@@ -1,0 +1,32 @@
+apply plugin: 'war'
+
+dependencies {
+    testImplementation 'com.github.h-thurow:tomcat8jndi:1.0.0'
+    testImplementation 'org.apache.tomcat:tomcat-dbcp:8.0.47'
+    implementation (project(':cwms_radar_api')) {     
+        exclude group: 'org.eclipse.jetty'
+        exclude group: 'org.eclipse.jetty.websocket'
+    }
+    compileOnly 'javax:javaee-web-api:7.0'
+    
+    implementation("io.javalin:javalin:3.7.0") {
+        exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"
+    }
+    implementation("io.javalin:javalin-openapi:3.9.0") {
+        exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"
+    }
+    runtime 'jstl:jstl:1.2'
+
+    testImplementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+
+    
+}
+
+
+test {
+	useJUnitPlatform()
+}
+
+description = 'CWMS RADAR Tomcat Instance'

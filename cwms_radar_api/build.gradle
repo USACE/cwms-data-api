@@ -1,0 +1,12 @@
+apply plugin: 'java-library'
+
+dependencies {    
+    implementation 'io.javalin:javalin:3.7.0'    
+    compileOnly 'javax:javaee-web-api:7.0'
+}
+
+test {
+	useJUnitPlatform()
+}
+
+description = 'CWMS RADAR API'
