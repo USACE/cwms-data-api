@@ -1,0 +1,27 @@
+
+
+allprojects {
+    group = 'mil.army.usace.hec.cwms'
+    version = '2.0-SNAPSHOT'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenLocal()
+	    mavenCentral()
+        jcenter();
+        maven {
+            url = uri('https://repo.maven.apache.org/maven2')
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8";
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
