@@ -36,7 +36,7 @@ import java.sql.SQLException;
 
     public Location(ResultSet rs) throws SQLException {
         location_id = rs.getString("location_id");
-        latitude = rs.getDouble("lattidue");
+        latitude = rs.getDouble("latitude");
         longitude = rs.getDouble("longitude");
     }
 

@@ -47,7 +47,7 @@ import javax.sql.DataSource;
  * @author mike
  */
 public class LocationController implements CrudHandler {
-    public static final String ALL_LOCATIONS_QUERY = "select * from cwms_v_locations"; //TODO: put a where clause in here with everything 
+    public static final String ALL_LOCATIONS_QUERY = "select * from cwms_20.av_loc2"; //TODO: put a where clause in here with everything 
     
 
     @Override

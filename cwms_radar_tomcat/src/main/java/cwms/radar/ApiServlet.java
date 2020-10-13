@@ -45,7 +45,7 @@ import cwms.radar.api.*;
  *
  * @author mike
  */
-@WebServlet( urlPatterns = {"/api/*"})
+@WebServlet( urlPatterns = {"/*"})
 public class ApiServlet extends HttpServlet {
     final JavalinServlet javalin;
     
@@ -66,8 +66,9 @@ public class ApiServlet extends HttpServlet {
                 .exception(Exception.class, (e,ctx) -> {
                     e.printStackTrace(System.err);                   
                 })
-                .routes( () -> {                    
-                    crud("/cwms-data/locations", new LocationController());
+                .routes( () -> {      
+                    get("/", ctx -> { ctx.result("welcome to the CWMS REST APi");});              
+                    crud("/locations/:location_code", new LocationController());
                 }).servlet();
         
     }
@@ -75,7 +76,7 @@ public class ApiServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {     
         try (Connection db = cwms.getConnection() ) {            
-            req.setAttribute("db", db);
+            req.setAttribute("database", db);
             javalin.service(req, resp);     
         } catch (SQLException ex) {
             Logger.getLogger(ApiServlet.class.getName()).log(Level.SEVERE, null, ex);
