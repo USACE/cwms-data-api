@@ -69,6 +69,7 @@ public class ApiServlet extends HttpServlet {
                 .routes( () -> {      
                     get("/", ctx -> { ctx.result("welcome to the CWMS REST APi");});              
                     crud("/locations/:location_code", new LocationController());
+                    crud("/offices/:office_name", new OfficeController());
                 }).servlet();
         
     }
