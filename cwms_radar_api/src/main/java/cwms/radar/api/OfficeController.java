@@ -63,7 +63,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import cwms.radar.api.Office;
+
+import cwms.radar.data.dao.Office;
 
 /**
  *
