@@ -24,11 +24,11 @@ public class CwmsDataManager implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {        
+    public void close() throws SQLException {        
         conn.close();
     }
 
-    List<Office> getOffices(){        
+    public List<Office> getOffices(){        
         try (                
                 PreparedStatement stmt = conn.prepareStatement(ALL_OFFICES_QUERY);
                 ResultSet rs = stmt.executeQuery();
@@ -44,4 +44,5 @@ public class CwmsDataManager implements AutoCloseable {
         }
         return null;
     }
+    
 }

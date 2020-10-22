@@ -64,6 +64,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
 
 /**
@@ -71,24 +72,17 @@ import cwms.radar.data.dao.Office;
  * @author mike
  */
 public class OfficeController implements CrudHandler {
-    public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office"; //TODO: put a where clause in here with everything 
     
 
     @Override
     public void getAll(Context ctx) {
         try (
-                Connection conn = ctx.attribute("database");  
-                PreparedStatement stmt = conn.prepareStatement(ALL_OFFICES_QUERY);
-                ResultSet rs = stmt.executeQuery();
+                CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                ArrayList<Office> offices = new ArrayList<>();
-                while (rs.next()) {
-                    Office l = new Office(rs);            
-                    offices.add(l);
-
-                }
+                
+                
                 HashMap<String,Object> results = new HashMap<>();
-                results.put("offices",offices);
+                results.put("offices",cdm.getOffices());
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.json(results);            
         } catch (SQLException ex) {
