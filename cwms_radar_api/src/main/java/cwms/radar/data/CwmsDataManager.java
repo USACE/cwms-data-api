@@ -14,7 +14,7 @@ import io.javalin.http.Context;
 public class CwmsDataManager implements AutoCloseable {
     private static final Logger logger = Logger.getLogger("CwmsDataManager");
     public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office"; //TODO: put a where clause in here with everything 
-    
+    public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
 
 
     private Connection conn;
@@ -40,9 +40,28 @@ public class CwmsDataManager implements AutoCloseable {
                 }
                 return offices;
         } catch( SQLException err ){
-            logger.warning("Failed to process database request" + err.getLocalizedMessage() );
+            
         }
         return null;
     }
+
+	public Office getOfficeById(String office_id) {
+        
+        try(
+            PreparedStatement stmt = conn.prepareStatement(SINGLE_OFFICE);
+        ) {
+            stmt.setString(1, office_id);
+            try(
+                ResultSet rs = stmt.executeQuery();
+            ){ 
+                if(rs.next()){
+                    return new Office(rs);
+                }
+            }
+        } catch( SQLException err ){
+            logger.warning("Failed to process database request" + err.getLocalizedMessage() );
+        }
+		return null;
+	}
     
 }

@@ -79,8 +79,7 @@ public class OfficeController implements CrudHandler {
         try (
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                
-                
+                                
                 HashMap<String,Object> results = new HashMap<>();
                 results.put("offices",cdm.getOffices());
                 ctx.status(HttpServletResponse.SC_OK);
@@ -93,8 +92,18 @@ public class OfficeController implements CrudHandler {
     }
 
     @Override
-    public void getOne(Context ctx, String location_code) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void getOne(Context ctx, String office_id) {
+        try(
+            CwmsDataManager cdm = new CwmsDataManager(ctx);
+        ) {
+            Office office = cdm.getOfficeById(office_id);
+            ctx.status(HttpServletResponse.SC_OK);
+            ctx.json(office);
+        } catch( SQLException ex ){
+            Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            ctx.result("Failed to process request");
+        }        
     }
 
     @Override
