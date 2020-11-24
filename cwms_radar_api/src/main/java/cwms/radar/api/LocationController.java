@@ -30,9 +30,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+
+import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.Location;
 
 
 /**
@@ -40,25 +44,18 @@ import javax.servlet.http.HttpServletResponse;
  * @author mike
  */
 public class LocationController implements CrudHandler {
-    public static final String ALL_LOCATIONS_QUERY = "select * from cwms_20.av_loc2"; //TODO: put a where clause in here with everything 
+    
     
 
     @Override
     public void getAll(Context ctx) {
         try (
-                Connection conn = ctx.attribute("database");  
-                PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY);
-                ResultSet rs = stmt.executeQuery();
+                CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                ArrayList<Location> locations = new ArrayList<>();
-                while (rs.next()) {
-                    Location l = new Location(rs);            
-                    locations.add(l);
-
-                }
-                
+                HashMap<String,Object> results = new HashMap<>();
+                results.put("locations",cdm.getLocations());
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.json(locations);            
+                ctx.json(results);            
         } catch (SQLException ex) {
             Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

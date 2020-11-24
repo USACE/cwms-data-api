@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package cwms.radar.api;
+package cwms.radar.data.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
