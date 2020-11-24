@@ -1,10 +1,12 @@
 package cwms.radar.data;
 
 import java.util.logging.Level;
-
+import java.sql.CallableStatement;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +28,9 @@ public class CwmsDataManager implements AutoCloseable {
                                                                                                                                         // with
                                                                                                                                         // everything
     public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
-    public static final String ALL_LOCATIONS_QUERY = "select * from cwms_20.av_loc2"; // TODO: put a where clause in
-                                                                                      // here with everything
+    public static final String ALL_LOCATIONS_QUERY = "select cwms_loc.retrieve_locations_f(?,?,?,?,?) from dual";
+                                                                    
+
 
     private Connection conn;
 
@@ -40,16 +43,27 @@ public class CwmsDataManager implements AutoCloseable {
         conn.close();
     }
 
-    public List<Location> getLocations() {
-        try (PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY); ResultSet rs = stmt.executeQuery();) {
-            List<Location> locations = new ArrayList<>();
-            while(rs.next()){
-                Location l = new Location(rs);
-                locations.add(l);                
+    public String getLocations(String names,String format, String units, String datum, String OfficeId) {
+        ResultSet rs = null;
+        try( PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY); ) {
+            stmt.setString(1,names);
+            stmt.setString(2,format);
+            stmt.setString(3,units);
+            stmt.setString(4,datum);
+            stmt.setString(5,OfficeId);            
+            rs = stmt.executeQuery();
+            
+            if(rs.next()){
+                Clob clob = rs.getClob(1);
+                return clob.getSubString(1L, (int)clob.length());
             }
-            return locations;
+            
         }catch (SQLException err) {
             logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
+        } finally {
+            if( rs != null ){
+                try{ rs.close(); } catch (Exception err) {logger.log(Level.WARNING, err.getLocalizedMessage(), err);}
+            }
         }
         return null;
     }

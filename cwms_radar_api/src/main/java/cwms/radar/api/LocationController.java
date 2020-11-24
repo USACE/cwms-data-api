@@ -52,10 +52,24 @@ public class LocationController implements CrudHandler {
         try (
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                HashMap<String,Object> results = new HashMap<>();
-                results.put("locations",cdm.getLocations());
+                String format = ctx.queryParam("format","json");           
+                String names = ctx.queryParam("names");
+                String units = ctx.queryParam("units");
+                String datum = ctx.queryParam("datum");
+                String office = ctx.queryParam("office");
+
+
+                switch(format){
+                    case "json": {ctx.contentType("application/json"); break;}
+                    case "tab": {ctx.contentType("text/tab-sperated-values");break;}
+                    case "csv": {ctx.contentType("text/csv"); break;}
+                    case "xml": {ctx.contentType("application/xml");break;}
+                    case "wml2": {ctx.contentType("application/xml");break;}
+                }
+
+                String results = cdm.getLocations(names,format,units,datum,office);                
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.json(results);            
+                ctx.result(results);                
         } catch (SQLException ex) {
             Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
