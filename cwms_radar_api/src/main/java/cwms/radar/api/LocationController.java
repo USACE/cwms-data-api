@@ -25,47 +25,51 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLType;
-import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
+
+import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.Location;
+
 
 /**
  *
  * @author mike
  */
 public class LocationController implements CrudHandler {
-    public static final String ALL_LOCATIONS_QUERY = "select * from cwms_20.av_loc2"; //TODO: put a where clause in here with everything 
+    
     
 
     @Override
     public void getAll(Context ctx) {
         try (
-                Connection conn = ctx.attribute("database");  
-                PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY);
-                ResultSet rs = stmt.executeQuery();
+                CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                ArrayList<Location> locations = new ArrayList<>();
-                while (rs.next()) {
-                    Location l = new Location(rs);            
-                    locations.add(l);
+                String format = ctx.queryParam("format","json");           
+                String names = ctx.queryParam("names");
+                String units = ctx.queryParam("units");
+                String datum = ctx.queryParam("datum");
+                String office = ctx.queryParam("office");
 
+
+                switch(format){
+                    case "json": {ctx.contentType("application/json"); break;}
+                    case "tab": {ctx.contentType("text/tab-sperated-values");break;}
+                    case "csv": {ctx.contentType("text/csv"); break;}
+                    case "xml": {ctx.contentType("application/xml");break;}
+                    case "wml2": {ctx.contentType("application/xml");break;}
                 }
-                
+
+                String results = cdm.getLocations(names,format,units,datum,office);                
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.json(locations);            
+                ctx.result(results);                
         } catch (SQLException ex) {
             Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

@@ -46,48 +46,32 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLType;
-import java.sql.Types;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-import cwms.radar.api.Office;
+
+
+import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.Office;
 
 /**
  *
  * @author mike
  */
 public class OfficeController implements CrudHandler {
-    public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office"; //TODO: put a where clause in here with everything 
     
 
     @Override
     public void getAll(Context ctx) {
         try (
-                Connection conn = ctx.attribute("database");  
-                PreparedStatement stmt = conn.prepareStatement(ALL_OFFICES_QUERY);
-                ResultSet rs = stmt.executeQuery();
+                CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                ArrayList<Office> offices = new ArrayList<>();
-                while (rs.next()) {
-                    Office l = new Office(rs);            
-                    offices.add(l);
-
-                }
+                                
                 HashMap<String,Object> results = new HashMap<>();
-                results.put("offices",offices);
+                results.put("offices",cdm.getOffices());
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.json(results);            
         } catch (SQLException ex) {
@@ -98,8 +82,18 @@ public class OfficeController implements CrudHandler {
     }
 
     @Override
-    public void getOne(Context ctx, String location_code) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void getOne(Context ctx, String office_id) {
+        try(
+            CwmsDataManager cdm = new CwmsDataManager(ctx);
+        ) {
+            Office office = cdm.getOfficeById(office_id);
+            ctx.status(HttpServletResponse.SC_OK);
+            ctx.json(office);
+        } catch( SQLException ex ){
+            Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            ctx.result("Failed to process request");
+        }        
     }
 
     @Override
