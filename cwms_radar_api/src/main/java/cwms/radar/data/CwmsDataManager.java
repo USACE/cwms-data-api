@@ -100,5 +100,11 @@ public class CwmsDataManager implements AutoCloseable {
         }
 		return null;
 	}
+
+	public String getRatings(String names, String format, String unit, String datum, String office, String at,
+			String end, String timezone, String size) {
+        //TODO: way more work that the others.
+		return null;
+	}
     
 }
