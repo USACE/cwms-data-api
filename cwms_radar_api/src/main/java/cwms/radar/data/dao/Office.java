@@ -32,6 +32,11 @@ public class Office {
     private String reports_to;
 
     private final HashMap<String,String> office_types = new HashMap<>(){
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+
         {
             put("UNK","unknown");
             put("HQ","corps headquarters");

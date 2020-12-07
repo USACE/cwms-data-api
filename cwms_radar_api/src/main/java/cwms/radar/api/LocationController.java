@@ -25,18 +25,12 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
 import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dao.Location;
 
 
 /**
