@@ -29,7 +29,8 @@ public class CwmsDataManager implements AutoCloseable {
                                                                                                                                         // everything
     public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
     public static final String ALL_LOCATIONS_QUERY = "select cwms_loc.retrieve_locations_f(?,?,?,?,?) from dual";
-    public static final String ALL_UNITS_QUERY = "select cwms_cat.retrieve_units_f(?) from dual";                                                                
+    public static final String ALL_UNITS_QUERY = "select cwms_cat.retrieve_units_f(?) from dual";
+    private static final String ALL_PARAMETERS_QUERY = "select cwms_cat.retrieve_parameters_f(?) from dual";
 
 
     private Connection conn;
@@ -117,5 +118,23 @@ public class CwmsDataManager implements AutoCloseable {
         }
         return null;
 	}
+
+	public String getParameters(String format) {
+		try (
+            PreparedStatement stmt = conn.prepareStatement(ALL_PARAMETERS_QUERY);
+        ) {
+            stmt.setString(1, format);
+            try( ResultSet rs = stmt.executeQuery() ){
+                if( rs.next() ){
+                    Clob clob = rs.getClob(1);
+                return clob.getSubString(1L, (int)clob.length());
+                }                
+            }
+        } catch (SQLException err ){
+            logger.log(Level.WARNING,"Failed to process database request",err);
+        }
+        return null;
+	}
+	
     
 }
