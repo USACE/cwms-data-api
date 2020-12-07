@@ -29,6 +29,7 @@ public class CwmsDataManager implements AutoCloseable {
     public static final String ALL_UNITS_QUERY = "select cwms_cat.retrieve_units_f(?) from dual";
     private static final String ALL_PARAMETERS_QUERY = "select cwms_cat.retrieve_parameters_f(?) from dual";
     private static final String ALL_TIMEZONES_QUERY = "select cwms_cat.retrieve_time_zones_f(?) from dual";
+    private static final String ALL_TIMESERIES_QUERY = "select cwms_ts.retrieve_time_series_f(?,?,?,?,?,?,?,?) from dual";
 
     private Connection conn;
 
@@ -148,6 +149,30 @@ public class CwmsDataManager implements AutoCloseable {
             logger.log(Level.WARNING,"Failed to process database request",err);
         }
         return null;
+	}
+
+	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
+			String end, String timezone) {                
+                try( PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY); ) {
+                    stmt.setString(1,names);
+                    stmt.setString(2,format);
+                    stmt.setString(3,units);
+                    stmt.setString(4,datum);
+                    stmt.setString(5,begin);
+                    stmt.setString(6,end);
+                    stmt.setString(7,timezone);
+                    stmt.setString(8,office);            
+                    try( ResultSet rs = stmt.executeQuery();){
+                    
+                    if(rs.next()){
+                        Clob clob = rs.getClob(1);
+                        return clob.getSubString(1L, (int)clob.length());
+                    }
+                }
+                }catch (SQLException err) {
+                    logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
+                } 
+                return null;
 	}
 	
     
