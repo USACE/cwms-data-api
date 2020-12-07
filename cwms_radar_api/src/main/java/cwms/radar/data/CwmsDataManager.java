@@ -42,27 +42,21 @@ public class CwmsDataManager implements AutoCloseable {
         conn.close();
     }
 
-    public String getLocations(String names,String format, String units, String datum, String OfficeId) {
-        ResultSet rs = null;
+    public String getLocations(String names,String format, String units, String datum, String OfficeId) {        
         try( PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY); ) {
             stmt.setString(1,names);
             stmt.setString(2,format);
             stmt.setString(3,units);
             stmt.setString(4,datum);
-            stmt.setString(5,OfficeId);            
-            rs = stmt.executeQuery();
-            
-            if(rs.next()){
-                Clob clob = rs.getClob(1);
-                return clob.getSubString(1L, (int)clob.length());
+            stmt.setString(5,OfficeId);
+            try( ResultSet rs = stmt.executeQuery(); ){
+                if(rs.next()){
+                    Clob clob = rs.getClob(1);
+                    return clob.getSubString(1L, (int)clob.length());
+                }                
             }
-            
         }catch (SQLException err) {
             logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
-        } finally {
-            if( rs != null ){
-                try{ rs.close(); } catch (Exception err) {logger.log(Level.WARNING, err.getLocalizedMessage(), err);}
-            }
         }
         return null;
     }
@@ -153,7 +147,7 @@ public class CwmsDataManager implements AutoCloseable {
 
 	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
 			String end, String timezone) {                
-                try( PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY); ) {
+                try( PreparedStatement stmt = conn.prepareStatement(ALL_TIMESERIES_QUERY); ) {
                     stmt.setString(1,names);
                     stmt.setString(2,format);
                     stmt.setString(3,units);

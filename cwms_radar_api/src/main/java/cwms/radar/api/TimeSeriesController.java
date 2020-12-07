@@ -36,8 +36,7 @@ public class TimeSeriesController implements CrudHandler {
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
-            String timezone = ctx.queryParam("timezone");
-            String size = ctx.queryParam("size");
+            String timezone = ctx.queryParam("timezone");            
             
             
             switch(format){
