@@ -25,10 +25,8 @@ package cwms.radar;
 
 import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.*;
-import io.javalin.http.Context;
 import io.javalin.http.JavalinServlet;
 import java.io.IOException;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -47,6 +45,11 @@ import cwms.radar.api.*;
  */
 @WebServlet( urlPatterns = {"/*"})
 public class ApiServlet extends HttpServlet {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
+
     final JavalinServlet javalin;
     
     @Resource(name="jdbc/CWMS")
