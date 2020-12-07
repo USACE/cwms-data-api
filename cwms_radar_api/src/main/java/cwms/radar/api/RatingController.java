@@ -35,7 +35,7 @@ public class RatingController implements CrudHandler {
                 String unit = ctx.queryParam("unit");
                 String datum = ctx.queryParam("datum");
                 String office = ctx.queryParam("office");
-                String at = ctx.queryParam("at");
+                String start = ctx.queryParam("at");
                 String end = ctx.queryParam("end");
                 String timezone = ctx.queryParam("timezone","UTC");
                 String size = ctx.queryParam("size");                
@@ -50,18 +50,18 @@ public class RatingController implements CrudHandler {
                     case "png": {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND);
                         ctx.contentType("text/plain");
-                        ctx.result("Server Side image creation is not supported in this version");
+                        ctx.result("Server Side image creation is not supported in this version. Note: we may be retiring it in favor or encouraging the use of client based rendering.");
                         return;                        
                      }
                      default: {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND);
                         ctx.contentType("text/plain");
-                        ctx.result(String.format("Format ,{} , is not available on this endpoint",format))
+                        ctx.result(String.format("Format ,{} , is not available on this endpoint",format));
                         return;
                      }
                 }
 
-                String results = cdm.getRatings(names,format,unit,datum,office,at,end,timezone,size);                
+                String results = cdm.getRatings(names,format,unit,datum,office,start,end,timezone,size);                
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);                
         } catch (SQLException ex) {
