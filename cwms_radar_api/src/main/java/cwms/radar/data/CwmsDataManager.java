@@ -26,6 +26,7 @@ public class CwmsDataManager implements AutoCloseable {
                                                                                                                                         // everything
     public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
     public static final String ALL_LOCATIONS_QUERY = "select cwms_loc.retrieve_locations_f(?,?,?,?,?) from dual";
+    public static final String ALL_RATINGS_QUERY = "select cwms_rating.retrieve_ratings_f(?,?,?,?,?,?,?,?) from dual";                                                               
     public static final String ALL_UNITS_QUERY = "select cwms_cat.retrieve_units_f(?) from dual";
     private static final String ALL_PARAMETERS_QUERY = "select cwms_cat.retrieve_parameters_f(?) from dual";
     private static final String ALL_TIMEZONES_QUERY = "select cwms_cat.retrieve_time_zones_f(?) from dual";
@@ -94,6 +95,32 @@ public class CwmsDataManager implements AutoCloseable {
 		return null;
 	}
 
+	public String getRatings(String names, String format, String unit, String datum, String office, String start,
+			String end, String timezone, String size) {
+                try(
+                    PreparedStatement stmt = conn.prepareStatement(ALL_RATINGS_QUERY);
+                ) {
+                    stmt.setString(1, names);
+                    stmt.setString(2, format);
+                    stmt.setString(3, unit);
+                    stmt.setString(4, datum);
+                    stmt.setString(5, start);
+                    stmt.setString(6, end);
+                    stmt.setString(7, timezone);
+                    stmt.setString(8, office);
+                    try(
+                        ResultSet rs = stmt.executeQuery();
+                    ){ 
+                        if(rs.next()){
+                            Clob clob = rs.getClob(1);
+                            return clob.getSubString(1L, (int)clob.length());
+                        }
+                    }
+                } catch( SQLException err ){
+                    logger.warning("Failed to process database request" + err.getLocalizedMessage() );
+                }
+                return null;
+	}
 	public String getUnits(String format) {
 		try (
             PreparedStatement stmt = conn.prepareStatement(ALL_UNITS_QUERY);
