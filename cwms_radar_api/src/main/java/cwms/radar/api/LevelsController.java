@@ -9,6 +9,9 @@ import javax.servlet.http.HttpServletResponse;
 import cwms.radar.data.CwmsDataManager;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
@@ -23,7 +26,10 @@ public class LevelsController implements CrudHandler {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        
 
     }
-
+    @OpenApi(
+        pathParams = @OpenApiParam(name="id"),        
+        responses = @OpenApiResponse(status="200" )
+    )
     @Override
     public void getAll(Context ctx) {
         try (

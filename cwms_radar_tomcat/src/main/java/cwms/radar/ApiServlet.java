@@ -28,6 +28,7 @@ import cwms.radar.api.*;
  */
 @WebServlet(urlPatterns = { "/*" })
 public class ApiServlet extends HttpServlet {
+    private Logger log = Logger.getLogger(ApiServlet.class.getName());
     /**
      *
      */
@@ -44,7 +45,9 @@ public class ApiServlet extends HttpServlet {
         this.javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";   
             config.contextPath = "/";                        
-            config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));            
+            config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));  
+            config.enableDevLogging();          
+            config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
         })
                 .before( ctx -> { 
                     Connection conn = ctx.attribute("db");
@@ -55,7 +58,7 @@ public class ApiServlet extends HttpServlet {
                     e.printStackTrace(System.err);                   
                 })
                 .routes( () -> {      
-                    get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
+                    //get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
                     crud("/locations/:location_code", new LocationController());
                     crud("/offices/:office_name", new OfficeController());
                     crud("/units/:unit_name", new UnitsController());
@@ -69,7 +72,9 @@ public class ApiServlet extends HttpServlet {
 
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().version("2.0").description("CWMS REST API for Data Retrieval");
-        OpenApiOptions options = new OpenApiOptions(applicationInfo).path("/swagger-docs");                        
+        OpenApiOptions options = new OpenApiOptions(applicationInfo)
+                    .path("/swagger-docs")                                        
+                    .activateAnnotationScanningFor("cwms.radar.api");                        
         return options;
     }
 
