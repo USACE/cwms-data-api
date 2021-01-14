@@ -14,15 +14,13 @@ public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
 
     @Override
-    public void create(Context arg0) {
-        // TODO Auto-generated method stub
-
+    public void create(Context ctx) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
     @Override
-    public void delete(Context arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+    public void delete(Context ctx, String rating) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
     @Override
@@ -73,15 +71,13 @@ public class RatingController implements CrudHandler {
     }
 
     @Override
-    public void getOne(Context arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+    public void getOne(Context ctx, String rating) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
     @Override
-    public void update(Context arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+    public void update(Context ctx, String rating) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
     
 }

@@ -5,7 +5,6 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
-import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 
 import java.io.IOException;
@@ -58,8 +57,9 @@ public class ApiServlet extends HttpServlet {
             config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
         })
                 .before( ctx -> { 
-                    Connection conn = ctx.attribute("db");
-                    //TODO: any pre-connection setup goes here
+                    /* authorization on connection setup will go here
+                    Connection conn = ctx.attribute("db");                    
+                    */
                 }
                 )
                 .exception(Exception.class, (e,ctx) -> {
