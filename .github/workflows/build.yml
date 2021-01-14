@@ -1,6 +1,9 @@
-name: Create Release
+name: Build CWMS RADAR
 on:   
-  push-rqeuest:
+  push:
+    branches:
+      - main
+  pull-request:
     branches: 
       - develop
 
@@ -10,5 +13,5 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v2
-      - name: build and test
+      - name: build and test        
         run: ./gradlew test
