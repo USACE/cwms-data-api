@@ -10,6 +10,8 @@ import cwms.radar.data.CwmsDataManager;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 public class ParametersController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
@@ -27,6 +29,15 @@ public class ParametersController implements CrudHandler {
 
     }
 
+    @OpenApi(
+        queryParams = {
+            @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)")        
+        },
+        responses = {
+            @OpenApiResponse( status = "200"),
+            @OpenApiResponse(status="501",description = "The format requested is not implemented")
+        }
+    )
     @Override
     public void getAll(Context ctx) {
         try (
