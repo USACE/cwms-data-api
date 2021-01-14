@@ -16,11 +16,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
 
+    @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        
@@ -76,12 +78,14 @@ public class LevelsController implements CrudHandler {
         }        
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);        
 
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        

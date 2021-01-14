@@ -2,6 +2,8 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,21 +50,25 @@ public class LocationController implements CrudHandler {
         }
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String location_code) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String location_code) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String location_code) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

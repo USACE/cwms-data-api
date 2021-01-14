@@ -9,15 +9,18 @@ import javax.servlet.http.HttpServletResponse;
 import cwms.radar.data.CwmsDataManager;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.OpenApi;
 
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
 
+    @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String rating) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
@@ -70,11 +73,13 @@ public class RatingController implements CrudHandler {
 
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String rating) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String rating) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
