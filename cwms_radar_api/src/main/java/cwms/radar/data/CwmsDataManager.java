@@ -15,15 +15,7 @@ import io.javalin.http.Context;
 
 public class CwmsDataManager implements AutoCloseable {
     private static final Logger logger = Logger.getLogger("CwmsDataManager");
-    public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office"; // TODO:
-                                                                                                                                        // put
-                                                                                                                                        // a
-                                                                                                                                        // where
-                                                                                                                                        // clause
-                                                                                                                                        // in
-                                                                                                                                        // here
-                                                                                                                                        // with
-                                                                                                                                        // everything
+    public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office";
     public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
     public static final String ALL_LOCATIONS_QUERY = "select cwms_loc.retrieve_locations_f(?,?,?,?,?) from dual";
     public static final String ALL_RATINGS_QUERY = "select cwms_rating.retrieve_ratings_f(?,?,?,?,?,?,?,?) from dual";                                                               
