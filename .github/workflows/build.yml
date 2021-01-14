@@ -13,9 +13,10 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v2
-      - name: build and test     
+      - name: setup java
         uses: actions/setup-java@v1
         with:
           java-verson: '11'
           java-package: jdk             
+      - name: build and test     
         run: ./gradlew test
