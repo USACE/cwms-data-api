@@ -52,7 +52,7 @@ public class ApiServlet extends HttpServlet {
         //System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
         this.javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";   
-            config.contextPath = "/";                        
+            config.contextPath = "/cwms-data";                        
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));  
             config.enableDevLogging();          
             config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
@@ -81,7 +81,8 @@ public class ApiServlet extends HttpServlet {
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().version("2.0").description("CWMS REST API for Data Retrieval");
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
-                    .path("/swagger-docs")                                        
+                    .path("/swagger-docs")           
+                    
                     .activateAnnotationScanningFor("cwms.radar.api");                        
         return options;
     }

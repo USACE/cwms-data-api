@@ -9,6 +9,7 @@ info:
     email: support@hec.usace.army.mil
     url: https://www.hec.usace.army.mil
 host: 10.10.10.180
+url: /cwms-data/swagger-docs
 basePath: /cwms-data
 schemes:
   - https
