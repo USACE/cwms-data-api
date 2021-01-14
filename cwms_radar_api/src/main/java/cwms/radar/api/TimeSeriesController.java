@@ -57,7 +57,7 @@ public class TimeSeriesController implements CrudHandler {
                 }
                 default: {
                     ctx.contentType("text/plain");
-                    ctx.status(HttpServletResponse.SC_NOT_FOUND);
+                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                     ctx.result(String.format("Format {} is not implemented for this endpoint",format));
                     return;
                 }
