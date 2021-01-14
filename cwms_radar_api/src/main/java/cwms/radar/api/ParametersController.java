@@ -36,7 +36,8 @@ public class ParametersController implements CrudHandler {
         responses = {
             @OpenApiResponse( status = "200"),
             @OpenApiResponse(status="501",description = "The format requested is not implemented")
-        }
+        },
+        tags = {"Parameters"}
     )
     @Override
     public void getAll(Context ctx) {

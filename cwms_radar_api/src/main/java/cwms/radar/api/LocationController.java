@@ -33,8 +33,9 @@ public class LocationController implements CrudHandler {
             @OpenApiResponse( status="200"),
             @OpenApiResponse( status="404", description = "Based on the combination of inputs provided the location(s) were not found."),
             @OpenApiResponse( status="501", description = "request format is not implemented")
-        }
-        , description = "Returns CWMS Location Data"        
+        },
+        description = "Returns CWMS Location Data",
+        tags = {"Locations"}
     )
     @Override
     public void getAll(Context ctx) {

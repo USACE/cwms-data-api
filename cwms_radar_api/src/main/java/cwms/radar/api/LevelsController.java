@@ -44,7 +44,8 @@ public class LevelsController implements CrudHandler {
             @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a level."),
             @OpenApiResponse(status="501", description = "Requested format is not implemented")
             
-        }
+        },
+        tags = {"Levels"}
     )
     @Override
     public void getAll(Context ctx) {

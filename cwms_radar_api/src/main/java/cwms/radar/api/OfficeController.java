@@ -26,7 +26,8 @@ public class OfficeController implements CrudHandler {
         queryParams = @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),        
         responses = { @OpenApiResponse(status="200" ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented")
-                    }
+                    },
+        tags = {"Offices"}
     )
     @Override
     public void getAll(Context ctx) {
@@ -50,7 +51,8 @@ public class OfficeController implements CrudHandler {
         queryParams = @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),        
         responses = { @OpenApiResponse(status="200" ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented")
-                    }
+                    },
+        tags = {"Offices"}
     )
     @Override
     public void getOne(Context ctx, String office_id) {

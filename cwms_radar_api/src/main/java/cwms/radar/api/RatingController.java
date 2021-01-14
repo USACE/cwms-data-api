@@ -13,6 +13,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
+
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
 
@@ -44,7 +45,8 @@ public class RatingController implements CrudHandler {
             @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a rating table."),
             @OpenApiResponse(status="501", description = "Requested format is not implemented")
             
-        }
+        },
+        tags = {"Ratings"}
     )
     @Override
     public void getAll(Context ctx) {

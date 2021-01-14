@@ -45,7 +45,8 @@ public class TimeSeriesController implements CrudHandler {
             @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a timeseries."),
             @OpenApiResponse(status="501", description = "Requested format is not implemented")
             
-        }
+        },
+        tags = {"TimeSeries"}
     )
     @Override
     public void getAll(Context ctx) {
