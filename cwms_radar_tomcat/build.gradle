@@ -27,6 +27,34 @@ dependencies {
     
 }
 
+// get 
+
+task getSwagger {
+    project.mkdir("$buildDir/downloaded")
+    project.mkdir("$buildDir/extra/swagger-ui")
+    def f = new File("$buildDir/downloaded/swagger-editor.zip")
+    if(!f.exists()){
+        new URL("https://github.com/swagger-api/swagger-editor/releases/download/v2.10.4/swagger-editor.zip").withInputStream{ i -> f.withOutputStream{ it << i }}
+    }
+}
+
+task unzipSwagger(type: Copy) {
+    dependsOn getSwagger
+
+    eachFile {
+        path -= ~/^.+?\//
+    }
+    from zipTree("$buildDir/downloaded/swagger-editor.zip")
+    into "$buildDir/extra/swagger-ui/"
+    includeEmptyDirs = false
+}
+
+
+war {
+    dependsOn unzipSwagger
+    from "$buildDir/extra"
+}
+
 
 test {
 	useJUnitPlatform()

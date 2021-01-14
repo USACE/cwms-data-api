@@ -26,7 +26,15 @@ import cwms.radar.api.*;
  * Setup all the information required so we can serve the request.
  * 
  */
-@WebServlet(urlPatterns = { "/*" })
+@WebServlet(urlPatterns = { "/locations/*", 
+                            "/offices/*",
+                            "/timeseries/*",
+                            "/swagger-docs",
+                            "/ratings/*",
+                            "/parameters/*",
+                            "/timezones/*",
+                            "/levels/*"
+})
 public class ApiServlet extends HttpServlet {
     private Logger log = Logger.getLogger(ApiServlet.class.getName());
     /**
