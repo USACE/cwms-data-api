@@ -30,11 +30,13 @@ dependencies {
 // get 
 
 task getSwagger {
-    project.mkdir("$buildDir/downloaded")
-    project.mkdir("$buildDir/extra/swagger-ui")
-    def f = new File("$buildDir/downloaded/swagger-ui.zip")
-    if(!f.exists()){
-        new URL("https://github.com/swagger-api/swagger-ui/archive/v3.39.0.zip").withInputStream{ i -> f.withOutputStream{ it << i }}
+    doLast {        
+        project.mkdir("$buildDir/downloaded")
+        project.mkdir("$buildDir/extra/swagger-ui")
+        def f = new File("$buildDir/downloaded/swagger-ui.zip")
+        if(!f.exists()){
+            new URL("https://github.com/swagger-api/swagger-ui/archive/v3.39.0.zip").withInputStream{ i -> f.withOutputStream{ it << i }}
+        }
     }
 }
 
