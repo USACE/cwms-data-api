@@ -43,7 +43,7 @@ public class ApiServlet extends HttpServlet {
 
     final JavalinServlet javalin;
 
-    @Resource(name = "jdbc/CWMS")
+    @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
 
     public ApiServlet() {
