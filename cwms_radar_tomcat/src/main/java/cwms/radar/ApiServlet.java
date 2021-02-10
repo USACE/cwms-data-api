@@ -41,17 +41,19 @@ public class ApiServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
-    final JavalinServlet javalin;
+    JavalinServlet javalin = null;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
 
-    public ApiServlet() {
+    @Override
+    public void init() throws ServletException{
         //System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
         //System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
+        String context = this.getServletContext().getContextPath();
         this.javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";   
-            config.contextPath = "/cwms-data";                        
+            config.contextPath = context;                        
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));  
             config.enableDevLogging();          
             config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
