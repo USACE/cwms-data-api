@@ -2,11 +2,19 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.0-SNAPSHOT'
+    version = '2.0.1'
+
+    
+    
 }
 
 subprojects {
     apply plugin: 'java'
+
+    compileJava{
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
+    }
 
     repositories {
         mavenLocal()

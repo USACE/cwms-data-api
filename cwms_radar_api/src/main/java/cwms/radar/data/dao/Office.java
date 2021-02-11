@@ -10,7 +10,7 @@ public class Office {
     private String type;
     private String reports_to;
 
-    private final HashMap<String,String> office_types = new HashMap<>(){
+    private final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
          *
          */

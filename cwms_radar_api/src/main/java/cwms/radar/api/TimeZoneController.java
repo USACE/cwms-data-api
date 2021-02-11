@@ -9,21 +9,36 @@ import javax.servlet.http.HttpServletResponse;
 import cwms.radar.data.CwmsDataManager;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 public class TimeZoneController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
 
+    @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        
 
     }
 
+    @OpenApi(
+        queryParams = {
+            @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)")        
+        },
+        responses = {
+            @OpenApiResponse( status = "200"),
+            @OpenApiResponse(status="501",description = "The format requested is not implemented")
+        },
+        tags = { "TimeZones"}
+    )
     @Override
     public void getAll(Context ctx) {
         try (
@@ -50,12 +65,14 @@ public class TimeZoneController implements CrudHandler {
         }        
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);        
 
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);        

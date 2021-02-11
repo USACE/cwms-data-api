@@ -9,22 +9,35 @@ import javax.servlet.http.HttpServletResponse;
 import cwms.radar.data.CwmsDataManager;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 public class UnitsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
 
+    @OpenApi(ignore = true)
     @Override
-    public void create(Context arg0) {
-        // TODO Auto-generated method stub
-
+    public void create(Context ctx) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    @OpenApi(ignore = true)
     @Override
-    public void delete(Context arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+    public void delete(Context ctx, String unit) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    @OpenApi(
+        queryParams = {
+            @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)")        
+        },
+        responses = {
+            @OpenApiResponse( status = "200"),
+            @OpenApiResponse(status="501",description = "The format requested is not implemented")
+        },
+        tags = { "Units"}
+    )
     @Override
     public void getAll(Context ctx) {
         try (
@@ -52,16 +65,16 @@ public class UnitsController implements CrudHandler {
 
     }
 
+    @OpenApi(ignore = true)
     @Override
-    public void getOne(Context arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+    public void getOne(Context ctx, String unit) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    @OpenApi(ignore = true)
     @Override
-    public void update(Context arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+    public void update(Context ctx, String unit) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
     
 }
