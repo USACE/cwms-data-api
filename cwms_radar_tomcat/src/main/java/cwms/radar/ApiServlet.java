@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
 import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 
@@ -44,6 +45,7 @@ import cwms.radar.api.*;
 public class ApiServlet extends HttpServlet {
     private Logger log = Logger.getLogger(ApiServlet.class.getName());    
     private MetricRegistry metrics;
+    private Meter total_requests;
     /**
      *
      */
@@ -99,6 +101,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {     
+        total_requests.mark();
         try (Connection db = cwms.getConnection() ) {            
             req.setAttribute("database", db);
             javalin.service(req, resp);     
@@ -111,6 +114,7 @@ public class ApiServlet extends HttpServlet {
     @Override    
     public void init(ServletConfig config) throws ServletException {        
         metrics = (MetricRegistry)config.getServletContext().getAttribute(MetricsServlet.METRICS_REGISTRY);        
+        total_requests = metrics.meter("radar.total_requests");
         super.init(config);
     }
   
