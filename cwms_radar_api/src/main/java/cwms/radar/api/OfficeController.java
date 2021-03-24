@@ -13,6 +13,9 @@ import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
@@ -21,7 +24,18 @@ import cwms.radar.data.dao.Office;
  *
  */
 public class OfficeController implements CrudHandler {
+    private static final Logger logger = Logger.getLogger(OfficeController.class.getName());
+    private final MetricRegistry metrics;// = new MetricRegistry();
+    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
+    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+
+    public OfficeController(MetricRegistry metrics){
+        this.metrics=metrics;
+        getAllRequests = this.metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
+        getAllRequestsTime = this.metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+    }
     
+
     @OpenApi(
         queryParams = @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),        
         responses = { @OpenApiResponse(status="200" ),
@@ -31,7 +45,11 @@ public class OfficeController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
+        logger.info("Hello"+getAllRequests.getCount());
+        getAllRequests.mark();
+        
         try (
+                final Timer.Context time_context  = getAllRequestsTime.time();
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
                                 
@@ -40,7 +58,7 @@ public class OfficeController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.json(results);            
         } catch (SQLException ex) {
-            Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
         }

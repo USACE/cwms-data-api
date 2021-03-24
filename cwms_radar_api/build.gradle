@@ -3,6 +3,7 @@ apply plugin: 'java-library'
 dependencies {    
     compileOnly 'io.javalin:javalin:3.12.0'    
     compileOnly 'javax:javaee-web-api:7.0'
+    compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
 }
 
 test {
