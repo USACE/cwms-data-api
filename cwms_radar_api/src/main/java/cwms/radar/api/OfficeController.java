@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
@@ -28,11 +29,16 @@ public class OfficeController implements CrudHandler {
     private final MetricRegistry metrics;// = new MetricRegistry();
     private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
     private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+    private final Meter getOneRequest;
+    private final Timer getOneRequestTime;
 
     public OfficeController(MetricRegistry metrics){
         this.metrics=metrics;
-        getAllRequests = this.metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
-        getAllRequestsTime = this.metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+        String className = OfficeController.class.getName();
+        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
+        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
+        getOneRequest = this.metrics.meter(name(className,"getOne","count"));
+        getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
     }
     
 
@@ -43,7 +49,7 @@ public class OfficeController implements CrudHandler {
                     },
         tags = {"Offices"}
     )
-    @Override
+    @Override    
     public void getAll(Context ctx) {
         logger.info("Hello"+getAllRequests.getCount());
         getAllRequests.mark();
@@ -74,7 +80,9 @@ public class OfficeController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String office_id) {
+        getOneRequest.mark();
         try(
+            final Timer.Context time_context = getOneRequestTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             Office office = cdm.getOfficeById(office_id);
