@@ -50,8 +50,7 @@ public class OfficeController implements CrudHandler {
         tags = {"Offices"}
     )
     @Override    
-    public void getAll(Context ctx) {
-        logger.info("Hello"+getAllRequests.getCount());
+    public void getAll(Context ctx) {        
         getAllRequests.mark();
         
         try (
