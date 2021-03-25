@@ -79,14 +79,14 @@ public class ApiServlet extends HttpServlet {
                 })
                 .routes( () -> {      
                     //get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
-                    crud("/locations/:location_code", new LocationController());
+                    crud("/locations/:location_code", new LocationController(metrics));
                     crud("/offices/:office_name", new OfficeController(metrics));
-                    crud("/units/:unit_name", new UnitsController());
-                    crud("/parameters/:param_name", new ParametersController());
-                    crud("/timezones/:zone", new TimeZoneController());
-                    crud("/levels/:location", new LevelsController());
-                    crud("/timeseries/:timeseries", new TimeSeriesController());
-                    crud("/ratings/:rating", new RatingController());                    
+                    crud("/units/:unit_name", new UnitsController(metrics));
+                    crud("/parameters/:param_name", new ParametersController(metrics));
+                    crud("/timezones/:zone", new TimeZoneController(metrics));
+                    crud("/levels/:location", new LevelsController(metrics));
+                    crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+                    crud("/ratings/:rating", new RatingController(metrics));                    
                 }).servlet();                    
     }
 

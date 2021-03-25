@@ -6,6 +6,12 @@ import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import static com.codahale.metrics.MetricRegistry.*;
+import com.codahale.metrics.Timer;
+
 import cwms.radar.data.CwmsDataManager;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
@@ -15,6 +21,22 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 public class ParametersController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
+    private final MetricRegistry metrics;// = new MetricRegistry();
+    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
+    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+    private final Meter getOneRequest;
+    private final Timer getOneRequestTime;
+    private final Histogram requestResultSize;
+
+    public ParametersController(MetricRegistry metrics){
+        this.metrics=metrics;
+        String className = this.getClass().getName();
+        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
+        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
+        getOneRequest = this.metrics.meter(name(className,"getOne","count"));
+        getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
+        requestResultSize = this.metrics.histogram((name(className,"results","size")));
+    }
 
     @OpenApi(ignore = true)
     @Override
@@ -41,7 +63,9 @@ public class ParametersController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
+        getAllRequests.mark();
         try (
+            final Timer.Context time_context = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             String format = ctx.queryParam("format","json");                       
@@ -57,7 +81,8 @@ public class ParametersController implements CrudHandler {
 
             String results = cdm.getParameters(format);                
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);                
+            ctx.result(results);         
+            requestResultSize.update(results.length());       
         } catch (SQLException ex) {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -68,8 +93,12 @@ public class ParametersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);        
-
+        getOneRequest.mark();
+        try (
+            final Timer.Context time_context = getOneRequestTime.time();
+            ){
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+        }
     }
 
     @OpenApi(ignore = true)

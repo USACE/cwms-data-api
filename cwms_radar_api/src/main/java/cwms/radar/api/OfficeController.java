@@ -2,6 +2,7 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
@@ -31,6 +33,8 @@ public class OfficeController implements CrudHandler {
     private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
+    private final Histogram requestResultSize;
+    
 
     public OfficeController(MetricRegistry metrics){
         this.metrics=metrics;
@@ -39,6 +43,7 @@ public class OfficeController implements CrudHandler {
         getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
         getOneRequest = this.metrics.meter(name(className,"getOne","count"));
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
+        requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
     
 
@@ -61,7 +66,9 @@ public class OfficeController implements CrudHandler {
                 HashMap<String,Object> results = new HashMap<>();
                 results.put("offices",cdm.getOffices());
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.json(results);            
+                String json = JavalinJson.toJson(results);
+                ctx.result(json).contentType("application/json");
+                requestResultSize.update(json.length());
         } catch (SQLException ex) {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
