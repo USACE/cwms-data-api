@@ -6,6 +6,6 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>metrics</servlet-name>
-        <url-pattern>/*</url-pattern>
+        <url-pattern>/status/*</url-pattern>
     </servlet-mapping>
 </web-app>
