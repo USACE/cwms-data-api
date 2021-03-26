@@ -411,36 +411,36 @@ paths:
           description: unexpected error
           schema:
             $ref: '#/definitions/errorModel'
-  /offices:
-    get:
-      description: The offices URI allows access to CWMS office data.
-      operationId: findOffices
-      produces:
-        - application/json
-        - application/xml
-        - text/xml
-        - text/html
-        - text/csv
-      parameters:
-        - name: format
-          in: query
-          description:  |
-            Specifies specifies the encoding format of the response.  Valid values for the format field for this URI are: 
-                1.	tab
-                2.	csv
-                3.	xml            
-                4.	json           
-          required: false
-          type: string
-          enum: ["tab", "csv", "xml", "json"]
-      responses:
-        '200':
-          description: office response
-          schema:
-            type: string
-        default:
-          description: unexpected error
-          schema:
+  # /offices:
+  #   get:
+  #     description: The offices URI allows access to CWMS office data.
+  #     operationId: findOffices
+  #     produces:
+  #       - application/json
+  #       - application/xml
+  #       - text/xml
+  #       - text/html
+  #       - text/csv
+  #     parameters:
+  #       - name: format
+  #         in: query
+  #         description:  |
+  #           Specifies specifies the encoding format of the response.  Valid values for the format field for this URI are: 
+  #               1.	tab
+  #               2.	csv
+  #               3.	xml            
+  #               4.	json           
+  #         required: false
+  #         type: string
+  #         enum: ["tab", "csv", "xml", "json"]
+  #     responses:
+  #       '200':
+  #         description: office response
+  #         schema:
+  #           type: string
+  #       default:
+  #         description: unexpected error
+  #         schema:
             $ref: '#/definitions/errorModel'        
   /timezones:
     get:
