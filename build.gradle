@@ -2,7 +2,7 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.1.0'    
+    version = '2.1.1'    
 }
 
 ext.dropwizard_version="4.1.2"
