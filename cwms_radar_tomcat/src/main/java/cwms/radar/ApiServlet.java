@@ -10,15 +10,23 @@ import io.swagger.v3.oas.models.info.Info;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.servlets.MetricsServlet;
+
 import cwms.radar.api.*;
 
 /**
@@ -35,7 +43,9 @@ import cwms.radar.api.*;
                             "/levels/*"
 })
 public class ApiServlet extends HttpServlet {
-    private Logger log = Logger.getLogger(ApiServlet.class.getName());
+    private Logger log = Logger.getLogger(ApiServlet.class.getName());    
+    private MetricRegistry metrics;
+    private Meter total_requests;
     /**
      *
      */
@@ -69,14 +79,14 @@ public class ApiServlet extends HttpServlet {
                 })
                 .routes( () -> {      
                     //get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
-                    crud("/locations/:location_code", new LocationController());
-                    crud("/offices/:office_name", new OfficeController());
-                    crud("/units/:unit_name", new UnitsController());
-                    crud("/parameters/:param_name", new ParametersController());
-                    crud("/timezones/:zone", new TimeZoneController());
-                    crud("/levels/:location", new LevelsController());
-                    crud("/timeseries/:timeseries", new TimeSeriesController());
-                    crud("/ratings/:rating", new RatingController());
+                    crud("/locations/:location_code", new LocationController(metrics));
+                    crud("/offices/:office_name", new OfficeController(metrics));
+                    crud("/units/:unit_name", new UnitsController(metrics));
+                    crud("/parameters/:param_name", new ParametersController(metrics));
+                    crud("/timezones/:zone", new TimeZoneController(metrics));
+                    crud("/levels/:location", new LevelsController(metrics));
+                    crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+                    crud("/ratings/:rating", new RatingController(metrics));                    
                 }).servlet();                    
     }
 
@@ -91,6 +101,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {     
+        total_requests.mark();
         try (Connection db = cwms.getConnection() ) {            
             req.setAttribute("database", db);
             javalin.service(req, resp);     
@@ -98,6 +109,13 @@ public class ApiServlet extends HttpServlet {
             Logger.getLogger(ApiServlet.class.getName()).log(Level.SEVERE, null, ex);
         } 
         
+    }
+
+    @Override    
+    public void init(ServletConfig config) throws ServletException {        
+        metrics = (MetricRegistry)config.getServletContext().getAttribute(MetricsServlet.METRICS_REGISTRY);        
+        total_requests = metrics.meter("radar.total_requests");
+        super.init(config);
     }
   
 }

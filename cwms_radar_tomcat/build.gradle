@@ -20,6 +20,8 @@ dependencies {
     implementation 'io.swagger.core.v3:swagger-core:2.0.9'
     implementation 'org.webjars:swagger-ui:3.24.3'    
     implementation 'org.slf4j:slf4j-simple:1.7.28'
+    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+    implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
     runtime 'jstl:jstl:1.2'    
 
     testImplementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'

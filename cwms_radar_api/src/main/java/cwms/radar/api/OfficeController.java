@@ -2,6 +2,7 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
@@ -13,6 +14,11 @@ import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import static com.codahale.metrics.MetricRegistry.*;
+import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
@@ -21,7 +27,26 @@ import cwms.radar.data.dao.Office;
  *
  */
 public class OfficeController implements CrudHandler {
+    private static final Logger logger = Logger.getLogger(OfficeController.class.getName());
+    private final MetricRegistry metrics;// = new MetricRegistry();
+    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
+    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+    private final Meter getOneRequest;
+    private final Timer getOneRequestTime;
+    private final Histogram requestResultSize;
     
+
+    public OfficeController(MetricRegistry metrics){
+        this.metrics=metrics;
+        String className = OfficeController.class.getName();
+        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
+        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
+        getOneRequest = this.metrics.meter(name(className,"getOne","count"));
+        getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
+        requestResultSize = this.metrics.histogram((name(className,"results","size")));
+    }
+    
+
     @OpenApi(
         queryParams = @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),        
         responses = { @OpenApiResponse(status="200" ),
@@ -29,18 +54,23 @@ public class OfficeController implements CrudHandler {
                     },
         tags = {"Offices"}
     )
-    @Override
-    public void getAll(Context ctx) {
+    @Override    
+    public void getAll(Context ctx) {        
+        getAllRequests.mark();
+        
         try (
+                final Timer.Context time_context  = getAllRequestsTime.time();
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
                                 
                 HashMap<String,Object> results = new HashMap<>();
                 results.put("offices",cdm.getOffices());
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.json(results);            
+                String json = JavalinJson.toJson(results);
+                ctx.result(json).contentType("application/json");
+                requestResultSize.update(json.length());
         } catch (SQLException ex) {
-            Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
         }
@@ -56,7 +86,9 @@ public class OfficeController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String office_id) {
+        getOneRequest.mark();
         try(
+            final Timer.Context time_context = getOneRequestTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             Office office = cdm.getOfficeById(office_id);
