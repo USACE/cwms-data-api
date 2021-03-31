@@ -102,7 +102,12 @@ public class ApiServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {     
         total_requests.mark();
-        try (Connection db = cwms.getConnection() ) {            
+        try (Connection db = cwms.getConnection() ) {      
+            String office = req.getContextPath().substring(1).split("-")[0];//       
+            if( office.equalsIgnoreCase("cwms")){
+                office = "HQ";
+            }
+            req.setAttribute("office_id", office.toUpperCase());
             req.setAttribute("database", db);
             javalin.service(req, resp);     
         } catch (SQLException ex) {

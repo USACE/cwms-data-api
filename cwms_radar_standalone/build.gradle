@@ -1,0 +1,35 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-simple:1.8.0-beta4'
+    implementation 'org.apache.tomcat:tomcat-jdbc:9.0.41'
+    implementation 'io.javalin:javalin:3.13.4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.3'
+    implementation (project(':cwms_radar_api'))
+    implementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
+    implementation("io.javalin:javalin:3.12.0") 
+    implementation("io.javalin:javalin-openapi:3.12.0")
+    implementation 'io.swagger.core.v3:swagger-core:2.0.9'
+    implementation 'org.webjars:swagger-ui:3.24.3'    
+    implementation 'org.slf4j:slf4j-simple:1.7.28'
+    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+    implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
+}
+
+application {
+    mainClass = "mil.army.usace.hec.RadarAPI"
+}
+
+run {
+    doFirst {
+        println("$System.env.RADAR_JDBC_USERNAME")
+    }
+    debugOptions {
+       enabled = true
+       port = 5566
+       server = true
+       suspend = false
+   }
+}
