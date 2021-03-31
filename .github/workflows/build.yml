@@ -20,3 +20,5 @@ jobs:
           java-package: jdk             
       - name: build and test     
         run: ./gradlew test
+      - name: Build docker image
+        run: ./gradlew dockerBuild
