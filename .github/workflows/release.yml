@@ -46,3 +46,42 @@ jobs:
           asset_path: ${{ steps.get_version.outputs.WAR_FILE}}
           asset_name: ${{ steps.get_version.outputs.WAR_FILE}}
           asset_content_type: application/rpm
+  publish:
+    name: API Container Image
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: get RADAR version
+        id: get_version
+        run: .github/workflows/get_version.sh
+      - name: Configure AWS credentials
+            if: ${{ always() }}
+            uses: aws-actions/configure-aws-credentials@v1
+            with:
+              aws-access-key-id: ${{ secrets.CWBICI_DEVELOP_AWS_ACCESS_KEY_ID }}
+              aws-secret-access-key: ${{ secrets.CWBICI_DEVELOP_AWS_SECRET_ACCESS_KEY }}
+              aws-region: ${{ secrets.CWBICI_DEVELOP_AWS_REGION }}
+       name: Login to Amazon ECR
+        if: ${{ success() }}
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR (midas-api)
+        if: ${{ success() }}
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: cwms-radar-api
+          IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
+        run: |
+          ./gradlew prepareDocker
+          cd cwms_radar_standlone/build/docker
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Logout of Amazon ECR
+        if: ${{ always() }}
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
