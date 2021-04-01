@@ -2,7 +2,7 @@ name: Build CWMS RADAR
 on:   
   push:
     branches:
-      - main
+      - develop
   pull_request:
     branches: 
       - develop
