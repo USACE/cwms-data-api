@@ -10,6 +10,11 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v2
+      - name: setup java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+          java-package: jdk  
       - name: build
         run: ./gradlew build
       - name: get version
@@ -55,6 +60,11 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - name: setup java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+          java-package: jdk  
       - name: get RADAR version
         id: get_version
         run: .github/workflows/get_version.sh
