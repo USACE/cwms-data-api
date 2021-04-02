@@ -18,5 +18,5 @@ include 'services:webservice'
 rootProject.name = 'cwms_rest_api'
 
 include ":cwms_radar_api"
-include ":cwms_radar_cwbi"
+include ":cwms_radar_standalone"
 include ":cwms_radar_tomcat"
