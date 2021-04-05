@@ -86,6 +86,7 @@ jobs:
           ECR_REPOSITORY: cwms-radar-api
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
         run: |
+          ./gradlew :cwms_radar_api:build
           ./gradlew prepareDocker
           cd cwms_radar_standlone/build/docker
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
