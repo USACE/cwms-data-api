@@ -4,13 +4,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
-public class Office {
-    private String name;
-    private String long_name;
-    private String type;
-    private String reports_to;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-    private final HashMap<String,String> office_types = new HashMap<String,String>(){
+@Schema(description = "A respresentation of a CWMS office")
+public class Office {
+    private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
          *
          */
@@ -25,6 +23,15 @@ public class Office {
             put("FOA","field operating activity");
         }
     };
+
+    private String name;
+    private String long_name;
+    @Schema(allowableValues = {"unknown","corps headquarters","divison headquarters","division regional","district","filed operating activity"})
+    private String type;
+    @Schema(description = "Reference to another office, like a division, that this office reports to.")
+    private String reports_to;
+
+
 
     public Office(ResultSet rs ) throws SQLException {
         name = rs.getString("office_id");

@@ -2,6 +2,7 @@ apply plugin: 'java-library'
 
 dependencies {    
     compileOnly 'io.javalin:javalin:3.12.0'    
+    compileOnly "io.swagger.core.v3:swagger-core:2.0.9"
     compileOnly 'javax:javaee-web-api:7.0'
     compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
 }
