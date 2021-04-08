@@ -7,7 +7,7 @@ import java.util.HashMap;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A respresentation of a CWMS office")
-public class Office {
+public class Office implements CwmsDao{
     private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
          *

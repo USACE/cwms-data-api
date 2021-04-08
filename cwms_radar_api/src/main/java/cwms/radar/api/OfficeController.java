@@ -22,11 +22,12 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
-import cwms.radar.api.formats.FormatFactory;
 import cwms.radar.api.formats.FormatResult;
-import cwms.radar.api.formats.OfficeFormatV1;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
+import cwms.radar.formatters.FormatFactory;
+import cwms.radar.formatters.OfficeFormatV1;
+import cwms.radar.formatters.OutputFormatter;
 
 /**
  *
@@ -87,21 +88,13 @@ public class OfficeController implements CrudHandler {
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {                                            
                 List<Office> offices = cdm.getOffices();
-                String format_parm = ctx.queryParam("format");
+                String format_parm = ctx.queryParam("format","");
                 String format_header = ctx.header(Header.ACCEPT);
-                String contentType = "application/json";
-                format_parm = format_parm.isEmpty() ? null : format_parm;
-                if( format_parm != null  && format_header != null ){
-                    throw new BadRequestResponse("You must specify only the format query parameter or accept header, not both");
-                } else if ( format_parm != null ){
-                    contentType = format_parm;
-                } else if ( format_header != null ){
-                    contentType = format_header;
-                }
-
-                FormatResult result = FormatFactory.format( contentType, offices);
+                String contentType = FormatFactory.parseHeaderAndQueryParm(format_header, format_parm);                
+                OutputFormatter formatter = FormatFactory.formatFor(contentType);
+                String result = formatter.format(offices);
                 if ( result != null ){
-                    ctx.result(result.toString());
+                    ctx.result(result);
                     requestResultSize.update(result.length());
                 } else {
                     throw new NotImplementedError("Format " +  contentType + " is not implemented for this end point");
