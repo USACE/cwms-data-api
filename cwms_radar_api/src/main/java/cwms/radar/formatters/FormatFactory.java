@@ -1,11 +1,7 @@
 package cwms.radar.formatters;
 
 import java.util.HashMap;
-import java.util.List;
 
-import cwms.radar.api.formats.FormatResult;
-import cwms.radar.data.dao.Office;
-import io.javalin.plugin.json.JavalinJson;
 import io.javalin.http.BadRequestResponse;
 
 public class FormatFactory {

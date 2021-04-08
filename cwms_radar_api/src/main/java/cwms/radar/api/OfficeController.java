@@ -2,14 +2,11 @@ package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
-import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.annotations.*;
 import kotlin.NotImplementedError;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,7 +19,6 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
-import cwms.radar.api.formats.FormatResult;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
 import cwms.radar.formatters.FormatFactory;
