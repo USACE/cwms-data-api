@@ -43,7 +43,7 @@ public class RadarAPI {
         
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
 
-        Javalin app = Javalin.create( config -> {
+        Javalin.create( config -> {
             config.defaultContentType = "application/json";   
             config.contextPath = "/";                        
             config.registerPlugin((Plugin) new OpenApiPlugin(getOpenApiOptions()));  
