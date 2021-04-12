@@ -2,6 +2,7 @@ package cwms.radar.formatters;
 
 import java.util.HashMap;
 
+import cwms.radar.formatters.csv.CsvV1;
 import cwms.radar.formatters.tab.TabV1;
 import io.javalin.http.BadRequestResponse;
 
@@ -23,6 +24,8 @@ public class FormatFactory {
             return new JsonV2();
         } else if (contentType.equalsIgnoreCase(Formats.TAB)){
             return new TabV1();
+        } else if (contentType.equalsIgnoreCase(Formats.CSV)){
+            return new CsvV1();
         } else {
             return null;
         }        

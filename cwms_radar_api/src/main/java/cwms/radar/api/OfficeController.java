@@ -25,6 +25,7 @@ import cwms.radar.formatters.FormatFactory;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
+import cwms.radar.formatters.csv.CsvV1Office;
 import cwms.radar.formatters.tab.TabV1Office;
 
 /**
@@ -63,7 +64,8 @@ public class OfficeController implements CrudHandler {
                                            @OpenApiContent(from = OfficeFormatV1.class, type = ""),
                                            @OpenApiContent(from = Office.class, isArray = true,type=Formats.JSONV2),
                                            @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON ),
-                                           @OpenApiContent(from = TabV1Office.class, type = Formats.TAB )
+                                           @OpenApiContent(from = TabV1Office.class, type = Formats.TAB ),
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
                                        }
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),
