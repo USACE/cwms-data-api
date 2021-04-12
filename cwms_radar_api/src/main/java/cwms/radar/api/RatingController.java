@@ -101,10 +101,7 @@ public class RatingController implements CrudHandler {
                         return;                        
                      }
                      default: {
-                        ctx.status(HttpServletResponse.SC_NOT_FOUND);
-                        ctx.contentType("text/plain");
-                        ctx.result(String.format("Format ,{} , is not available on this endpoint",format));
-                        return;
+                        throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
                      }
                 }
 

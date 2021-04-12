@@ -18,6 +18,7 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.formatters.FormatFactory;
 
 
 /**
@@ -70,7 +71,7 @@ public class LocationController implements CrudHandler {
                 String units = ctx.queryParam("units");
                 String datum = ctx.queryParam("datum");
                 String office = ctx.queryParam("office");
-
+                
 
                 switch(format){
                     case "json": {ctx.contentType("application/json"); break;}
@@ -78,6 +79,8 @@ public class LocationController implements CrudHandler {
                     case "csv": {ctx.contentType("text/csv"); break;}
                     case "xml": {ctx.contentType("application/xml");break;}
                     case "wml2": {ctx.contentType("application/xml");break;}
+                    default:
+                    throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
                 }
 
                 String results = cdm.getLocations(names,format,units,datum,office);                

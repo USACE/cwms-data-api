@@ -27,7 +27,7 @@ public class FormatFactory {
         } else if (contentType.equalsIgnoreCase(Formats.CSV)){
             return new CsvV1();
         } else {
-            return null;
+            throw new UnsupportedOperationException("Format '" +  contentType + "' is not implemented for this end point");
         }        
     }
 
@@ -42,7 +42,7 @@ public class FormatFactory {
         if( queryParam != null && !queryParam.isEmpty() ){
             contentType = type_map.get(queryParam);
             if( contentType == null ){                
-                throw new BadRequestResponse(String.format("Format {} is not implemented for this request",queryParam));
+                throw new UnsupportedOperationException(String.format("Format %s is not implemented for this request",queryParam));
             }
         } else if( header == null ){
             throw new BadRequestResponse("You must set the Accept Header to a valid value");

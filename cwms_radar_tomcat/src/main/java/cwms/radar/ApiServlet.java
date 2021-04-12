@@ -70,9 +70,14 @@ public class ApiServlet extends HttpServlet {
                     /* authorization on connection setup will go here
                     Connection conn = ctx.attribute("db");                    
                     */
-                }
-                )
+                })
+                .exception(UnsupportedOperationException.class, (e,ctx) -> {
+                    ctx.status(501);
+                    ctx.json(e.getMessage());
+                })
                 .exception(Exception.class, (e,ctx) -> {
+                    ctx.status(500);
+                    ctx.json("Server Error");
                     e.printStackTrace(System.err);                   
                 })
                 .routes( () -> {      
