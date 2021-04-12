@@ -95,7 +95,7 @@ public class OfficeController implements CrudHandler {
                 OutputFormatter formatter = FormatFactory.formatFor(contentType);
                 String result = formatter.format(offices);
                 if ( result != null ){
-                    ctx.result(result);
+                    ctx.result(result).contentType(formatter.getContentType());
                     requestResultSize.update(result.length());
                 } else {
                     throw new NotImplementedError("Format " +  contentType + " is not implemented for this end point");
