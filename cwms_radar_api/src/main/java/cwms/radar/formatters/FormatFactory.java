@@ -1,25 +1,29 @@
 package cwms.radar.formatters;
 
+import java.text.Format;
 import java.util.HashMap;
 
+import cwms.radar.formatters.tab.TabV1;
 import io.javalin.http.BadRequestResponse;
 
 public class FormatFactory {
 
     private static HashMap<String,String> type_map =new HashMap<>();
     static{        
-        type_map.put("json","application/json");
-        type_map.put("xml","application/xml");
-        type_map.put("wml2","applciation/xml+wml2");
-        type_map.put("tab","application/tab");
-        type_map.put("csv","application/csv");
+        type_map.put("json",Formats.JSON);
+        type_map.put("xml",Formats.XML);
+        type_map.put("wml2",Formats.WML2);
+        type_map.put("tab",Formats.TAB);
+        type_map.put("csv",Formats.CSV);
     };
 
     public static OutputFormatter formatFor(String contentType) {
-        if( contentType.equalsIgnoreCase("application/json")){
+        if( contentType.equalsIgnoreCase(Formats.JSON)){
             return new JsonV1();
-        } else if (contentType.equalsIgnoreCase("application/json;version=2")) {
+        } else if (contentType.equalsIgnoreCase(Formats.JSONV2)) {
             return new JsonV2();
+        } else if (contentType.equalsIgnoreCase(Formats.TAB)){
+            return new TabV1();
         } else {
             return null;
         }        
@@ -32,7 +36,7 @@ public class FormatFactory {
      * @return an appropriate standard mimetype for lookup
      */
     public static String parseHeaderAndQueryParm(String header, String queryParam){
-        String contentType = "application/json";
+        String contentType = Formats.JSON;
         if( queryParam != null && !queryParam.isEmpty() ){
             contentType = type_map.get(queryParam);
             if( contentType == null ){                
@@ -41,7 +45,7 @@ public class FormatFactory {
         } else if( header == null ){
             throw new BadRequestResponse("You must set the Accept Header to a valid value");
         } else if( header.equals("*/*") ) {
-            contentType = "application/json";
+            contentType = Formats.JSON;
         } else {
             contentType = header;
         }         

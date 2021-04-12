@@ -22,8 +22,10 @@ import com.codahale.metrics.Timer;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
 import cwms.radar.formatters.FormatFactory;
+import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
+import cwms.radar.formatters.tab.TabV1Office;
 
 /**
  *
@@ -59,8 +61,9 @@ public class OfficeController implements CrudHandler {
                                        description = "A list of offices.",
                                        content = {
                                            @OpenApiContent(from = OfficeFormatV1.class, type = ""),
-                                           @OpenApiContent(from = Office.class, isArray = true,type="application/json;version=2"),
-                                           @OpenApiContent(from = OfficeFormatV1.class, type = "application/json" )                                           
+                                           @OpenApiContent(from = Office.class, isArray = true,type=Formats.JSONV2),
+                                           @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON ),
+                                           @OpenApiContent(from = TabV1Office.class, type = Formats.TAB )
                                        }
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),
