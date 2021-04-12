@@ -1,6 +1,5 @@
 package cwms.radar.formatters;
 
-import java.text.Format;
 import java.util.HashMap;
 
 import cwms.radar.formatters.tab.TabV1;
