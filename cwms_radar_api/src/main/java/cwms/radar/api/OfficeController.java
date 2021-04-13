@@ -1,14 +1,13 @@
 package cwms.radar.api;
 
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJson;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.*;
+import kotlin.NotImplementedError;
 
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +21,12 @@ import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
+import cwms.radar.formatters.FormatFactory;
+import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.OfficeFormatV1;
+import cwms.radar.formatters.OutputFormatter;
+import cwms.radar.formatters.csv.CsvV1Office;
+import cwms.radar.formatters.tab.TabV1Office;
 
 /**
  *
@@ -47,11 +52,32 @@ public class OfficeController implements CrudHandler {
     }
     
 
-    @OpenApi(
-        queryParams = @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),        
-        responses = { @OpenApiResponse(status="200" ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented")
+    @OpenApi(                
+        queryParams = @OpenApiParam(name="format",
+                                    required = false, 
+                                    deprecated = true,
+                                    description = "(Deprecated in favor of Accept header Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
+                                    ),        
+        responses = { @OpenApiResponse(status="200",
+                                       description = "A list of offices.",
+                                       content = {
+                                           @OpenApiContent(from = OfficeFormatV1.class, type = ""),
+                                           @OpenApiContent(from = Office.class, isArray = true,type=Formats.JSONV2),
+                                           @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON ),
+                                           @OpenApiContent(from = TabV1Office.class, type = Formats.TAB ),
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
+                                       }
+                      ),
+                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
+                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
                     },
+        /*
+        headers = {
+            @OpenApiParam(name="Accept",
+                          description="Specifies the encoding format of the response. Valid values are shown in the Response descriptions below"                          
+                          )
+
+        },*/
         tags = {"Offices"}
     )
     @Override    
@@ -61,14 +87,17 @@ public class OfficeController implements CrudHandler {
         try (
                 final Timer.Context time_context  = getAllRequestsTime.time();
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
-            ) {
-                                
-                HashMap<String,Object> results = new HashMap<>();
-                results.put("offices",cdm.getOffices());
-                ctx.status(HttpServletResponse.SC_OK);
-                String json = JavalinJson.toJson(results);
-                ctx.result(json).contentType("application/json");
-                requestResultSize.update(json.length());
+            ) {                                            
+                List<Office> offices = cdm.getOffices();
+                String format_parm = ctx.queryParam("format","");
+                String format_header = ctx.header(Header.ACCEPT);
+                String contentType = FormatFactory.parseHeaderAndQueryParm(format_header, format_parm);                
+                OutputFormatter formatter = FormatFactory.formatFor(contentType);
+                String result = formatter.format(offices);
+                
+                ctx.result(result).contentType(formatter.getContentType());
+                requestResultSize.update(result.length());
+                
         } catch (SQLException ex) {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

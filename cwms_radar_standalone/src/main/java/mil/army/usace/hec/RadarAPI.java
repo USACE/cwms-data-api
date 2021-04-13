@@ -43,7 +43,7 @@ public class RadarAPI {
         
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
 
-        Javalin app = Javalin.create( config -> {
+        Javalin.create( config -> {
             config.defaultContentType = "application/json";   
             config.contextPath = "/";                        
             config.registerPlugin((Plugin) new OpenApiPlugin(getOpenApiOptions()));  
@@ -59,6 +59,10 @@ public class RadarAPI {
             total_requests.mark();
         }).after( ctx -> {
             ((java.sql.Connection)ctx.attribute("database")).close();
+        })
+        .exception(UnsupportedOperationException.class, (e,ctx) -> {
+            ctx.status(501);
+            ctx.json(e.getMessage());
         })
         .exception(Exception.class, (e,ctx) -> {
             logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);                   

@@ -100,10 +100,7 @@ public class LevelsController implements CrudHandler {
                     break;
                 }
                 default: {
-                    ctx.contentType("text/plain");
-                    ctx.status(HttpServletResponse.SC_NOT_FOUND);
-                    ctx.result(String.format("Format {} is not implemented for this endpoint",format));
-                    return;
+                    throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
                 }
             }
 

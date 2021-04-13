@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.info.Info;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
@@ -22,7 +21,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
-import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -72,9 +70,14 @@ public class ApiServlet extends HttpServlet {
                     /* authorization on connection setup will go here
                     Connection conn = ctx.attribute("db");                    
                     */
-                }
-                )
+                })
+                .exception(UnsupportedOperationException.class, (e,ctx) -> {
+                    ctx.status(501);
+                    ctx.json(e.getMessage());
+                })
                 .exception(Exception.class, (e,ctx) -> {
+                    ctx.status(500);
+                    ctx.json("Server Error");
                     e.printStackTrace(System.err);                   
                 })
                 .routes( () -> {      

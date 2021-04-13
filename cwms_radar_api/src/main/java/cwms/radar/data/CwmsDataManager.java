@@ -1,6 +1,7 @@
 package cwms.radar.data;
 
 import java.util.logging.Level;
+import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -24,11 +25,18 @@ public class CwmsDataManager implements AutoCloseable {
     private static final String ALL_TIMEZONES_QUERY = "select cwms_cat.retrieve_time_zones_f(?) from dual";
     private static final String ALL_LOCATION_LEVELS_QUERY = "select cwms_level.retrieve_location_levels_f(?,?,?,?,?,?,?,?) from dual";
     private static final String ALL_TIMESERIES_QUERY = "select cwms_ts.retrieve_time_series_f(?,?,?,?,?,?,?,?) from dual";
+    private static final String CALL_CWMS_ENV_SET_SESSION_OFFICE_ID = "CALL cwms_env.set_session_office_id(?)";
 
     private Connection conn;
 
-    public CwmsDataManager(Context ctx) {
+    public CwmsDataManager(Context ctx) throws SQLException{
         conn = ctx.attribute("database");
+        try(
+            CallableStatement setOffice = conn.prepareCall(CALL_CWMS_ENV_SET_SESSION_OFFICE_ID);
+        ){ 
+            setOffice.setString(1,ctx.attribute("office_id"));
+            setOffice.execute();
+        }
     }
 
     @Override

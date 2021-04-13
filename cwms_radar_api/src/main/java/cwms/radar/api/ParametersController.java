@@ -77,6 +77,7 @@ public class ParametersController implements CrudHandler {
                 case "csv": {ctx.contentType("text/csv"); break;}
                 case "xml": {ctx.contentType("application/xml");break;}
                 case "wml2": {ctx.contentType("application/xml");break;}
+                default: throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
             }
 
             String results = cdm.getParameters(format);                
