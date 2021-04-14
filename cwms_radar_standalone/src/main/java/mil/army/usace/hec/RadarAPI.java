@@ -16,9 +16,11 @@ import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 
+
 import cwms.radar.api.*;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
+import org.owasp.html.*;
 
 public class RadarAPI {
     private static final Logger logger = Logger.getLogger(RadarAPI.class.getName());
@@ -40,7 +42,7 @@ public class RadarAPI {
             System.exit(1);
         }
         
-        
+        PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
 
         Javalin.create( config -> {
@@ -52,6 +54,9 @@ public class RadarAPI {
             }            
             config.requestLogger( (ctx,ms) -> { logger.info(ctx.toString());} );
         }).before( ctx -> { 
+            ctx.header("X-Content-Type-Options","nosniff");
+            ctx.header("X-Frame-Options","SAMEORIGIN");
+            ctx.header("X-XSS-Protection", "1; mode=block");
             ctx.attribute("database",ds.getConnection());
             /* authorization on connection setup will go here
             Connection conn = ctx.attribute("db");                    
@@ -62,9 +67,11 @@ public class RadarAPI {
         })
         .exception(UnsupportedOperationException.class, (e,ctx) -> {
             ctx.status(501);
-            ctx.json(e.getMessage());
+            ctx.json(sanitizer.sanitize(e.getMessage()));
         })
         .exception(Exception.class, (e,ctx) -> {
+            ctx.status(500);
+            ctx.json("There was an error processing your request");
             logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);                   
         })
         .routes( () -> {      
