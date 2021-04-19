@@ -1,5 +1,6 @@
 package cwms.radar.formatters;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,8 +18,8 @@ public class JsonV1 implements OutputFormatter{
 
 	@Override
 	public String format(CwmsDao dao) {
-		
-		return JavalinJson.toJson(dao);
+		OfficeFormatV1 fmtv1 = new OfficeFormatV1(Arrays.asList((Office)dao) );		
+		return JavalinJson.toJson(fmtv1);
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package cwms.radar.api;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.NotFoundResponse;
 import io.javalin.plugin.openapi.annotations.*;
 import kotlin.NotImplementedError;
 
@@ -56,7 +57,7 @@ public class OfficeController implements CrudHandler {
         queryParams = @OpenApiParam(name="format",
                                     required = false, 
                                     deprecated = true,
-                                    description = "(Deprecated in favor of Accept header Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
+                                    description = "(Deprecated in favor of Accept header) Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
                                     ),        
         responses = { @OpenApiResponse(status="200",
                                        description = "A list of offices.",
@@ -107,9 +108,23 @@ public class OfficeController implements CrudHandler {
 
     @OpenApi(
         pathParams = @OpenApiParam(name="office", description = "The 3 letter office ID you want more information for", type = String.class),
-        queryParams = @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),        
-        responses = { @OpenApiResponse(status="200" ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented")
+        queryParams = @OpenApiParam(name="format",
+                                    required = false, 
+                                    deprecated = true,
+                                    description = "(Deprecated in favor of Accept header) Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
+                                    ),        
+        responses = { @OpenApiResponse(status="200",
+                                       description = "A list of offices.",
+                                       content = {
+                                           @OpenApiContent(from = OfficeFormatV1.class, type = ""),
+                                           @OpenApiContent(from = Office.class, isArray = true,type=Formats.JSONV2),
+                                           @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON ),
+                                           @OpenApiContent(from = TabV1Office.class, type = Formats.TAB ),
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
+                                       }
+                      ),
+                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
+                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
                     },
         tags = {"Offices"}
     )
@@ -119,10 +134,19 @@ public class OfficeController implements CrudHandler {
         try(
             final Timer.Context time_context = getOneRequestTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
-        ) {
+        ) {            
             Office office = cdm.getOfficeById(office_id);
-            ctx.status(HttpServletResponse.SC_OK);
-            ctx.json(office);
+            if( office == null ){
+                throw new NotFoundResponse("Office id: " + office_id + " does not exist");
+            }
+            String format_parm = ctx.queryParam("format","");
+            String format_header = ctx.header(Header.ACCEPT);
+            String contentType = FormatFactory.parseHeaderAndQueryParm(format_header, format_parm);                
+            OutputFormatter formatter = FormatFactory.formatFor(contentType);
+            String result = formatter.format(office);
+            
+            ctx.result(result).contentType(formatter.getContentType());
+            requestResultSize.update(result.length());
         } catch( SQLException ex ){
             Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

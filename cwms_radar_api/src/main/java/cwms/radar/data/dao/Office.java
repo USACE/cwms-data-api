@@ -4,9 +4,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
+import javax.xml.bind.annotation.*;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A respresentation of a CWMS office")
+@XmlRootElement(name="office")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Office implements CwmsDao{
     private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
@@ -25,13 +29,15 @@ public class Office implements CwmsDao{
     };
 
     private String name;
+    @XmlElement(name="long-name")
     private String long_name;
     @Schema(allowableValues = {"unknown","corps headquarters","divison headquarters","division regional","district","filed operating activity"})
     private String type;
+    @XmlElement(name="reports-to")
     @Schema(description = "Reference to another office, like a division, that this office reports to.")
     private String reports_to;
 
-
+    public Office(){}
 
     public Office(ResultSet rs ) throws SQLException {
         name = rs.getString("office_id");
