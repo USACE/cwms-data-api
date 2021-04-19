@@ -18,17 +18,20 @@ public class FormatFactory {
     };
 
     public static OutputFormatter formatFor(String contentType) {
-        if( contentType.equalsIgnoreCase(Formats.JSON)){
-            return new JsonV1();
-        } else if (contentType.equalsIgnoreCase(Formats.JSONV2)) {
-            return new JsonV2();
-        } else if (contentType.equalsIgnoreCase(Formats.TAB)){
-            return new TabV1();
-        } else if (contentType.equalsIgnoreCase(Formats.CSV)){
-            return new CsvV1();
-        } else {
-            throw new UnsupportedOperationException("Format '" +  contentType + "' is not implemented for this end point");
-        }        
+        String formats[] = contentType.split(",");
+        for( String format: formats ){
+            if( format.equalsIgnoreCase(Formats.JSON)){
+                return new JsonV1();
+            } else if (format.equalsIgnoreCase(Formats.JSONV2)) {
+                return new JsonV2();
+            } else if (format.equalsIgnoreCase(Formats.TAB)){
+                return new TabV1();
+            } else if (format.equalsIgnoreCase(Formats.CSV)){
+                return new CsvV1();
+            }
+        }
+        throw new UnsupportedOperationException("Format '" +  contentType + "' is not implemented for this end point");
+            
     }
 
     /**
