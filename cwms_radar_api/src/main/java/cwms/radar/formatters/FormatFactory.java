@@ -4,7 +4,9 @@ import java.util.HashMap;
 
 import cwms.radar.formatters.csv.CsvV1;
 import cwms.radar.formatters.tab.TabV1;
+import cwms.radar.formatters.xml.XMLv1;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.http.InternalServerErrorResponse;
 
 public class FormatFactory {
 
@@ -17,7 +19,7 @@ public class FormatFactory {
         type_map.put("csv",Formats.CSV);
     };
 
-    public static OutputFormatter formatFor(String contentType) {
+    public static OutputFormatter formatFor(String contentType) throws InternalServerErrorResponse{
         String formats[] = contentType.split(",");
         for( String format: formats ){
             if( format.equalsIgnoreCase(Formats.JSON)){
@@ -28,6 +30,8 @@ public class FormatFactory {
                 return new TabV1();
             } else if (format.equalsIgnoreCase(Formats.CSV)){
                 return new CsvV1();
+            } else if (format.equalsIgnoreCase(Formats.XML)){
+                return new XMLv1();
             }
         }
         throw new UnsupportedOperationException("Format '" +  contentType + "' is not implemented for this end point");
