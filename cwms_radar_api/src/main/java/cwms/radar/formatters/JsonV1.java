@@ -5,10 +5,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dao.CwmsDao;
+import cwms.radar.data.dao.Location;
 import cwms.radar.data.dao.Office;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.plugin.json.JavalinJson;
+import service.annotations.FormatService;
 
+@FormatService(contentType = "application/json", dataTypes = {Office.class,Location.class})
 public class JsonV1 implements OutputFormatter{
 
 	@Override

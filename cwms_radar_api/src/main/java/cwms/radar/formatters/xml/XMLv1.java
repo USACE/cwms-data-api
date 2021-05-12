@@ -17,7 +17,9 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.InternalServerErrorResponse;
+import service.annotations.FormatService;
 
+@FormatService(contentType="application/xml", dataTypes = {Office.class})
 public class XMLv1 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv1.class.getName());
     private JAXBContext context = null;

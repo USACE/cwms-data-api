@@ -6,7 +6,9 @@ import cwms.radar.data.dao.CwmsDao;
 import cwms.radar.data.dao.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
+import service.annotations.FormatService;
 
+@FormatService(contentType = "text/tab-seperated-values", dataTypes = {Office.class})
 public class TabV1 implements OutputFormatter {
 
     @Override
