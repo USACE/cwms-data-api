@@ -1,6 +1,7 @@
 package cwms.radar.formatters;
 
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 import cwms.radar.formatters.csv.CsvV1;
 import cwms.radar.formatters.tab.TabV1;
@@ -9,7 +10,7 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.InternalServerErrorResponse;
 
 public class FormatFactory {
-
+    private static Logger logger = Logger.getLogger(FormatFactory.class.getName());
     private static HashMap<String,String> type_map =new HashMap<>();
     static{        
         type_map.put("json",Formats.JSON);
@@ -17,11 +18,12 @@ public class FormatFactory {
         type_map.put("wml2",Formats.WML2);
         type_map.put("tab",Formats.TAB);
         type_map.put("csv",Formats.CSV);
-    };
+    };    
 
     public static OutputFormatter formatFor(String contentType) throws InternalServerErrorResponse{
         String formats[] = contentType.split(",");
         for( String format: formats ){
+            logger.info("Trying to find formatter for " + format);
             if( format.equalsIgnoreCase(Formats.JSON)){
                 return new JsonV1();
             } else if (format.equalsIgnoreCase(Formats.JSONV2)) {

@@ -7,6 +7,7 @@ import io.javalin.http.NotFoundResponse;
 import io.javalin.plugin.openapi.annotations.*;
 import kotlin.NotImplementedError;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,11 +25,12 @@ import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
 import cwms.radar.formatters.FormatFactory;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
 import cwms.radar.formatters.csv.CsvV1Office;
 import cwms.radar.formatters.tab.TabV1Office;
-
+import cwms.radar.formatters.ContentType;
 /**
  *
  */
@@ -92,8 +94,8 @@ public class OfficeController implements CrudHandler {
                 List<Office> offices = cdm.getOffices();
                 String format_parm = ctx.queryParam("format","");
                 String format_header = ctx.header(Header.ACCEPT);
-                String contentType = FormatFactory.parseHeaderAndQueryParm(format_header, format_parm);                
-                OutputFormatter formatter = FormatFactory.formatFor(contentType);
+                ContentType contentType = Formats.parseHeaderAndQueryParm(format_header, format_parm);                
+                OutputFormatter formatter = Formats.format(contentType,offices);
                 String result = formatter.format(offices);
                 
                 ctx.result(result).contentType(formatter.getContentType());
@@ -103,6 +105,15 @@ public class OfficeController implements CrudHandler {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
+        } catch ( FormattingException fe ){
+            logger.log(Level.SEVERE,"failed to format data",fe);
+            if( fe.getCause() instanceof IOException ){
+                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                ctx.result("server error");
+            } else {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.result("Invalid Format Options");
+            }
         }
     }
 
@@ -141,17 +152,25 @@ public class OfficeController implements CrudHandler {
             }
             String format_parm = ctx.queryParam("format","");
             String format_header = ctx.header(Header.ACCEPT);
-            String contentType = FormatFactory.parseHeaderAndQueryParm(format_header, format_parm);                
-            OutputFormatter formatter = FormatFactory.formatFor(contentType);
-            String result = formatter.format(office);
-            
-            ctx.result(result).contentType(formatter.getContentType());
+            ContentType contentType = Formats.parseHeaderAndQueryParm(format_header, format_parm);                                                    
+            String result = Formats.format(contentType,office);
+            ctx.result(result).contentType(contentType.toString());
+            //ctx.result(result).contentType(formatter.getContentType());
             requestResultSize.update(result.length());
         } catch( SQLException ex ){
             Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
-        }        
+        } catch( FormattingException fe ){
+            logger.log(Level.SEVERE,"failed to format data",fe);
+            if( fe.getCause() instanceof IOException ){
+                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                ctx.result("server error");
+            } else {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.result("Invalid Format Options");
+            }
+        }
     }
 
     @OpenApi(ignore = true)
