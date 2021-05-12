@@ -95,10 +95,10 @@ public class OfficeController implements CrudHandler {
                 String format_parm = ctx.queryParam("format","");
                 String format_header = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(format_header, format_parm);                
-                OutputFormatter formatter = Formats.format(contentType,offices);
-                String result = formatter.format(offices);
                 
-                ctx.result(result).contentType(formatter.getContentType());
+                String result = Formats.format(contentType,offices);
+                
+                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
                 
         } catch (SQLException ex) {

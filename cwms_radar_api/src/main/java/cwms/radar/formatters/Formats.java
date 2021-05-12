@@ -97,6 +97,19 @@ public class Formats {
         
     }
 
+    private String getFormatted(ContentType type, List<? extends CwmsDao> toFormat) throws FormattingException{
+        for(ContentType key: formatters.keySet()){
+            logger.info(key.toString());
+        }                
+        Map<Class<CwmsDao>, OutputFormatter> contentFormatters = (Map<Class<CwmsDao>, OutputFormatter>) formatters.get(type);
+        if( contentFormatters != null ){
+            return contentFormatters.get(toFormat.get(0).getClass()).format(toFormat);
+        } else {
+            throw new FormattingException("No Format for this contenttype and datatype : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
+        }
+        
+    }
+
     private static void init(){
         if( formats == null ){
             logger.info("creating instance");
@@ -114,10 +127,10 @@ public class Formats {
         return formats.getFormatted(type,toFormat);
     }
 
-    public static String format(ContentType type, List<? extends CwmsDao> ) throws FormattingException{
+    public static String format(ContentType type, List<? extends CwmsDao> toFormat) throws FormattingException{
         logger.info("format list");
         init();
-        return formats.getFormatted(type,)
+        return formats.getFormatted(type,toFormat);
     }
 
 
