@@ -7,13 +7,10 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -61,6 +58,7 @@ public class Formats {
             
             ContentType type = new ContentType(type_formatter_classes[0]);
             try {
+                @SuppressWarnings("unchecked")
                 Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(type_formatter_classes[1]);
                 OutputFormatter formatterInstance;
 			
@@ -68,6 +66,7 @@ public class Formats {
                 Map<Class<CwmsDao>,OutputFormatter> tmp = new HashMap<>();
 
                 for(String clazz: type_formatter_classes[2].split(";") ){
+                    @SuppressWarnings("unchecked")
                     Class<CwmsDao> formatForClass = (Class<CwmsDao>)Class.forName(clazz);
                     tmp.put( formatForClass, formatterInstance);
                 }
@@ -141,8 +140,6 @@ public class Formats {
      * @return an appropriate standard mimetype for lookup
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam){
-        String contentType = Formats.JSON;        
-
         if( queryParam != null && !queryParam.isEmpty() ){
             String val = type_map.get(queryParam);
             if( val != null ){

@@ -1,6 +1,5 @@
 package service.annotations;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
@@ -50,7 +49,6 @@ public class FormatServiceProcessor extends AbstractProcessor{
                         wr.write(fs.contentType()+":");
                         wr.write(element.asType().toString()+":");                        
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     List<? extends AnnotationMirror> mirrors = element.getAnnotationMirrors();
@@ -62,13 +60,13 @@ public class FormatServiceProcessor extends AbstractProcessor{
                             Object value = entry.getValue().getValue();
                             switch(key){
                                 case "dataTypes": 
+                                    @SuppressWarnings("unchecked")
                                     List<? extends AnnotationValue> typeMirrors= (List<? extends AnnotationValue>) value;
                                     typeMirrors.forEach( tm -> {
                                         System.out.println("\t"+ tm.getValue().toString());
                                         try {
                                             wr.write( tm.getValue().toString() + ";");
                                         } catch (IOException e) {
-                                            // TODO Auto-generated catch block
                                             e.printStackTrace();
                                         }
                                     });
@@ -79,8 +77,7 @@ public class FormatServiceProcessor extends AbstractProcessor{
                     }
                     try {
                         wr.write("\r\n");
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
+                    } catch (IOException e) {                        
                         e.printStackTrace();
                     }
 
@@ -90,7 +87,6 @@ public class FormatServiceProcessor extends AbstractProcessor{
             
             return true;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return false;

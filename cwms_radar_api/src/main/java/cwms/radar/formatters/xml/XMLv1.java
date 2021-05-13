@@ -15,7 +15,6 @@ import cwms.radar.data.dao.CwmsDao;
 import cwms.radar.data.dao.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
-import io.javalin.http.BadRequestResponse;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
