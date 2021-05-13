@@ -5,7 +5,6 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.plugin.openapi.annotations.*;
-import kotlin.NotImplementedError;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -23,11 +22,9 @@ import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.Office;
-import cwms.radar.formatters.FormatFactory;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
-import cwms.radar.formatters.OutputFormatter;
 import cwms.radar.formatters.csv.CsvV1Office;
 import cwms.radar.formatters.tab.TabV1Office;
 import cwms.radar.formatters.ContentType;
