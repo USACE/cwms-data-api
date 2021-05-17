@@ -6,13 +6,26 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import cwms.radar.data.dto.Catalog;
+import cwms.radar.data.dto.CatalogEntry;
 import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.TimeSeries;
 import io.javalin.http.Context;
+
+import static org.jooq.impl.DSL.*;
+
+import org.jooq.*;
+import org.jooq.conf.ParamType;
+import org.jooq.exception.*;
+import org.jooq.impl.DSL;
+
 
 public class CwmsDataManager implements AutoCloseable {
     private static final Logger logger = Logger.getLogger("CwmsDataManager");
@@ -28,9 +41,11 @@ public class CwmsDataManager implements AutoCloseable {
     private static final String CALL_CWMS_ENV_SET_SESSION_OFFICE_ID = "CALL cwms_env.set_session_office_id(?)";
 
     private Connection conn;
+    private DSLContext dsl = null;
 
     public CwmsDataManager(Context ctx) throws SQLException{
         conn = ctx.attribute("database");
+        dsl = DSL.using(conn,SQLDialect.ORACLE);
         try(
             CallableStatement setOffice = conn.prepareCall(CALL_CWMS_ENV_SET_SESSION_OFFICE_ID);
         ){ 
@@ -223,6 +238,17 @@ public class CwmsDataManager implements AutoCloseable {
                 } 
                 return null;
 	}
+
+    public List<TimeSeries> getTimeSeries(List<String> names, String office, String units, String datum, ZonedDateTime start, ZonedDateTime end, ZoneId timeZone){
+        ArrayList<TimeSeries> tsList = new ArrayList<>();
+        
+        return tsList;
+    }
 	
+    public Catalog getCatalog(int page){
+        
+
+        return null;
+    }
     
 }

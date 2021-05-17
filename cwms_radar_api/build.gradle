@@ -4,7 +4,9 @@ dependencies {
     implementation 'javax.xml.bind:jaxb-api:2.2.12'
     implementation 'com.sun.xml.bind:jaxb-impl:2.2.11'
     implementation 'com.sun.xml.bind:jaxb-core:2.2.11'
-    
+    implementation( 'mil.army.usace.hec:cwms-db-jooq:6.0.2'){
+        exclude group: 'com.oracle', module: "*"
+    }
 
     
     compileOnly 'io.javalin:javalin:3.12.0'    

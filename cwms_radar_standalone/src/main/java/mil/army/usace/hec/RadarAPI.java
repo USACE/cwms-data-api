@@ -22,6 +22,7 @@ import cwms.radar.api.*;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.owasp.html.*;
 
+
 public class RadarAPI {
     private static final Logger logger = Logger.getLogger(RadarAPI.class.getName());
     private static final MetricRegistry metrics = new MetricRegistry();
@@ -84,7 +85,8 @@ public class RadarAPI {
             crud("/timezones/:zone", new TimeZoneController(metrics));
             crud("/levels/:location", new LevelsController(metrics));
             crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
-            crud("/ratings/:rating", new RatingController(metrics));                    
+            crud("/ratings/:rating", new RatingController(metrics)); 
+            crud("/catalog/:", new CatalogController(metrics));                   
         }).start(port);
         
     }

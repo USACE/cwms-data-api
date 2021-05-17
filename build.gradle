@@ -21,6 +21,9 @@ subprojects {
         maven {
             url = uri('https://repo.maven.apache.org/maven2')
         }
+        maven {
+            url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
+        }
     }
 
     tasks.withType(JavaCompile) {

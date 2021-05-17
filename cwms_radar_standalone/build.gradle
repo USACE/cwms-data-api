@@ -21,6 +21,9 @@ dependencies {
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20180219.1"
+
+    
+    
 }
 
 application {
