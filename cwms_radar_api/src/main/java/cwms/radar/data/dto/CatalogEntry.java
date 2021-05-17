@@ -1,26 +1,27 @@
 package cwms.radar.data.dto;
 
-public class CatalogEntry {
-    private String location;
-    private String parameter;
-    private String dataType;
-    private String interval;
-    private String duration;
-    private String version;
+public class CatalogEntry {    
+    private String office;
+    private String tsName;
 
+    public CatalogEntry(String office, String name){
+        this.office = office;
+        this.tsName=name;
+
+    }
+
+    public String getOffice(){
+        return office;
+    }
+    
     public String getFullName(){
-        StringBuilder builder = new StringBuilder();
-        builder.append(location).append(".")
-               .append(parameter).append(".")
-               .append(dataType).append(".")
-               .append(interval).append(".")
-               .append(duration).append(".")
-               .append(version);
-        return builder.toString();
+        return tsName;
     }
 
     @Override
     public String toString(){
-        return this.getFullName();
+        StringBuilder builder = new StringBuilder();
+        builder.append(office).append("/").append(tsName);        
+        return builder.toString();
     }
 }

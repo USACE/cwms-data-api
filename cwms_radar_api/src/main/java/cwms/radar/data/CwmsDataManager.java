@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CatalogEntry;
@@ -28,7 +29,7 @@ import org.jooq.impl.DSL;
 
 import usace.cwms.db.jooq.codegen.routines.*;
 import usace.cwms.db.jooq.codegen.packages.*; //CWMS_ENV_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.*;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -243,10 +244,17 @@ public class CwmsDataManager implements AutoCloseable {
         return tsList;
     }
 	
-    public Catalog getCatalog(int page){
-        
-
-        return null;
+    public Catalog getCatalog(int page){        
+        Result<Record2<String,String>> result = dsl.select(
+                                    AV_CWMS_TS_ID2.DB_OFFICE_ID,
+                                    AV_CWMS_TS_ID2.CWMS_TS_ID)
+                                .from(AV_CWMS_TS_ID2)
+                                .fetch();
+        List<CatalogEntry> entries = result.stream().map( e -> {
+            return new CatalogEntry(e.value1(),e.value2());             
+        }).collect(Collectors.toList());
+        Catalog cat = new Catalog(page,page+1,0,entries);
+        return cat;
     }
     
 }
