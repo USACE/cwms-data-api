@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "A respresentation of a CWMS office")
+@Schema(description = "A representation of a CWMS office")
 @XmlRootElement(name="office")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Office implements CwmsDao{
@@ -31,7 +31,7 @@ public class Office implements CwmsDao{
     private String name;
     @XmlElement(name="long-name")
     private String long_name;
-    @Schema(allowableValues = {"unknown","corps headquarters","divison headquarters","division regional","district","filed operating activity"})
+    @Schema(allowableValues = {"unknown","corps headquarters","division headquarters","division regional","district","filed operating activity"})
     private String type;
     @XmlElement(name="reports-to")
     @Schema(description = "Reference to another office, like a division, that this office reports to.")

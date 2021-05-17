@@ -64,8 +64,8 @@ paths:
           description:  |
             Specifies the elevation datum of the response.
             Valid values for this field are:
-                1.	NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.
-                2.	NGVD29.  The elevation values will be in csvthe specified or default units above the NGVD-29 datum.
+                1.	NAVD88.  The elevation values will be in the specified or default units above the NAVD-88 datum.
+                2.	NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum.
             If this field is not specified, each elevation value will be in the specified or default units above that location's native vertical datum in the database, which is identified in the response.
           required: false
           type: string
@@ -169,14 +169,14 @@ paths:
         - name: begin
           in: query
           description:  |
-            Specifies the start of the time window for data to be included in the response.  If this field is not specified, any required time window begins 24 hours prior to the specified or default end time.
+            Specifies the start of the time window for data to be included in the response.  If this field is not specified, any required time window begins 24 hours prior to the specified or default end time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
         - name: end
           in: query
           description:  |
-            Specifies the end of the time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.
+            Specifies the end of the time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
@@ -269,14 +269,14 @@ paths:
         - name: begin
           in: query
           description:  |
-            Specifies the start of the effective date time window for data to be included in the response.  If this field is not specified, any required time window begins at the latest rating effective time on or before the (default or specified) end time (i.e., the single rating effective at the end time is returned).  If this field is specified as 'none' (case in-sensitive), any required effective date time will have no beginning time (i.e., all ratings with effective dates on or before the end time are returned).
+            Specifies the start of the effective date time window for data to be included in the response.  If this field is not specified, any required time window begins at the latest rating effective time on or before the (default or specified) end time (i.e., the single rating effective at the end time is returned).  If this field is specified as 'none' (case in-sensitive), any required effective date time will have no beginning time (i.e., all ratings with effective dates on or before the end time are returned).  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
         - name: end
           in: query
           description:  |
-            Specifies the end of the effective date time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.
+            Specifies the end of the effective date time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
@@ -365,14 +365,14 @@ paths:
         - name: begin
           in: query
           description:  |
-            Specifies the start of the time window for data to be included in the response.  If this field is not specified, any required time window begins 24 hours prior to the specified or default end time.
+            Specifies the start of the time window for data to be included in the response.  If this field is not specified, any required time window begins 24 hours prior to the specified or default end time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
         - name: end
           in: query
           description:  |
-            Specifies the end of the time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.
+            Specifies the end of the time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
@@ -425,11 +425,11 @@ paths:
   #       - name: format
   #         in: query
   #         description:  |
-  #           Specifies specifies the encoding format of the response.  Valid values for the format field for this URI are: 
+  #           Specifies specifies the encoding format of the response.  Valid values for the format field for this URI are:
   #               1.	tab
   #               2.	csv
-  #               3.	xml            
-  #               4.	json           
+  #               3.	xml
+  #               4.	json
   #         required: false
   #         type: string
   #         enum: ["tab", "csv", "xml", "json"]
@@ -441,7 +441,7 @@ paths:
   #       default:
   #         description: unexpected error
   #         schema:
-            $ref: '#/definitions/errorModel'        
+            $ref: '#/definitions/errorModel'
   /timezones:
     get:
       description: The timezones URI allows access to CWMS time zone data.
@@ -592,8 +592,8 @@ paths:
           in: query
           description:  |
             Specifies the elevation datum of the response.  This field affects only elevation location levels.  Valid values for this field are:
-                1.	NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.
-                2.	NGVD29.  The elevation values will be in csvthe specified or default units above the NGVD-29 datum.
+                1.	NAVD88.  The elevation values will be in the specified or default units above the NAVD-88 datum.
+                2.	NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum.
             If this field is not specified, elevation location levels will be in the specified or default units above that location's native vertical datum in the database, which is identified in the response.
           required: false
           type: string
@@ -601,14 +601,14 @@ paths:
         - name: begin
           in: query
           description:  |
-            Specifies the start of the time window for data to be included in the response.  If this field is not specified, any required time window begins 24 hours prior to the specified or default end time.
+            Specifies the start of the time window for data to be included in the response.  If this field is not specified, any required time window begins 24 hours prior to the specified or default end time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime
         - name: end
           in: query
           description:  |
-            Specifies the end of the time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.
+            Specifies the end of the time window for data to be included in the response.  If this field is not specified, any required time window ends at the current time.  The format for this field is ISO 8601 extended, i.e., 'YYYY-MM-DDThh:mm:ss'.
           required: false
           type: string
           format: dateTime

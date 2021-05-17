@@ -6,7 +6,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 
 @WebListener
-public class RADARMetricsContextListner extends MetricsServlet.ContextListener {
+public class RADARMetricsContextListener extends MetricsServlet.ContextListener {
 
     public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
 
