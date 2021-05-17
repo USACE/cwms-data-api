@@ -26,6 +26,10 @@ import org.jooq.conf.ParamType;
 import org.jooq.exception.*;
 import org.jooq.impl.DSL;
 
+import usace.cwms.db.jooq.codegen.routines.*;
+import usace.cwms.db.jooq.codegen.packages.*; //CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.*;
+
 
 public class CwmsDataManager implements AutoCloseable {
     private static final Logger logger = Logger.getLogger("CwmsDataManager");
@@ -38,7 +42,6 @@ public class CwmsDataManager implements AutoCloseable {
     private static final String ALL_TIMEZONES_QUERY = "select cwms_cat.retrieve_time_zones_f(?) from dual";
     private static final String ALL_LOCATION_LEVELS_QUERY = "select cwms_level.retrieve_location_levels_f(?,?,?,?,?,?,?,?) from dual";
     private static final String ALL_TIMESERIES_QUERY = "select cwms_ts.retrieve_time_series_f(?,?,?,?,?,?,?,?) from dual";
-    private static final String CALL_CWMS_ENV_SET_SESSION_OFFICE_ID = "CALL cwms_env.set_session_office_id(?)";
 
     private Connection conn;
     private DSLContext dsl = null;
@@ -46,12 +49,7 @@ public class CwmsDataManager implements AutoCloseable {
     public CwmsDataManager(Context ctx) throws SQLException{
         conn = ctx.attribute("database");
         dsl = DSL.using(conn,SQLDialect.ORACLE);
-        try(
-            CallableStatement setOffice = conn.prepareCall(CALL_CWMS_ENV_SET_SESSION_OFFICE_ID);
-        ){ 
-            setOffice.setString(1,ctx.attribute("office_id"));
-            setOffice.execute();
-        }
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), null);        
     }
 
     @Override
