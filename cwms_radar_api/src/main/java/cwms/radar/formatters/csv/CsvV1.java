@@ -8,12 +8,12 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import service.annotations.FormatService;
 
-@FormatService(contentType = "text/csv", dataTypes = {Office.class})
+@FormatService(contentType = Formats.CSV, dataTypes = {Office.class})
 public class CsvV1 implements OutputFormatter {
 
     @Override
-    public String getContentType() {        
-        return Formats.TAB;
+    public String getContentType() {
+        return Formats.CSV;
     }
 
     @Override
@@ -22,7 +22,7 @@ public class CsvV1 implements OutputFormatter {
             return new CsvV1Office().format(dto);
         } else {
             return null;
-        }        
+        }
     }
 
     @Override
@@ -31,9 +31,9 @@ public class CsvV1 implements OutputFormatter {
             return new CsvV1Office().format(dtoList);
         } else {
             return null;
-        }        
+        }
     }
 
-    
-    
+
+
 }

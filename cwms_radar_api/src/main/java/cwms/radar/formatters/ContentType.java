@@ -14,14 +14,14 @@ public class ContentType implements Comparable<ContentType> {
         if( parts.length > 1){
             for( int i = 1; i < parts.length; i++){
                 String key_val[] = parts[i].split("=");
-                parameters.put(key_val[0],key_val[1]);            
+                parameters.put(key_val[0],key_val[1]);
             }
         }
-        
-    }    
+
+    }
 
     public String getType(){ return contentType; }
-    public Map<String,String> getParamters() { 
+    public Map<String,String> getParameters() {
         return new HashMap<>(parameters);
     }
 

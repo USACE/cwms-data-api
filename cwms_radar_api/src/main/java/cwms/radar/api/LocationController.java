@@ -18,11 +18,12 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.formatters.Formats;
 
 
 /**
  *
- * 
+ *
  */
 public class LocationController implements CrudHandler {
     private final MetricRegistry metrics;// = new MetricRegistry();
@@ -41,14 +42,14 @@ public class LocationController implements CrudHandler {
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
-    
+
     @OpenApi(
         queryParams = {
             @OpenApiParam( name="names",required = false, description = "Specifies the name(s) of the location(s) whose data is to be included in the response"),
             @OpenApiParam(name="office", required=false, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
             @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
             @OpenApiParam(name="datum", required=false, description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
-            @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")            
+            @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")
         },
         responses = {
             @OpenApiResponse( status="200"),
@@ -65,27 +66,26 @@ public class LocationController implements CrudHandler {
             final Timer.Context time_context = getAllRequestsTime.time();
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                String format = ctx.queryParam("format","json");           
+                String format = ctx.queryParam("format","json");
                 String names = ctx.queryParam("names");
                 String units = ctx.queryParam("units");
                 String datum = ctx.queryParam("datum");
                 String office = ctx.queryParam("office");
-                
+
 
                 switch(format){
-                    case "json": {ctx.contentType("application/json"); break;}
-                    case "tab": {ctx.contentType("text/tab-sperated-values");break;}
-                    case "csv": {ctx.contentType("text/csv"); break;}
-                    case "xml": {ctx.contentType("application/xml");break;}
-                    case "wml2": {ctx.contentType("application/xml");break;}
-                    default:
-                    throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
+                    case "json": {ctx.contentType(Formats.JSON); break;}
+                    case "tab": {ctx.contentType(Formats.TAB); break;}
+                    case "csv": {ctx.contentType(Formats.CSV); break;}
+                    case "xml": {ctx.contentType(Formats.XML); break;}
+                    case "wml2": {ctx.contentType(Formats.WML2); break;}
+                    default: throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
                 }
 
-                String results = cdm.getLocations(names,format,units,datum,office);                
+                String results = cdm.getLocations(names,format,units,datum,office);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
-                requestResultSize.update(results.length());             
+                requestResultSize.update(results.length());
         } catch (SQLException ex) {
             Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

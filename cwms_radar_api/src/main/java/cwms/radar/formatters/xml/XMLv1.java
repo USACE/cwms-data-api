@@ -20,7 +20,7 @@ import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
-@FormatService(contentType="application/xml", dataTypes = {Office.class,Catalog.class})
+@FormatService(contentType = Formats.XML, dataTypes = {Office.class,Catalog.class})
 public class XMLv1 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv1.class.getName());
     private JAXBContext context = null;
@@ -35,7 +35,7 @@ public class XMLv1 implements OutputFormatter {
             logger.log(Level.SEVERE, "Unable to build XML Marshaller", jaxb);
             throw new InternalServerErrorResponse("Internal error");
         }
-        
+
     }
 
     @Override
@@ -45,7 +45,7 @@ public class XMLv1 implements OutputFormatter {
 
     @Override
     public String format(CwmsDTO dto) {
-        try{              
+        try{
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             if( dto instanceof Office ){
@@ -54,7 +54,7 @@ public class XMLv1 implements OutputFormatter {
             } else {
                 mar.marshal(dto,pw);
                 return sw.toString();
-            } 
+            }
         } catch( JAXBException jaxb ){
             String msg = dto != null ?
                     "Error rendering '" + dto.toString() + "' to XM"
@@ -62,25 +62,25 @@ public class XMLv1 implements OutputFormatter {
                     "Null element passed to formatter";
             logger.log(Level.WARNING, msg, jaxb);
             throw new InternalServerErrorResponse("Invalid Parameters");
-        } 
+        }
     }
 
     @Override
     @SuppressWarnings("unchecked") // we're ALWAYS checking before conversion in this function
     public String format(List<? extends CwmsDTO> dtoList) {
-        try{              
+        try{
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
 
             if( !dtoList.isEmpty() && dtoList.get(0) instanceof Office ){
                 mar.marshal(new XMLv1Office((List<Office>)dtoList), pw);
-                return sw.toString();  
-            }    
+                return sw.toString();
+            }
         } catch( Exception err ){
             logger.log(Level.WARNING, "Error doing XML format of office list", err);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
         throw new UnsupportedOperationException("Unable to process your request");
     }
-    
+
 }

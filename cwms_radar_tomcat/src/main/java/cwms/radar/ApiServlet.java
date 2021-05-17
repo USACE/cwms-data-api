@@ -89,7 +89,7 @@ public class ApiServlet extends HttpServlet {
                     e.printStackTrace(System.err);                   
                 })
                 .routes( () -> {      
-                    get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
+                    get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType("text/plain");});              
                     crud("/locations/:location_code", new LocationController(metrics));
                     crud("/offices/:office", new OfficeController(metrics));
                     crud("/units/:unit_name", new UnitsController(metrics));
