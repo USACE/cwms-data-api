@@ -2,7 +2,7 @@ package cwms.radar.formatters;
 
 import java.util.List;
 
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.Office;
 
 public class OfficeFormatV1 {
     public class OfficesFMT{        

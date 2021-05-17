@@ -11,8 +11,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
-import cwms.radar.data.dao.CwmsDao;
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
@@ -42,19 +42,19 @@ public class XMLv1 implements OutputFormatter {
     }
 
     @Override
-    public String format(CwmsDao dao) {
+    public String format(CwmsDTO dto) {
         try{              
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            if( dao instanceof Office ){
-                mar.marshal(new XMLv1Office(Arrays.asList((Office)dao)),pw);
+            if( dto instanceof Office ){
+                mar.marshal(new XMLv1Office(Arrays.asList((Office)dto)),pw);
                 return sw.toString();
             } else {
                 return null;
             } 
         } catch( JAXBException jaxb ){
-            String msg = dao != null ?
-                    "Error rendering '" + dao.toString() + "' to XM"
+            String msg = dto != null ?
+                    "Error rendering '" + dto.toString() + "' to XM"
                     :
                     "Null element passed to formatter";
             logger.log(Level.WARNING, msg, jaxb);
@@ -64,13 +64,13 @@ public class XMLv1 implements OutputFormatter {
 
     @Override
     @SuppressWarnings("unchecked") // we're ALWAYS checking before conversion in this function
-    public String format(List<? extends CwmsDao> daoList) {
+    public String format(List<? extends CwmsDTO> dtoList) {
         try{              
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
 
-            if( !daoList.isEmpty() && daoList.get(0) instanceof Office ){
-                mar.marshal(new XMLv1Office((List<Office>)daoList), pw);
+            if( !dtoList.isEmpty() && dtoList.get(0) instanceof Office ){
+                mar.marshal(new XMLv1Office((List<Office>)dtoList), pw);
                 return sw.toString();  
             }    
         } catch( Exception err ){

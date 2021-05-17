@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.Office;
 import io.javalin.http.Context;
 
 public class CwmsDataManager implements AutoCloseable {

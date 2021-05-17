@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import cwms.radar.data.dao.CwmsDao;
+import cwms.radar.data.dto.CwmsDTO;
 
 
 
@@ -43,7 +43,7 @@ public class Formats {
     }; 
 
 
-    private Map<ContentType, Map<Class<CwmsDao>,OutputFormatter> > formatters = null;
+    private Map<ContentType, Map<Class<CwmsDTO>,OutputFormatter> > formatters = null;
 
     private static Formats formats = null;    
 
@@ -63,11 +63,11 @@ public class Formats {
                 OutputFormatter formatterInstance;
 			
 				formatterInstance = formatter.getDeclaredConstructor().newInstance();
-                Map<Class<CwmsDao>,OutputFormatter> tmp = new HashMap<>();
+                Map<Class<CwmsDTO>,OutputFormatter> tmp = new HashMap<>();
 
                 for(String clazz: type_formatter_classes[2].split(";") ){
                     @SuppressWarnings("unchecked")
-                    Class<CwmsDao> formatForClass = (Class<CwmsDao>)Class.forName(clazz);
+                    Class<CwmsDTO> formatForClass = (Class<CwmsDTO>)Class.forName(clazz);
                     tmp.put( formatForClass, formatterInstance);
                 }
 
@@ -83,11 +83,11 @@ public class Formats {
     }
 
     
-    private String getFormatted(ContentType type, CwmsDao toFormat) throws FormattingException{
+    private String getFormatted(ContentType type, CwmsDTO toFormat) throws FormattingException{
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }
-        Map<Class<CwmsDao>, OutputFormatter> contentFormatters = (Map<Class<CwmsDao>, OutputFormatter>) formatters.get(type);
+        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = (Map<Class<CwmsDTO>, OutputFormatter>) formatters.get(type);
         if( contentFormatters != null ){
             return contentFormatters.get(toFormat.getClass()).format(toFormat);
         } else {
@@ -96,11 +96,11 @@ public class Formats {
         
     }
 
-    private String getFormatted(ContentType type, List<? extends CwmsDao> toFormat) throws FormattingException{
+    private String getFormatted(ContentType type, List<? extends CwmsDTO> toFormat) throws FormattingException{
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }                
-        Map<Class<CwmsDao>, OutputFormatter> contentFormatters = (Map<Class<CwmsDao>, OutputFormatter>) formatters.get(type);
+        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = (Map<Class<CwmsDTO>, OutputFormatter>) formatters.get(type);
         if( contentFormatters != null ){
             return contentFormatters.get(toFormat.get(0).getClass()).format(toFormat);
         } else {
@@ -120,13 +120,13 @@ public class Formats {
         }
     }
 
-    public static String format(ContentType type, CwmsDao toFormat) throws FormattingException{
+    public static String format(ContentType type, CwmsDTO toFormat) throws FormattingException{
         logger.info("formats");
         init();
         return formats.getFormatted(type,toFormat);
     }
 
-    public static String format(ContentType type, List<? extends CwmsDao> toFormat) throws FormattingException{
+    public static String format(ContentType type, List<? extends CwmsDTO> toFormat) throws FormattingException{
         logger.info("format list");
         init();
         return formats.getFormatted(type,toFormat);

@@ -4,7 +4,7 @@ import java.util.List;
 
 import javax.xml.bind.annotation.*;
 
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.Office;
 
 @XmlRootElement(name = "offices")
 @XmlAccessorType (XmlAccessType.FIELD)

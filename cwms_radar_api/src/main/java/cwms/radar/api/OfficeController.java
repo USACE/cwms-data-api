@@ -21,7 +21,7 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
