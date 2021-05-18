@@ -50,4 +50,12 @@ public class Office implements CwmsDTO{
     public String getLongName(){ return longName; }
     public String getType(){ return type; }
     public String getReportsTo(){ return reportsTo; }
+
+    public static boolean validOfficeNotNull(String office){
+        return office !=null && office.matches("^[a-zA-Z0-9]*$");
+    }
+
+    public static boolean validOfficeCanNull(String office){
+        return office == null || validOfficeNotNull(office);
+    }
 }

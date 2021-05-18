@@ -12,6 +12,7 @@ import com.codahale.metrics.*;
 
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dto.Catalog;
+import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 
@@ -97,9 +98,10 @@ public class CatalogController implements CrudHandler{
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             int page = ctx.queryParam("page",Integer.class,"1").getValue().intValue();
-            Optional<String> office = Optional.ofNullable(ctx.queryParam("office", String.class, null).check( ofc -> {
-                return ofc == null || ofc.matches("^[a-zA-Z0-9]*$");            
-            }).getOrNull());
+            Optional<String> office = Optional.ofNullable(
+                                         ctx.queryParam("office", String.class, null)
+                                            .check( ofc -> Office.validOfficeCanNull(ofc)                
+                                          ).getOrNull());
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
