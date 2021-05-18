@@ -92,7 +92,7 @@ public class RadarAPI {
             crud("/levels/:location", new LevelsController(metrics));
             crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
             crud("/ratings/:rating", new RatingController(metrics)); 
-            crud("/catalog/:", new CatalogController(metrics));                   
+            crud("/catalog/:dataSet", new CatalogController(metrics));                   
         }).start(port);
         
     }

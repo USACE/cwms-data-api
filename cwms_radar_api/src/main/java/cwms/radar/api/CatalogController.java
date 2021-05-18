@@ -42,52 +42,22 @@ public class CatalogController implements CrudHandler{
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
+    @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");        
     }
 
+    @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void delete(Context ctx, String entry) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
-    @OpenApi(                              
-        queryParams = {
-            @OpenApiParam(name="page",
-                          required = false, 
-                          type=Integer.class, 
-                          description = "This end point can return a lot of data, this identifies where in the request you are.")
-        },
-        responses = { @OpenApiResponse(status="200",
-                                       description = "A list of everything, unless you set some parameters.",
-                                       content = {
-                                           @OpenApiContent(from = Catalog.class, type=Formats.JSONV2)                                           
-                                       }
-                      ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
-                    },        
-        tags = {"Catalog"}
-    )
+    @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
-        try (
-            final Timer.Context time_context = getAllRequestsTime.time();
-            CwmsDataManager cdm = new CwmsDataManager(ctx);
-        ) {
-            int page = ctx.queryParam("page",Integer.class,"1").getValue().intValue();
-            String acceptHeader = ctx.header("Accept");
-            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
-            Catalog cat = cdm.getCatalog(page);
-            String data = Formats.format(contentType, cat);
-            ctx.result(data).contentType(contentType.toString());
-        } catch( SQLException er) {
-            logger.log(Level.SEVERE, "failed to process catalog request", er);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).result("Failed to process request");
-        }
-        
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");        
     }
 
     @OpenApi(                              
@@ -100,6 +70,7 @@ public class CatalogController implements CrudHandler{
         pathParams = {
             @OpenApiParam(name="dataSet",
                           required = false,
+                          type = CatalogableEndpoint.class,                                                                          
                           description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
         },
         responses = { @OpenApiResponse(status="200",
@@ -115,10 +86,33 @@ public class CatalogController implements CrudHandler{
     )
     @Override
     public void getOne(Context ctx, String dataSet) {
-        // TODO Auto-generated method stub
+        getAllRequests.mark();
+        try (
+            final Timer.Context time_context = getAllRequestsTime.time();
+            CwmsDataManager cdm = new CwmsDataManager(ctx);
+        ) {
+            int page = ctx.queryParam("page",Integer.class,"1").getValue().intValue();
+            String acceptHeader = ctx.header("Accept");
+            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
+            Catalog cat = null;
+            if( "timeseries".equalsIgnoreCase(dataSet)){
+                cat = cdm.getTimeSeriesCatalog(page);
+            }
+            if( cat != null ){
+                String data = Formats.format(contentType, cat);
+                ctx.result(data).contentType(contentType.toString());
+            } else {
+                ctx.result("Cannot create catalog of requested information").status(HttpServletResponse.SC_BAD_REQUEST);
+            }
+            
+        } catch( SQLException er) {
+            logger.log(Level.SEVERE, "failed to process catalog request", er);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).result("Failed to process request");
+        }
         
     }
 
+    @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void update(Context ctx, String entry) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");   
