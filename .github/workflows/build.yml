@@ -19,6 +19,6 @@ jobs:
           java-version: '11'
           java-package: jdk             
       - name: build and test     
-        run: ./gradlew test
+        run: ./gradlew test --init-script init.gradle
       - name: Build docker image
         run: ./gradlew dockerBuild

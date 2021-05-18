@@ -1,0 +1,9 @@
+// This creates a gradle.properties file for tests
+// This can be called using gradlew --init-script init.gradle <task>
+if (!file('gradle.properties').exists()) {
+    copy {
+        from "gradle.properties.example"
+        into "."
+        rename("gradle.properties.example", "gradle.properties")
+    }
+}
