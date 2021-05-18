@@ -30,24 +30,24 @@ public class Office implements CwmsDTO{
 
     private String name;
     @XmlElement(name="long-name")
-    private String long_name;
+    private String longName;
     @Schema(allowableValues = {"unknown","corps headquarters","division headquarters","division regional","district","filed operating activity"})
     private String type;
     @XmlElement(name="reports-to")
     @Schema(description = "Reference to another office, like a division, that this office reports to.")
-    private String reports_to;
+    private String reportsTo;
 
     public Office(){}
 
     public Office(ResultSet rs ) throws SQLException {
         name = rs.getString("office_id");
-        long_name = rs.getString("long_name");
+        longName = rs.getString("long_name");
         type = office_types.get(rs.getString("office_type"));
-        reports_to = rs.getString("report_to_office_id");
+        reportsTo = rs.getString("report_to_office_id");
     }
 
     public String getName(){ return name; }
-    public String getLong_Name(){ return long_name; }
+    public String getLongName(){ return longName; }
     public String getType(){ return type; }
-    public String getReports_To(){ return reports_to; }
+    public String getReportsTo(){ return reportsTo; }
 }

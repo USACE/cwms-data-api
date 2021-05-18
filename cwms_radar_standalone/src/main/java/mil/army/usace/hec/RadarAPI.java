@@ -5,12 +5,16 @@ import java.util.logging.Logger;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
 //import java.sql.DriverManager;
 
 import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.*;
 import io.javalin.core.plugin.Plugin;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
@@ -45,7 +49,9 @@ public class RadarAPI {
         
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
-
+        ObjectMapper om = JavalinJackson.getObjectMapper();
+        om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+        JavalinJackson.configure(om);
         Javalin.create( config -> {
             config.defaultContentType = "application/json";   
             config.contextPath = "/";                        

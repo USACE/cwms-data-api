@@ -60,9 +60,9 @@ public class CsvV1Office implements OutputFormatter{
     private String officeRow(Office office){
         StringBuilder builder = new StringBuilder();
         builder.append(office.getName()).append(",")
-               .append(office.getLong_Name()).append(",")
+               .append(office.getLongName()).append(",")
                .append(office.getType()).append(",")
-               .append(office.getReports_To());
+               .append(office.getReportsTo());
         return builder.toString();
     }
 }

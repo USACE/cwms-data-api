@@ -59,9 +59,9 @@ public class TabV1Office implements OutputFormatter{
     private String officeRow(Office office){
         StringBuilder builder = new StringBuilder();
         builder.append(office.getName()).append("\t")
-               .append(office.getLong_Name()).append("\t")
+               .append(office.getLongName()).append("\t")
                .append(office.getType()).append("\t")
-               .append(office.getReports_To());
+               .append(office.getReportsTo());
         return builder.toString();
     }
 }
