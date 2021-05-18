@@ -60,6 +60,10 @@ war {
     dependsOn unzipSwagger
     from "$buildDir/extra"
     from "src/resources/"
+
+    doLast {
+        println( "::set-output name=WARFILE::${project.name}-${project.version}.war")
+    }
 }
 
 
