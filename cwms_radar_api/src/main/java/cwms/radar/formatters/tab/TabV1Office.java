@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
     name = "Office Tabulation",
-    description = "Single Office or List of Offices in tab seperated format",
+    description = "Single Office or List of Offices in tab separated format",
     example = 
     "#Office Name<tab>Long Name<tab>Office Type<tab>Reports To Office\r\n"+
     "CERL	Construction Engineering Research Laboratory	Field Operating Activity	ERD\r\n"+
