@@ -16,7 +16,7 @@ jobs:
           java-version: '11'
           java-package: jdk  
       - name: build
-      run: ./gradlew build --init-script init.gradle
+        run: ./gradlew build --init-script init.gradle
       - name: get version
         id: get_version
         run: .github/workflows/get_version.sh
@@ -86,7 +86,7 @@ jobs:
           ECR_REPOSITORY: cwms-radar-api
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
         run: |
-                ./gradlew :cwms_radar_api:build --init-script init.gradle
+          ./gradlew :cwms_radar_api:build --init-script init.gradle
           ./gradlew prepareDocker             
           cd cwms_radar_standalone/build/docker
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
