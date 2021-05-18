@@ -11,6 +11,7 @@ import java.time.ZonedDateTime;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -244,14 +245,20 @@ public class CwmsDataManager implements AutoCloseable {
         return tsList;
     }
 	
-    public Catalog getTimeSeriesCatalog(int page){        
-        Result<Record2<String,String>> result = dsl.select(
+    public Catalog getTimeSeriesCatalog(int page, Optional<String> office){        
+        SelectJoinStep<Record3<String, String, String>> query = dsl.select(
                                     AV_CWMS_TS_ID2.DB_OFFICE_ID,
-                                    AV_CWMS_TS_ID2.CWMS_TS_ID)
-                                .from(AV_CWMS_TS_ID2)
-                                .fetch();
+                                    AV_CWMS_TS_ID2.CWMS_TS_ID,
+                                    AV_CWMS_TS_ID2.UNIT_ID)
+                                .from(AV_CWMS_TS_ID2);
+            
+        if( office.isPresent() ){
+            query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
+        }                            
+        query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
+        Result<Record3<String,String,String>> result = query.fetch();
         List<CatalogEntry> entries = result.stream().map( e -> {
-            return new CatalogEntry(e.value1(),e.value2());             
+            return new CatalogEntry(e.value1(),e.value2(),e.value3());             
         }).collect(Collectors.toList());
         Catalog cat = new Catalog(page,page+1,0,entries);
         return cat;

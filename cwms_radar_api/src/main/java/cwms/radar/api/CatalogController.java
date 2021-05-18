@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,7 +66,11 @@ public class CatalogController implements CrudHandler{
             @OpenApiParam(name="page",
                           required = false, 
                           type=Integer.class, 
-                          description = "This end point can return a lot of data, this identifies where in the request you are.")
+                          description = "This end point can return a lot of data, this identifies where in the request you are."),
+            @OpenApiParam(name="office",
+                          required = false,
+                          description = "3-4 letter office name representing the district you want to isolate data to."
+            )
         },
         pathParams = {
             @OpenApiParam(name="dataSet",
@@ -92,11 +97,14 @@ public class CatalogController implements CrudHandler{
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             int page = ctx.queryParam("page",Integer.class,"1").getValue().intValue();
+            Optional<String> office = Optional.ofNullable(ctx.queryParam("office", String.class, null).check( ofc -> {
+                return ofc == null || ofc.matches("^[a-zA-Z0-9]*$");            
+            }).getOrNull());
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if( "timeseries".equalsIgnoreCase(dataSet)){
-                cat = cdm.getTimeSeriesCatalog(page);
+                cat = cdm.getTimeSeriesCatalog(page, office );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);
