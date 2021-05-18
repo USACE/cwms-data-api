@@ -66,8 +66,14 @@ public class CatalogController implements CrudHandler{
         queryParams = {
             @OpenApiParam(name="page",
                           required = false, 
-                          type=Integer.class, 
-                          description = "This end point can return a lot of data, this identifies where in the request you are."),
+                          
+                          description = "This end point can return a lot of data, this identifies where in the request you are."
+            ),
+            @OpenApiParam(name="pageSize",
+                          required= false,
+                          type=Integer.class,
+                          description = "How many entires per page returned. Default 500."
+            ),
             @OpenApiParam(name="office",
                           required = false,
                           description = "3-4 letter office name representing the district you want to isolate data to."
@@ -97,16 +103,17 @@ public class CatalogController implements CrudHandler{
             final Timer.Context time_context = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
-            int page = ctx.queryParam("page",Integer.class,"1").getValue().intValue();
+            String cursor = ctx.queryParam("cursor",String.class,"").getValue();
+            int pageSize = ctx.queryParam("pageSize",Integer.class,"10").getValue().intValue();
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParam("office", String.class, null)
                                             .check( ofc -> Office.validOfficeCanNull(ofc)                
-                                          ).getOrNull());
+                                           ).getOrNull());
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if( "timeseries".equalsIgnoreCase(dataSet)){
-                cat = cdm.getTimeSeriesCatalog(page, office );
+                cat = cdm.getTimeSeriesCatalog(cursor, pageSize, office );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);

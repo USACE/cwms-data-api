@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -245,22 +246,41 @@ public class CwmsDataManager implements AutoCloseable {
         return tsList;
     }
 	
-    public Catalog getTimeSeriesCatalog(int page, Optional<String> office){        
+    public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
+        int total = 0;
+        String tsCursor = "*";
+        if( page == null || page.isEmpty() ){
+            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_CWMS_TS_ID2);
+            if( office.isPresent() ){
+                count.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
+            }
+            total = count.fetchOne().value1().intValue();
+        } else {
+            // get totally from page
+            String cursor = new String( Base64.getDecoder().decode(page) );
+            String parts[] = cursor.split("|||");
+            tsCursor = parts[0];
+            total = Integer.parseInt(parts[1]);
+        }
+        
         SelectJoinStep<Record3<String, String, String>> query = dsl.select(
                                     AV_CWMS_TS_ID2.DB_OFFICE_ID,
                                     AV_CWMS_TS_ID2.CWMS_TS_ID,
                                     AV_CWMS_TS_ID2.UNIT_ID)
                                 .from(AV_CWMS_TS_ID2);
-            
+                                
         if( office.isPresent() ){
-            query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
-        }                            
-        query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
+            query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()))
+                 .and(AV_CWMS_TS_ID2.CWMS_TS_ID.greaterThan(tsCursor));
+        } else {
+            query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.gt(tsCursor));
+        }                    
+        query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
         Result<Record3<String,String,String>> result = query.fetch();
         List<CatalogEntry> entries = result.stream().map( e -> {
             return new CatalogEntry(e.value1(),e.value2(),e.value3());             
         }).collect(Collectors.toList());
-        Catalog cat = new Catalog(page,page+1,0,entries);
+        Catalog cat = new Catalog(tsCursor,total,pageSize,entries);
         return cat;
     }
     

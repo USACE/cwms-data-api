@@ -1,35 +1,43 @@
 package cwms.radar.data.dto;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
 public class Catalog implements CwmsDTO {
-    private int page;
-    private int nextPage;
+    private String page;
+    private String nextPage;
     private int total;
     private List<CatalogEntry> entries;
 
-    public Catalog(int page, int nextPage, int total, List<CatalogEntry> entries ){
-        this.page = page;
-        this.nextPage = nextPage;
+    public Catalog(String page, int total, int pageSize, List<CatalogEntry> entries ){
+        this.page = page;        
         this.total = total;
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
         this.entries = entries;
+        if( entries.size() == pageSize){
+            String nextSet = String.format("%s|||%d",entries.get(entries.size()-1).getFullName(),total);
+            
+            nextPage = Base64.getEncoder().encodeToString(nextSet.getBytes());
+        } else {
+            nextPage = null;
+        }
+        
     }
 
     /**
-     * @return int return the page
+     * @return String return the page
      */
-    public int getPage() {
+    public String getPage() {
         return page;
     }
 
 
     /**
-     * @return int return the nextPage
+     * @return String return the nextPage
      */
-    public int getNextPage() {
+    public String getNextPage() {
         return nextPage;
     }
 
