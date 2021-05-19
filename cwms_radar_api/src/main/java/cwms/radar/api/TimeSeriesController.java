@@ -32,7 +32,7 @@ public class TimeSeriesController implements CrudHandler {
 
     public TimeSeriesController(MetricRegistry metrics){
         this.metrics=metrics;
-        String className = OfficeController.class.getName();
+        String className = this.getClass().getName();
         getAllRequests = this.metrics.meter(name(className,"getAll","count"));
         getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
         getOneRequest = this.metrics.meter(name(className,"getOne","count"));
