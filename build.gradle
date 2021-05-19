@@ -6,7 +6,7 @@ allprojects {
 }
 
 ext.dropwizard_version="4.1.2"
-
+ext.OWASP_SANITIZER_VERSION="20180219.1"
 subprojects {
     apply plugin: 'java'
 

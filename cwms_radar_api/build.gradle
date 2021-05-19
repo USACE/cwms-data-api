@@ -7,7 +7,7 @@ dependencies {
     implementation( 'mil.army.usace.hec:cwms-db-jooq:6.0.2'){
         exclude group: 'com.oracle', module: "*"
     }
-
+    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
     
     compileOnly 'io.javalin:javalin:3.12.0'    
     compileOnly "io.swagger.core.v3:swagger-core:2.0.9"

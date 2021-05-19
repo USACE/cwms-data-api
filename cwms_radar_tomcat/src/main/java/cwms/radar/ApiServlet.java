@@ -3,6 +3,7 @@ package cwms.radar;
 import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.*;
 import io.javalin.http.JavalinServlet;
+import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.info.Info;
@@ -24,6 +25,11 @@ import javax.sql.DataSource;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.*;
 
@@ -31,15 +37,7 @@ import cwms.radar.api.*;
  * Setup all the information required so we can serve the request.
  * 
  */
-@WebServlet(urlPatterns = { "/locations/*", 
-                            "/offices/*",
-                            "/timeseries/*",
-                            "/swagger-docs",
-                            "/ratings/*",
-                            "/parameters/*",
-                            "/timezones/*",
-                            "/levels/*"
-})
+@WebServlet(urlPatterns = { "/*" })
 public class ApiServlet extends HttpServlet {
     private Logger log = Logger.getLogger(ApiServlet.class.getName());    
     private MetricRegistry metrics;
@@ -59,6 +57,11 @@ public class ApiServlet extends HttpServlet {
         //System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
         //System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
         String context = this.getServletContext().getContextPath();
+
+        PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();        
+        ObjectMapper om = JavalinJackson.getObjectMapper();
+        om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+
         this.javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";   
             config.contextPath = context;                        
@@ -70,6 +73,10 @@ public class ApiServlet extends HttpServlet {
                     /* authorization on connection setup will go here
                     Connection conn = ctx.attribute("db");                    
                     */
+                    ctx.attribute("sanitizer",sanitizer);
+                    ctx.header("X-Content-Type-Options","nosniff");
+                    ctx.header("X-Frame-Options","SAMEORIGIN");
+                    ctx.header("X-XSS-Protection", "1; mode=block");
                 })
                 .exception(UnsupportedOperationException.class, (e,ctx) -> {
                     ctx.status(501);
@@ -77,11 +84,11 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     ctx.status(500);
-                    ctx.json("Server Error");
+                    ctx.json("Server Error");                    
                     e.printStackTrace(System.err);                   
                 })
                 .routes( () -> {      
-                    //get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
+                    get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
                     crud("/locations/:location_code", new LocationController(metrics));
                     crud("/offices/:office", new OfficeController(metrics));
                     crud("/units/:unit_name", new UnitsController(metrics));
@@ -89,7 +96,8 @@ public class ApiServlet extends HttpServlet {
                     crud("/timezones/:zone", new TimeZoneController(metrics));
                     crud("/levels/:location", new LevelsController(metrics));
                     crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
-                    crud("/ratings/:rating", new RatingController(metrics));                    
+                    crud("/ratings/:rating", new RatingController(metrics));
+                    crud("/catalog/:dataSet", new CatalogController(metrics));
                 }).servlet();                    
     }
 

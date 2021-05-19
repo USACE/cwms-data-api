@@ -51,8 +51,8 @@ public class CwmsDataManager implements AutoCloseable {
 
     public CwmsDataManager(Context ctx) throws SQLException{
         conn = ctx.attribute("database");
-        dsl = DSL.using(conn,SQLDialect.ORACLE);
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), null);        
+        dsl = DSL.using(conn,SQLDialect.ORACLE11G);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), ctx.attribute("office_id"));
     }
 
     @Override
@@ -281,6 +281,7 @@ public class CwmsDataManager implements AutoCloseable {
             query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
         }                    
         query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
+        logger.info( query.getSQL(ParamType.INLINED));
         Result<Record3<String,String,String>> result = query.fetch();
         List<CatalogEntry> entries = result.stream().map( e -> {
             return new CatalogEntry(e.value1(),e.value2(),e.value3());             
