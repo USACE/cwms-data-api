@@ -69,6 +69,7 @@ public class ApiServlet extends HttpServlet {
             config.enableDevLogging();          
             config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
         })
+                .attribute(PolicyFactory.class,sanitizer)
                 .before( ctx -> { 
                     /* authorization on connection setup will go here
                     Connection conn = ctx.attribute("db");                    

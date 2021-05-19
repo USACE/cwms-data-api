@@ -60,8 +60,8 @@ public class RadarAPI {
                 config.enableDevLogging();          
             }            
             config.requestLogger( (ctx,ms) -> { logger.info(ctx.toString());} );
-        }).before( ctx -> { 
-            ctx.attribute("sanitizer",sanitizer);
+        }).attribute(PolicyFactory.class,sanitizer)
+          .before( ctx -> {                     
             ctx.header("X-Content-Type-Options","nosniff");
             ctx.header("X-Frame-Options","SAMEORIGIN");
             ctx.header("X-XSS-Protection", "1; mode=block");

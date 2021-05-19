@@ -10,6 +10,8 @@ import javax.ws.rs.QueryParam;
 
 import com.codahale.metrics.*;
 
+import org.owasp.html.PolicyFactory;
+
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
@@ -102,6 +104,7 @@ public class CatalogController implements CrudHandler{
             final Timer.Context time_context = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
+            String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();
             int pageSize = ctx.queryParam("pageSize",Integer.class,"10").getValue().intValue();
             Optional<String> office = Optional.ofNullable(
@@ -111,8 +114,10 @@ public class CatalogController implements CrudHandler{
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
-            if( "timeseries".equalsIgnoreCase(dataSet)){
+            if( "timeseries".equalsIgnoreCase(valDataSet)){
                 cat = cdm.getTimeSeriesCatalog(cursor, pageSize, office );
+            } else if ("locations".equalsIgnoreCase(valDataSet)){
+                //cat = cdm.
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);
