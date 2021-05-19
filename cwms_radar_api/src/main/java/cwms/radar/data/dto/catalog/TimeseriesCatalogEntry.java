@@ -1,21 +1,15 @@
-package cwms.radar.data.dto;
+package cwms.radar.data.dto.catalog;
 
-public class CatalogEntry {    
-    private String office;
+public class TimeseriesCatalogEntry extends CatalogEntry{        
     private String tsName;
     private String units;
 
-    public CatalogEntry(String office, String name, String units){
-        this.office = office;
+    public TimeseriesCatalogEntry(String office, String name, String units){
+        super(office);
         this.tsName=name;
         this.units = units;
-
-    }
-
-    public String getOffice(){
-        return office;
-    }
-    
+    }    
+        
     public String getFullName(){
         return tsName;
     }
@@ -27,7 +21,7 @@ public class CatalogEntry {
     @Override
     public String toString(){
         StringBuilder builder = new StringBuilder();
-        builder.append(office).append("/").append(tsName).append(";units=").append(units);        
+        builder.append(getOffice()).append("/").append(tsName).append(";units=").append(units);        
         return builder.toString();
-    }
+    }    
 }

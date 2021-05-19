@@ -5,13 +5,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Base64.Encoder;
 
+import cwms.radar.data.dto.catalog.CatalogEntry;
+import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public class Catalog implements CwmsDTO {
     private String page;
     private String nextPage;
     private int total;
-    private List<CatalogEntry> entries;
+    @Schema(
+        anyOf = {
+            TimeseriesCatalogEntry.class
+        }
+    )
+    private List<? extends CatalogEntry> entries;
 
-    public Catalog(String page, int total, int pageSize, List<CatalogEntry> entries ){        
+    public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries ){        
         Encoder encoder = Base64.getEncoder();
         this.page = page.equals("*") ? null : encoder.encodeToString(String.format("%s||%d",page,pageSize).getBytes());
         this.total = total;
@@ -20,7 +29,7 @@ public class Catalog implements CwmsDTO {
         this.entries = entries;
         if( entries.size() == pageSize){            
             nextPage = encoder.encodeToString(
-                            String.format("%s|||%d",entries.get(entries.size()-1).getFullName().toUpperCase(),total).getBytes()
+                            String.format("%s|||%d",entries.get(entries.size()-1).toString().toUpperCase(),total).getBytes()
                        );
         } else {
             nextPage = null;
@@ -52,9 +61,9 @@ public class Catalog implements CwmsDTO {
     }
 
     /**
-     * @return List<CatalogEntry> return the entries
+     * @return List<? extends CatalogEntry> return the entries
      */
-    public List<CatalogEntry> getEntries() {
+    public List<? extends CatalogEntry> getEntries() {
         return entries;
     }
 

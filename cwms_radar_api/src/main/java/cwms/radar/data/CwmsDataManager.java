@@ -17,9 +17,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.Catalog;
-import cwms.radar.data.dto.CatalogEntry;
 import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.data.dto.catalog.CatalogEntry;
+import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.javalin.http.Context;
 
 import static org.jooq.impl.DSL.*;
@@ -264,7 +265,7 @@ public class CwmsDataManager implements AutoCloseable {
             for( String p: parts){
                 logger.info(p);
             }
-            tsCursor = parts[0];
+            tsCursor = parts[0].split("\\/")[1];
             total = Integer.parseInt(parts[1]);
         }
         
@@ -283,8 +284,8 @@ public class CwmsDataManager implements AutoCloseable {
         query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
         logger.info( query.getSQL(ParamType.INLINED));
         Result<Record3<String,String,String>> result = query.fetch();
-        List<CatalogEntry> entries = result.stream().map( e -> {
-            return new CatalogEntry(e.value1(),e.value2(),e.value3());             
+        List<? extends CatalogEntry> entries = result.stream().map( e -> {
+            return new TimeseriesCatalogEntry(e.value1(),e.value2(),e.value3());             
         }).collect(Collectors.toList());
         Catalog cat = new Catalog(tsCursor,total,pageSize,entries);
         return cat;
