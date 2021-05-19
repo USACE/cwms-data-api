@@ -24,7 +24,7 @@ jobs:
           java-package: jdk             
       - name: build and test     
         id: thebuild
-        run: ./gradlew test --init-script init.gradle
+        run: ./gradlew build --init-script init.gradle
       - name: Upload WAR
         uses: actions/upload-artifact@v2
         with:
