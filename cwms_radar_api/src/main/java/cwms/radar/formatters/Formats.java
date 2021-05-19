@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -84,6 +85,7 @@ public class Formats {
 
     
     private String getFormatted(ContentType type, CwmsDTO toFormat) throws FormattingException{
+        Objects.requireNonNull(toFormat,"Object to be formatted should not be null");
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }

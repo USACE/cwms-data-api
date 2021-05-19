@@ -6,6 +6,10 @@ dependencies {
     implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
     implementation( "mil.army.usace.hec:cwms-db-jooq:6.0.2"){
         exclude group: "com.oracle", module: "*"
+        exclude group: "org.jooq", module: "*"
+    }
+    implementation('org.jooq.pro:jooq:3.11.2'){
+        exclude group: "com.oracle", module: "*"
     }
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
     
