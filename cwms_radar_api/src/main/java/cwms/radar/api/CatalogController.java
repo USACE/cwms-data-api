@@ -100,9 +100,9 @@ public class CatalogController implements CrudHandler{
     )
     @Override
     public void getOne(Context ctx, String dataSet) {
-        getAllRequests.mark();
+        getOneRequest.mark();
         try (
-            final Timer.Context time_context = getAllRequestsTime.time();
+            final Timer.Context time_context = getOneRequestTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
@@ -123,6 +123,7 @@ public class CatalogController implements CrudHandler{
             if( cat != null ){
                 String data = Formats.format(contentType, cat);
                 ctx.result(data).contentType(contentType.toString());
+                requestResultSize.update(data.length());
             } else {
                 ctx.result("Cannot create catalog of requested information").status(HttpServletResponse.SC_BAD_REQUEST);
             }
