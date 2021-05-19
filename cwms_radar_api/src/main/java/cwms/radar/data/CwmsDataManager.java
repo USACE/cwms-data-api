@@ -20,6 +20,7 @@ import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.catalog.CatalogEntry;
+import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.javalin.http.Context;
 
@@ -33,6 +34,7 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.routines.*;
 import usace.cwms.db.jooq.codegen.packages.*; //CWMS_ENV_PACKAGE;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC2.*;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -288,6 +290,50 @@ public class CwmsDataManager implements AutoCloseable {
             return new TimeseriesCatalogEntry(e.value1(),e.value2(),e.value3());             
         }).collect(Collectors.toList());
         Catalog cat = new Catalog(tsCursor,total,pageSize,entries);
+        return cat;
+    }
+
+    public Catalog getLocationCatalog(String cursor, int pageSize, Optional<String> office) {
+        int total = 0;
+        String locCursor = "*";
+        if( cursor == null || cursor.isEmpty() ){
+            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_LOC2);
+            if( office.isPresent() ){
+                count.where(AV_LOC2.DB_OFFICE_ID.eq(office.get()));
+            }
+            total = count.fetchOne().value1().intValue();
+        } else {
+            logger.info("getting non-default page");
+            // get totally from page
+            String _cursor = new String( Base64.getDecoder().decode(cursor) );
+            logger.info("decoded cursor: " + cursor);
+            String parts[] = _cursor.split("\\|\\|\\|");
+            for( String p: parts){
+                logger.info(p);
+            }
+            locCursor = parts[0].split("\\/")[1];
+            total = Integer.parseInt(parts[1]);
+        }
+        
+        SelectJoinStep<Record3<String, String, String>> query = dsl.select(
+                                    AV_LOC2.DB_OFFICE_ID,
+                                    AV_LOC2.LOCATION_ID,
+                                    AV_LOC2.NEAREST_CITY)
+                                .from(AV_LOC2);
+                                
+        if( office.isPresent() ){
+            query.where(AV_LOC2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()))
+                 .and(AV_LOC2.LOCATION_ID.upper().greaterThan(locCursor));
+        } else {
+            query.where(AV_LOC2.LOCATION_ID.upper().gt(locCursor));
+        }                    
+        query.orderBy(AV_LOC2.LOCATION_ID).limit(pageSize);
+        logger.info( query.getSQL(ParamType.INLINED));
+        Result<Record3<String,String,String>> result = query.fetch();
+        List<? extends CatalogEntry> entries = result.stream().map( e -> {
+            return new LocationCatalogEntry(e.value1(),e.value2(),e.value3());             
+        }).collect(Collectors.toList());
+        Catalog cat = new Catalog(locCursor,total,pageSize,entries);
         return cat;
     }
     

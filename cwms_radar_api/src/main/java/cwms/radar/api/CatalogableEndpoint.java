@@ -8,7 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
     description = "Set of data for which a larger catalog can be built."
 )
 public enum CatalogableEndpoint {
-    TIMESERIES("timeseries");
+    TIMESERIES("timeseries"),
+    LOCATIONS("locations");
 
     private String dataSet;
 

@@ -117,7 +117,7 @@ public class CatalogController implements CrudHandler{
             if( "timeseries".equalsIgnoreCase(valDataSet)){
                 cat = cdm.getTimeSeriesCatalog(cursor, pageSize, office );
             } else if ("locations".equalsIgnoreCase(valDataSet)){
-                //cat = cdm.
+                cat = cdm.getLocationCatalog(cursor, pageSize, office );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);

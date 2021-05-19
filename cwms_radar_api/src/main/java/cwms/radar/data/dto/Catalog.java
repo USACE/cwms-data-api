@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Base64.Encoder;
 
 import cwms.radar.data.dto.catalog.CatalogEntry;
+import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -14,7 +15,8 @@ public class Catalog implements CwmsDTO {
     private String nextPage;
     private int total;
     @Schema(
-        anyOf = {
+        oneOf = {
+            LocationCatalogEntry.class,
             TimeseriesCatalogEntry.class
         }
     )
