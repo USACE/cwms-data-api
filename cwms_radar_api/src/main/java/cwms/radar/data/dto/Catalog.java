@@ -5,11 +5,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Base64.Encoder;
 
+import javax.xml.bind.annotation.*;
+
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@XmlRootElement(name="catalog")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Catalog implements CwmsDTO {
     private String page;
     private String nextPage;
@@ -20,7 +24,12 @@ public class Catalog implements CwmsDTO {
             TimeseriesCatalogEntry.class
         }
     )
+    @XmlElementWrapper(name="entries")
+    @XmlElement(name="entry")    
     private List<? extends CatalogEntry> entries;
+    
+    @SuppressWarnings("unused") // required so JAXB can initialize and marshal
+    private Catalog(){}
 
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries ){        
         Encoder encoder = Base64.getEncoder();

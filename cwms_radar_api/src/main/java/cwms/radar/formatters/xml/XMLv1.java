@@ -11,14 +11,16 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
+import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
-@FormatService(contentType="application/xml", dataTypes = {Office.class})
+@FormatService(contentType="application/xml", dataTypes = {Office.class,Catalog.class})
 public class XMLv1 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv1.class.getName());
     private JAXBContext context = null;
@@ -26,7 +28,7 @@ public class XMLv1 implements OutputFormatter {
 
     public XMLv1() throws InternalServerErrorResponse{
         try {
-            context = JAXBContext.newInstance(XMLv1Office.class);
+            context = JAXBContext.newInstance(XMLv1Office.class,Catalog.class);
             mar = context.createMarshaller();
             mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
         } catch( JAXBException jaxb ){
@@ -50,7 +52,8 @@ public class XMLv1 implements OutputFormatter {
                 mar.marshal(new XMLv1Office(Arrays.asList((Office)dto)),pw);
                 return sw.toString();
             } else {
-                return null;
+                mar.marshal(dto,pw);
+                return sw.toString();
             } 
         } catch( JAXBException jaxb ){
             String msg = dto != null ?

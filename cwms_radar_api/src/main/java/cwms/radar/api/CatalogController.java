@@ -87,9 +87,10 @@ public class CatalogController implements CrudHandler{
                           description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
         },
         responses = { @OpenApiResponse(status="200",
-                                       description = "A list of everything, unless you set some parameters.",
+                                       description = "A list of elements the data set you've selected.",
                                        content = {
-                                           @OpenApiContent(from = Catalog.class, type=Formats.JSONV2)                                           
+                                           @OpenApiContent(from = Catalog.class, type=Formats.JSONV2),
+                                           @OpenApiContent(from = Catalog.class, type=Formats.XML)
                                        }
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),

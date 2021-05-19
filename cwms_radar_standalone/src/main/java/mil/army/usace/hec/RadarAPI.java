@@ -71,7 +71,7 @@ public class RadarAPI {
             */
             logger.info(ctx.header("accept"));
             total_requests.mark();
-        }).after( ctx -> {
+        }).after( ctx -> {         
             ((java.sql.Connection)ctx.attribute("database")).close();
         })
         .exception(UnsupportedOperationException.class, (e,ctx) -> {

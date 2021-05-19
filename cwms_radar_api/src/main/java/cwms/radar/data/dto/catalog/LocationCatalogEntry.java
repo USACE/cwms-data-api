@@ -4,6 +4,8 @@ public class LocationCatalogEntry extends CatalogEntry{
     private String name;
     private String nearestCity;
 
+    private LocationCatalogEntry(){ super(null);}
+
     public LocationCatalogEntry(String office, String name, String nearestCity){
         super(office);
         this.name=name;
