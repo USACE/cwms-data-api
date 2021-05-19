@@ -64,9 +64,8 @@ public class CatalogController implements CrudHandler{
 
     @OpenApi(                              
         queryParams = {
-            @OpenApiParam(name="page",
-                          required = false, 
-                          
+            @OpenApiParam(name="cursor",
+                          required = false,                           
                           description = "This end point can return a lot of data, this identifies where in the request you are."
             ),
             @OpenApiParam(name="pageSize",

@@ -256,9 +256,14 @@ public class CwmsDataManager implements AutoCloseable {
             }
             total = count.fetchOne().value1().intValue();
         } else {
+            logger.info("getting non-default page");
             // get totally from page
             String cursor = new String( Base64.getDecoder().decode(page) );
-            String parts[] = cursor.split("|||");
+            logger.info("decoded cursor: " + cursor);
+            String parts[] = cursor.split("\\|\\|\\|");
+            for( String p: parts){
+                logger.info(p);
+            }
             tsCursor = parts[0];
             total = Integer.parseInt(parts[1]);
         }
@@ -270,10 +275,10 @@ public class CwmsDataManager implements AutoCloseable {
                                 .from(AV_CWMS_TS_ID2);
                                 
         if( office.isPresent() ){
-            query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()))
-                 .and(AV_CWMS_TS_ID2.CWMS_TS_ID.greaterThan(tsCursor));
+            query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()))
+                 .and(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().greaterThan(tsCursor));
         } else {
-            query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.gt(tsCursor));
+            query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
         }                    
         query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
         Result<Record3<String,String,String>> result = query.fetch();

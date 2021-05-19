@@ -3,6 +3,7 @@ package cwms.radar.data.dto;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
+import java.util.Base64.Encoder;
 
 public class Catalog implements CwmsDTO {
     private String page;
@@ -10,16 +11,17 @@ public class Catalog implements CwmsDTO {
     private int total;
     private List<CatalogEntry> entries;
 
-    public Catalog(String page, int total, int pageSize, List<CatalogEntry> entries ){
-        this.page = page;        
+    public Catalog(String page, int total, int pageSize, List<CatalogEntry> entries ){        
+        Encoder encoder = Base64.getEncoder();
+        this.page = page.equals("*") ? null : encoder.encodeToString(String.format("%s||%d",page,pageSize).getBytes());
         this.total = total;
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
         this.entries = entries;
-        if( entries.size() == pageSize){
-            String nextSet = String.format("%s|||%d",entries.get(entries.size()-1).getFullName(),total);
-            
-            nextPage = Base64.getEncoder().encodeToString(nextSet.getBytes());
+        if( entries.size() == pageSize){            
+            nextPage = encoder.encodeToString(
+                            String.format("%s|||%d",entries.get(entries.size()-1).getFullName().toUpperCase(),total).getBytes()
+                       );
         } else {
             nextPage = null;
         }
