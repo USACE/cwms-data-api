@@ -333,6 +333,15 @@ public class CwmsDataManager implements AutoCloseable {
                             ).from(AV_LOC_ALIAS)
                             .where(AV_LOC_ALIAS.LOCATION_ID.eq(AV_LOC2.LOCATION_ID))
                             .asField("aliases");*/        
+        
+        /**
+         * INNER JOIN ( SELECT * FROM A WHERE A.FIELD1='X' ORDER BY A.FIELD2 LIMIT 10) X
+             ON (A.KEYFIELD=X.KEYFIELD)
+         */
+        Table<?> forLimit = dsl.select(AV_LOC2.LOCATION_ID)
+                               .from(AV_LOC2)
+                               .where(AV_LOC2.LOCATION_ID.greaterThan(locCursor))
+                               .orderBy(AV_LOC2.BASE_LOCATION_ID).limit(pageSize).asTable();        
         SelectJoinStep<?> query = dsl.select(
                                     AV_LOC2.DB_OFFICE_ID,
                                     AV_LOC2.LOCATION_ID,
@@ -341,6 +350,7 @@ public class CwmsDataManager implements AutoCloseable {
                                     AV_LOC_ALIAS.ALIAS_ID
                                 )
                                 .from(AV_LOC2)
+                                .innerJoin(forLimit).on(forLimit.field(AV_LOC2.LOCATION_ID).eq(AV_LOC2.LOCATION_ID))
                                 .leftJoin(AV_LOC_ALIAS).on(AV_LOC_ALIAS.LOCATION_ID.eq(AV_LOC2.LOCATION_ID));
                                 
         if( office.isPresent() ){
@@ -377,19 +387,7 @@ public class CwmsDataManager implements AutoCloseable {
 
             return ce;
         }).collect(Collectors.toList());
-        
-        
-        /*List<? extends CatalogEntry> entries = result.stream().map( e -> {
-            
-            logger.info(e.getValue(aliases).toString());
-            
-            return new LocationCatalogEntry(
-                    e.getValue(AV_LOC2.DB_OFFICE_ID),
-                    e.getValue(AV_LOC2.LOCATION_ID),
-                    e.getValue(AV_LOC2.NEAREST_CITY),
-                    new ArrayList<LocationAlias>()
-            );             
-        }).collect(Collectors.toList());*/
+                    
         Catalog cat = new Catalog(locCursor,total,pageSize,entries);
         return cat;
     }

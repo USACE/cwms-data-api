@@ -3,9 +3,13 @@ package cwms.radar.data.dto.catalog;
 import java.util.List;
 import java.util.Objects;
 
+import javax.xml.bind.annotation.*;
+
 public class LocationCatalogEntry extends CatalogEntry{        
     private String name;
     private String nearestCity;
+    @XmlElementWrapper(name="aliases")
+    @XmlElement(name="alias")
     private List<LocationAlias> aliases;   
 
     private LocationCatalogEntry(){ super(null);}
