@@ -10,6 +10,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class TimeseriesCatalogEntry extends CatalogEntry{        
     @XmlAttribute
     private String tsName;
+    private String longName;    
+
+    public String getTsName() {
+        return this.tsName;
+    }
+
+    public String getLongName() {
+        return this.longName;
+    }
     private String units;
     
     private TimeseriesCatalogEntry(){ super(null);}

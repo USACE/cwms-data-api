@@ -1,6 +1,7 @@
 package cwms.radar.data;
 
 import java.util.logging.Level;
+import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -12,15 +13,20 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.*;
 
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.catalog.CatalogEntry;
+import cwms.radar.data.dto.catalog.LocationAlias;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
+import cwms.radar.data.dto.catalog.StringRecord;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.javalin.http.Context;
 
@@ -30,11 +36,15 @@ import org.jooq.*;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.*;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 
 import usace.cwms.db.jooq.codegen.routines.*;
+import usace.cwms.db.jooq.codegen.tables.records.AV_LOC2;
+import usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS;
 import usace.cwms.db.jooq.codegen.packages.*; //CWMS_ENV_PACKAGE;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC2.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.*;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -314,12 +324,24 @@ public class CwmsDataManager implements AutoCloseable {
             locCursor = parts[0].split("\\/")[1];
             total = Integer.parseInt(parts[1]);
         }
-        
-        SelectJoinStep<Record3<String, String, String>> query = dsl.select(
+        /*
+        Field<?> aliases = dsl.select(            
+                                collect(
+                                    //AV_LOC_ALIAS.CATEGORY_ID.concat(",").concat(AV_LOC_ALIAS.ALIAS_ID), String.class
+                                    AV_LOC_ALIAS.ALIAS_ID.as("test"),null//, SQLDataType.VARCHAR
+                                )
+                            ).from(AV_LOC_ALIAS)
+                            .where(AV_LOC_ALIAS.LOCATION_ID.eq(AV_LOC2.LOCATION_ID))
+                            .asField("aliases");*/        
+        SelectJoinStep<?> query = dsl.select(
                                     AV_LOC2.DB_OFFICE_ID,
                                     AV_LOC2.LOCATION_ID,
-                                    AV_LOC2.NEAREST_CITY)
-                                .from(AV_LOC2);
+                                    AV_LOC2.NEAREST_CITY,
+                                    AV_LOC_ALIAS.CATEGORY_ID,
+                                    AV_LOC_ALIAS.ALIAS_ID
+                                )
+                                .from(AV_LOC2)
+                                .leftJoin(AV_LOC_ALIAS).on(AV_LOC_ALIAS.LOCATION_ID.eq(AV_LOC2.LOCATION_ID));
                                 
         if( office.isPresent() ){
             query.where(AV_LOC2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()))
@@ -329,10 +351,45 @@ public class CwmsDataManager implements AutoCloseable {
         }                    
         query.orderBy(AV_LOC2.LOCATION_ID).limit(pageSize);
         logger.info( query.getSQL(ParamType.INLINED));
-        Result<Record3<String,String,String>> result = query.fetch();
-        List<? extends CatalogEntry> entries = result.stream().map( e -> {
-            return new LocationCatalogEntry(e.value1(),e.value2(),e.value3());             
+        //Result<?> result = query.fetch();
+        List<? extends CatalogEntry> entries = 
+        //Map<AV_LOC2, List<AV_LOC_ALIAS>> collect = 
+        query.collect(
+            groupingBy( 
+                r -> r.into(AV_LOC2), 
+                filtering( 
+                    r -> r.get(AV_LOC_ALIAS.CATEGORY_ID) != null,
+                    mapping( 
+                        r -> r.into(AV_LOC_ALIAS), 
+                        toList() 
+                    )
+                )
+            )            
+        ).entrySet().stream().map( e -> {
+            LocationCatalogEntry ce = new LocationCatalogEntry(
+                e.getKey().getDB_OFFICE_ID(),
+                e.getKey().getLOCATION_ID(),
+                e.getKey().getNEAREST_CITY(),
+                e.getValue().stream().map( a -> {
+                    return new LocationAlias(a.getCATEGORY_ID(),a.getALIAS_ID());
+                }).collect(Collectors.toList())
+            );
+
+            return ce;
         }).collect(Collectors.toList());
+        
+        
+        /*List<? extends CatalogEntry> entries = result.stream().map( e -> {
+            
+            logger.info(e.getValue(aliases).toString());
+            
+            return new LocationCatalogEntry(
+                    e.getValue(AV_LOC2.DB_OFFICE_ID),
+                    e.getValue(AV_LOC2.LOCATION_ID),
+                    e.getValue(AV_LOC2.NEAREST_CITY),
+                    new ArrayList<LocationAlias>()
+            );             
+        }).collect(Collectors.toList());*/
         Catalog cat = new Catalog(locCursor,total,pageSize,entries);
         return cat;
     }
