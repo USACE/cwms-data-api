@@ -43,8 +43,9 @@ import usace.cwms.db.jooq.codegen.tables.records.AV_LOC2;
 import usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS;
 import usace.cwms.db.jooq.codegen.packages.*; //CWMS_ENV_PACKAGE;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.*;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC2.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.*;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -307,9 +308,9 @@ public class CwmsDataManager implements AutoCloseable {
         int total = 0;
         String locCursor = "*";
         if( cursor == null || cursor.isEmpty() ){
-            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_LOC2);
+            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_LOC);
             if( office.isPresent() ){
-                count.where(AV_LOC2.DB_OFFICE_ID.eq(office.get()));
+                count.where(AV_LOC.DB_OFFICE_ID.eq(office.get()));
             }
             total = count.fetchOne().value1().intValue();
         } else {
@@ -338,57 +339,56 @@ public class CwmsDataManager implements AutoCloseable {
          * INNER JOIN ( SELECT * FROM A WHERE A.FIELD1='X' ORDER BY A.FIELD2 LIMIT 10) X
              ON (A.KEYFIELD=X.KEYFIELD)
          */
-        Table<?> forLimit = dsl.select(AV_LOC2.LOCATION_ID)
-                               .from(AV_LOC2)
-                               .where(AV_LOC2.LOCATION_ID.greaterThan(locCursor))
-                               .orderBy(AV_LOC2.BASE_LOCATION_ID).limit(pageSize).asTable();        
-        SelectJoinStep<?> query = dsl.select(
-                                    AV_LOC2.DB_OFFICE_ID,
-                                    AV_LOC2.LOCATION_ID,
-                                    AV_LOC2.NEAREST_CITY,
-                                    AV_LOC_ALIAS.CATEGORY_ID,
-                                    AV_LOC_ALIAS.ALIAS_ID
+        
+        Table<?> forLimit = dsl.select(AV_LOC.LOCATION_ID)
+                               .from(AV_LOC)
+                               .where(AV_LOC.LOCATION_ID.greaterThan(locCursor))
+                               .and(AV_LOC.UNIT_SYSTEM.eq("SI"))
+                               .orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();           
+        SelectConditionStep<Record> query = dsl.select(
+                                    AV_LOC.asterisk(),
+                                    AV_LOC_GRP_ASSGN.asterisk()
                                 )
-                                .from(AV_LOC2)
-                                .innerJoin(forLimit).on(forLimit.field(AV_LOC2.LOCATION_ID).eq(AV_LOC2.LOCATION_ID))
-                                .leftJoin(AV_LOC_ALIAS).on(AV_LOC_ALIAS.LOCATION_ID.eq(AV_LOC2.LOCATION_ID));
+                                .from(AV_LOC)
+                                .innerJoin(forLimit).on(forLimit.field(AV_LOC.LOCATION_ID).eq(AV_LOC.LOCATION_ID))
+                                .leftJoin(AV_LOC_GRP_ASSGN).on(AV_LOC_GRP_ASSGN.LOCATION_ID.eq(AV_LOC.LOCATION_ID))
+                                .where(AV_LOC.UNIT_SYSTEM.eq("SI"))
+                                .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
                                 
         if( office.isPresent() ){
-            query.where(AV_LOC2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()))
-                 .and(AV_LOC2.LOCATION_ID.upper().greaterThan(locCursor));
-        } else {
-            query.where(AV_LOC2.LOCATION_ID.upper().gt(locCursor));
-        }                    
-        query.orderBy(AV_LOC2.LOCATION_ID).limit(pageSize);
+            query.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));                 
+        }                            
+        query.orderBy(AV_LOC.LOCATION_ID);
         logger.info( query.getSQL(ParamType.INLINED));
         //Result<?> result = query.fetch();
         List<? extends CatalogEntry> entries = 
         //Map<AV_LOC2, List<AV_LOC_ALIAS>> collect = 
         query.collect(
             groupingBy( 
-                r -> r.into(AV_LOC2), 
+                r -> r.into(AV_LOC), 
                 filtering( 
-                    r -> r.get(AV_LOC_ALIAS.CATEGORY_ID) != null,
+                    r -> r.get(AV_LOC_GRP_ASSGN.ALIAS_ID) != null,
                     mapping( 
-                        r -> r.into(AV_LOC_ALIAS), 
+                        r -> r.into(AV_LOC_GRP_ASSGN), 
                         toList() 
                     )
                 )
             )            
         ).entrySet().stream().map( e -> {
-            LocationCatalogEntry ce = new LocationCatalogEntry(
+            logger.info(e.getKey().toString());
+            LocationCatalogEntry ce = new LocationCatalogEntry(                
                 e.getKey().getDB_OFFICE_ID(),
                 e.getKey().getLOCATION_ID(),
                 e.getKey().getNEAREST_CITY(),
                 e.getValue().stream().map( a -> {
-                    return new LocationAlias(a.getCATEGORY_ID(),a.getALIAS_ID());
+                    return new LocationAlias(a.getCATEGORY_ID()+"-"+a.getGROUP_ID(),a.getALIAS_ID());
                 }).collect(Collectors.toList())
             );
 
             return ce;
         }).collect(Collectors.toList());
                     
-        Catalog cat = new Catalog(locCursor,total,pageSize,entries);
+        Catalog cat = new Catalog(cursor,total,pageSize,entries);
         return cat;
     }
     
