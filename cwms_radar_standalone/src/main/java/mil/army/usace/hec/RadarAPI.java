@@ -3,14 +3,21 @@ package mil.army.usace.hec;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.ServletException;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.servlets.MetricsServlet;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
 //import java.sql.DriverManager;
 
 import io.javalin.Javalin;
 import static io.javalin.apibuilder.ApiBuilder.*;
 import io.javalin.core.plugin.Plugin;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
@@ -20,7 +27,11 @@ import io.swagger.v3.oas.models.info.Info;
 import cwms.radar.api.*;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.owasp.html.*;
+
 
 public class RadarAPI {
     private static final Logger logger = Logger.getLogger(RadarAPI.class.getName());
@@ -40,20 +51,27 @@ public class RadarAPI {
         } catch( Exception err ){
             logger.log(Level.SEVERE,"Required Parameter not set in environment",err);
             System.exit(1);
-        }
+        }        
         
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
-
-        Javalin.create( config -> {
+        ObjectMapper om = JavalinJackson.getObjectMapper();
+        om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+        JavalinJackson.configure(om);
+        Javalin app = Javalin.create( config -> {            
             config.defaultContentType = "application/json";   
             config.contextPath = "/";                        
             config.registerPlugin((Plugin) new OpenApiPlugin(getOpenApiOptions()));  
             if( System.getProperty("RADAR_DEBUG_LOGGING","false").equalsIgnoreCase("true")){
                 config.enableDevLogging();          
             }            
-            config.requestLogger( (ctx,ms) -> { logger.info(ctx.toString());} );
-        }).before( ctx -> { 
+            config.requestLogger( (ctx,ms) -> { logger.info(ctx.toString());} );               
+            config.configureServletContextHandler( sch -> {
+                sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*");
+            });
+        }).attribute(PolicyFactory.class,sanitizer)
+        
+          .before( ctx -> {                     
             ctx.header("X-Content-Type-Options","nosniff");
             ctx.header("X-Frame-Options","SAMEORIGIN");
             ctx.header("X-XSS-Protection", "1; mode=block");
@@ -63,7 +81,7 @@ public class RadarAPI {
             */
             logger.info(ctx.header("accept"));
             total_requests.mark();
-        }).after( ctx -> {
+        }).after( ctx -> {         
             ((java.sql.Connection)ctx.attribute("database")).close();
         })
         .exception(UnsupportedOperationException.class, (e,ctx) -> {
@@ -75,7 +93,7 @@ public class RadarAPI {
             ctx.json("There was an error processing your request");
             logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);                   
         })
-        .routes( () -> {      
+        .routes( () -> {               
             get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});                          
             crud("/locations/:location_code", new LocationController(metrics));
             crud("/offices/:office", new OfficeController(metrics));
@@ -84,7 +102,8 @@ public class RadarAPI {
             crud("/timezones/:zone", new TimeZoneController(metrics));
             crud("/levels/:location", new LevelsController(metrics));
             crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
-            crud("/ratings/:rating", new RatingController(metrics));                    
+            crud("/ratings/:rating", new RatingController(metrics)); 
+            crud("/catalog/:dataSet", new CatalogController(metrics));                  
         }).start(port);
         
     }

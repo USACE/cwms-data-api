@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import cwms.radar.data.dao.CwmsDao;
-import cwms.radar.data.dao.Location;
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.Location;
+import cwms.radar.data.dto.Office;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.plugin.json.JavalinJson;
 import service.annotations.FormatService;
@@ -20,13 +20,13 @@ public class JsonV1 implements OutputFormatter{
 	}
 
 	@Override
-	public String format(CwmsDao dao) {
-		OfficeFormatV1 fmtv1 = new OfficeFormatV1(Arrays.asList((Office)dao) );		
+	public String format(CwmsDTO dto) {
+		OfficeFormatV1 fmtv1 = new OfficeFormatV1(Arrays.asList((Office)dto) );		
 		return JavalinJson.toJson(fmtv1);
 	}
 
 	@Override
-	public String format(List<? extends CwmsDao> daoList) {
+	public String format(List<? extends CwmsDTO> daoList) {
         if( daoList.get(0) instanceof Office ){            
             OfficeFormatV1 fmtv1 = new OfficeFormatV1(
                 daoList.stream().map( office -> (Office)office ).collect(Collectors.toList())

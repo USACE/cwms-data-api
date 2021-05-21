@@ -7,21 +7,22 @@ dependencies {
         exclude group: 'org.eclipse.jetty'
         exclude group: 'org.eclipse.jetty.websocket'
     }
-    compileOnly 'javax:javaee-web-api:7.0'
+    compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
     
-    implementation("io.javalin:javalin:3.12.0") {
+    implementation("io.javalin:javalin:$JAVALIN_VERSION") {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"
     }
-    implementation("io.javalin:javalin-openapi:3.12.0") {
+    implementation("io.javalin:javalin-openapi:$JAVALIN_VERSION") {
         //exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"
     }
-    implementation 'io.swagger.core.v3:swagger-core:2.0.9'
+    implementation "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"
     implementation 'org.webjars:swagger-ui:3.24.3'    
     implementation 'org.slf4j:slf4j-simple:1.7.28'
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
+    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
     runtimeOnly 'jstl:jstl:1.2'    
 
     testImplementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
@@ -60,6 +61,10 @@ war {
     dependsOn unzipSwagger
     from "$buildDir/extra"
     from "src/resources/"
+
+    doLast {
+        println( "::set-output name=WARFILE::${project.name}-${project.version}.war")
+    }
 }
 
 

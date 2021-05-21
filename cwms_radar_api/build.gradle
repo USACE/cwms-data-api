@@ -1,15 +1,21 @@
 apply plugin: 'java-library'
 
 dependencies {    
-    implementation 'javax.xml.bind:jaxb-api:2.2.12'
-    implementation 'com.sun.xml.bind:jaxb-impl:2.2.11'
-    implementation 'com.sun.xml.bind:jaxb-core:2.2.11'
+    implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
+    implementation "com.sun.xml.bind:jaxb-impl:$JAXB_IMPL_VERSION"
+    implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
+    implementation( "mil.army.usace.hec:cwms-db-jooq:6.0.2"){
+        exclude group: "com.oracle", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+    }
+    implementation('org.jooq.pro:jooq:3.11.2'){
+        exclude group: "com.oracle", module: "*"
+    }
+    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
     
-
-    
-    compileOnly 'io.javalin:javalin:3.12.0'    
-    compileOnly "io.swagger.core.v3:swagger-core:2.0.9"
-    compileOnly 'javax:javaee-web-api:7.0'
+    compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
+    compileOnly "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"
+    compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
     compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     
     compileOnly project(":annotations")

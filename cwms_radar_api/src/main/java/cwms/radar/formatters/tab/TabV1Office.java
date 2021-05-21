@@ -2,15 +2,15 @@ package cwms.radar.formatters.tab;
 
 import java.util.List;
 
-import cwms.radar.data.dao.CwmsDao;
-import cwms.radar.data.dao.Office;
+import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
     name = "Office Tabulation",
-    description = "Single Office or List of Offices in tab seperated format",
+    description = "Single Office or List of Offices in tab separated format",
     example = 
     "#Office Name<tab>Long Name<tab>Office Type<tab>Reports To Office\r\n"+
     "CERL	Construction Engineering Research Laboratory	Field Operating Activity	ERD\r\n"+
@@ -31,8 +31,8 @@ public class TabV1Office implements OutputFormatter{
     }
 
     @Override
-    public String format(CwmsDao dao) {
-        Office office = (Office)dao;
+    public String format(CwmsDTO dto) {
+        Office office = (Office)dto;
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
         builder.append(officeRow(office));
@@ -42,8 +42,8 @@ public class TabV1Office implements OutputFormatter{
 
     @Override
     @SuppressWarnings("unchecked") // for the daoList conversion
-    public String format(List<? extends CwmsDao> daoList) {        
-        List<Office> offices = (List<Office>)daoList;
+    public String format(List<? extends CwmsDTO> dtoList) {        
+        List<Office> offices = (List<Office>)dtoList;
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
         for( Office office: offices){
@@ -59,9 +59,9 @@ public class TabV1Office implements OutputFormatter{
     private String officeRow(Office office){
         StringBuilder builder = new StringBuilder();
         builder.append(office.getName()).append("\t")
-               .append(office.getLong_Name()).append("\t")
+               .append(office.getLongName()).append("\t")
                .append(office.getType()).append("\t")
-               .append(office.getReports_To());
+               .append(office.getReportsTo());
         return builder.toString();
     }
 }

@@ -1,10 +1,10 @@
-package cwms.radar.data.dao;
+package cwms.radar.data.dto;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 
- public class Location implements CwmsDao{
+ public class Location implements CwmsDTO{
     private String location_id;
     private double latitude;
     private double longitude;

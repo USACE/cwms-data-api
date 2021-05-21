@@ -3,13 +3,17 @@ on:
   push:
     branches:
       - develop
+      - 'release/**'
   pull_request:
     branches: 
       - develop
 
 jobs: 
   build:
+    name: build and test
     runs-on: ubuntu-latest
+    outputs:
+      thewar: ${{steps.thebuild.outputs.WARFILE}}
     steps:
       - name: checkout code
         uses: actions/checkout@v2
@@ -19,6 +23,112 @@ jobs:
           java-version: '11'
           java-package: jdk             
       - name: build and test     
-        run: ./gradlew test --init-script init.gradle
+        id: thebuild
+        run: ./gradlew build --init-script init.gradle
+      - name: Upload WAR
+        uses: actions/upload-artifact@v2
+        with:
+          name: warfile
+          path: cwms_radar_tomcat/build/libs/${{steps.thebuild.outputs.WARFILE}}
+          retention-days: 1
+          if-no-files-found: error
       - name: Build docker image
         run: ./gradlew dockerBuild
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v2'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: setup java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+          java-package: jdk  
+      - name: Download all workflow run artifacts from build
+        id: artifacts
+        uses: actions/download-artifact@v2      
+        with:
+          path: ./
+      - name: get version
+        id: get_version
+        run: .github/workflows/get_version.sh
+      - name: show version
+        run: echo ${{steps.get_version.outputs.VERSION}}
+      - name: tag repo
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{steps.get_version.outputs.VERSION}}",
+              sha: context.sha
+            })
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env: 
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{steps.get_version.outputs.VERSION}}
+          release_name: Release ${{steps.get_version.outputs.VERSION}}
+      - name: Upload Tomcat War
+        id: upload-war
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: warfile/${{ needs.build.outputs.thewar}}
+          asset_name: ${{ steps.get_version.outputs.WAR_FILE_NAME}}
+          asset_content_type: application/x-webarchive
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v2'
+    name: API Container Image
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: build
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: setup java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+          java-package: jdk  
+      - name: get RADAR version
+        id: get_version
+        run: .github/workflows/get_version.sh
+      - name: Configure AWS credentials
+        if: ${{ always() }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CWBICI_DEVELOP_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CWBICI_DEVELOP_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.CWBICI_DEVELOP_AWS_REGION }}
+      - name: Login to Amazon ECR
+        if: ${{ success() }}
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag, and push image to Amazon ECR (midas-api)
+        if: ${{ success() }}
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: cwms-radar-api
+          IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
+        run: |
+          ./gradlew :cwms_radar_api:build --init-script init.gradle
+          ./gradlew prepareDocker             
+          cd cwms_radar_standalone/build/docker
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Logout of Amazon ECR
+        if: ${{ always() }}
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
