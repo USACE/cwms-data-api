@@ -9,12 +9,12 @@ import cwms.radar.data.dto.Office;
 import io.javalin.plugin.json.JavalinJson;
 import service.annotations.FormatService;
 
-@FormatService(contentType = "application/json;version=2", dataTypes = {Office.class,Location.class,Catalog.class})
+@FormatService(contentType = Formats.JSONV2, dataTypes = {Office.class,Location.class,Catalog.class})
 public class JsonV2 implements OutputFormatter {
 
 	@Override
 	public String getContentType() {		
-		return "appliation/json;version=2";
+		return Formats.JSONV2;
 	}
 
 	@Override

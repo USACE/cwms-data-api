@@ -93,7 +93,7 @@ public class Formats {
         if( contentFormatters != null ){
             return contentFormatters.get(toFormat.getClass()).format(toFormat);
         } else {
-            throw new FormattingException("No Format for this contenttype and datatype : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
+            throw new FormattingException("No Format for this content-type and data-type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
         }
         
     }

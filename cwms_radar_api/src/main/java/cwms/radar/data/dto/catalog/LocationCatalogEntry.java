@@ -18,7 +18,7 @@ public class LocationCatalogEntry extends CatalogEntry{
         super(office);
         this.name=name;
         this.nearestCity = nearestCity;
-        Objects.requireNonNull(aliases, "alaies provided must be an actual list, empty list is okay");
+        Objects.requireNonNull(aliases, "aliases provided must be an actual list, empty list is okay");
         this.aliases = aliases;
     }    
         
