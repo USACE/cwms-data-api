@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 
- public class Location{
+ public class Location implements CwmsDao{
     private String location_id;
     private double latitude;
     private double longitude;

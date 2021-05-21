@@ -61,6 +61,7 @@ public class RadarAPI {
             /* authorization on connection setup will go here
             Connection conn = ctx.attribute("db");                    
             */
+            logger.info(ctx.header("accept"));
             total_requests.mark();
         }).after( ctx -> {
             ((java.sql.Connection)ctx.attribute("database")).close();

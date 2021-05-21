@@ -6,7 +6,9 @@ import cwms.radar.data.dao.CwmsDao;
 import cwms.radar.data.dao.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
+import service.annotations.FormatService;
 
+@FormatService(contentType = "text/csv", dataTypes = {Office.class})
 public class CsvV1 implements OutputFormatter {
 
     @Override

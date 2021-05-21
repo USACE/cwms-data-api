@@ -18,7 +18,6 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
-import cwms.radar.formatters.FormatFactory;
 
 
 /**
