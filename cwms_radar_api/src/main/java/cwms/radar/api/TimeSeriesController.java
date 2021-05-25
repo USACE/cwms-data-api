@@ -98,7 +98,7 @@ public class TimeSeriesController implements CrudHandler {
                 case "wml2": {ctx.contentType(Formats.WML2); break;}
                 case "png":
                 case "jpg":{
-                    ctx.contentType("text/plain");
+                    ctx.contentType(Formats.PLAIN);
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                     ctx.result("At this time we are not implementing graphics in this version.");
                     break;

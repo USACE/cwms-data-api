@@ -21,6 +21,7 @@ import cwms.radar.data.dto.CwmsDTO;
 
 public class Formats {
     public static final Logger logger = Logger.getLogger(Formats.class.getName());
+    public static final String PLAIN = "text/plain";    // Only used as a constant, not for any data mapping
     public static final String JSON = "application/json";
     public static final String XML = "application/xml";
     public static final String WML2 = "application/vnd.opengis.waterml+xml";

@@ -97,7 +97,7 @@ public class RatingController implements CrudHandler {
                     case "jpg": // same handler
                     case "png": {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND);
-                        ctx.contentType("text/plain");
+                        ctx.contentType(Formats.PLAIN);
                         ctx.result("Server Side image creation is not supported in this version. Note: we may be retiring it in favor or encouraging the use of client based rendering.");
                         return;
                      }
