@@ -10,8 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
     name = "Office CSV",
-    description = "Single Office or List of Offices in comma seperated format",
-    example = 
+    description = "Single Office or List of Offices in comma separated format",
+    example =
     "#Office Name,Long Name,Office Type,Reports To Office\r\n"+
     "CERL,Construction Engineering Research Laboratory,Field Operating Activity	ERD\r\n"+
     "CHL,Coastal and Hydraulics Laboratory,Field Operating Activity	ERD\r\n" +
@@ -19,15 +19,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
     "NAD,North Atlantic Division,Division Headquarters,HQ"
 )
 public class CsvV1Office implements OutputFormatter{
-    
-    public String Office;    
-    public String longName;    
-    public String officeType;    
+
+    public String Office;
+    public String longName;
+    public String officeType;
     public String reportsToOffice;
 
     @Schema(hidden = true)
     @Override
-    public String getContentType() {        
+    public String getContentType() {
         return Formats.CSV;
     }
 
@@ -37,7 +37,7 @@ public class CsvV1Office implements OutputFormatter{
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
         builder.append(officeRow(office));
-        
+
         return builder.toString();
     }
 

@@ -18,15 +18,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
     "NAD	North Atlantic Division	Division Headquarters	HQ"
 )
 public class TabV1Office implements OutputFormatter{
-    
-    public String Office;    
-    public String longName;    
-    public String officeType;    
+
+    public String Office;
+    public String longName;
+    public String officeType;
     public String reportsToOffice;
 
     @Schema(hidden = true)
     @Override
-    public String getContentType() {        
+    public String getContentType() {
         return Formats.TAB;
     }
 
@@ -36,7 +36,7 @@ public class TabV1Office implements OutputFormatter{
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
         builder.append(officeRow(office));
-        
+
         return builder.toString();
     }
 

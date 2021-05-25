@@ -32,14 +32,15 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.*;
+import cwms.radar.formatters.Formats;
 
 /**
  * Setup all the information required so we can serve the request.
- * 
+ *
  */
 @WebServlet(urlPatterns = { "/*" })
 public class ApiServlet extends HttpServlet {
-    private Logger log = Logger.getLogger(ApiServlet.class.getName());    
+    private Logger log = Logger.getLogger(ApiServlet.class.getName());
     private MetricRegistry metrics;
     private Meter total_requests;
     /**
@@ -58,21 +59,21 @@ public class ApiServlet extends HttpServlet {
         //System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
         String context = this.getServletContext().getContextPath();
 
-        PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();        
+        PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
 
         this.javalin = Javalin.createStandalone(config -> {
-            config.defaultContentType = "application/json";   
-            config.contextPath = context;                        
-            config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));  
-            config.enableDevLogging();          
+            config.defaultContentType = "application/json";
+            config.contextPath = context;
+            config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
+            config.enableDevLogging();
             config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
         })
                 .attribute(PolicyFactory.class,sanitizer)
-                .before( ctx -> { 
+                .before( ctx -> {
                     /* authorization on connection setup will go here
-                    Connection conn = ctx.attribute("db");                    
+                    Connection conn = ctx.attribute("db");
                     */
                     ctx.attribute("sanitizer",sanitizer);
                     ctx.header("X-Content-Type-Options","nosniff");
@@ -85,11 +86,11 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     ctx.status(500);
-                    ctx.json("Server Error");                    
-                    e.printStackTrace(System.err);                   
+                    ctx.json("Server Error");
+                    e.printStackTrace(System.err);
                 })
-                .routes( () -> {      
-                    get("/", ctx -> { ctx.result("welcome to the CWMS REST APi").contentType("text/plain");});              
+                .routes( () -> {
+                    get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
                     crud("/locations/:location_code", new LocationController(metrics));
                     crud("/offices/:office", new OfficeController(metrics));
                     crud("/units/:unit_name", new UnitsController(metrics));
@@ -99,40 +100,40 @@ public class ApiServlet extends HttpServlet {
                     crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
                     crud("/catalog/:dataSet", new CatalogController(metrics));
-                }).servlet();                    
+                }).servlet();
     }
 
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().version("2.0").description("CWMS REST API for Data Retrieval");
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
-                    .path("/swagger-docs")           
-                    
-                    .activateAnnotationScanningFor("cwms.radar.api");                        
+                    .path("/swagger-docs")
+
+                    .activateAnnotationScanningFor("cwms.radar.api");
         return options;
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {     
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         total_requests.mark();
-        try (Connection db = cwms.getConnection() ) {      
-            String office = req.getContextPath().substring(1).split("-")[0];//       
+        try (Connection db = cwms.getConnection() ) {
+            String office = req.getContextPath().substring(1).split("-")[0];//
             if( office.equalsIgnoreCase("cwms")){
                 office = "HQ";
             }
             req.setAttribute("office_id", office.toUpperCase());
             req.setAttribute("database", db);
-            javalin.service(req, resp);     
+            javalin.service(req, resp);
         } catch (SQLException ex) {
             Logger.getLogger(ApiServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } 
-        
+        }
+
     }
 
-    @Override    
-    public void init(ServletConfig config) throws ServletException {        
-        metrics = (MetricRegistry)config.getServletContext().getAttribute(MetricsServlet.METRICS_REGISTRY);        
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        metrics = (MetricRegistry)config.getServletContext().getAttribute(MetricsServlet.METRICS_REGISTRY);
         total_requests = metrics.meter("radar.total_requests");
         super.init(config);
     }
-  
+
 }

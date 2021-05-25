@@ -8,11 +8,11 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import service.annotations.FormatService;
 
-@FormatService(contentType = "text/tab-seperated-values", dataTypes = {Office.class})
+@FormatService(contentType = Formats.TAB, dataTypes = {Office.class})
 public class TabV1 implements OutputFormatter {
 
     @Override
-    public String getContentType() {        
+    public String getContentType() {
         return Formats.TAB;
     }
 
@@ -22,7 +22,7 @@ public class TabV1 implements OutputFormatter {
             return new TabV1Office().format(dto);
         } else {
             return null;
-        }        
+        }
     }
 
     @Override
@@ -31,9 +31,9 @@ public class TabV1 implements OutputFormatter {
             return new TabV1Office().format(dtoList);
         } else {
             return null;
-        }        
+        }
     }
 
-    
-    
+
+
 }

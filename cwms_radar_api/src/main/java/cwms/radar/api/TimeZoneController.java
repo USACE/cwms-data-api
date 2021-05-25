@@ -13,6 +13,7 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -41,19 +42,19 @@ public class TimeZoneController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);        
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);        
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
 
     }
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)")        
+            @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)")
         },
         responses = {
             @OpenApiResponse( status = "200"),
@@ -68,28 +69,28 @@ public class TimeZoneController implements CrudHandler {
             final Timer.Context time_context = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
-            String format = ctx.queryParam("format","json");                       
+            String format = ctx.queryParam("format","json");
 
 
             switch(format){
-                case "json": {ctx.contentType("application/json"); break;}
-                case "tab": {ctx.contentType("text/tab-sperated-values");break;}
-                case "csv": {ctx.contentType("text/csv"); break;}
-                case "xml": {ctx.contentType("application/xml");break;}
-                case "wml2": {ctx.contentType("application/xml");break;}
+                case "json": {ctx.contentType(Formats.JSON); break;}
+                case "tab": {ctx.contentType(Formats.TAB); break;}
+                case "csv": {ctx.contentType(Formats.CSV); break;}
+                case "xml": {ctx.contentType(Formats.XML); break;}
+                case "wml2": {ctx.contentType(Formats.WML2); break;}
                 default: throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
             }
 
-            String results = cdm.getTimeZones(format);                
+            String results = cdm.getTimeZones(format);
             requestResultSize.update(results.length());
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);                
+            ctx.result(results);
             requestResultSize.update(results.length());
         } catch (SQLException ex) {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
-        }        
+        }
     }
 
     @OpenApi(ignore = true)
@@ -106,8 +107,8 @@ public class TimeZoneController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);        
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
 
     }
-    
+
 }

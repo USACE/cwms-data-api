@@ -11,12 +11,12 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.plugin.json.JavalinJson;
 import service.annotations.FormatService;
 
-@FormatService(contentType = "application/json", dataTypes = {Office.class,Location.class})
+@FormatService(contentType = Formats.JSON, dataTypes = {Office.class,Location.class})
 public class JsonV1 implements OutputFormatter{
 
 	@Override
 	public String getContentType() {
-		return "application/json";
+		return Formats.JSON;
 	}
 
 	@Override
@@ -27,14 +27,14 @@ public class JsonV1 implements OutputFormatter{
 
 	@Override
 	public String format(List<? extends CwmsDTO> daoList) {
-        if( daoList.get(0) instanceof Office ){            
+        if( daoList.get(0) instanceof Office ){
             OfficeFormatV1 fmtv1 = new OfficeFormatV1(
                 daoList.stream().map( office -> (Office)office ).collect(Collectors.toList())
             );
             return JavalinJson.toJson(fmtv1);
         } else {
 			throw new BadRequestResponse(String.format("Format {} not implemented for this data type"));
-		}				
+		}
 	}
-    
+
 }
