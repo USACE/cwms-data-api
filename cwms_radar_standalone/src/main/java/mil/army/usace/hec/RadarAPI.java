@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.info.Info;
 
 
 import cwms.radar.api.*;
+import cwms.radar.formatters.Formats;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.eclipse.jetty.server.Server;
