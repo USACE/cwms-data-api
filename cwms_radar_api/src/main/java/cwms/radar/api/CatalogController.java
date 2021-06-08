@@ -49,7 +49,7 @@ public class CatalogController implements CrudHandler{
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");        
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
     @OpenApi(tags = {"Catalog"},ignore = true)
@@ -61,13 +61,13 @@ public class CatalogController implements CrudHandler{
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void getAll(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");        
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
-    @OpenApi(                              
+    @OpenApi(
         queryParams = {
             @OpenApiParam(name="cursor",
-                          required = false,                           
+                          required = false,
                           description = "This end point can return a lot of data, this identifies where in the request you are."
             ),
             @OpenApiParam(name="pageSize",
@@ -83,7 +83,7 @@ public class CatalogController implements CrudHandler{
         pathParams = {
             @OpenApiParam(name="dataSet",
                           required = false,
-                          type = CatalogableEndpoint.class,                                                                          
+                          type = CatalogableEndpoint.class,
                           description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
         },
         responses = { @OpenApiResponse(status="200",
@@ -95,7 +95,7 @@ public class CatalogController implements CrudHandler{
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),
                       @OpenApiResponse(status="400", description = "Invalid Parameter combination")
-                    },        
+                    },
         tags = {"Catalog"}
     )
     @Override
@@ -107,10 +107,10 @@ public class CatalogController implements CrudHandler{
         ) {
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();
-            int pageSize = ctx.queryParam("pageSize",Integer.class,"10").getValue().intValue();
+            int pageSize = ctx.queryParam("pageSize",Integer.class,"500").getValue().intValue();
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParam("office", String.class, null)
-                                            .check( ofc -> Office.validOfficeCanNull(ofc)                
+                                            .check( ofc -> Office.validOfficeCanNull(ofc)
                                            ).getOrNull());
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
@@ -127,18 +127,18 @@ public class CatalogController implements CrudHandler{
             } else {
                 ctx.result("Cannot create catalog of requested information").status(HttpServletResponse.SC_BAD_REQUEST);
             }
-            
+
         } catch( SQLException er) {
             logger.log(Level.SEVERE, "failed to process catalog request", er);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).result("Failed to process request");
         }
-        
+
     }
 
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void update(Context ctx, String entry) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");   
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
     }
-    
+
 }
