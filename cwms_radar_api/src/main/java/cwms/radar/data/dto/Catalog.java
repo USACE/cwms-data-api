@@ -25,27 +25,27 @@ public class Catalog implements CwmsDTO {
         }
     )
     @XmlElementWrapper(name="entries")
-    @XmlElement(name="entry")    
+    @XmlElement(name="entry")
     private List<? extends CatalogEntry> entries;
-    
+
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     private Catalog(){}
 
-    public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries ){        
+    public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries ){
         Encoder encoder = Base64.getEncoder();
-        this.page = page.equals("*") ? null : encoder.encodeToString(String.format("%s||%d",page,pageSize).getBytes());
+        this.page = page == null || page.equals("*") ? null : encoder.encodeToString(String.format("%s||%d",page,pageSize).getBytes());
         this.total = total;
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
         this.entries = entries;
-        if( entries.size() == pageSize){            
+        if( entries.size() == pageSize){
             nextPage = encoder.encodeToString(
                             String.format("%s|||%d",entries.get(entries.size()-1).toString().toUpperCase(),total).getBytes()
                        );
         } else {
             nextPage = null;
         }
-        
+
     }
 
     /**

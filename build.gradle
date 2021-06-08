@@ -2,7 +2,7 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.3.0'    
+    version = '2.3-SNAPSHOT'
 }
 
 // versions for shared dependencies
@@ -24,7 +24,7 @@ subprojects {
 
     repositories {
         mavenLocal()
-	    mavenCentral()        
+	    mavenCentral()
         maven {
             url = uri('https://repo.maven.apache.org/maven2')
         }

@@ -1,6 +1,6 @@
 apply plugin: 'java-library'
 
-dependencies {    
+dependencies {
     implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
     implementation "com.sun.xml.bind:jaxb-impl:$JAXB_IMPL_VERSION"
     implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
@@ -10,14 +10,17 @@ dependencies {
     }
     implementation('org.jooq.pro:jooq:3.11.2'){
         exclude group: "com.oracle", module: "*"
+        exclude group: "javax.xml.bind", module: "*"
     }
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
-    
+
     compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
-    compileOnly "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"
+    compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+        exclude group: "jakarta.xml.bind", module: "*"
+    }
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
     compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
-    
+
     compileOnly project(":annotations")
     annotationProcessor project(":annotations")
 }

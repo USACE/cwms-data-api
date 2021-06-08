@@ -3,12 +3,12 @@ apply plugin: 'war'
 dependencies {
     testImplementation 'com.github.h-thurow:tomcat8jndi:1.0.0'
     testImplementation 'org.apache.tomcat:tomcat-dbcp:8.0.47'
-    implementation (project(':cwms_radar_api')) {     
+    implementation (project(':cwms_radar_api')) {
         exclude group: 'org.eclipse.jetty'
         exclude group: 'org.eclipse.jetty.websocket'
     }
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
-    
+
     implementation("io.javalin:javalin:$JAVALIN_VERSION") {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"
@@ -16,24 +16,27 @@ dependencies {
     implementation("io.javalin:javalin-openapi:$JAVALIN_VERSION") {
         //exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"
+        exclude group: "jakarta.xml.bind", module: "*"
     }
-    implementation "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"
-    implementation 'org.webjars:swagger-ui:3.24.3'    
+    implementation( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+        exclude group: "jakarta.xml.bind", module: "*"
+    }
+    implementation 'org.webjars:swagger-ui:3.24.3'
     implementation 'org.slf4j:slf4j-simple:1.7.28'
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
-    runtimeOnly 'jstl:jstl:1.2'    
+    runtimeOnly 'jstl:jstl:1.2'
 
     testImplementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
 
-    
+
 }
 
-// get 
+// get
 
 task getSwagger {
-    doLast {        
+    doLast {
         project.mkdir("$buildDir/downloaded")
         project.mkdir("$buildDir/extra/swagger-ui")
         def f = new File("$buildDir/downloaded/swagger-ui.zip")

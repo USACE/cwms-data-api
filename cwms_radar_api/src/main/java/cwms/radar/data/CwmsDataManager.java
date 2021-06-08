@@ -12,6 +12,7 @@ import java.time.ZonedDateTime;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import cwms.radar.data.dto.catalog.LocationAlias;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.StringRecord;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.radar.data.dto.catalog.CatalogIntermediate;
 import io.javalin.http.Context;
 
 import static org.jooq.impl.DSL.*;
@@ -39,8 +41,10 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
 import usace.cwms.db.jooq.codegen.routines.*;
+import usace.cwms.db.jooq.codegen.tables.records.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.records.AV_LOC2;
 import usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS;
+import usace.cwms.db.jooq.codegen.tables.records.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.packages.*; //CWMS_ENV_PACKAGE;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.*;
@@ -53,7 +57,7 @@ public class CwmsDataManager implements AutoCloseable {
     public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office";
     public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
     public static final String ALL_LOCATIONS_QUERY = "select cwms_loc.retrieve_locations_f(?,?,?,?,?) from dual";
-    public static final String ALL_RATINGS_QUERY = "select cwms_rating.retrieve_ratings_f(?,?,?,?,?,?,?,?) from dual";                                                               
+    public static final String ALL_RATINGS_QUERY = "select cwms_rating.retrieve_ratings_f(?,?,?,?,?,?,?,?) from dual";
     public static final String ALL_UNITS_QUERY = "select cwms_cat.retrieve_units_f(?) from dual";
     private static final String ALL_PARAMETERS_QUERY = "select cwms_cat.retrieve_parameters_f(?) from dual";
     private static final String ALL_TIMEZONES_QUERY = "select cwms_cat.retrieve_time_zones_f(?) from dual";
@@ -74,7 +78,7 @@ public class CwmsDataManager implements AutoCloseable {
         conn.close();
     }
 
-    public String getLocations(String names,String format, String units, String datum, String OfficeId) {        
+    public String getLocations(String names,String format, String units, String datum, String OfficeId) {
         try( PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY); ) {
             stmt.setString(1,names);
             stmt.setString(2,format);
@@ -85,10 +89,10 @@ public class CwmsDataManager implements AutoCloseable {
                 if(rs.next()){
                     Clob clob = rs.getClob(1);
                     return clob.getSubString(1L, (int)clob.length());
-                }                
+                }
             }
         }catch (SQLException err) {
-            logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
+            logger.log(Level.WARNING, err.getLocalizedMessage(), err);
         }
         return null;
     }
@@ -102,20 +106,20 @@ public class CwmsDataManager implements AutoCloseable {
             }
             return offices;
         } catch (SQLException err) {
-            logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
+            logger.log(Level.WARNING, err.getLocalizedMessage(), err);
         }
         return null;
     }
 
 	public Office getOfficeById(String office_id) {
-        
+
         try(
             PreparedStatement stmt = conn.prepareStatement(SINGLE_OFFICE);
         ) {
             stmt.setString(1, office_id);
             try(
                 ResultSet rs = stmt.executeQuery();
-            ){ 
+            ){
                 if(rs.next()){
                     return new Office(rs);
                 }
@@ -141,7 +145,7 @@ public class CwmsDataManager implements AutoCloseable {
                     stmt.setString(8, office);
                     try(
                         ResultSet rs = stmt.executeQuery();
-                    ){ 
+                    ){
                         if(rs.next()){
                             Clob clob = rs.getClob(1);
                             return clob.getSubString(1L, (int)clob.length());
@@ -161,7 +165,7 @@ public class CwmsDataManager implements AutoCloseable {
                 if( rs.next() ){
                     Clob clob = rs.getClob(1);
                 return clob.getSubString(1L, (int)clob.length());
-                }                
+                }
             }
         } catch (SQLException err ){
             logger.log(Level.WARNING,"Failed to process database request",err);
@@ -178,7 +182,7 @@ public class CwmsDataManager implements AutoCloseable {
                 if( rs.next() ){
                     Clob clob = rs.getClob(1);
                 return clob.getSubString(1L, (int)clob.length());
-                }                
+                }
             }
         } catch (SQLException err ){
             logger.log(Level.WARNING,"Failed to process database request",err);
@@ -195,7 +199,7 @@ public class CwmsDataManager implements AutoCloseable {
                 if( rs.next() ){
                     Clob clob = rs.getClob(1);
                 return clob.getSubString(1L, (int)clob.length());
-                }                
+                }
             }
         } catch (SQLException err ){
             logger.log(Level.WARNING,"Failed to process database request",err);
@@ -203,7 +207,7 @@ public class CwmsDataManager implements AutoCloseable {
         return null;
 	}
 
-	
+
 
 	public String getLocationLevels(String format, String names, String office, String unit, String datum, String begin,
 			String end, String timezone) {
@@ -222,16 +226,16 @@ public class CwmsDataManager implements AutoCloseable {
                 if( rs.next() ){
                     Clob clob = rs.getClob(1);
                 return clob.getSubString(1L, (int)clob.length());
-                }                
+                }
             }
         } catch (SQLException err ){
             logger.log(Level.WARNING,"Failed to process database request",err);
         }
         return null;
     }
-    
+
 	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
-			String end, String timezone) {                
+			String end, String timezone) {
                 try( PreparedStatement stmt = conn.prepareStatement(ALL_TIMESERIES_QUERY); ) {
                     stmt.setString(1,names);
                     stmt.setString(2,format);
@@ -240,26 +244,26 @@ public class CwmsDataManager implements AutoCloseable {
                     stmt.setString(5,begin);
                     stmt.setString(6,end);
                     stmt.setString(7,timezone);
-                    stmt.setString(8,office);            
+                    stmt.setString(8,office);
                     try( ResultSet rs = stmt.executeQuery();){
-                    
+
                     if(rs.next()){
                         Clob clob = rs.getClob(1);
                         return clob.getSubString(1L, (int)clob.length());
                     }
                 }
                 }catch (SQLException err) {
-                    logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
-                } 
+                    logger.log(Level.WARNING, err.getLocalizedMessage(), err);
+                }
                 return null;
 	}
 
     public List<TimeSeries> getTimeSeries(List<String> names, String office, String units, String datum, ZonedDateTime start, ZonedDateTime end, ZoneId timeZone){
         ArrayList<TimeSeries> tsList = new ArrayList<>();
-        
+
         return tsList;
     }
-	
+
     public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
         int total = 0;
         String tsCursor = "*";
@@ -281,24 +285,24 @@ public class CwmsDataManager implements AutoCloseable {
             tsCursor = parts[0].split("\\/")[1];
             total = Integer.parseInt(parts[1]);
         }
-        
+
         SelectJoinStep<Record3<String, String, String>> query = dsl.select(
                                     AV_CWMS_TS_ID2.DB_OFFICE_ID,
                                     AV_CWMS_TS_ID2.CWMS_TS_ID,
                                     AV_CWMS_TS_ID2.UNIT_ID)
                                 .from(AV_CWMS_TS_ID2);
-                                
+
         if( office.isPresent() ){
             query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()))
                  .and(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().greaterThan(tsCursor));
         } else {
             query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
-        }                    
+        }
         query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
         logger.info( query.getSQL(ParamType.INLINED));
         Result<Record3<String,String,String>> result = query.fetch();
         List<? extends CatalogEntry> entries = result.stream().map( e -> {
-            return new TimeseriesCatalogEntry(e.value1(),e.value2(),e.value3());             
+            return new TimeseriesCatalogEntry(e.value1(),e.value2(),e.value3());
         }).collect(Collectors.toList());
         Catalog cat = new Catalog(tsCursor,total,pageSize,entries);
         return cat;
@@ -325,26 +329,12 @@ public class CwmsDataManager implements AutoCloseable {
             locCursor = parts[0].split("\\/")[1];
             total = Integer.parseInt(parts[1]);
         }
-        /*
-        Field<?> aliases = dsl.select(            
-                                collect(
-                                    //AV_LOC_ALIAS.CATEGORY_ID.concat(",").concat(AV_LOC_ALIAS.ALIAS_ID), String.class
-                                    AV_LOC_ALIAS.ALIAS_ID.as("test"),null//, SQLDataType.VARCHAR
-                                )
-                            ).from(AV_LOC_ALIAS)
-                            .where(AV_LOC_ALIAS.LOCATION_ID.eq(AV_LOC2.LOCATION_ID))
-                            .asField("aliases");*/        
-        
-        /**
-         * INNER JOIN ( SELECT * FROM A WHERE A.FIELD1='X' ORDER BY A.FIELD2 LIMIT 10) X
-             ON (A.KEYFIELD=X.KEYFIELD)
-         */
-        
+
         Table<?> forLimit = dsl.select(AV_LOC.LOCATION_ID)
                                .from(AV_LOC)
                                .where(AV_LOC.LOCATION_ID.greaterThan(locCursor))
                                .and(AV_LOC.UNIT_SYSTEM.eq("SI"))
-                               .orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();           
+                               .orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();
         SelectConditionStep<Record> query = dsl.select(
                                     AV_LOC.asterisk(),
                                     AV_LOC_GRP_ASSGN.asterisk()
@@ -354,29 +344,30 @@ public class CwmsDataManager implements AutoCloseable {
                                 .leftJoin(AV_LOC_GRP_ASSGN).on(AV_LOC_GRP_ASSGN.LOCATION_ID.eq(AV_LOC.LOCATION_ID))
                                 .where(AV_LOC.UNIT_SYSTEM.eq("SI"))
                                 .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
-                                
+
         if( office.isPresent() ){
-            query.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));                 
-        }                            
+            query.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
+        }
         query.orderBy(AV_LOC.LOCATION_ID);
         logger.info( query.getSQL(ParamType.INLINED));
+        HashMap<AV_LOC, ArrayList<AV_LOC_ALIAS>> theMap = new HashMap<>();
         //Result<?> result = query.fetch();
-        List<? extends CatalogEntry> entries = 
-        //Map<AV_LOC2, List<AV_LOC_ALIAS>> collect = 
-        query.collect(
-            groupingBy( 
-                r -> r.into(AV_LOC), 
-                filtering( 
-                    r -> r.get(AV_LOC_GRP_ASSGN.ALIAS_ID) != null,
-                    mapping( 
-                        r -> r.into(AV_LOC_GRP_ASSGN), 
-                        toList() 
-                    )
-                )
-            )            
-        ).entrySet().stream().map( e -> {
+        query.fetch().forEach( row -> {
+            AV_LOC loc = row.into(AV_LOC);
+            if( !theMap.containsKey(loc)){
+                theMap.put(loc, new ArrayList<>() );
+            }
+            AV_LOC_ALIAS alias = row.into(AV_LOC_ALIAS);
+            AV_LOC_GRP_ASSGN group = row.into(AV_LOC_GRP_ASSGN);
+            if( group.getALIAS_ID() != null ){
+                theMap.get(loc).add(alias);
+            }
+        });
+
+        List<? extends CatalogEntry> entries =
+        theMap.entrySet().stream().map( e -> {
             logger.info(e.getKey().toString());
-            LocationCatalogEntry ce = new LocationCatalogEntry(                
+            LocationCatalogEntry ce = new LocationCatalogEntry(
                 e.getKey().getDB_OFFICE_ID(),
                 e.getKey().getLOCATION_ID(),
                 e.getKey().getNEAREST_CITY(),
@@ -387,9 +378,9 @@ public class CwmsDataManager implements AutoCloseable {
 
             return ce;
         }).collect(Collectors.toList());
-                    
+
         Catalog cat = new Catalog(cursor,total,pageSize,entries);
         return cat;
     }
-    
+
 }
