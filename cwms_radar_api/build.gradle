@@ -12,14 +12,19 @@ dependencies {
         exclude group: "com.oracle", module: "*"
     }
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
-    
-    compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
+
+    implementation "io.javalin:javalin:$JAVALIN_VERSION"
+
     compileOnly "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
     compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     
     compileOnly project(":annotations")
     annotationProcessor project(":annotations")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    compile "com.fasterxml.jackson.core:jackson-databind:2.11.1"
 }
 
 test {
