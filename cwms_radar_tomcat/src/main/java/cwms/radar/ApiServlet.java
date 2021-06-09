@@ -38,7 +38,17 @@ import cwms.radar.formatters.Formats;
  * Setup all the information required so we can serve the request.
  *
  */
-@WebServlet(urlPatterns = { "/*" })
+@WebServlet(urlPatterns = { "/catalog/*",
+                            "/swagger-docs",
+                            "/timeseries/*",
+                            "/offices/*",
+                            "/locations/*",
+                            "/parameters/*",
+                            "/timezones/*",
+                            "/units/*",
+                            "/ratings/*",
+                            "/levels/*"
+})
 public class ApiServlet extends HttpServlet {
     private Logger log = Logger.getLogger(ApiServlet.class.getName());
     private MetricRegistry metrics;
