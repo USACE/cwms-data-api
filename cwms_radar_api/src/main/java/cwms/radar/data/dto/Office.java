@@ -1,10 +1,10 @@
 package cwms.radar.data.dto;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
-
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -39,11 +39,11 @@ public class Office implements CwmsDTO{
 
     public Office(){}
 
-    public Office(ResultSet rs ) throws SQLException {
-        name = rs.getString("office_id");
-        longName = rs.getString("long_name");
-        type = office_types.get(rs.getString("office_type"));
-        reportsTo = rs.getString("report_to_office_id");
+    public Office(String name, String longName, String officeType, String reportsTo ){
+        this.name = name;
+        this.longName = longName;
+        this.type = office_types.get(officeType);
+        this.reportsTo = reportsTo;
     }
 
     public String getName(){ return name; }
