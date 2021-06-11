@@ -17,7 +17,8 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.plugin.json.JavalinJackson;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class})
+@FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class,
+		LocationGroup.class, LocationCategory.class})
 public class JsonV1 implements OutputFormatter{
 
 	private final ObjectMapper om;
@@ -78,13 +79,11 @@ public class JsonV1 implements OutputFormatter{
 		}
 		else if(dao instanceof LocationGroup)
 		{
-			List<LocationGroup> groups = Arrays.asList((LocationGroup) dao);
-			retval = new LocationGroupFormatV1(groups);
+			retval = dao;
 		}
 		else if(dao instanceof LocationCategory)
 		{
-			List<LocationCategory> cats = Arrays.asList((LocationCategory) dao);
-			retval = new LocationCategoryFormatV1(cats);
+			retval = dao;
 		}
 
 

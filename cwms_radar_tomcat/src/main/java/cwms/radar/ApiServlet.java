@@ -50,7 +50,7 @@ import cwms.radar.formatters.Formats;
                             "/levels/*"
 })
 public class ApiServlet extends HttpServlet {
-    private Logger log = Logger.getLogger(ApiServlet.class.getName());
+    public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
     private MetricRegistry metrics;
     private Meter total_requests;
     /**
@@ -58,7 +58,7 @@ public class ApiServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
-    JavalinServlet javalin = null;
+    static JavalinServlet javalin = null;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
@@ -73,12 +73,12 @@ public class ApiServlet extends HttpServlet {
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
 
-        this.javalin = Javalin.createStandalone(config -> {
+        javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";
             config.contextPath = context;
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
-            config.requestLogger( (ctx,ms) -> { log.info(ctx.toString());} );
+            config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
         })
                 .attribute(PolicyFactory.class,sanitizer)
                 .before( ctx -> {
@@ -100,8 +100,10 @@ public class ApiServlet extends HttpServlet {
                     e.printStackTrace(System.err);
                 })
                 .routes( () -> {
-                    get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
+                    get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
                     crud("/locations/:location_code", new LocationController(metrics));
+                    crud("/location/category/:category-id", new LocationCategoryController(metrics));
+                    crud("/location/group/:group-id", new LocationGroupController(metrics));
                     crud("/offices/:office", new OfficeController(metrics));
                     crud("/units/:unit_name", new UnitsController(metrics));
                     crud("/parameters/:param_name", new ParametersController(metrics));
