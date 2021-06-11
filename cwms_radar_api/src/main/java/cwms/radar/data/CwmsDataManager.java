@@ -369,14 +369,13 @@ public class CwmsDataManager implements AutoCloseable {
 
     public LocationGroup getLocationGroup(String officeId, String categoryId, String groupId)
     {
-
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        final RecordMapper<? super Record15<String, String, BigDecimal, String, String, String, String, String, BigDecimal, String, String, String, String, String, BigDecimal>,
-                Pair<LocationGroup, AssignedLocation>> mapper = (RecordMapper<Record15<String, String, BigDecimal, String, String, String, String, String, BigDecimal, String, String, String, String, String, BigDecimal>, Pair<LocationGroup, AssignedLocation>>) record15 -> {
-            LocationGroup group = buildLocationGroup(record15);
-            AssignedLocation loc = buildAssignedLocation(record15);
+        final RecordMapper<Record,
+                Pair<LocationGroup, AssignedLocation>> mapper = record17 -> {
+            LocationGroup group = buildLocationGroup(record17);
+            AssignedLocation loc = buildAssignedLocation(record17);
 
             return new Pair<>(group, loc);
         };
@@ -385,7 +384,8 @@ public class CwmsDataManager implements AutoCloseable {
                 .select(alga.CATEGORY_ID, alga.GROUP_ID,
                 alga.LOCATION_CODE, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
                 alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
+                        alcg.CAT_DB_OFFICE_ID,
+                alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
                 .from(alcg)
                 .join(alga)
                 .on(
