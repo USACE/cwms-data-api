@@ -3,42 +3,44 @@ package mil.army.usace.hec;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletException;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-
-//import java.sql.DriverManager;
-
+import cwms.radar.api.CatalogController;
+import cwms.radar.api.LevelsController;
+import cwms.radar.api.LocationCategoryController;
+import cwms.radar.api.LocationController;
+import cwms.radar.api.LocationGroupController;
+import cwms.radar.api.OfficeController;
+import cwms.radar.api.ParametersController;
+import cwms.radar.api.RatingController;
+import cwms.radar.api.TimeSeriesController;
+import cwms.radar.api.TimeZoneController;
+import cwms.radar.api.UnitsController;
+import cwms.radar.formatters.Formats;
 import io.javalin.Javalin;
-import static io.javalin.apibuilder.ApiBuilder.*;
 import io.javalin.core.plugin.Plugin;
 import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
-
-
-import cwms.radar.api.*;
-import cwms.radar.formatters.Formats;
-
 import org.apache.tomcat.jdbc.pool.DataSource;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.owasp.html.*;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
+
+import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
 
 
 public class RadarAPI {
     private static final Logger logger = Logger.getLogger(RadarAPI.class.getName());
     private static final MetricRegistry metrics = new MetricRegistry();
-    private static final Meter total_requests = metrics.meter("radar.total_requests");;
-    public static void main(String args[]){
+    private static final Meter total_requests = metrics.meter("radar.total_requests");
+    public static void main(String[] args){
         DataSource ds = new DataSource();
         try{
             ds.setDriverClassName(getconfig("RADAR_JDBC_DRIVER","oracle.jdbc.driver.OracleDriver"));
@@ -66,7 +68,7 @@ public class RadarAPI {
             if( System.getProperty("RADAR_DEBUG_LOGGING","false").equalsIgnoreCase("true")){
                 config.enableDevLogging();
             }
-            config.requestLogger( (ctx,ms) -> { logger.info(ctx.toString());} );
+            config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
             config.configureServletContextHandler( sch -> {
                 sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*");
             });
@@ -92,11 +94,13 @@ public class RadarAPI {
         .exception(Exception.class, (e,ctx) -> {
             ctx.status(500);
             ctx.json("There was an error processing your request");
-            logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);
+            logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(), e);
         })
         .routes( () -> {
             get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
             crud("/locations/:location_code", new LocationController(metrics));
+            crud("/location/category/:category-id", new LocationCategoryController(metrics));
+            crud("/location/group/:group-id", new LocationGroupController(metrics));
             crud("/offices/:office", new OfficeController(metrics));
             crud("/units/:unit_name", new UnitsController(metrics));
             crud("/parameters/:param_name", new ParametersController(metrics));

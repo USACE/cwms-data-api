@@ -1,18 +1,15 @@
 package cwms.radar.data;
 
-import java.sql.Clob;
+import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cwms.radar.data.dto.AssignedLocation;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
@@ -22,17 +19,28 @@ import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.javalin.http.Context;
+import kotlin.Pair;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.Record15;
 import org.jooq.Record3;
+import org.jooq.RecordMapper;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.SelectJoinStep;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 
+import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
 import static org.jooq.impl.DSL.asterisk;
@@ -42,19 +50,11 @@ import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 
 public class CwmsDataManager implements AutoCloseable {
     private static final Logger logger = Logger.getLogger("CwmsDataManager");
-    public static final String ALL_OFFICES_QUERY = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office";
-    public static final String SINGLE_OFFICE = "select office_id,long_name,office_type,report_to_office_id from cwms_20.av_office where office_id=?";
-    public static final String ALL_LOCATIONS_QUERY = "select cwms_loc.retrieve_locations_f(?,?,?,?,?) from dual";
-    public static final String ALL_RATINGS_QUERY = "select cwms_rating.retrieve_ratings_f(?,?,?,?,?,?,?,?) from dual";                                                               
-    public static final String ALL_UNITS_QUERY = "select cwms_cat.retrieve_units_f(?) from dual";
-    private static final String ALL_PARAMETERS_QUERY = "select cwms_cat.retrieve_parameters_f(?) from dual";
-    private static final String ALL_TIMEZONES_QUERY = "select cwms_cat.retrieve_time_zones_f(?) from dual";
-    private static final String ALL_LOCATION_LEVELS_QUERY = "select cwms_level.retrieve_location_levels_f(?,?,?,?,?,?,?,?) from dual";
-    private static final String ALL_TIMESERIES_QUERY = "select cwms_ts.retrieve_time_series_f(?,?,?,?,?,?,?,?) from dual";
+
     public static final String FAILED = "Failed to process database request";
 
     private Connection conn;
-    private DSLContext dsl = null;
+    private DSLContext dsl;
 
     public CwmsDataManager(Context ctx) throws SQLException{
         this(ctx.attribute("database"), ctx.attribute("office_id"));
@@ -71,208 +71,63 @@ public class CwmsDataManager implements AutoCloseable {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
     }
 
-
     @Override
     public void close() throws SQLException {
         conn.close();
     }
 
-    private static String extractClobString(ResultSet rs) throws SQLException
-    {
-        return extractClobString(rs, 1);
-    }
-
-    private static String extractClobString(ResultSet rs, int columnIndex) throws SQLException
-    {
-        String retval = null;
-        if(rs != null && rs.next()){
-            retval = getAndFree(rs.getClob(columnIndex));
-        }
-        return retval;
-    }
-
-    private static String getAndFree(Clob clob) throws SQLException
-    {
-        String retval = null;
-        if(clob != null)
-        {
-            try
-            {
-                retval = clob.getSubString(1L, (int) clob.length());
-            }
-            finally
-            {
-                clob.free();
-            }
-        }
-        return retval;
-    }
-
     public String getLocations(String names,String format, String units, String datum, String officeId) {
-        try( PreparedStatement stmt = conn.prepareStatement(ALL_LOCATIONS_QUERY) ) {
-            stmt.setString(1,names);
-            stmt.setString(2,format);
-            stmt.setString(3,units);
-            stmt.setString(4,datum);
-            stmt.setString(5,officeId);
-            try(ResultSet rs = stmt.executeQuery()){
-                return extractClobString(rs);
-            }
-        }catch (SQLException err) {
-            logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
-        }
-        return null;
+        return CWMS_LOC_PACKAGE.call_RETRIEVE_LOCATIONS_F(dsl.configuration(),
+                names, format, units, datum, officeId);
     }
 
-    public List<Office> getOffices() throws SQLException {
-        try (PreparedStatement stmt = conn.prepareStatement(ALL_OFFICES_QUERY); ResultSet rs = stmt.executeQuery()) {
-            List<Office> offices = new ArrayList<>();
-            while (rs.next()) {
-                String name = rs.getString("office_id");
-                String longName = rs.getString("long_name");
-                String type = rs.getString("office_type");
-                String reportsTo = rs.getString("report_to_office_id");
+    public List<Office> getOffices() {
+        List<Office> retval = null;
+        AV_OFFICE view = AV_OFFICE.AV_OFFICE;
+        // The .as snippets lets it map directly into the Office ctor fields.
+        retval = dsl.select(view.OFFICE_ID.as("name"), view.LONG_NAME, view.OFFICE_TYPE.as("type"),
+                view.REPORT_TO_OFFICE_ID.as("reportsTo")).from(view).fetch().into(
+                Office.class);
 
-                offices.add(new Office(name, longName, type, reportsTo));
-            }
-            return offices;
-        } catch (SQLException err) {
-            logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
-        }
-        return null;
+        return retval;
     }
 
 	public Office getOfficeById(String officeId) {
-        
-        try(
-            PreparedStatement stmt = conn.prepareStatement(SINGLE_OFFICE)
-        ) {
-            stmt.setString(1, officeId);
-            try(
-                ResultSet rs = stmt.executeQuery()
-            ){ 
-                if(rs.next()){
-                    String name = rs.getString("office_id");
-                    String longName = rs.getString("long_name");
-                    String type = rs.getString("office_type");
-                    String reportsTo = rs.getString("report_to_office_id");
-
-                    return new Office(name, longName, type, reportsTo);
-                }
-            }
-        } catch( SQLException err ){
-            logger.log(Level.WARNING, FAILED,err);
-        }
-		return null;
+        AV_OFFICE view = AV_OFFICE.AV_OFFICE;
+        // The .as snippets lets it map directly into the Office ctor fields.
+        return dsl.select(view.OFFICE_ID.as("name"), view.LONG_NAME, view.OFFICE_TYPE.as("type"),
+                view.REPORT_TO_OFFICE_ID.as("reportsTo")).from(view).where(view.OFFICE_ID.eq(officeId)).fetchOne().into(
+                Office.class);
 	}
 
 	public String getRatings(String names, String format, String unit, String datum, String office, String start,
 			String end, String timezone, String size) {
-                try(
-                    PreparedStatement stmt = conn.prepareStatement(ALL_RATINGS_QUERY)
-                ) {
-                    stmt.setString(1, names);
-                    stmt.setString(2, format);
-                    stmt.setString(3, unit);
-                    stmt.setString(4, datum);
-                    stmt.setString(5, start);
-                    stmt.setString(6, end);
-                    stmt.setString(7, timezone);
-                    stmt.setString(8, office);
-                    try(
-                        ResultSet rs = stmt.executeQuery()
-                    ){
-                        return extractClobString(rs);
-                    }
-                } catch( SQLException err ){
-                    logger.warning(FAILED + err.getLocalizedMessage() );
-                }
-                return null;
-	}
-	public String getUnits(String format) {
-		try (
-            PreparedStatement stmt = conn.prepareStatement(ALL_UNITS_QUERY)
-        ) {
-            stmt.setString(1, format);
-            try( ResultSet rs = stmt.executeQuery() ){
-                return extractClobString(rs);
-            }
-        } catch (SQLException err ){
-            logger.log(Level.WARNING,"Failed to process database request",err);
-        }
-        return null;
+        return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(),
+                names, format, unit, datum, start, end, timezone, office);
 	}
 
-	public String getParameters(String format) {
-		try (
-            PreparedStatement stmt = conn.prepareStatement(ALL_PARAMETERS_QUERY)
-        ) {
-            stmt.setString(1, format);
-            try( ResultSet rs = stmt.executeQuery() ){
-                return extractClobString(rs);
-            }
-        } catch (SQLException err ){
-            logger.log(Level.WARNING,"Failed to process database request",err);
-        }
-        return null;
+	public String getUnits(String format) {
+        return CWMS_CAT_PACKAGE.call_RETRIEVE_UNITS_F(dsl.configuration(), format);
 	}
+
+	public String getParameters(String format){
+        return CWMS_CAT_PACKAGE.call_RETRIEVE_PARAMETERS_F(dsl.configuration(), format);
+    }
 
 	public String getTimeZones(String format) {
-		try (
-            PreparedStatement stmt = conn.prepareStatement(ALL_TIMEZONES_QUERY)
-        ) {
-            stmt.setString(1, format);
-            try( ResultSet rs = stmt.executeQuery() ){
-                return extractClobString(rs);
-            }
-        } catch (SQLException err ){
-            logger.log(Level.WARNING,"Failed to process database request",err);
-        }
-        return null;
-	}
-
-	
+            return CWMS_CAT_PACKAGE.call_RETRIEVE_TIME_ZONES_F(dsl.configuration(), format);
+    }
 
 	public String getLocationLevels(String format, String names, String office, String unit, String datum, String begin,
 			String end, String timezone) {
-        try (
-            PreparedStatement stmt = conn.prepareStatement(ALL_LOCATION_LEVELS_QUERY)
-        ) {
-            stmt.setString(1, names);
-            stmt.setString(2, format);
-            stmt.setString(3, office);
-            stmt.setString(4, unit);
-            stmt.setString(5, datum);
-            stmt.setString(6, begin);
-            stmt.setString(7, end);
-            stmt.setString(8,timezone);
-            try( ResultSet rs = stmt.executeQuery() ){
-                return extractClobString(rs);
-            }
-        } catch (SQLException err ){
-            logger.log(Level.WARNING,"Failed to process database request",err);
-        }
-        return null;
+        return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVELS_F(dsl.configuration(),
+                names, format, office,unit,datum, begin, end, timezone);
     }
     
 	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
-			String end, String timezone) {                
-                try( PreparedStatement stmt = conn.prepareStatement(ALL_TIMESERIES_QUERY) ) {
-                    stmt.setString(1,names);
-                    stmt.setString(2,format);
-                    stmt.setString(3,units);
-                    stmt.setString(4,datum);
-                    stmt.setString(5,begin);
-                    stmt.setString(6,end);
-                    stmt.setString(7,timezone);
-                    stmt.setString(8,office);            
-                    try( ResultSet rs = stmt.executeQuery()){
-                        return extractClobString(rs);
-                    }
-                }catch (SQLException err) {
-                    logger.log(Level.WARNING, err.getLocalizedMessage(), err);            
-                } 
-                return null;
+			String end, String timezone) {
+        return CWMS_TS_PACKAGE.call_RETRIEVE_TIME_SERIES_F(dsl.configuration(),
+                names, format, units,datum, begin, end, timezone, office);
 	}
 	
     public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
@@ -410,97 +265,200 @@ public class CwmsDataManager implements AutoCloseable {
 
     public List<LocationCategory> getLocationCategories()
     {
-        List<LocationCategory> retval =
-                dsl.selectDistinct(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.CAT_DB_OFFICE_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_ID,
-                        AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_DESC)
-                .from(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP)
-                .fetch().into(LocationCategory.class);
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        return retval;
+        return dsl.selectDistinct(
+                table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID,
+                table.LOC_CATEGORY_DESC)
+        .from(table)
+        .fetch().into(LocationCategory.class);
     }
 
     public List<LocationCategory> getLocationCategories(String officeId)
     {
-        List<LocationCategory> retval =
-                dsl.select(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.CAT_DB_OFFICE_ID,
-                        AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_ID, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_DESC)
-                        .from(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP)
-                        .where(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.CAT_DB_OFFICE_ID.eq(officeId))
-                        .fetch().into(LocationCategory.class);
+        if(officeId == null || officeId.isEmpty()){
+            return getLocationCategories();
+        }
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        return retval;
+        return dsl.select(table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
+                .from(table)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId))
+                .fetch().into(LocationCategory.class);
+    }
+
+    public LocationCategory getLocationCategory(String officeId, String categoryId)
+    {
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+
+        return dsl.select(table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
+                .from(table)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId).and(table.LOC_CATEGORY_ID.eq(categoryId)))
+                .fetchOne().into(LocationCategory.class);
     }
 
 
     public List<LocationGroup> getLocationGroups(){
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        List<LocationGroup> retval = dsl.selectDistinct(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.CAT_DB_OFFICE_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_ID, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_DESC,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.GRP_DB_OFFICE_ID, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_DESC, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.SHARED_LOC_ALIAS_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.SHARED_REF_LOCATION_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_ATTRIBUTE).from(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP)
-                .orderBy(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_ATTRIBUTE)
+        return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC,
+                table.GRP_DB_OFFICE_ID, table.LOC_GROUP_ID,
+                table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID,
+                table.SHARED_REF_LOCATION_ID,
+                table.LOC_GROUP_ATTRIBUTE).from(table)
+                .orderBy(table.LOC_GROUP_ATTRIBUTE)
                 .fetch().into(LocationGroup.class);
-
-
-        return retval;
     }
 
     public List<LocationGroup> getLocationGroups(String officeId)
     {
-        List<LocationGroup> retval = dsl.selectDistinct(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.CAT_DB_OFFICE_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_ID, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_CATEGORY_DESC,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.GRP_DB_OFFICE_ID, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_DESC, AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.SHARED_LOC_ALIAS_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.SHARED_REF_LOCATION_ID,
-                AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_ATTRIBUTE).from(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP)
-                .where(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId))
-                .orderBy(AV_LOC_CAT_GRP.AV_LOC_CAT_GRP.LOC_GROUP_ATTRIBUTE)
-                .fetch().into(LocationGroup.class);
-
+        List<LocationGroup> retval;
+        if(officeId == null || officeId.isEmpty()){
+            retval = getLocationGroups();
+        } else
+        {
+            AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+            retval = dsl.selectDistinct(table.CAT_DB_OFFICE_ID, table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC,
+                    table.GRP_DB_OFFICE_ID, table.LOC_GROUP_ID, table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID, table.SHARED_REF_LOCATION_ID,
+                    table.LOC_GROUP_ATTRIBUTE)
+                    .from(table)
+                    .where(table.GRP_DB_OFFICE_ID.eq(officeId))
+                    .orderBy(table.LOC_GROUP_ATTRIBUTE).fetch().into(LocationGroup.class);
+        }
         return retval;
     }
 
     public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId)
     {
-        List<TimeSeriesCategory> retval =
-                dsl.select(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID, AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC)
-                        .from(AV_TS_CAT_GRP.AV_TS_CAT_GRP)
-                        .where(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID.eq(officeId))
-                        .fetch().into(TimeSeriesCategory.class);
+        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
 
-        return retval;
+        return dsl.select(table.CAT_DB_OFFICE_ID,
+                table.TS_CATEGORY_ID, table.TS_CATEGORY_DESC)
+                .from(table)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId))
+                .fetch().into(TimeSeriesCategory.class);
     }
 
     public List<TimeSeriesCategory> getTimeSeriesCategories()
     {
-        List<TimeSeriesCategory> retval =
-                dsl.select(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID, AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC)
-                        .from(AV_TS_CAT_GRP.AV_TS_CAT_GRP)
-                        .fetch().into(TimeSeriesCategory.class);
+        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
 
-        return retval;
+        return dsl.select(table.CAT_DB_OFFICE_ID,
+                table.TS_CATEGORY_ID, table.TS_CATEGORY_DESC)
+                .from(table)
+                .fetch().into(TimeSeriesCategory.class);
     }
 
     public List<TimeSeriesGroup> getTimeSeriesGroups()
     {
-        List<TimeSeriesGroup> retval = dsl.selectDistinct(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID,
-                AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID, AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC,
-                AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID,
-                AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID,
-                AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC, AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID,
-                AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID).from(AV_TS_CAT_GRP.AV_TS_CAT_GRP)
+        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
+
+        return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
+                table.TS_CATEGORY_ID, table.TS_CATEGORY_DESC,
+                table.GRP_DB_OFFICE_ID,
+                table.TS_GROUP_ID,
+                table.TS_GROUP_DESC, table.SHARED_TS_ALIAS_ID,
+                table.SHARED_REF_TS_ID).from(table)
               //  .orderBy(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ATTRIBUTE)
                 .fetch().into(TimeSeriesGroup.class);
-
-        return retval;
     }
 
+    public LocationGroup getLocationGroup(String officeId, String categoryId, String groupId)
+    {
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
+        final RecordMapper<Record,
+                Pair<LocationGroup, AssignedLocation>> mapper = record17 -> {
+            LocationGroup group = buildLocationGroup(record17);
+            AssignedLocation loc = buildAssignedLocation(record17);
+
+            return new Pair<>(group, loc);
+        };
+
+        List<Pair<LocationGroup, AssignedLocation>> assignments = dsl
+                .select(alga.CATEGORY_ID, alga.GROUP_ID,
+                alga.LOCATION_CODE, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
+                alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+                        alcg.CAT_DB_OFFICE_ID,
+                alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
+                .from(alcg)
+                .join(alga)
+                .on(
+                        alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                                .and(
+                                        alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+                .where(alcg.LOC_CATEGORY_ID.eq(categoryId).and(alcg.LOC_GROUP_ID.eq(groupId)).and(alga.DB_OFFICE_ID.eq(officeId)))
+                .orderBy(alga.ATTRIBUTE)
+                .fetch(mapper);
+
+        // Might want to verify that all the groups in the list are the same?
+        LocationGroup locGroup = assignments.stream()
+                .map(g -> g.component1())
+                .findFirst().orElse(null);
+
+        if(locGroup != null)
+        {
+            List<AssignedLocation> assignedLocations = assignments.stream()
+                    .map(g -> g.component2())
+                    .collect(Collectors.toList());
+            locGroup = new LocationGroup(locGroup, assignedLocations);
+        }
+        return locGroup;
+    }
+
+    private AssignedLocation buildAssignedLocation(Record resultRecord)
+    {
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+
+        String locationId = resultRecord.get(alga.LOCATION_ID);
+        String baseLocationId = resultRecord.get(alga.BASE_LOCATION_ID);
+        String subLocationId = resultRecord.get(alga.SUB_LOCATION_ID);
+        String aliasId = resultRecord.get(alga.ALIAS_ID);
+        Number attribute = resultRecord.get(alga.ATTRIBUTE);
+        Number locationCode = resultRecord.get(alga.LOCATION_CODE);
+        String refLocationId = resultRecord.get(alga.REF_LOCATION_ID);
+
+        return new AssignedLocation(locationId, baseLocationId, subLocationId, aliasId, attribute,
+                locationCode, refLocationId);
+    }
+
+    private LocationGroup buildLocationGroup(Record resultRecord)
+    {
+        // This method needs the record to have fields
+        // from both AV_LOC_GRP_ASSGN _and_ AV_LOC_CAT_GRP
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+
+        String officeId = resultRecord.get(alga.DB_OFFICE_ID);
+        String groupId = resultRecord.get(alga.GROUP_ID);
+        String sharedAliasId = resultRecord.get(alga.SHARED_ALIAS_ID);
+        String sharedRefLocationId = resultRecord.get(alga.SHARED_REF_LOCATION_ID);
+
+        String grpDesc = resultRecord.get(alcg.LOC_GROUP_DESC);
+        Number grpAttribute = resultRecord.get(alcg.LOC_GROUP_ATTRIBUTE);
+
+        LocationCategory locationCategory = buildLocationCategory(resultRecord);
+
+        return new LocationGroup(
+                locationCategory,
+                officeId, groupId, grpDesc,
+                sharedAliasId, sharedRefLocationId, grpAttribute);
+    }
+
+    private LocationCategory buildLocationCategory(Record resultRecord)
+    {
+        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+
+        String categoryId = resultRecord.get(alcg.LOC_CATEGORY_ID);
+        String catDesc = resultRecord.get(alcg.LOC_CATEGORY_DESC);
+        String catDbOfficeId = resultRecord.get(alcg.CAT_DB_OFFICE_ID);
+        return new LocationCategory(catDbOfficeId, categoryId, catDesc);
+    }
 
 
 }

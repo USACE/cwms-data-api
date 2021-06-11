@@ -11,7 +11,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dto.LocationGroup;
+import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -24,9 +24,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
-public class LocationGroupController implements CrudHandler
+public class LocationCategoryController implements CrudHandler
 {
-	public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
+	public static final Logger logger = Logger.getLogger(LocationCategoryController.class.getName());
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -35,7 +35,7 @@ public class LocationGroupController implements CrudHandler
 	private final Timer getOneRequestTime;
 	private final Histogram requestResultSize;
 
-	public LocationGroupController(MetricRegistry metrics)
+	public LocationCategoryController(MetricRegistry metrics)
 	{
 		this.metrics = metrics;
 		String className = this.getClass().getName();
@@ -47,18 +47,16 @@ public class LocationGroupController implements CrudHandler
 	}
 
 	@OpenApi(queryParams = {
-			@OpenApiParam(name = "office", description = "Specifies the owning office of the location group(s) whose data is to be included in the response. If this field is not specified, matching location groups information from all offices shall be returned."),
+			@OpenApiParam(name = "office", description = "Specifies the owning office of the location category(ies) whose data is to be included in the response. If this field is not specified, matching location category information from all offices shall be returned."),
 			},
-			responses = {
-			@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON)
-							//							@OpenApiContent(isArray = true, from = TabV1LocationGroup.class, type = Formats.TAB ),
-							//							@OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV )
-					}
-
+			responses = {@OpenApiResponse(status = "200",
+					content = {@OpenApiContent(isArray = true, from = LocationCategory.class, type = Formats.JSON)
+					//							@OpenApiContent(isArray = true, from = TabV1LocationCategory.class, type = Formats.TAB ),
+					//							@OpenApiContent(isArray = true, from = CsvV1LocationCategory.class, type = Formats.CSV )
+			}
 			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location(s) were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Groups Data", tags = {"Location Groups"})
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the categories were not found."),
+					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Category Data", tags = {"Location Categories"})
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -67,13 +65,13 @@ public class LocationGroupController implements CrudHandler
 		{
 			String office = ctx.queryParam("office");
 
-			List<LocationGroup> grps = cdm.getLocationGroups(office);
+			List<LocationCategory> cats = cdm.getLocationCategories(office);
 
 //			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result = Formats.format(contentType,grps);
+			String result = Formats.format(contentType,cats);
 
 			ctx.result(result).contentType(contentType.toString());
 			requestResultSize.update(result.length());
@@ -90,32 +88,32 @@ public class LocationGroupController implements CrudHandler
 
 	@OpenApi(
 			pathParams = {
-					@OpenApiParam(name = "group-id", required = true, description = "Specifies the location_group whose data is to be included in the response")
+					@OpenApiParam(name = "category-id", required = true, description = "Specifies the Category whose data is to be included in the response."),
 			},
 			queryParams = {
-			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the location group whose data is to be included in the response."),
-					@OpenApiParam(name = "category-id", required = true, description = "Specifies the category containing the location group whose data is to be included in the response."),
+			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the Location Category whose data is to be included in the response."),
 			},
-			responses = {@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
-							//							@OpenApiContent(from = TabV1LocationGroup.class, type = Formats.TAB ),
-							//							@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV )
-					}
 
-			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location group was not found."),
+			responses = {
+					@OpenApiResponse(status = "200",
+							content = {
+							@OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
+//							@OpenApiContent(from = TabV1LocationCategory.class, type = Formats.TAB ),
+//							@OpenApiContent(from = CsvV1LocationCategory.class, type = Formats.CSV )
+					}
+					),
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the Location Category was not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")},
-			description = "Retrieves requested Location Group", tags = {"Location Groups"})
+			description = "Retrieves requested Location Category", tags = {"Location Categories"})
 	@Override
-	public void getOne(Context ctx, String groupId)
+	public void getOne(Context ctx, String categoryId)
 	{
 		getOneRequest.mark();
 		try(final Timer.Context timeContext = getOneRequestTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
 		{
 			String office = ctx.queryParam("office");
-			String categoryId = ctx.queryParam("category-id");
 
-			LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
+			LocationCategory grp = cdm.getLocationCategory(office, categoryId);
 
 //			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
@@ -145,14 +143,14 @@ public class LocationGroupController implements CrudHandler
 
 	@OpenApi(ignore = true)
 	@Override
-	public void update(Context ctx, String groupId)
+	public void update(Context ctx, String locationCode)
 	{
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@OpenApi(ignore = true)
 	@Override
-	public void delete(Context ctx, String groupId)
+	public void delete(Context ctx, String locationCode)
 	{
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
