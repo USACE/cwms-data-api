@@ -15,6 +15,10 @@ public class LocationCategory implements CwmsDTO
 	private final String id;
 	private final String description;
 
+	public LocationCategory(String catDbOfficeId, String locCategoryId){
+		this(catDbOfficeId, locCategoryId, null);
+	}
+
 	public LocationCategory(String catDbOfficeId, String locCategoryId, String locCategoryDesc)
 	{
 		this.officeId = catDbOfficeId;
