@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
@@ -19,6 +18,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
@@ -47,9 +47,17 @@ public class LocationGroupController implements CrudHandler
 	}
 
 	@OpenApi(queryParams = {
-			@OpenApiParam(name = "office", required = false, description = "Specifies the owning office of the location group(s) whose data is to be included in the response. If this field is not specified, matching location groups information from all offices shall be returned."),
-			@OpenApiParam(name = "format", required = false, description = "Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")},
-			responses = {@OpenApiResponse(status = "200"), @OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location(s) were not found."),
+			@OpenApiParam(name = "office", description = "Specifies the owning office of the location group(s) whose data is to be included in the response. If this field is not specified, matching location groups information from all offices shall be returned."),
+			},
+			responses = {
+			@OpenApiResponse(status = "200",
+					content = {@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON)
+							//							@OpenApiContent(isArray = true, from = TabV1LocationGroup.class, type = Formats.TAB ),
+							//							@OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV )
+					}
+
+			),
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location(s) were not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Groups Data", tags = {"Location Groups"})
 	@Override
 	public void getAll(Context ctx)
@@ -61,9 +69,9 @@ public class LocationGroupController implements CrudHandler
 
 			List<LocationGroup> grps = cdm.getLocationGroups(office);
 
-			String formatParm = ctx.queryParam("format", "json");
+//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
 			String result = Formats.format(contentType,grps);
 
@@ -74,20 +82,57 @@ public class LocationGroupController implements CrudHandler
 		}
 		catch(SQLException ex)
 		{
-			Logger.getLogger(LocationController.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, ex);
 			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			ctx.result("Failed to process request");
 		}
 	}
 
-	@OpenApi(ignore = true)
+	@OpenApi(
+			pathParams = {
+					@OpenApiParam(name = "group-id", required = true, description = "Specifies the location_group whose data is to be included in the response")
+			},
+			queryParams = {
+			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the location group whose data is to be included in the response."),
+					@OpenApiParam(name = "category-id", required = true, description = "Specifies the category containing the location group whose data is to be included in the response."),
+			},
+			responses = {@OpenApiResponse(status = "200",
+					content = {@OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
+							//							@OpenApiContent(from = TabV1LocationGroup.class, type = Formats.TAB ),
+							//							@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV )
+					}
+
+			),
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location group was not found."),
+					@OpenApiResponse(status = "501", description = "request format is not implemented")},
+			description = "Retrieves requested Location Group", tags = {"Location Groups"})
 	@Override
-	public void getOne(Context ctx, String locationCode)
+	public void getOne(Context ctx, String groupId)
 	{
 		getOneRequest.mark();
-		try(final Timer.Context timeContext = getOneRequestTime.time())
+		try(final Timer.Context timeContext = getOneRequestTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
 		{
-			ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+			String office = ctx.queryParam("office");
+			String categoryId = ctx.queryParam("category-id");
+
+			LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
+
+//			String formatParm = ctx.queryParam("format", "json");
+			String formatHeader = ctx.header(Header.ACCEPT);
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+
+			String result = Formats.format(contentType,grp);
+
+			ctx.result(result).contentType(contentType.toString());
+			requestResultSize.update(result.length());
+
+			ctx.status(HttpServletResponse.SC_OK);
+		}
+		catch(SQLException ex)
+		{
+			logger.log(Level.SEVERE, null, ex);
+			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			ctx.result("Failed to process request");
 		}
 	}
 
@@ -100,14 +145,14 @@ public class LocationGroupController implements CrudHandler
 
 	@OpenApi(ignore = true)
 	@Override
-	public void update(Context ctx, String locationCode)
+	public void update(Context ctx, String groupId)
 	{
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@OpenApi(ignore = true)
 	@Override
-	public void delete(Context ctx, String locationCode)
+	public void delete(Context ctx, String groupId)
 	{
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}

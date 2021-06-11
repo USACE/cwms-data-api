@@ -18,6 +18,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
@@ -47,8 +48,13 @@ public class LocationCategoryController implements CrudHandler
 
 	@OpenApi(queryParams = {
 			@OpenApiParam(name = "office", description = "Specifies the owning office of the location category(ies) whose data is to be included in the response. If this field is not specified, matching location category information from all offices shall be returned."),
-			@OpenApiParam(name = "format", description = "Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")},
-			responses = {@OpenApiResponse(status = "200"), 
+			},
+			responses = {@OpenApiResponse(status = "200",
+					content = {@OpenApiContent(isArray = true, from = LocationCategory.class, type = Formats.JSON)
+					//							@OpenApiContent(isArray = true, from = TabV1LocationCategory.class, type = Formats.TAB ),
+					//							@OpenApiContent(isArray = true, from = CsvV1LocationCategory.class, type = Formats.CSV )
+			}
+			),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the categories were not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Category Data", tags = {"Location Categories"})
 	@Override
@@ -61,9 +67,9 @@ public class LocationCategoryController implements CrudHandler
 
 			List<LocationCategory> cats = cdm.getLocationCategories(office);
 
-			String formatParm = ctx.queryParam("format", "json");
+//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
 			String result = Formats.format(contentType,cats);
 
@@ -86,8 +92,16 @@ public class LocationCategoryController implements CrudHandler
 			},
 			queryParams = {
 			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the Location Category whose data is to be included in the response."),
-			@OpenApiParam(name = "format", description = "Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")},
-			responses = {@OpenApiResponse(status = "200"),
+			},
+
+			responses = {
+					@OpenApiResponse(status = "200",
+							content = {
+							@OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
+//							@OpenApiContent(from = TabV1LocationCategory.class, type = Formats.TAB ),
+//							@OpenApiContent(from = CsvV1LocationCategory.class, type = Formats.CSV )
+					}
+					),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the Location Category was not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")},
 			description = "Retrieves requested Location Category", tags = {"Location Categories"})
@@ -101,9 +115,9 @@ public class LocationCategoryController implements CrudHandler
 
 			LocationCategory grp = cdm.getLocationCategory(office, categoryId);
 
-			String formatParm = ctx.queryParam("format", "json");
+//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
 			String result = Formats.format(contentType,grp);
 
