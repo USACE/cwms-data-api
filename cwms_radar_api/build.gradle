@@ -1,27 +1,32 @@
 apply plugin: 'java-library'
 
-dependencies {    
+dependencies {
     implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
     implementation "com.sun.xml.bind:jaxb-impl:$JAXB_IMPL_VERSION"
     implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
     implementation( "mil.army.usace.hec:cwms-db-jooq:6.0.2"){
         exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
     }
     implementation('org.jooq.pro:jooq:3.11.2'){
         exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "javax.xml.bind", module: "*"
     }
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
 
-    implementation "io.javalin:javalin:$JAVALIN_VERSION"
-
-    compileOnly "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"
+    compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
+    compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+        exclude group: "jakarta.xml.bind", module: "*"
+    }
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
     compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
-    
+
     compileOnly project(":annotations")
     annotationProcessor project(":annotations")
 
+    testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     compile "com.fasterxml.jackson.core:jackson-databind:2.11.1"

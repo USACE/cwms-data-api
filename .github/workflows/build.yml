@@ -1,14 +1,14 @@
 name: Build CWMS RADAR
-on:   
+on:
   push:
     branches:
       - develop
       - 'release/**'
   pull_request:
-    branches: 
+    branches:
       - develop
 
-jobs: 
+jobs:
   build:
     name: build and test
     runs-on: ubuntu-latest
@@ -20,9 +20,9 @@ jobs:
       - name: setup java
         uses: actions/setup-java@v1
         with:
-          java-version: '11'
-          java-package: jdk             
-      - name: build and test     
+          java-version: '8'
+          java-package: jdk
+      - name: build and test
         id: thebuild
         run: ./gradlew build --init-script init.gradle
       - name: Upload WAR
@@ -45,11 +45,11 @@ jobs:
       - name: setup java
         uses: actions/setup-java@v1
         with:
-          java-version: '11'
-          java-package: jdk  
+          java-version: '8'
+          java-package: jdk
       - name: Download all workflow run artifacts from build
         id: artifacts
-        uses: actions/download-artifact@v2      
+        uses: actions/download-artifact@v2
         with:
           path: ./
       - name: get version
@@ -71,7 +71,7 @@ jobs:
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
-        env: 
+        env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{steps.get_version.outputs.VERSION}}
@@ -100,8 +100,8 @@ jobs:
       - name: setup java
         uses: actions/setup-java@v1
         with:
-          java-version: '11'
-          java-package: jdk  
+          java-version: '8'
+          java-package: jdk
       - name: get RADAR version
         id: get_version
         run: .github/workflows/get_version.sh
@@ -124,7 +124,7 @@ jobs:
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
         run: |
           ./gradlew :cwms_radar_api:build --init-script init.gradle
-          ./gradlew prepareDocker             
+          ./gradlew prepareDocker
           cd cwms_radar_standalone/build/docker
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
