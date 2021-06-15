@@ -186,7 +186,7 @@ public class CwmsDataManager implements AutoCloseable {
         return cat;
     }
 
-    public Catalog getLocationCatalog(String cursor, int pageSize, Optional<String> office) {
+    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office) {
         int total = 0;
         String locCursor = "*";
         if( cursor == null || cursor.isEmpty() ){
@@ -211,7 +211,7 @@ public class CwmsDataManager implements AutoCloseable {
         SelectConditionStep<Record1<String>> tmp = dsl.select(AV_LOC.LOCATION_ID)
                                .from(AV_LOC)
                                .where(AV_LOC.LOCATION_ID.greaterThan(locCursor))
-                               .and(AV_LOC.UNIT_SYSTEM.eq("SI"));
+                               .and(AV_LOC.UNIT_SYSTEM.eq(unitSystem));
         if( office.isPresent()){
             tmp = tmp.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
         }
@@ -223,7 +223,7 @@ public class CwmsDataManager implements AutoCloseable {
                                 .from(AV_LOC)
                                 .innerJoin(forLimit).on(forLimit.field(AV_LOC.LOCATION_ID).eq(AV_LOC.LOCATION_ID))
                                 .leftJoin(AV_LOC_GRP_ASSGN).on(AV_LOC_GRP_ASSGN.LOCATION_ID.eq(AV_LOC.LOCATION_ID))
-                                .where(AV_LOC.UNIT_SYSTEM.eq("SI"))
+                                .where(AV_LOC.UNIT_SYSTEM.eq(unitSystem))
                                 .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
 
         if( office.isPresent() ){

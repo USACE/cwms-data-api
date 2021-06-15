@@ -12,6 +12,7 @@ import com.codahale.metrics.*;
 
 import org.owasp.html.PolicyFactory;
 
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
@@ -75,6 +76,10 @@ public class CatalogController implements CrudHandler{
                           type=Integer.class,
                           description = "How many entires per page returned. Default 500."
             ),
+            @OpenApiParam(name="unitSystem",
+                          required = false,
+                          type = UnitSystem.class
+            ),
             @OpenApiParam(name="office",
                           required = false,
                           description = "3-4 letter office name representing the district you want to isolate data to."
@@ -108,6 +113,7 @@ public class CatalogController implements CrudHandler{
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();
             int pageSize = ctx.queryParam("pageSize",Integer.class,"500").getValue().intValue();
+            String unitSystem = ctx.queryParam("unitSystem",UnitSystem.class,"SI").getValue().getValue();
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParam("office", String.class, null)
                                             .check( ofc -> Office.validOfficeCanNull(ofc)
@@ -118,7 +124,7 @@ public class CatalogController implements CrudHandler{
             if( "timeseries".equalsIgnoreCase(valDataSet)){
                 cat = cdm.getTimeSeriesCatalog(cursor, pageSize, office );
             } else if ("locations".equalsIgnoreCase(valDataSet)){
-                cat = cdm.getLocationCatalog(cursor, pageSize, office );
+                cat = cdm.getLocationCatalog(cursor, pageSize, unitSystem, office );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);

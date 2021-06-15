@@ -1,6 +1,8 @@
 package cwms.radar;
 
 import io.javalin.Javalin;
+import io.javalin.core.validation.JavalinValidation;
+
 import static io.javalin.apibuilder.ApiBuilder.*;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.json.JavalinJackson;
@@ -32,6 +34,7 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.*;
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.formatters.Formats;
 
 /**
@@ -72,7 +75,7 @@ public class ApiServlet extends HttpServlet {
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
-
+        JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
         javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";
             config.contextPath = context;

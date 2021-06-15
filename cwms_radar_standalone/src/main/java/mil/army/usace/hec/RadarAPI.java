@@ -19,9 +19,11 @@ import cwms.radar.api.RatingController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.formatters.Formats;
 import io.javalin.Javalin;
 import io.javalin.core.plugin.Plugin;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -57,6 +59,7 @@ public class RadarAPI {
         }
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
+        JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
