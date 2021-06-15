@@ -14,10 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement(name="catalog")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Catalog implements CwmsDTO {
-    private String page;
-    private String nextPage;
-    private int total;
+public class Catalog extends CwmsDTOPaginated {
     @Schema(
         oneOf = {
             LocationCatalogEntry.class,
@@ -32,43 +29,16 @@ public class Catalog implements CwmsDTO {
     private Catalog(){}
 
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries ){
-        Encoder encoder = Base64.getEncoder();
-        this.page = page == null || page.equals("*") ? null : encoder.encodeToString(String.format("%s||%d",page,pageSize).getBytes());
+        super(page, pageSize);
         this.total = total;
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
         this.entries = entries;
         if( entries.size() == pageSize){
-            nextPage = encoder.encodeToString(
-                            String.format("%s|||%d",entries.get(entries.size()-1).toString().toUpperCase(),total).getBytes()
-                       );
+            nextPage = encodeCursor(entries.get(entries.size()-1).toString().toUpperCase(), total, "|||");
         } else {
             nextPage = null;
         }
-
-    }
-
-    /**
-     * @return String return the page
-     */
-    public String getPage() {
-        return page;
-    }
-
-
-    /**
-     * @return String return the nextPage
-     */
-    public String getNextPage() {
-        return nextPage;
-    }
-
-
-    /**
-     * @return int return the total
-     */
-    public int getTotal() {
-        return total;
     }
 
     /**

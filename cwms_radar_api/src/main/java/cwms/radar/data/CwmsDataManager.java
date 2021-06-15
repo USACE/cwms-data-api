@@ -1,6 +1,12 @@
 package cwms.radar.data;
 
-import java.math.BigDecimal;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
+import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -11,24 +17,9 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import cwms.radar.data.dto.AssignedLocation;
-import cwms.radar.data.dto.Catalog;
-import cwms.radar.data.dto.LocationCategory;
-import cwms.radar.data.dto.LocationGroup;
-import cwms.radar.data.dto.Office;
-import cwms.radar.data.dto.TimeSeriesCategory;
-import cwms.radar.data.dto.TimeSeriesGroup;
-import cwms.radar.data.dto.catalog.CatalogEntry;
-import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
-import cwms.radar.data.dto.catalog.CatalogIntermediate;
-import cwms.radar.data.dto.catalog.LocationAlias;
-import cwms.radar.data.dto.catalog.LocationCatalogEntry;
-import io.javalin.http.Context;
-import kotlin.Pair;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
-import org.jooq.Record15;
 import org.jooq.Record3;
 import org.jooq.RecordMapper;
 import org.jooq.Result;
@@ -39,26 +30,29 @@ import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 
+import cwms.radar.data.dto.AssignedLocation;
+import cwms.radar.data.dto.Catalog;
+import cwms.radar.data.dto.LocationCategory;
+import cwms.radar.data.dto.LocationGroup;
+import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.TimeSeriesCategory;
+import cwms.radar.data.dto.TimeSeriesGroup;
+import cwms.radar.data.dto.catalog.CatalogEntry;
+import cwms.radar.data.dto.catalog.LocationAlias;
+import cwms.radar.data.dto.catalog.LocationCatalogEntry;
+import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
+import io.javalin.http.Context;
+import kotlin.Pair;
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
-
-
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
-import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -154,14 +148,17 @@ public class CwmsDataManager implements AutoCloseable {
         } else {
             logger.info("getting non-default page");
             // get totally from page
-            String cursor = new String( Base64.getDecoder().decode(page) );
-            logger.info("decoded cursor: " + cursor);
-            String[] parts = cursor.split("\\|\\|\\|");
+            String[] parts = Catalog.decodeCursor(page, "|||");
+
+            logger.info("decoded cursor: " + String.join("|||", parts));
             for( String p: parts){
                 logger.info(p);
             }
-            tsCursor = parts[0].split("\\/")[1];
-            total = Integer.parseInt(parts[1]);
+
+            if(parts.length > 1) {
+                tsCursor = parts[0].split("\\/")[1];
+                total = Integer.parseInt(parts[1]);
+            }
         }
 
         SelectJoinStep<Record3<String, String, String>> query = dsl.select(
@@ -198,14 +195,17 @@ public class CwmsDataManager implements AutoCloseable {
         } else {
             logger.info("getting non-default page");
             // get totally from page
-            String _cursor = new String( Base64.getDecoder().decode(cursor) );
-            logger.info("decoded cursor: " + cursor);
-            String parts[] = _cursor.split("\\|\\|\\|");
+            String[] parts = Catalog.decodeCursor(cursor, "|||");
+
+            logger.info("decoded cursor: " + String.join("|||", parts));
             for( String p: parts){
                 logger.info(p);
             }
-            locCursor = parts[0].split("\\/")[1];
-            total = Integer.parseInt(parts[1]);
+
+            if(parts.length > 1) {
+                locCursor = parts[0].split("\\/")[1];
+                total = Integer.parseInt(parts[1]);
+            }
         }
 
         Table<?> forLimit = dsl.select(AV_LOC.LOCATION_ID)
