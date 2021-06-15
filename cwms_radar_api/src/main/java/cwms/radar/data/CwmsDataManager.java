@@ -192,7 +192,7 @@ public class CwmsDataManager implements AutoCloseable {
         if( cursor == null || cursor.isEmpty() ){
             SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_LOC);
             if( office.isPresent() ){
-                count.where(AV_LOC.DB_OFFICE_ID.eq(office.get()));
+                count.where(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
             }
             total = count.fetchOne().value1().intValue();
         } else {
@@ -208,11 +208,14 @@ public class CwmsDataManager implements AutoCloseable {
             total = Integer.parseInt(parts[1]);
         }
 
-        Table<?> forLimit = dsl.select(AV_LOC.LOCATION_ID)
+        SelectConditionStep<Record1<String>> tmp = dsl.select(AV_LOC.LOCATION_ID)
                                .from(AV_LOC)
                                .where(AV_LOC.LOCATION_ID.greaterThan(locCursor))
-                               .and(AV_LOC.UNIT_SYSTEM.eq("SI"))
-                               .orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();
+                               .and(AV_LOC.UNIT_SYSTEM.eq("SI"));
+        if( office.isPresent()){
+            tmp = tmp.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
+        }
+        Table<?> forLimit = tmp.orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();
         SelectConditionStep<Record> query = dsl.select(
                                     AV_LOC.asterisk(),
                                     AV_LOC_GRP_ASSGN.asterisk()
@@ -255,10 +258,10 @@ public class CwmsDataManager implements AutoCloseable {
                 e.getKey().getLOCATION_KIND_ID(),
                 e.getKey().getLOCATION_TYPE(),
                 e.getKey().getTIME_ZONE_NAME(),
-                e.getKey().getLATITUDE().doubleValue(),
-                e.getKey().getLONGITUDE().doubleValue(),
-                e.getKey().getPUBLISHED_LATITUDE().doubleValue(),
-                e.getKey().getPUBLISHED_LONGITUDE().doubleValue(),
+                e.getKey().getLATITUDE() != null ? e.getKey().getLATITUDE().doubleValue() : null,
+                e.getKey().getLONGITUDE() != null ? e.getKey().getLONGITUDE().doubleValue() : null,
+                e.getKey().getPUBLISHED_LATITUDE() != null ? e.getKey().getPUBLISHED_LATITUDE().doubleValue() : null,
+                e.getKey().getPUBLISHED_LONGITUDE() != null ? e.getKey().getPUBLISHED_LONGITUDE().doubleValue() : null,
                 e.getKey().getHORIZONTAL_DATUM(),
                 e.getKey().getELEVATION(),
                 e.getKey().getUNIT_ID(),
