@@ -39,7 +39,7 @@ public class FormatServiceProcessor extends AbstractProcessor{
             for(TypeElement anno: annotations){
                 System.out.println(anno.toString());
                 Collection<? extends Element> elements = roundEnv.getElementsAnnotatedWith(anno);
-                FileObject createResource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "formats.list");
+                FileObject createResource = processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", "formats.list");
                 Writer wr = createResource.openWriter();
                 elements.forEach( element -> {
                     System.out.println(element.toString());

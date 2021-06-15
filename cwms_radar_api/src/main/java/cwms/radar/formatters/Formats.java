@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.helpers.ResourceHelper;
 
 
 
@@ -51,7 +52,7 @@ public class Formats {
 
     private Formats() throws IOException{
         formatters = new HashMap<>();
-        InputStream formatList = this.getClass().getResourceAsStream("/formats.list");
+        InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list", this.getClass());
         BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
         while( br.ready() ){
             String line = br.readLine();
