@@ -1,6 +1,9 @@
 package cwms.radar.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -9,14 +12,16 @@ import javax.servlet.http.HttpServletResponse;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
@@ -30,6 +35,7 @@ public class TimeSeriesController implements CrudHandler {
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
+    private final int defaultPageSize = 500;
 
     public TimeSeriesController(MetricRegistry metrics){
         this.metrics=metrics;
@@ -41,13 +47,13 @@ public class TimeSeriesController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(tags = {"TimeSeries"}, ignore = true)
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(tags = {"TimeSeries"}, ignore = true)
     @Override
     public void delete(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
@@ -56,21 +62,34 @@ public class TimeSeriesController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="name", required=false, description="Specifies the name(s) of the time series whose data is to be included in the response. A case insensitive comparison is used to match names."),
+            @OpenApiParam(name="name", required=true, description="Specifies the name(s) of the time series whose data is to be included in the response. A case insensitive comparison is used to match names."),
             @OpenApiParam(name="office", required=false, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
             @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
             @OpenApiParam(name="datum", required=false, description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
-            @OpenApiParam(name="begin", required=false, description="Specifies the start of the time window for data to be included in the response. If this field is not specified, any required time window begins 24 hours prior to the specified or default end time."),
-            @OpenApiParam(name="end", required=false, description="Specifies the end of the time window for data to be included in the response. If this field is not specified, any required time window ends at the current time"),
-            @OpenApiParam(name="timezone", required=false, description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used."),
-            @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")
+            @OpenApiParam(name="begin", required=false, description="Specifies the start of the time window for data to be included in the response. If this field is not specified, any required time window begins 24 hours prior to the specified or default end time. The format for this field is ISO 8601 extended, with optional timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ssZ['['VV']']', e.g., '2021-06-10T13:00:00-0700[PST8PDT]'."),
+            @OpenApiParam(name="end", required=false, description="Specifies the end of the time window for data to be included in the response. If this field is not specified, any required time window ends at the current time. The format for this field is ISO 8601 extended, with optional timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ssZ['['VV']']', e.g., '2021-06-10T13:00:00-0700[PST8PDT]'."),
+            @OpenApiParam(name="timezone", required=false, description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used.\r\nIgnored if begin_time was specified with offset and timezone."),
+            @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)\r\n6.    jsonv2"),
+            @OpenApiParam(name="page",
+                          required = false,
+                          description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+            ),
+            @OpenApiParam(name="pageSize",
+                          required=false,
+                          type=Integer.class,
+                          description = "How many entries per page returned. Default " + defaultPageSize + "."
+            )
         },
-        responses = {
-            @OpenApiResponse(status="200" ),
-            @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a timeseries."),
-            @OpenApiResponse(status="501", description = "Requested format is not implemented")
-
-        },
+        responses = { @OpenApiResponse(status="200",
+                                       description = "A list of elements of the data set you've selected.",
+                                       content = {
+                                           @OpenApiContent(from = TimeSeries.class, type=Formats.JSONV2),
+                                           @OpenApiContent(from = TimeSeries.class, type=Formats.XML)
+                                       }
+                      ),
+                      @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a timeseries."),
+                      @OpenApiResponse(status="501",description = "Requested format is not implemented")
+                    },
         tags = {"TimeSeries"}
     )
     @Override
@@ -88,10 +107,16 @@ public class TimeSeriesController implements CrudHandler {
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
             String timezone = ctx.queryParam("timezone");
+            // The following parameters are only used for jsonv2
+            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"").getValue()).getValue();
+            int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
 
+            String acceptHeader = ctx.header("Accept");
+            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
 
             switch(format){
                 case "json": {ctx.contentType(Formats.JSON); break;}
+                case "jsonv2": {ctx.contentType(Formats.JSONV2); break;}
                 case "tab": {ctx.contentType(Formats.TAB); break;}
                 case "csv": {ctx.contentType(Formats.CSV); break;}
                 case "xml": {ctx.contentType(Formats.XML); break;}
@@ -108,9 +133,32 @@ public class TimeSeriesController implements CrudHandler {
                 }
             }
 
-            String results = cdm.getTimeseries(format,names,office,unit,datum,begin,end,timezone);
-            ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
+            String results;
+            // TODO: XML serialization already done, just needs a way to call it. format parameter conflicts with Accept header.
+            if(format.equalsIgnoreCase("jsonv2") || format.equalsIgnoreCase("xml")) {
+                TimeSeries ts = cdm.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
+
+                contentType = Formats.parseHeaderAndQueryParm(format.equalsIgnoreCase("jsonv2") ? Formats.JSONV2 : Formats.XML, null);
+                results = Formats.format(contentType, ts);
+                ctx.status(HttpServletResponse.SC_OK);
+
+                // Send back the link to the next page in the response header
+                StringBuffer linkValue = new StringBuffer(600);
+                linkValue.append(String.format("<%s>; rel=self; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getPage()), contentType.toString()));
+
+                if(ts.getNextPage() != null) {
+                    linkValue.append(",");
+                    linkValue.append(String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()), contentType.toString()));
+                }
+
+                ctx.header("Link", linkValue.toString());
+                ctx.result(results).contentType(contentType.toString());
+            }
+            else {
+                results = cdm.getTimeseries(format,names,office,unit,datum,begin,end,timezone);
+                ctx.status(HttpServletResponse.SC_OK);
+                ctx.result(results);
+            }
             requestResultSize.update(results.length());
         } catch (SQLException ex) {
             logger.log(Level.SEVERE, null, ex);
@@ -119,7 +167,7 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(tags = {"TimeSeries"}, ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
@@ -130,11 +178,33 @@ public class TimeSeriesController implements CrudHandler {
 
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(tags = {"TimeSeries"}, ignore = true)
     @Override
     public void update(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_FOUND);
 
     }
 
+    /**
+     * Builds a URL that references a specific "page" of the result.
+     * @param ctx
+     * @param ts
+     * @return
+     */
+    private String buildRequestUrl(Context ctx, TimeSeries ts, String cursor)
+    {
+        StringBuffer result = ctx.req.getRequestURL();
+        result.append(String.format("?name=%s", ts.getName()));
+        result.append(String.format("&office=%s", ts.getOfficeId()));
+        result.append(String.format("&unit=%s", ts.getUnits()));
+        result.append(String.format("&begin=%s", ts.getBegin().format(DateTimeFormatter.ISO_ZONED_DATE_TIME)));
+        result.append(String.format("&end=%s", ts.getEnd().format(DateTimeFormatter.ISO_ZONED_DATE_TIME)));
+        //result.append(String.format("&timezone=%s", ts.getTimezone()));
+        result.append(String.format("&format=%s", ctx.queryParam("format", "jsonv2")));
+
+        if(cursor != null && !cursor.isEmpty())
+            result.append(String.format("&page=%s", cursor));
+
+        return result.toString();
+    }
 }

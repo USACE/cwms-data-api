@@ -2,7 +2,6 @@ package cwms.radar.formatters.xml;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,23 +10,22 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
-import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTO;
-import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.XML, dataTypes = {Office.class,Catalog.class})
-public class XMLv1 implements OutputFormatter {
-    private static Logger logger = Logger.getLogger(XMLv1.class.getName());
+@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class})
+public class XMLv2 implements OutputFormatter {
+    private static Logger logger = Logger.getLogger(XMLv2.class.getName());
     private JAXBContext context = null;
     private Marshaller mar = null;
 
-    public XMLv1() throws InternalServerErrorResponse{
+    public XMLv2() throws InternalServerErrorResponse{
         try {
-            context = JAXBContext.newInstance(XMLv1Office.class,Catalog.class);
+            context = JAXBContext.newInstance(TimeSeries.class);
             mar = context.createMarshaller();
             mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
         } catch( JAXBException jaxb ){
@@ -39,7 +37,7 @@ public class XMLv1 implements OutputFormatter {
 
     @Override
     public String getContentType() {
-        return Formats.XML;
+        return Formats.XMLV2;
     }
 
     @Override
@@ -47,13 +45,8 @@ public class XMLv1 implements OutputFormatter {
         try{
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            if( dto instanceof Office ){
-                mar.marshal(new XMLv1Office(Arrays.asList((Office)dto)),pw);
-                return sw.toString();
-            } else {
-                mar.marshal(dto,pw);
-                return sw.toString();
-            }
+            mar.marshal(dto,pw);
+            return sw.toString();
         } catch( JAXBException jaxb ){
             String msg = dto != null ?
                     "Error rendering '" + dto.toString() + "' to XML"
@@ -65,20 +58,7 @@ public class XMLv1 implements OutputFormatter {
     }
 
     @Override
-    @SuppressWarnings("unchecked") // we're ALWAYS checking before conversion in this function
     public String format(List<? extends CwmsDTO> dtoList) {
-        try{
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-
-            if( !dtoList.isEmpty() && dtoList.get(0) instanceof Office ){
-                mar.marshal(new XMLv1Office((List<Office>)dtoList), pw);
-                return sw.toString();
-            }
-        } catch( Exception err ){
-            logger.log(Level.WARNING, "Error doing XML format of office list", err);
-            throw new InternalServerErrorResponse("Invalid Parameters");
-        }
         throw new UnsupportedOperationException("Unable to process your request");
     }
 

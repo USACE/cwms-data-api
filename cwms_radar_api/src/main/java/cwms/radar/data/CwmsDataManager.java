@@ -8,12 +8,26 @@ import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -35,12 +49,14 @@ import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationAlias;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.radar.helpers.ResourceHelper;
 import io.javalin.http.Context;
 import kotlin.Pair;
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
@@ -57,6 +73,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
 public class CwmsDataManager implements AutoCloseable {
     private static final Logger logger = Logger.getLogger("CwmsDataManager");
+    private static final String ALL_TIMESERIES_QUERY_V2 = ResourceHelper.getResourceAsString("../../../queries/get_timeseries.sql", CwmsDataManager.class);
     public static final String FAILED = "Failed to process database request";
 
     private Connection conn;
@@ -134,6 +151,53 @@ public class CwmsDataManager implements AutoCloseable {
 			String end, String timezone) {
         return CWMS_TS_PACKAGE.call_RETRIEVE_TIME_SERIES_F(dsl.configuration(),
                 names, format, units,datum, begin, end, timezone, office);
+	}
+
+    public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
+        String cursor = null;
+        Timestamp tsCursor = null;
+
+        if(begin == null)
+            begin = ZonedDateTime.now().minusDays(1).toLocalDateTime().toString();
+        if(end == null)
+            end = ZonedDateTime.now().toLocalDateTime().toString();
+
+        if(page != null && !page.isEmpty())
+        {
+            String[] parts = TimeSeries.decodeCursor(page);
+
+            logger.info("Decoded cursor");
+            for( String p: parts){
+                logger.info(p);
+            }
+
+            if(parts.length > 1)
+            {
+                cursor = parts[0];
+                tsCursor = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(parts[0])));
+                // Use the pageSize from the original cursor, for consistent paging
+                pageSize = Integer.parseInt(parts[parts.length - 1]);   // Last item is pageSize
+            }
+        }
+
+        ZoneId zone = timezone == null ? ZoneOffset.UTC.normalized() : ZoneId.of(timezone);
+
+        // Parse the date time in the best format it can find. Timezone is optional, but use it if it's found.
+        TemporalAccessor begin_parsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(begin, ZonedDateTime::from, LocalDateTime::from);
+        TemporalAccessor end_parsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(end, ZonedDateTime::from, LocalDateTime::from);
+
+        ZonedDateTime begin_time = begin_parsed instanceof ZonedDateTime ? ZonedDateTime.from(begin_parsed) : LocalDateTime.from(begin_parsed).atZone(zone);
+        // If the end time doesn't have a timezone, but begin did, use begin's timezone as end's.
+        ZonedDateTime end_time = end_parsed instanceof ZonedDateTime ? ZonedDateTime.from(end_parsed) : LocalDateTime.from(end_parsed).atZone(begin_time.getZone());
+
+        if(timezone == null) {
+            // If no timezone was found, get it from begin_time
+            zone = begin_time.getZone();
+            timezone = zone.getId();
+        }
+        
+        // TODO
+        return null;
 	}
 
     public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
