@@ -165,9 +165,10 @@ public class CwmsDataManager implements AutoCloseable {
         }
 
         SelectJoinStep<Record3<String, String, String>> query = dsl.select(
-                                    AV_CWMS_TS_ID2.DB_OFFICE_ID,
-                                    AV_CWMS_TS_ID2.CWMS_TS_ID,
-                                    AV_CWMS_TS_ID2.UNIT_ID)
+                                        AV_CWMS_TS_ID2.DB_OFFICE_ID,
+                                        AV_CWMS_TS_ID2.CWMS_TS_ID,
+                                        AV_CWMS_TS_ID2.UNIT_ID
+                                    )
                                 .from(AV_CWMS_TS_ID2);
 
         if( office.isPresent() ){
@@ -178,9 +179,13 @@ public class CwmsDataManager implements AutoCloseable {
         }
         query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
         logger.info( query.getSQL(ParamType.INLINED));
-        Result<Record3<String,String,String>> result = query.fetch();
+        Result<Record3<String, String, String>> result = query.fetch();
         List<? extends CatalogEntry> entries = result.stream()
-                .map( e -> new TimeseriesCatalogEntry(e.value1(),e.value2(),e.value3()))
+                //.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
+                .map( e -> new TimeseriesCatalogEntry(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID),
+                                                      e.get(AV_CWMS_TS_ID2.CWMS_TS_ID),
+                                                      e.get(AV_CWMS_TS_ID2.UNIT_ID) )
+                )
                 .collect(Collectors.toList());
         Catalog cat = new Catalog(tsCursor,total,pageSize,entries);
         return cat;
