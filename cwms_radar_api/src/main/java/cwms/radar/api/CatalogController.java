@@ -78,7 +78,8 @@ public class CatalogController implements CrudHandler{
             ),
             @OpenApiParam(name="unitSystem",
                           required = false,
-                          type = UnitSystem.class
+                          type = UnitSystem.class,
+                          description = UnitSystem.DESCRIPTION
             ),
             @OpenApiParam(name="office",
                           required = false,

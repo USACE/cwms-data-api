@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum UnitSystem {
     SI("SI"),
     EN("EN");
-
+    public static final String DESCRIPTION = "Unit System desired in response. Can be SI (International Scientific) or EN (Imperial.) If unspecified, defaults to SI.";
     private String dataSet;
 
     UnitSystem(String value) {
