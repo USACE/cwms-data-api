@@ -2,10 +2,11 @@ package cwms.radar.data.dto;
 
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.*;
 
@@ -53,10 +54,15 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
         this.page = encodeCursor(String.join(delimiter, list), pageSize);
     }
 
-    protected CwmsDTOPaginated(String page, int pageSize)
-    {
+    protected CwmsDTOPaginated(String page, int pageSize) {
         this.pageSize = pageSize;
         this.page = encodeCursor(page, pageSize);
+    }
+
+    protected CwmsDTOPaginated(String page, int pageSize, Integer total) {
+        this.pageSize = pageSize;
+        this.total = total;
+        this.page = encodeCursor(page, pageSize, total);
     }
 
     /**
@@ -87,13 +93,11 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
         return pageSize;
     }
 
-    public static String[] decodeCursor(String cursor)
-    {
+    public static String[] decodeCursor(String cursor) {
         return decodeCursor(cursor, CwmsDTOPaginated.delimiter);
     }
 
-    public static String[] decodeCursor(String cursor, String delimiter)
-    {
+    public static String[] decodeCursor(String cursor, String delimiter) {
         if(cursor != null && !cursor.isEmpty()) {
             String _cursor = new String(decoder.decode(cursor));
             String parts[] = _cursor.split(Pattern.quote(delimiter));
@@ -104,13 +108,21 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
         return new String[0];
     }
 
-    public static String encodeCursor(String page, int pageSize)
-    {
-        return encodeCursor(page, pageSize, CwmsDTOPaginated.delimiter);
+    public static String encodeCursor(String page, int pageSize) {
+        return encodeCursor(CwmsDTOPaginated.delimiter, page, pageSize);
     }
 
-    public static String encodeCursor(String page, int pageSize, String delimiter)
+    public static String encodeCursor(String page, int pageSize, Integer total) {
+        return encodeCursor(CwmsDTOPaginated.delimiter, page, total, pageSize);     // pageSize should be last
+    }
+
+    public static String encodeCursor(Object ... parts) {
+        return encodeCursor(CwmsDTOPaginated.delimiter, parts);
+    }
+
+    public static String encodeCursor(String delimiter, Object ... parts)
     {
-        return (page == null || page.equals("*")) ? null : encoder.encodeToString(String.join(delimiter, page, String.format("%d", pageSize)).getBytes());
+        return (parts.length == 0 || parts[0] == null || parts[0].equals("*")) ? null :
+            encoder.encodeToString(Arrays.stream(parts).map(o -> String.valueOf(o)).collect(Collectors.joining(delimiter)).getBytes());
     }
 }

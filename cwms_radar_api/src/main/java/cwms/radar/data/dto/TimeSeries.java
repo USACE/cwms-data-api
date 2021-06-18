@@ -1,36 +1,18 @@
 package cwms.radar.data.dto;
 
 import java.lang.reflect.Field;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
-import java.util.TimeZone;
 
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.DurationAdapter;
@@ -45,7 +27,7 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
 public class TimeSeries extends CwmsDTOPaginated {
-    static final String ZONED_DATE_TIME_FORMAT = "YYYY-MM-dd'T'hh:mm:ssZ['['VV']']";
+    static final String ZONED_DATE_TIME_FORMAT = "YYYY-MM-dd'T'hh:mm:ssZ'['VV']'";
 
     @Schema(description = "Time-series name")
     String name;
@@ -58,7 +40,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @XmlJavaTypeAdapter(DurationAdapter.class)
     @JsonFormat(shape = Shape.STRING)
-    @Schema(description = "The interval of the time-series")
+    @Schema(description = "The interval of the time-series, in ISO-8601 duration format")
     Duration interval;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
@@ -71,13 +53,6 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')")
     ZonedDateTime end;
 
-    @XmlTransient
-    String timezone;
-    @XmlTransient
-    ZoneId zone;
-    @XmlTransient
-    static DateTimeFormatter formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME;
-
     @XmlElementWrapper
     @XmlElement(name="record")
     // Use the array shape to optimize data transfer to client
@@ -87,6 +62,17 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     private TimeSeries() {}
+
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
+        super(page, pageSize, total);
+        this.name = name;
+        this.officeId = officeId;
+        this.begin = begin;
+        this.end = end;
+        this.interval = interval;
+        this.units = units;
+        values = new ArrayList<Record>();
+    }
 
     public String getName() {
         return name;
@@ -101,17 +87,13 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     @Schema(description = "The interval of the time-series in minutes")
+    @XmlElement
     public long getIntervalMinutes() {
          return interval.toMinutes();
     }
 
     public Duration getInterval() {
         return interval;
-    }
-
-    @JsonIgnore
-    public String getTimezone() {
-        return timezone;
     }
 
     public ZonedDateTime getBegin() {
@@ -138,6 +120,19 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(name = "valueColumns", accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
         return getColumnDescriptor("json");
+    }
+
+    public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
+        // Set the current page, if not set
+        if((page == null || page.isEmpty()) && values.size() == 0) {
+            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+        }
+        if(pageSize > 0 && values.size() == pageSize) {
+            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
+            return false;
+        } else {
+            return values.add(new Record(dateTime, value, qualityCode));
+        }
     }
 
     private List<Column> getColumnDescriptor(String format) {
@@ -186,8 +181,8 @@ public class TimeSeries extends CwmsDTOPaginated {
         Timestamp dateTime;
 
         @JsonProperty(index = 1)
-        @Schema(description = "Requested time-series data value.")
-        double value;
+        @Schema(description = "Requested time-series data value")
+        Double value;
 
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
@@ -195,12 +190,18 @@ public class TimeSeries extends CwmsDTOPaginated {
         @SuppressWarnings("unused") // required so JAXB can initialize and marshal
         private Record() {}
 
+        protected Record(Timestamp dateTime, Double value, int qualityCode) {
+            this.dateTime = dateTime;
+            this.value = value;
+            this.qualityCode = qualityCode;
+        }
+
         // When serialized, the value is unix epoch at UTC.
         public Timestamp getDateTime() {
             return dateTime;
         }
 
-        public double getValue() {
+        public Double getValue() {
             return value;
         }
 
