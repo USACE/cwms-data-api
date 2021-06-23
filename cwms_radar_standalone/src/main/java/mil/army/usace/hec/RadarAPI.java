@@ -31,6 +31,7 @@ import org.apache.tomcat.jdbc.pool.DataSource;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -60,6 +61,8 @@ public class RadarAPI {
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+        om.registerModule(new JavaTimeModule());
+
         JavalinJackson.configure(om);
         Javalin app = Javalin.create( config -> {
             config.defaultContentType = "application/json";
@@ -94,7 +97,7 @@ public class RadarAPI {
         .exception(Exception.class, (e,ctx) -> {
             ctx.status(500);
             ctx.json("There was an error processing your request");
-            logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(), e);
+            logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);
         })
         .routes( () -> {
             get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});

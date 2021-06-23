@@ -1,4 +1,4 @@
-package cwms.radar.formatters;
+package cwms.radar.formatters.json;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,6 +13,12 @@ import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
+import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
+import cwms.radar.formatters.LocationCategoryFormatV1;
+import cwms.radar.formatters.LocationGroupFormatV1;
+import cwms.radar.formatters.OfficeFormatV1;
+import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.plugin.json.JavalinJackson;
 import service.annotations.FormatService;
@@ -99,7 +105,7 @@ public class JsonV1 implements OutputFormatter{
 		}
 		return retval;
 	}
-	
+
 	private Object buildFormatting(List<? extends CwmsDTO> daoList)
 	{
 		Object retval = null;
@@ -135,5 +141,5 @@ public class JsonV1 implements OutputFormatter{
 		}
 		return retval;
 	}
-    
+
 }

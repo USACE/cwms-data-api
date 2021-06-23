@@ -37,3 +37,9 @@ test {
 }
 
 description = 'CWMS RADAR API'
+
+sourceSets {
+    main {
+        resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
+    }
+}
