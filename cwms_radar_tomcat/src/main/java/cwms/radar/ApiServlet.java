@@ -29,6 +29,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -76,6 +77,8 @@ public class ApiServlet extends HttpServlet {
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
         JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
+        om.registerModule(new JavaTimeModule());            // Needed in Java 8 to properly format java.time classes
+
         javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";
             config.contextPath = context;
@@ -130,7 +133,7 @@ public class ApiServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         total_requests.mark();
-        try (Connection db = cwms.getConnection() ) {
+        try (Connection db = cwms.getConnection()) {
             String office = req.getContextPath().substring(1).split("-")[0];//
             if( office.equalsIgnoreCase("cwms")){
                 office = "HQ";

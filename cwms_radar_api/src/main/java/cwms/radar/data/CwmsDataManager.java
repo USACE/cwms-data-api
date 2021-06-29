@@ -1,64 +1,74 @@
 package cwms.radar.data;
 
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
+import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Record3;
+import org.jooq.Record5;
+import org.jooq.RecordMapper;
+import org.jooq.Result;
+import org.jooq.SQL;
+import org.jooq.SQLDialect;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectJoinStep;
+import org.jooq.SelectSelectStep;
+import org.jooq.Table;
+import org.jooq.conf.ParamType;
+import org.jooq.impl.DSL;
+
 import cwms.radar.data.dto.AssignedLocation;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.data.dto.catalog.CatalogEntry;
-import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
-import cwms.radar.data.dto.catalog.CatalogIntermediate;
 import cwms.radar.data.dto.catalog.LocationAlias;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
+import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.javalin.http.Context;
 import kotlin.Pair;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.Record15;
-import org.jooq.Record3;
-import org.jooq.RecordMapper;
-import org.jooq.Result;
-import org.jooq.SQLDialect;
-import org.jooq.SelectConditionStep;
-import org.jooq.SelectJoinStep;
-import org.jooq.Table;
-import org.jooq.conf.ParamType;
-import org.jooq.impl.DSL;
-
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ROUNDING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
-
-
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
-import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -142,6 +152,140 @@ public class CwmsDataManager implements AutoCloseable {
                 names, format, units,datum, begin, end, timezone, office);
 	}
 
+    public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
+        String cursor = null;
+        Timestamp tsCursor = null;
+        Integer total = null;
+
+        if(begin == null)
+            begin = ZonedDateTime.now().minusDays(1).toLocalDateTime().toString();
+        if(end == null)
+            end = ZonedDateTime.now().toLocalDateTime().toString();
+
+        if(page != null && !page.isEmpty())
+        {
+            String[] parts = TimeSeries.decodeCursor(page);
+
+            logger.info("Decoded cursor");
+            for( String p: parts){
+                logger.info(p);
+            }
+
+            if(parts.length > 1)
+            {
+                cursor = parts[0];
+                tsCursor = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(parts[0])));
+
+                if(parts.length > 2)
+                    total = Integer.parseInt(parts[1]);
+
+                // Use the pageSize from the original cursor, for consistent paging
+                pageSize = Integer.parseInt(parts[parts.length - 1]);   // Last item is pageSize
+            }
+        }
+
+        ZoneId zone = timezone == null ? ZoneOffset.UTC.normalized() : ZoneId.of(timezone);
+
+        // Parse the date time in the best format it can find. Timezone is optional, but use it if it's found.
+        TemporalAccessor begin_parsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(begin, ZonedDateTime::from, LocalDateTime::from);
+        TemporalAccessor end_parsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(end, ZonedDateTime::from, LocalDateTime::from);
+
+        ZonedDateTime begin_time = begin_parsed instanceof ZonedDateTime ? ZonedDateTime.from(begin_parsed) : LocalDateTime.from(begin_parsed).atZone(zone);
+        // If the end time doesn't have a timezone, but begin did, use begin's timezone as end's.
+        ZonedDateTime end_time = end_parsed instanceof ZonedDateTime ? ZonedDateTime.from(end_parsed) : LocalDateTime.from(end_parsed).atZone(begin_time.getZone());
+
+        if(timezone == null) {
+            if(begin_time.getZone().equals(begin_time.getOffset()))
+                throw new IllegalArgumentException("Time cannot contain only an offset without the timezone.");
+            // If no timezone was found, get it from begin_time
+            zone = begin_time.getZone();
+        }
+
+        final String recordCursor = cursor;
+        final int recordPageSize = pageSize;
+
+        Field<String> office_id = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
+        Field<String> ts_id = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), office_id);
+        Field<BigDecimal> ts_code = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(ts_id, office_id);
+        Field<String> unit = units.compareToIgnoreCase("SI") == 0 || units.compareToIgnoreCase("EN") == 0 ?
+            CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(ts_code), DSL.val(units, String.class)) :
+            DSL.val(units, String.class);
+
+        // This code assumes the database timezone is in UTC (per Oracle recommendation)
+        // Wrap in table() so JOOQ can parse the result
+        @SuppressWarnings("deprecated")
+        SQL retrieveTable = DSL.sql("table(" + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
+            ts_id,
+            unit,
+            CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(begin_time.toInstant().toEpochMilli())),
+            CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(end_time.toInstant().toEpochMilli())),
+            DSL.inline("UTC", String.class),    // All times are sent as UTC to the database, regardless of requested timezone.
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            office_id) + ")"
+        );
+
+        SelectSelectStep<Record5<String,String,String,BigDecimal,Integer>> metadataQuery = dsl.select(
+            ts_id.as("NAME"),
+            office_id.as("OFFICE_ID"),
+            unit.as("UNITS"),
+            CWMS_TS_PACKAGE.call_GET_INTERVAL(ts_id).as("INTERVAL"),
+            // If we don't know the total, fetch it from the database (only for first fetch).
+            // Total is only an estimate, as it can change if fetching current data, or the timeseries otherwise changes between queries.
+            total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL")
+        );
+
+        logger.info( metadataQuery.getSQL(ParamType.INLINED));
+
+        TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata ->
+                new TimeSeries(recordCursor,
+                    recordPageSize,
+                    tsMetadata.getValue("TOTAL", Integer.class),
+                    tsMetadata.getValue("NAME", String.class),
+                    tsMetadata.getValue("OFFICE_ID", String.class),
+                    begin_time,
+                    end_time,
+                    tsMetadata.getValue("UNITS", String.class),
+                    Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class)))
+        );
+
+        if(pageSize != 0) {
+            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
+                DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME"),
+                CWMS_ROUNDING_PACKAGE.call_ROUND_DD_F(DSL.field("VALUE", Double.class), DSL.inline("5567899996"), DSL.inline('T')).as("VALUE"),
+                CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(DSL.field("QUALITY_CODE", Integer.class), DSL.inline(5))).as("QUALITY_CODE")
+            )
+            .from(retrieveTable)
+            .where(DSL.field("DATE_TIME", Timestamp.class)
+                .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                    DSL.nvl(DSL.val(tsCursor == null ? null : tsCursor.toInstant().toEpochMilli()),
+                                            DSL.val(begin_time.toInstant().toEpochMilli())))))
+            .and(DSL.field("DATE_TIME", Timestamp.class)
+                .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(end_time.toInstant().toEpochMilli())))
+            );
+
+            if(pageSize > 0)
+                query.limit(DSL.val(pageSize + 1));
+
+            logger.info( query.getSQL(ParamType.INLINED));
+
+            query.fetchInto(record -> {
+                    timeseries.addValue(
+                        record.getValue("DATE_TIME", Timestamp.class),
+                        record.getValue("VALUE", Double.class),
+                        record.getValue("QUALITY_CODE", Integer.class)
+                    );
+                }
+            );
+        }
+        return timeseries;
+    }
+
     public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
         int total = 0;
         String tsCursor = "*";
@@ -154,14 +298,17 @@ public class CwmsDataManager implements AutoCloseable {
         } else {
             logger.info("getting non-default page");
             // get totally from page
-            String cursor = new String( Base64.getDecoder().decode(page) );
-            logger.info("decoded cursor: " + cursor);
-            String[] parts = cursor.split("\\|\\|\\|");
+            String[] parts = Catalog.decodeCursor(page, "|||");
+
+            logger.info("decoded cursor: " + String.join("|||", parts));
             for( String p: parts){
                 logger.info(p);
             }
-            tsCursor = parts[0].split("\\/")[1];
-            total = Integer.parseInt(parts[1]);
+
+            if(parts.length > 1) {
+                tsCursor = parts[0].split("\\/")[1];
+                total = Integer.parseInt(parts[1]);
+            }
         }
 
         SelectJoinStep<Record3<String, String, String>> query = dsl.select(
@@ -203,14 +350,17 @@ public class CwmsDataManager implements AutoCloseable {
         } else {
             logger.info("getting non-default page");
             // get totally from page
-            String _cursor = new String( Base64.getDecoder().decode(cursor) );
-            logger.info("decoded cursor: " + cursor);
-            String parts[] = _cursor.split("\\|\\|\\|");
+            String[] parts = Catalog.decodeCursor(cursor, "|||");
+
+            logger.info("decoded cursor: " + String.join("|||", parts));
             for( String p: parts){
                 logger.info(p);
             }
-            locCursor = parts[0].split("\\/")[1];
-            total = Integer.parseInt(parts[1]);
+
+            if(parts.length > 1) {
+                locCursor = parts[0].split("\\/")[1];
+                total = Integer.parseInt(parts[1]);
+            }
         }
 
         SelectConditionStep<Record1<String>> tmp = dsl.select(AV_LOC.LOCATION_ID)
