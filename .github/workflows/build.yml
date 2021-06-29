@@ -36,7 +36,7 @@ jobs:
         run: ./gradlew dockerBuild
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v2'
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +88,7 @@ jobs:
           asset_content_type: application/x-webarchive
 
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v2'
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
     name: API Container Image
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
