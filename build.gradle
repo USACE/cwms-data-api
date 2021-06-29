@@ -2,7 +2,7 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.3.1'
+    version = '2.3-SNAPSHOT'
 }
 
 // versions for shared dependencies
