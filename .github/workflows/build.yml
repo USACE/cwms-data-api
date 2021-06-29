@@ -124,7 +124,7 @@ jobs:
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
         run: |
           ./gradlew :cwms_radar_api:build --init-script init.gradle
-          ./gradlew prepareDocker
+          ./gradlew prepareDocker --init-script init.gradle
           cd cwms_radar_standalone/build/docker
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
