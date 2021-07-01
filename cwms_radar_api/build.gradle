@@ -16,6 +16,10 @@ dependencies {
     }
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
 
+    // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
+    implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
+
+
     compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
     compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
         exclude group: "jakarta.xml.bind", module: "*"
@@ -29,7 +33,10 @@ dependencies {
     testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-    compile "com.fasterxml.jackson.core:jackson-databind:2.11.1"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.12.1"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.1"
+
+    testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
 }
 
 test {
