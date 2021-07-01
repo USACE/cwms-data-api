@@ -30,11 +30,13 @@ public class Formats {
     public static final String JSONV2 = "application/json;version=2";
     public static final String TAB = "text/tab-separated-values";
     public static final String CSV = "text/csv";
+    public static final String GEOJSON = "application/geo+json";
+
 
     private static ArrayList<ContentType> contentTypeList = new ArrayList<>();
     static {
         contentTypeList.addAll(
-            Arrays.asList(JSON,XML,WML2,JSONV2,TAB,CSV)
+            Arrays.asList(JSON,XML,WML2,JSONV2,TAB,CSV, GEOJSON)
             .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
     private static HashMap<String,String> type_map =new HashMap<>();
@@ -44,6 +46,7 @@ public class Formats {
         type_map.put("wml2",Formats.WML2);
         type_map.put("tab",Formats.TAB);
         type_map.put("csv",Formats.CSV);
+        type_map.put("geojson",Formats.GEOJSON);
     };
 
 
