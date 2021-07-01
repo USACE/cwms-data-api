@@ -14,6 +14,7 @@ import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.csv.CsvV1LocationGroup;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -51,9 +52,9 @@ public class LocationGroupController implements CrudHandler
 			},
 			responses = {
 			@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON)
+					content = {@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
+							@OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV )
 							//							@OpenApiContent(isArray = true, from = TabV1LocationGroup.class, type = Formats.TAB ),
-							//							@OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV )
 					}
 
 			),
@@ -69,7 +70,6 @@ public class LocationGroupController implements CrudHandler
 
 			List<LocationGroup> grps = cdm.getLocationGroups(office);
 
-//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
@@ -97,9 +97,10 @@ public class LocationGroupController implements CrudHandler
 					@OpenApiParam(name = "category-id", required = true, description = "Specifies the category containing the location group whose data is to be included in the response."),
 			},
 			responses = {@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
-							//							@OpenApiContent(from = TabV1LocationGroup.class, type = Formats.TAB ),
-							//							@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV )
+					content = {
+						@OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
+						@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV )
+							//	@OpenApiContent(from = TabV1LocationGroup.class, type = Formats.TAB ),
 					}
 
 			),
@@ -117,7 +118,6 @@ public class LocationGroupController implements CrudHandler
 
 			LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
 
-//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
