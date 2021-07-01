@@ -112,6 +112,8 @@ public class ApiServlet extends HttpServlet {
                     crud("/timezones/:zone", new TimeZoneController(metrics));
                     crud("/levels/:location", new LevelsController(metrics));
                     crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+                    crud("/timeseries/category/:category-id", new TimeSeriesCategoryController(metrics));
+                    crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
                     crud("/catalog/:dataSet", new CatalogController(metrics));
                 }).servlet();

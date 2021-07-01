@@ -16,7 +16,9 @@ import cwms.radar.api.LocationGroupController;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.RatingController;
+import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
+import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.formatters.Formats;
@@ -110,6 +112,8 @@ public class RadarAPI {
             crud("/timezones/:zone", new TimeZoneController(metrics));
             crud("/levels/:location", new LevelsController(metrics));
             crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+            crud("/timeseries/category/:category-id", new TimeSeriesCategoryController(metrics));
+            crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
         }).start(port);
