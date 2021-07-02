@@ -1,24 +1,30 @@
-package cwms.radar.formatters;
+package cwms.radar.formatters.json;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import cwms.radar.data.dto.AvClob;
 import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
+import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
+import cwms.radar.formatters.OfficeFormatV1;
+import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.plugin.json.JavalinJackson;
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class,
-		LocationGroup.class, LocationCategory.class})
+		LocationGroup.class, LocationCategory.class, AvClob.class})
 public class JsonV1 implements OutputFormatter{
 
 	private final ObjectMapper om;
@@ -31,7 +37,7 @@ public class JsonV1 implements OutputFormatter{
 	public JsonV1(ObjectMapper om)
 	{
 		this.om = om.copy();
-		this.om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+		this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
 		this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 	}
 
@@ -77,15 +83,12 @@ public class JsonV1 implements OutputFormatter{
 			List<Office> offices = Arrays.asList((Office) dao);
 			retval = new OfficeFormatV1(offices);
 		}
-		else if(dao instanceof LocationGroup)
-		{
+		else if (dataTypesContains(dao.getClass())){
+			// Any types that have to be handle as special cases
+			// should be in else if branches before this
+			// If the class is in the annotation assume we can just return it.
 			retval = dao;
 		}
-		else if(dao instanceof LocationCategory)
-		{
-			retval = dao;
-		}
-
 
 		if(retval == null)
 		{
@@ -99,10 +102,30 @@ public class JsonV1 implements OutputFormatter{
 		}
 		return retval;
 	}
-	
+
+	private boolean dataTypesContains(Class klass){
+		List<Class> dataTypes = getDataTypes();
+		return dataTypes.contains(klass);
+	}
+
+	private List<Class> getDataTypes(){
+		List<Class> retval = Collections.emptyList();
+		FormatService fs = JsonV1.class.getDeclaredAnnotation(FormatService.class);
+		if(fs != null)
+		{
+			Class[] classes = fs.dataTypes();
+			if(classes != null && classes.length > 0)
+			{
+				retval = Arrays.asList(classes);
+			}
+		}
+		return retval;
+	}
+
 	private Object buildFormatting(List<? extends CwmsDTO> daoList)
 	{
 		Object retval = null;
+
 		if(daoList != null && !daoList.isEmpty())
 		{
 			CwmsDTO firstObj = daoList.get(0);
@@ -111,17 +134,12 @@ public class JsonV1 implements OutputFormatter{
 				List<Office> officesList = daoList.stream().map(Office.class::cast).collect(Collectors.toList());
 				retval = new OfficeFormatV1(officesList);
 			}
-			else if(firstObj instanceof LocationGroup)
-			{
-				List<LocationGroup> groups = daoList.stream().map(LocationGroup.class::cast).collect(Collectors.toList());
-				retval = new LocationGroupFormatV1(groups);
+			else if (dataTypesContains(firstObj.getClass())){
+				// If dataType annotated with the class we can return an array of them.
+				// If a class needs to be handled differently an else_if branch can be added above
+				// here and a wrapper obj used to format the return value however is desired.
+				retval = daoList;
 			}
-			else if(firstObj instanceof LocationCategory)
-			{
-				List<LocationCategory> cats = daoList.stream().map(LocationCategory.class::cast).collect(Collectors.toList());
-				retval = new LocationCategoryFormatV1(cats);
-			}
-
 
 			if(retval == null)
 			{
@@ -135,5 +153,5 @@ public class JsonV1 implements OutputFormatter{
 		}
 		return retval;
 	}
-    
+
 }

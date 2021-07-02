@@ -1,13 +1,5 @@
 package cwms.radar;
 
-import io.javalin.Javalin;
-import static io.javalin.apibuilder.ApiBuilder.*;
-import io.javalin.http.JavalinServlet;
-import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.openapi.OpenApiOptions;
-import io.javalin.plugin.openapi.OpenApiPlugin;
-import io.swagger.v3.oas.models.info.Info;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,13 +18,35 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import cwms.radar.api.CatalogController;
+import cwms.radar.api.ClobController;
+import cwms.radar.api.LevelsController;
+import cwms.radar.api.LocationCategoryController;
+import cwms.radar.api.LocationController;
+import cwms.radar.api.LocationGroupController;
+import cwms.radar.api.OfficeController;
+import cwms.radar.api.ParametersController;
+import cwms.radar.api.RatingController;
+import cwms.radar.api.TimeSeriesCategoryController;
+import cwms.radar.api.TimeSeriesController;
+import cwms.radar.api.TimeSeriesGroupController;
+import cwms.radar.api.TimeZoneController;
+import cwms.radar.api.UnitsController;
+import cwms.radar.formatters.Formats;
+import io.javalin.Javalin;
+import io.javalin.http.JavalinServlet;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.openapi.OpenApiOptions;
+import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.swagger.v3.oas.models.info.Info;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
-import cwms.radar.api.*;
-import cwms.radar.formatters.Formats;
+import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
 
 /**
  * Setup all the information required so we can serve the request.
@@ -47,7 +61,8 @@ import cwms.radar.formatters.Formats;
                             "/timezones/*",
                             "/units/*",
                             "/ratings/*",
-                            "/levels/*"
+                            "/levels/*",
+                            "/clobs/*"
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
@@ -71,7 +86,8 @@ public class ApiServlet extends HttpServlet {
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         ObjectMapper om = JavalinJackson.getObjectMapper();
-        om.setPropertyNamingStrategy(PropertyNamingStrategy.KEBAB_CASE);
+        om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
+        om.registerModule(new JavaTimeModule());            // Needed in Java 8 to properly format java.time classes
 
         javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";
@@ -110,8 +126,17 @@ public class ApiServlet extends HttpServlet {
                     crud("/timezones/:zone", new TimeZoneController(metrics));
                     crud("/levels/:location", new LevelsController(metrics));
                     crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+                    crud("/timeseries/category/:category-id", new TimeSeriesCategoryController(metrics));
+                    crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
                     crud("/catalog/:dataSet", new CatalogController(metrics));
+
+                    ClobController clobController = new ClobController(metrics);
+                    path("/clobs", () -> {
+                        get(":clob-id", ctx->clobController.getOne(ctx, ctx.pathParam("clob-id")));
+                        get("/", ctx->clobController.getAll(ctx));
+                        get("/like/:like", ctx->clobController.getLike(ctx, ctx.pathParam("like")));
+                    });
                 }).servlet();
     }
 
@@ -127,7 +152,7 @@ public class ApiServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         total_requests.mark();
-        try (Connection db = cwms.getConnection() ) {
+        try (Connection db = cwms.getConnection()) {
             String office = req.getContextPath().substring(1).split("-")[0];//
             if( office.equalsIgnoreCase("cwms")){
                 office = "HQ";

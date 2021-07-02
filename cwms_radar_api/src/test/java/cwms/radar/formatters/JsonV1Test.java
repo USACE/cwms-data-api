@@ -6,6 +6,8 @@ import java.util.List;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
+import cwms.radar.formatters.json.JsonV1;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

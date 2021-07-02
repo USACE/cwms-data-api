@@ -11,10 +11,11 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dto.LocationGroup;
+
+import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.csv.CsvV1LocationGroup;
+
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -25,9 +26,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
-public class LocationGroupController implements CrudHandler
+public class TimeSeriesGroupController implements CrudHandler
 {
-	public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
+	public static final Logger logger = Logger.getLogger(TimeSeriesGroupController.class.getName());
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -36,7 +37,7 @@ public class LocationGroupController implements CrudHandler
 	private final Timer getOneRequestTime;
 	private final Histogram requestResultSize;
 
-	public LocationGroupController(MetricRegistry metrics)
+	public TimeSeriesGroupController(MetricRegistry metrics)
 	{
 		this.metrics = metrics;
 		String className = this.getClass().getName();
@@ -48,18 +49,18 @@ public class LocationGroupController implements CrudHandler
 	}
 
 	@OpenApi(queryParams = {
-			@OpenApiParam(name = "office", description = "Specifies the owning office of the location group(s) whose data is to be included in the response. If this field is not specified, matching location groups information from all offices shall be returned."),
+			@OpenApiParam(name = "office", description = "Specifies the owning office of the timeseries group(s) whose data is to be included in the response. If this field is not specified, matching timeseries groups information from all offices shall be returned."),
 			},
 			responses = {
 			@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
-							@OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV )
-							//							@OpenApiContent(isArray = true, from = TabV1LocationGroup.class, type = Formats.TAB ),
+					content = {@OpenApiContent(isArray = true, from = TimeSeriesGroup.class, type = Formats.JSON)
+							//							@OpenApiContent(isArray = true, from = TabV1TimeseriesGroup.class, type = Formats.TAB ),
+							//							@OpenApiContent(isArray = true, from = CsvV1TimeseriesGroup.class, type = Formats.CSV )
 					}
 
 			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location(s) were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Groups Data", tags = {"Location Groups"})
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group(s) were not found."),
+					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Timeseries Groups Data", tags = {"Timeseries Groups"})
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -68,15 +69,14 @@ public class LocationGroupController implements CrudHandler
 		{
 			String office = ctx.queryParam("office");
 
-			List<LocationGroup> grps = cdm.getLocationGroups(office);
-
+			List<TimeSeriesGroup> grps = cdm.getTimeSeriesGroups(office);
+			
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result = Formats.format(contentType, grps);
+			String result = Formats.format(contentType,grps);
 
-			ctx.result(result);
-			ctx.contentType(contentType.toString());
+			ctx.result(result).contentType(contentType.toString());
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);
@@ -91,23 +91,23 @@ public class LocationGroupController implements CrudHandler
 
 	@OpenApi(
 			pathParams = {
-					@OpenApiParam(name = "group-id", required = true, description = "Specifies the location_group whose data is to be included in the response")
+					@OpenApiParam(name = "group-id", required = true, description = "Specifies the timeseries group whose data is to be included in the response")
 			},
 			queryParams = {
-			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the location group whose data is to be included in the response."),
-					@OpenApiParam(name = "category-id", required = true, description = "Specifies the category containing the location group whose data is to be included in the response."),
+					@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the timeseries group whose data is to be included in the response."),
+					@OpenApiParam(name = "category-id", required = true, description = "Specifies the category containing the timeseries group whose data is to be included in the response."),
 			},
-			responses = {@OpenApiResponse(status = "200",
-					content = {
-						@OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
-						@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV )
-							//	@OpenApiContent(from = TabV1LocationGroup.class, type = Formats.TAB ),
+			responses = {
+					@OpenApiResponse(status = "200", content = {
+							@OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
+//						@OpenApiContent(from = CsvV1TimeseriesGroup.class, type = Formats.CSV )
+							//	@OpenApiContent(from = TabV1TimeseriesGroup.class, type = Formats.TAB ),
 					}
 
 			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location group was not found."),
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group was not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")},
-			description = "Retrieves requested Location Group", tags = {"Location Groups"})
+			description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
 	@Override
 	public void getOne(Context ctx, String groupId)
 	{
@@ -117,12 +117,36 @@ public class LocationGroupController implements CrudHandler
 			String office = ctx.queryParam("office");
 			String categoryId = ctx.queryParam("category-id");
 
-			LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
-
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result = Formats.format(contentType,grp);
+			String result;
+			if(Formats.GEOJSON.equals(contentType.getType())){
+				result = null; // for now.
+			} else
+			{
+
+				TimeSeriesGroup group = null;
+				List<TimeSeriesGroup> timeSeriesGroups = cdm.getTimeSeriesGroups(office, categoryId, groupId);
+				if(timeSeriesGroups != null && !timeSeriesGroups.isEmpty())
+				{
+					if(timeSeriesGroups.size() == 1)
+					{
+						group = timeSeriesGroups.get(0);
+					}
+					else
+					{
+						// An error. [office, categoryId, groupId] should have, at most, one match
+						String message = String.format(
+								"Multiple TimeSeriesGroups returned from getTimeSeriesGroups "
+										+ "for:%s category:%s groupId:%s At most one match was expected. Found:%s",
+								office, categoryId, groupId, timeSeriesGroups);
+						throw new IllegalArgumentException(message);
+					}
+				}
+
+				result = Formats.format(contentType, group);
+			}
 
 			ctx.result(result);
 			ctx.contentType(contentType.toString());

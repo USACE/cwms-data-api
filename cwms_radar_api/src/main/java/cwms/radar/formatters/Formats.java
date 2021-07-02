@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.helpers.ResourceHelper;
 
 
 
@@ -24,15 +25,18 @@ public class Formats {
     public static final String PLAIN = "text/plain";    // Only used as a constant, not for any data mapping
     public static final String JSON = "application/json";
     public static final String XML = "application/xml";
+    public static final String XMLV2 = "application/xml;version=2";
     public static final String WML2 = "application/vnd.opengis.waterml+xml";
     public static final String JSONV2 = "application/json;version=2";
     public static final String TAB = "text/tab-separated-values";
     public static final String CSV = "text/csv";
+    public static final String GEOJSON = "application/geo+json";
+
 
     private static ArrayList<ContentType> contentTypeList = new ArrayList<>();
     static {
         contentTypeList.addAll(
-            Arrays.asList(JSON,XML,WML2,JSONV2,TAB,CSV)
+            Arrays.asList(JSON,XML,WML2,JSONV2,TAB,CSV, GEOJSON)
             .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
     private static HashMap<String,String> type_map =new HashMap<>();
@@ -42,6 +46,7 @@ public class Formats {
         type_map.put("wml2",Formats.WML2);
         type_map.put("tab",Formats.TAB);
         type_map.put("csv",Formats.CSV);
+        type_map.put("geojson",Formats.GEOJSON);
     };
 
 
@@ -51,7 +56,7 @@ public class Formats {
 
     private Formats() throws IOException{
         formatters = new HashMap<>();
-        InputStream formatList = this.getClass().getResourceAsStream("/formats.list");
+        InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list", this.getClass());
         BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
         while( br.ready() ){
             String line = br.readLine();
@@ -148,7 +153,7 @@ public class Formats {
             if( val != null ){
                 return new ContentType(val);
             } else {
-                throw new FormattingException("content-type " + queryParam + "is not implemented");
+                throw new FormattingException("content-type " + queryParam + " is not implemented");
             }
         } else if( header == null ){
             throw new FormattingException("no content type or format specified");
