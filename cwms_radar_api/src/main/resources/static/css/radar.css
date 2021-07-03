@@ -7,6 +7,12 @@ html, body {
     height: 100%;
 }
 
+a:link,a:hover,a:visited,a:active {
+    color: white;
+    text-decoration: none;
+}
+
+
 #logo img{
     width: 5em;
     height: 5em;
@@ -106,15 +112,29 @@ html, body {
     list-style-type: none;
 }
 
-#footer ul li {
-    display: inline;
-    margin-right: .5em;
+#footer ul {
+    width:100%;
+}
+
+#footer ul, #footer li {
+    list-style-type: none;
+
+
+}
+
+.footer-text-links ul li {
+    width: 50%;
+    display: block;
+    float: left;
+    /*padding: .2em 0;*/
+}
+
+.footer-text-links ul a {
     width: 10em;
     min-width: 10em;
+    margin-right: .5em;
     text-align: left;
     font-size: medium;
-    padding: .2em 0;
-    text-align: center;
 }
 
 #footer .top {
@@ -124,6 +144,12 @@ html, body {
     margin: 0;
     z-index: 2;
     padding-bottom: 3em;
+}
+
+#footer_army_links {
+    font-size: medium;
+    width: 10em;
+    text-align: center;
 }
 
 #footer .bottom {
@@ -139,4 +165,8 @@ html, body {
     display: block;
     top: -4em;
     position: relative;
+}
+
+#content ul {
+    list-style-type: initial;
 }
