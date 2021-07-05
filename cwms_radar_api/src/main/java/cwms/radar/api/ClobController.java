@@ -57,7 +57,7 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            path = "/clob/",
+            path = "/clobs/",
             queryParams = {
             @OpenApiParam(name="office", required=false, description="Specifies the owning office. If this field is not specified, matching information from all offices shall be returned.")
         },
@@ -110,7 +110,7 @@ public class ClobController implements CrudHandler {
 
 
     @OpenApi(
-            path="/clob/:clob-id",
+            path="/clobs/:clob-id",
             queryParams = {
             @OpenApiParam(name = "office", description = "Specifies the owning office."),
     },
@@ -159,7 +159,7 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            path="/clob/like/:like",
+            path="/clobs/like/:like",
             description = "Finds Clobs with an ID that is like the specified id. In Oracle:% matches 0 or more char, _ matches exactly 1. ",
             queryParams = {
             @OpenApiParam(name = "office", description = "Specifies the owning office."),

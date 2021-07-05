@@ -61,7 +61,8 @@ import static io.javalin.apibuilder.ApiBuilder.path;
                             "/timezones/*",
                             "/units/*",
                             "/ratings/*",
-                            "/levels/*"
+                            "/levels/*",
+                            "/clobs/*"
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
@@ -131,7 +132,7 @@ public class ApiServlet extends HttpServlet {
                     crud("/catalog/:dataSet", new CatalogController(metrics));
 
                     ClobController clobController = new ClobController(metrics);
-                    path("/clob", () -> {
+                    path("/clobs", () -> {
                         get(":clob-id", ctx->clobController.getOne(ctx, ctx.pathParam("clob-id")));
                         get("/", ctx->clobController.getAll(ctx));
                         get("/like/:like", ctx->clobController.getLike(ctx, ctx.pathParam("like")));
