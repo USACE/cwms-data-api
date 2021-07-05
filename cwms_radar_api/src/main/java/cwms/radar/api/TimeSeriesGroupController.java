@@ -107,7 +107,7 @@ public class TimeSeriesGroupController implements CrudHandler
 			),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group was not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")},
-			description = "Retrieves requested timeseries group", tags = {"timeseries groups"})
+			description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
 	@Override
 	public void getOne(Context ctx, String groupId)
 	{
@@ -148,7 +148,8 @@ public class TimeSeriesGroupController implements CrudHandler
 				result = Formats.format(contentType, group);
 			}
 
-			ctx.result(result).contentType(contentType.toString());
+			ctx.result(result);
+			ctx.contentType(contentType.toString());
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);

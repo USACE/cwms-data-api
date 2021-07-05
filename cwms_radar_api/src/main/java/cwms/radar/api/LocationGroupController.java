@@ -71,11 +71,12 @@ public class LocationGroupController implements CrudHandler
 			List<LocationGroup> grps = cdm.getLocationGroups(office);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-			String result = Formats.format(contentType,grps);
+			String result = Formats.format(contentType, grps);
 
-			ctx.result(result).contentType(contentType.toString());
+			ctx.result(result);
+			ctx.contentType(contentType.toString());
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);
@@ -119,11 +120,12 @@ public class LocationGroupController implements CrudHandler
 			LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
 			String result = Formats.format(contentType,grp);
 
-			ctx.result(result).contentType(contentType.toString());
+			ctx.result(result);
+			ctx.contentType(contentType.toString());
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);
