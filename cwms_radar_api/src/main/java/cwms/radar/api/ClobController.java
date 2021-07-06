@@ -72,15 +72,15 @@ public class ClobController implements CrudHandler {
                     },
         tags = {"Clob"}
     )
-    @Override    
-    public void getAll(Context ctx) {        
+    @Override
+    public void getAll(Context ctx) {
         getAllRequests.mark();
         try(
                 final Timer.Context timeContext = getOneRequestTime.time();
                 DSLContext dsl = getDslContext(ctx)
         ) {
             String office = ctx.queryParam("office");
-            Optional<String> officeOpt = Optional.of(office);
+            Optional<String> officeOpt = Optional.ofNullable(office);
 
 
             String formatParm = ctx.queryParam("format","");
@@ -90,7 +90,7 @@ public class ClobController implements CrudHandler {
             ClobDao dao = new ClobDao(dsl);
             List<AvClob> clobs = dao.getAll(officeOpt);
             String result = Formats.format(contentType,clobs);
-                
+
             ctx.result(result);
             ctx.contentType(contentType.toString());
             requestResultSize.update(result.length());
