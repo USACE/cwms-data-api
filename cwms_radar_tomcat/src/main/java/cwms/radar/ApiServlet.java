@@ -62,7 +62,8 @@ import static io.javalin.apibuilder.ApiBuilder.path;
                             "/units/*",
                             "/ratings/*",
                             "/levels/*",
-                            "/clobs/*"
+                            "/clobs/*",
+                            "/index*"
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
@@ -95,6 +96,7 @@ public class ApiServlet extends HttpServlet {
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
             config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
+            config.addStaticFiles("/static");
         })
                 .attribute(PolicyFactory.class,sanitizer)
                 .before( ctx -> {

@@ -79,6 +79,7 @@ public class RadarAPI {
             config.configureServletContextHandler( sch -> {
                 sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*");
             });
+            config.addStaticFiles("/static");
         }).attribute(PolicyFactory.class,sanitizer)
 
           .before( ctx -> {
@@ -104,7 +105,7 @@ public class RadarAPI {
             logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);
         })
         .routes( () -> {
-            get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
+            //get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
             crud("/locations/:location_code", new LocationController(metrics));
             crud("/location/category/:category-id", new LocationCategoryController(metrics));
             crud("/location/group/:group-id", new LocationGroupController(metrics));
@@ -134,7 +135,7 @@ public class RadarAPI {
         Info applicationInfo = new Info().version("2.0").description("CWMS REST API for Data Retrieval");
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
-                    .swagger( new SwaggerOptions("/swagger-ui"))
+                    .swagger( new SwaggerOptions("/swagger-ui.html"))
                     .activateAnnotationScanningFor("cwms.radar.api");
         return options;
     }
