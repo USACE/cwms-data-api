@@ -67,7 +67,6 @@ public class LocationCategoryController implements CrudHandler
 
 			List<LocationCategory> cats = cdm.getLocationCategories(office);
 
-//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
@@ -115,7 +114,6 @@ public class LocationCategoryController implements CrudHandler
 
 			LocationCategory grp = cdm.getLocationCategory(office, categoryId);
 
-//			String formatParm = ctx.queryParam("format", "json");
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
