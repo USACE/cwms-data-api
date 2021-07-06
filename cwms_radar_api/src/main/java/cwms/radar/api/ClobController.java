@@ -158,54 +158,7 @@ public class ClobController implements CrudHandler {
         }
     }
 
-    @OpenApi(
-            path="/clobs/like/:like",
-            description = "Finds Clobs with an ID that is like the specified id. In Oracle:% matches 0 or more char, _ matches exactly 1. ",
-            queryParams = {
-            @OpenApiParam(name = "office", description = "Specifies the owning office."),
-    },
-            responses = { @OpenApiResponse(status="200",
-                    description = "Returns requested clob.",
-                    content = {
-                            @OpenApiContent(type = Formats.JSON ),
-                    }
-            ),
-                    @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                    @OpenApiResponse(status="400", description = "Invalid Parameter combination")
-            },
-            tags = {"Clob"}
-    )
-    public void getLike(Context ctx, String likeKey) {
-        getOneRequest.mark();
-        try(
-                final Timer.Context timeContext = getOneRequestTime.time();
-                DSLContext dsl = getDslContext(ctx)
-        ) {
-            ClobDao dao = new ClobDao(dsl);
 
-            String office = ctx.queryParam("office");
-            List<AvClob> clobsLike = dao.getClobsLike(office, likeKey);
-
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-
-            String result = Formats.format(contentType, clobsLike);
-
-            ctx.contentType(contentType.toString());
-            ctx.result(result);
-
-            requestResultSize.update(result.length());
-        }  catch( FormattingException fe ){
-            logger.log(Level.SEVERE,"failed to format data",fe);
-            if( fe.getCause() instanceof IOException ){
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
-            } else {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
-            }
-        }
-    }
 
 
     @OpenApi(ignore = true)
