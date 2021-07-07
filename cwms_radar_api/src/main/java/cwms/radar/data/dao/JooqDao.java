@@ -1,6 +1,8 @@
 package cwms.radar.data.dao;
 
 import java.sql.Connection;
+import java.util.List;
+import java.util.Optional;
 
 import io.javalin.http.Context;
 import org.jooq.DSLContext;
@@ -28,5 +30,17 @@ public abstract class JooqDao<T> extends Dao<T>
 		DSLContext dsl =  DSL.using(database, SQLDialect.ORACLE11G);
 		CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 		return dsl;
+	}
+
+	@Override
+	public List<T> getAll(Optional<String> limitToOffice)
+	{
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	@Override
+	public Optional<T> getByUniqueName(String uniqueName, Optional<String> limitToOffice)
+	{
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

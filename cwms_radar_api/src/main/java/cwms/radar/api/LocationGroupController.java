@@ -1,6 +1,5 @@
 package cwms.radar.api;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -10,7 +9,9 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.radar.data.CwmsDataManager;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.radar.data.dao.LocationGroupDao;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -18,12 +19,16 @@ import cwms.radar.formatters.csv.CsvV1LocationGroup;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.geojson.FeatureCollection;
+import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class LocationGroupController implements CrudHandler
 {
@@ -64,8 +69,12 @@ public class LocationGroupController implements CrudHandler
 	public void getAll(Context ctx)
 	{
 		getAllRequests.mark();
-		try(final Timer.Context timeContext = getAllRequestsTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
+		try(final Timer.Context timeContext = getAllRequestsTime.time();
+			DSLContext dsl = getDslContext(ctx)
+		)
 		{
+			LocationGroupDao cdm = new LocationGroupDao(dsl);
+
 			String office = ctx.queryParam("office");
 
 			List<LocationGroup> grps = cdm.getLocationGroups(office);
@@ -81,12 +90,7 @@ public class LocationGroupController implements CrudHandler
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
-		catch(SQLException ex)
-		{
-			logger.log(Level.SEVERE, null, ex);
-			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			ctx.result("Failed to process request");
-		}
+
 	}
 
 	@OpenApi(
@@ -99,9 +103,9 @@ public class LocationGroupController implements CrudHandler
 			},
 			responses = {@OpenApiResponse(status = "200",
 					content = {
-						@OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
-						@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV )
-							//	@OpenApiContent(from = TabV1LocationGroup.class, type = Formats.TAB ),
+							@OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
+							@OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV),
+							@OpenApiContent(type = Formats.GEOJSON)
 					}
 
 			),
@@ -112,30 +116,41 @@ public class LocationGroupController implements CrudHandler
 	public void getOne(Context ctx, String groupId)
 	{
 		getOneRequest.mark();
-		try(final Timer.Context timeContext = getOneRequestTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
+		try(final Timer.Context timeContext = getOneRequestTime.time();
+			DSLContext dsl = getDslContext(ctx)
+		)
 		{
+			LocationGroupDao cdm = new LocationGroupDao(dsl);
 			String office = ctx.queryParam("office");
 			String categoryId = ctx.queryParam("category-id");
-
-			LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-			String result = Formats.format(contentType,grp);
-
+			String result;
+			if(Formats.GEOJSON.equals(contentType.getType()))
+			{
+				FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(office, categoryId, groupId,"EN");
+				ObjectMapper mapper = JavalinJackson.getObjectMapper();
+				result = mapper.writeValueAsString(fc);
+			} else
+			{
+				LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
+				result = Formats.format(contentType, grp);
+			}
 			ctx.result(result);
 			ctx.contentType(contentType.toString());
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
-		catch(SQLException ex)
+		catch(JsonProcessingException e)
 		{
-			logger.log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, null, e);
 			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			ctx.result("Failed to process request");
 		}
+
 	}
 
 	@OpenApi(ignore = true)
