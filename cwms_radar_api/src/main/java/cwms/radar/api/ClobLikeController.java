@@ -65,7 +65,7 @@ public class ClobLikeController implements CrudHandler {
             responses = { @OpenApiResponse(status="200",
                     description = "Returns requested clob.",
                     content = {
-                            @OpenApiContent(type = Formats.JSON ),
+                            @OpenApiContent(type = Formats.JSON, from = Clob.class, isArray = true ),
                     }
             ),
                     @OpenApiResponse(status="501",description = "The format requested is not implemented"),

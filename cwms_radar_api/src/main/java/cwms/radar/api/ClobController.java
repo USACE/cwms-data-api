@@ -57,14 +57,13 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            path = "/clobs/",
             queryParams = {
             @OpenApiParam(name="office", required=false, description="Specifies the owning office. If this field is not specified, matching information from all offices shall be returned.")
         },
         responses = { @OpenApiResponse(status="200",
                                        description = "A list of clobs.",
                                        content = {
-                                           @OpenApiContent( type = Formats.JSON )
+                                           @OpenApiContent( type = Formats.JSON, from = Clob.class, isArray = true )
                                        }
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),
@@ -110,14 +109,13 @@ public class ClobController implements CrudHandler {
 
 
     @OpenApi(
-            path="/clobs/:clob-id",
             queryParams = {
             @OpenApiParam(name = "office", description = "Specifies the owning office."),
     },
         responses = { @OpenApiResponse(status="200",
                                        description = "Returns requested clob.",
                                        content = {
-                                           @OpenApiContent(type = Formats.JSON ),
+                                           @OpenApiContent(type = Formats.JSON, from = Clob.class ),
                                        }
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),
