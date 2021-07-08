@@ -48,7 +48,7 @@ public class Clobs extends CwmsDTOPaginated {
     public static class Builder {
         private Clobs clobs = null;
         public Builder( String cursor, int pageSize, int total){
-            clobs = new Clobs(cursor,pageSize, total);
+            clobs = new Clobs(cursor, pageSize, total);
         }
 
         public Clobs build(){

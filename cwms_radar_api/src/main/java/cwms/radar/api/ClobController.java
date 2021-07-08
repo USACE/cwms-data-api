@@ -76,6 +76,11 @@ public class ClobController implements CrudHandler {
                     required = false,
                     type = Boolean.class,
                     description = "Do you want the value assosciated with this particular clob (default: false)"
+                ),
+                @OpenApiParam(name="like",
+                    required = false,
+                    type = String.class,
+                    description = "Posix regular expression describing the clob id's you want"
                 )
             },
         responses = { @OpenApiResponse(status="200",
@@ -104,13 +109,14 @@ public class ClobController implements CrudHandler {
             int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
 
             boolean includeValues = ctx.queryParam("includeValues",Boolean.class,"false").getValue().booleanValue();
+            String like = ctx.queryParam("like",".*");
 
             String formatParm = ctx.queryParam("format","");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             ClobDao dao = new ClobDao(dsl);
-            Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues);
+            Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);
             String result = Formats.format(contentType,clobs);
 
             ctx.result(result);

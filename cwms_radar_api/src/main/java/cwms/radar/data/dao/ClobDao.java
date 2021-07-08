@@ -100,6 +100,10 @@ public class ClobDao extends JooqDao<Clob>
 	}
 
 	public Clobs getClobs(String cursor, int pageSize, Optional<String> office, boolean includeValues ){
+		return getClobs(cursor,pageSize,office,includeValues,".*");
+	}
+
+	public Clobs getClobs(String cursor, int pageSize, Optional<String> office, boolean includeValues, String like ){
 		int total = 0;
 		String clobCursor = "*";
 		AV_CLOB v_clob = AV_CLOB.AV_CLOB;
@@ -109,9 +113,10 @@ public class ClobDao extends JooqDao<Clob>
 
 			SelectConditionStep<Record1<Integer>> count =
 				dsl.select(count(asterisk()))
-				   .from(AV_CLOB.AV_CLOB)
+				   .from(v_clob)
 				   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-				   .where(v_office.OFFICE_ID.like(office.isPresent() ? office.get() : "*"));
+				   .where(v_clob.ID.likeRegex(like))
+				   .and(v_office.OFFICE_ID.like(office.isPresent() ? office.get() : "*"));
 
 			total = count.fetchOne().value1().intValue();
 		} else {
@@ -130,7 +135,8 @@ public class ClobDao extends JooqDao<Clob>
 
 		Table<?> forLimit = dsl.select(v_clob.ID)
 							   .from(v_clob)
-							   .where(v_clob.ID.greaterThan(clobCursor))
+							   .where(v_clob.ID.likeRegex(like))
+							   .and(v_clob.ID.greaterThan(clobCursor))
 							   .orderBy(v_clob.ID).limit(pageSize).asTable();
 
 
@@ -143,7 +149,8 @@ public class ClobDao extends JooqDao<Clob>
 									   .from(v_clob)
 									   .innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
 									   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-									   .where(v_clob.ID.greaterThan(clobCursor));
+									   .where(v_clob.ID.likeRegex(like))
+									   .and(v_clob.ID.greaterThan(clobCursor));
 									   ;
 		Clobs.Builder builder = new Clobs.Builder(cursor,pageSize, total);
 		query.fetch().forEach( row -> {
