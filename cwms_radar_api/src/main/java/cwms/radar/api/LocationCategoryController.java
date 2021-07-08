@@ -1,8 +1,6 @@
 package cwms.radar.api;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -10,7 +8,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.LocationCategoryDao;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -21,8 +19,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class LocationCategoryController implements CrudHandler
 {
@@ -61,11 +61,13 @@ public class LocationCategoryController implements CrudHandler
 	public void getAll(Context ctx)
 	{
 		getAllRequests.mark();
-		try(final Timer.Context timeContext = getAllRequestsTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
+		try(final Timer.Context timeContext = getAllRequestsTime.time();
+			DSLContext dsl = getDslContext(ctx))
 		{
+			LocationCategoryDao dao = new LocationCategoryDao(dsl);
 			String office = ctx.queryParam("office");
 
-			List<LocationCategory> cats = cdm.getLocationCategories(office);
+			List<LocationCategory> cats = dao.getLocationCategories(office);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
@@ -77,12 +79,7 @@ public class LocationCategoryController implements CrudHandler
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
-		catch(SQLException ex)
-		{
-			logger.log(Level.SEVERE, null, ex);
-			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			ctx.result("Failed to process request");
-		}
+
 	}
 
 	@OpenApi(
@@ -108,11 +105,13 @@ public class LocationCategoryController implements CrudHandler
 	public void getOne(Context ctx, String categoryId)
 	{
 		getOneRequest.mark();
-		try(final Timer.Context timeContext = getOneRequestTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
+		try(final Timer.Context timeContext = getOneRequestTime.time();
+			DSLContext dsl = getDslContext(ctx))
 		{
+			LocationCategoryDao dao = new LocationCategoryDao(dsl);
 			String office = ctx.queryParam("office");
 
-			LocationCategory grp = cdm.getLocationCategory(office, categoryId);
+			LocationCategory grp = dao.getLocationCategory(office, categoryId);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
@@ -124,12 +123,7 @@ public class LocationCategoryController implements CrudHandler
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
-		catch(SQLException ex)
-		{
-			logger.log(Level.SEVERE, null, ex);
-			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			ctx.result("Failed to process request");
-		}
+
 	}
 
 	@OpenApi(ignore = true)

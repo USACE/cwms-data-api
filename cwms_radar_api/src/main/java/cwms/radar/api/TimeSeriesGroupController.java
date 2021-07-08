@@ -1,8 +1,6 @@
 package cwms.radar.api;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -10,12 +8,10 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.radar.data.CwmsDataManager;
-
+import cwms.radar.data.dao.TimeSeriesGroupDao;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -23,8 +19,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class TimeSeriesGroupController implements CrudHandler
 {
@@ -65,11 +63,13 @@ public class TimeSeriesGroupController implements CrudHandler
 	public void getAll(Context ctx)
 	{
 		getAllRequests.mark();
-		try(final Timer.Context timeContext = getAllRequestsTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
+		try(final Timer.Context timeContext = getAllRequestsTime.time();
+			DSLContext dsl = getDslContext(ctx))
 		{
+			TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
 			String office = ctx.queryParam("office");
 
-			List<TimeSeriesGroup> grps = cdm.getTimeSeriesGroups(office);
+			List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office);
 			
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
@@ -81,12 +81,7 @@ public class TimeSeriesGroupController implements CrudHandler
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
-		catch(SQLException ex)
-		{
-			logger.log(Level.SEVERE, null, ex);
-			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			ctx.result("Failed to process request");
-		}
+
 	}
 
 	@OpenApi(
@@ -112,41 +107,37 @@ public class TimeSeriesGroupController implements CrudHandler
 	public void getOne(Context ctx, String groupId)
 	{
 		getOneRequest.mark();
-		try(final Timer.Context timeContext = getOneRequestTime.time(); CwmsDataManager cdm = new CwmsDataManager(ctx))
+		try(final Timer.Context timeContext = getOneRequestTime.time();
+			DSLContext dsl = getDslContext(ctx))
 		{
+			TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
 			String office = ctx.queryParam("office");
 			String categoryId = ctx.queryParam("category-id");
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result;
-			if(Formats.GEOJSON.equals(contentType.getType())){
-				result = null; // for now.
-			} else
+			TimeSeriesGroup group = null;
+			List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(office, categoryId, groupId);
+			if(timeSeriesGroups != null && !timeSeriesGroups.isEmpty())
 			{
-
-				TimeSeriesGroup group = null;
-				List<TimeSeriesGroup> timeSeriesGroups = cdm.getTimeSeriesGroups(office, categoryId, groupId);
-				if(timeSeriesGroups != null && !timeSeriesGroups.isEmpty())
+				if(timeSeriesGroups.size() == 1)
 				{
-					if(timeSeriesGroups.size() == 1)
-					{
-						group = timeSeriesGroups.get(0);
-					}
-					else
-					{
-						// An error. [office, categoryId, groupId] should have, at most, one match
-						String message = String.format(
-								"Multiple TimeSeriesGroups returned from getTimeSeriesGroups "
-										+ "for:%s category:%s groupId:%s At most one match was expected. Found:%s",
-								office, categoryId, groupId, timeSeriesGroups);
-						throw new IllegalArgumentException(message);
-					}
+					group = timeSeriesGroups.get(0);
 				}
-
-				result = Formats.format(contentType, group);
+				else
+				{
+					// An error. [office, categoryId, groupId] should have, at most, one match
+					String message = String.format(
+							"Multiple TimeSeriesGroups returned from getTimeSeriesGroups "
+									+ "for:%s category:%s groupId:%s At most one match was expected. Found:%s",
+							office, categoryId, groupId, timeSeriesGroups);
+					throw new IllegalArgumentException(message);
+				}
 			}
+
+			String result = Formats.format(contentType, group);
+
 
 			ctx.result(result);
 			ctx.contentType(contentType.toString());
@@ -154,12 +145,7 @@ public class TimeSeriesGroupController implements CrudHandler
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
-		catch(SQLException ex)
-		{
-			logger.log(Level.SEVERE, null, ex);
-			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			ctx.result("Failed to process request");
-		}
+
 	}
 
 	@OpenApi(ignore = true)

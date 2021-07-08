@@ -13,68 +13,42 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import cwms.radar.data.dto.AssignedLocation;
 import cwms.radar.data.dto.Catalog;
-import cwms.radar.data.dto.LocationCategory;
-import cwms.radar.data.dto.LocationGroup;
-import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.TimeSeries;
-import cwms.radar.data.dto.TimeSeriesCategory;
-import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationAlias;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import io.javalin.http.Context;
-import kotlin.Pair;
-import org.geojson.Feature;
-import org.geojson.FeatureCollection;
-import org.geojson.Point;
-import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Record5;
-import org.jooq.RecordMapper;
 import org.jooq.Result;
 import org.jooq.SQL;
 import org.jooq.SQLDialect;
-import org.jooq.Select;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectJoinStep;
-import org.jooq.SelectOrderByStep;
-import org.jooq.SelectSeekStep1;
 import org.jooq.SelectSelectStep;
-import org.jooq.SelectWhereStep;
 import org.jooq.Table;
-import org.jooq.TableField;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ROUNDING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
-import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
-import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
@@ -112,92 +86,7 @@ public class CwmsDataManager implements AutoCloseable {
         conn.close();
     }
 
-    public String getLocations(String names,String format, String units, String datum, String officeId) {
 
-        return CWMS_LOC_PACKAGE.call_RETRIEVE_LOCATIONS_F(dsl.configuration(),
-                names, format, units, datum, officeId);
-    }
-
-
-    public FeatureCollection buildFeatureCollection(String names, String units, String officeId)
-    {
-        if(!"EN".equals(units)){
-            units = "SI";
-        }
-
-        SelectConditionStep<Record> selectQuery = dsl.select(asterisk())
-                .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.eq(officeId))
-                .and(AV_LOC.UNIT_SYSTEM.eq(units))
-                ;
-
-        if(names != null && !names.isEmpty()){
-            List<String> identifiers = new ArrayList<>();
-            if(names.contains("|")){
-                String[] namePieces = names.split("\\|");
-                identifiers.addAll(Arrays.asList(namePieces));
-            } else {
-                identifiers.add(names);
-            }
-
-            selectQuery = selectQuery.and(AV_LOC.LOCATION_ID.in(identifiers));
-        }
-
-        List<Feature> features = selectQuery.stream()
-                .map(this::buildFeatureFromAvLocRecord)
-                .collect(Collectors.toList());
-        FeatureCollection collection = new FeatureCollection();
-        collection.setFeatures(features);
-
-        return collection;
-    }
-
-    public FeatureCollection buildFeatureCollectionForLocationGroup(String officeId, String categoryId, String groupId, String units)
-    {
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN;
-        AV_LOC al = AV_LOC;
-
-        SelectSeekStep1<Record, BigDecimal> select = dsl.select(al.asterisk(),
-                alga.CATEGORY_ID, alga.GROUP_ID,
-                alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID, alga.SHARED_ALIAS_ID )
-                .from(al).join(alga)
-                .on(al.LOCATION_ID.eq(alga.LOCATION_ID))
-                .where(alga.DB_OFFICE_ID.eq(officeId)
-                                .and(alga.CATEGORY_ID.eq(categoryId)
-                                        .and(alga.GROUP_ID.eq(groupId))
-                                .and(al.UNIT_SYSTEM.eq(units))))
-                .orderBy(alga.ATTRIBUTE);
-
-
-
-        List<Feature> features = select.stream()
-                .map(this::buildFeatureFromAvLocRecordWithLocGroup)
-                .collect(Collectors.toList());
-        FeatureCollection collection = new FeatureCollection();
-        collection.setFeatures(features);
-
-        return collection;
-    }
-
-
-    public List<Office> getOffices() {
-        List<Office> retval;
-        AV_OFFICE view = AV_OFFICE.AV_OFFICE;
-        // The .as snippets lets it map directly into the Office ctor fields.
-        retval = dsl.select(view.OFFICE_ID.as("name"), view.LONG_NAME, view.OFFICE_TYPE.as("type"),
-                view.REPORT_TO_OFFICE_ID.as("reportsTo")).from(view).fetch().into(
-                Office.class);
-
-        return retval;
-    }
-
-	public Office getOfficeById(String officeId) {
-        AV_OFFICE view = AV_OFFICE.AV_OFFICE;
-        // The .as snippets lets it map directly into the Office ctor fields.
-        return dsl.select(view.OFFICE_ID.as("name"), view.LONG_NAME, view.OFFICE_TYPE.as("type"),
-                view.REPORT_TO_OFFICE_ID.as("reportsTo")).from(view).where(view.OFFICE_ID.eq(officeId)).fetchOne().into(
-                Office.class);
-	}
 
 	public String getRatings(String names, String format, String unit, String datum, String office, String start,
 			String end, String timezone, String size) {
@@ -486,348 +375,6 @@ public class CwmsDataManager implements AutoCloseable {
 
         Catalog cat = new Catalog(cursor,total,pageSize,entries);
         return cat;
-    }
-
-
-    public List<LocationCategory> getLocationCategories()
-    {
-        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        return dsl.selectDistinct(
-                table.CAT_DB_OFFICE_ID,
-                table.LOC_CATEGORY_ID,
-                table.LOC_CATEGORY_DESC)
-        .from(table)
-        .fetch().into(LocationCategory.class);
-    }
-
-    public List<LocationCategory> getLocationCategories(String officeId)
-    {
-        if(officeId == null || officeId.isEmpty()){
-            return getLocationCategories();
-        }
-        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        return dsl.select(table.CAT_DB_OFFICE_ID,
-                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
-                .from(table)
-                .where(table.CAT_DB_OFFICE_ID.eq(officeId))
-                .fetch().into(LocationCategory.class);
-    }
-
-    public LocationCategory getLocationCategory(String officeId, String categoryId)
-    {
-        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        return dsl.select(table.CAT_DB_OFFICE_ID,
-                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
-                .from(table)
-                .where(table.CAT_DB_OFFICE_ID.eq(officeId)
-                        .and(table.LOC_CATEGORY_ID.eq(categoryId)))
-                .fetchOne().into(LocationCategory.class);
-    }
-
-    public List<LocationGroup> getLocationGroups(){
-        return getLocationGroups(null);
-    }
-
-    public List<LocationGroup> getLocationGroups(String officeId)
-    {
-        List<LocationGroup> retval;
-        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        org.jooq.TableField [] columns = new TableField[]{
-                table.CAT_DB_OFFICE_ID, table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC, table.GRP_DB_OFFICE_ID,
-                table.LOC_GROUP_ID, table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID, table.SHARED_REF_LOCATION_ID,
-                table.LOC_GROUP_ATTRIBUTE
-        };
-
-        SelectJoinStep<Record> step = dsl.selectDistinct(columns).from(table);
-
-        SelectOrderByStep select = step;
-
-        if(officeId != null && !officeId.isEmpty()){
-            select = step.where(
-                    table.GRP_DB_OFFICE_ID.eq(officeId));
-        }
-
-        retval = select.orderBy(table.LOC_GROUP_ATTRIBUTE)
-                .fetch().into(LocationGroup.class);
-
-        return retval;
-    }
-
-
-    public TimeSeriesCategory getTimeSeriesCategory(String officeId, String categoryId)
-    {
-        AV_TS_CAT_GRP view = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
-
-        return dsl.select(view.CAT_DB_OFFICE_ID, view.TS_CATEGORY_ID,
-                view.TS_CATEGORY_DESC)
-                .from(view)
-                .where(view.CAT_DB_OFFICE_ID.eq(officeId))
-                .and(view.TS_CATEGORY_ID.eq(categoryId))
-                .fetchOne().into( TimeSeriesCategory.class);
-    }
-
-    public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId)
-    {
-        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
-
-        SelectWhereStep<Record3<String, String, String>> step = dsl.select(table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,
-                table.TS_CATEGORY_DESC).from(table);
-        Select select = step;
-        if ( officeId != null && !officeId.isEmpty())
-        {
-            select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId));
-        }
-        return select.fetch().into(TimeSeriesCategory.class);
-    }
-
-    public List<TimeSeriesCategory> getTimeSeriesCategories()
-    {
-        return getTimeSeriesCategories(null);
-    }
-
-    public List<TimeSeriesGroup> getTimeSeriesGroups()
-    {
-       return getTimeSeriesGroups(null);
-    }
-
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId)
-    {
-        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
-
-        org.jooq.TableField [] columns = new TableField[]{
-                table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,
-                table.TS_CATEGORY_DESC, table.GRP_DB_OFFICE_ID, table.TS_GROUP_ID,
-                table.TS_GROUP_DESC, table.SHARED_TS_ALIAS_ID, table.SHARED_REF_TS_ID
-        };
-
-        SelectJoinStep<Record> step
-                = dsl.selectDistinct(columns)
-                .from(table);
-
-        Select select = step;
-
-        if ( officeId != null && !officeId.isEmpty())
-        {
-            select = step.where(table.GRP_DB_OFFICE_ID.eq(officeId));
-        }
-
-        return select
-                //  .orderBy(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ATTRIBUTE)
-                .fetch().into(TimeSeriesGroup.class);
-    }
-
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId, String groupId)
-    {
-        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
-
-        org.jooq.TableField [] columns = new TableField[]{
-                table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,
-                table.TS_CATEGORY_DESC, table.GRP_DB_OFFICE_ID, table.TS_GROUP_ID,
-                table.TS_GROUP_DESC, table.SHARED_TS_ALIAS_ID, table.SHARED_REF_TS_ID
-        };
-
-        SelectWhereStep<Record> step = dsl.selectDistinct(columns).from(table);
-
-        Select select = step;
-
-        Condition whereCondition = buildWhereCondition(officeId, categoryId, groupId, table);
-
-        if(whereCondition != null)
-        {
-            select = step.where(whereCondition);
-        }
-
-        return select.fetch().into(TimeSeriesGroup.class);
-    }
-
-    private Condition buildWhereCondition(String officeId, String categoryId, String groupId, AV_TS_CAT_GRP table)
-    {
-        Condition whereCondition = null;
-        if ( officeId != null && !officeId.isEmpty())
-        {
-            whereCondition = and(whereCondition, table.GRP_DB_OFFICE_ID.eq(officeId));
-        }
-
-        if ( categoryId != null && !categoryId.isEmpty())
-        {
-            whereCondition = and(whereCondition, table.TS_CATEGORY_ID.eq(categoryId));
-        }
-
-        if ( groupId != null && !groupId.isEmpty())
-        {
-            whereCondition = and(whereCondition, table.TS_GROUP_ID.eq(groupId));
-        }
-        return whereCondition;
-    }
-
-    private Condition and(Condition whereCondition, Condition cond)
-    {
-        Condition retval = null;
-        if(whereCondition == null){
-            retval = cond;
-        } else {
-            retval = whereCondition.and(cond);
-        }
-        return retval;
-    }
-
-    public LocationGroup getLocationGroup(String officeId, String categoryId, String groupId)
-    {
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
-        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        final RecordMapper<Record,
-                Pair<LocationGroup, AssignedLocation>> mapper = record17 -> {
-            LocationGroup group = buildLocationGroup(record17);
-            AssignedLocation loc = buildAssignedLocation(record17);
-
-            return new Pair<>(group, loc);
-        };
-
-        List<Pair<LocationGroup, AssignedLocation>> assignments = dsl
-                .select(alga.CATEGORY_ID, alga.GROUP_ID,
-                alga.LOCATION_CODE, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
-                alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                        alcg.CAT_DB_OFFICE_ID,
-                alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
-                .from(alcg)
-                .join(alga)
-                .on(
-                        alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                                .and(
-                                        alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
-                .where(alcg.LOC_CATEGORY_ID.eq(categoryId).and(alcg.LOC_GROUP_ID.eq(groupId)).and(alga.DB_OFFICE_ID.eq(officeId)))
-                .orderBy(alga.ATTRIBUTE)
-                .fetch(mapper);
-
-        // Might want to verify that all the groups in the list are the same?
-        LocationGroup locGroup = assignments.stream()
-                .map(Pair::component1)
-                .findFirst().orElse(null);
-
-        if(locGroup != null)
-        {
-            List<AssignedLocation> assignedLocations = assignments.stream()
-                    .map(Pair::component2)
-                    .collect(Collectors.toList());
-            locGroup = new LocationGroup(locGroup, assignedLocations);
-        }
-        return locGroup;
-    }
-
-    private AssignedLocation buildAssignedLocation(Record resultRecord)
-    {
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN;
-
-        String locationId = resultRecord.get(alga.LOCATION_ID);
-        String baseLocationId = resultRecord.get(alga.BASE_LOCATION_ID);
-        String subLocationId = resultRecord.get(alga.SUB_LOCATION_ID);
-        String aliasId = resultRecord.get(alga.ALIAS_ID);
-        Number attribute = resultRecord.get(alga.ATTRIBUTE);
-        Number locationCode = resultRecord.get(alga.LOCATION_CODE);
-        String refLocationId = resultRecord.get(alga.REF_LOCATION_ID);
-
-        return new AssignedLocation(locationId, baseLocationId, subLocationId, aliasId, attribute,
-                locationCode, refLocationId);
-    }
-
-    private LocationGroup buildLocationGroup(Record resultRecord)
-    {
-        // This method needs the record to have fields
-        // from both AV_LOC_GRP_ASSGN _and_ AV_LOC_CAT_GRP
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN;
-        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        String officeId = resultRecord.get(alga.DB_OFFICE_ID);
-        String groupId = resultRecord.get(alga.GROUP_ID);
-        String sharedAliasId = resultRecord.get(alga.SHARED_ALIAS_ID);
-        String sharedRefLocationId = resultRecord.get(alga.SHARED_REF_LOCATION_ID);
-
-        String grpDesc = resultRecord.get(alcg.LOC_GROUP_DESC);
-        Number grpAttribute = resultRecord.get(alcg.LOC_GROUP_ATTRIBUTE);
-
-        LocationCategory locationCategory = buildLocationCategory(resultRecord);
-
-        return new LocationGroup(
-                locationCategory,
-                officeId, groupId, grpDesc,
-                sharedAliasId, sharedRefLocationId, grpAttribute);
-    }
-
-    private LocationCategory buildLocationCategory(Record resultRecord)
-    {
-        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
-
-        String categoryId = resultRecord.get(alcg.LOC_CATEGORY_ID);
-        String catDesc = resultRecord.get(alcg.LOC_CATEGORY_DESC);
-        String catDbOfficeId = resultRecord.get(alcg.CAT_DB_OFFICE_ID);
-        return new LocationCategory(catDbOfficeId, categoryId, catDesc);
-    }
-
-    private Feature buildFeatureFromAvLocRecordWithLocGroup(Record avLocRecord){
-        Feature feature = buildFeatureFromAvLocRecord(avLocRecord);
-
-        Map<String, Object> grpProps = new LinkedHashMap<>();
-
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN;
-
-        List<TableField> fields = new ArrayList<>();
-        fields.add(alga.CATEGORY_ID);
-        fields.add(alga.GROUP_ID);
-        fields.add(alga.ATTRIBUTE);
-        fields.add(alga.ALIAS_ID);
-        fields.add(alga.SHARED_ALIAS_ID);
-        fields.add(alga.SHARED_REF_LOCATION_ID);
-
-        fields.stream().forEach(f -> grpProps.put(f.getName(), avLocRecord.getValue(f)));
-
-        Map<String, Object> props = feature.getProperties();
-        props.put("avLocGrpAssgn", grpProps);
-        feature.setProperties(props);
-        return feature;
-    }
-
-    private Feature buildFeatureFromAvLocRecord( Record avLocRecord)
-    {
-        Feature feature = new Feature();
-
-        String featureId = avLocRecord.getValue(AV_LOC.PUBLIC_NAME, String.class);
-        if(featureId == null || featureId.isEmpty()){
-            featureId = avLocRecord.getValue(AV_LOC.LOCATION_ID, String.class);
-        }
-        feature.setId(featureId);
-
-        Double longitude = avLocRecord.getValue(AV_LOC.LONGITUDE, Double.class);
-        Double latitude = avLocRecord.getValue(AV_LOC.LATITUDE, Double.class);
-
-        if(latitude == null)
-        {
-            latitude = 0.0;
-        }
-
-        if(longitude == null){
-            longitude = 0.0;
-        }
-
-        feature.setGeometry(new Point(longitude, latitude));
-
-        Map<String, Object> properties = new LinkedHashMap<>();
-        Map<String, Object> recordMap = avLocRecord.intoMap();
-        List<String> keysWithNullValue =
-                recordMap.entrySet().stream().filter(e -> e.getValue() == null)
-                        .map(Map.Entry::getKey).collect(Collectors.toList());
-        keysWithNullValue.forEach(recordMap::remove);
-        recordMap.remove(AV_LOC.LATITUDE.getName());
-        recordMap.remove(AV_LOC.LONGITUDE.getName());
-        recordMap.remove(AV_LOC.PUBLIC_NAME.getName());
-        properties.put("avLoc", recordMap);
-        feature.setProperties(properties);
-
-        return feature;
     }
 
 
