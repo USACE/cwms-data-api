@@ -10,6 +10,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
+import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
@@ -17,7 +18,7 @@ import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class})
+@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class, Clobs.class})
 public class XMLv2 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv2.class.getName());
     private JAXBContext context = null;

@@ -14,6 +14,7 @@ import com.codahale.metrics.Timer;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.Clob;
+import cwms.radar.data.dto.Clobs;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -34,6 +35,7 @@ import static com.codahale.metrics.MetricRegistry.name;
  */
 public class ClobController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(ClobController.class.getName());
+    private static final int defaultPageSize = 20;
     private final MetricRegistry metrics;
     private final Meter getAllRequests;
     private final Timer getAllRequestsTime;
@@ -58,12 +60,29 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office. If this field is not specified, matching information from all offices shall be returned.")
-        },
+                @OpenApiParam(name="office",
+                            required=false,
+                            description="Specifies the owning office. If this field is not specified, matching information from all offices shall be returned."),
+                @OpenApiParam(name="page",
+                            required = false,
+                            description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+                ),
+                @OpenApiParam(name="pageSize",
+                            required=false,
+                            type=Integer.class,
+                            description = "How many entries per page returned. Default " + defaultPageSize + "."
+                ),
+                @OpenApiParam(name="includeValues",
+                    required = false,
+                    type = Boolean.class,
+                    description = "Do you want the value assosciated with this particular clob (default: false)"
+                )
+            },
         responses = { @OpenApiResponse(status="200",
                                        description = "A list of clobs.",
                                        content = {
-                                           @OpenApiContent( type = Formats.JSON, from = Clob.class, isArray = true )
+                                           @OpenApiContent( type = Formats.JSONV2, from = Clobs.class ),
+                                           @OpenApiContent( type = Formats.XMLV2, from = Clobs.class )
                                        }
                       ),
                       @OpenApiResponse(status="501",description = "The format requested is not implemented"),
@@ -81,13 +100,17 @@ public class ClobController implements CrudHandler {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
 
+            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"").getValue()).getValue();
+            int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
+
+            boolean includeValues = ctx.queryParam("includeValues",Boolean.class,"false").getValue().booleanValue();
 
             String formatParm = ctx.queryParam("format","");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             ClobDao dao = new ClobDao(dsl);
-            List<Clob> clobs = dao.getAll(officeOpt);
+            Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues);
             String result = Formats.format(contentType,clobs);
 
             ctx.result(result);

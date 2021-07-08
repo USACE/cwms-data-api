@@ -2,23 +2,39 @@ package cwms.radar.data.dao;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Clob;
+import cwms.radar.data.dto.Clobs;
+import cwms.radar.data.dto.Office;
+
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record2;
+import org.jooq.Record4;
 import org.jooq.RecordMapper;
 import org.jooq.Select;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 
 import usace.cwms.db.jooq.codegen.tables.AV_CLOB;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.inline;
+
 public class ClobDao extends JooqDao<Clob>
 {
+	private static Logger logger = Logger.getLogger(ClobDao.class.getName());
+
 	public ClobDao(DSLContext dsl)
 	{
 		super(dsl);
@@ -81,6 +97,68 @@ public class ClobDao extends JooqDao<Clob>
 				ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetchOne(mapper);
 
 		return Optional.ofNullable(avClob);
+	}
+
+	public Clobs getClobs(String cursor, int pageSize, Optional<String> office, boolean includeValues ){
+		int total = 0;
+		String clobCursor = "*";
+		AV_CLOB v_clob = AV_CLOB.AV_CLOB;
+		AV_OFFICE v_office = AV_OFFICE.AV_OFFICE;
+
+		if( cursor == null || cursor.isEmpty() ){
+
+			SelectConditionStep<Record1<Integer>> count =
+				dsl.select(count(asterisk()))
+				   .from(AV_CLOB.AV_CLOB)
+				   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
+				   .where(v_office.OFFICE_ID.like(office.isPresent() ? office.get() : "*"));
+
+			total = count.fetchOne().value1().intValue();
+		} else {
+			String[] parts = Catalog.decodeCursor(cursor, "|||");
+
+            logger.info("decoded cursor: " + String.join("|||", parts));
+            for( String p: parts){
+                logger.info(p);
+            }
+
+            if(parts.length > 1) {
+                clobCursor = parts[0].split("\\/")[1];
+                total = Integer.parseInt(parts[1]);
+            }
+		}
+
+		Table<?> forLimit = dsl.select(v_clob.ID)
+							   .from(v_clob)
+							   .where(v_clob.ID.greaterThan(clobCursor))
+							   .orderBy(v_clob.ID).limit(pageSize).asTable();
+
+
+		SelectConditionStep<Record4<String, String, String, String>> query = dsl.select(
+												v_office.OFFICE_ID,
+												v_clob.ID,
+												v_clob.DESCRIPTION,
+												includeValues == true ? v_clob.VALUE : DSL.inline("").as(v_clob.VALUE)
+												)
+									   .from(v_clob)
+									   .innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
+									   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
+									   .where(v_clob.ID.greaterThan(clobCursor));
+									   ;
+		Clobs.Builder builder = new Clobs.Builder(cursor,pageSize, total);
+		query.fetch().forEach( row -> {
+			usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(v_clob);
+			usace.cwms.db.jooq.codegen.tables.records.AV_OFFICE clobOffice = row.into(v_office);
+			builder.addClob( new Clob(
+				clobOffice.getOFFICE_ID(),
+				clob.getID(),
+				clob.getDESCRIPTION(),
+				clob.getVALUE()
+			));
+
+		});
+
+		return builder.build();
 	}
 
 

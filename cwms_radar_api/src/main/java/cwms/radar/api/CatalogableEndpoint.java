@@ -9,7 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 )
 public enum CatalogableEndpoint {
     TIMESERIES("timeseries"),
-    LOCATIONS("locations");
+    LOCATIONS("locations"),
+    CLOBS("clobs");
 
     private String dataSet;
 
