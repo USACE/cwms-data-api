@@ -1,7 +1,6 @@
 package cwms.radar.api;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -14,7 +13,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -27,8 +26,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.geojson.FeatureCollection;
+import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 
 /**
@@ -56,11 +57,11 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam( name="names",required = false, description = "Specifies the name(s) of the location(s) whose data is to be included in the response"),
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
-            @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
-            @OpenApiParam(name="datum", required=false, description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
-            @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)\n" + "6.    geojson")
+            @OpenApiParam( name="names", description = "Specifies the name(s) of the location(s) whose data is to be included in the response"),
+            @OpenApiParam(name="office", description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
+            @OpenApiParam(name="unit",   description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
+            @OpenApiParam(name="datum",  description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
+            @OpenApiParam(name="format", description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)\n" + "6.    geojson")
         },
         responses = {
             @OpenApiResponse( status="200",
@@ -82,9 +83,11 @@ public class LocationController implements CrudHandler {
     public void getAll(Context ctx)
     {
         getAllRequests.mark();
-        try(final Timer.Context time_context = getAllRequestsTime.time();
-            CwmsDataManager cdm = new CwmsDataManager(ctx);)
+        try(final Timer.Context timeContext = getAllRequestsTime.time();
+            DSLContext dsl = getDslContext(ctx))
         {
+            LocationsDao cdm = new LocationsDao(dsl);
+
             String names = ctx.queryParam("names");
             String units = ctx.queryParam("unit");
             String datum = ctx.queryParam("datum");
@@ -113,7 +116,7 @@ public class LocationController implements CrudHandler {
             ctx.result(results);
             requestResultSize.update(results.length());
         }
-        catch(SQLException | JsonProcessingException ex)
+        catch( JsonProcessingException ex)
         {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -160,10 +163,10 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String location_code) {
+    public void getOne(Context ctx, String locationCode) {
         getOneRequest.mark();
         try (
-            final Timer.Context time_context = getOneRequestTime.time();
+            final Timer.Context timeContext = getOneRequestTime.time()
             ){
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
         }
@@ -177,13 +180,13 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String location_code) {
+    public void update(Context ctx, String locationCode) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String location_code) {
+    public void delete(Context ctx, String locationCode) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

@@ -17,7 +17,7 @@ import org.jooq.SelectJoinStep;
 import usace.cwms.db.jooq.codegen.tables.AV_CLOB;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
-public class ClobDao extends Dao<AvClob>
+public class ClobDao extends JooqDao<AvClob>
 {
 	public ClobDao(DSLContext dsl)
 	{
@@ -113,10 +113,10 @@ public class ClobDao extends Dao<AvClob>
 
 		Condition cond = ac.ID.eq(id).and(ao.OFFICE_ID.eq(office));
 
-		Record1<String> record = dsl.select(ac.VALUE).from(
+		Record1<String> clobRecord = dsl.select(ac.VALUE).from(
 				ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetchOne();
 
-		return record.value1();
+		return clobRecord.value1();
 	}
 
 }
