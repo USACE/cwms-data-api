@@ -13,7 +13,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
-import cwms.radar.data.dto.AvClob;
+import cwms.radar.data.dto.Clob;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -82,7 +82,7 @@ public class ClobLikeController implements CrudHandler {
             ClobDao dao = new ClobDao(dsl);
 
             String office = ctx.queryParam("office");
-            List<AvClob> clobsLike = dao.getClobsLike(office, likeKey);
+            List<Clob> clobsLike = dao.getClobsLike(office, likeKey);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");

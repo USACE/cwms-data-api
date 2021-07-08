@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import cwms.radar.data.dto.AvClob;
+import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
@@ -24,7 +24,7 @@ import io.javalin.plugin.json.JavalinJackson;
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class,
-		LocationGroup.class, LocationCategory.class, AvClob.class})
+		LocationGroup.class, LocationCategory.class, Clob.class})
 public class JsonV1 implements OutputFormatter{
 
 	private final ObjectMapper om;

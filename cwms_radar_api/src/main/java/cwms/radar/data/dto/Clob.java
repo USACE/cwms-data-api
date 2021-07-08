@@ -1,13 +1,13 @@
 package cwms.radar.data.dto;
 
-public class AvClob implements CwmsDTO
+public class Clob implements CwmsDTO
 {
 	private String office;
 	private String id;
 	private String description;
 	private String value;
 
-	public AvClob(String office, String id, String description, String value)
+	public Clob(String office, String id, String description, String value)
 	{
 		this.office = office;
 		this.id = id;

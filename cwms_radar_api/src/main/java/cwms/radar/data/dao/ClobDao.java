@@ -3,7 +3,7 @@ package cwms.radar.data.dao;
 import java.util.List;
 import java.util.Optional;
 
-import cwms.radar.data.dto.AvClob;
+import cwms.radar.data.dto.Clob;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -17,7 +17,7 @@ import org.jooq.SelectJoinStep;
 import usace.cwms.db.jooq.codegen.tables.AV_CLOB;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
-public class ClobDao extends JooqDao<AvClob>
+public class ClobDao extends JooqDao<Clob>
 {
 	public ClobDao(DSLContext dsl)
 	{
@@ -27,7 +27,7 @@ public class ClobDao extends JooqDao<AvClob>
 	// Yikes, I hate this method - it retrieves all the clobs?  That could be gigabytes of data.
 	// Not returning Value or Desc fields until a useful way of working with this method is figured out.
 	@Override
-	public List<AvClob> getAll(Optional<String> limitToOffice)
+	public List<Clob> getAll(Optional<String> limitToOffice)
 	{
 		AV_CLOB ac = AV_CLOB.AV_CLOB;
 		AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
@@ -47,15 +47,15 @@ public class ClobDao extends JooqDao<AvClob>
 			}
 		}
 
-		RecordMapper<Record2<String, String>, AvClob> mapper = joinRecord ->
-			new AvClob(joinRecord.get(ao.OFFICE_ID),
+		RecordMapper<Record2<String, String>, Clob> mapper = joinRecord ->
+			new Clob(joinRecord.get(ao.OFFICE_ID),
 					joinRecord.get(ac.ID),null, null);
 
 		return select.fetch(mapper);
 	}
 
 	@Override
-	public Optional<AvClob> getByUniqueName(String uniqueName, Optional<String> limitToOffice)
+	public Optional<Clob> getByUniqueName(String uniqueName, Optional<String> limitToOffice)
 	{
 		AV_CLOB ac = AV_CLOB.AV_CLOB;
 		AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
@@ -70,21 +70,21 @@ public class ClobDao extends JooqDao<AvClob>
 			}
 		}
 
-		RecordMapper<Record, AvClob> mapper = joinRecord ->
-				new AvClob(joinRecord.getValue(ao.OFFICE_ID),
+		RecordMapper<Record, Clob> mapper = joinRecord ->
+				new Clob(joinRecord.getValue(ao.OFFICE_ID),
 					joinRecord.getValue(ac.ID),
 					joinRecord.getValue(ac.DESCRIPTION),
 					joinRecord.getValue(ac.VALUE)
 			);
 
-		AvClob avClob = dsl.select(ao.OFFICE_ID, ac.asterisk() ).from(
+		Clob avClob = dsl.select(ao.OFFICE_ID, ac.asterisk() ).from(
 				ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetchOne(mapper);
 
 		return Optional.ofNullable(avClob);
 	}
 
 
-	public List<AvClob> getClobsLike(String office, String idLike)
+	public List<Clob> getClobsLike(String office, String idLike)
 	{
 		AV_CLOB ac = AV_CLOB.AV_CLOB;
 		AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
@@ -95,8 +95,8 @@ public class ClobDao extends JooqDao<AvClob>
 			cond = cond.and(ao.OFFICE_ID.eq(office));
 		}
 
-		RecordMapper<Record, AvClob> mapper = joinRecord ->
-				new AvClob(joinRecord.get(ao.OFFICE_ID),
+		RecordMapper<Record, Clob> mapper = joinRecord ->
+				new Clob(joinRecord.get(ao.OFFICE_ID),
 						joinRecord.get(ac.ID),
 						joinRecord.get(ac.DESCRIPTION),
 						joinRecord.get(ac.VALUE)

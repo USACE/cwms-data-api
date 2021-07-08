@@ -13,7 +13,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
-import cwms.radar.data.dto.AvClob;
+import cwms.radar.data.dto.Clob;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -88,7 +88,7 @@ public class ClobController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             ClobDao dao = new ClobDao(dsl);
-            List<AvClob> clobs = dao.getAll(officeOpt);
+            List<Clob> clobs = dao.getAll(officeOpt);
             String result = Formats.format(contentType,clobs);
 
             ctx.result(result);
@@ -134,8 +134,8 @@ public class ClobController implements CrudHandler {
         ) {
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam("office"));
-            Optional<AvClob> optAc = dao.getByUniqueName(clobId,  office);
-            AvClob ac = optAc.orElse(null);
+            Optional<Clob> optAc = dao.getByUniqueName(clobId,  office);
+            Clob ac = optAc.orElse(null);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
