@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
-import cwms.radar.api.ClobLikeController;
 import cwms.radar.api.LevelsController;
 import cwms.radar.api.LocationCategoryController;
 import cwms.radar.api.LocationController;
@@ -121,7 +120,6 @@ public class RadarAPI {
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
 
-            crud("/clobs/like/:like", new ClobLikeController(metrics));
             crud("/clobs/:clob-id", new ClobController(metrics));
         }).start(port);
 

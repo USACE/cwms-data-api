@@ -4,7 +4,7 @@ import javax.xml.bind.annotation.*;
 
 @XmlRootElement(name="entry")
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlSeeAlso({TimeseriesCatalogEntry.class,LocationCatalogEntry.class,ClobCatalogEntry.class})
+@XmlSeeAlso({TimeseriesCatalogEntry.class,LocationCatalogEntry.class})
 public abstract class CatalogEntry {
     @XmlAttribute
     private String office;
