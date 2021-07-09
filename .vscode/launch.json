@@ -1,0 +1,26 @@
+
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch RadarAPI",
+            "request": "launch",
+            "mainClass": "mil.army.usace.hec.RadarAPI",
+            "projectName": "cwms_radar_standalone",
+            "env": {
+                "RADAR_JDBC_URL": "jdbc:oracle:thin:@${env:RADAR_DB_URL}",
+                "RADAR_JDBC_USERNAME": "${env:RADAR_DB_USER}",
+                "RADAR_JDBC_PASSWORD": "${env:RADAR_DB_PASSWORD}",
+                "RADAR_LISTEN_PORT": "7000",
+                "RADAR_DEBUG_LOGGING": "true",
+            },
+            "sourcePaths": [
+                "build/generated/sources/annotationProcessor/java/main",
+            ]
+        }
+    ]
+}

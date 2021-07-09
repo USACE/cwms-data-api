@@ -120,13 +120,7 @@ public class RadarAPI {
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
 
-            ClobController clobController = new ClobController(metrics);
-            path("clobs", () -> {
-                get(":clob-id", ctx->clobController.getOne(ctx, ctx.pathParam("clob-id")));
-                get("/", ctx->clobController.getAll(ctx));
-                get("/like/:like", ctx->clobController.getLike(ctx, ctx.pathParam("like")));
-            });
-
+            crud("/clobs/:clob-id", new ClobController(metrics));
         }).start(port);
 
     }

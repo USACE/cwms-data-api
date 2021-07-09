@@ -3,8 +3,8 @@ package cwms.radar.api;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
-@Schema(    
-    name = "dataSet",    
+@Schema(
+    name = "dataSet",
     description = "Set of data for which a larger catalog can be built."
 )
 public enum CatalogableEndpoint {
@@ -24,5 +24,5 @@ public enum CatalogableEndpoint {
     public String getValue(){
         return dataSet;
     }
-    
+
 }
