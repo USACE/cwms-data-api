@@ -34,4 +34,11 @@ public class Clob implements CwmsDTO
 	{
 		return value;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder builder = new StringBuilder();
+		builder.append(getOffice()).append("/").append(id).append(";description=").append(description);
+		return builder.toString();
+	}
 }

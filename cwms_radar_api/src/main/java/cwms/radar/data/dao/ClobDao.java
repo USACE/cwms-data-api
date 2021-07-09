@@ -19,8 +19,10 @@ import org.jooq.RecordMapper;
 import org.jooq.Select;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.SelectLimitPercentStep;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
@@ -116,43 +118,50 @@ public class ClobDao extends JooqDao<Clob>
 				   .from(v_clob)
 				   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
 				   .where(v_clob.ID.likeRegex(like))
-				   .and(v_office.OFFICE_ID.like(office.isPresent() ? office.get() : "*"));
+				   .and(v_office.OFFICE_ID.like(office.isPresent() ? office.get() : "%"));
 
 			total = count.fetchOne().value1().intValue();
 		} else {
-			String[] parts = Catalog.decodeCursor(cursor, "|||");
+			String[] parts = Catalog.decodeCursor(cursor, "||");
 
-            logger.info("decoded cursor: " + String.join("|||", parts));
+            logger.info("decoded cursor: " + String.join("||", parts));
             for( String p: parts){
                 logger.info(p);
             }
 
             if(parts.length > 1) {
-                clobCursor = parts[0].split("\\/")[1];
+                clobCursor = parts[0].split(";")[0];
+				clobCursor = clobCursor.substring(clobCursor.indexOf("/")+1); // ditch the officeId that's embedded in
                 total = Integer.parseInt(parts[1]);
+				pageSize = Integer.parseInt(parts[2]);
             }
 		}
-
-		Table<?> forLimit = dsl.select(v_clob.ID)
+/*
+		Table<?> forLimit = dsl.select(v_clob.ID,v_office.OFFICE_ID)
 							   .from(v_clob)
+							   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
 							   .where(v_clob.ID.likeRegex(like))
-							   .and(v_clob.ID.greaterThan(clobCursor))
-							   .orderBy(v_clob.ID).limit(pageSize).asTable();
+							   .and(v_office.OFFICE_ID.like( office.isPresent() ? office.get() : "%"))
+							   .and(v_clob.ID.upper().greaterThan(clobCursor))
+							   .orderBy(v_clob.ID).limit(pageSize).asTable();*/
 
 
-		SelectConditionStep<Record4<String, String, String, String>> query = dsl.select(
+		SelectLimitPercentStep<Record4<String, String, String, String>> query = dsl.select(
 												v_office.OFFICE_ID,
 												v_clob.ID,
 												v_clob.DESCRIPTION,
 												includeValues == true ? v_clob.VALUE : DSL.inline("").as(v_clob.VALUE)
 												)
 									   .from(v_clob)
-									   .innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
+									   //.innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
 									   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
 									   .where(v_clob.ID.likeRegex(like))
-									   .and(v_clob.ID.greaterThan(clobCursor));
+									   .and(v_clob.ID.upper().greaterThan(clobCursor))
+									   .orderBy(v_clob.ID).limit(pageSize);
 									   ;
-		Clobs.Builder builder = new Clobs.Builder(cursor,pageSize, total);
+
+		Clobs.Builder builder = new Clobs.Builder(clobCursor,pageSize, total);
+		logger.info(query.getSQL(ParamType.INLINED));
 		query.fetch().forEach( row -> {
 			usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(v_clob);
 			usace.cwms.db.jooq.codegen.tables.records.AV_OFFICE clobOffice = row.into(v_office);

@@ -46,17 +46,27 @@ public class Clobs extends CwmsDTOPaginated {
     }
 
     public static class Builder {
-        private Clobs clobs = null;
+        private Clobs workingClobs = null;
         public Builder( String cursor, int pageSize, int total){
-            clobs = new Clobs(cursor, pageSize, total);
+            workingClobs = new Clobs(cursor, pageSize, total);
         }
 
         public Clobs build(){
-            return clobs;
+            if( this.workingClobs.clobs.size() == this.workingClobs.pageSize){
+                this.workingClobs.nextPage = encodeCursor(
+                            this.workingClobs.clobs.get(this.workingClobs.clobs.size()-1).toString().toUpperCase(),
+                            this.workingClobs.pageSize,
+                            this.workingClobs.total);
+            } else {
+                this.workingClobs.nextPage = null;
+            }
+            return workingClobs;
+
+
         }
 
         public Builder addClob(Clob clob){
-            this.clobs.addClob(clob);
+            this.workingClobs.addClob(clob);
             return this;
         }
     }
