@@ -278,9 +278,10 @@ public class CwmsDataManager implements AutoCloseable {
         }
 
         SelectJoinStep<Record3<String, String, String>> query = dsl.select(
-                                    AV_CWMS_TS_ID2.DB_OFFICE_ID,
-                                    AV_CWMS_TS_ID2.CWMS_TS_ID,
-                                    AV_CWMS_TS_ID2.UNIT_ID)
+                                        AV_CWMS_TS_ID2.DB_OFFICE_ID,
+                                        AV_CWMS_TS_ID2.CWMS_TS_ID,
+                                        AV_CWMS_TS_ID2.UNIT_ID
+                                    )
                                 .from(AV_CWMS_TS_ID2);
 
         if( office.isPresent() ){
@@ -291,91 +292,19 @@ public class CwmsDataManager implements AutoCloseable {
         }
         query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
         logger.info( query.getSQL(ParamType.INLINED));
-        Result<Record3<String,String,String>> result = query.fetch();
+        Result<Record3<String, String, String>> result = query.fetch();
         List<? extends CatalogEntry> entries = result.stream()
-                .map( e -> new TimeseriesCatalogEntry(e.value1(),e.value2(),e.value3()))
+                //.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
+                .map( e -> new TimeseriesCatalogEntry(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID),
+                                                      e.get(AV_CWMS_TS_ID2.CWMS_TS_ID),
+                                                      e.get(AV_CWMS_TS_ID2.UNIT_ID) )
+                )
                 .collect(Collectors.toList());
         Catalog cat = new Catalog(tsCursor,total,pageSize,entries);
         return cat;
     }
 
-    public Catalog getLocationCatalog(String cursor, int pageSize, Optional<String> office) {
-        int total = 0;
-        String locCursor = "*";
-        if( cursor == null || cursor.isEmpty() ){
-            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_LOC);
-            if( office.isPresent() ){
-                count.where(AV_LOC.DB_OFFICE_ID.eq(office.get()));
-            }
-            total = count.fetchOne().value1().intValue();
-        } else {
-            logger.info("getting non-default page");
-            // get totally from page
-            String[] parts = Catalog.decodeCursor(cursor, "|||");
 
-            logger.info("decoded cursor: " + String.join("|||", parts));
-            for( String p: parts){
-                logger.info(p);
-            }
-
-            if(parts.length > 1) {
-                locCursor = parts[0].split("\\/")[1];
-                total = Integer.parseInt(parts[1]);
-            }
-        }
-
-        Table<?> forLimit = dsl.select(AV_LOC.LOCATION_ID)
-                               .from(AV_LOC)
-                               .where(AV_LOC.LOCATION_ID.greaterThan(locCursor))
-                               .and(AV_LOC.UNIT_SYSTEM.eq("SI"))
-                               .orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();
-        SelectConditionStep<Record> query = dsl.select(
-                                    AV_LOC.asterisk(),
-                                    AV_LOC_GRP_ASSGN.asterisk()
-                                )
-                                .from(AV_LOC)
-                                .innerJoin(forLimit).on(forLimit.field(AV_LOC.LOCATION_ID).eq(AV_LOC.LOCATION_ID))
-                                .leftJoin(AV_LOC_GRP_ASSGN).on(AV_LOC_GRP_ASSGN.LOCATION_ID.eq(AV_LOC.LOCATION_ID))
-                                .where(AV_LOC.UNIT_SYSTEM.eq("SI"))
-                                .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
-
-        if( office.isPresent() ){
-            query.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
-        }
-        query.orderBy(AV_LOC.LOCATION_ID);
-        logger.info( query.getSQL(ParamType.INLINED));
-        HashMap<usace.cwms.db.jooq.codegen.tables.records.AV_LOC, ArrayList<usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS>> theMap = new HashMap<>();
-        //Result<?> result = query.fetch();
-        query.fetch().forEach( row -> {
-            usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc = row.into(AV_LOC);
-            if( !theMap.containsKey(loc)){
-                theMap.put(loc, new ArrayList<>() );
-            }
-            usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS alias = row.into(AV_LOC_ALIAS);
-            usace.cwms.db.jooq.codegen.tables.records.AV_LOC_GRP_ASSGN group = row.into(AV_LOC_GRP_ASSGN);
-            if( group.getALIAS_ID() != null ){
-                theMap.get(loc).add(alias);
-            }
-        });
-
-        List<? extends CatalogEntry> entries =
-        theMap.entrySet().stream().map( e -> {
-            logger.info(e.getKey().toString());
-            LocationCatalogEntry ce = new LocationCatalogEntry(
-                e.getKey().getDB_OFFICE_ID(),
-                e.getKey().getLOCATION_ID(),
-                e.getKey().getNEAREST_CITY(),
-                e.getValue().stream().map( a -> {
-                    return new LocationAlias(a.getCATEGORY_ID()+"-"+a.getGROUP_ID(),a.getALIAS_ID());
-                }).collect(Collectors.toList())
-            );
-
-            return ce;
-        }).collect(Collectors.toList());
-
-        Catalog cat = new Catalog(cursor,total,pageSize,entries);
-        return cat;
-    }
 
 
 }

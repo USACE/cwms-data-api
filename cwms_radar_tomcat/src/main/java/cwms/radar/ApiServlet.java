@@ -1,5 +1,15 @@
 package cwms.radar;
 
+import io.javalin.Javalin;
+import io.javalin.core.validation.JavalinValidation;
+
+import static io.javalin.apibuilder.ApiBuilder.*;
+import io.javalin.http.JavalinServlet;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.openapi.OpenApiOptions;
+import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.swagger.v3.oas.models.info.Info;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -35,18 +45,14 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.formatters.Formats;
-import io.javalin.Javalin;
-import io.javalin.http.JavalinServlet;
-import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.openapi.OpenApiOptions;
-import io.javalin.plugin.openapi.OpenApiPlugin;
-import io.swagger.v3.oas.models.info.Info;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
+import cwms.radar.api.*;
+import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.formatters.Formats;
 import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
+
 
 /**
  * Setup all the information required so we can serve the request.
@@ -87,6 +93,7 @@ public class ApiServlet extends HttpServlet {
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         ObjectMapper om = JavalinJackson.getObjectMapper();
+        JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());            // Needed in Java 8 to properly format java.time classes
 
