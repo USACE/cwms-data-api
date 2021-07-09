@@ -10,10 +10,13 @@ import javax.ws.rs.QueryParam;
 
 import com.codahale.metrics.*;
 
+import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.ClobDao;
+import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.ContentType;
@@ -110,6 +113,7 @@ public class CatalogController implements CrudHandler{
         try (
             final Timer.Context time_context = getOneRequestTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
+            DSLContext dsl = JooqDao.getDslContext(ctx);
         ) {
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();

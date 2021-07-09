@@ -1,11 +1,18 @@
 apply plugin: 'war'
 
+configurations {
+    info
+}
+
 dependencies {
     testImplementation 'com.github.h-thurow:tomcat8jndi:1.0.0'
     testImplementation 'org.apache.tomcat:tomcat-dbcp:8.0.47'
     implementation (project(':cwms_radar_api')) {
         exclude group: 'org.eclipse.jetty'
         exclude group: 'org.eclipse.jetty.websocket'
+    }
+    info (project(':cwms_radar_api')) {
+        exclude group: '*'
     }
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
 
@@ -59,9 +66,22 @@ task unzipSwagger(type: Copy) {
     includeEmptyDirs = false
 }
 
+task extractInfo( type: Copy ){
+    from zipTree(configurations.info.singleFile)
+    into file("$buildDir/extra")
+    include "/static/**"
+    eachFile {
+        def segments = it.getRelativePath().getSegments() as List
+        it.setPath(segments.tail().join("/"))
+        return it
+    }
+
+    includeEmptyDirs false
+}
 
 war {
     dependsOn unzipSwagger
+    dependsOn extractInfo
     from "$buildDir/extra"
     from "src/resources/"
 

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>CWMS Restful API for Data Retrieval</title>
+    <link rel="stylesheet" type="text/css" href="css/radar.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+</head>
+<body>
+    <div id="header">
+        <div class="filler">&nbsp;</div>
+        <div id="nav_links">
+
+            <ul>
+                <li><a href="./swagger-docs">Swagger Docs</a></li>
+                <li><a href="./swagger-ui.html">Swagger UI</a></li>
+            </ul>
+        </div>
+        <div id="info">
+
+            <span style="font-weight: bold;">US Army Corps of Engineers</span>&nbsp;<span>CWMS Restful API for Data Retrieval</span>
+        </div>
+        <div id="logo">
+            <img src="images/usace-logo-color.svg"/>
+        </div>
+    </div>
+    <div id="content">
+        <p>Welcome to the US Army Corps of Engineers Corps Water Management System Data API.
+        At the Swagger UI link above you will find a REST styled interface for retrieving any data available publicly.
+        </p>
+
+        <p><h1>Some Quick notes</h1>
+            <ul>
+                <li>Dates and Intervals/Durations are always in either the ISO 8601 or milliseconds since the unix epoch.</li>
+                <li>The interval is the time between two different measurements.
+                    <ul>
+                        <li>An interval of 0 and irregular are equivalent and mean that there is no fixed interval between measurements</li>
+                    </ul>
+                </li>
+                <li>The Duration is used for aggregating calculations (Sums over time, Averages) and indicates the time window over which samples are gathered to
+                    generate a value.
+                </li>
+            </ul>
+        </p>
+    </div>
+    <div id="footer">
+        <div class="top">
+            <div id="mission">
+                <h1>Our Mission</h1>
+                <p>
+                    The mission of the U.S. Army Corps of Engineers is to deliver vital
+                    public and military engineering services; partnering in peace and war
+                    to strengthen our nation's security, energize the economy and reduce
+                    risks from disasters.
+                </p>
+                <h1>About the Hydrologic Engineering Center</h1>
+                <p>
+                    The official public website of the U.S. Army Corps of Engineers Hydrologic
+                    Engineering Center (HEC). For website corrections,
+                    write to Webmaster-HEC@usace.army.mil.
+                </p>
+            </div>
+            <div id="footer_links">
+                <div class="social-icons">
+                    <ul>
+                        <li><a href="http://www.facebook.com/USACEHQ" title="Facebook" target="_blank" rel="noopener"><span class="social-icon fab fa-facebook social-link-41"></span></a></li>
+                        <li><a href="http://twitter.com/#!/USACE_HQ" title="Twitter" target="_blank" rel="noopener"><span class="social-icon fab fa-twitter social-link-102"></span></a></li>
+                        <li><a href="http://www.youtube.com/CORPSCONNECTION" title="YouTube" target="_blank" rel="noopener"><span class="social-icon fab fa-youtube-square social-link-161"></span></a></li>
+                        <li><a href="http://www.flickr.com/photos/usacehq" title="Flickr" target="_blank" rel="noopener"><span class="social-icon fab fa-flickr social-link-220"></span></a></li>
+                    </ul>
+                </div>
+                <div class="footer-text-links">
+                    <ul>
+                        <li><a href="https://www.esd.whs.mil/DD/plainlanguage/" title="Plain Language" target="_blank" rel="noopener">Plain Language</a></li>
+                        <li><a href="https://dodcio.defense.gov/DoDSection508/Std_Stmt.aspx" title="Accessibility" target="_blank" rel="noopener">Accessibility</a></li>
+                        <li><a href="/contact/" title="Contact Us">Contact Us</a></li>
+                        <li><a href="https://www.usace.army.mil/FOIA.aspx" title="Freedom of Information Act" target="_blank" rel="noopener">FOIA</a></li>
+                        <li><a href="https://www.usace.army.mil/InformationQualityAct.aspx" title="Quality Facts" target="_blank" rel="noopener">Quality Facts</a></li>
+                        <li><a href="https://www.usace.army.mil/LinkDisclaimer.aspx" title="Link Disclaimer" target="_blank" rel="noopener">Link Disclaimer</a></li>
+                        <li><a href="https://www.usace.army.mil/PrivacyandSecurity.aspx" title="Privacy &amp; Security" target="_blank" rel="noopener">Privacy &amp; Security</a></li>
+                        <li><a href="/sitemap/default.aspx" title="Site Map">Site Map</a></li>
+                        <li><a href="https://www.usa.gov/" title="USA.gov" target="_blank" rel="noopener">USA.gov</a></li>
+                        <li><a href="https://prhome.defense.gov/nofear" title="No Fear Act" target="_blank" rel="noopener">No Fear Act</a></li>
+                        <li><a href="https://www.usace.army.mil/Careers/EEO/" title="EEO &amp; SHARP" target="_blank" rel="noopener"></a></li>
+                        <li><a href="https://www.usace.army.mil/Business-With-Us/Small-Business/" title="Small Business" target="_blank" rel="noopener">Small Business</a></li>
+                        <li><a href="https://open.defense.gov/" title="Open Government" target="_blank" rel="noopener">Open Government</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div id="footer_army_links">
+                <div >
+                    <a href="https://www.army.mil" target="_blank" rel="noopener">
+                        <img alt="U.S. Army logo" src="/images/army-logo-color.svg"></a>
+                    <ul>
+                        <li><a href="https://www.usace.army.mil/Engineer-Inspector-General/" title="Inspector General"><span class="text text-link-988">IG</span></a></li>
+                        <li><a href="https://www.usace.army.mil/FOIA.aspx" title="The Freedom of Information Act"><span class="text text-link-992">FOIA</span></a></li>
+                        <li><a href="https://www.inscom.army.mil/isalute/" title="If you have information that may be of interest to U.S. Army Counterintelligence, please click continue to submit an iSALUTE Suspicious Activity Report. You may also report by telephone at 1-800-CALL-SPY (1-800-225-5779) [CONUS ONLY]." target="_blank" rel="noopener"><span class="text text-link-917">iSALUTE</span></a></li>
+                    </ul>
+                </div>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+        <div class="bottom">
+            <img src="images/essayonscrest.png"/>
+        </div>
+    </div>
+
+</body>
+
+</html>

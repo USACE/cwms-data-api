@@ -10,7 +10,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-simple:1.8.0-beta4'
     implementation 'org.apache.tomcat:tomcat-jdbc:9.0.41'
     implementation 'io.javalin:javalin:3.13.4'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.3'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.1'
     implementation (project(':cwms_radar_api'))
     implementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
     implementation("io.javalin:javalin:3.12.0") 

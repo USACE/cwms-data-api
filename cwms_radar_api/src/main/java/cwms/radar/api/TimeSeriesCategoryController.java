@@ -8,8 +8,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.radar.data.dao.LocationCategoryDao;
-import cwms.radar.data.dto.LocationCategory;
+import cwms.radar.data.dao.TimeSeriesCategoryDao;
+import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -24,9 +24,9 @@ import org.jooq.DSLContext;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
-public class LocationCategoryController implements CrudHandler
+public class TimeSeriesCategoryController implements CrudHandler
 {
-	public static final Logger logger = Logger.getLogger(LocationCategoryController.class.getName());
+	public static final Logger logger = Logger.getLogger(TimeSeriesCategoryController.class.getName());
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -35,7 +35,7 @@ public class LocationCategoryController implements CrudHandler
 	private final Timer getOneRequestTime;
 	private final Histogram requestResultSize;
 
-	public LocationCategoryController(MetricRegistry metrics)
+	public TimeSeriesCategoryController(MetricRegistry metrics)
 	{
 		this.metrics = metrics;
 		String className = this.getClass().getName();
@@ -47,16 +47,16 @@ public class LocationCategoryController implements CrudHandler
 	}
 
 	@OpenApi(queryParams = {
-			@OpenApiParam(name = "office", description = "Specifies the owning office of the location category(ies) whose data is to be included in the response. If this field is not specified, matching location category information from all offices shall be returned."),
+			@OpenApiParam(name = "office", description = "Specifies the owning office of the timeseries category(ies) whose data is to be included in the response. If this field is not specified, matching timeseries category information from all offices shall be returned."),
 			},
 			responses = {@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(isArray = true, from = LocationCategory.class, type = Formats.JSON)
-					//							@OpenApiContent(isArray = true, from = TabV1LocationCategory.class, type = Formats.TAB ),
-					//							@OpenApiContent(isArray = true, from = CsvV1LocationCategory.class, type = Formats.CSV )
+					content = {@OpenApiContent(isArray = true, from = TimeSeriesCategory.class, type = Formats.JSON)
+					//							@OpenApiContent(isArray = true, from = TabV1TimeSeriesCategory.class, type = Formats.TAB ),
+					//							@OpenApiContent(isArray = true, from = CsvV1TimeSeriesCategory.class, type = Formats.CSV )
 			}
 			),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the categories were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Category Data", tags = {"Location Categories"})
+					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS timeseries category Data", tags = {"TimeSeries Categories"})
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -64,10 +64,10 @@ public class LocationCategoryController implements CrudHandler
 		try(final Timer.Context timeContext = getAllRequestsTime.time();
 			DSLContext dsl = getDslContext(ctx))
 		{
-			LocationCategoryDao dao = new LocationCategoryDao(dsl);
+			TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
 			String office = ctx.queryParam("office");
 
-			List<LocationCategory> cats = dao.getLocationCategories(office);
+			List<TimeSeriesCategory> cats = dao.getTimeSeriesCategories(office);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
@@ -87,20 +87,20 @@ public class LocationCategoryController implements CrudHandler
 					@OpenApiParam(name = "category-id", required = true, description = "Specifies the Category whose data is to be included in the response."),
 			},
 			queryParams = {
-			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the Location Category whose data is to be included in the response."),
+			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the timeseries category whose data is to be included in the response."),
 			},
 
 			responses = {
 					@OpenApiResponse(status = "200",
 							content = {
-							@OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
-//							@OpenApiContent(from = TabV1LocationCategory.class, type = Formats.TAB ),
-//							@OpenApiContent(from = CsvV1LocationCategory.class, type = Formats.CSV )
+							@OpenApiContent(from = TimeSeriesCategory.class, type = Formats.JSON)
+//							@OpenApiContent(from = TabV1TimeSeriesCategory.class, type = Formats.TAB ),
+//							@OpenApiContent(from = CsvV1TimeSeriesCategory.class, type = Formats.CSV )
 					}
 					),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the Location Category was not found."),
+					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries category was not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")},
-			description = "Retrieves requested Location Category", tags = {"Location Categories"})
+			description = "Retrieves requested timeseries category", tags = {"TimeSeries Categories"})
 	@Override
 	public void getOne(Context ctx, String categoryId)
 	{
@@ -108,13 +108,13 @@ public class LocationCategoryController implements CrudHandler
 		try(final Timer.Context timeContext = getOneRequestTime.time();
 			DSLContext dsl = getDslContext(ctx))
 		{
-			LocationCategoryDao dao = new LocationCategoryDao(dsl);
+			TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
 			String office = ctx.queryParam("office");
-
-			LocationCategory grp = dao.getLocationCategory(office, categoryId);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+
+			TimeSeriesCategory grp = dao.getTimeSeriesCategory(office, categoryId);
 
 			String result = Formats.format(contentType,grp);
 

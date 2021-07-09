@@ -36,7 +36,7 @@ jobs:
         run: ./gradlew dockerBuild
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v2'
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +88,7 @@ jobs:
           asset_content_type: application/x-webarchive
 
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v2'
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
     name: API Container Image
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -124,7 +124,7 @@ jobs:
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
         run: |
           ./gradlew :cwms_radar_api:build --init-script init.gradle
-          ./gradlew prepareDocker
+          ./gradlew prepareDocker --init-script init.gradle
           cd cwms_radar_standalone/build/docker
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

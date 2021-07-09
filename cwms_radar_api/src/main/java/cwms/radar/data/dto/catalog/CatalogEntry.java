@@ -19,6 +19,6 @@ public abstract class CatalogEntry {
     public String getOffice(){
         return office;
     }
-    
+
 
 }
