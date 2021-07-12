@@ -1,0 +1,51 @@
+package cwms.radar.api.errors;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import kotlin.random.Random;
+
+/**
+ * Class for reporting error to users, primary used for default error handlers for exceptions,
+ * however you can initialize and return more detail to the user if it makes sense for the given endpoint
+ *
+ */
+public class RadarError{
+    private String message;
+    private String incidentIdentifier;
+    private HashMap<String,String> details;
+
+    public String getMessage() {
+        return this.message;
+    }
+
+    public String getIncidentIdentifier(){
+        return incidentIdentifier;
+    }
+
+    public Map<String, String> getDetails(){
+        return Collections.unmodifiableMap(details);
+    }
+
+
+    public RadarError(String message){
+        this.incidentIdentifier = Long.toString(Random.Default.nextLong());
+        this.message = message;
+        this.details = new HashMap<>();
+    }
+
+    public RadarError(String message, HashMap<String,String> details){
+        Objects.requireNonNull(details);
+        this.incidentIdentifier = Long.toString(Random.Default.nextLong());
+        this.message = message;
+        this.details = details;
+    }
+
+    @Override
+    public String toString(){
+        return String.format("%s: %s", incidentIdentifier, message);
+    }
+
+}

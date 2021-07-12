@@ -1,5 +1,6 @@
 package mil.army.usace.hec;
 
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,15 +25,19 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import io.javalin.Javalin;
 import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
+
+import org.apache.http.entity.ContentType;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -96,17 +101,23 @@ public class RadarAPI {
             logger.info(ctx.header("accept"));
             total_requests.mark();
         }).after( ctx -> {
-            ((java.sql.Connection)ctx.attribute("database")).close();
+            try{
+                ((java.sql.Connection)ctx.attribute("database")).close();
+            } catch( SQLException e ){
+                logger.log(Level.WARNING, "Failed to close database connection", e);
+            }
         })
-        .exception(UnsupportedOperationException.class, (e,ctx) -> {
-            ctx.status(501);
-            ctx.json(sanitizer.sanitize(e.getMessage()));
+        .error(501, ctx -> {
+            ctx.json(new RadarError("Not Implemented"));
         })
         .exception(Exception.class, (e,ctx) -> {
+            RadarError errResponse = new RadarError("Server Error");
+            logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
             ctx.status(500);
-            ctx.json("There was an error processing your request");
-            logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);
+            ctx.contentType(ContentType.TEXT_PLAIN.toString());
+            ctx.json(errResponse);
         })
+
         .routes( () -> {
             //get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
             crud("/locations/:location_code", new LocationController(metrics));
@@ -133,7 +144,13 @@ public class RadarAPI {
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
                     .swagger( new SwaggerOptions("/swagger-ui.html"))
-                    .activateAnnotationScanningFor("cwms.radar.api");
+                    .activateAnnotationScanningFor("cwms.radar.api")
+                    .defaultDocumentation( doc -> {
+                        doc.json("500", RadarError.class);
+                        doc.json("404", RadarError.class);
+                        doc.json("501", RadarError.class);
+                    });
+
         return options;
     }
 
