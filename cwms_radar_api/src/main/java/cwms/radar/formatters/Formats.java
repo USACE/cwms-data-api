@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,21 +34,21 @@ public class Formats {
     public static final String GEOJSON = "application/geo+json";
 
 
-    private static ArrayList<ContentType> contentTypeList = new ArrayList<>();
+    private static List<ContentType> contentTypeList = new ArrayList<>();
     static {
         contentTypeList.addAll(
             Arrays.asList(JSON,XML,WML2,JSONV2,TAB,CSV, GEOJSON)
             .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
-    private static HashMap<String,String> type_map =new HashMap<>();
+    private static Map<String,String> typeMap = new LinkedHashMap<>();
     static{
-        type_map.put("json",Formats.JSON);
-        type_map.put("xml",Formats.XML);
-        type_map.put("wml2",Formats.WML2);
-        type_map.put("tab",Formats.TAB);
-        type_map.put("csv",Formats.CSV);
-        type_map.put("geojson",Formats.GEOJSON);
-    };
+        typeMap.put("json",Formats.JSON);
+        typeMap.put("xml",Formats.XML);
+        typeMap.put("wml2",Formats.WML2);
+        typeMap.put("tab",Formats.TAB);
+        typeMap.put("csv",Formats.CSV);
+        typeMap.put("geojson",Formats.GEOJSON);
+    }
 
 
     private Map<ContentType, Map<Class<CwmsDTO>,OutputFormatter> > formatters = null;
@@ -55,24 +56,24 @@ public class Formats {
     private static Formats formats = null;
 
     private Formats() throws IOException{
-        formatters = new HashMap<>();
+        formatters = new LinkedHashMap<>();
         InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list", this.getClass());
         BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
         while( br.ready() ){
             String line = br.readLine();
             logger.info(line);
-            String type_formatter_classes[] = line.split(":");
+            String[] typeFormatterClasses = line.split(":");
 
-            ContentType type = new ContentType(type_formatter_classes[0]);
+            ContentType type = new ContentType(typeFormatterClasses[0]);
             try {
                 @SuppressWarnings("unchecked")
-                Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(type_formatter_classes[1]);
+                Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
                 OutputFormatter formatterInstance;
 
 				formatterInstance = formatter.getDeclaredConstructor().newInstance();
                 Map<Class<CwmsDTO>,OutputFormatter> tmp = new HashMap<>();
 
-                for(String clazz: type_formatter_classes[2].split(";") ){
+                for(String clazz: typeFormatterClasses[2].split(";") ){
                     @SuppressWarnings("unchecked")
                     Class<CwmsDTO> formatForClass = (Class<CwmsDTO>)Class.forName(clazz);
                     tmp.put( formatForClass, formatterInstance);
@@ -81,9 +82,9 @@ public class Formats {
                 formatters.put(type,tmp);
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
 					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				throw new IOException("Failed to load format list, formatter for " + type_formatter_classes[0] + " point to a class with an invalid constructor",e);
+				throw new IOException("Failed to load format list, formatter for " + typeFormatterClasses[0] + " point to a class with an invalid constructor",e);
 			} catch (ClassNotFoundException e) {
-				throw new IOException("Failed to find class referenced for formatter " + type_formatter_classes[0],e );
+				throw new IOException("Failed to find class referenced for formatter " + typeFormatterClasses[0],e );
 			}
         }
 
@@ -95,26 +96,41 @@ public class Formats {
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = (Map<Class<CwmsDTO>, OutputFormatter>) formatters.get(type);
-        if( contentFormatters != null ){
-            return contentFormatters.get(toFormat.getClass()).format(toFormat);
+
+        OutputFormatter outputFormatter = getOutputFormatter(type, toFormat.getClass());
+
+        if(outputFormatter != null){
+            return outputFormatter.format(toFormat);
         } else {
             throw new FormattingException("No Format for this content-type and data-type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
         }
 
     }
 
-    private String getFormatted(ContentType type, List<? extends CwmsDTO> toFormat) throws FormattingException{
+    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTO> klass)
+    {
+        OutputFormatter outputFormatter =null;
+        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
+        if( contentFormatters != null )
+        {
+            outputFormatter = contentFormatters.get(klass);
+        }
+        return outputFormatter;
+    }
+
+    private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos) throws FormattingException{
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = (Map<Class<CwmsDTO>, OutputFormatter>) formatters.get(type);
-        if( contentFormatters != null ){
-            return contentFormatters.get(toFormat.get(0).getClass()).format(toFormat);
-        } else {
-            throw new FormattingException("No Format for this content-type and data type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
-        }
 
+        Class<? extends CwmsDTO> klass = dtos.get(0).getClass();
+        OutputFormatter outputFormatter = getOutputFormatter(type, klass);
+
+        if(outputFormatter != null){
+            return outputFormatter.format(dtos);
+        } else {
+            throw new FormattingException("No Format for this content-type and data type : (" + type.toString() + ", " + dtos.get(0).getClass().getName() + ")");
+        }
     }
 
     private static void init(){
@@ -149,7 +165,7 @@ public class Formats {
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam){
         if( queryParam != null && !queryParam.isEmpty() ){
-            String val = type_map.get(queryParam);
+            String val = typeMap.get(queryParam);
             if( val != null ){
                 return new ContentType(val);
             } else {
@@ -158,28 +174,39 @@ public class Formats {
         } else if( header == null ){
             throw new FormattingException("no content type or format specified");
         } else {
-            String all[] = header.split(",");
-            ArrayList<ContentType> contentTypes = new ArrayList<>();
-            logger.info("Finding handlers " + all.length);
-            for( String ct: all){
-                logger.info(ct);
-                contentTypes.add(new ContentType(ct));
-            }
-            Collections.sort(contentTypes);
-            logger.info("have " + contentTypes.size());
-            for( ContentType ct: contentTypes ){
-                logger.info("checking " + ct.toString());
-                if( contentTypeList.contains(ct)){
-                    return ct;
-                }
-            }
-            for( ContentType ct: contentTypes ){
-                if( ct.getType().equals("*/*")){
-                    return new ContentType(Formats.JSON);
-                }
+            ContentType ct = parseHeader(header);
+            if(ct != null)
+            {
+                return ct;
             }
         }
         throw new FormattingException("Content-Type " + header + " is not available");
+    }
+
+
+    public static ContentType parseHeader(String header)
+    {
+        String[] all = header.split(",");
+        ArrayList<ContentType> contentTypes = new ArrayList<>();
+        logger.info("Finding handlers " + all.length);
+        for( String ct: all){
+            logger.info(ct);
+            contentTypes.add(new ContentType(ct));
+        }
+        Collections.sort(contentTypes);
+        logger.info("have " + contentTypes.size());
+        for( ContentType ct: contentTypes ){
+            logger.info("checking " + ct.toString());
+            if( contentTypeList.contains(ct)){
+                return ct;
+            }
+        }
+        for( ContentType ct: contentTypes ){
+            if( ct.getType().equals("*/*")){
+                return new ContentType(Formats.JSON);
+            }
+        }
+        return null;
     }
 
 }
