@@ -52,8 +52,12 @@ public class RadarAPI {
     private static final Logger logger = Logger.getLogger(RadarAPI.class.getName());
     private static final MetricRegistry metrics = new MetricRegistry();
     private static final Meter total_requests = metrics.meter("radar.total_requests");
+    private Javalin app = null;
+    private int port = -1;
+
     public static void main(String[] args){
         DataSource ds = new DataSource();
+        int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
         try{
             ds.setDriverClassName(getconfig("RADAR_JDBC_DRIVER","oracle.jdbc.driver.OracleDriver"));
             ds.setUrl(getconfig("RADAR_JDBC_URL","jdbc:oracle:thin:@localhost/CWMSDEV"));
@@ -63,20 +67,26 @@ public class RadarAPI {
             ds.setMaxActive(Integer.parseInt(getconfig("RADAR_POOL_MAX_ACTIVE","10")));
             ds.setMaxIdle(Integer.parseInt(getconfig("RADAR_POOL_MAX_IDLE","5")));
             ds.setMinIdle(Integer.parseInt(getconfig("RADAR_POOL_MIN_IDLE","2")));
+
         } catch( Exception err ){
             logger.log(Level.SEVERE,"Required Parameter not set in environment",err);
             System.exit(1);
         }
+        RadarAPI api = new RadarAPI(ds,port);
+        api.start();
+    }
 
+    public RadarAPI(DataSource ds, int port){
+        this.port = port;
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
-        int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
+
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
 
         JavalinJackson.configure(om);
-        Javalin app = Javalin.create( config -> {
+        app = Javalin.create( config -> {
             config.defaultContentType = "application/json";
             config.contextPath = "/";
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
@@ -135,7 +145,7 @@ public class RadarAPI {
             crud("/catalog/:dataSet", new CatalogController(metrics));
 
             crud("/clobs/:clob-id", new ClobController(metrics));
-        }).start(port);
+        });
 
     }
 
@@ -152,6 +162,10 @@ public class RadarAPI {
                     });
 
         return options;
+    }
+
+    public void start(){
+        this.app.start(this.port);
     }
 
     private static String getconfig(String envName){
