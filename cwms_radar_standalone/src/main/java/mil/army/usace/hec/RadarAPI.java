@@ -17,6 +17,7 @@ import cwms.radar.api.LocationController;
 import cwms.radar.api.LocationGroupController;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
+import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
@@ -24,9 +25,7 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.formatters.Formats;
 import io.javalin.Javalin;
-import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -39,8 +38,6 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
 
 
 public class RadarAPI {
@@ -122,8 +119,8 @@ public class RadarAPI {
             crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
-
             crud("/clobs/:clob-id", new ClobController(metrics));
+            crud("/pools/:pool-id", new PoolController(metrics));
         }).start(port);
 
     }
