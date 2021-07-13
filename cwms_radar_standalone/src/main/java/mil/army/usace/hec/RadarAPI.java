@@ -76,7 +76,7 @@ public class RadarAPI {
         api.start();
     }
 
-    public RadarAPI(DataSource ds, int port){
+    public RadarAPI(javax.sql.DataSource ds, int port){
         this.port = port;
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
