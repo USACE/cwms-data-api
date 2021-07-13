@@ -21,6 +21,7 @@ import cwms.radar.api.LocationController;
 import cwms.radar.api.LocationGroupController;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
+import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
@@ -72,7 +73,6 @@ public class RadarAPI {
             ds.setMaxActive(Integer.parseInt(getconfig("RADAR_POOL_MAX_ACTIVE","10")));
             ds.setMaxIdle(Integer.parseInt(getconfig("RADAR_POOL_MAX_IDLE","5")));
             ds.setMinIdle(Integer.parseInt(getconfig("RADAR_POOL_MIN_IDLE","2")));
-
         } catch( Exception err ){
             logger.log(Level.SEVERE,"Required Parameter not set in environment",err);
             System.exit(1);
@@ -156,7 +156,6 @@ public class RadarAPI {
             ctx.contentType(ContentType.APPLICATION_JSON.toString());
             ctx.json(errResponse);
         })
-
         .routes( () -> {
             //get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
             crud("/locations/:location_code", new LocationController(metrics));
