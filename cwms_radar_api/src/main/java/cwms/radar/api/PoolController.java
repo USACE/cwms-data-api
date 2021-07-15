@@ -1,6 +1,5 @@
 package cwms.radar.api;
 
-import java.util.List;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -9,7 +8,9 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.data.dao.PoolDao;
+import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.Pool;
+import cwms.radar.data.dto.Pools;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -20,7 +21,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jooq.DSLContext;
-import org.jooq.exception.TooManyRowsException;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
@@ -28,6 +28,8 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 public class PoolController implements CrudHandler
 {
 	public static final Logger logger = Logger.getLogger(PoolController.class.getName());
+	public static final String ANY_MASK = "*";
+	private static final int defaultPageSize = 100;
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -35,7 +37,6 @@ public class PoolController implements CrudHandler
 	private final Meter getOneRequest;
 	private final Timer getOneRequestTime;
 	private final Histogram requestResultSize;
-	public static final String ANY_MASK = "*";
 
 	public PoolController(MetricRegistry metrics)
 	{
@@ -56,9 +57,18 @@ public class PoolController implements CrudHandler
 			@OpenApiParam(name = "top-mask", description = "Top level mask. Default value:*\""),
 			@OpenApiParam(name = "include-explicit", description = "Specifies if the results should include explicit Pools. Default value:false\""),
 			@OpenApiParam(name = "include-implicit", description = "Specifies if the results should include implicit Pools..Default value:true\""),
+			@OpenApiParam(name="page",
+					required = false,
+					description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+			),
+			@OpenApiParam(name="pageSize",
+					required=false,
+					type=Integer.class,
+					description = "How many entries per page returned. Default " + defaultPageSize + "."
+			),
 	}, responses = {
 			@OpenApiResponse(status = "200", content = {
-					@OpenApiContent(isArray = true, type = Formats.JSONV2, from = Pool.class)}),
+					@OpenApiContent(type = Formats.JSONV2, from = Pools.class)}),
 			@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the pools were not found."),
 			@OpenApiResponse(status = "501", description = "request format is not implemented")
 	},
@@ -84,7 +94,10 @@ public class PoolController implements CrudHandler
 			String isImp = ctx.queryParam("include-implicit", "true");
 			boolean isImplicit = Boolean.parseBoolean(isImp);
 
-			List<Pool> pools = dao.catalogPools(projectIdMask, nameMask, bottomMask, topMask, isExplicit, isImplicit, office);
+			String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"").getValue()).getValue();
+			int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
+
+			Pools pools = dao.retrievePools(cursor, pageSize, projectIdMask, nameMask, bottomMask, topMask, isExplicit, isImplicit, office);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -110,6 +123,7 @@ public class PoolController implements CrudHandler
 					@OpenApiParam(name = "top-mask", description = "Top level mask. Default value:*\""),
 					@OpenApiParam(name = "include-explicit", description = "Specifies if the results should include explicit Pools. Default value:false\""),
 					@OpenApiParam(name = "include-implicit", description = "Specifies if the results should include implicit Pools..Default value:true\""),
+
 			},
 			responses = {
 					@OpenApiResponse(status = "200",
