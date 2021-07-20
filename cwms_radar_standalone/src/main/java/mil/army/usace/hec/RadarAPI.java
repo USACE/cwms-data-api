@@ -117,9 +117,9 @@ public class RadarAPI {
                 logger.log(Level.WARNING, "Failed to close database connection", e);
             }
         })
-        .error(501, ctx -> {
+        /*.error(501, ctx -> {
             ctx.json(new RadarError("Not Implemented"));
-        })
+        })*/
         .exception(Exception.class, (e,ctx) -> {
             RadarError errResponse = new RadarError("Server Error");
             logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
@@ -166,6 +166,10 @@ public class RadarAPI {
 
     public void start(){
         this.app.start(this.port);
+    }
+
+    public void stop(){
+        this.app.stop();
     }
 
     private static String getconfig(String envName){

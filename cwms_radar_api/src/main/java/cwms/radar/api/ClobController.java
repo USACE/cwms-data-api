@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -11,6 +12,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.Clob;
@@ -124,14 +127,23 @@ public class ClobController implements CrudHandler {
             requestResultSize.update(result.length());
 
         } catch ( FormattingException fe ){
-            logger.log(Level.SEVERE,"failed to format data",fe);
+            RadarError re = null;
+
             if( fe.getCause() instanceof IOException ){
+                re = new RadarError("failed to format data", null );
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 ctx.result("server error");
             } else {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
+                re = new RadarError("failed to format data", new HashMap<String,String>(){
+                    {
+                        put("cause","Invalid format or format options");
+                    }
+                });
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+
             }
+            logger.log(Level.SEVERE,String.format("%s: failed to format data",re.getIncidentIdentifier()),fe);
+            ctx.json(re);
         }
     }
 

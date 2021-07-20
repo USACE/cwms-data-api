@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import kotlin.random.Random;
 
 /**
@@ -14,6 +15,7 @@ import kotlin.random.Random;
  */
 public class RadarError{
     private String message;
+    @Schema(description = "A randomly generated number to help identify your request in the logs for analysis..")
     private String incidentIdentifier;
     private HashMap<String,String> details;
 

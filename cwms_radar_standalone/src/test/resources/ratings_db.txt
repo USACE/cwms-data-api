@@ -1,0 +1,32 @@
+# always called
+{ call "CWMS_20"."CWMS_ENV"."SET_SESSION_OFFICE_ID" (\\?) };
+> Empty
+> -----
+@ rows: 0
+{ call "CWMS_20"."CWMS_ENV"."SET_SESSION_OFFICE_ID" (?) };
+> Empty
+> -----
+@ rows: 0
+# always called
+{ call "CWMS_20"."CWMS_ENV"."SET_SESSION_OFFICE_ID" (null) };
+> Empty
+> -----
+@ rows: 0
+# always called
+{ call "CWMS_20"."CWMS_ENV"."SET_SESSION_OFFICE_ID" (NULL) };
+> Empty
+> -----
+@ rows: 0
+select count(*) from "CWMS_20"."AV_CLOB" join "CWMS_20"."AV_OFFICE" on "CWMS_20"."AV_CLOB"."OFFICE_CODE" = "CWMS_20"."AV_OFFICE"."OFFICE_CODE" where ((regexp_like("CWMS_20"."AV_CLOB"."ID", ?)) and "CWMS_20"."AV_OFFICE"."OFFICE_ID" like ?);
+> count
+> -----
+> 4
+@ rows: 1
+select "v0" "OFFICE_ID", "v1" "ID", "v2" "DESCRIPTION", "v3" "VALUE" from (select "x"."v0", "x"."v1", "x"."v2", "x"."v3", rownum "rn" from (select "CWMS_20"."AV_OFFICE"."OFFICE_ID" "v0", "CWMS_20"."AV_CLOB"."ID" "v1", "CWMS_20"."AV_CLOB"."DESCRIPTION" "v2", '' "v3" from "CWMS_20"."AV_CLOB" join "CWMS_20"."AV_OFFICE" on "CWMS_20"."AV_CLOB"."OFFICE_CODE" = "CWMS_20"."AV_OFFICE"."OFFICE_CODE" where ((regexp_like("CWMS_20"."AV_CLOB"."ID", ?)) and upper("CWMS_20"."AV_CLOB"."ID") > ?) order by "v1") "x" where rownum <= (0 + ?)) where "rn" > 0 order by "rn";
+> Office_id ID    Description VALUE
+> --------- --    ----------- -----
+> SPK       TEST1 Row 1 Test  Random Text
+> NAE       TEST2 Row 2 Test  Less Random Text
+#> CWMS      TEST3 Row 3 Test  A Clob for All
+#> MVN       TEST4 Row 4 Test  The final countdown
+@ rows: 2
