@@ -34,7 +34,7 @@ public class ClobControllerTest {
     @BeforeAll
     public static void startServer(){
 
-        RestAssured.port = 7000;
+        RestAssured.port = 7001;
     }
 
     @BeforeEach
@@ -45,7 +45,7 @@ public class ClobControllerTest {
                                 )
                 );
         when(ds.getConnection()).thenReturn(conn);
-        api = new RadarAPI(ds,7000);
+        api = new RadarAPI(ds,7001);
         api.start();
     }
 
@@ -75,7 +75,8 @@ public class ClobControllerTest {
         .then()
         .statusCode(HttpServletResponse.SC_OK)
         .body("$", hasKey("next-page"))
-        .body("page-size", equalTo(2));
+        .body("page-size", equalTo(2))
+        .body("clobs.size()",is(2));
 
     }
 
@@ -86,7 +87,9 @@ public class ClobControllerTest {
         .get("/clobs")
         .then()
         .statusCode(HttpServletResponse.SC_OK)
-        .body("$", hasKey("nextPage"))
-        .body("pageSize", equalTo(2));
+        .body(hasXPath("/clobs/nextPage"))
+        .body("clobs.pageSize", equalTo("2"))
+        .body("clobs.clobs.children().size()",is(2))
+        ;
     }
 }
