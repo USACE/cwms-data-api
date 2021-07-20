@@ -10,7 +10,7 @@ public class Pool extends PoolType implements CwmsDTO
 {
 	private Number attribute;
 	private String description;
-	private Integer clobId;
+
 	private String clobText;
 
 	public Pool(PoolNameType poolName, String projectId, String bottomLevelId, String topLevelId, boolean implicit)
@@ -41,16 +41,6 @@ public class Pool extends PoolType implements CwmsDTO
 	public void setDescription(String description)
 	{
 		this.description = description;
-	}
-
-	public Integer getClobId()
-	{
-		return clobId;
-	}
-
-	public void setClobId(Integer clobId)
-	{
-		this.clobId = clobId;
 	}
 
 	public String getClobText()
@@ -89,10 +79,7 @@ public class Pool extends PoolType implements CwmsDTO
 		{
 			return false;
 		}
-		if(getClobId() != null ? !getClobId().equals(pool.getClobId()) : pool.getClobId() != null)
-		{
-			return false;
-		}
+
 		return getClobText() != null ? getClobText().equals(pool.getClobText()) : pool.getClobText() == null;
 	}
 
@@ -102,7 +89,7 @@ public class Pool extends PoolType implements CwmsDTO
 		int result = super.hashCode();
 		result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
 		result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
-		result = 31 * result + (getClobId() != null ? getClobId().hashCode() : 0);
+
 		result = 31 * result + (getClobText() != null ? getClobText().hashCode() : 0);
 		return result;
 	}

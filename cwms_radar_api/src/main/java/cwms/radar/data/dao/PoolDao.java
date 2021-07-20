@@ -84,14 +84,14 @@ public class PoolDao extends JooqDao<PoolType>
 		// hard-wired to null in the pl/sql for implicit pools, not sure about explicit.
 		Number attribute = catRecord.get("ATTRIBUTE", Number.class);
 		String description = catRecord.get("DESCRIPTION", String.class);
-		Integer clobCode = catRecord.get("CLOB_CODE", Integer.class);
+
 		String clobText = catRecord.get("CLOB_TEXT", String.class);
 
 		PoolNameType name = new PoolNameType(poolId, officeId);
 		Pool pool = new Pool(name, projectId, bottomLevelId, topLevelId, isImplicit);
 		pool.setAttribute(attribute);
 		pool.setDescription(description);
-		pool.setClobId(clobCode);
+
 		pool.setClobText(clobText);
 		return pool;
 	}
