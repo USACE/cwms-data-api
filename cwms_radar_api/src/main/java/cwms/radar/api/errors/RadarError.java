@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import kotlin.random.Random;
@@ -48,6 +49,10 @@ public class RadarError{
     @Override
     public String toString(){
         return String.format("%s: %s", incidentIdentifier, message);
+    }
+
+    public static RadarError notImplemented() {
+        return new RadarError("Not Implemented");
     }
 
 }

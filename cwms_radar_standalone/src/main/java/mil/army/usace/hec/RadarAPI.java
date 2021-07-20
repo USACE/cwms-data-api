@@ -157,6 +157,7 @@ public class RadarAPI {
                     .activateAnnotationScanningFor("cwms.radar.api")
                     .defaultDocumentation( doc -> {
                         doc.json("500", RadarError.class);
+                        doc.json("400", RadarError.class);
                         doc.json("404", RadarError.class);
                         doc.json("501", RadarError.class);
                     });

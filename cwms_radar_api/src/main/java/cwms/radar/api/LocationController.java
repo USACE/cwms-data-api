@@ -13,6 +13,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -72,9 +74,7 @@ public class LocationController implements CrudHandler {
                             @OpenApiContent(type = Formats.XML ),
                             @OpenApiContent(type = Formats.WML2),
                             @OpenApiContent(type = Formats.GEOJSON )
-                    }),
-            @OpenApiResponse( status="404", description = "Based on the combination of inputs provided the location(s) were not found."),
-            @OpenApiResponse( status="501", description = "request format is not implemented")
+                    })
         },
         description = "Returns CWMS Location Data",
         tags = {"Locations"}
@@ -118,13 +118,13 @@ public class LocationController implements CrudHandler {
         }
         catch( JsonProcessingException ex)
         {
-            logger.log(Level.SEVERE, null, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.result("Failed to process request");
+            RadarError re = new RadarError("failed to process request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
         catch(FormattingException fe)
         {
-            logger.log(Level.SEVERE, "failed to format data", fe);
+
             if(fe.getCause() instanceof IOException)
             {
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -135,6 +135,7 @@ public class LocationController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.result("Invalid Format Options");
             }
+            logger.log(Level.SEVERE, "failed to format data", fe);
         }
     }
 
@@ -168,26 +169,26 @@ public class LocationController implements CrudHandler {
         try (
             final Timer.Context timeContext = getOneRequestTime.time()
             ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

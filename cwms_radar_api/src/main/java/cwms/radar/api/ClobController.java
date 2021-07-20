@@ -92,9 +92,7 @@ public class ClobController implements CrudHandler {
                                            @OpenApiContent( type = Formats.JSONV2, from = Clobs.class ),
                                            @OpenApiContent( type = Formats.XMLV2, from = Clobs.class )
                                        }
-                      ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
+                      )
                     },
         tags = {"Clob"}
     )
@@ -158,9 +156,7 @@ public class ClobController implements CrudHandler {
                                        content = {
                                            @OpenApiContent(type = Formats.JSON, from = Clob.class ),
                                        }
-                      ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
+                      )
                     },
         tags = {"Clob"}
     )

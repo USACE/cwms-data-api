@@ -14,6 +14,7 @@ import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
@@ -102,9 +103,7 @@ public class CatalogController implements CrudHandler{
                                            @OpenApiContent(from = Catalog.class, type=Formats.JSONV2),
                                            @OpenApiContent(from = Catalog.class, type=Formats.XML)
                                        }
-                      ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
+                      )
                     },
         tags = {"Catalog"}
     )
@@ -139,12 +138,20 @@ public class CatalogController implements CrudHandler{
                 ctx.result(data).contentType(contentType.toString());
                 requestResultSize.update(data.length());
             } else {
-                ctx.result("Cannot create catalog of requested information").status(HttpServletResponse.SC_BAD_REQUEST);
+                final RadarError re = new RadarError("Cannot create catalog of requested information");
+
+                logger.info(() -> {
+                    StringBuilder builder = new StringBuilder(re.toString())
+                        .append("with url:" ).append(ctx.fullUrl());
+                    return builder.toString();
+                });
+                ctx.json(re).status(HttpServletResponse.SC_BAD_REQUEST);
             }
 
         } catch( SQLException er) {
-            logger.log(Level.SEVERE, "failed to process catalog request", er);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).result("Failed to process request");
+            RadarError re = new RadarError("failed to process request");
+            logger.log(Level.SEVERE, re.toString(), er);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }
@@ -152,7 +159,7 @@ public class CatalogController implements CrudHandler{
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void update(Context ctx, String entry) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

@@ -10,6 +10,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.OfficeDao;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.ContentType;
@@ -42,7 +44,7 @@ public class OfficeController implements CrudHandler {
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
-    
+
 
     public OfficeController(MetricRegistry metrics){
         this.metrics=metrics;
@@ -53,14 +55,14 @@ public class OfficeController implements CrudHandler {
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
-    
 
-    @OpenApi(                
+
+    @OpenApi(
         queryParams = @OpenApiParam(name="format",
-                                    required = false, 
+                                    required = false,
                                     deprecated = true,
                                     description = "(Deprecated in favor of Accept header) Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
-                                    ),        
+                                    ),
         responses = { @OpenApiResponse(status="200",
                                        description = "A list of offices.",
                                        content = {
@@ -71,22 +73,13 @@ public class OfficeController implements CrudHandler {
                                            @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
                                        }
                       ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
                     },
-        /*
-        headers = {
-            @OpenApiParam(name="Accept",
-                          description="Specifies the encoding format of the response. Valid values are shown in the Response descriptions below"                          
-                          )
-
-        },*/
         tags = {"Offices"}
     )
-    @Override    
-    public void getAll(Context ctx) {        
+    @Override
+    public void getAll(Context ctx) {
         getAllRequests.mark();
-        
+
         try (
                 final Timer.Context timeContext  = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
@@ -96,31 +89,35 @@ public class OfficeController implements CrudHandler {
                 String formatParm = ctx.queryParam("format","");
                 String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
-                
+
                 String result = Formats.format(contentType,offices);
-                
+
                 ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
         } catch ( FormattingException fe ){
-            logger.log(Level.SEVERE,"failed to format data",fe);
+            final RadarError re = new RadarError("Formatting error");
+
             if( fe.getCause() instanceof IOException ){
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
             } else {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
             }
+            logger.log(Level.SEVERE,fe, () -> {
+                return new StringBuilder(re.toString())
+                .append("for request: " + ctx.fullUrl()).toString();
+            });
+            ctx.json(re);
         }
     }
 
     @OpenApi(
         pathParams = @OpenApiParam(name="office", description = "The 3 letter office ID you want more information for", type = String.class),
         queryParams = @OpenApiParam(name="format",
-                                    required = false, 
+                                    required = false,
                                     deprecated = true,
                                     description = "(Deprecated in favor of Accept header) Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
-                                    ),        
+                                    ),
         responses = { @OpenApiResponse(status="200",
                                        description = "A list of offices.",
                                        content = {
@@ -130,9 +127,7 @@ public class OfficeController implements CrudHandler {
                                            @OpenApiContent(from = TabV1Office.class, type = Formats.TAB ),
                                            @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
                                        }
-                      ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
+                      )
                     },
         tags = {"Offices"}
     )
@@ -156,33 +151,37 @@ public class OfficeController implements CrudHandler {
 
             requestResultSize.update(result.length());
         } catch( FormattingException fe ){
-            logger.log(Level.SEVERE,"failed to format data",fe);
+            final RadarError re = new RadarError("Formatting error");
+
             if( fe.getCause() instanceof IOException ){
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
             } else {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
             }
+            logger.log(Level.SEVERE,fe, () -> {
+                return new StringBuilder(re.toString())
+                .append("for request: " + ctx.fullUrl()).toString();
+            });
+            ctx.json(re);
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String officeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String officeId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }
