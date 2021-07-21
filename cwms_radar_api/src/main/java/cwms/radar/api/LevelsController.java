@@ -1,7 +1,6 @@
 package cwms.radar.api;
 
 import java.sql.SQLException;
-import java.text.Format;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

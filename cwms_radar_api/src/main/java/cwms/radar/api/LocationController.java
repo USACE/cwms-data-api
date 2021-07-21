@@ -1,6 +1,5 @@
 package cwms.radar.api;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;

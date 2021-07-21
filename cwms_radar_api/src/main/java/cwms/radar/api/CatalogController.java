@@ -6,7 +6,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.QueryParam;
 
 import com.codahale.metrics.*;
 
@@ -16,7 +15,6 @@ import org.owasp.html.PolicyFactory;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.data.dto.Catalog;
