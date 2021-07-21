@@ -1,8 +1,11 @@
 package mil.army.usace.hec;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -27,6 +30,7 @@ import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
 import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
@@ -117,11 +121,25 @@ public class RadarAPI {
                 logger.log(Level.WARNING, "Failed to close database connection", e);
             }
         })
-        /*.error(501, ctx -> {
-            ctx.json(new RadarError("Not Implemented"));
-        })*/
+        .exception(FormattingException.class, (fe, ctx ) -> {
+            final RadarError re = new RadarError("Formatting error");
+
+            if( fe.getCause() instanceof IOException ){
+                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            } else {
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+            }
+            logger.log(Level.SEVERE,fe, () -> {
+                return new StringBuilder(re.toString())
+                .append("for request: " + ctx.fullUrl()).toString();
+            });
+            ctx.json(re);
+        })
+        .exception(UnsupportedOperationException.class, (e, ctx) -> {
+            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        })
         .exception(Exception.class, (e,ctx) -> {
-            RadarError errResponse = new RadarError("Server Error");
+            RadarError errResponse = new RadarError("System Error");
             logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
             ctx.status(500);
             ctx.contentType(ContentType.TEXT_PLAIN.toString());

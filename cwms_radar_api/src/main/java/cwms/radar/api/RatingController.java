@@ -12,6 +12,7 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -95,14 +96,10 @@ public class RatingController implements CrudHandler {
                     case "xml": {ctx.contentType(Formats.XML); break;}
                     case "wml2": {ctx.contentType(Formats.WML2); break;}
                     case "jpg": // same handler
-                    case "png": {
-                        ctx.status(HttpServletResponse.SC_NOT_FOUND);
-                        ctx.contentType(Formats.PLAIN);
-                        ctx.result("Server Side image creation is not supported in this version. Note: we may be retiring it in favor or encouraging the use of client based rendering.");
-                        return;
-                     }
+                    case "png":
                      default: {
-                        throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
+                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+                        return;
                      }
                 }
 
@@ -111,9 +108,10 @@ public class RatingController implements CrudHandler {
                 ctx.result(results);
                 requestResultSize.update(results.length());
         } catch (SQLException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            RadarError re = new RadarError("Failed to process request");
+            logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.result("Failed to process request");
+            ctx.json(re);
         }
 
     }

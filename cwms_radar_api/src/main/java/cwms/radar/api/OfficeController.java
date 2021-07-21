@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,14 +17,12 @@ import cwms.radar.data.dao.OfficeDao;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.csv.CsvV1Office;
 import cwms.radar.formatters.tab.TabV1Office;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.NotFoundResponse;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -95,19 +94,6 @@ public class OfficeController implements CrudHandler {
                 ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
-        } catch ( FormattingException fe ){
-            final RadarError re = new RadarError("Formatting error");
-
-            if( fe.getCause() instanceof IOException ){
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            } else {
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
-            }
-            logger.log(Level.SEVERE,fe, () -> {
-                return new StringBuilder(re.toString())
-                .append("for request: " + ctx.fullUrl()).toString();
-            });
-            ctx.json(re);
         }
     }
 
@@ -141,7 +127,13 @@ public class OfficeController implements CrudHandler {
             OfficeDao dao = new OfficeDao(dsl);
             Office office = dao.getOfficeById(officeId);
             if( office == null ){
-                throw new NotFoundResponse("Office id: " + officeId + " does not exist");
+                RadarError re = new RadarError("Bad input", new HashMap<String,String>(){
+                    {
+                        put("office", "A value must be provided");
+                    }
+
+                });
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
             }
             String formatParm = ctx.queryParam("format","");
             String formatHeader = ctx.header(Header.ACCEPT);
@@ -150,19 +142,6 @@ public class OfficeController implements CrudHandler {
             ctx.result(result).contentType(contentType.toString());
 
             requestResultSize.update(result.length());
-        } catch( FormattingException fe ){
-            final RadarError re = new RadarError("Formatting error");
-
-            if( fe.getCause() instanceof IOException ){
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            } else {
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
-            }
-            logger.log(Level.SEVERE,fe, () -> {
-                return new StringBuilder(re.toString())
-                .append("for request: " + ctx.fullUrl()).toString();
-            });
-            ctx.json(re);
         }
     }
 

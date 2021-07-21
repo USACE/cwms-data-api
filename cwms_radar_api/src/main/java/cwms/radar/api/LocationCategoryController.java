@@ -144,6 +144,6 @@ public class LocationCategoryController implements CrudHandler
 	@Override
 	public void delete(Context ctx, String locationCode)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 }

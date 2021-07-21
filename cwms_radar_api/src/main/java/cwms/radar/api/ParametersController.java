@@ -13,6 +13,7 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
@@ -57,8 +58,7 @@ public class ParametersController implements CrudHandler {
             @OpenApiParam(name="format",required = false, description = "Specifies the encoding format of the response. Valid value for the format field for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)")
         },
         responses = {
-            @OpenApiResponse( status = "200"),
-            @OpenApiResponse(status="501",description = "The format requested is not implemented")
+            @OpenApiResponse( status = "200")
         },
         tags = {"Parameters"}
     )
@@ -78,7 +78,7 @@ public class ParametersController implements CrudHandler {
                 case "csv": {ctx.contentType(Formats.CSV); break;}
                 case "xml": {ctx.contentType(Formats.XML); break;}
                 case "wml2": {ctx.contentType(Formats.WML2); break;}
-                default: throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
+                default: ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented()); return;
             }
 
             String results = cdm.getParameters(format);
@@ -86,9 +86,9 @@ public class ParametersController implements CrudHandler {
             ctx.result(results);
             requestResultSize.update(results.length());
         } catch (SQLException ex) {
-            logger.log(Level.SEVERE, null, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.result("Failed to process request");
+            RadarError re = new RadarError("Failed to process request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -99,14 +99,14 @@ public class ParametersController implements CrudHandler {
         try (
             final Timer.Context time_context = getOneRequestTime.time();
             ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 
     }
 

@@ -20,7 +20,6 @@ import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -124,24 +123,6 @@ public class ClobController implements CrudHandler {
             ctx.contentType(contentType.toString());
             requestResultSize.update(result.length());
 
-        } catch ( FormattingException fe ){
-            RadarError re = null;
-
-            if( fe.getCause() instanceof IOException ){
-                re = new RadarError("failed to format data", null );
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
-            } else {
-                re = new RadarError("failed to format data", new HashMap<String,String>(){
-                    {
-                        put("cause","Invalid format or format options");
-                    }
-                });
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
-
-            }
-            logger.log(Level.SEVERE,String.format("%s: failed to format data",re.getIncidentIdentifier()),fe);
-            ctx.json(re);
         }
     }
 
@@ -181,15 +162,6 @@ public class ClobController implements CrudHandler {
             ctx.result(result);
 
             requestResultSize.update(result.length());
-        }  catch( FormattingException fe ){
-            logger.log(Level.SEVERE,"failed to format data",fe);
-            if( fe.getCause() instanceof IOException ){
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
-            } else {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
-            }
         }
     }
 
@@ -199,19 +171,19 @@ public class ClobController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String clobId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String clobId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

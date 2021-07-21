@@ -18,7 +18,6 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -121,21 +120,6 @@ public class LocationController implements CrudHandler {
             RadarError re = new RadarError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-        }
-        catch(FormattingException fe)
-        {
-
-            if(fe.getCause() instanceof IOException)
-            {
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
-            }
-            else
-            {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
-            }
-            logger.log(Level.SEVERE, "failed to format data", fe);
         }
     }
 
