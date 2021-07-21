@@ -34,8 +34,6 @@ public class CatalogController implements CrudHandler{
 
 
     private final MetricRegistry metrics;// = new MetricRegistry();
-    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
-    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
@@ -43,8 +41,6 @@ public class CatalogController implements CrudHandler{
     public CatalogController(MetricRegistry metrics){
         this.metrics=metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
-        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
         getOneRequest = this.metrics.meter(name(className,"getOne","count"));
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
         requestResultSize = this.metrics.histogram((name(className,"results","size")));

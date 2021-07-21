@@ -95,7 +95,7 @@ public class ClobController implements CrudHandler {
     public void getAll(Context ctx) {
         getAllRequests.mark();
         try(
-                final Timer.Context timeContext = getOneRequestTime.time();
+                final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx)
         ) {
             String office = ctx.queryParam("office");
