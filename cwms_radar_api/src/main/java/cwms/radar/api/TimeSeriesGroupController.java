@@ -70,7 +70,7 @@ public class TimeSeriesGroupController implements CrudHandler
 			String office = ctx.queryParam("office");
 
 			List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office);
-			
+
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
@@ -95,13 +95,9 @@ public class TimeSeriesGroupController implements CrudHandler
 			responses = {
 					@OpenApiResponse(status = "200", content = {
 							@OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
-//						@OpenApiContent(from = CsvV1TimeseriesGroup.class, type = Formats.CSV )
-							//	@OpenApiContent(from = TabV1TimeseriesGroup.class, type = Formats.TAB ),
 					}
 
-			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group was not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")},
+			)},
 			description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
 	@Override
 	public void getOne(Context ctx, String groupId)
@@ -152,20 +148,20 @@ public class TimeSeriesGroupController implements CrudHandler
 	@Override
 	public void create(Context ctx)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void update(Context ctx, String groupId)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void delete(Context ctx, String groupId)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

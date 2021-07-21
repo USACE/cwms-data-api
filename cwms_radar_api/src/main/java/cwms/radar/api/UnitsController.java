@@ -12,6 +12,7 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -42,13 +43,13 @@ public class UnitsController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String unit) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(
@@ -99,14 +100,14 @@ public class UnitsController implements CrudHandler {
         try (
             final Timer.Context time_context = getOneRequestTime.time();
             ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String unit) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

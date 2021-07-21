@@ -123,14 +123,14 @@ public class RatingController implements CrudHandler {
         try (
             final Timer.Context time_context = getOneRequestTime.time();
             ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String rating) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }
