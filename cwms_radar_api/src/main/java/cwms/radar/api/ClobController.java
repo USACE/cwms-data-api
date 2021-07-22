@@ -14,6 +14,7 @@ import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
+import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -103,7 +104,9 @@ public class ClobController implements CrudHandler {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
 
-            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"").getValue()).getValue();
+            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"")
+                .check(CwmsDTOPaginated.CURSOR_CHECK, "Invalid Cursor")
+            .getValue()).getValue();
             int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
 
             boolean includeValues = ctx.queryParam("includeValues",Boolean.class,"false").getValue().booleanValue();
