@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -72,15 +73,27 @@ public class LocationCategoryController implements CrudHandler
 
 			List<LocationCategory> cats = dao.getLocationCategories(office);
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			if( !cats.isEmpty()) {
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result = Formats.format(contentType,cats);
+				String result = Formats.format(contentType,cats);
 
-			ctx.result(result).contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.result(result).contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.status(HttpServletResponse.SC_OK);
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				final RadarError re = new RadarError("Cannot requested location category for office provided");
+
+                logger.info(() -> {
+                    StringBuilder builder = new StringBuilder(re.toString())
+                        .append("with url:" ).append(ctx.fullUrl());
+                    return builder.toString();
+                });
+                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
+			}
+
 		}
 
 	}
@@ -111,17 +124,28 @@ public class LocationCategoryController implements CrudHandler
 			LocationCategoryDao dao = new LocationCategoryDao(dsl);
 			String office = ctx.queryParam("office");
 
-			LocationCategory grp = dao.getLocationCategory(office, categoryId);
+			Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
+			if( grp.isPresent() ){
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+				String result = Formats.format(contentType,grp.get());
 
-			String result = Formats.format(contentType,grp);
+				ctx.result(result).contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.result(result).contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				final RadarError re = new RadarError("Cannot requested location category id");
 
-			ctx.status(HttpServletResponse.SC_OK);
+                logger.info(() -> {
+                    StringBuilder builder = new StringBuilder(re.toString())
+                        .append("with url:" ).append(ctx.fullUrl());
+                    return builder.toString();
+                });
+                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
+			}
+
 		}
 
 	}

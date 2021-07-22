@@ -2,6 +2,7 @@ package cwms.radar.api;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -123,23 +124,26 @@ public class OfficeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx))
         {
             OfficeDao dao = new OfficeDao(dsl);
-            Office office = dao.getOfficeById(officeId);
-            if( office == null ){
-                RadarError re = new RadarError("Bad input", new HashMap<String,String>(){
+            Optional<Office> office = dao.getOfficeById(officeId);
+            if( office.isPresent() ){
+                String formatParm = ctx.queryParam("format","");
+                String formatHeader = ctx.header(Header.ACCEPT);
+                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+                String result = Formats.format(contentType,office.get());
+                ctx.result(result).contentType(contentType.toString());
+
+                requestResultSize.update(result.length());
+            }
+            else {
+                RadarError re = new RadarError("Not Found", new HashMap<String,String>(){
                     {
-                        put("office", "A value must be provided");
+                        put("office", "An office with that name does not exist");
                     }
 
                 });
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
-            String formatParm = ctx.queryParam("format","");
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
-            String result = Formats.format(contentType,office);
-            ctx.result(result).contentType(contentType.toString());
 
-            requestResultSize.update(result.length());
         }
     }
 

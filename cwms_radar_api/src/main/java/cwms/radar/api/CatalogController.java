@@ -141,7 +141,7 @@ public class CatalogController implements CrudHandler{
                         .append("with url:" ).append(ctx.fullUrl());
                     return builder.toString();
                 });
-                ctx.json(re).status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
             }
 
         } catch( SQLException er) {

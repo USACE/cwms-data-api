@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -80,16 +81,28 @@ public class LocationGroupController implements CrudHandler
 
 			List<LocationGroup> grps = cdm.getLocationGroups(office);
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+			if( !grps.isEmpty() ){
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-			String result = Formats.format(contentType, grps);
+				String result = Formats.format(contentType, grps);
 
-			ctx.result(result);
-			ctx.contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.result(result);
+				ctx.contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.status(HttpServletResponse.SC_OK);
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				RadarError re = new RadarError("No location groups for office provided");
+				logger.info( () -> {
+					return new StringBuilder()
+					.append( re.toString()).append(System.lineSeparator())
+					.append( "for request ").append( ctx.fullUrl() )
+					.toString();
+				});
+				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+			}
+
 		}
 
 	}
@@ -134,11 +147,25 @@ public class LocationGroupController implements CrudHandler
 				result = mapper.writeValueAsString(fc);
 			} else
 			{
-				LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
-				result = Formats.format(contentType, grp);
+				Optional<LocationGroup> grp = cdm.getLocationGroup(office, categoryId, groupId);
+				if( grp.isPresent() ) {
+					result = Formats.format(contentType, grp.get());
+				} else {
+					RadarError re = new RadarError("Unable to find location group based on parameters given");
+					logger.info( () -> {
+						return new StringBuilder()
+						.append( re.toString()).append(System.lineSeparator())
+						.append( "for request ").append( ctx.fullUrl() )
+						.toString();
+					});
+					ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+					return;
+				}
+
 			}
 			ctx.result(result);
 			ctx.contentType(contentType.toString());
+
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);

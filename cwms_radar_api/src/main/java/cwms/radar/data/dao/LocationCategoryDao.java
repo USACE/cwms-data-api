@@ -1,9 +1,11 @@
 package cwms.radar.data.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import cwms.radar.data.dto.LocationCategory;
 import org.jooq.DSLContext;
+import org.jooq.Record3;
 
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 
@@ -40,15 +42,17 @@ public class LocationCategoryDao extends JooqDao<LocationCategory>
 				.fetch().into(LocationCategory.class);
 	}
 
-	public LocationCategory getLocationCategory(String officeId, String categoryId)
+	public Optional<LocationCategory> getLocationCategory(String officeId, String categoryId)
 	{
 		AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		return dsl.select(table.CAT_DB_OFFICE_ID,
+		 Record3<String, String, String> fetchOne = dsl.select(table.CAT_DB_OFFICE_ID,
 				table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
 				.from(table)
 				.where(table.CAT_DB_OFFICE_ID.eq(officeId)
 						.and(table.LOC_CATEGORY_ID.eq(categoryId)))
-				.fetchOne().into(LocationCategory.class);
+				.fetchOne();
+		return fetchOne != null ?
+			Optional.of(fetchOne.into(LocationCategory.class)) : Optional.empty();
 	}
 }
