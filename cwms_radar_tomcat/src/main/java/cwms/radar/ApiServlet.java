@@ -45,11 +45,14 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
+
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.*;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 
@@ -115,14 +118,19 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Frame-Options","SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
-                .exception(UnsupportedOperationException.class, (e,ctx) -> {
-                    ctx.status(501);
-                    ctx.json(e.getMessage());
-                })
-                .exception(Exception.class, (e,ctx) -> {
-                    ctx.status(500);
-                    ctx.json("Server Error");
-                    e.printStackTrace(System.err);
+                .exception(FormattingException.class, (fe, ctx ) -> {
+                    final RadarError re = new RadarError("Formatting error");
+
+                    if( fe.getCause() instanceof IOException ){
+                        ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    } else {
+                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                    }
+                    logger.log(Level.SEVERE,fe, () -> {
+                        return new StringBuilder(re.toString())
+                        .append("for request: " + ctx.fullUrl()).toString();
+                    });
+                    ctx.json(re);
                 })
                 .routes( () -> {
                     get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
