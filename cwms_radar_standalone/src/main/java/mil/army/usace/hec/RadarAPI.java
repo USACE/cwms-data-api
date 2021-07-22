@@ -34,6 +34,7 @@ import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
 import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -137,6 +138,11 @@ public class RadarAPI {
         })
         .exception(UnsupportedOperationException.class, (e, ctx) -> {
             ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        })
+        .exception(BadRequestResponse.class, (e, ctx) -> {
+            RadarError re = new RadarError("Bad Request", e.getDetails());
+            logger.log(Level.INFO, re.toString(), e );
+            ctx.status(e.getStatus()).json(re);
         })
         .exception(Exception.class, (e,ctx) -> {
             RadarError errResponse = new RadarError("System Error");

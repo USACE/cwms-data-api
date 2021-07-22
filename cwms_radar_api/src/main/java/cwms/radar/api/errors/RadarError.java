@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import kotlin.random.Random;
@@ -18,7 +17,7 @@ public class RadarError{
     private String message;
     @Schema(description = "A randomly generated number to help identify your request in the logs for analysis..")
     private String incidentIdentifier;
-    private HashMap<String,String> details;
+    private Map<String,String> details;
 
     public String getMessage() {
         return this.message;
@@ -39,11 +38,11 @@ public class RadarError{
         this.details = new HashMap<>();
     }
 
-    public RadarError(String message, HashMap<String,String> details){
-        Objects.requireNonNull(details);
+    public RadarError(String message, Map<String, String> map){
+        Objects.requireNonNull(map);
         this.incidentIdentifier = Long.toString(Random.Default.nextLong());
         this.message = message;
-        this.details = details;
+        this.details = map;
     }
 
     @Override
