@@ -144,11 +144,16 @@ public class RadarAPI {
             logger.log(Level.INFO, re.toString(), e );
             ctx.status(e.getStatus()).json(re);
         })
+        .exception(IllegalArgumentException.class, (e, ctx ) -> {
+            RadarError re = new RadarError("Bad Request");
+            logger.log(Level.INFO, re.toString(), e );
+            ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+        })
         .exception(Exception.class, (e,ctx) -> {
             RadarError errResponse = new RadarError("System Error");
             logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
             ctx.status(500);
-            ctx.contentType(ContentType.TEXT_PLAIN.toString());
+            ctx.contentType(ContentType.APPLICATION_JSON.toString());
             ctx.json(errResponse);
         })
 

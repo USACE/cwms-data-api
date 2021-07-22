@@ -23,6 +23,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
+import org.eclipse.jetty.http.HttpStatus;
 import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -147,17 +149,23 @@ public class ClobController implements CrudHandler {
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam("office"));
             Optional<Clob> optAc = dao.getByUniqueName(clobId,  office);
-            Clob ac = optAc.orElse(null);
 
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            if( optAc.isPresent() ){
+                String formatHeader = ctx.header(Header.ACCEPT);
+                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-            String result = Formats.format(contentType, ac);
+                String result = Formats.format(contentType, optAc.get());
 
-            ctx.contentType(contentType.toString());
-            ctx.result(result);
+                ctx.contentType(contentType.toString());
+                ctx.result(result);
 
-            requestResultSize.update(result.length());
+                requestResultSize.update(result.length());
+            } else {
+                ctx.status(HttpStatus.NOT_FOUND_404).json(new RadarError("Unable to find clob based on given parameters"));
+            }
+
+
+
         }
     }
 

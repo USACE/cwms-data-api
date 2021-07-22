@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -8,6 +9,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesCategoryDao;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.formatters.ContentType;
@@ -114,14 +117,26 @@ public class TimeSeriesCategoryController implements CrudHandler
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			TimeSeriesCategory grp = dao.getTimeSeriesCategory(office, categoryId);
+			Optional<TimeSeriesCategory> grp = dao.getTimeSeriesCategory(office, categoryId);
+			if( grp.isPresent()){
+				String result = Formats.format(contentType,grp.get());
 
-			String result = Formats.format(contentType,grp);
+				ctx.result(result).contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.result(result).contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				RadarError re = new RadarError("Unable to find category based on parameters given");
+				logger.info( () -> {
+					return new StringBuilder()
+					.append( re.toString()).append(System.lineSeparator())
+					.append( "for request ").append( ctx.fullUrl() )
+					.toString();
+				});
+				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+			}
 
-			ctx.status(HttpServletResponse.SC_OK);
+
 		}
 
 	}

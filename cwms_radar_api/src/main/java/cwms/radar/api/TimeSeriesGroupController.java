@@ -8,6 +8,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesGroupDao;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.ContentType;
@@ -131,15 +133,26 @@ public class TimeSeriesGroupController implements CrudHandler
 					throw new IllegalArgumentException(message);
 				}
 			}
+			if( group != null){
+				String result = Formats.format(contentType, group);
 
-			String result = Formats.format(contentType, group);
 
+				ctx.result(result);
+				ctx.contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.result(result);
-			ctx.contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				RadarError re = new RadarError("Unable to find group based on parameters given");
+				logger.info( () -> {
+					return new StringBuilder()
+					.append( re.toString()).append(System.lineSeparator())
+					.append( "for request ").append( ctx.fullUrl() )
+					.toString();
+				});
+				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+			}
 
-			ctx.status(HttpServletResponse.SC_OK);
 		}
 
 	}
