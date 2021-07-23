@@ -62,7 +62,7 @@ public class ClobControllerTest {
         given()
         .header("Accept","Not_valid")
         .get("/clobs").then()
-        .body("message",equalTo("failed to format data"))
+        .body("message",equalTo("Formatting error"))
         .statusCode(HttpServletResponse.SC_NOT_IMPLEMENTED);
 
     }
