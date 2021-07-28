@@ -8,6 +8,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesGroupDao;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.ContentType;
@@ -70,7 +72,7 @@ public class TimeSeriesGroupController implements CrudHandler
 			String office = ctx.queryParam("office");
 
 			List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office);
-			
+
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
@@ -95,13 +97,9 @@ public class TimeSeriesGroupController implements CrudHandler
 			responses = {
 					@OpenApiResponse(status = "200", content = {
 							@OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
-//						@OpenApiContent(from = CsvV1TimeseriesGroup.class, type = Formats.CSV )
-							//	@OpenApiContent(from = TabV1TimeseriesGroup.class, type = Formats.TAB ),
 					}
 
-			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group was not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")},
+			)},
 			description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
 	@Override
 	public void getOne(Context ctx, String groupId)
@@ -135,15 +133,26 @@ public class TimeSeriesGroupController implements CrudHandler
 					throw new IllegalArgumentException(message);
 				}
 			}
+			if( group != null){
+				String result = Formats.format(contentType, group);
 
-			String result = Formats.format(contentType, group);
 
+				ctx.result(result);
+				ctx.contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.result(result);
-			ctx.contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				RadarError re = new RadarError("Unable to find group based on parameters given");
+				logger.info( () -> {
+					return new StringBuilder()
+					.append( re.toString()).append(System.lineSeparator())
+					.append( "for request ").append( ctx.fullUrl() )
+					.toString();
+				});
+				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+			}
 
-			ctx.status(HttpServletResponse.SC_OK);
 		}
 
 	}
@@ -152,20 +161,20 @@ public class TimeSeriesGroupController implements CrudHandler
 	@Override
 	public void create(Context ctx)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void update(Context ctx, String groupId)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void delete(Context ctx, String groupId)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 }

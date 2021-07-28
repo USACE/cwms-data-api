@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import cwms.radar.data.dto.TimeSeriesCategory;
 import org.jooq.DSLContext;
@@ -17,16 +18,20 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory>
 		super(dsl);
 	}
 
-	public TimeSeriesCategory getTimeSeriesCategory(String officeId, String categoryId)
+	public Optional<TimeSeriesCategory> getTimeSeriesCategory(String officeId, String categoryId)
 	{
 		AV_TS_CAT_GRP view = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
 
-		return dsl.select(view.CAT_DB_OFFICE_ID, view.TS_CATEGORY_ID,
+		Record3<String, String, String> fetchOne = dsl.select(view.CAT_DB_OFFICE_ID, view.TS_CATEGORY_ID,
 				view.TS_CATEGORY_DESC)
 				.from(view)
 				.where(view.CAT_DB_OFFICE_ID.eq(officeId))
 				.and(view.TS_CATEGORY_ID.eq(categoryId))
-				.fetchOne().into( TimeSeriesCategory.class);
+				.fetchOne();
+
+		return fetchOne != null ?
+			Optional.of(fetchOne.into(TimeSeriesCategory.class)) : Optional.empty();
+
 	}
 
 	public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId)

@@ -1,9 +1,11 @@
 package cwms.radar.data.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import cwms.radar.data.dto.Office;
 import org.jooq.DSLContext;
+import org.jooq.Record4;
 
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
@@ -26,12 +28,13 @@ public class OfficeDao extends JooqDao<Office>
 		return retval;
 	}
 
-	public Office getOfficeById(String officeId) {
+	public Optional<Office> getOfficeById(String officeId) {
 		AV_OFFICE view = AV_OFFICE.AV_OFFICE;
 		// The .as snippets lets it map directly into the Office ctor fields.
-		return dsl.select(view.OFFICE_ID.as("name"), view.LONG_NAME, view.OFFICE_TYPE.as("type"),
-				view.REPORT_TO_OFFICE_ID.as("reportsTo")).from(view).where(view.OFFICE_ID.eq(officeId)).fetchOne().into(
-				Office.class);
+		Record4<String, String, String, String> fetchOne = dsl.select(view.OFFICE_ID.as("name"), view.LONG_NAME, view.OFFICE_TYPE.as("type"),
+				view.REPORT_TO_OFFICE_ID.as("reportsTo")).from(view).where(view.OFFICE_ID.eq(officeId)).fetchOne();
+		return fetchOne != null ?
+				Optional.of(fetchOne.into(Office.class)) : Optional.empty();
 	}
 
 

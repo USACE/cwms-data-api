@@ -1,7 +1,11 @@
 package mil.army.usace.hec;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -24,15 +28,21 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
 import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.BadRequestResponse;
+import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
+
+import org.apache.http.entity.ContentType;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -47,8 +57,12 @@ public class RadarAPI {
     private static final Logger logger = Logger.getLogger(RadarAPI.class.getName());
     private static final MetricRegistry metrics = new MetricRegistry();
     private static final Meter total_requests = metrics.meter("radar.total_requests");
+    private Javalin app = null;
+    private int port = -1;
+
     public static void main(String[] args){
         DataSource ds = new DataSource();
+        int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
         try{
             ds.setDriverClassName(getconfig("RADAR_JDBC_DRIVER","oracle.jdbc.driver.OracleDriver"));
             ds.setUrl(getconfig("RADAR_JDBC_URL","jdbc:oracle:thin:@localhost/CWMSDEV"));
@@ -58,20 +72,26 @@ public class RadarAPI {
             ds.setMaxActive(Integer.parseInt(getconfig("RADAR_POOL_MAX_ACTIVE","10")));
             ds.setMaxIdle(Integer.parseInt(getconfig("RADAR_POOL_MAX_IDLE","5")));
             ds.setMinIdle(Integer.parseInt(getconfig("RADAR_POOL_MIN_IDLE","2")));
+
         } catch( Exception err ){
             logger.log(Level.SEVERE,"Required Parameter not set in environment",err);
             System.exit(1);
         }
+        RadarAPI api = new RadarAPI(ds,port);
+        api.start();
+    }
 
+    public RadarAPI(javax.sql.DataSource ds, int port){
+        this.port = port;
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
-        int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","7000"));
+
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
 
         JavalinJackson.configure(om);
-        Javalin app = Javalin.create( config -> {
+        app = Javalin.create( config -> {
             config.defaultContentType = "application/json";
             config.contextPath = "/";
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
@@ -96,17 +116,47 @@ public class RadarAPI {
             logger.info(ctx.header("accept"));
             total_requests.mark();
         }).after( ctx -> {
-            ((java.sql.Connection)ctx.attribute("database")).close();
+            try{
+                ((java.sql.Connection)ctx.attribute("database")).close();
+            } catch( SQLException e ){
+                logger.log(Level.WARNING, "Failed to close database connection", e);
+            }
         })
-        .exception(UnsupportedOperationException.class, (e,ctx) -> {
-            ctx.status(501);
-            ctx.json(sanitizer.sanitize(e.getMessage()));
+        .exception(FormattingException.class, (fe, ctx ) -> {
+            final RadarError re = new RadarError("Formatting error");
+
+            if( fe.getCause() instanceof IOException ){
+                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            } else {
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+            }
+            logger.log(Level.SEVERE,fe, () -> {
+                return new StringBuilder(re.toString())
+                .append("for request: " + ctx.fullUrl()).toString();
+            });
+            ctx.json(re);
+        })
+        .exception(UnsupportedOperationException.class, (e, ctx) -> {
+            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        })
+        .exception(BadRequestResponse.class, (e, ctx) -> {
+            RadarError re = new RadarError("Bad Request", e.getDetails());
+            logger.log(Level.INFO, re.toString(), e );
+            ctx.status(e.getStatus()).json(re);
+        })
+        .exception(IllegalArgumentException.class, (e, ctx ) -> {
+            RadarError re = new RadarError("Bad Request");
+            logger.log(Level.INFO, re.toString(), e );
+            ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
         })
         .exception(Exception.class, (e,ctx) -> {
+            RadarError errResponse = new RadarError("System Error");
+            logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
             ctx.status(500);
-            ctx.json("There was an error processing your request");
-            logger.log(Level.WARNING,"error on request: " + ctx.req.getRequestURI(),e);
+            ctx.contentType(ContentType.APPLICATION_JSON.toString());
+            ctx.json(errResponse);
         })
+
         .routes( () -> {
             //get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
             crud("/locations/:location_code", new LocationController(metrics));
@@ -124,7 +174,7 @@ public class RadarAPI {
             crud("/catalog/:dataSet", new CatalogController(metrics));
 
             crud("/clobs/:clob-id", new ClobController(metrics));
-        }).start(port);
+        });
 
     }
 
@@ -133,8 +183,23 @@ public class RadarAPI {
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
                     .swagger( new SwaggerOptions("/swagger-ui.html"))
-                    .activateAnnotationScanningFor("cwms.radar.api");
+                    .activateAnnotationScanningFor("cwms.radar.api")
+                    .defaultDocumentation( doc -> {
+                        doc.json("500", RadarError.class);
+                        doc.json("400", RadarError.class);
+                        doc.json("404", RadarError.class);
+                        doc.json("501", RadarError.class);
+                    });
+
         return options;
+    }
+
+    public void start(){
+        this.app.start(this.port);
+    }
+
+    public void stop(){
+        this.app.stop();
     }
 
     private static String getconfig(String envName){
