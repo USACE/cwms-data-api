@@ -2,21 +2,13 @@ package cwms.radar.data.dto;
 
 import java.util.Date;
 import java.util.Objects;
-import javax.persistence.Cacheable;
-import javax.persistence.Embeddable;
-import javax.persistence.Temporal;
 
-@Embeddable
-@Cacheable
 public class TsvDquId implements java.io.Serializable {
 
-	private String officeId;
-	private Long tsCode;
-	private String unitId;
-	private Date dateTime;
-
-	public TsvDquId() {
-	}
+	private final String officeId;
+	private final Long tsCode;
+	private final String unitId;
+	private final Date dateTime;
 
 	public TsvDquId(String officeId, Long tsCode, String unitId, Date dateTime) {
 		this.officeId = officeId;
@@ -25,41 +17,20 @@ public class TsvDquId implements java.io.Serializable {
 		this.dateTime = dateTime;
 	}
 
-
 	public String getOfficeId() {
 		return this.officeId;
 	}
-
-	public void setOfficeId(String officeId) {
-		this.officeId = officeId;
-	}
-
 
 	public Long getTsCode() {
 		return this.tsCode;
 	}
 
-	public void setTsCode(Long tsCode) {
-		this.tsCode = tsCode;
-	}
-
-
 	public String getUnitId() {
 		return this.unitId;
 	}
 
-	public void setUnitId(String unitId) {
-		this.unitId = unitId;
-	}
-
-
-	@Temporal(javax.persistence.TemporalType.TIMESTAMP)
 	public Date getDateTime() {
 		return this.dateTime;
-	}
-
-	public void setDateTime(Date dateTime) {
-		this.dateTime = dateTime;
 	}
 
 	@Override
