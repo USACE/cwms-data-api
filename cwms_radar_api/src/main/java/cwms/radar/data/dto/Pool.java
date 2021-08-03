@@ -8,19 +8,15 @@ import usace.cwms.db.dao.ifc.pool.PoolType;
 
 public class Pool extends PoolType implements CwmsDTO
 {
-	private Number attribute;
-	private String description;
+	private final Number attribute;
+	private final String description;
+	private final String clobText;
 
-	private String clobText;
-
-	public Pool(PoolNameType poolName, String projectId, String bottomLevelId, String topLevelId, boolean implicit)
-	{
-		super(poolName, projectId, bottomLevelId, topLevelId, implicit);
-	}
-
-	public Pool(PoolType p)
-	{
-		super(p.getPoolName(), p.getProjectId(), p.getBottomLevelId(), p.getTopLevelId(), p.isImplicit());
+	public Pool(Builder b){
+		super(b.getPoolName(), b.getProjectId(), b.getBottomLevelId(), b.getTopLevelId(), b.isImplicit());
+		this.attribute = b.getAttribute();
+		this.description = b.getDescription();
+		this.clobText = b.getClobText();
 	}
 
 	public Number getAttribute()
@@ -28,29 +24,15 @@ public class Pool extends PoolType implements CwmsDTO
 		return attribute;
 	}
 
-	public void setAttribute(Number attribute)
-	{
-		this.attribute = attribute;
-	}
 
 	public String getDescription()
 	{
 		return description;
 	}
 
-	public void setDescription(String description)
-	{
-		this.description = description;
-	}
-
 	public String getClobText()
 	{
 		return clobText;
-	}
-
-	public void setClobText(String clobText)
-	{
-		this.clobText = clobText;
 	}
 
 	@Override
@@ -101,7 +83,13 @@ public class Pool extends PoolType implements CwmsDTO
 
 		if(matcher.matches()){
 			PoolNameType poolName = new PoolNameType(matcher.group(3), matcher.group(1) );
-			retval = new Pool(poolName, matcher.group(2), null, null, true );
+			Builder builder = Builder.newInstance();
+			builder.withPoolName(poolName);
+			builder.withProjectId(matcher.group(2));
+			builder.withBottomLevelId(null);
+			builder.withTopLevelId(null);
+			builder.withImplicit(true);
+			retval = builder.build();
 		}
 
 		return retval;
@@ -117,6 +105,130 @@ public class Pool extends PoolType implements CwmsDTO
 				.append("/").append(getProjectId())
 				.append(":").append(poolName.getPoolName());
 		return builder.toString();
+	}
+
+	public static class Builder
+	{
+		private PoolNameType poolName;
+
+		private String projectId;
+		private String bottomLevelId;
+		private String topLevelId;
+		private boolean isImplicit;
+		private Number attribute;
+		private String description;
+		private String clobText;
+
+
+		public PoolNameType getPoolName()
+		{
+			return poolName;
+		}
+
+		public Builder withPoolName(PoolNameType poolName)
+		{
+			this.poolName = poolName;
+			return this;
+		}
+
+		public String getProjectId()
+		{
+			return projectId;
+		}
+
+		public Builder withProjectId(String projectId)
+		{
+			this.projectId = projectId;
+			return this;
+		}
+
+		public String getBottomLevelId()
+		{
+			return bottomLevelId;
+		}
+
+		public Builder withBottomLevelId(String bottomLevelId)
+		{
+			this.bottomLevelId = bottomLevelId;
+			return this;
+
+		}
+
+		public String getTopLevelId()
+		{
+			return topLevelId;
+		}
+
+		public Builder withTopLevelId(String topLevelId)
+		{
+			this.topLevelId = topLevelId;
+			return this;
+		}
+
+		public boolean isImplicit()
+		{
+			return isImplicit;
+		}
+
+		public Builder withImplicit(boolean implicit)
+		{
+			isImplicit = implicit;
+			return this;
+		}
+
+		public Number getAttribute()
+		{
+			return attribute;
+		}
+
+		public Builder withAttribute(Number attribute)
+		{
+			this.attribute = attribute;
+			return this;
+		}
+
+		public String getDescription()
+		{
+			return description;
+		}
+
+		public Builder withDescription(String description)
+		{
+			this.description = description;
+			return this;
+		}
+
+		public String getClobText()
+		{
+			return clobText;
+		}
+
+		public Builder withClobText(String clobText)
+		{
+			this.clobText = clobText;
+			return this;
+		}
+
+		public static Builder newInstance()
+		{
+			return new Builder();
+		}
+
+		public Pool build()
+		{
+			return new Pool(this);
+		}
+
+		public Builder withPoolType(PoolType poolType)
+		{
+			withPoolName(poolType.getPoolName());
+			withBottomLevelId(poolType.getBottomLevelId());
+			withTopLevelId(poolType.getTopLevelId());
+			withProjectId(poolType.getProjectId());
+			withImplicit(poolType.isImplicit());
+
+			return this;
+		}
 	}
 
 
