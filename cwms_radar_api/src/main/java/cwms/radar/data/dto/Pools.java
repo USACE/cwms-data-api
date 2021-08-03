@@ -27,10 +27,13 @@ public class Pools extends CwmsDTOPaginated {
     @SuppressWarnings("unused") // for JAXB to handle marshalling
     private Pools(){}
 
+    private int offset;
 
-    private Pools(String cursor, int pageSize, int total){
-        super(cursor, pageSize, total);
+    public Pools(int offset, int pageSize, Integer total)
+    {
+        super(Integer.toString(offset), pageSize, total);
         pools = new ArrayList<>();
+        this.offset = offset;
     }
 
     public List<Pool> getPools() {
@@ -41,18 +44,15 @@ public class Pools extends CwmsDTOPaginated {
     public static class Builder {
         private Pools workingPools = null;
 
-        public Builder( Pool lastItem, int pageSize, int total){
-            workingPools = new Pools(encodeItem(lastItem), pageSize, total);
-        }
-
-        public Builder( String cursor, int pageSize, int total){
-            workingPools = new Pools(cursor, pageSize, total);
+        public Builder(int offset, int pageSize, Integer total){
+            workingPools = new Pools(offset, pageSize, total);
         }
 
         public Pools build(){
             if( this.workingPools.pools.size() == this.workingPools.pageSize){
-                Pool lastItem = this.workingPools.pools.get(this.workingPools.pools.size() - 1);
-                this.workingPools.nextPage = encodeCursor(Pools.encodeItem(lastItem),
+
+                String cursor = Integer.toString(this.workingPools.offset + this.workingPools.pools.size());
+                this.workingPools.nextPage = encodeCursor(cursor,
                             this.workingPools.pageSize,
                             this.workingPools.total);
             } else {
@@ -72,18 +72,7 @@ public class Pools extends CwmsDTOPaginated {
         }
     }
 
-    public static String encodeItem(Pool lastItem)
-    {
-        String retval = null;
-        if(lastItem != null)
-        {
-            retval = lastItem.toString().toUpperCase();
-        }
-        return retval;
-    }
 
-    public static Pool decodeItem(String itemPortion){
-        return Pool.fromString(itemPortion);
-    }
+
 
 }
