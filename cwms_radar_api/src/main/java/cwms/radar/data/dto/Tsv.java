@@ -1,25 +1,15 @@
 package cwms.radar.data.dto;
 
 import java.util.Date;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 public class Tsv implements java.io.Serializable {
 
-	private TsvId id;
+	private final TsvId id;
+	private final Double value;
+	private final Long qualityCode;
+	private final Date startDate;
+	private final Date endDate;
 
-	private Double value;
-	private Long qualityCode;
-	private Date startDate;
-	private Date endDate;
-
-	public Tsv() {
-	}
-
-	public Tsv(TsvId id) {
-		this.id = id;
-	}
 
 	public Tsv(TsvId id,
 				 Double value, Long qualityCode, Date startDate,
@@ -34,49 +24,26 @@ public class Tsv implements java.io.Serializable {
 
 	}
 
-	@EmbeddedId
 	public TsvId getId() {
 		return this.id;
-	}
-
-	public void setId(TsvId id) {
-		this.id = id;
 	}
 
 	public Double getValue() {
 		return this.value;
 	}
 
-	public void setValue(Double value) {
-		this.value = value;
-	}
-
-
 	public Long getQualityCode() {
 		return this.qualityCode;
 	}
 
-	public void setQualityCode(Long qualityCode) {
-		this.qualityCode = qualityCode;
-	}
-
-	@Temporal(TemporalType.DATE)
 	public Date getStartDate() {
 		return this.startDate;
 	}
 
-	public void setStartDate(Date startDate) {
-		this.startDate = startDate;
-	}
-
-	@Temporal(TemporalType.DATE)
 	public Date getEndDate() {
 		return this.endDate;
 	}
 
-	public void setEndDate(Date endDate) {
-		this.endDate = endDate;
-	}
 
 	@Override
 	public String toString()

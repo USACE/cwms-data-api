@@ -2,21 +2,13 @@ package cwms.radar.data.dto;
 
 import java.util.Date;
 import java.util.Objects;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 public class TsvId implements java.io.Serializable {
 
-	private Long tsCode;
-
-	private Date dateTime;
-
-	private Date versionDate;
-
-	private Date dataEntryDate;
-
-	public TsvId() {
-	}
+	private final Long tsCode;
+	private final Date dateTime;
+	private final Date versionDate;
+	private final Date dataEntryDate;
 
 	public TsvId(Long tsCode, Date dateTime, Date versionDate,
 				 Date dataEntryDate) {
@@ -28,41 +20,20 @@ public class TsvId implements java.io.Serializable {
 		this.dataEntryDate = dataEntryDate;
 	}
 
-
 	public Long getTsCode() {
 		return this.tsCode;
 	}
 
-	public void setTsCode(Long tsCode) {
-		this.tsCode = tsCode;
-	}
-
-
-	@Temporal(javax.persistence.TemporalType.TIMESTAMP)
 	public Date getDateTime() {
 		return this.dateTime;
 	}
 
-	public void setDateTime(Date dateTime) {
-		this.dateTime = dateTime;
-	}
-
-	@Temporal(TemporalType.DATE)
 	public Date getVersionDate() {
 		return this.versionDate;
 	}
 
-	public void setVersionDate(Date versionDate) {
-		this.versionDate = versionDate;
-	}
-
-	@Temporal(TemporalType.DATE)
 	public Date getDataEntryDate() {
 		return this.dataEntryDate;
-	}
-
-	public void setDataEntryDate(Date dataEntryDate) {
-		this.dataEntryDate = dataEntryDate;
 	}
 
 	@Override
