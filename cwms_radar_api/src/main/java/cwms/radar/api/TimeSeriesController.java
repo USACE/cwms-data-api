@@ -1,24 +1,19 @@
 package cwms.radar.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
-import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -30,14 +25,17 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class TimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
+    private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
 
-
-    private final MetricRegistry metrics;// = new MetricRegistry();
-    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
-    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+    private final MetricRegistry metrics;
+    private final Meter getAllRequests;
+    private final Timer getAllRequestsTime;
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
@@ -103,9 +101,10 @@ public class TimeSeriesController implements CrudHandler {
     public void getAll(Context ctx) {
         getAllRequests.mark();
         try (
-            final Timer.Context time_context = getAllRequestsTime.time();
-            CwmsDataManager cdm = new CwmsDataManager(ctx);
-        ) {
+                final Timer.Context time_context = getAllRequestsTime.time();
+                DSLContext dsl = getDslContext(ctx))
+        {
+            TimeSeriesDao dao = new TimeSeriesDao(dsl);
             String format = ctx.queryParam("format","");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
@@ -124,7 +123,7 @@ public class TimeSeriesController implements CrudHandler {
             String results;
             String version = contentType.getParameters().get("version");
             if(version != null && version.equals("2")) {
-                TimeSeries ts = cdm.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
 
                 results = Formats.format(contentType, ts);
                 ctx.status(HttpServletResponse.SC_OK);
@@ -142,7 +141,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results).contentType(contentType.toString());
             }
             else {
-                results = cdm.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
+                results = dao.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
@@ -151,10 +150,6 @@ public class TimeSeriesController implements CrudHandler {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.result("Invalid arguments supplied");
-        } catch (SQLException ex) {
-            logger.log(Level.SEVERE, null, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.result("Failed to process request");
         } catch( FormattingException fe ){
             logger.log(Level.SEVERE,"failed to format data", fe);
             if( fe.getCause() instanceof IOException ){
@@ -171,7 +166,7 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
-        try( final Timer.Context time_context = getOneRequestTime.time(); ){
+        try( final Timer.Context time_context = getOneRequestTime.time() ){
 
             ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
         }

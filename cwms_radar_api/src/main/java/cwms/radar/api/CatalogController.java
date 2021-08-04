@@ -1,33 +1,31 @@
 package cwms.radar.api;
 
-import java.sql.SQLException;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.QueryParam;
 
-import com.codahale.metrics.*;
-
-import org.jooq.DSLContext;
-import org.owasp.html.PolicyFactory;
-
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.LocationsDao;
+import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-
-import static com.codahale.metrics.MetricRegistry.*;
-
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.*;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jooq.DSLContext;
+import org.owasp.html.PolicyFactory;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 public class CatalogController implements CrudHandler{
 
@@ -113,9 +111,9 @@ public class CatalogController implements CrudHandler{
         getOneRequest.mark();
         try (
             final Timer.Context time_context = getOneRequestTime.time();
-            CwmsDataManager cdm = new CwmsDataManager(ctx);
-            DSLContext dsl = JooqDao.getDslContext(ctx);
+            DSLContext dsl = JooqDao.getDslContext(ctx)
         ) {
+
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();
             int pageSize = ctx.queryParam("pageSize",Integer.class,"500").getValue().intValue();
@@ -128,7 +126,8 @@ public class CatalogController implements CrudHandler{
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if( "timeseries".equalsIgnoreCase(valDataSet)){
-                cat = cdm.getTimeSeriesCatalog(cursor, pageSize, office );
+                TimeSeriesDao tsDao = new TimeSeriesDao(dsl);
+                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office );
             } else if ("locations".equalsIgnoreCase(valDataSet)){
                 LocationsDao dao = new LocationsDao(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office );
@@ -142,9 +141,6 @@ public class CatalogController implements CrudHandler{
                 ctx.result("Cannot create catalog of requested information").status(HttpServletResponse.SC_BAD_REQUEST);
             }
 
-        } catch( SQLException er) {
-            logger.log(Level.SEVERE, "failed to process catalog request", er);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).result("Failed to process request");
         }
 
     }
