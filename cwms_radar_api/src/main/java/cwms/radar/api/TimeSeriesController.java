@@ -18,7 +18,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 
-import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.ContentType;
@@ -104,9 +103,10 @@ public class TimeSeriesController implements CrudHandler {
     public void getAll(Context ctx) {
         getAllRequests.mark();
         try (
-            final Timer.Context time_context = getAllRequestsTime.time();
-            CwmsDataManager cdm = new CwmsDataManager(ctx);
-        ) {
+                final Timer.Context time_context = getAllRequestsTime.time();
+                DSLContext dsl = getDslContext(ctx))
+        {
+            TimeSeriesDao dao = new TimeSeriesDao(dsl);
             String format = ctx.queryParam("format","");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
@@ -125,7 +125,7 @@ public class TimeSeriesController implements CrudHandler {
             String results;
             String version = contentType.getParameters().get("version");
             if(version != null && version.equals("2")) {
-                TimeSeries ts = cdm.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
 
                 results = Formats.format(contentType, ts);
                 ctx.status(HttpServletResponse.SC_OK);
@@ -143,7 +143,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results).contentType(contentType.toString());
             }
             else {
-                results = cdm.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
+                results = dao.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
