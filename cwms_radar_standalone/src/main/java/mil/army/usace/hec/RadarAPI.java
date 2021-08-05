@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Meter;
@@ -30,18 +29,15 @@ import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
-import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
-
 import org.apache.http.entity.ContentType;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.eclipse.jetty.servlet.ServletHolder;

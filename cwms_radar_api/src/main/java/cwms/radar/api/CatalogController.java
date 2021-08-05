@@ -3,10 +3,6 @@ package cwms.radar.api;
 import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
-import com.codahale.metrics.*;
-
-import org.jooq.DSLContext;
-import org.owasp.html.PolicyFactory;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -14,7 +10,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.data.dao.TimeSeriesDao;
@@ -38,7 +33,7 @@ public class CatalogController implements CrudHandler{
     private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
 
 
-    private final MetricRegistry metrics;// = new MetricRegistry();
+    private final MetricRegistry metrics;
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
@@ -110,7 +105,7 @@ public class CatalogController implements CrudHandler{
     public void getOne(Context ctx, String dataSet) {
         getOneRequest.mark();
         try (
-            final Timer.Context time_context = getOneRequestTime.time();
+            final Timer.Context timeContext = getOneRequestTime.time();
             DSLContext dsl = JooqDao.getDslContext(ctx)
         ) {
 
@@ -133,7 +128,6 @@ public class CatalogController implements CrudHandler{
             } else if ("locations".equalsIgnoreCase(valDataSet)){
                 LocationsDao dao = new LocationsDao(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office );
-                //cat = cdm.getLocationCatalog(cursor, pageSize, unitSystem, office );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);
@@ -142,15 +136,10 @@ public class CatalogController implements CrudHandler{
             } else {
                 final RadarError re = new RadarError("Cannot create catalog of requested information");
 
-                logger.info(() -> {
-                    StringBuilder builder = new StringBuilder(re.toString())
-                        .append("with url:" ).append(ctx.fullUrl());
-                    return builder.toString();
-                });
+                logger.info(() -> re.toString() + "with url:" + ctx.fullUrl());
                 ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
             }
         }
-
     }
 
     @OpenApi(tags = {"Catalog"},ignore = true)

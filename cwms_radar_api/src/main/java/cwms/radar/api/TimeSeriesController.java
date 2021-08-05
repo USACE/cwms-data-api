@@ -1,6 +1,5 @@
 package cwms.radar.api;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -13,12 +12,11 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -102,7 +100,7 @@ public class TimeSeriesController implements CrudHandler {
     public void getAll(Context ctx) {
         getAllRequests.mark();
         try (
-                final Timer.Context time_context = getAllRequestsTime.time();
+                final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = new TimeSeriesDao(dsl);
@@ -159,7 +157,7 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
-        try( final Timer.Context time_context = getOneRequestTime.time() ){
+        try( final Timer.Context timeContext = getOneRequestTime.time() ){
 
             throw new UnsupportedOperationException("Not supported yet.");
         }
