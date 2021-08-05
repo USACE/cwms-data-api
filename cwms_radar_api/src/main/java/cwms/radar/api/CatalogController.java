@@ -3,12 +3,18 @@ package cwms.radar.api;
 import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import com.codahale.metrics.*;
+
+import org.jooq.DSLContext;
+import org.owasp.html.PolicyFactory;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
+import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.data.dao.TimeSeriesDao;
@@ -33,8 +39,6 @@ public class CatalogController implements CrudHandler{
 
 
     private final MetricRegistry metrics;// = new MetricRegistry();
-    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
-    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
@@ -42,8 +46,6 @@ public class CatalogController implements CrudHandler{
     public CatalogController(MetricRegistry metrics){
         this.metrics=metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
-        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
         getOneRequest = this.metrics.meter(name(className,"getOne","count"));
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
@@ -100,9 +102,7 @@ public class CatalogController implements CrudHandler{
                                            @OpenApiContent(from = Catalog.class, type=Formats.JSONV2),
                                            @OpenApiContent(from = Catalog.class, type=Formats.XML)
                                        }
-                      ),
-                      @OpenApiResponse(status="501",description = "The format requested is not implemented"),
-                      @OpenApiResponse(status="400", description = "Invalid Parameter combination")
+                      )
                     },
         tags = {"Catalog"}
     )
@@ -116,7 +116,9 @@ public class CatalogController implements CrudHandler{
 
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();
+            logger.info("getting pageSize");
             int pageSize = ctx.queryParam("pageSize",Integer.class,"500").getValue().intValue();
+            logger.info("This is a test");
             String unitSystem = ctx.queryParam("unitSystem",UnitSystem.class,"SI").getValue().getValue();
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParam("office", String.class, null)
@@ -138,9 +140,15 @@ public class CatalogController implements CrudHandler{
                 ctx.result(data).contentType(contentType.toString());
                 requestResultSize.update(data.length());
             } else {
-                ctx.result("Cannot create catalog of requested information").status(HttpServletResponse.SC_BAD_REQUEST);
-            }
+                final RadarError re = new RadarError("Cannot create catalog of requested information");
 
+                logger.info(() -> {
+                    StringBuilder builder = new StringBuilder(re.toString())
+                        .append("with url:" ).append(ctx.fullUrl());
+                    return builder.toString();
+                });
+                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
+            }
         }
 
     }
@@ -148,7 +156,7 @@ public class CatalogController implements CrudHandler{
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void update(Context ctx, String entry) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

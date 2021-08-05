@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -11,6 +12,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationGroupDao;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.formatters.ContentType;
@@ -57,14 +60,13 @@ public class LocationGroupController implements CrudHandler
 			},
 			responses = {
 			@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
+					content = {
+							@OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
 							@OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV )
-							//							@OpenApiContent(isArray = true, from = TabV1LocationGroup.class, type = Formats.TAB ),
 					}
 
-			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location(s) were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Groups Data", tags = {"Location Groups"})
+			)},
+			description = "Returns CWMS Location Groups Data", tags = {"Location Groups"})
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -79,16 +81,28 @@ public class LocationGroupController implements CrudHandler
 
 			List<LocationGroup> grps = cdm.getLocationGroups(office);
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+			if( !grps.isEmpty() ){
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-			String result = Formats.format(contentType, grps);
+				String result = Formats.format(contentType, grps);
 
-			ctx.result(result);
-			ctx.contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.result(result);
+				ctx.contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.status(HttpServletResponse.SC_OK);
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				RadarError re = new RadarError("No location groups for office provided");
+				logger.info( () -> {
+					return new StringBuilder()
+					.append( re.toString()).append(System.lineSeparator())
+					.append( "for request ").append( ctx.fullUrl() )
+					.toString();
+				});
+				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+			}
+
 		}
 
 	}
@@ -108,9 +122,7 @@ public class LocationGroupController implements CrudHandler
 							@OpenApiContent(type = Formats.GEOJSON)
 					}
 
-			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the location group was not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")},
+			)},
 			description = "Retrieves requested Location Group", tags = {"Location Groups"})
 	@Override
 	public void getOne(Context ctx, String groupId)
@@ -135,20 +147,34 @@ public class LocationGroupController implements CrudHandler
 				result = mapper.writeValueAsString(fc);
 			} else
 			{
-				LocationGroup grp = cdm.getLocationGroup(office, categoryId, groupId);
-				result = Formats.format(contentType, grp);
+				Optional<LocationGroup> grp = cdm.getLocationGroup(office, categoryId, groupId);
+				if( grp.isPresent() ) {
+					result = Formats.format(contentType, grp.get());
+				} else {
+					RadarError re = new RadarError("Unable to find location group based on parameters given");
+					logger.info( () -> {
+						return new StringBuilder()
+						.append( re.toString()).append(System.lineSeparator())
+						.append( "for request ").append( ctx.fullUrl() )
+						.toString();
+					});
+					ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
+					return;
+				}
+
 			}
 			ctx.result(result);
 			ctx.contentType(contentType.toString());
+
 			requestResultSize.update(result.length());
 
 			ctx.status(HttpServletResponse.SC_OK);
 		}
 		catch(JsonProcessingException e)
 		{
-			logger.log(Level.SEVERE, null, e);
-			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			ctx.result("Failed to process request");
+			RadarError re = new RadarError("Failed to process request");
+			logger.log(Level.SEVERE, re.toString(), e);
+			ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
 		}
 
 	}
@@ -157,20 +183,20 @@ public class LocationGroupController implements CrudHandler
 	@Override
 	public void create(Context ctx)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void update(Context ctx, String groupId)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void delete(Context ctx, String groupId)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 }

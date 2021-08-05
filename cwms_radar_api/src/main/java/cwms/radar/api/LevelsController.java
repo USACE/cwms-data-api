@@ -1,7 +1,6 @@
 package cwms.radar.api;
 
 import java.sql.SQLException;
-import java.text.Format;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +12,7 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -43,15 +43,15 @@ public class LevelsController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
-
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
+
     @OpenApi(
         queryParams = {
             @OpenApiParam(name="name", required=false, description="Specifies the name(s) of the location level(s) whose data is to be included in the response. Uses * for all."),
@@ -64,10 +64,7 @@ public class LevelsController implements CrudHandler {
             @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")
         },
         responses = {
-            @OpenApiResponse(status="200" ),
-            @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a level."),
-            @OpenApiResponse(status="501", description = "Requested format is not implemented")
-
+            @OpenApiResponse(status="200" )
         },
         tags = {"Levels"}
     )
@@ -94,15 +91,10 @@ public class LevelsController implements CrudHandler {
                 case "csv": {ctx.contentType(Formats.CSV); break;}
                 case "xml": {ctx.contentType(Formats.XML); break;}
                 case "wml2": {ctx.contentType(Formats.WML2); break;}
-                case "png":
-                case "jpg":{
-                    ctx.contentType(Formats.PLAIN);
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
-                    ctx.result("At this time we are not implementing graphics in this version.");
-                    break;
-                }
+                case "png": // fall next
+                case "jpg": // fall next
                 default: {
-                    throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
+                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
                 }
             }
 
@@ -111,9 +103,9 @@ public class LevelsController implements CrudHandler {
             ctx.result(results);
             requestResultSize.update(results.length());
         } catch (SQLException ex) {
-            logger.log(Level.SEVERE, null, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.result("Failed to process request");
+            RadarError re = new RadarError("Internal Error");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -124,14 +116,14 @@ public class LevelsController implements CrudHandler {
         try (
             final Timer.Context time_context = getOneRequestTime.time();
             ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 
     }
 

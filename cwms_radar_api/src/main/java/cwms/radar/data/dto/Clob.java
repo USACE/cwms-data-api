@@ -1,11 +1,20 @@
 package cwms.radar.data.dto;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name="clob")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Clob implements CwmsDTO
 {
 	private String office;
 	private String id;
 	private String description;
 	private String value;
+
+	@SuppressWarnings("unused")
+	private Clob(){}
 
 	public Clob(String office, String id, String description, String value)
 	{

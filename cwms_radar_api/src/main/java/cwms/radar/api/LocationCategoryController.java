@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
@@ -23,6 +24,8 @@ import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
+
+import cwms.radar.api.errors.RadarError;
 
 public class LocationCategoryController implements CrudHandler
 {
@@ -50,13 +53,14 @@ public class LocationCategoryController implements CrudHandler
 			@OpenApiParam(name = "office", description = "Specifies the owning office of the location category(ies) whose data is to be included in the response. If this field is not specified, matching location category information from all offices shall be returned."),
 			},
 			responses = {@OpenApiResponse(status = "200",
-					content = {@OpenApiContent(isArray = true, from = LocationCategory.class, type = Formats.JSON)
-					//							@OpenApiContent(isArray = true, from = TabV1LocationCategory.class, type = Formats.TAB ),
-					//							@OpenApiContent(isArray = true, from = CsvV1LocationCategory.class, type = Formats.CSV )
-			}
-			),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the categories were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Location Category Data", tags = {"Location Categories"})
+					content = {
+						@OpenApiContent(isArray = true, from = LocationCategory.class, type = Formats.JSON)
+					})
+			},
+
+			description = "Returns CWMS Location Category Data",
+			tags = {"Location Categories"}
+	)
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -69,15 +73,27 @@ public class LocationCategoryController implements CrudHandler
 
 			List<LocationCategory> cats = dao.getLocationCategories(office);
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			if( !cats.isEmpty()) {
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result = Formats.format(contentType,cats);
+				String result = Formats.format(contentType,cats);
 
-			ctx.result(result).contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.result(result).contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.status(HttpServletResponse.SC_OK);
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				final RadarError re = new RadarError("Cannot requested location category for office provided");
+
+                logger.info(() -> {
+                    StringBuilder builder = new StringBuilder(re.toString())
+                        .append("with url:" ).append(ctx.fullUrl());
+                    return builder.toString();
+                });
+                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
+			}
+
 		}
 
 	}
@@ -87,20 +103,17 @@ public class LocationCategoryController implements CrudHandler
 					@OpenApiParam(name = "category-id", required = true, description = "Specifies the Category whose data is to be included in the response."),
 			},
 			queryParams = {
-			@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the Location Category whose data is to be included in the response."),
+				@OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the Location Category whose data is to be included in the response."),
 			},
-
 			responses = {
 					@OpenApiResponse(status = "200",
 							content = {
-							@OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
-//							@OpenApiContent(from = TabV1LocationCategory.class, type = Formats.TAB ),
-//							@OpenApiContent(from = CsvV1LocationCategory.class, type = Formats.CSV )
-					}
-					),
-					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the Location Category was not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")},
-			description = "Retrieves requested Location Category", tags = {"Location Categories"})
+								@OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
+							}
+					)
+			},
+			description = "Retrieves requested Location Category",
+			tags = {"Location Categories"})
 	@Override
 	public void getOne(Context ctx, String categoryId)
 	{
@@ -111,17 +124,28 @@ public class LocationCategoryController implements CrudHandler
 			LocationCategoryDao dao = new LocationCategoryDao(dsl);
 			String office = ctx.queryParam("office");
 
-			LocationCategory grp = dao.getLocationCategory(office, categoryId);
+			Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
+			if( grp.isPresent() ){
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+				String result = Formats.format(contentType,grp.get());
 
-			String result = Formats.format(contentType,grp);
+				ctx.result(result).contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.result(result).contentType(contentType.toString());
-			requestResultSize.update(result.length());
+				ctx.status(HttpServletResponse.SC_OK);
+			} else {
+				final RadarError re = new RadarError("Cannot requested location category id");
 
-			ctx.status(HttpServletResponse.SC_OK);
+                logger.info(() -> {
+                    StringBuilder builder = new StringBuilder(re.toString())
+                        .append("with url:" ).append(ctx.fullUrl());
+                    return builder.toString();
+                });
+                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
+			}
+
 		}
 
 	}
@@ -130,20 +154,20 @@ public class LocationCategoryController implements CrudHandler
 	@Override
 	public void create(Context ctx)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void update(Context ctx, String locationCode)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 
 	@OpenApi(ignore = true)
 	@Override
 	public void delete(Context ctx, String locationCode)
 	{
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
 	}
 }

@@ -4,6 +4,8 @@ import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
+
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -45,11 +47,15 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
+
+import org.apache.http.entity.ContentType;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.*;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 
@@ -115,15 +121,39 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options","nosniff");
                     ctx.header("X-Frame-Options","SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                }).exception(FormattingException.class, (fe, ctx ) -> {
+                    final RadarError re = new RadarError("Formatting error");
+
+                    if( fe.getCause() instanceof IOException ){
+                        ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    } else {
+                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                    }
+                    logger.log(Level.SEVERE,fe, () -> {
+                        return new StringBuilder(re.toString())
+                        .append("for request: " + ctx.fullUrl()).toString();
+                    });
+                    ctx.json(re);
                 })
-                .exception(UnsupportedOperationException.class, (e,ctx) -> {
-                    ctx.status(501);
-                    ctx.json(e.getMessage());
+                .exception(UnsupportedOperationException.class, (e, ctx) -> {
+                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+                })
+                .exception(BadRequestResponse.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Bad Request", e.getDetails());
+                    logger.log(Level.INFO, re.toString(), e );
+                    ctx.status(e.getStatus()).json(re);
+                })
+                .exception(IllegalArgumentException.class, (e, ctx ) -> {
+                    RadarError re = new RadarError("Bad Request");
+                    logger.log(Level.INFO, re.toString(), e );
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(Exception.class, (e,ctx) -> {
+                    RadarError errResponse = new RadarError("System Error");
+                    logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
                     ctx.status(500);
-                    ctx.json("Server Error");
-                    e.printStackTrace(System.err);
+                    ctx.contentType(ContentType.APPLICATION_JSON.toString());
+                    ctx.json(errResponse);
                 })
                 .routes( () -> {
                     get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import kotlin.jvm.functions.Function1;
 
 /***
  * Provides a framework for a paginated result set.
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public abstract class CwmsDTOPaginated implements CwmsDTO {
+
     @Schema(description = "The cursor to the current page of data")
     protected String page;
     @Schema(description = "The cursor to the next page of data; null if there is no more data")
@@ -125,4 +127,16 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
         return (parts.length == 0 || parts[0] == null || parts[0].equals("*")) ? null :
             encoder.encodeToString(Arrays.stream(parts).map(o -> String.valueOf(o)).collect(Collectors.joining(delimiter)).getBytes());
     }
+
+    public static class CursorCheck implements Function1<String,Boolean> {
+        private static Pattern base64 = Pattern.compile("^[-A-Za-z0-9+/]*={0,3}$");
+        @Override
+        public Boolean invoke(String cursor) {
+            System.out.println("checking");
+            return base64.matcher(cursor).matches() ? Boolean.TRUE : Boolean.FALSE;
+        }
+
+    }
+
+    public static CursorCheck CURSOR_CHECK = new CursorCheck();
 }

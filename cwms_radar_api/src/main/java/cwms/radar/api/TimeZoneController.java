@@ -13,6 +13,7 @@ import static com.codahale.metrics.MetricRegistry.*;
 import com.codahale.metrics.Timer;
 
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
@@ -42,14 +43,13 @@ public class TimeZoneController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @OpenApi(
@@ -78,7 +78,10 @@ public class TimeZoneController implements CrudHandler {
                 case "csv": {ctx.contentType(Formats.CSV); break;}
                 case "xml": {ctx.contentType(Formats.XML); break;}
                 case "wml2": {ctx.contentType(Formats.WML2); break;}
-                default: throw new UnsupportedOperationException("Format " +  format + " is not implemented for this end point");
+                default: {
+                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+                return;
+                }
             }
 
             String results = cdm.getTimeZones(format);
@@ -100,15 +103,14 @@ public class TimeZoneController implements CrudHandler {
         try (
             final Timer.Context time_context = getOneRequestTime.time();
             ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }

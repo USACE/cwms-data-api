@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		super(dsl);
 	}
 
-	public LocationGroup getLocationGroup(String officeId, String categoryId, String groupId)
+	public Optional<LocationGroup> getLocationGroup(String officeId, String categoryId, String groupId)
 	{
 		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 		AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
@@ -76,7 +77,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 					.collect(Collectors.toList());
 			locGroup = new LocationGroup(locGroup, assignedLocations);
 		}
-		return locGroup;
+		return Optional.ofNullable(locGroup);
 	}
 
 	private AssignedLocation buildAssignedLocation(Record resultRecord)

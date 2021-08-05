@@ -37,7 +37,7 @@ public class Formats {
     private static List<ContentType> contentTypeList = new ArrayList<>();
     static {
         contentTypeList.addAll(
-            Arrays.asList(JSON,XML,WML2,JSONV2,TAB,CSV, GEOJSON)
+            Arrays.asList(JSON,XML, XMLV2, WML2,JSONV2,TAB,CSV, GEOJSON)
             .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
     private static Map<String,String> typeMap = new LinkedHashMap<>();
@@ -65,15 +65,20 @@ public class Formats {
             String[] typeFormatterClasses = line.split(":");
 
             ContentType type = new ContentType(typeFormatterClasses[0]);
+            logger.info("Adding links for content-type: " + type.toString());
+
             try {
                 @SuppressWarnings("unchecked")
                 Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
                 OutputFormatter formatterInstance;
-
+                logger.info("Formatter class: "+ type_formatter_classes[1]);
 				formatterInstance = formatter.getDeclaredConstructor().newInstance();
                 Map<Class<CwmsDTO>,OutputFormatter> tmp = new HashMap<>();
 
+
                 for(String clazz: typeFormatterClasses[2].split(";") ){
+                    logger.info("\tFor Class: " + clazz);
+
                     @SuppressWarnings("unchecked")
                     Class<CwmsDTO> formatForClass = (Class<CwmsDTO>)Class.forName(clazz);
                     tmp.put( formatForClass, formatterInstance);

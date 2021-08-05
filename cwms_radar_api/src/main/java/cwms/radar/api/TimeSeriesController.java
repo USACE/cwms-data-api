@@ -13,6 +13,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.ContentType;
@@ -147,19 +148,11 @@ public class TimeSeriesController implements CrudHandler {
             }
             requestResultSize.update(results.length());
         } catch (IllegalArgumentException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            RadarError re = new RadarError("Invalid arguments supplied");
+            logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-            ctx.result("Invalid arguments supplied");
-        } catch( FormattingException fe ){
-            logger.log(Level.SEVERE,"failed to format data", fe);
-            if( fe.getCause() instanceof IOException ){
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                ctx.result("server error");
-            } else {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Invalid Format Options");
-            }
-        }
+            ctx.json(re);            
+        } 
     }
 
     @OpenApi(tags = {"TimeSeries"}, ignore = true)
@@ -168,7 +161,7 @@ public class TimeSeriesController implements CrudHandler {
         getOneRequest.mark();
         try( final Timer.Context time_context = getOneRequestTime.time() ){
 
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
     }
@@ -176,8 +169,7 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(tags = {"TimeSeries"}, ignore = true)
     @Override
     public void update(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**

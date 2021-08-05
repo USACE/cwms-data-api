@@ -26,7 +26,7 @@ public class XMLv2 implements OutputFormatter {
 
     public XMLv2() throws InternalServerErrorResponse{
         try {
-            context = JAXBContext.newInstance(TimeSeries.class);
+            context = JAXBContext.newInstance(TimeSeries.class,Clobs.class);
             mar = context.createMarshaller();
             mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
         } catch( JAXBException jaxb ){
