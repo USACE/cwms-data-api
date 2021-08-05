@@ -1,16 +1,12 @@
 package cwms.radar.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
@@ -18,7 +14,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 
-import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -30,14 +26,17 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class TimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
+    private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
 
-
-    private final MetricRegistry metrics;// = new MetricRegistry();
-    private final Meter getAllRequests;// = metrics.meter(OfficeController.class.getName()+"."+"getAll.count");
-    private final Timer getAllRequestsTime;// =metrics.timer(OfficeController.class.getName()+"."+"getAll.time");
+    private final MetricRegistry metrics;
+    private final Meter getAllRequests;
+    private final Timer getAllRequestsTime;
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
@@ -153,11 +152,6 @@ public class TimeSeriesController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
-        } catch (SQLException ex) {
-            RadarError re = new RadarError("Failed to ProcessRequest");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.json(re);
         }
     }
 
@@ -165,7 +159,7 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
-        try( final Timer.Context time_context = getOneRequestTime.time(); ){
+        try( final Timer.Context time_context = getOneRequestTime.time() ){
 
             throw new UnsupportedOperationException("Not supported yet.");
         }

@@ -33,7 +33,6 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
-import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.HttpResponseException;
@@ -50,8 +49,6 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
 
 
 public class RadarAPI {
@@ -171,8 +168,8 @@ public class RadarAPI {
             crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
-
             crud("/clobs/:clob-id", new ClobController(metrics));
+            crud("/pools/:pool-id", new PoolController(metrics));
         });
 
     }

@@ -66,15 +66,18 @@ public class Formats {
 
             ContentType type = new ContentType(typeFormatterClasses[0]);
             logger.info("Adding links for content-type: " + type.toString());
+
             try {
                 @SuppressWarnings("unchecked")
                 Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
                 OutputFormatter formatterInstance;
-                logger.info("Formatter class: "+ type_formatter_classes[1]);
+                logger.info("Formatter class: "+ typeFormatterClasses[1]);
 				formatterInstance = formatter.getDeclaredConstructor().newInstance();
                 Map<Class<CwmsDTO>,OutputFormatter> tmp = new HashMap<>();
 
                 for(String clazz: typeFormatterClasses[2].split(";") ){
+                    logger.info("\tFor Class: " + clazz);
+
                     @SuppressWarnings("unchecked")
                     Class<CwmsDTO> formatForClass = (Class<CwmsDTO>)Class.forName(clazz);
                     tmp.put( formatForClass, formatterInstance);
@@ -97,9 +100,11 @@ public class Formats {
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = (Map<Class<CwmsDTO>, OutputFormatter>) formatters.get(type);
-        if( contentFormatters != null ){
-            return contentFormatters.get(toFormat.getClass()).format(toFormat);
+
+        OutputFormatter outputFormatter = getOutputFormatter(type, toFormat.getClass());
+
+        if(outputFormatter != null){
+            return outputFormatter.format(toFormat);
         } else {
             throw new FormattingException("No Format for this content-type and data-type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
         }
@@ -121,13 +126,15 @@ public class Formats {
         for(ContentType key: formatters.keySet()){
             logger.info(key.toString());
         }
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = (Map<Class<CwmsDTO>, OutputFormatter>) formatters.get(type);
-        if( contentFormatters != null ){
-            return contentFormatters.get(toFormat.get(0).getClass()).format(toFormat);
-        } else {
-            throw new FormattingException("No Format for this content-type and data type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
-        }
 
+        Class<? extends CwmsDTO> klass = dtos.get(0).getClass();
+        OutputFormatter outputFormatter = getOutputFormatter(type, klass);
+
+        if(outputFormatter != null){
+            return outputFormatter.format(dtos);
+        } else {
+            throw new FormattingException("No Format for this content-type and data type : (" + type.toString() + ", " + dtos.get(0).getClass().getName() + ")");
+        }
     }
 
     private static void init(){
@@ -203,8 +210,7 @@ public class Formats {
                 return new ContentType(Formats.JSON);
             }
         }
-        }
-        throw new FormattingException("Content-Type " + header + " is not available");
+        return null;
     }
 
 }
