@@ -13,13 +13,13 @@ import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.Pool;
+import cwms.radar.data.dto.Pools;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.json.JavalinJson;
-import io.javalin.plugin.json.ToJsonMapper;
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
@@ -28,7 +28,9 @@ import service.annotations.FormatService;
 	Catalog.class,
 	TimeSeries.class,
 	Clob.class,
-	Clobs.class
+	Clobs.class,
+	Pool.class,
+		Pools.class
 })
 public class JsonV2 implements OutputFormatter {
 
@@ -66,7 +68,14 @@ public class JsonV2 implements OutputFormatter {
 
 	@Override
 	public String format(List<? extends CwmsDTO> dtoList) {
-		return JavalinJson.toJson(dtoList);
+		try
+		{
+			return om.writeValueAsString(dtoList);
+		}
+		catch(JsonProcessingException e)
+		{
+			throw new FormattingException("Could not format :" + dtoList, e);
+		}
 	}
 
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Meter;
@@ -21,6 +20,7 @@ import cwms.radar.api.LocationController;
 import cwms.radar.api.LocationGroupController;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
+import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
@@ -29,19 +29,15 @@ import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
-import io.javalin.core.plugin.Plugin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
-import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
-
 import org.apache.http.entity.ContentType;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -49,8 +45,6 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
 
 
 public class RadarAPI {
@@ -72,7 +66,6 @@ public class RadarAPI {
             ds.setMaxActive(Integer.parseInt(getconfig("RADAR_POOL_MAX_ACTIVE","10")));
             ds.setMaxIdle(Integer.parseInt(getconfig("RADAR_POOL_MAX_IDLE","5")));
             ds.setMinIdle(Integer.parseInt(getconfig("RADAR_POOL_MIN_IDLE","2")));
-
         } catch( Exception err ){
             logger.log(Level.SEVERE,"Required Parameter not set in environment",err);
             System.exit(1);
@@ -156,7 +149,6 @@ public class RadarAPI {
             ctx.contentType(ContentType.APPLICATION_JSON.toString());
             ctx.json(errResponse);
         })
-
         .routes( () -> {
             //get("/", ctx -> { ctx.result("welcome to the CWMS REST API").contentType(Formats.PLAIN);});
             crud("/locations/:location_code", new LocationController(metrics));
@@ -172,8 +164,8 @@ public class RadarAPI {
             crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
-
             crud("/clobs/:clob-id", new ClobController(metrics));
+            crud("/pools/:pool-id", new PoolController(metrics));
         });
 
     }
