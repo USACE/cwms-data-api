@@ -12,7 +12,7 @@ public class Pool extends PoolType implements CwmsDTO
 	private final String description;
 	private final String clobText;
 
-	public Pool(Builder b){
+	private Pool(Builder b){
 		super(b.getPoolName(), b.getProjectId(), b.getBottomLevelId(), b.getTopLevelId(), b.isImplicit());
 		this.attribute = b.getAttribute();
 		this.description = b.getDescription();
