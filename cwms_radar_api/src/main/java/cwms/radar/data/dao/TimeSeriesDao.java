@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
+import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.Tsv;
 import cwms.radar.data.dto.TsvDqu;
@@ -51,6 +53,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
+import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
@@ -340,11 +343,11 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 	}
 
 	// Finds single most recent value within the window for each of the tsCodes
-	public List<Tsv> findMostRecentsInRange(List<String> tsIds,  Timestamp futuredate, Timestamp pastdate) {
-		List<Tsv> retval = Collections.emptyList();
+	public List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastdate, Timestamp futuredate) {
+		final List<RecentValue> retval = new ArrayList<>();
 
 		if (tsIds != null && !tsIds.isEmpty()) {
-			AV_TSV tsvView = AV_TSV.AV_TSV;
+			AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;
 			AV_CWMS_TS_ID2 tsView = AV_CWMS_TS_ID2;
 			SelectConditionStep<Record> innerSelect
 					= dsl.select(tsvView.asterisk(),
@@ -359,37 +362,148 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 									.and(tsvView.END_DATE.gt(pastdate)));
 
 
-			String[] columns = new String[]{"ts_code","date_time","version_date","data_entry_date","value",
-					"quality_code","start_date","end_date"};
-			List<Field<Object>> fields = Arrays.stream(columns).map(c -> field(c)).collect(Collectors.toList());
+			Field[] queryFields = new Field[]{
+					tsView.CWMS_TS_ID,
+					tsvView.OFFICE_ID,
+					tsvView.TS_CODE,
+					tsvView.UNIT_ID,
+					tsvView.DATE_TIME,
+					tsvView.VERSION_DATE,
+					tsvView.DATA_ENTRY_DATE,
+					tsvView.VALUE,
+					tsvView.QUALITY_CODE,
+					tsvView.START_DATE,
+					tsvView.END_DATE,
+					};
+
+			// look them back up by name b/c we are using them on results of innerselect.
+			List<Field<Object>> fields = Arrays.stream(queryFields)
+					.map(Field::getName)
+					.map(DSL::field).collect(
+							Collectors.toList());
 
 			// I want to select tsvView.asterisk but we are selecting from an inner select and
 			// even though the inner select selects tsvView.asterisk it isn't the same.
 			// So we will just select the fields we want.  Unfortunately that means our results
 			// won't map into AV_TSV.AV_TSV
-			retval = dsl.select(fields)
+			dsl.select(fields)
 					.from(innerSelect)
 					.where(field("DATE_TIME").eq(innerSelect.field("max_date_time")))
-
-					.fetch( jrecord -> {
-						Timestamp dataEntryDate;
-						// !!! skipping DATA_ENTRY_DATE for now.  Need to figure out how to fix mapping in jooq.
-						//	!! dataEntryDate= jrecord.getValue("data_entry_date", Timestamp.class); // maps to oracle.sql.TIMESTAMP
-						// !!!
-						dataEntryDate = null;
-						// !!!
-						TsvId id = new TsvId(jrecord.getValue("ts_code", Long.class),
-								jrecord.getValue("date_time", Timestamp.class),
-								jrecord.getValue("version_date", Timestamp.class), dataEntryDate); // oracle timestamp?
-
-						return new Tsv(id, jrecord.getValue("value", Double.class),
-								jrecord.getValue("quality_code", Long.class),
-								jrecord.getValue("start_date", Timestamp.class),
-								jrecord.getValue("end_date", Timestamp.class));
+					.forEach( jrecord -> {
+						RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
+						retval.add(recentValue);
 					});
 		}
 		return retval;
 	}
 
+	@NotNull
+	private RecentValue buildRecentValue(AV_TSV_DQU tsvView, usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2 tsView,
+									   Record jrecord)
+	{
+		return buildRecentValue(tsvView, jrecord, tsView.CWMS_TS_ID.getName());
+	}
 
+	@NotNull
+	private RecentValue buildRecentValue(AV_TSV_DQU tsvView, AV_TS_GRP_ASSGN tsView, Record jrecord)
+	{
+		return buildRecentValue(tsvView, jrecord, tsView.TS_ID.getName());
+	}
+
+	@NotNull
+	private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName)
+	{
+		Timestamp dataEntryDate;
+		// TODO:
+		// !!! skipping DATA_ENTRY_DATE for now.  Need to figure out how to fix mapping in jooq.
+		//	!! dataEntryDate= jrecord.getValue("data_entry_date", Timestamp.class); // maps to oracle.sql.TIMESTAMP
+		// !!!
+		dataEntryDate = null;
+		// !!!
+
+		TsvDqu tsv = buildTsvDqu(tsvView, jrecord, dataEntryDate);
+		String tsId = jrecord.getValue(tsColumnName, String.class);
+		return new RecentValue(tsId, tsv);
+	}
+
+	@NotNull
+	private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, Timestamp dataEntryDate)
+	{
+		TsvDquId id = buildDquId(tsvView, jrecord);
+
+		return new TsvDqu(id, jrecord.getValue(tsvView.CWMS_TS_ID.getName(), String.class),
+				jrecord.getValue(tsvView.VERSION_DATE.getName(), Timestamp.class), dataEntryDate,
+				jrecord.getValue(tsvView.VALUE.getName(), Double.class),
+				jrecord.getValue(tsvView.QUALITY_CODE.getName(), Long.class),
+				jrecord.getValue(tsvView.START_DATE.getName(), Timestamp.class),
+				jrecord.getValue(tsvView.END_DATE.getName(), Timestamp.class));
+	}
+
+
+	public List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId, Timestamp pastLimit, Timestamp futureLimit)
+	{
+		List<RecentValue> retval  = new ArrayList<>();
+
+		if (categoryId != null && groupId != null) {
+			AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and possible use 30D view?
+
+			AV_TS_GRP_ASSGN tsView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+
+			SelectConditionStep<Record> innerSelect
+					= dsl.select(tsvView.asterisk(), tsView.TS_ID, tsView.ATTRIBUTE,
+					max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as("max_date_time"), tsView.TS_ID)
+					.from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
+					.where(
+							tsView.DB_OFFICE_ID.eq(office)
+									.and(tsView.CATEGORY_ID.eq(categoryId))
+									.and(tsView.GROUP_ID.eq(groupId))
+									.and(tsvView.VALUE.isNotNull())
+									.and(tsvView.DATE_TIME.lt(futureLimit))
+									.and(tsvView.DATE_TIME.gt(pastLimit))
+									.and(tsvView.START_DATE.le(futureLimit))
+									.and(tsvView.END_DATE.gt(pastLimit)));
+
+			Field[] queryFields = new Field[]{
+					tsvView.OFFICE_ID,
+					tsvView.TS_CODE,
+					tsvView.DATE_TIME,
+					tsvView.VERSION_DATE,
+					tsvView.DATA_ENTRY_DATE,
+					tsvView.VALUE,
+					tsvView.QUALITY_CODE,
+					tsvView.START_DATE,
+					tsvView.END_DATE,
+					tsvView.UNIT_ID,
+					tsView.TS_ID, tsView.ATTRIBUTE};
+
+			List<Field<Object>> fields = Arrays.stream(queryFields)
+					.map(Field::getName)
+					.map(DSL::field).collect(
+					Collectors.toList());
+			
+
+			// I want to select tsvView.asterisk but we are selecting from an inner select and
+			// even though the inner select selects tsvView.asterisk it isn't the same.
+			// So we will just select the fields we want.
+			// Unfortunately that means our results won't map into AV_TSV.AV_TSV
+			dsl.select(fields)
+					.from(innerSelect)
+					.where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time")))
+					.orderBy(field(tsView.ATTRIBUTE.getName()))
+					.forEach( jrecord -> {
+						RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
+						retval.add(recentValue);
+					});				
+		}
+		return retval;
+	}
+
+	@NotNull
+	private TsvDquId buildDquId(AV_TSV_DQU tsvView, Record jrecord)
+	{
+		return new TsvDquId(jrecord.getValue(tsvView.OFFICE_ID.getName(), String.class),
+				jrecord.getValue(tsvView.TS_CODE.getName(), Long.class),
+				jrecord.getValue(tsvView.UNIT_ID.getName(), String.class),
+				jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class));
+	}
 }

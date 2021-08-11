@@ -3,9 +3,23 @@ package cwms.radar.api;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
@@ -14,7 +28,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesDao;
+import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.data.dto.Tsv;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -37,6 +53,9 @@ public class TimeSeriesController implements CrudHandler {
     private final Timer getAllRequestsTime;
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
+    private final Meter getRecentRequests;
+    private final Timer getRecentRequestsTime;
+
     private final Histogram requestResultSize;
     private final int defaultPageSize = 500;
 
@@ -48,6 +67,8 @@ public class TimeSeriesController implements CrudHandler {
         getOneRequest = this.metrics.meter(name(className,"getOne","count"));
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
+        getRecentRequests = this.metrics.meter(name(className,"getRecent","count"));
+        getRecentRequestsTime = this.metrics.timer(name(className,"getRecent","time"));
     }
 
     @OpenApi(tags = {"TimeSeries"}, ignore = true)
@@ -129,11 +150,13 @@ public class TimeSeriesController implements CrudHandler {
 
                 // Send back the link to the next page in the response header
                 StringBuffer linkValue = new StringBuffer(600);
-                linkValue.append(String.format("<%s>; rel=self; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getPage()), contentType.toString()));
+                linkValue.append(String.format("<%s>; rel=self; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getPage()),
+                        contentType));
 
                 if(ts.getNextPage() != null) {
                     linkValue.append(",");
-                    linkValue.append(String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()), contentType.toString()));
+                    linkValue.append(String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()),
+                            contentType));
                 }
 
                 ctx.header("Link", linkValue.toString());
@@ -197,5 +220,127 @@ public class TimeSeriesController implements CrudHandler {
             logger.log(Level.WARNING, null, ex);
         }
         return result.toString();
+    }
+
+    @OpenApi(queryParams = {
+            @OpenApiParam(name = "office", description = "Specifies the owning office of the timeseries group(s) whose data is to be included in the response. If this field is not specified, matching timeseries groups information from all offices shall be returned."),
+    },
+            responses = {
+                    @OpenApiResponse(status = "200",
+                            content = {@OpenApiContent(isArray = true, from = Tsv.class, type = Formats.JSON)
+                            }
+
+                    ),
+                    @OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group(s) were not found."),
+                    @OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Timeseries Groups Data", tags = {"Timeseries Groups"})
+    public void getRecent(Context ctx)
+    {
+        // what does recent do?
+        // automatically sets the time window to recent
+        // excludes null values
+        // gets value for each ts in ts_ids or value for each ts assigned to ts_group_id
+        // limit=1
+        // sort date_time desc.
+
+        getRecentRequests.mark();
+        try(final Timer.Context timeContext = getRecentRequestsTime.time();
+            DSLContext dsl = getDslContext(ctx))
+        {
+            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            String office = ctx.queryParam("office");
+            String categoryId = ctx.queryParam("category-id", (String) null);
+            String groupId = ctx.queryParam("group-id", (String) null);
+            String tsIdsParam = ctx.queryParam("ts-ids", (String) null);
+
+            GregorianCalendar gregorianCalendar = new GregorianCalendar();
+            gregorianCalendar.set(Calendar.HOUR, 0);
+            gregorianCalendar.set(Calendar.MINUTE, 0);
+            gregorianCalendar.set(Calendar.SECOND, 0);
+            gregorianCalendar.set(Calendar.MILLISECOND, 0);
+
+            gregorianCalendar.add(Calendar.HOUR, 24 * 14);
+            Timestamp futureLimit = Timestamp.from(gregorianCalendar.toInstant());
+            gregorianCalendar.add(Calendar.HOUR, 24 * -28);
+            Timestamp pastLimit = Timestamp.from(gregorianCalendar.toInstant());
+
+            boolean hasTsGroupInfo = categoryId != null && !categoryId.isEmpty() && groupId != null && !groupId.isEmpty();
+            List<String> tsIds = getTsIds(tsIdsParam);
+            boolean hasTsIds = tsIds != null && !tsIds.isEmpty();
+
+            List<RecentValue> latestValues = null;
+            if(hasTsGroupInfo && hasTsIds){
+                // has both = this is an error
+                RadarError re = new RadarError("Invalid arguments supplied");
+                logger.log(Level.SEVERE, re.toString());
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.json(re);
+            } else if(!hasTsGroupInfo && !hasTsIds){
+                // doesn't have either?  Just return empty results?
+                RadarError re = new RadarError("Invalid arguments supplied");
+                logger.log(Level.SEVERE, re.toString());
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.json(re);
+            } else if( hasTsGroupInfo){
+                // just group provided
+                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit);
+            } else if(hasTsIds){
+                latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit);
+            }
+
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+
+            String result = Formats.format(contentType, latestValues);
+
+            ctx.result(result).contentType(contentType.toString());
+            requestResultSize.update(result.length());
+
+            ctx.status(HttpServletResponse.SC_OK);
+        }
+    }
+
+    public static List<String> getTsIds(String tsIdsParam)
+    {
+        List<String> retval = null;
+
+        if(tsIdsParam != null && !tsIdsParam.isEmpty()){
+            retval = new ArrayList<>();
+
+            if(tsIdsParam.startsWith("[")){
+                tsIdsParam = tsIdsParam.substring(1);
+            }
+
+            if(tsIdsParam.endsWith("]")){
+                tsIdsParam = tsIdsParam.substring(0, tsIdsParam.length() -1);
+            }
+
+            if(!tsIdsParam.isEmpty())
+            {
+                final String regex = "\"[^\"]*\"|[^,]+";
+                final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+
+                try(Scanner s = new Scanner(tsIdsParam)) {
+                    List<String> matches = findAll(s, pattern).map(m -> m.group().trim())
+                            .collect(Collectors.toList());
+                    retval.addAll(matches);
+                }
+            }
+        }
+
+        return retval;
+    }
+
+    // This came from https://stackoverflow.com/questions/42961296/java-8-stream-emitting-a-stream/42978216#42978216
+    public static Stream<MatchResult> findAll(Scanner s, Pattern pattern) {
+        return StreamSupport.stream(new Spliterators.AbstractSpliterator<MatchResult>(
+                1000, Spliterator.ORDERED|Spliterator.NONNULL) {
+            public boolean tryAdvance(Consumer<? super MatchResult> action) {
+                if(s.findWithinHorizon(pattern, 0)!=null) {
+                    action.accept(s.match());
+                    return true;
+                }
+                else return false;
+            }
+        }, false);
     }
 }

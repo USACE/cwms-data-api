@@ -1,17 +1,5 @@
 package cwms.radar;
 
-import io.javalin.Javalin;
-import io.javalin.core.validation.JavalinValidation;
-
-import static io.javalin.apibuilder.ApiBuilder.*;
-
-import io.javalin.http.BadRequestResponse;
-import io.javalin.http.JavalinServlet;
-import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.openapi.OpenApiOptions;
-import io.javalin.plugin.openapi.OpenApiPlugin;
-import io.swagger.v3.oas.models.info.Info;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -40,24 +28,31 @@ import cwms.radar.api.LocationController;
 import cwms.radar.api.LocationGroupController;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
+import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
+import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
-
+import io.javalin.Javalin;
+import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.BadRequestResponse;
+import io.javalin.http.JavalinServlet;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.openapi.OpenApiOptions;
+import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.swagger.v3.oas.models.info.Info;
 import org.apache.http.entity.ContentType;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
-import cwms.radar.api.*;
-import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.api.errors.RadarError;
-import cwms.radar.formatters.Formats;
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
 
 
 /**
@@ -100,7 +95,7 @@ public class ApiServlet extends HttpServlet {
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         ObjectMapper om = JavalinJackson.getObjectMapper();
-        JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());            // Needed in Java 8 to properly format java.time classes
 
@@ -129,10 +124,7 @@ public class ApiServlet extends HttpServlet {
                     } else {
                         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                     }
-                    logger.log(Level.SEVERE,fe, () -> {
-                        return new StringBuilder(re.toString())
-                        .append("for request: " + ctx.fullUrl()).toString();
-                    });
+                    logger.log(Level.SEVERE,fe, () -> re + "for request: " + ctx.fullUrl());
                     ctx.json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
@@ -165,7 +157,9 @@ public class ApiServlet extends HttpServlet {
                     crud("/parameters/:param_name", new ParametersController(metrics));
                     crud("/timezones/:zone", new TimeZoneController(metrics));
                     crud("/levels/:location", new LevelsController(metrics));
-                    crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+                    TimeSeriesController tsController = new TimeSeriesController(metrics);
+                    crud("/timeseries/:timeseries", tsController);
+                    get("/timeseries/recent/:group-id", tsController::getRecent);
                     crud("/timeseries/category/:category-id", new TimeSeriesCategoryController(metrics));
                     crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
