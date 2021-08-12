@@ -12,21 +12,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import cwms.radar.api.CatalogController;
-import cwms.radar.api.ClobController;
-import cwms.radar.api.LevelsController;
-import cwms.radar.api.LocationCategoryController;
-import cwms.radar.api.LocationController;
-import cwms.radar.api.LocationGroupController;
-import cwms.radar.api.OfficeController;
-import cwms.radar.api.ParametersController;
-import cwms.radar.api.PoolController;
-import cwms.radar.api.RatingController;
-import cwms.radar.api.TimeSeriesCategoryController;
-import cwms.radar.api.TimeSeriesController;
-import cwms.radar.api.TimeSeriesGroupController;
-import cwms.radar.api.TimeZoneController;
-import cwms.radar.api.UnitsController;
+import cwms.radar.api.*;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.FormattingException;
@@ -166,6 +152,7 @@ public class RadarAPI {
             crud("/catalog/:dataSet", new CatalogController(metrics));
             crud("/clobs/:clob-id", new ClobController(metrics));
             crud("/pools/:pool-id", new PoolController(metrics));
+            crud("/basins/:basin", new BasinController(metrics));
         });
 
     }

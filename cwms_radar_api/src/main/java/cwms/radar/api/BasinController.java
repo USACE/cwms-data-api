@@ -97,10 +97,6 @@ public class BasinController implements CrudHandler
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
             ctx.contentType(contentType.toString());
-
-            final String results;
-            Basin basin = basinDao.getBasin("CANADIAN_BASIN", units, office);
-            System.out.println(basin.getBasinId() +", " + basin.getPrimaryStream().getStreamId());
         }
     }
 

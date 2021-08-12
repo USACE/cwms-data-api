@@ -172,6 +172,7 @@ public class ApiServlet extends HttpServlet {
                     crud("/catalog/:dataSet", new CatalogController(metrics));
                     crud("/clobs/:clob-id", new ClobController(metrics));
                     crud("/pools/:pool-id", new PoolController(metrics));
+                    crud("/basins/:basin", new BasinController(metrics));
                 }).servlet();
     }
 
