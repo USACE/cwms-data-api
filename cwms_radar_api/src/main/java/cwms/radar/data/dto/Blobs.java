@@ -38,10 +38,6 @@ public class Blobs extends CwmsDTOPaginated {
         return Collections.unmodifiableList(blobs);
     }
 
-    private void addBlob(Blob blob ){
-        blobs.add(blob);
-    }
-
     public static class Builder {
         private Blobs workingBlobs = null;
         public Builder( String cursor, int pageSize, int total){
@@ -63,9 +59,15 @@ public class Blobs extends CwmsDTOPaginated {
         }
 
         public Builder addBlob(Blob blob){
-            this.workingBlobs.addBlob(blob);
+            this.workingBlobs.blobs.add(blob);
             return this;
         }
+
+        public Builder addAll(List<Blob> toAdd ){
+            this.workingBlobs.blobs.addAll(toAdd);
+            return this;
+        }
+
     }
 
 }

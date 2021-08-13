@@ -1,5 +1,6 @@
 package cwms.radar.api;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -10,7 +11,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.BlobDao;
-import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.Blob;
 import cwms.radar.data.dto.Blobs;
@@ -34,7 +34,7 @@ import static com.codahale.metrics.MetricRegistry.name;
  *
  */
 public class BlobController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(BlobController.class.getName());
+
     private static final int defaultPageSize = 20;
     private final MetricRegistry metrics;
     private final Meter getAllRequests;
@@ -103,7 +103,6 @@ public class BlobController implements CrudHandler {
             .getValue()).getValue();
             int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
 
-            boolean includeValues = false;
             String like = ctx.queryParam("like",".*");
 
             String formatParm = ctx.queryParam("format","");
@@ -111,29 +110,21 @@ public class BlobController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             BlobDao dao = new BlobDao(dsl);
-            Blobs blobs = dao.getBlobs(cursor, pageSize, officeOpt, includeValues, like);
+            List<Blob> blobList = dao.getAll(officeOpt, like);
+
+            Blobs blobs = new Blobs.Builder(cursor, pageSize, 0).addAll(blobList).build();
             String result = Formats.format(contentType,blobs);
 
             ctx.result(result);
             ctx.contentType(contentType.toString());
             requestResultSize.update(result.length());
-
         }
     }
-
-
 
     @OpenApi(
             queryParams = {
             @OpenApiParam(name = "office", description = "Specifies the owning office."),
     },
-        responses = { @OpenApiResponse(status="200",
-                                       description = "Returns requested blob.",
-                                       content = {
-                                           @OpenApiContent(type = Formats.JSON, from = Blob.class ),
-                                       }
-                      )
-                    },
         tags = {"Blob"}
     )
     @Override
@@ -144,29 +135,24 @@ public class BlobController implements CrudHandler {
                 DSLContext dsl = getDslContext(ctx)
         ) {
             BlobDao dao = new BlobDao(dsl);
-            Optional<String> office = Optional.ofNullable(ctx.queryParam("office"));
+            String officeQP = ctx.queryParam("office");
+            Optional<String> office = Optional.ofNullable(officeQP);
             Optional<Blob> optAc = dao.getByUniqueName(blobId,  office);
 
             if( optAc.isPresent() ){
-                String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                Blob blob = optAc.get();
 
-                String result = Formats.format(contentType, optAc.get());
+                ctx.contentType(blob.getMediaTypeId());
+                byte[] value = blob.getValue();
+                ctx.result(value);
 
-                ctx.contentType(contentType.toString());
-                ctx.result(result);
-
-                requestResultSize.update(result.length());
+                requestResultSize.update(value.length);
             } else {
                 ctx.status(HttpStatus.NOT_FOUND_404).json(new RadarError("Unable to find blob based on given parameters"));
             }
 
-
-
         }
     }
-
-
 
 
     @OpenApi(ignore = true)
