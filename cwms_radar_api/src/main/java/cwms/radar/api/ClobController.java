@@ -76,7 +76,7 @@ public class ClobController implements CrudHandler {
                 @OpenApiParam(name="includeValues",
                     required = false,
                     type = Boolean.class,
-                    description = "Do you want the value assosciated with this particular clob (default: false)"
+                    description = "Do you want the value associated with this particular clob (default: false)"
                 ),
                 @OpenApiParam(name="like",
                     required = false,

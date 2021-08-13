@@ -2,7 +2,6 @@ package cwms.radar.api;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
