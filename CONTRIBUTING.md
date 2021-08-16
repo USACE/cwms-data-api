@@ -74,7 +74,7 @@ By making a contribution to this project, I certify that:
 
 ## Getting Started
 
-This project is intented to replace what is currently hosted at https://cwms-data.usace.army.mil/cwms-data/
+This project is intended to replace what is currently hosted at https://cwms-data.usace.army.mil/cwms-data/
 
 Due to the current limits on releasing about database source we don't expect much random contribution. However, we will be moving more of the logic into
 this repository and any help on the formatting code and such will be greatly appreciated.
@@ -86,7 +86,7 @@ Now you're ready to [clone the repository](https://help.github.com/articles/clon
 
 ### Code Style
 
-If you are editing an existing file please be consistent with the style in the file. 
+If you are editing an existing file please be consistent with the style in the file.
 
 Otherwise normal Java formatting should be used.
 
@@ -131,4 +131,3 @@ The project is setup as a gradle project and using either the command line or an
 ```
 
 Due to the use of the CWMS Oracle Database is it difficult to provide an easy mechanism to fully test locally without having additional access to source that hasn't been made public. This may change in the future.
-
