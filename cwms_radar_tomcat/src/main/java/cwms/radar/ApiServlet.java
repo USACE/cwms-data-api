@@ -56,7 +56,6 @@ import org.owasp.html.PolicyFactory;
 import cwms.radar.api.*;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.formatters.Formats;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 
 
@@ -74,6 +73,7 @@ import static io.javalin.apibuilder.ApiBuilder.crud;
                             "/units/*",
                             "/ratings/*",
                             "/levels/*",
+                            "/blobs/*",
                             "/clobs/*",
                             "/pools/*",
                             "/index*"
@@ -170,6 +170,7 @@ public class ApiServlet extends HttpServlet {
                     crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
                     crud("/catalog/:dataSet", new CatalogController(metrics));
+                    crud("/blobs/:blob-id", new BlobController(metrics));
                     crud("/clobs/:clob-id", new ClobController(metrics));
                     crud("/pools/:pool-id", new PoolController(metrics));
                 }).servlet();
