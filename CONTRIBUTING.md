@@ -110,15 +110,16 @@ When submitting a bug report, please be sure to include accurate and thorough in
 
 Please [fork](https://help.github.com/en/articles/fork-a-repo) the repository on github and create a [branch in Git](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) if you are making changes to existing code.
 
-The recommended branch naming is the version followed by a simple name. E.G. 6.6RC03_newinflow.
-
-If you are submitting an entire new OpenDCS algorithms working on the main branch is fine, though a branch is preferred. When submitting an algorithm, if you have made the xml file that is used to let your install know the input, outputs, and parameters or the algorithm please place that file in src/main/resources/yourpackage/youralgorithmname.xml
 
 Once you have made your changes submit a [pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork).
+Please submit all PRs to the develop branch.
+
+Barring nothing working at all or the code not being related to CWMS RADAR your contributions will be accepted.
 
 
-Barring nothing working at all or the code not being related to OpenDCS your contributions will be accepted.
+## Releases an branching
 
+If you have write access to the repository you can create release. All release should be put in a release/X.Y branch.
 
 ### Check Your Changes
 
