@@ -12,6 +12,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
 import cwms.radar.api.LevelsController;
@@ -163,6 +164,7 @@ public class RadarAPI {
             crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
+            crud("/blobs/:blob-id", new BlobController(metrics));
             crud("/clobs/:clob-id", new ClobController(metrics));
             crud("/pools/:pool-id", new PoolController(metrics));
         });
