@@ -18,7 +18,7 @@ dependencies {
 
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
-
+    compile 'org.glassfish:javax.json:1.0.4'
 
     compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
     compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
@@ -58,3 +58,4 @@ sourceSets {
         resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
     }
 }
+
