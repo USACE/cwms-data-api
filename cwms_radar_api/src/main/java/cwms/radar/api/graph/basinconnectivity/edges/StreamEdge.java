@@ -1,4 +1,7 @@
-package cwms.radar.data.dto.basinconnectivity.graph;
+package cwms.radar.api.graph.basinconnectivity.edges;
+
+import cwms.radar.api.graph.basinconnectivity.edges.BasinConnectivityEdge;
+import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
 
 import javax.json.Json;
 import javax.json.JsonObject;

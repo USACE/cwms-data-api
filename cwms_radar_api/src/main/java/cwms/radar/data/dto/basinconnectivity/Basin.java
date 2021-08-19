@@ -2,9 +2,6 @@ package cwms.radar.data.dto.basinconnectivity;
 
 import cwms.radar.data.dto.CwmsDTO;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
 public final class Basin implements CwmsDTO
 {
     private final String _basinId;
@@ -24,30 +21,6 @@ public final class Basin implements CwmsDTO
     public Stream getPrimaryStream()
     {
         return _primaryStream;
-    }
-
-    public String toPGJSONString()
-    {
-        return toPGJSON().toString();
-    }
-
-    private JsonObject toPGJSON()
-    {
-        JsonObject retval = getDefaultPGJSON();
-        Stream primaryStream = getPrimaryStream();
-        if(primaryStream != null)
-        {
-            retval = primaryStream.toPGJSON();
-        }
-        return retval;
-    }
-
-    private JsonObject getDefaultPGJSON()
-    {
-        return Json.createObjectBuilder()
-                .add("nodes", Json.createArrayBuilder())
-                .add("edges", Json.createArrayBuilder())
-                .build();
     }
 
 }

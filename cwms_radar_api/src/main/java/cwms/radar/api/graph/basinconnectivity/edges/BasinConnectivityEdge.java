@@ -1,9 +1,12 @@
-package cwms.radar.data.dto.basinconnectivity.graph;
+package cwms.radar.api.graph.basinconnectivity.edges;
+
+import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
+import cwms.radar.api.graph.pgjson.PgJsonEdge;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 
-public abstract class BasinConnectivityEdge implements BasinConnectivityElement
+public abstract class BasinConnectivityEdge implements PgJsonEdge
 {
     private final String _streamId;
     private final BasinConnectivityNode _source;
@@ -14,6 +17,12 @@ public abstract class BasinConnectivityEdge implements BasinConnectivityElement
         _streamId = streamId;
         _source = source;
         _target = target;
+    }
+
+    @Override
+    public String getId()
+    {
+        return getStreamId();
     }
 
     public String getStreamId()
@@ -35,8 +44,8 @@ public abstract class BasinConnectivityEdge implements BasinConnectivityElement
     public JsonObject toPGJSON()
     {
         return Json.createObjectBuilder()
-                .add("from", getSource().getName())
-                .add("to", getTarget().getName())
+                .add("from", getSource().getId())
+                .add("to", getTarget().getId())
                 .add("undirected", false)
                 .add("labels", Json.createArrayBuilder().add(getLabel()))
                 .add("properties", getProperties())

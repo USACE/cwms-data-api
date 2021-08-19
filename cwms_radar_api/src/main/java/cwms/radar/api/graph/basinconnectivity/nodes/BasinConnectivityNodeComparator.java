@@ -1,13 +1,15 @@
-package cwms.radar.data.dto.basinconnectivity.graph;
+package cwms.radar.api.graph.basinconnectivity.nodes;
+
+import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
 
 import javax.validation.constraints.NotNull;
 import java.util.Comparator;
 
-public class StreamNodeComparator implements Comparator<BasinConnectivityNode>
+public class BasinConnectivityNodeComparator implements Comparator<BasinConnectivityNode>
 {
     private final boolean _startsDownstream;
 
-    public StreamNodeComparator(boolean startsDownstream)
+    public BasinConnectivityNodeComparator(boolean startsDownstream)
     {
         _startsDownstream = startsDownstream;
     }

@@ -1,8 +1,8 @@
-package cwms.radar.data.dto.basinconnectivity.graph;
+package cwms.radar.api.graph.pgjson;
 
 import javax.json.JsonObject;
 
-interface BasinConnectivityElement
+public interface PgJsonElement
 {
     String getLabel();
     JsonObject getProperties();

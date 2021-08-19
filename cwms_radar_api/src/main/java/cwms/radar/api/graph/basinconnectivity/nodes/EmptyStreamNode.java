@@ -1,4 +1,6 @@
-package cwms.radar.data.dto.basinconnectivity.graph;
+package cwms.radar.api.graph.basinconnectivity.nodes;
+
+import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
 
 public class EmptyStreamNode extends BasinConnectivityNode//probably needs a better name
 {
@@ -16,7 +18,7 @@ public class EmptyStreamNode extends BasinConnectivityNode//probably needs a bet
     }
 
     @Override
-    public String getName()
+    public String getId()
     {
         return getStreamId() + "-Node-" + getStation();
     }
