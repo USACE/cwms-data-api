@@ -8,13 +8,25 @@ public class StreamLocation implements CwmsDTO
     private final String _streamId;
     private final Double _station;
     private final String _bank;
+    private final String _officeId;
+    private final Double _publishedStation;
+    private final Double _navigationStation;
+    private final Double _lowestMeasurableStage;
+    private final Double _totalDrainageArea;
+    private final Double _ungagedDrainageArea;
 
-    public StreamLocation(String locationId, String streamId, Double station, String bank)
+    StreamLocation(StreamLocationBuilder builder)
     {
-        _locationId = locationId;
-        _streamId = streamId;
-        _station = station;
-        _bank = bank;
+        _locationId = builder.getLocationId();
+        _streamId = builder.getStreamId();
+        _station = builder.getStation();
+        _bank = builder.getBank();
+        _officeId = builder.getOfficeId();
+        _publishedStation = builder.getPublishedStation();
+        _navigationStation = builder.getNagivationStation();
+        _lowestMeasurableStage = builder.getLowestMeasurableStage();
+        _totalDrainageArea = builder.getTotalDrainageArea();
+        _ungagedDrainageArea = builder.getUngagedDrainageArea();
     }
 
     public String getStreamId()
@@ -31,9 +43,40 @@ public class StreamLocation implements CwmsDTO
     {
         return _bank;
     }
+
     public String getLocationId()
     {
         return _locationId;
+    }
+
+    public Double getPublishedStation()
+    {
+        return _publishedStation;
+    }
+
+    public Double getNagivationStation()
+    {
+        return _navigationStation;
+    }
+
+    public Double getLowestMeasurableStage()
+    {
+        return _lowestMeasurableStage;
+    }
+
+    public Double getTotalDrainageArea()
+    {
+        return _totalDrainageArea;
+    }
+
+    public Double getUngagedDrainageArea()
+    {
+        return _ungagedDrainageArea;
+    }
+
+    public String getOfficeId()
+    {
+        return _officeId;
     }
 }
 

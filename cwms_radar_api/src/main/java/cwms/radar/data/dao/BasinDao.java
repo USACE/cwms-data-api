@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import cwms.radar.data.dto.basinconnectivity.Basin;
+import cwms.radar.data.dto.basinconnectivity.BasinBuilder;
 import cwms.radar.data.dto.basinconnectivity.Stream;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.dao.CwmsDbBasinJooq;
@@ -28,16 +29,22 @@ public class BasinDao extends JooqDao<Basin>
         Double[] pContributingDrainageArea = new Double[1];
         String areaUnit = "km2";
         Connection c = dsl.configuration().connectionProvider().acquire();
-        ResultSet rs = basinJooq.catBasins(c, (String) null, (String) null, (String) null, areaUnit, (String) null);
+        ResultSet rs = basinJooq.catBasins(c, null, null, null, areaUnit, officeId);
 
         basinJooq.retrieveBasin(c, pParentBasinId, pSortOrder, pPrimaryStreamId, pTotalDrainageArea, pContributingDrainageArea, basinId, areaUnit, officeId);
-        Stream primaryStream = null;
+        Basin retval = new BasinBuilder(basinId, officeId)
+                .withBasinArea(pTotalDrainageArea[0])
+                .withContributingArea(pContributingDrainageArea[0])
+                .withParentBasinId(pParentBasinId[0])
+                .withSortOrder(pSortOrder[0])
+                .build();
         if(pPrimaryStreamId[0] != null)
         {
             StreamDao streamDao = new StreamDao(dsl);
-            primaryStream = streamDao.getStream(pPrimaryStreamId[0], officeId);
+            Stream primaryStream = streamDao.getStream(pPrimaryStreamId[0], officeId);
+            retval = new BasinBuilder(retval).withPrimaryStream(primaryStream).build();
         }
-        return new Basin(basinId, primaryStream);
+        return retval;
     }
 
     @Override

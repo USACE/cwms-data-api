@@ -8,6 +8,7 @@ import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.stream.StreamT;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,13 +34,15 @@ public class StreamDao extends JooqDao<Stream>
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
         Connection c = dsl.configuration().connectionProvider().acquire();
         StreamT streamResult = streamJooq.retrieveStreamF(c, streamId, pStationUnit, pOfficeId);
-        return new StreamBuilder(streamId, streamResult.getStartsDownstream(), streamResult.getLength())
+        return new StreamBuilder(streamId, streamResult.getStartsDownstream(), streamResult.getLength(), streamResult.getOfficeId())
                 .withDivertingStreamId( streamResult.getDivertsFromStream())
                     .withDiversionStation(streamResult.getDivertsFromStation())
                     .withDiversionBank(streamResult.getDivertsFromBank())
                 .withReceivingStreamId(streamResult.getFlowsIntoStream())
                     .withConfluenceStation(streamResult.getFlowsIntoStation())
                     .withConfluenceBank(streamResult.getFlowsIntoBank())
+                .withComment(streamResult.getComments())
+                .withAverageSlope(streamResult.getAverageSlope())
                 .withStreamLocations(getStreamLocationsOnStream(streamId, officeId))
                 .withTributaries(getTributaries(streamId, officeId))
                 .withStreamReaches(getReaches(streamId, officeId))
@@ -92,13 +95,17 @@ public class StreamDao extends JooqDao<Stream>
             String diversionBank = result.getString(9);
             Double streamLength = toDouble(result.getBigDecimal(10));
             boolean startsDownstream = result.getBoolean(3);
-            Stream stream = new StreamBuilder(streamId, startsDownstream, streamLength)
+            Double averageSlope = toDouble(result.getBigDecimal(11));
+            String comment = result.getString(12);
+            Stream stream = new StreamBuilder(streamId, startsDownstream, streamLength, officeId)
                     .withDivertingStreamId(divertingStreamId)
                         .withDiversionStation(diversionStation)
                         .withDiversionBank(diversionBank)
                     .withReceivingStreamId(receivingStreamId)
                         .withConfluenceStation(confluenceStation)
                         .withConfluenceBank(confluenceBank)
+                    .withComment(comment)
+                    .withAverageSlope(averageSlope)
                     .withStreamLocations(getStreamLocationsOnStream(streamId, officeId))
                     .withTributaries(getTributaries(streamId, officeId))
                     .withStreamReaches(getReaches(streamId, officeId))

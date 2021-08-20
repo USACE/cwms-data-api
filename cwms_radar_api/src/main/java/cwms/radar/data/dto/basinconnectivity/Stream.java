@@ -18,6 +18,9 @@ public final class Stream implements CwmsDTO
     private final Double _confluenceStation;
     private final Double _diversionStation;
     private final List<StreamLocation> _streamLocations;
+    private final String _officeId;
+    private String _comment;
+    private Double _averageSlope;
 
     Stream(StreamBuilder streamBuilder)
     {
@@ -33,6 +36,9 @@ public final class Stream implements CwmsDTO
         _streamLocations = streamBuilder.getStreamLocations();
         _tributaries = streamBuilder.getTributaries();
         _streamReaches = streamBuilder.getStreamReaches();
+        _comment = streamBuilder.getComment();
+        _averageSlope = streamBuilder.getAverageSlope();
+        _officeId = streamBuilder.getOfficeId();
     }
 
     public List<StreamLocation> getStreamLocations()
@@ -93,6 +99,21 @@ public final class Stream implements CwmsDTO
     public Double getDiversionStation()
     {
         return _diversionStation;
+    }
+
+    public String getComment()
+    {
+        return _comment;
+    }
+
+    public Double getAverageSlope()
+    {
+        return _averageSlope;
+    }
+
+    public String getOfficeId()
+    {
+        return _officeId;
     }
 
 }

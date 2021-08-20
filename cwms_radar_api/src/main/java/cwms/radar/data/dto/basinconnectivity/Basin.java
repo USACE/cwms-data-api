@@ -5,12 +5,22 @@ import cwms.radar.data.dto.CwmsDTO;
 public final class Basin implements CwmsDTO
 {
     private final String _basinId;
+    private final String _officeId;
     private final Stream _primaryStream;
+    private final Double _sortOrder;
+    private final Double _basinArea;
+    private final Double _contributingArea;
+    private final String _parentBasinId;
 
-    public Basin(String basinId, Stream primaryStream)
+    Basin(BasinBuilder basinBuilder)
     {
-        _basinId = basinId;
-        _primaryStream = primaryStream;
+        _basinId = basinBuilder.getBasinId();
+        _primaryStream = basinBuilder.getPrimaryStream();
+        _officeId = basinBuilder.getOfficeId();
+        _sortOrder = basinBuilder.getSortOrder();
+        _basinArea = basinBuilder.getBasinArea();
+        _contributingArea = basinBuilder.getContributingArea();
+        _parentBasinId = basinBuilder.getParentBasinId();
     }
 
     public String getBasinId()
@@ -21,6 +31,31 @@ public final class Basin implements CwmsDTO
     public Stream getPrimaryStream()
     {
         return _primaryStream;
+    }
+
+    public String getOfficeId()
+    {
+        return _officeId;
+    }
+
+    public Double getSortOrder()
+    {
+        return _sortOrder;
+    }
+
+    public Double getBasinArea()
+    {
+        return _basinArea;
+    }
+
+    public Double getContributingArea()
+    {
+        return _contributingArea;
+    }
+
+    public String getParentBasinId()
+    {
+        return _parentBasinId;
     }
 
 }

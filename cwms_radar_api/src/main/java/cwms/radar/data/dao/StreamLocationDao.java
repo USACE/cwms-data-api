@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import cwms.radar.data.dto.basinconnectivity.StreamLocation;
+import cwms.radar.data.dto.basinconnectivity.StreamLocationBuilder;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
 
@@ -46,10 +47,22 @@ public class StreamLocationDao extends JooqDao<StreamLocation>
         while(rs.next())
         {
             String locationId = rs.getString(3);
+            String officeId = rs.getString(1);
             String streamId = rs.getString(2);
             Double station = toDouble(rs.getBigDecimal(4));
+            Double publishedStation = toDouble(rs.getBigDecimal(5));
+            Double navigationStation = toDouble(rs.getBigDecimal(6));
+            Double lowestMeasurableStage = toDouble(rs.getBigDecimal(7));
+            Double totalDrainageArea = toDouble(rs.getBigDecimal(9));
+            Double ungagedDrainageArea = toDouble(rs.getBigDecimal(10));
             String bank = rs.getString(7);
-            StreamLocation loc = new StreamLocation(locationId, streamId, station, bank);
+            StreamLocation loc = new StreamLocationBuilder(locationId, streamId, station, bank, officeId)
+                    .withPublishedStation(publishedStation)
+                    .withNavigationStation(navigationStation)
+                    .withLowestMeasurableStage(lowestMeasurableStage)
+                    .withTotalDrainageArea(totalDrainageArea)
+                    .withUngagedDrainageArea(ungagedDrainageArea)
+                    .build();
             retVal.add(loc);
         }
 

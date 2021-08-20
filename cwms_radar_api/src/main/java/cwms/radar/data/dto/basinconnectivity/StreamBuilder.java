@@ -10,24 +10,50 @@ import java.util.Set;
 
 public class StreamBuilder implements BuildStream, BuildDiversionStation, BuildConfluenceStation, BuildDiversionBank, BuildConfluenceBank
 {
-    private String _streamId;
-    private boolean _startsDownstream;
+    private final String _officeId;
+    private final String _streamId;
+    private final boolean _startsDownstream;
     private String _divertingStreamId; //flows from
     private String _receivingStreamId; //flows into
     private String _confluenceBank;
     private String _diversionBank;
-    private Double _streamLength;
+    private final Double _streamLength;
     private Double _confluenceStation;
     private Double _diversionStation;
     private final List<StreamLocation> _streamLocations = new ArrayList<>();
     private final List<Stream> _tributaries = new ArrayList<>();//streams that flow into this
     private final List<StreamReach> _streamReaches = new ArrayList<>();
+    private String _comment;
+    private Double _averageSlope;
 
-    public StreamBuilder(String streamId, boolean startsDownstream, Double streamLength)
+    public StreamBuilder(String streamId, boolean startsDownstream, Double streamLength, String officeId)
     {
         _streamId = streamId;
         _startsDownstream = startsDownstream;
         _streamLength = streamLength;
+        _officeId = officeId;
+    }
+
+    public StreamBuilder(Stream stream)
+    {
+        _streamId = stream.getStreamId();
+        _startsDownstream = stream.startsDownstream();
+        _streamLength = stream.getStreamLength();
+        _officeId = stream.getOfficeId();
+        _averageSlope = stream.getAverageSlope();
+        _comment = stream.getComment();
+        _receivingStreamId = stream.getReceivingStreamId();
+        _confluenceStation = stream.getConfluenceStation();
+        _confluenceBank = stream.getConfluenceBank();
+        _divertingStreamId = stream.getDivertingStreamId();
+        _diversionStation = stream.getDiversionStation();
+        _diversionBank = stream.getDiversionBank();
+        _tributaries.clear();
+        _tributaries.addAll(stream.getTributaries());
+        _streamReaches.clear();
+        _streamReaches.addAll(stream.getStreamReaches());
+        _streamLocations.clear();
+        _streamLocations.addAll(stream.getStreamLocations());
     }
 
     public BuildDiversionStation withDivertingStreamId(String divertingStreamId)
@@ -97,6 +123,18 @@ public class StreamBuilder implements BuildStream, BuildDiversionStation, BuildC
         return this;
     }
 
+    public BuildStream withComment(String comment)
+    {
+        _comment = comment;
+        return this;
+    }
+
+    public BuildStream withAverageSlope(Double averageSlope)
+    {
+        _averageSlope = averageSlope;
+        return this;
+    }
+
     String getStreamId()
     {
         return _streamId;
@@ -155,6 +193,21 @@ public class StreamBuilder implements BuildStream, BuildDiversionStation, BuildC
     List<Stream> getTributaries()
     {
         return new ArrayList<>(_tributaries);
+    }
+
+    String getComment()
+    {
+        return _comment;
+    }
+
+    Double getAverageSlope()
+    {
+        return _averageSlope;
+    }
+
+    String getOfficeId()
+    {
+        return _officeId;
     }
 
 }

@@ -8,13 +8,19 @@ public class StreamReach implements CwmsDTO
     private final String _downstreamLocationId;
     private final String _streamId;
     private final String _reachId;
+    private final String _officeId;
+    private final String _comment;
+    private final String _configuration;
 
-    public StreamReach(String reachId, String streamId, String upstreamLocationId, String downstreamLocationId)
+    StreamReach(StreamReachBuilder builder)
     {
-        _streamId = streamId;
-        _reachId = reachId;
-        _upstreamLocationId = upstreamLocationId;
-        _downstreamLocationId = downstreamLocationId;
+        _streamId = builder.getStreamId();
+        _reachId = builder.getReachId();
+        _upstreamLocationId = builder.getUpstreamLocationId();
+        _downstreamLocationId = builder.getDownstreamLocationId();
+        _comment = builder.getComment();
+        _configuration = builder.getConfiguration();
+        _officeId = builder.getOfficeId();
     }
 
     public String getReachId()
@@ -35,6 +41,21 @@ public class StreamReach implements CwmsDTO
     public String getDownstreamLocationId()
     {
         return _downstreamLocationId;
+    }
+
+    public String getComment()
+    {
+        return _comment;
+    }
+
+    public String getConfiguration()
+    {
+        return _configuration;
+    }
+
+    public String getOfficeId()
+    {
+        return _officeId;
     }
 
 }

@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import cwms.radar.data.dto.basinconnectivity.StreamReach;
+import cwms.radar.data.dto.basinconnectivity.StreamReachBuilder;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
 
@@ -42,9 +43,15 @@ public class StreamReachDao extends JooqDao<StreamReach>
             if (!reachId.isEmpty())
             {
                 String streamId = rs.getString(3);
+                String officeId = rs.getString(1);
                 String upstreamLocationId = rs.getString(5);
                 String downstreamLocationId = rs.getString(8);
-                StreamReach streamReach = new StreamReach(reachId, streamId, upstreamLocationId, downstreamLocationId);
+                String configuration = rs.getString(2);
+                String comment = rs.getString(11);
+                StreamReach streamReach = new StreamReachBuilder(reachId, streamId, upstreamLocationId, downstreamLocationId, officeId)
+                        .withComment(comment)
+                        .withConfiguration(configuration)
+                        .build();
                 retVal.add(streamReach);
             }
         }

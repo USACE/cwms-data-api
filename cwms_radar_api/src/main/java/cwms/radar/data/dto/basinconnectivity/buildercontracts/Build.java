@@ -1,8 +1,9 @@
 package cwms.radar.data.dto.basinconnectivity.buildercontracts;
 
+import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.basinconnectivity.Stream;
 
-public interface Build
+public interface Build<T>
 {
-    Stream build();
+    public T build();
 }
