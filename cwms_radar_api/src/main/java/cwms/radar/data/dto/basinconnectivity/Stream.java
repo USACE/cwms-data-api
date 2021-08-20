@@ -17,30 +17,27 @@ public final class Stream implements CwmsDTO
     private final Double _streamLength;
     private final Double _confluenceStation;
     private final Double _diversionStation;
-    private final ArrayList<StreamLocation> _streamLocations;
+    private final List<StreamLocation> _streamLocations;
 
-    //This could probably be refactored to use builder pattern
-    public Stream(String streamId, boolean startsDownstream, String divertingStreamId, String receivingStreamId,
-                  String diversionBank, String confluenceBank, Double diversionStation, Double confluenceStation,
-                  Double streamLength, Set<StreamLocation> streamLocations, Set<Stream> tributaries, Set<StreamReach> reachesOnStream)
+    Stream(StreamBuilder streamBuilder)
     {
-        _streamId = streamId;
-        _startsDownstream = startsDownstream;
-        _divertingStreamId = divertingStreamId;
-        _receivingStreamId = receivingStreamId;
-        _confluenceBank = confluenceBank;
-        _diversionBank = diversionBank;
-        _streamLength = streamLength;
-        _confluenceStation = confluenceStation;
-        _diversionStation = diversionStation;
-        _streamLocations = new ArrayList<>(streamLocations);
-        _tributaries = new ArrayList<>(tributaries);
-        _streamReaches = new ArrayList<>(reachesOnStream);
+        _streamId = streamBuilder.getStreamId();
+        _startsDownstream = streamBuilder.startDownstream();
+        _divertingStreamId = streamBuilder.getDivertingStreamId();
+        _receivingStreamId = streamBuilder.getReceivingStreamId();
+        _confluenceBank = streamBuilder.getConfluenceBank();
+        _diversionBank = streamBuilder.getDiversionBank();
+        _streamLength = streamBuilder.getStreamLength();
+        _confluenceStation = streamBuilder.getConfluenceStation();
+        _diversionStation = streamBuilder.getDiversionStation();
+        _streamLocations = streamBuilder.getStreamLocations();
+        _tributaries = streamBuilder.getTributaries();
+        _streamReaches = streamBuilder.getStreamReaches();
     }
 
     public List<StreamLocation> getStreamLocations()
     {
-        return _streamLocations;
+        return new ArrayList<>(_streamLocations);
     }
 
     public List<StreamReach> getStreamReaches()

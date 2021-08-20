@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import cwms.radar.data.dto.basinconnectivity.Stream;
+import cwms.radar.data.dto.basinconnectivity.StreamBuilder;
 import cwms.radar.data.dto.basinconnectivity.StreamLocation;
 import cwms.radar.data.dto.basinconnectivity.StreamReach;
 import org.jooq.DSLContext;
@@ -32,18 +33,17 @@ public class StreamDao extends JooqDao<Stream>
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
         Connection c = dsl.configuration().connectionProvider().acquire();
         StreamT streamResult = streamJooq.retrieveStreamF(c, streamId, pStationUnit, pOfficeId);
-        return new Stream(streamId,
-                streamResult.getStartsDownstream(),
-                streamResult.getDivertsFromStream(),
-                streamResult.getFlowsIntoStream(),
-                streamResult.getDivertsFromBank(),
-                streamResult.getFlowsIntoBank(),
-                streamResult.getDivertsFromStation(),
-                streamResult.getFlowsIntoStation(),
-                streamResult.getLength(),
-                getStreamLocationsOnStream(streamId, officeId),
-                getTributaries(streamId, officeId),
-                getReaches(streamId, officeId));
+        return new StreamBuilder(streamId, streamResult.getStartsDownstream(), streamResult.getLength())
+                .withDivertingStreamId( streamResult.getDivertsFromStream())
+                    .withDiversionStation(streamResult.getDivertsFromStation())
+                    .withDiversionBank(streamResult.getDivertsFromBank())
+                .withReceivingStreamId(streamResult.getFlowsIntoStream())
+                    .withConfluenceStation(streamResult.getFlowsIntoStation())
+                    .withConfluenceBank(streamResult.getFlowsIntoBank())
+                .withStreamLocations(getStreamLocationsOnStream(streamId, officeId))
+                .withTributaries(getTributaries(streamId, officeId))
+                .withStreamReaches(getReaches(streamId, officeId))
+                .build();
     }
 
     private Set<StreamLocation> getStreamLocationsOnStream(String streamId, String officeId) throws SQLException
@@ -92,18 +92,17 @@ public class StreamDao extends JooqDao<Stream>
             String diversionBank = result.getString(9);
             Double streamLength = toDouble(result.getBigDecimal(10));
             boolean startsDownstream = result.getBoolean(3);
-            Stream stream = new Stream(streamId,
-                    startsDownstream,
-                    divertingStreamId,
-                    receivingStreamId,
-                    diversionBank,
-                    confluenceBank,
-                    diversionStation,
-                    confluenceStation,
-                    streamLength,
-                    getStreamLocationsOnStream(streamId, officeId),
-                    getTributaries(streamId, officeId),
-                    getReaches(streamId, officeId));
+            Stream stream = new StreamBuilder(streamId, startsDownstream, streamLength)
+                    .withDivertingStreamId(divertingStreamId)
+                        .withDiversionStation(diversionStation)
+                        .withDiversionBank(diversionBank)
+                    .withReceivingStreamId(receivingStreamId)
+                        .withConfluenceStation(confluenceStation)
+                        .withConfluenceBank(confluenceBank)
+                    .withStreamLocations(getStreamLocationsOnStream(streamId, officeId))
+                    .withTributaries(getTributaries(streamId, officeId))
+                    .withStreamReaches(getReaches(streamId, officeId))
+                    .build();
             retVal.add(stream);
         }
 
