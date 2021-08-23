@@ -63,12 +63,7 @@ public class BasinController implements CrudHandler
             responses = {
                     @OpenApiResponse(status="200",
                             content = {
-                                    @OpenApiContent(type = Formats.JSON ),
-                                    @OpenApiContent(type = Formats.TAB ),
-                                    @OpenApiContent(type = Formats.CSV ),
-                                    @OpenApiContent(type = Formats.XML ),
-                                    @OpenApiContent(type = Formats.WML2),
-                                    @OpenApiContent(type = Formats.GEOJSON )
+                                    @OpenApiContent(type = Formats.JSON)
                             }),
                     @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a basin."),
                     @OpenApiResponse(status="501", description = "Requested format is not implemented")

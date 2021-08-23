@@ -2,37 +2,43 @@ package cwms.radar.api.graph.basinconnectivity;
 
 import cwms.radar.api.graph.basinconnectivity.edges.BasinConnectivityEdge;
 import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
+import cwms.radar.api.graph.pgjson.PgJsonEdge;
+import cwms.radar.api.graph.pgjson.PgJsonGraph;
+import cwms.radar.api.graph.pgjson.PgJsonNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BasinConnectivityGraph
+public class BasinConnectivityGraph implements PgJsonGraph
 {
 
     private final List<BasinConnectivityEdge> _edges = new ArrayList<>();
     private final List<BasinConnectivityNode> _nodes = new ArrayList<>();
+    private final String _id;
 
     BasinConnectivityGraph(BasinConnectivityGraphBuilder builder)
     {
-        _edges.clear();
-        _nodes.clear();
         _edges.addAll(builder.getEdges());
         _nodes.addAll(builder.getNodes());
+        _id = builder.getBasinId();
     }
 
-    public List<BasinConnectivityEdge> getEdges()
+    @Override
+    public List<PgJsonEdge> getEdges()
     {
         return new ArrayList<>(_edges);
     }
 
-    public List<BasinConnectivityNode> getNodes()
+    @Override
+    public List<PgJsonNode> getNodes()
     {
         return new ArrayList<>(_nodes);
     }
 
-    public boolean isEmpty()
+    @Override
+    public String getId()
     {
-        return getEdges().isEmpty() && getNodes().isEmpty();
+        return _id;
     }
 
 }

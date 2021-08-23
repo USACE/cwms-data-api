@@ -1,8 +1,10 @@
 package cwms.radar.data.dto.basinconnectivity;
 
-import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.api.graph.basinconnectivity.BasinConnectivityGraphBuilder;
+import cwms.radar.api.graph.pgjson.PgJsonGraph;
+import cwms.radar.data.dto.PgJsonDTO;
 
-public final class Basin implements CwmsDTO
+public final class Basin implements PgJsonDTO
 {
     private final String _basinId;
     private final String _officeId;
@@ -58,4 +60,9 @@ public final class Basin implements CwmsDTO
         return _parentBasinId;
     }
 
+    @Override
+    public PgJsonGraph getPgJsonGraph()
+    {
+        return new BasinConnectivityGraphBuilder(this).build();
+    }
 }

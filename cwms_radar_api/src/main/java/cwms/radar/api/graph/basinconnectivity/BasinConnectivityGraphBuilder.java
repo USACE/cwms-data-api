@@ -45,4 +45,9 @@ public class BasinConnectivityGraphBuilder
         }
         return retVal;
     }
+
+    public String getBasinId()
+    {
+        return _basin.getBasinId();
+    }
 }
