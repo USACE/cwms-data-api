@@ -19,7 +19,7 @@ public final class PgJsonFormatter
     public static String formatBasinConnectivityGraph(BasinConnectivityGraph graph)
     {
         String retVal = getDefaultPGJSON();
-        if(graph != null)
+        if(graph != null && !graph.isEmpty())
         {
             retVal = Json.createObjectBuilder()
                     .add("nodes", getJsonArray(graph.getNodes()))
