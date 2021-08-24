@@ -3,37 +3,32 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.BasinDao;
-import cwms.radar.data.dao.LocationsDao;
+import cwms.radar.data.dto.basinconnectivity.Basin;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.json.PgJsonFormatter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.ifc.basin.CwmsDbBasin;
-import usace.cwms.db.jooq.codegen.packages.CWMS_BASIN_PACKAGE;
-import usace.cwms.db.jooq.dao.CwmsDbBasinJooq;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 public class BasinController implements CrudHandler
 {
-    private static final Logger LOGGER = Logger.getLogger(LocationController.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
     private final MetricRegistry _metrics;
     private final Meter _getAllRequests;
     private final Timer _getAllRequestsTime;
@@ -53,12 +48,9 @@ public class BasinController implements CrudHandler
     }
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name="name", required=false, description="Specifies the name(s) of the time series whose data is to be included in the response. A case insensitive comparison is used to match names."),
-                    @OpenApiParam(name="office", required=false, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
-                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
-                    @OpenApiParam(name="datum", required=false, description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
-                    @OpenApiParam(name="timezone", required=false, description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used."),
-                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.    json (default)")
+                    @OpenApiParam(name="office", required=false, description="Specifies the owning office of the basin whose data is to be included in the response. If this field is not specified, matching basin information from all offices shall be returned."),
+                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
+                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are: json")
             },
             responses = {
                     @OpenApiResponse(status="200",
@@ -78,15 +70,24 @@ public class BasinController implements CrudHandler
         try(final Timer.Context timeContext = _getAllRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            String names = ctx.queryParam("names");
             String units = ctx.queryParam("unit");
-            String datum = ctx.queryParam("datum");
             String office = ctx.queryParam("office");
             String formatParm = ctx.queryParam("format", "");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
+            List<Basin> basins = basinDao.getAllBasins(office);
+            if(contentType.getType().equals(Formats.JSON))
+            {
+                PgJsonFormatter pgJsonFormatter = new PgJsonFormatter();
+                String result = pgJsonFormatter.format(basins);
+                ctx.result(result);
+            }
+        }
+        catch (SQLException ex)
+        {
+            LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
         }
     }
 
@@ -102,13 +103,50 @@ public class BasinController implements CrudHandler
     {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
+
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required=false, description="Specifies the owning office of the basin whose data is to be included in the response. If this field is not specified, matching basin information from all offices shall be returned."),
+                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
+                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are: json")
+            },
+            responses = {
+                    @OpenApiResponse(status="200",
+                            content = {
+                                    @OpenApiContent(type = Formats.JSON)
+                            }),
+                    @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a basin."),
+                    @OpenApiResponse(status="501", description = "Requested format is not implemented")
+            },
+            description = "Returns CWMS Basin Data",
+            tags = {"Basins"}
+    )
     @Override
-    public void getOne(@NotNull Context ctx, @NotNull String s)
+    public void getOne(@NotNull Context ctx, @NotNull String basinId)
     {
         _getOneRequest.mark();
-        try (final Timer.Context timeContext = _getOneRequestTime.time())
+        try(final Timer.Context timeContext = _getAllRequestsTime.time();
+            DSLContext dsl = getDslContext(ctx))
         {
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+            String units = ctx.queryParam("unit");
+            String office = ctx.queryParam("office");
+            String formatParam = ctx.queryParam("format", "");
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParam);
+            ctx.contentType(contentType.toString());
+            BasinDao basinDao = new BasinDao(dsl);
+            Basin basin = basinDao.getBasin(basinId, office);
+            if(contentType.getType().equals(Formats.JSON))
+            {
+                PgJsonFormatter pgJsonFormatter = new PgJsonFormatter();
+                String result = pgJsonFormatter.format(basin);
+                ctx.result(result);
+            }
+        }
+        catch (SQLException ex)
+        {
+            String errorMsg = "Error retrieving " + basinId;
+            LOGGER.log(Level.SEVERE, errorMsg, ex);
         }
     }
     @OpenApi(ignore = true)

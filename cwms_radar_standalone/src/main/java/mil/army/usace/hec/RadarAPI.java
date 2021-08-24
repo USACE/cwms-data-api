@@ -27,6 +27,7 @@ import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
+import cwms.radar.api.BasinController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.FormattingException;
@@ -164,6 +165,7 @@ public class RadarAPI {
             crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
+            crud("/basins/:basin-id", new BasinController(metrics));
             crud("/clobs/:clob-id", new ClobController(metrics));
             crud("/pools/:pool-id", new PoolController(metrics));
         });
