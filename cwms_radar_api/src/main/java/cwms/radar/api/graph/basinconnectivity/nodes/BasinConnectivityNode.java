@@ -18,6 +18,10 @@ public abstract class BasinConnectivityNode implements PgJsonNode
     {
         _streamId = streamId;
         _station = station;
+        if(bank == null)
+        {
+            bank = "L"; //default bank
+        }
         _bank = bank;
     }
 

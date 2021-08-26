@@ -8,6 +8,7 @@ import cwms.radar.data.dao.BasinDao;
 import cwms.radar.data.dto.basinconnectivity.Basin;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.PgJsonFormatter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -23,12 +24,17 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 public class BasinController implements CrudHandler
 {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
+    private static final List<String> SUPPORTED_CONTENT_TYPES = Arrays.asList
+        (
+            "json"
+        );
     private final MetricRegistry _metrics;
     private final Meter _getAllRequests;
     private final Timer _getAllRequestsTime;
@@ -49,8 +55,8 @@ public class BasinController implements CrudHandler
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name="office", required=false, description="Specifies the owning office of the basin whose data is to be included in the response. If this field is not specified, matching basin information from all offices shall be returned."),
-                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
-                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are: json")
+                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters. (This is default if no value is entered)\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters."),
+                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n 1. json (returns a PG-JSON graph. This is default if no value is entered)")
             },
             responses = {
                     @OpenApiResponse(status="200",
@@ -72,12 +78,24 @@ public class BasinController implements CrudHandler
         {
             String units = ctx.queryParam("unit");
             String office = ctx.queryParam("office");
-            String formatParm = ctx.queryParam("format", "");
+            String formatParam = ctx.queryParam("format", "");
+            if(units == null)
+            {
+                units = "EN";
+            }
+            if(formatParam == null)
+            {
+                formatParam = "json";
+            }
+            if(!SUPPORTED_CONTENT_TYPES.contains(formatParam))
+            {
+                throw new FormattingException("content-type " + formatParam + " is not implemented");
+            }
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParam);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
-            List<Basin> basins = basinDao.getAllBasins(office);
+            List<Basin> basins = basinDao.getAllBasins(units, office);
             if(contentType.getType().equals(Formats.JSON))
             {
                 PgJsonFormatter pgJsonFormatter = new PgJsonFormatter();
@@ -91,24 +109,11 @@ public class BasinController implements CrudHandler
         }
     }
 
-    @OpenApi(ignore = true)
-    @Override
-    public void create(@NotNull Context ctx)
-    {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
-    }
-    @OpenApi(ignore = true)
-    @Override
-    public void delete(@NotNull Context ctx, @NotNull String s)
-    {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
-    }
-
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name="office", required=false, description="Specifies the owning office of the basin whose data is to be included in the response. If this field is not specified, matching basin information from all offices shall be returned."),
-                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
-                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are: json")
+                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters. (This is default if no value is entered)\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters."),
+                    @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are: \r\n 1. json (returns a PG-JSON graph. This is default if no value is entered)")
             },
             responses = {
                     @OpenApiResponse(status="200",
@@ -131,11 +136,23 @@ public class BasinController implements CrudHandler
             String units = ctx.queryParam("unit");
             String office = ctx.queryParam("office");
             String formatParam = ctx.queryParam("format", "");
+            if(units == null)
+            {
+                units = "EN";
+            }
+            if(formatParam == null)
+            {
+                formatParam = "json";
+            }
+            if(!SUPPORTED_CONTENT_TYPES.contains(formatParam))
+            {
+                throw new FormattingException("content-type " + formatParam + " is not implemented");
+            }
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParam);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
-            Basin basin = basinDao.getBasin(basinId, office);
+            Basin basin = basinDao.getBasin(basinId, units, office);
             if(contentType.getType().equals(Formats.JSON))
             {
                 PgJsonFormatter pgJsonFormatter = new PgJsonFormatter();
@@ -152,6 +169,20 @@ public class BasinController implements CrudHandler
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String s)
+    {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    }
+
+    @OpenApi(ignore = true)
+    @Override
+    public void create(@NotNull Context ctx)
+    {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    }
+
+    @OpenApi(ignore = true)
+    @Override
+    public void delete(@NotNull Context ctx, @NotNull String s)
     {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
