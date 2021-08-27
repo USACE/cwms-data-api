@@ -16,6 +16,7 @@ ext.JAVA_EE_WEB_VERSION='7.0'
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'checkstyle'
 
     compileJava{
         sourceCompatibility = "1.8"
