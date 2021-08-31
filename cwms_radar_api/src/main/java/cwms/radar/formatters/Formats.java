@@ -32,12 +32,13 @@ public class Formats {
     public static final String TAB = "text/tab-separated-values";
     public static final String CSV = "text/csv";
     public static final String GEOJSON = "application/geo+json";
+    public static final String PGJSON = "application/vnd.pg+json";
 
 
     private static List<ContentType> contentTypeList = new ArrayList<>();
     static {
         contentTypeList.addAll(
-            Arrays.asList(JSON,XML, XMLV2, WML2,JSONV2,TAB,CSV, GEOJSON)
+            Arrays.asList(JSON,XML, XMLV2, WML2,JSONV2,TAB,CSV, GEOJSON, PGJSON)
             .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
     private static Map<String,String> typeMap = new LinkedHashMap<>();
@@ -48,6 +49,7 @@ public class Formats {
         typeMap.put("tab",Formats.TAB);
         typeMap.put("csv",Formats.CSV);
         typeMap.put("geojson",Formats.GEOJSON);
+        typeMap.put("pgjson", Formats.PGJSON);
     }
 
 

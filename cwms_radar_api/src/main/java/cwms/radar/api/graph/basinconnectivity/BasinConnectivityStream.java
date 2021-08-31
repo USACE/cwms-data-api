@@ -15,30 +15,29 @@ import java.util.*;
 
 public class BasinConnectivityStream
 {
-    private final List<BasinConnectivityNode> _streamNodes;
-    private final Stream _stream;
-    private final String _receivingStreamId;
-    private final List<BasinConnectivityStream> _tributaries;
-    private final List<BasinConnectivityReach> _reaches;
-    private BasinConnectivityNode _diversionNode;
+    private final List<BasinConnectivityNode> streamNodes;
+    private final Stream stream;
+    private final String receivingStreamId;
+    private final List<BasinConnectivityStream> tributaries;
+    private final List<BasinConnectivityReach> reaches;
+    private BasinConnectivityNode diversionNode;
 
     public BasinConnectivityStream(Stream stream, String receivingStreamId)
     {
-        _stream = stream;
-        _tributaries = buildBasinConnectivityTributaries();
-        _reaches = buildBasinConnectivityReaches();
-        _receivingStreamId= receivingStreamId;
-        _streamNodes = new ArrayList<>(buildStreamLocationNodes(stream.getStreamLocations()));
-        addEmptyNodes(); //adds terminal nodes and tributary junction nodes to _streamNodes, then sorts by station
+        this.stream = stream;
+        this.tributaries = buildBasinConnectivityTributaries();
+        this.reaches = buildBasinConnectivityReaches();
+        this.receivingStreamId= receivingStreamId;
+        this.streamNodes = new ArrayList<>(buildStreamLocationNodes(stream.getStreamLocations()));
+        addEmptyNodes(); //adds terminal nodes and tributary junction nodes to this.streamNodes, then sorts by station
     }
 
     private List<BasinConnectivityStream> buildBasinConnectivityTributaries()
     {
         List<BasinConnectivityStream> retval = new ArrayList<>();
-        Stream stream = getStream();
         for(Stream tributary : stream.getTributaries())
         {
-            retval.add(new BasinConnectivityStream(tributary, stream.getStreamId()));
+            retval.add(new BasinConnectivityStream(tributary, stream.getStreamName()));
 
         }
         return retval;
@@ -47,7 +46,6 @@ public class BasinConnectivityStream
     private List<BasinConnectivityReach> buildBasinConnectivityReaches()
     {
         List<BasinConnectivityReach> retval = new ArrayList<>();
-        Stream stream = getStream();
         for(StreamReach reach : stream.getStreamReaches())
         {
             retval.add(new BasinConnectivityReach(reach, this));
@@ -67,27 +65,27 @@ public class BasinConnectivityStream
 
     public Stream getStream()
     {
-        return _stream;
+        return stream;
     }
 
     public List<BasinConnectivityNode> getStreamNodes()
     {
-        return new ArrayList<>(_streamNodes);
+        return new ArrayList<>(streamNodes);
     }
 
     private boolean isPrimary()
     {
-        return _receivingStreamId == null;
+        return receivingStreamId == null;
     }
 
     public List<BasinConnectivityStream> getTributaries()
     {
-        return _tributaries;
+        return tributaries;
     }
 
     public List<BasinConnectivityReach> getReaches()
     {
-        return _reaches;
+        return reaches;
     }
 
     private static List<StreamEdge> createAllStreamEdges(BasinConnectivityStream stream)
@@ -114,17 +112,17 @@ public class BasinConnectivityStream
             {
                 targetNode = streamNodes.get(0);
             }
-            StreamEdge edge = new StreamEdge(currentStream.getStreamId(), diversionNode, targetNode);
+            StreamEdge edge = new StreamEdge(currentStream.getStreamName(), diversionNode, targetNode);
             retval.add(edge);
         }
         for(int i=0; i < streamNodes.size() -1; i++)
         {
-            StreamEdge edge = new StreamEdge(currentStream.getStreamId(), streamNodes.get(i), streamNodes.get(i+1));
+            StreamEdge edge = new StreamEdge(currentStream.getStreamName(), streamNodes.get(i), streamNodes.get(i+1));
             retval.add(edge);
         }
         if(isTributary && !streamNodes.isEmpty()) //if tributary, then connect last edge to junction node in receiving stream
         {
-            StreamEdge edge = new StreamEdge(currentStream.getStreamId(), streamNodes.get(streamNodes.size() -1), confluenceNode);
+            StreamEdge edge = new StreamEdge(currentStream.getStreamName(), streamNodes.get(streamNodes.size() -1), confluenceNode);
             retval.add(edge);
         }
         for(BasinConnectivityStream tributary : currentBasinConnStream.getTributaries())
@@ -167,16 +165,16 @@ public class BasinConnectivityStream
 
     private void sortStreamNodesByStation()
     {
-        _streamNodes.sort(new BasinConnectivityNodeComparator(getStream().startsDownstream()));
+        streamNodes.sort(new BasinConnectivityNodeComparator(getStream().startsDownstream()));
     }
 
     private BasinConnectivityNode getFirstNode()
     {
         BasinConnectivityNode retval = null;
-        if(!_streamNodes.isEmpty())
+        if(!streamNodes.isEmpty())
         {
-            ArrayList<BasinConnectivityNode> copyNodes = new ArrayList<>(_streamNodes);
-            copyNodes.sort(new BasinConnectivityNodeComparator(getStream().startsDownstream()));
+            ArrayList<BasinConnectivityNode> copyNodes = new ArrayList<>(streamNodes);
+            copyNodes.sort(new BasinConnectivityNodeComparator(stream.startsDownstream()));
             retval = copyNodes.get(0);
         }
         return retval;
@@ -185,7 +183,7 @@ public class BasinConnectivityStream
 
     private BasinConnectivityNode getDiversionNode()
     {
-        return _diversionNode;
+        return diversionNode;
     }
 
     public List<BasinConnectivityEdge> getEdges()
@@ -222,7 +220,6 @@ public class BasinConnectivityStream
 
     private void addTerminalNodes()
     {
-        Stream stream = getStream();
         boolean startsDownstream = stream.startsDownstream();
         double firstStation = startsDownstream ? stream.getStreamLength() : 0.0;
         double lastStation = startsDownstream ? 0.0 : stream.getStreamLength();
@@ -230,13 +227,13 @@ public class BasinConnectivityStream
         BasinConnectivityNode lastNode = getNodeAtStation(lastStation);
         if(firstNode == null)
         {
-            firstNode = new EmptyStreamNode(stream.getStreamId(), firstStation, "L");
-            _streamNodes.add(firstNode);
+            firstNode = new EmptyStreamNode(stream.getStreamName(), firstStation, "L");
+            streamNodes.add(firstNode);
         }
         if(lastNode == null && isPrimary()) //if this is a tributary (not primary), 'last node' will be junction node on primary stream
         {
-            lastNode = new EmptyStreamNode(stream.getStreamId(), lastStation, "L");
-            _streamNodes.add(lastNode);
+            lastNode = new EmptyStreamNode(stream.getStreamName(), lastStation, "L");
+            streamNodes.add(lastNode);
         }
     }
 
@@ -250,20 +247,20 @@ public class BasinConnectivityStream
             BasinConnectivityStream divertsFromStream = getChildStream(tributary.getDivertingStreamId());
             if(divertsFromStream != null) //if the stream the tributary diverts from is also in basin
             {
-                BasinConnectivityNode diversionNode = divertsFromStream.getNodeAtStation(diversionStation);
-                if(diversionNode == null) //if no stream node at this station, we must make an empty node
+                BasinConnectivityNode tributaryDiversionNode = divertsFromStream.getNodeAtStation(diversionStation);
+                if(tributaryDiversionNode == null) //if no stream node at this station, we must make an empty node
                 {
-                    diversionNode = new EmptyStreamNode(divertsFromStream.getStream().getStreamId(), diversionStation, basinConnTributary.getStream().getDiversionBank());
-                    divertsFromStream.insertNode(diversionNode);
+                    tributaryDiversionNode = new EmptyStreamNode(divertsFromStream.getStream().getStreamName(), diversionStation, basinConnTributary.getStream().getDiversionBank());
+                    divertsFromStream.insertNode(tributaryDiversionNode);
                     basinConnTributary.removeNode(basinConnTributary.getFirstNode()); //remove first node from tributary, because this node now exists on tributary's diversion stream
                 }
-                basinConnTributary.setDiversionNode(diversionNode);
+                basinConnTributary.setDiversionNode(tributaryDiversionNode);
             }
             BasinConnectivityNode existingNodeAtConfluenceStation = getNodeAtStation(confluenceStation);
             if(existingNodeAtConfluenceStation == null) //if no stream node at this station, we must make an empty node
             {
-                EmptyStreamNode emptyNode = new EmptyStreamNode(getStream().getStreamId(), confluenceStation, basinConnTributary.getStream().getConfluenceBank());
-                _streamNodes.add(emptyNode);
+                EmptyStreamNode emptyNode = new EmptyStreamNode(getStream().getStreamName(), confluenceStation, basinConnTributary.getStream().getConfluenceBank());
+                streamNodes.add(emptyNode);
             }
         }
     }
@@ -290,22 +287,22 @@ public class BasinConnectivityStream
 
     private void setDiversionNode(BasinConnectivityNode diversionNode)
     {
-        _diversionNode = diversionNode;
+        this.diversionNode = diversionNode;
     }
 
     private void removeNode(BasinConnectivityNode node)
     {
-        _streamNodes.remove(node);
+        streamNodes.remove(node);
     }
 
     private void insertNode(BasinConnectivityNode node)
     {
-        int index = Collections.binarySearch(_streamNodes, node, new BasinConnectivityNodeComparator(getStream().startsDownstream()));
+        int index = Collections.binarySearch(streamNodes, node, new BasinConnectivityNodeComparator(getStream().startsDownstream()));
         if (index < 0)
         {
             index = -index - 1;
         }
-        _streamNodes.add(index, node);
+        streamNodes.add(index, node);
     }
 
     /**
@@ -317,10 +314,9 @@ public class BasinConnectivityStream
     private BasinConnectivityStream getChildStream(String streamId)
     {
         BasinConnectivityStream retval = null;
-        List<BasinConnectivityStream> tributaries = getTributaries();
         for(BasinConnectivityStream tributary : tributaries)
         {
-            if(tributary.getStream().getStreamId().equalsIgnoreCase(streamId))
+            if(tributary.getStream().getStreamName().equalsIgnoreCase(streamId))
             {
                 retval = tributary;
             }

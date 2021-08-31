@@ -1,11 +1,11 @@
-package cwms.radar.api.graph.pgjson;
+package cwms.radar.api.graph;
 
 import java.util.List;
 
-public interface PgJsonGraph
+public interface Graph
 {
-    List<PgJsonEdge> getEdges();
-    List<PgJsonNode> getNodes();
+    List<Edge> getEdges();
+    List<Node> getNodes();
     String getId();
     default boolean isEmpty()
     {

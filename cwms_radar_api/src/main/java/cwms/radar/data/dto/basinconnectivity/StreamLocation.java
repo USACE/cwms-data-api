@@ -4,79 +4,152 @@ import cwms.radar.data.dto.CwmsDTO;
 
 public class StreamLocation implements CwmsDTO
 {
-    private final String _locationId;
-    private final String _streamId;
-    private final Double _station;
-    private final String _bank;
-    private final String _officeId;
-    private final Double _publishedStation;
-    private final Double _navigationStation;
-    private final Double _lowestMeasurableStage;
-    private final Double _totalDrainageArea;
-    private final Double _ungagedDrainageArea;
+    private final String locationName;
+    private final String streamName;
+    private final Double station;
+    private final String bank;
+    private final String officeId;
+    private final Double publishedStation;
+    private final Double navigationStation;
+    private final Double lowestMeasurableStage;
+    private final Double totalDrainageArea;
+    private final Double ungagedDrainageArea;
 
-    StreamLocation(StreamLocationBuilder builder)
+    private StreamLocation(Builder builder)
     {
-        _locationId = builder.getLocationId();
-        _streamId = builder.getStreamId();
-        _station = builder.getStation();
-        _bank = builder.getBank();
-        _officeId = builder.getOfficeId();
-        _publishedStation = builder.getPublishedStation();
-        _navigationStation = builder.getNagivationStation();
-        _lowestMeasurableStage = builder.getLowestMeasurableStage();
-        _totalDrainageArea = builder.getTotalDrainageArea();
-        _ungagedDrainageArea = builder.getUngagedDrainageArea();
+        locationName = builder.locationName;
+        streamName = builder.streamName;
+        station = builder.station;
+        bank = builder.bank;
+        officeId = builder.officeId;
+        publishedStation = builder.publishedStation;
+        navigationStation = builder.navigationStation;
+        lowestMeasurableStage = builder.lowestMeasurableStage;
+        totalDrainageArea = builder.totalDrainageArea;
+        ungagedDrainageArea = builder.ungagedDrainageArea;
     }
 
-    public String getStreamId()
+    public String getStreamName()
     {
-        return _streamId;
+        return streamName;
     }
 
     public Double getStation()
     {
-        return _station;
+        return station;
     }
 
     public String getBank()
     {
-        return _bank;
+        return bank;
     }
 
-    public String getLocationId()
+    public String getLocationName()
     {
-        return _locationId;
+        return locationName;
     }
 
     public Double getPublishedStation()
     {
-        return _publishedStation;
+        return publishedStation;
     }
 
     public Double getNagivationStation()
     {
-        return _navigationStation;
+        return navigationStation;
     }
 
     public Double getLowestMeasurableStage()
     {
-        return _lowestMeasurableStage;
+        return lowestMeasurableStage;
     }
 
     public Double getTotalDrainageArea()
     {
-        return _totalDrainageArea;
+        return totalDrainageArea;
     }
 
     public Double getUngagedDrainageArea()
     {
-        return _ungagedDrainageArea;
+        return ungagedDrainageArea;
     }
 
     public String getOfficeId()
     {
-        return _officeId;
+        return officeId;
     }
+
+    public static class Builder
+    {
+        private final String officeId;
+        private final String locationName;
+        private final String streamName;
+        private final Double station;
+        private final String bank;
+        private Double publishedStation;
+        private Double navigationStation;
+        private Double lowestMeasurableStage;
+        private Double totalDrainageArea;
+        private Double ungagedDrainageArea;
+
+        public Builder(String locationName, String streamName, Double station, String bank, String officeId)
+        {
+            this.locationName = locationName;
+            this.streamName = streamName;
+            this.station = station;
+            this.bank = bank;
+            this.officeId = officeId;
+        }
+
+        public Builder(StreamLocation streamLocation)
+        {
+            this.locationName = streamLocation.getLocationName();
+            this.streamName = streamLocation.getStreamName();
+            this.station = streamLocation.getStation();
+            this.bank = streamLocation.getBank();
+            this.officeId = streamLocation.getOfficeId();
+            this.publishedStation = streamLocation.getPublishedStation();
+            this.navigationStation = streamLocation.getNagivationStation();
+            this.lowestMeasurableStage = streamLocation.getLowestMeasurableStage();
+            this.totalDrainageArea = streamLocation.getTotalDrainageArea();
+            this.ungagedDrainageArea = streamLocation.getUngagedDrainageArea();
+        }
+
+        public Builder withPublishedStation(Double publishedStation)
+        {
+            this.publishedStation = publishedStation;
+            return this;
+        }
+
+        public Builder withNavigationStation(Double navigationStation)
+        {
+            this.navigationStation = navigationStation;
+            return this;
+        }
+
+        public Builder withLowestMeasurableStage(Double lowestMeasurableStage)
+        {
+            this.lowestMeasurableStage = lowestMeasurableStage;
+            return this;
+        }
+
+        public Builder withTotalDrainageArea(Double totalDrainageArea)
+        {
+            this.totalDrainageArea = totalDrainageArea;
+            return this;
+        }
+
+        public Builder withUngagedDrainageArea(Double ungagedDrainageArea)
+        {
+            this.ungagedDrainageArea = ungagedDrainageArea;
+            return this;
+        }
+
+        public StreamLocation build()
+        {
+            return new StreamLocation(this);
+        }
+    }
+
 }
 

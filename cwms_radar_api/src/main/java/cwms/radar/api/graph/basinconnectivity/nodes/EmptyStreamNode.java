@@ -1,8 +1,6 @@
 package cwms.radar.api.graph.basinconnectivity.nodes;
 
-import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
-
-public class EmptyStreamNode extends BasinConnectivityNode//probably needs a better name
+public class EmptyStreamNode extends BasinConnectivityNode
 {
     private static final String LABEL = "EMPTY";
 

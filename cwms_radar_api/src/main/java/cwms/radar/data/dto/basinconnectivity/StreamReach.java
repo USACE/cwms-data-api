@@ -4,58 +4,102 @@ import cwms.radar.data.dto.CwmsDTO;
 
 public class StreamReach implements CwmsDTO
 {
-    private final String _upstreamLocationId;
-    private final String _downstreamLocationId;
-    private final String _streamId;
-    private final String _reachId;
-    private final String _officeId;
-    private final String _comment;
-    private final String _configuration;
+    private final String upstreamLocationName;
+    private final String downstreamLocationName;
+    private final String streamName;
+    private final String reachName;
+    private final String officeId;
+    private final String comment;
+    private final String configuration;
 
-    StreamReach(StreamReachBuilder builder)
+    StreamReach(Builder builder)
     {
-        _streamId = builder.getStreamId();
-        _reachId = builder.getReachId();
-        _upstreamLocationId = builder.getUpstreamLocationId();
-        _downstreamLocationId = builder.getDownstreamLocationId();
-        _comment = builder.getComment();
-        _configuration = builder.getConfiguration();
-        _officeId = builder.getOfficeId();
+        streamName = builder.streamName;
+        reachName = builder.reachName;
+        upstreamLocationName = builder.upstreamLocationName;
+        downstreamLocationName = builder.downstreamLocationName;
+        comment = builder.comment;
+        configuration = builder.configuration;
+        officeId = builder.officeId;
     }
 
-    public String getReachId()
+    public String getReachName()
     {
-        return _reachId;
+        return reachName;
     }
 
-    public String getStreamId()
+    public String getStreamName()
     {
-        return _streamId; //stream that reach is on
+        return streamName; //stream that reach is on
     }
 
-    public String getUpstreamLocationId()
+    public String getUpstreamLocationName()
     {
-        return _upstreamLocationId;
+        return upstreamLocationName;
     }
 
-    public String getDownstreamLocationId()
+    public String getDownstreamLocationName()
     {
-        return _downstreamLocationId;
+        return downstreamLocationName;
     }
 
     public String getComment()
     {
-        return _comment;
+        return comment;
     }
 
     public String getConfiguration()
     {
-        return _configuration;
+        return configuration;
     }
 
     public String getOfficeId()
     {
-        return _officeId;
+        return officeId;
+    }
+
+    public static class Builder
+    {
+
+        private final String streamName;
+        private final String reachName;
+        private final String upstreamLocationName;
+        private final String downstreamLocationName;
+        private final String officeId;
+        private String comment;
+        private String configuration;
+
+        public Builder(String reachName, String streamName, String upstreamLocationName, String downstreamLocationName, String officeId) {
+            this.streamName = streamName;
+            this.reachName = reachName;
+            this.upstreamLocationName = upstreamLocationName;
+            this.downstreamLocationName = downstreamLocationName;
+            this.officeId = officeId;
+        }
+
+        public Builder(StreamReach streamReach) {
+            this.streamName = streamReach.getStreamName();
+            this.reachName = streamReach.getReachName();
+            this.upstreamLocationName = streamReach.getUpstreamLocationName();
+            this.downstreamLocationName = streamReach.getDownstreamLocationName();
+            this.officeId = streamReach.getOfficeId();
+            this.comment = streamReach.getComment();
+            this.configuration = streamReach.getConfiguration();
+        }
+
+        public Builder withComment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public Builder withConfiguration(String configuration) {
+            this.configuration = configuration;
+            return this;
+        }
+
+        public StreamReach build() {
+            return new StreamReach(this);
+        }
     }
 
 }

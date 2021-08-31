@@ -6,23 +6,35 @@ public class BasinConnectivityStreamLocation extends BasinConnectivityNode
 {
 
     private static final String LABEL = "Stream Location";
-    private final StreamLocation _streamLocation;
+    private final StreamLocation streamLocation;
 
     public BasinConnectivityStreamLocation(StreamLocation streamLocation)
     {
-        super(streamLocation.getStreamId(), streamLocation.getStation(), streamLocation.getBank());
-        _streamLocation = streamLocation;
+        super(streamLocation.getStreamName(), streamLocation.getStation(), streamLocation.getBank());
+        this.streamLocation = streamLocation;
     }
 
     @Override
     public String getId()
     {
-        return _streamLocation.getLocationId();
+        return streamLocation.getLocationName();
     }
 
     @Override
     public String getLabel()
     {
         return LABEL;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return super.hashCode();
     }
 }

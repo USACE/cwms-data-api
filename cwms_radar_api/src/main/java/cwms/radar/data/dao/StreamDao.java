@@ -1,10 +1,10 @@
 package cwms.radar.data.dao;
 
+import cwms.radar.api.enums.Unit;
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.basinconnectivity.Stream;
-import cwms.radar.data.dto.basinconnectivity.StreamBuilder;
 import cwms.radar.data.dto.basinconnectivity.StreamLocation;
 import cwms.radar.data.dto.basinconnectivity.StreamReach;
-import cwms.radar.data.util.BasinUnitsConverter;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.stream.StreamT;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class StreamDao extends JooqDao<Stream>
@@ -25,32 +26,22 @@ public class StreamDao extends JooqDao<Stream>
 
     public Stream getStream(String streamId, String unitSystem, String officeId) throws SQLException
     {
-        String pStationUnit = "km";
-        String stationUnitOut = "km";
-        if(unitSystem.equals("EN"))
-        {
-            stationUnitOut = "mi";
-        }
-        String pOfficeId = null;
-        if (officeId != null)
-        {
-            pOfficeId = officeId;
-        }
+        String pStationUnit = UnitSystem.EN.value().equals(unitSystem) ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-        Connection c = dsl.configuration().connectionProvider().acquire();
-        StreamT streamResult = streamJooq.retrieveStreamF(c, streamId, pStationUnit, pOfficeId);
-        Double streamLength = BasinUnitsConverter.convertUnits(streamResult.getLength(), pStationUnit, stationUnitOut);
-        return new StreamBuilder(streamId, streamResult.getStartsDownstream(), streamLength, streamResult.getOfficeId())
+        AtomicReference<StreamT> streamResultRef = new AtomicReference<>();
+        dsl.connection(c -> streamResultRef.set(streamJooq.retrieveStreamF(c, streamId, pStationUnit, officeId)));
+        StreamT streamResult = streamResultRef.get();
+        return new Stream.Builder(streamId, streamResult.getStartsDownstream(), streamResult.getLength(), streamResult.getOfficeId())
                 .withDivertingStreamId( streamResult.getDivertsFromStream())
-                    .withDiversionStation(BasinUnitsConverter.convertUnits(streamResult.getDivertsFromStation(), pStationUnit, stationUnitOut))
+                    .withDiversionStation(streamResult.getDivertsFromStation())
                     .withDiversionBank(streamResult.getDivertsFromBank())
                 .withReceivingStreamId(streamResult.getFlowsIntoStream())
-                    .withConfluenceStation(BasinUnitsConverter.convertUnits(streamResult.getFlowsIntoStation(), pStationUnit, stationUnitOut))
+                    .withConfluenceStation(streamResult.getFlowsIntoStation())
                     .withConfluenceBank(streamResult.getFlowsIntoBank())
                 .withComment(streamResult.getComments())
                 .withAverageSlope(streamResult.getAverageSlope())
                 .withStreamLocations(getStreamLocationsOnStream(streamId, unitSystem, officeId))
-                .withTributaries(getTributaries(streamId, unitSystem, pStationUnit, stationUnitOut, officeId))
+                .withTributaries(getTributaries(streamId, unitSystem, officeId))
                 .withStreamReaches(getReaches(streamId, officeId))
                 .build();
     }
@@ -67,46 +58,46 @@ public class StreamDao extends JooqDao<Stream>
         return streamReachDao.getReachesOnStream(streamId, officeId);
     }
 
-    private Set<Stream> getTributaries(String streamId, String unitSystem, String stationUnitIn, String stationUnitOut, String officeId)  throws SQLException
+    private Set<Stream> getTributaries(String streamId, String unitSystem, String officeId)  throws SQLException
     {
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
         Connection c = dsl.configuration().connectionProvider().acquire();
-        ResultSet rs = streamJooq.catStreams(c, null, "km", null, streamId, null, null, null, null, null, null, null, null, null, null, null, null, officeId);
-        return buildStreamsFromResultSet(rs, streamId, unitSystem, stationUnitIn, stationUnitOut);
+        String pStationUnit = UnitSystem.EN.value().equals(unitSystem) ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
+        ResultSet rs = streamJooq.catStreams(c, null, pStationUnit, null, streamId, null, null, null, null, null, null, null, null, null, null, null, null, officeId);
+        return buildStreamsFromResultSet(rs, streamId, unitSystem);
     }
 
-    private Set<Stream> buildStreamsFromResultSet(ResultSet result, String parentStreamId, String unitSystem, String stationUnitIn, String stationUnitOut) throws SQLException
+    private Set<Stream> buildStreamsFromResultSet(ResultSet result, String parentStreamId, String unitSystem) throws SQLException
     {
         Set<Stream> retVal = new HashSet<>();
 
         while (result.next())
         {
-            String officeId = result.getString(1);
-            String streamId = result.getString(2);
-            String receivingStreamId = result.getString(4);
+            String officeId = result.getString("OFFICE_ID");
+            String streamId = result.getString("STREAM_ID");
+            String receivingStreamId = result.getString("FLOWS_INTO_STREAM");
             if(receivingStreamId != null && receivingStreamId.equals(parentStreamId))
             {
                 Double confluenceStation = null;
-                Object confluenceObject = result.getObject(5);
+                Object confluenceObject = result.getObject("FLOWS_INTO_STATION");
                 if (confluenceObject instanceof Double)
                 {
-                    confluenceStation = BasinUnitsConverter.convertUnits((Double) confluenceObject, stationUnitIn, stationUnitOut);
+                    confluenceStation = (Double) confluenceObject;
                 }
-                String confluenceBank = result.getString(6);
-                String divertingStreamId = result.getString(7);
+                String confluenceBank = result.getString("FLOWS_INTO_BANK");
+                String divertingStreamId = result.getString("DIVERTS_FROM_STREAM");
                 Double diversionStation = null;
-                Object diversionObject = result.getObject(8);
+                Object diversionObject = result.getObject("DIVERTS_FROM_STATION");
                 if (diversionObject instanceof Double)
                 {
-                    diversionStation = BasinUnitsConverter.convertUnits((Double) diversionObject, stationUnitIn, stationUnitOut);
+                    diversionStation = (Double) diversionObject;
                 }
-                String diversionBank = result.getString(9);
-                Double streamLength = toDouble(result.getBigDecimal(10));
-                streamLength = BasinUnitsConverter.convertUnits((Double) streamLength, stationUnitIn, stationUnitOut);
-                boolean startsDownstream = result.getBoolean(3);
-                Double averageSlope = toDouble(result.getBigDecimal(11));
-                String comment = result.getString(12);
-                Stream stream = new StreamBuilder(streamId, startsDownstream, streamLength, officeId)
+                String diversionBank = result.getString("DIVERTS_FROM_BANK");
+                Double streamLength = toDouble(result.getBigDecimal("STREAM_LENGTH"));
+                boolean startsDownstream = result.getBoolean("STATIONING_STARTS_DS");
+                Double averageSlope = toDouble(result.getBigDecimal("AVERAGE_SLOPE"));
+                String comment = result.getString("COMMENTS");
+                Stream stream = new Stream.Builder(streamId, startsDownstream, streamLength, officeId)
                         .withDivertingStreamId(divertingStreamId)
                         .withDiversionStation(diversionStation)
                         .withDiversionBank(diversionBank)
@@ -116,7 +107,7 @@ public class StreamDao extends JooqDao<Stream>
                         .withComment(comment)
                         .withAverageSlope(averageSlope)
                         .withStreamLocations(getStreamLocationsOnStream(streamId, unitSystem, officeId))
-                        .withTributaries(getTributaries(streamId, unitSystem, stationUnitIn, stationUnitOut, officeId))
+                        .withTributaries(getTributaries(streamId, unitSystem, officeId))
                         .withStreamReaches(getReaches(streamId, officeId))
                         .build();
                 retVal.add(stream);

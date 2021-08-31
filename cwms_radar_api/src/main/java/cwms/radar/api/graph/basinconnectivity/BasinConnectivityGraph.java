@@ -1,44 +1,77 @@
 package cwms.radar.api.graph.basinconnectivity;
 
+import cwms.radar.api.graph.Edge;
+import cwms.radar.api.graph.Node;
 import cwms.radar.api.graph.basinconnectivity.edges.BasinConnectivityEdge;
 import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
-import cwms.radar.api.graph.pgjson.PgJsonEdge;
-import cwms.radar.api.graph.pgjson.PgJsonGraph;
-import cwms.radar.api.graph.pgjson.PgJsonNode;
+import cwms.radar.api.graph.Graph;
+import cwms.radar.data.dto.basinconnectivity.Basin;
+import cwms.radar.data.dto.basinconnectivity.Stream;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BasinConnectivityGraph implements PgJsonGraph
+public class BasinConnectivityGraph implements Graph
 {
 
-    private final List<BasinConnectivityEdge> _edges = new ArrayList<>();
-    private final List<BasinConnectivityNode> _nodes = new ArrayList<>();
-    private final String _id;
+    private final List<BasinConnectivityEdge> edges = new ArrayList<>();
+    private final List<BasinConnectivityNode> nodes = new ArrayList<>();
+    private final String id;
 
-    BasinConnectivityGraph(BasinConnectivityGraphBuilder builder)
+    private BasinConnectivityGraph(Builder builder)
     {
-        _edges.addAll(builder.getEdges());
-        _nodes.addAll(builder.getNodes());
-        _id = builder.getBasinId();
+        edges.addAll(builder.edges);
+        nodes.addAll(builder.nodes);
+        id = builder.basin.getBasinName();
     }
 
     @Override
-    public List<PgJsonEdge> getEdges()
+    public List<Edge> getEdges()
     {
-        return new ArrayList<>(_edges);
+        return new ArrayList<>(edges);
     }
 
     @Override
-    public List<PgJsonNode> getNodes()
+    public List<Node> getNodes()
     {
-        return new ArrayList<>(_nodes);
+        return new ArrayList<>(nodes);
     }
+
+
 
     @Override
     public String getId()
     {
-        return _id;
+        return id;
+    }
+
+    public static class Builder
+    {
+
+        private final List<BasinConnectivityEdge> edges = new ArrayList<>();
+        private final List<BasinConnectivityNode> nodes = new ArrayList<>();
+        private final Basin basin;
+
+        public Builder(Basin basin)
+        {
+            this.basin = basin;
+        }
+
+        public BasinConnectivityGraph build()
+        {
+            edges.clear();
+            nodes.clear();
+            BasinConnectivityGraph retVal = new BasinConnectivityGraph(this);
+            Stream primaryStream = basin.getPrimaryStream();
+            if(primaryStream != null)
+            {
+                BasinConnectivityStream primaryBasinConnStream = new BasinConnectivityStream(primaryStream, null);
+                edges.addAll(primaryBasinConnStream.getEdges());
+                nodes.addAll(primaryBasinConnStream.getNodes());
+                retVal = new BasinConnectivityGraph(this);
+            }
+            return retVal;
+        }
     }
 
 }

@@ -1,66 +1,44 @@
 package cwms.radar.api.graph.basinconnectivity.nodes;
 
+import cwms.radar.api.graph.Node;
 import cwms.radar.api.graph.basinconnectivity.BasinConnectivityStream;
-import cwms.radar.api.graph.pgjson.PgJsonNode;
 import org.jetbrains.annotations.NotNull;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import java.util.List;
+import java.util.*;
 
-public abstract class BasinConnectivityNode implements PgJsonNode
+public abstract class BasinConnectivityNode implements Node
 {
-    private final String _streamId;
-    private final Double _station;
-    private final String _bank;
+    private final String streamId;
+    private final Double station;
+    private final String bank;
 
     protected BasinConnectivityNode(String streamId, Double station, String bank)
     {
-        _streamId = streamId;
-        _station = station;
+        this.streamId = streamId;
+        this.station = station;
         if(bank == null)
         {
             bank = "L"; //default bank
         }
-        _bank = bank;
+        this.bank = bank;
     }
-
-    public abstract String getId();
 
     public String getBank()
     {
-        return _bank;
+        return bank;
     }
 
     public Double getStation()
     {
-        return _station;
+        return station;
     }
 
     public String getStreamId()
     {
-        return _streamId;
+        return streamId;
     }
 
-    @Override
-    public JsonObject getProperties()
-    {
-        return Json.createObjectBuilder()
-                .add("stream_id", Json.createArrayBuilder().add(getStreamId()))
-                .add("station", Json.createArrayBuilder().add(getStation()))
-                .add("bank", Json.createArrayBuilder().add(getBank()))
-                .build();
-    }
-
-    @Override
-    public JsonObject toPGJSON()
-    {
-        return Json.createObjectBuilder()
-                .add("id", getId())
-                .add("labels", Json.createArrayBuilder().add(getLabel()))
-                .add("properties", getProperties())
-                .build();
-    }
+    public abstract String getLabel();
 
     @Override
     public boolean equals(Object obj)
@@ -86,8 +64,6 @@ public abstract class BasinConnectivityNode implements PgJsonNode
         final int prime = 31;
         int result = 1;
         String name = getId();
-        Double station = getStation();
-        String streamId = getStreamId();
         result = prime * result + ((name == null) ? 0 : name.toLowerCase().hashCode());
         result = prime * result + ((station == null) ? 0 : station.hashCode());
         result = prime * result + ((streamId == null) ? 0 : streamId.toLowerCase().hashCode());

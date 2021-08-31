@@ -1,15 +1,15 @@
 package cwms.radar.data.dao;
 
+import cwms.radar.api.enums.Unit;
 import cwms.radar.data.dto.basinconnectivity.StreamReach;
-import cwms.radar.data.dto.basinconnectivity.StreamReachBuilder;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class StreamReachDao extends JooqDao<StreamReach>
@@ -21,16 +21,11 @@ public class StreamReachDao extends JooqDao<StreamReach>
 
     public Set<StreamReach> getReachesOnStream(String streamId, String officeId) throws SQLException
     {
-        String pStationUnitIn = "km";
-        String pOfficeIdMaskIn = null;
-        if (officeId != null)
-        {
-            pOfficeIdMaskIn = officeId;
-        }
-        Connection c = dsl.configuration().connectionProvider().acquire();
+        String pStationUnitIn = Unit.KILOMETER.getValue();
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-        ResultSet rs = streamJooq.catStreamReaches(c, streamId, null, null, null, pStationUnitIn, pOfficeIdMaskIn);
-        return buildReachesFromResultSet(rs);
+        AtomicReference<ResultSet> resultSetRef = new AtomicReference<>();
+        dsl.connection(c -> resultSetRef.set(streamJooq.catStreamReaches(c, streamId, null, null, null, pStationUnitIn, officeId)));
+        return buildReachesFromResultSet(resultSetRef.get());
     }
 
     private Set<StreamReach> buildReachesFromResultSet(ResultSet rs) throws SQLException
@@ -39,16 +34,16 @@ public class StreamReachDao extends JooqDao<StreamReach>
 
         while(rs.next())
         {
-            String reachId = rs.getString(4);
+            String reachId = rs.getString("REACH_LOCATION");
             if (!reachId.isEmpty())
             {
-                String streamId = rs.getString(3);
-                String officeId = rs.getString(1);
-                String upstreamLocationId = rs.getString(5);
-                String downstreamLocationId = rs.getString(8);
-                String configuration = rs.getString(2);
-                String comment = rs.getString(11);
-                StreamReach streamReach = new StreamReachBuilder(reachId, streamId, upstreamLocationId, downstreamLocationId, officeId)
+                String streamId = rs.getString("STREAM_LOCATION");
+                String officeId = rs.getString("OFFICE_ID");
+                String upstreamLocationId = rs.getString("UPSTREAM_LOCATION");
+                String downstreamLocationId = rs.getString("DOWNSTREAM_LOCATION");
+                String configuration = rs.getString("CONFIGURATION");
+                String comment = rs.getString("COMMENTS");
+                StreamReach streamReach = new StreamReach.Builder(reachId, streamId, upstreamLocationId, downstreamLocationId, officeId)
                         .withComment(comment)
                         .withConfiguration(configuration)
                         .build();

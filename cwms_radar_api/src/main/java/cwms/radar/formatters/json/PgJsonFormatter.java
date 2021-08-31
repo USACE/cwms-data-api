@@ -1,7 +1,19 @@
 package cwms.radar.formatters.json;
 
-import cwms.radar.api.graph.pgjson.PgJsonElement;
-import cwms.radar.api.graph.pgjson.PgJsonGraph;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.radar.api.graph.Edge;
+import cwms.radar.api.graph.Graph;
+import cwms.radar.api.graph.Node;
+import cwms.radar.api.graph.basinconnectivity.BasinConnectivityGraph;
+import cwms.radar.api.graph.basinconnectivity.edges.ReachEdge;
+import cwms.radar.api.graph.basinconnectivity.edges.StreamEdge;
+import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
+import cwms.radar.api.graph.pg.dto.*;
+import cwms.radar.api.graph.pg.properties.PgProperties;
+import cwms.radar.api.graph.pg.properties.basinconnectivity.PgReachEdgeProperties;
+import cwms.radar.api.graph.pg.properties.basinconnectivity.PgStreamEdgeProperties;
+import cwms.radar.api.graph.pg.properties.basinconnectivity.PgStreamNodeProperties;
 import cwms.radar.data.dto.*;
 import cwms.radar.data.dto.basinconnectivity.Basin;
 import cwms.radar.formatters.Formats;
@@ -9,76 +21,126 @@ import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
 import service.annotations.FormatService;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import java.util.List;
+import java.util.*;
 
-@FormatService(contentType = Formats.JSON, dataTypes = {Basin.class})
+@FormatService(contentType = Formats.PGJSON, dataTypes = {Basin.class})
 public final class PgJsonFormatter implements OutputFormatter
 {
 
+    private final ObjectMapper om;
+
     public PgJsonFormatter()
     {
-        super();
+        om = new ObjectMapper();
     }
 
-    private String formatGraph(PgJsonGraph graph)
+    private String formatGraph(Graph graph) throws JsonProcessingException
     {
         String id = graph.getId();
         String retVal = getDefaultPGJSON(id);
         if(!graph.isEmpty())
         {
-            JsonObject nodesEdgesJson = Json.createObjectBuilder()
-                    .add("nodes", getJsonArray(graph.getNodes()))
-                    .add("edges", getJsonArray(graph.getEdges()))
-                    .build();
-            retVal = Json.createObjectBuilder()
-                    .add(id, nodesEdgesJson)
-                    .build()
-                    .toString();
+            retVal = om.writeValueAsString(getFormattedMap(graph));
         }
         return retVal;
     }
 
-    private static String getDefaultPGJSON(String id)
+    private Map<String, PgGraphData> getFormattedMap(Graph graph)
     {
-        JsonObject nodesEdgesJson = Json.createObjectBuilder()
-                .add("nodes", Json.createArrayBuilder())
-                .add("edges", Json.createArrayBuilder()).build();
-        return Json.createObjectBuilder()
-                .add(id, nodesEdgesJson)
-                .build()
-                .toString();
+        String id = graph.getId();
+        Map<String, PgGraphData> pgGraphMap = new HashMap<>();
+        List<PgNodeData> formattedNodes = formatNodes(graph.getNodes());
+        List<PgEdgeData> formattedEdges = formatEdges(graph.getEdges());
+        PgGraphData graphData = new PgGraphData(formattedNodes, formattedEdges);
+        pgGraphMap.put(id, graphData);
+        return pgGraphMap;
+    }
+    private List<PgEdgeData> formatEdges(List<Edge> edges)
+    {
+        List<PgEdgeData> retval = new ArrayList<>();
+        for(Edge edge : edges)
+        {
+            PgEdgeData edgeData;
+            if(edge instanceof StreamEdge)
+            {
+                StreamEdge streamEdge = (StreamEdge) edge;
+                PgProperties properties = new PgStreamEdgeProperties(streamEdge.getStreamId());
+                String[] labels = new String[]{streamEdge.getLabel()};
+                edgeData = new PgEdgeData(streamEdge.getSource().getId(), streamEdge.getTarget().getId(), labels, false, properties);
+            }
+            else if(edge instanceof  ReachEdge)
+            {
+                ReachEdge reachEdge = (ReachEdge) edge;
+                PgProperties properties = new PgReachEdgeProperties(reachEdge.getStreamId(), reachEdge.getId());
+                String[] labels = new String[]{reachEdge.getLabel()};
+                edgeData = new PgEdgeData(reachEdge.getSource().getId(), reachEdge.getTarget().getId(), labels, false, properties);
+            }
+            else
+            {
+                throw new IllegalArgumentException("PG-JSON format does not currently support this Edge type");
+            }
+            retval.add(edgeData);
+        }
+        return retval;
     }
 
-    private static JsonArray getJsonArray(List<? extends PgJsonElement> elements)
+    private List<PgNodeData> formatNodes(List<Node> nodes)
     {
-        JsonArrayBuilder builder = Json.createArrayBuilder();
-        for(PgJsonElement element : elements)
+        List<PgNodeData> retval = new ArrayList<>();
+        for(Node node : nodes)
         {
-            builder.add(element.toPGJSON());
+            if(node instanceof BasinConnectivityNode)
+            {
+                String nodeId = node.getId();
+                BasinConnectivityNode basinConnNode = (BasinConnectivityNode) node;
+                String[] labels = new String[]{basinConnNode.getLabel()};
+                PgProperties properties = new PgStreamNodeProperties(basinConnNode.getStreamId(), basinConnNode.getStation(), basinConnNode.getBank());
+                retval.add(new PgNodeData(nodeId, labels, properties));
+            }
+            else
+            {
+                throw new IllegalArgumentException("PG-JSON format does not currently support this Node type");
+            }
         }
-        return builder.build();
+        return retval;
+    }
+
+    private String getDefaultPGJSON(String id) throws JsonProcessingException
+    {
+        Map<String, PgGraphData> basinGraphMap= new LinkedHashMap<>();
+        basinGraphMap.put(id, new PgGraphData(new ArrayList<>(), new ArrayList<>()));
+        return om.writeValueAsString(basinGraphMap);
     }
 
     @Override
     public String getContentType()
     {
-        return Formats.JSON;
+        return Formats.PGJSON;
     }
 
     @Override
     public String format(CwmsDTO dto)
     {
-        if(!(dto instanceof PgJsonDTO))
+        String retVal;
+        Graph graph;
+        if(dto instanceof Basin)
         {
-            throw new FormattingException(dto.getClass().getSimpleName() + " is not a pg-json data object. Object must implement PgJsonDTO.");
+            Basin basin = (Basin) dto;
+            graph = new BasinConnectivityGraph.Builder(basin).build();
         }
-        PgJsonDTO pgJsonDTO = (PgJsonDTO) dto;
-        PgJsonGraph graph = pgJsonDTO.getPgJsonGraph();
-        return formatGraph(graph);
+        else
+        {
+            throw new FormattingException(dto.getClass().getSimpleName() + " is not currently supported for PG-JSON format.");
+        }
+        try
+        {
+            retVal = formatGraph(graph);
+        }
+        catch (JsonProcessingException e)
+        {
+            throw new FormattingException(e.getMessage());
+        }
+        return retVal;
     }
 
     @Override

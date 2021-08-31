@@ -2,23 +2,21 @@ package cwms.radar.api.graph.basinconnectivity.edges;
 
 import cwms.radar.api.graph.basinconnectivity.nodes.BasinConnectivityNode;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
 public class ReachEdge extends BasinConnectivityEdge
 {
     private static final String LABEL = "Reach";
-    private final String _reachId;
+    private final String reachId;
 
     public ReachEdge(String reachId, String streamId, BasinConnectivityNode source, BasinConnectivityNode target)
     {
         super(streamId, source, target);
-        _reachId = reachId;
+        this.reachId = reachId;
     }
 
-    private String getReachId()
+    @Override
+    public String getId()
     {
-        return _reachId;
+        return reachId;
     }
 
     @Override
@@ -27,12 +25,4 @@ public class ReachEdge extends BasinConnectivityEdge
         return LABEL;
     }
 
-    @Override
-    public JsonObject getProperties()
-    {
-        return Json.createObjectBuilder()
-                .add("reach_id", Json.createArrayBuilder().add(getReachId()))
-                .add("stream_id", Json.createArrayBuilder().add(getStreamId()))
-                .build();
-    }
 }
