@@ -47,7 +47,7 @@ public class NamedPgJsonFormatter implements OutputFormatter
             }
             else
             {
-                throw new FormattingException(dto.getClass().getSimpleName() + " is not currently supported for Basin-PG-JSON format.");
+                throw new FormattingException(dto.getClass().getSimpleName() + " is not currently supported for Named-PG-JSON format.");
             }
         }
         catch (JsonProcessingException e)
