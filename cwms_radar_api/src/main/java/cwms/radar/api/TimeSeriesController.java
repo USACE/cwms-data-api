@@ -1,8 +1,11 @@
 package cwms.radar.api;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -38,11 +41,15 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.json.JavalinJson;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jooq.DSLContext;
+
+import usace.cwms.db.jooq.dao.CwmsDbTsJooq;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
@@ -57,6 +64,10 @@ public class TimeSeriesController implements CrudHandler {
     private final Timer getOneRequestTime;
     private final Meter getRecentRequests;
     private final Timer getRecentRequestsTime;
+    private final Meter createRequests;
+    private final Timer createRequestsTime;
+    private final Meter deleteRequests;
+    private final Timer deleteRequestsTime;
 
     private final Histogram requestResultSize;
     private final int defaultPageSize = 500;
@@ -71,25 +82,77 @@ public class TimeSeriesController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
         getRecentRequests = this.metrics.meter(name(className,"getRecent","count"));
         getRecentRequestsTime = this.metrics.timer(name(className,"getRecent","time"));
+        createRequests = this.metrics.meter(name(className,"create","count"));
+        createRequestsTime = this.metrics.timer(name(className,"create","time"));
+        deleteRequests = this.metrics.meter(name(className,"delete","count"));
+        deleteRequestsTime = this.metrics.timer(name(className,"delete","time"));
     }
 
-    @OpenApi(tags = {"TimeSeries"}, ignore = true)
+    @OpenApi(
+
+    )
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        createRequests.mark();
+        // Not 100% sure I want to stick with TimeSeries here
+        // but it would make the most sense...
+        // Probably need to validate that the input arg
+        // doesn't do pagination
+        // possibly also validate the start/stop dates
+        // possibly validate the interval
+        TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
+
+        try (
+           final Timer.Context timeContext = createRequestsTime.time();
+           DSLContext dsl = getDslContext(ctx))
+        {
+            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            dao.createOrStore(timeSeries);
+            ctx.status(HttpServletResponse.SC_OK);
+        }
+        catch(SQLException ex)
+        {
+            RadarError re = new RadarError("Internal Error");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
+
+
     }
 
-    @OpenApi(tags = {"TimeSeries"}, ignore = true)
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the timeseries to be deleted.")
+            }
+    )
     @Override
-    public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+    public void delete(Context ctx, String tsId) {
+        deleteRequests.mark();
+
+        String office = ctx.queryParam("office");
+
+        try (
+                final Timer.Context timeContext = deleteRequestsTime.time();
+                DSLContext dsl = getDslContext(ctx))
+        {
+            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            dao.delete(office, tsId);
+        }
+        catch(SQLException ex)
+        {
+            RadarError re = new RadarError("Internal Error");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
+
+        ctx.status(HttpServletResponse.SC_OK);
 
     }
 
     @OpenApi(
         queryParams = {
             @OpenApiParam(name="name", required=true, description="Specifies the name(s) of the time series whose data is to be included in the response. A case insensitive comparison is used to match names."),
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
+            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the time series(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
             @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   (default) Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
             @OpenApiParam(name="datum", required=false, description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
             @OpenApiParam(name="begin", required=false, description="Specifies the start of the time window for data to be included in the response. If this field is not specified, any required time window begins 24 hours prior to the specified or default end time. The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-0700[PST8PDT]'."),
@@ -117,6 +180,7 @@ public class TimeSeriesController implements CrudHandler {
                       @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a timeseries."),
                       @OpenApiResponse(status="501",description = "Requested format is not implemented")
                     },
+            method = HttpMethod.GET,
         tags = {"TimeSeries"}
     )
     @Override
@@ -185,7 +249,7 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    @OpenApi(tags = {"TimeSeries"}, ignore = true)
+    @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
@@ -196,9 +260,10 @@ public class TimeSeriesController implements CrudHandler {
 
     }
 
-    @OpenApi(tags = {"TimeSeries"}, ignore = true)
+    @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
+
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -241,7 +306,12 @@ public class TimeSeriesController implements CrudHandler {
 
                     ),
                     @OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group(s) were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Timeseries Groups Data", tags = {"Timeseries Groups"})
+                    @OpenApiResponse(status = "501", description = "request format is not implemented")
+            },
+            description = "Returns CWMS Timeseries Groups Data",
+            tags = {"TimeSeries"},
+            method = HttpMethod.GET
+    )
     public void getRecent(Context ctx)
     {
         // what does recent do?

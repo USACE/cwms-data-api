@@ -1,6 +1,8 @@
 package cwms.radar.data.dao;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -12,9 +14,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -47,6 +51,9 @@ import org.jooq.SelectSelectStep;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 
+import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
+import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ROUNDING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
@@ -54,6 +61,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.dao.CwmsDbTsJooq;
 
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
@@ -65,6 +73,9 @@ import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 public class TimeSeriesDao extends JooqDao<TimeSeries>
 {
 	private static final Logger logger = Logger.getLogger(TimeSeriesDao.class.getName());
+
+	public static final String STORE_RULE = "DELETE INSERT";
+	public static final boolean OVERRIDE_PROTECTION = true;
 
 	public TimeSeriesDao(DSLContext dsl)
 	{
@@ -506,4 +517,80 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 				jrecord.getValue(tsvView.UNIT_ID.getName(), String.class),
 				jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class));
 	}
+
+	public void createOrStore(TimeSeries input) throws SQLException
+	{
+		dsl.connection(connection -> {
+			CwmsDbTs tsDao = new CwmsDbTsJooq();
+			//  I think the CwmsDbServiceLookup needs -Dcwms.db.impl.classpaths=.....
+			//		CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
+			final String officeId = input.getOfficeId();
+			final String tsId = input.getName();
+
+			final String units = input.getUnits();
+
+			List<TimeSeries.Record> values = input.getValues();
+			final int count = values == null ? 0 : values.size();
+
+			if(count == 0)
+			{
+				int utcOffsetMinutes = 0;
+				int intervalForward = 0;
+				int intervalBackward = 0;
+				boolean versionedFlag = false;
+				boolean activeFlag = true;
+				tsDao.createTsCodeBigInteger(connection, officeId, tsId, utcOffsetMinutes,
+						intervalForward, intervalBackward, versionedFlag, activeFlag);
+			}
+			else
+			{
+				store(connection, tsDao, officeId, tsId, units, values, count);
+			}
+		});
+
+
+	}
+
+	public void store(Connection connection, CwmsDbTs tsDao, String officeId, String tsId, String units,
+						   List<TimeSeries.Record> values, int count) throws SQLException
+	{
+		final long[] timeArray = new long[count];
+		final double[] valueArray = new double[count];
+		final int[] qualityArray = new int[count];
+
+		if(values != null && !values.isEmpty())
+		{
+			Iterator<TimeSeries.Record> iter = values.iterator();
+			for(int i = 0; iter.hasNext(); i++)
+			{
+				TimeSeries.Record value = iter.next();
+				timeArray[i] = value.getDateTime().getTime();
+				valueArray[i] = value.getValue();
+				qualityArray[i] = value.getQualityCode();
+			}
+		}
+
+		final Timestamp versionDate = null;  // Where does this come from?
+		final boolean createAsLrts = false;  // Not sure what this means.
+
+		long retval = tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
+				STORE_RULE, OVERRIDE_PROTECTION, versionDate, createAsLrts);
+		// It looks like the store method returns the time when the proc completed?
+		// Doesn't seem like a useful thing to return to me.
+	}
+
+	public void delete(String officeId, String tsId)throws SQLException
+	{
+		CwmsDbTs tsDao = new CwmsDbTsJooq();
+
+		// How much do we want to delete?
+		dsl.connection(connection -> {
+			tsDao.deleteData(connection, officeId, tsId);
+			tsDao.deleteKey(connection, officeId, tsId);
+			tsDao.deleteAll(connection, officeId, tsId);
+		});
+	}
+
+
+
 }
