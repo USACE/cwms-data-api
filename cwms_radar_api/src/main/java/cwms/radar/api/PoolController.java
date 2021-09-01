@@ -7,6 +7,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.PoolDao;
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.Pool;
@@ -159,16 +160,28 @@ public class PoolController implements CrudHandler
 			//			pool = dao.retrievePool(projectId, poolId, office);
 			Pool pool = dao.retrievePoolFromCatalog(projectId, poolId, bottomMask, topMask, isExplicit, isImplicit, office);
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-			ctx.contentType(contentType.toString());
+			if(pool == null)
+			{
+				RadarError re = new RadarError("Unable to find pool based on parameters given");
+				logger.info(() -> {
+					String fullUrl = ctx.fullUrl();
+					return new StringBuilder().append(re).append(System.lineSeparator()).append(
+							"for request ").append(fullUrl).toString();
+				});
+				ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
+			} else
+			{
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+				ctx.contentType(contentType.toString());
 
-			String result = Formats.format(contentType, pool);
+				String result = Formats.format(contentType, pool);
 
-			ctx.result(result);
-			requestResultSize.update(result.length());
+				ctx.result(result);
+				requestResultSize.update(result.length());
 
-			ctx.status(HttpServletResponse.SC_OK);
+				ctx.status(HttpServletResponse.SC_OK);
+			}
 		}
 
 	}

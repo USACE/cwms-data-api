@@ -12,6 +12,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
 import cwms.radar.api.LevelsController;
@@ -46,6 +47,7 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
 
 
 public class RadarAPI {
@@ -78,7 +80,7 @@ public class RadarAPI {
     public RadarAPI(javax.sql.DataSource ds, int port){
         this.port = port;
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
-        JavalinValidation.register(UnitSystem.class, v -> UnitSystem.systemFor(v) );
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
 
         ObjectMapper om = JavalinJackson.getObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -93,9 +95,7 @@ public class RadarAPI {
                 config.enableDevLogging();
             }
             config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
-            config.configureServletContextHandler( sch -> {
-                sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*");
-            });
+            config.configureServletContextHandler( sch -> sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*"));
             config.addStaticFiles("/static");
         }).attribute(PolicyFactory.class,sanitizer)
 
@@ -124,10 +124,7 @@ public class RadarAPI {
             } else {
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
             }
-            logger.log(Level.SEVERE,fe, () -> {
-                return new StringBuilder(re.toString())
-                .append("for request: " + ctx.fullUrl()).toString();
-            });
+            logger.log(Level.SEVERE,fe, () -> re + "for request: " + ctx.fullUrl());
             ctx.json(re);
         })
         .exception(UnsupportedOperationException.class, (e, ctx) -> {
@@ -160,11 +157,15 @@ public class RadarAPI {
             crud("/parameters/:param_name", new ParametersController(metrics));
             crud("/timezones/:zone", new TimeZoneController(metrics));
             crud("/levels/:location", new LevelsController(metrics));
-            crud("/timeseries/:timeseries", new TimeSeriesController(metrics));
+            TimeSeriesController tsController = new TimeSeriesController(metrics);
+            crud("/timeseries/:timeseries", tsController);
+            get("/timeseries/recent/:group-id", tsController::getRecent);
+
             crud("/timeseries/category/:category-id", new TimeSeriesCategoryController(metrics));
             crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
+            crud("/blobs/:blob-id", new BlobController(metrics));
             crud("/basins/:basin-id", new BasinController(metrics));
             crud("/clobs/:clob-id", new ClobController(metrics));
             crud("/pools/:pool-id", new PoolController(metrics));
