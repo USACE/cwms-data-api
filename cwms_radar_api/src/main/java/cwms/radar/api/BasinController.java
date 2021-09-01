@@ -9,7 +9,7 @@ import cwms.radar.data.dao.BasinDao;
 import cwms.radar.data.dto.basinconnectivity.Basin;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.json.PgJsonFormatter;
+import cwms.radar.formatters.json.NamedPgJsonFormatter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -56,7 +56,7 @@ public class BasinController implements CrudHandler
             responses = {
                     @OpenApiResponse(status="200",
                             content = {
-                                    @OpenApiContent(from = Basin.class, type = Formats.PGJSON)
+                                    @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
                             }),
                     @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a basin."),
                     @OpenApiResponse(status="501", description = "Requested format is not implemented")
@@ -73,15 +73,15 @@ public class BasinController implements CrudHandler
         {
             String units = ctx.queryParam("unit", UnitSystem.EN.value());
             String office = ctx.queryParam("office");
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.PGJSON;
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
-            if(contentType.getType().equals(Formats.PGJSON))
+            if(contentType.getType().equals(Formats.NAMED_PGJSON))
             {
-                PgJsonFormatter pgJsonFormatter = new PgJsonFormatter();
-                String result = pgJsonFormatter.format(basins);
+                NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
+                String result = basinPgJsonFormatter.format(basins);
                 ctx.result(result);
             }
         }
@@ -99,7 +99,7 @@ public class BasinController implements CrudHandler
             responses = {
                     @OpenApiResponse(status="200",
                             content = {
-                                    @OpenApiContent(from = Basin.class, type = Formats.PGJSON)
+                                    @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
                             }),
                     @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a basin."),
                     @OpenApiResponse(status="501", description = "Requested format is not implemented")
@@ -116,15 +116,15 @@ public class BasinController implements CrudHandler
         {
             String units = ctx.queryParam("unit", UnitSystem.EN.value());
             String office = ctx.queryParam("office");
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.PGJSON;
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);
-            if(contentType.getType().equals(Formats.PGJSON))
+            if(contentType.getType().equals(Formats.NAMED_PGJSON))
             {
-                PgJsonFormatter pgJsonFormatter = new PgJsonFormatter();
-                String result = pgJsonFormatter.format(basin);
+                NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
+                String result = basinPgJsonFormatter.format(basin);
                 ctx.result(result);
             }
             else

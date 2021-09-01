@@ -4,20 +4,20 @@ import cwms.radar.api.graph.pg.properties.PgProperties;
 
 public class PgNodeData
 {
-    private final String id;
+    private final String name;
     private final String[] labels;
     private final PgProperties properties;
 
-    public PgNodeData(String id, String[] labels, PgProperties properties)
+    public PgNodeData(String name, String[] labels, PgProperties properties)
     {
-        this.id = id;
+        this.name = name;
         this.labels = labels;
         this.properties = properties;
     }
 
-    public String getId()
+    public String getName()
     {
-        return id;
+        return name;
     }
 
     public String[] getLabels()

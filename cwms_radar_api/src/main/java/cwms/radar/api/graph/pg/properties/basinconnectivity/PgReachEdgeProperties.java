@@ -2,16 +2,16 @@ package cwms.radar.api.graph.pg.properties.basinconnectivity;
 
 public class PgReachEdgeProperties extends PgStreamEdgeProperties
 {
-    private final String[] reachId;
+    private final String[] reachName;
 
-    public PgReachEdgeProperties(String streamId, String reachId)
+    public PgReachEdgeProperties(String streamName, String reachName)
     {
-        super(streamId);
-        this.reachId = new String[]{reachId};
+        super(streamName);
+        this.reachName = new String[]{reachName};
     }
 
-    public String[] getReachId()
+    public String[] getReachName()
     {
-        return reachId;
+        return reachName;
     }
 }

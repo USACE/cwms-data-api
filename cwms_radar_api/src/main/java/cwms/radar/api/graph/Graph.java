@@ -6,7 +6,7 @@ public interface Graph
 {
     List<Edge> getEdges();
     List<Node> getNodes();
-    String getId();
+    String getName();
     default boolean isEmpty()
     {
         return getEdges().isEmpty() && getNodes().isEmpty();

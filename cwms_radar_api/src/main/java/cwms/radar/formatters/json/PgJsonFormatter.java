@@ -36,24 +36,19 @@ public final class PgJsonFormatter implements OutputFormatter
 
     private String formatGraph(Graph graph) throws JsonProcessingException
     {
-        String id = graph.getId();
-        String retVal = getDefaultPGJSON(id);
+        String retVal = getDefaultPGJSON();
         if(!graph.isEmpty())
         {
-            retVal = om.writeValueAsString(getFormattedMap(graph));
+            retVal = om.writeValueAsString(getFormattedGraph(graph));
         }
         return retVal;
     }
 
-    private Map<String, PgGraphData> getFormattedMap(Graph graph)
+    public PgGraphData getFormattedGraph(Graph graph)
     {
-        String id = graph.getId();
-        Map<String, PgGraphData> pgGraphMap = new HashMap<>();
         List<PgNodeData> formattedNodes = formatNodes(graph.getNodes());
         List<PgEdgeData> formattedEdges = formatEdges(graph.getEdges());
-        PgGraphData graphData = new PgGraphData(formattedNodes, formattedEdges);
-        pgGraphMap.put(id, graphData);
-        return pgGraphMap;
+        return new PgGraphData(formattedNodes, formattedEdges);
     }
     private List<PgEdgeData> formatEdges(List<Edge> edges)
     {
@@ -105,11 +100,9 @@ public final class PgJsonFormatter implements OutputFormatter
         return retval;
     }
 
-    private String getDefaultPGJSON(String id) throws JsonProcessingException
+    private String getDefaultPGJSON() throws JsonProcessingException
     {
-        Map<String, PgGraphData> basinGraphMap= new LinkedHashMap<>();
-        basinGraphMap.put(id, new PgGraphData(new ArrayList<>(), new ArrayList<>()));
-        return om.writeValueAsString(basinGraphMap);
+        return om.writeValueAsString(new PgGraphData(new ArrayList<>(), new ArrayList<>()));
     }
 
     @Override

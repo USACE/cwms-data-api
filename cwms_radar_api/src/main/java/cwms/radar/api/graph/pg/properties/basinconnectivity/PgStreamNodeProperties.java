@@ -5,20 +5,20 @@ import cwms.radar.api.graph.pg.properties.PgProperties;
 
 public class PgStreamNodeProperties implements PgProperties
 {
-    private final String[] streamId;
+    private final String[] streamName;
     private final Double[] station;
     private final String[] bank;
 
-    public PgStreamNodeProperties(String streamId, Double station, String bank)
+    public PgStreamNodeProperties(String streamName, Double station, String bank)
     {
-        this.streamId = new String[]{streamId};
+        this.streamName = new String[]{streamName};
         this.station = new Double[]{station};
         this.bank = new String[]{bank};
     }
 
-    public String[] getStreamId()
+    public String[] getStreamName()
     {
-        return streamId;
+        return streamName;
     }
 
     public Double[] getStation()

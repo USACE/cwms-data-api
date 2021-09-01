@@ -4,15 +4,15 @@ import cwms.radar.api.graph.pg.properties.PgProperties;
 
 public class PgStreamEdgeProperties implements PgProperties
 {
-    private final String[] streamId;
+    private final String[] streamName;
 
-    public PgStreamEdgeProperties(String streamId)
+    public PgStreamEdgeProperties(String streamName)
     {
-        this.streamId = new String[]{streamId};
+        this.streamName = new String[]{streamName};
     }
 
-    public String[] getStreamId()
+    public String[] getStreamName()
     {
-        return streamId;
+        return streamName;
     }
 }

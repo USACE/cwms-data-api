@@ -16,13 +16,13 @@ public class BasinConnectivityGraph implements Graph
 
     private final List<BasinConnectivityEdge> edges = new ArrayList<>();
     private final List<BasinConnectivityNode> nodes = new ArrayList<>();
-    private final String id;
+    private final String name;
 
     private BasinConnectivityGraph(Builder builder)
     {
         edges.addAll(builder.edges);
         nodes.addAll(builder.nodes);
-        id = builder.basin.getBasinName();
+        name = builder.basin.getBasinName();
     }
 
     @Override
@@ -40,9 +40,9 @@ public class BasinConnectivityGraph implements Graph
 
 
     @Override
-    public String getId()
+    public String getName()
     {
-        return id;
+        return name;
     }
 
     public static class Builder
