@@ -68,7 +68,8 @@ public class OfficeController implements CrudHandler {
                                            @OpenApiContent(from = Office.class, isArray = true,type=Formats.JSONV2),
                                            @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON ),
                                            @OpenApiContent(from = TabV1Office.class, type = Formats.TAB ),
-                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV ),
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
                                        }
                       ),
                     },
@@ -110,7 +111,8 @@ public class OfficeController implements CrudHandler {
                                            @OpenApiContent(from = Office.class, isArray = true,type=Formats.JSONV2),
                                            @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON ),
                                            @OpenApiContent(from = TabV1Office.class, type = Formats.TAB ),
-                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV )
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV ),
+                                           @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
                                        }
                       )
                     },
