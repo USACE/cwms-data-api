@@ -73,6 +73,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
                             "/units/*",
                             "/ratings/*",
                             "/levels/*",
+                            "/basins/*",
                             "/blobs/*",
                             "/clobs/*",
                             "/pools/*",
