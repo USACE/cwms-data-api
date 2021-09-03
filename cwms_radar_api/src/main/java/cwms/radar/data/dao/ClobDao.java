@@ -124,9 +124,9 @@ public class ClobDao extends JooqDao<Clob>
 		} else {
 			String[] parts = Catalog.decodeCursor(cursor, "||");
 
-            logger.info("decoded cursor: " + String.join("||", parts));
+            logger.fine("decoded cursor: " + String.join("||", parts));
             for( String p: parts){
-                logger.info(p);
+                logger.finest(p);
             }
 
             if(parts.length > 1) {
@@ -161,7 +161,7 @@ public class ClobDao extends JooqDao<Clob>
 									   ;
 
 		Clobs.Builder builder = new Clobs.Builder(clobCursor,pageSize, total);
-		logger.info(query.getSQL(ParamType.INLINED));
+		logger.finest( () -> { return query.getSQL(ParamType.INLINED);});
 		query.fetch().forEach( row -> {
 			usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(v_clob);
 			usace.cwms.db.jooq.codegen.tables.records.AV_OFFICE clobOffice = row.into(v_office);
