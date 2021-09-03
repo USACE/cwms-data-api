@@ -4,16 +4,26 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessOrder;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorOrder;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.DurationAdapter;
 import cwms.radar.formatters.xml.adapters.TimestampAdapter;
@@ -27,7 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
 public class TimeSeries extends CwmsDTOPaginated {
-    static final String ZONED_DATE_TIME_FORMAT = "YYYY-MM-dd'T'hh:mm:ssZ'['VV']'";
+    public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
     @Schema(description = "Time-series name")
     String name;
