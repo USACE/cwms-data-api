@@ -81,7 +81,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         this.end = end;
         this.interval = interval;
         this.units = units;
-        values = new ArrayList<Record>();
+        values = new ArrayList<>();
     }
 
     public String getName() {
@@ -98,6 +98,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @Schema(description = "The interval of the time-series in minutes")
     @XmlElement
+    @JsonIgnore
     public long getIntervalMinutes() {
          return interval.toMinutes();
     }
@@ -134,7 +135,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
         // Set the current page, if not set
-        if((page == null || page.isEmpty()) && values.size() == 0) {
+        if((page == null || page.isEmpty()) && values.isEmpty()) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
         }
         if(pageSize > 0 && values.size() == pageSize) {
@@ -146,7 +147,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     private List<Column> getColumnDescriptor(String format) {
-        List<Column> columns = new ArrayList<Column>();
+        List<Column> columns = new ArrayList<>();
 
         for (Field f: Record.class.getDeclaredFields()) {
             String fieldName = f.getName();
@@ -226,7 +227,8 @@ public class TimeSeries extends CwmsDTOPaginated {
         public final int ordinal;
         public final Class<?> datatype;
 
-        protected Column(String name, int number, Class<?> datatype) {
+        @JsonCreator
+        protected Column(@JsonProperty("name") String name, @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {
             this.name = name;
             this.ordinal = number;
             this.datatype = datatype;
