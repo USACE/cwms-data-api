@@ -62,7 +62,7 @@ public class BasinController implements CrudHandler
                     @OpenApiResponse(status="501", description = "Requested format is not implemented")
             },
             description = "Returns CWMS Basin Data",
-            tags = {"Basins"}
+            tags = {"Basins-Beta"}
     )
     @Override
     public void getAll(@NotNull Context ctx)
