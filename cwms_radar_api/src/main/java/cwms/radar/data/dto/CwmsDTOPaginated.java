@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
+import java.util.logging.Logger;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import kotlin.jvm.functions.Function1;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public abstract class CwmsDTOPaginated implements CwmsDTO {
+    private static Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
 
     @Schema(description = "The cursor to the current page of data")
     protected String page;
@@ -132,7 +134,7 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
         private static Pattern base64 = Pattern.compile("^[-A-Za-z0-9+/]*={0,3}$");
         @Override
         public Boolean invoke(String cursor) {
-            System.out.println("checking");
+            logger.finest("checking");
             return base64.matcher(cursor).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 

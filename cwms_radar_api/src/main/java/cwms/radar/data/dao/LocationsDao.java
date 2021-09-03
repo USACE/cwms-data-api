@@ -132,13 +132,13 @@ public class LocationsDao extends JooqDao<Location> {
             }
             total = count.fetchOne().value1().intValue();
         } else {
-            logger.info("getting non-default page");
+            logger.fine("getting non-default page");
             // get totally from page
             String[] parts = Catalog.decodeCursor(cursor, "|||");
 
-            logger.info("decoded cursor: " + String.join("|||", parts));
+            logger.fine("decoded cursor: " + String.join("|||", parts));
             for( String p: parts){
-                logger.info(p);
+                logger.finest(p);
             }
 
             if(parts.length > 1) {

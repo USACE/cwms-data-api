@@ -94,7 +94,7 @@ public class RadarAPI {
             if( System.getProperty("RADAR_DEBUG_LOGGING","false").equalsIgnoreCase("true")){
                 config.enableDevLogging();
             }
-            config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
+            config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.configureServletContextHandler( sch -> sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*"));
             config.addStaticFiles("/static");
         }).attribute(PolicyFactory.class,sanitizer)
@@ -107,7 +107,7 @@ public class RadarAPI {
             /* authorization on connection setup will go here
             Connection conn = ctx.attribute("db");
             */
-            logger.info(ctx.header("accept"));
+            logger.finest(ctx.header("accept"));
             total_requests.mark();
         }).after( ctx -> {
             try{

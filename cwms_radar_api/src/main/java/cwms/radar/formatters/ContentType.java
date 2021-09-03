@@ -2,8 +2,10 @@ package cwms.radar.formatters;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class ContentType implements Comparable<ContentType> {
+    private static Logger logger = Logger.getLogger(ContentType.class.getName());
     private String contentType;
     private Map<String,String> parameters;
 
@@ -27,7 +29,7 @@ public class ContentType implements Comparable<ContentType> {
 
     @Override
     public boolean equals(Object other){
-        System.out.println("Checking + " + this.toString() + " vs " + other.toString());
+        logger.finest("Checking + " + this.toString() + " vs " + other.toString());
         if(!(other instanceof ContentType) ) return false;
         ContentType o = (ContentType)other;
         if(!(contentType.equals(o.contentType))) return false;

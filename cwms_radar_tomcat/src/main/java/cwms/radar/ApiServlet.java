@@ -110,7 +110,7 @@ public class ApiServlet extends HttpServlet {
             config.contextPath = context;
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
-            config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
+            config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.addStaticFiles("/static");
         })
                 .attribute(PolicyFactory.class,sanitizer)
@@ -198,7 +198,7 @@ public class ApiServlet extends HttpServlet {
             req.setAttribute("database", db);
             javalin.service(req, resp);
         } catch (SQLException ex) {
-            Logger.getLogger(ApiServlet.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         }
 
     }

@@ -96,9 +96,9 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 		{
 			String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
-			logger.info("Decoded cursor");
+			logger.fine("Decoded cursor");
 			for( String p: parts){
-				logger.info(p);
+				logger.finest(p);
 			}
 
 			if(parts.length > 1)
@@ -169,7 +169,7 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 				total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL")
 		);
 
-		logger.info( metadataQuery.getSQL(ParamType.INLINED));
+		logger.finest( () -> {return metadataQuery.getSQL(ParamType.INLINED);});
 
 		TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata ->
 				new TimeSeries(recordCursor,
@@ -201,7 +201,7 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 			if(pageSize > 0)
 				query.limit(DSL.val(pageSize + 1));
 
-			logger.info( query.getSQL(ParamType.INLINED));
+			logger.finest( () -> { return query.getSQL(ParamType.INLINED); } );
 
 			query.fetchInto(tsRecord -> timeseries.addValue(
 					tsRecord.getValue("DATE_TIME", Timestamp.class),
@@ -223,13 +223,13 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 			}
 			total = count.fetchOne().value1().intValue();
 		} else {
-			logger.info("getting non-default page");
+			logger.fine("getting non-default page");
 			// get totally from page
 			String[] parts = CwmsDTOPaginated.decodeCursor(page, "|||");
 
-			logger.info("decoded cursor: " + String.join("|||", parts));
+			logger.fine("decoded cursor: " + String.join("|||", parts));
 			for( String p: parts){
-				logger.info(p);
+				logger.finest(p);
 			}
 
 			if(parts.length > 1) {
@@ -252,7 +252,7 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 			query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
 		}
 		query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
-		logger.info( query.getSQL(ParamType.INLINED));
+		logger.finest( () -> { return query.getSQL(ParamType.INLINED); });
 		Result<Record3<String, String, String>> result = query.fetch();
 		List<? extends CatalogEntry> entries = result.stream()
 				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
@@ -480,7 +480,7 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 					.map(Field::getName)
 					.map(DSL::field).collect(
 					Collectors.toList());
-			
+
 
 			// I want to select tsvView.asterisk but we are selecting from an inner select and
 			// even though the inner select selects tsvView.asterisk it isn't the same.
@@ -493,7 +493,7 @@ public class TimeSeriesDao extends JooqDao<TimeSeries>
 					.forEach( jrecord -> {
 						RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
 						retval.add(recentValue);
-					});				
+					});
 		}
 		return retval;
 	}

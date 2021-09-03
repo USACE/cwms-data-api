@@ -99,7 +99,7 @@ public class LocationController implements CrudHandler {
             final String results;
             if(contentType.getType().equals(Formats.GEOJSON))
             {
-                logger.info("units:" + units);
+                logger.fine("units:" + units);
                 FeatureCollection collection = cdm.buildFeatureCollection(names, units, office);
                 ObjectMapper mapper = JavalinJackson.getObjectMapper();
                 results = mapper.writeValueAsString(collection);
