@@ -73,6 +73,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
                             "/units/*",
                             "/ratings/*",
                             "/levels/*",
+                            "/basins/*",
                             "/blobs/*",
                             "/clobs/*",
                             "/pools/*",
@@ -169,6 +170,7 @@ public class ApiServlet extends HttpServlet {
                     crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
                     crud("/catalog/:dataSet", new CatalogController(metrics));
+                    crud("/basins/:basin-id", new BasinController(metrics));
                     crud("/blobs/:blob-id", new BlobController(metrics));
                     crud("/clobs/:clob-id", new ClobController(metrics));
                     crud("/pools/:pool-id", new PoolController(metrics));
