@@ -4,16 +4,26 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessOrder;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorOrder;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.DurationAdapter;
 import cwms.radar.formatters.xml.adapters.TimestampAdapter;
@@ -27,7 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
 public class TimeSeries extends CwmsDTOPaginated {
-    static final String ZONED_DATE_TIME_FORMAT = "YYYY-MM-dd'T'hh:mm:ssZ'['VV']'";
+    public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
     @Schema(description = "Time-series name")
     String name;
@@ -71,7 +81,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         this.end = end;
         this.interval = interval;
         this.units = units;
-        values = new ArrayList<Record>();
+        values = new ArrayList<>();
     }
 
     public String getName() {
@@ -88,6 +98,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @Schema(description = "The interval of the time-series in minutes")
     @XmlElement
+    @JsonIgnore
     public long getIntervalMinutes() {
          return interval.toMinutes();
     }
@@ -124,7 +135,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
         // Set the current page, if not set
-        if((page == null || page.isEmpty()) && values.size() == 0) {
+        if((page == null || page.isEmpty()) && values.isEmpty()) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
         }
         if(pageSize > 0 && values.size() == pageSize) {
@@ -136,7 +147,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     private List<Column> getColumnDescriptor(String format) {
-        List<Column> columns = new ArrayList<Column>();
+        List<Column> columns = new ArrayList<>();
 
         for (Field f: Record.class.getDeclaredFields()) {
             String fieldName = f.getName();
@@ -216,7 +227,8 @@ public class TimeSeries extends CwmsDTOPaginated {
         public final int ordinal;
         public final Class<?> datatype;
 
-        protected Column(String name, int number, Class<?> datatype) {
+        @JsonCreator
+        protected Column(@JsonProperty("name") String name, @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {
             this.name = name;
             this.ordinal = number;
             this.datatype = datatype;
