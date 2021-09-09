@@ -1,5 +1,8 @@
 package cwms.radar.data.dao;
 
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -7,9 +10,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cwms.radar.api.enums.Nation;
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.catalog.CatalogEntry;
@@ -25,12 +31,12 @@ import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectJoinStep;
 import org.jooq.Table;
-import org.jooq.conf.ParamType;
 
+import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.dao.CwmsDbLocJooq;
 
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
@@ -47,6 +53,127 @@ public class LocationsDao extends JooqDao<Location> {
 
         return CWMS_LOC_PACKAGE.call_RETRIEVE_LOCATIONS_F(dsl.configuration(),
                 names, format, units, datum, officeId);
+    }
+
+    public Location getLocation(String locationName, String unitSystem, String officeId) throws IOException
+    {
+        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
+        String[] locationId = new String[]{locationName};
+        String elevationUnitId = (unitSystem.equals(UnitSystem.EN.getValue())) ? "ft" : "m";
+        String[] locationType = new String[1];
+        Number[] elevation = new Number[1];
+        String[] verticalDatum = new String[1];
+        Number[] latitude = new Number[1];
+        Number[] longitude = new Number[1];
+        String[] horizontalDatum = new String[1];
+        String[] publicName = new String[1];
+        String[] longName = new String[1];
+        String[] description = new String[1];
+        String[] timezoneId = new String[1];
+        String[] countyName = new String[1];
+        String[] stateInitial = new String[1];
+        Boolean[] active = new Boolean[1];
+        String[] locationKindId = new String[1];
+        String[] mapLabel = new String[1];
+        Number[] publishedLatitude = new Number[1];
+        Number[] publishedLongitude = new Number[1];
+        String[] boundingOfficeId = new String[1];
+        String[] nationId = new String[1];
+        String[] nearestCity = new String[1];
+        ResultSet[] aliasResultSet = new ResultSet[1];
+        AtomicReference<Location> locationRef = new AtomicReference<>();
+        try {
+            dsl.connection(c ->
+            {
+                locJooq.retrieve2(c, officeId, locationId, elevationUnitId, locationType, elevation, verticalDatum, latitude, longitude,
+                        horizontalDatum, publicName, longName, description, timezoneId, countyName, stateInitial, active, locationKindId,
+                        mapLabel, publishedLatitude, publishedLongitude, boundingOfficeId, nationId, nearestCity, aliasResultSet);
+                Location location = new Location.Builder(locationId[0], locationKindId[0], ZoneId.of(timezoneId[0]), latitude[0].doubleValue(), longitude[0].doubleValue(), horizontalDatum[0], officeId)
+                        .withLocationType(locationType[0])
+                        .withElevation(elevation[0].doubleValue())
+                        .withVerticalDatum(verticalDatum[0])
+                        .withPublicName(publicName[0])
+                        .withLongName(longName[0])
+                        .withDescription(description[0])
+                        .withCountyName(countyName[0])
+                        .withStateInitial(stateInitial[0])
+                        .withActive(active[0])
+                        .withMapLabel(mapLabel[0])
+                        .withBoundingOfficeId(boundingOfficeId[0])
+                        .withNearestCity(nearestCity[0])
+                        .withNation(Nation.NationForName(nationId[0]))
+                        .build();
+                if (publishedLatitude[0] != null) {
+                    location = new Location.Builder(location)
+                            .withPublishedLatitude(publishedLatitude[0].doubleValue())
+                            .build();
+                }
+                if (publishedLongitude[0] != null) {
+                    location = new Location.Builder(location)
+                            .withPublishedLongitude(publishedLongitude[0].doubleValue())
+                            .build();
+                }
+                locationRef.set(location);
+            });
+        }
+        catch(DataAccessException ex)
+        {
+            throw new IOException(ex);
+        }
+        return locationRef.get();
+    }
+
+    public void deleteLocation(String locationName, String officeId) throws IOException
+    {
+        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
+        try {
+            dsl.connection(c -> locJooq.delete(c, officeId, locationName));
+        }
+        catch(DataAccessException ex)
+        {
+            throw new IOException(ex);
+        }
+    }
+
+    public void storeLocation(Location location) throws IOException
+    {
+        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
+        try {
+            dsl.connection(c ->
+            {
+                String elevationUnits = "m"; //this should be updated to use Unit enum once merged in
+                locJooq.store(c, location.getOfficeId(), location.getName(), location.getStateInitial(), location.getCountyName(),
+                        location.getTimezoneId(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
+                        elevationUnits, location.getVerticalDatum(), location.getHorizontalDatum(), location.getPublicName(), location.getLongName(),
+                        location.getDescription(), location.active(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
+                        location.getPublishedLongitude(), location.getBoundingOfficeId(), location.getNation().getCode(), location.getNearestCity(), true);
+
+            });
+        }
+        catch(DataAccessException ex)
+        {
+            throw new IOException(ex);
+        }
+    }
+
+    public void renameLocation(String oldLocationName, Location renamedLocation) throws IOException
+    {
+        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
+        try {
+            dsl.connection(c ->
+            {
+                String elevationUnits = "m"; //this should be updated to use Unit enum once merged in
+                locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName(), renamedLocation.getStateInitial(),
+                        renamedLocation.getCountyName(), renamedLocation.getTimezoneId(), renamedLocation.getLocationType(),
+                        renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getElevation(), elevationUnits,
+                        renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(), renamedLocation.getPublicName(),
+                        renamedLocation.getLongName(), renamedLocation.getDescription(), renamedLocation.active(),  true);
+            });
+        }
+        catch(DataAccessException ex)
+        {
+            throw new IOException(ex);
+        }
     }
 
     public FeatureCollection buildFeatureCollection(String names, String units, String officeId)
