@@ -20,6 +20,7 @@ import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
+import cwms.radar.data.dao.LocationsDaoImpl;
 import cwms.radar.data.dto.Location;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -101,7 +102,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = getAllRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDao(dsl);
+            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
 
             String names = ctx.queryParam("names");
             String units = ctx.queryParam("unit");
@@ -197,7 +198,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDao(dsl);
+            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
             String acceptHeader = ctx.header(Header.ACCEPT);
             String formatHeader = (acceptHeader != null) ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -245,7 +246,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDao(dsl);
+            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
             String acceptHeader = ctx.header(Header.ACCEPT);
             String formatHeader = (acceptHeader != null) ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -300,7 +301,7 @@ public class LocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx))
         {
             String office = ctx.queryParam("office");
-            LocationsDao locationsDao = new LocationsDao(dsl);
+            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
             locationsDao.deleteLocation(locationId, office);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
         }

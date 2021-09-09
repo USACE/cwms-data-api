@@ -160,7 +160,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 	}
 
 	public Feature buildFeatureFromAvLocRecordWithLocGroup(Record avLocRecord){
-		Feature feature = LocationsDao.buildFeatureFromAvLocRecord(avLocRecord);
+		Feature feature = LocationsDaoImpl.buildFeatureFromAvLocRecord(avLocRecord);
 
 		Map<String, Object> grpProps = new LinkedHashMap<>();
 
