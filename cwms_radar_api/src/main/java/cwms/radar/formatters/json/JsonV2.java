@@ -20,7 +20,7 @@ import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
-
+import io.javalin.plugin.json.JavalinJackson;
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
@@ -40,15 +40,29 @@ public class JsonV2 implements OutputFormatter {
 
 	public JsonV2()
 	{
-		this(new ObjectMapper());
+		this(JavalinJackson.getObjectMapper());
 	}
 
 	public JsonV2(ObjectMapper om)
 	{
-		this.om = om.copy();
-		this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
-		this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		this.om.registerModule(new JavaTimeModule());
+		this.om = buildObjectMapper(om);
+	}
+
+	@NotNull
+	public static ObjectMapper buildObjectMapper()
+	{
+		return buildObjectMapper(JavalinJackson.getObjectMapper());
+	}
+
+	@NotNull
+	public static ObjectMapper buildObjectMapper(ObjectMapper om)
+	{
+		ObjectMapper retval = om.copy();
+
+		retval.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
+		retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		retval.registerModule(new JavaTimeModule());
+		return retval;
 	}
 
 	@Override
