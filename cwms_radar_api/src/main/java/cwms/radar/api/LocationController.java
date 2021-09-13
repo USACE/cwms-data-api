@@ -16,6 +16,7 @@ import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
@@ -260,10 +261,8 @@ public class LocationController implements CrudHandler {
             {
                 ObjectMapper om = new ObjectMapper();
                 om.registerModule(new JavaTimeModule());
-                deserializationErrorMsg = "Location object could not be deserialized. Please ensure there was not an attempt to set a required field to NULL.";
-                Location locationFromBody = om.readValue(ctx.body(), Location.class);
+                Location locationFromBody = deserializeJSONLocation(ctx.body());
                 //getLocation will throw an error if location does not exist
-                deserializationErrorMsg = null; //successfully deserialized
                 Location existingLocation = locationsDao.getLocation(locationId, UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
                 //only store (update) if location does exist
                 Location updatedLocation = getUpdatedLocation(existingLocation, locationFromBody);
@@ -282,8 +281,7 @@ public class LocationController implements CrudHandler {
         }
         catch(IOException ex)
         {
-            String errorMsg = deserializationErrorMsg == null ? ex.getLocalizedMessage() : deserializationErrorMsg;
-            RadarError re = new RadarError("Failed to process request: " + errorMsg);
+            RadarError re = new RadarError("Failed to process request: " + ex.getLocalizedMessage());
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -318,6 +316,27 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
+
+    private Location deserializeJSONLocation(String body) throws IOException
+    {
+        ObjectMapper om = new ObjectMapper();
+        om.registerModule(new JavaTimeModule());
+        Location retVal;
+        try
+        {
+            retVal = om.readValue(body, Location.class);
+        }
+        catch (MismatchedInputException ex)
+        {
+            String error = ex.getLocalizedMessage();
+            int firstQuoteIndex = error.indexOf('\'');
+            int secondQuoteIndex = error.indexOf('\'', firstQuoteIndex +1);
+            String missingField = error.substring(firstQuoteIndex + 1, secondQuoteIndex);
+            throw new IOException("Missing required field: " + missingField);
+        }
+        return retVal;
+    }
+
 
     private Location getUpdatedLocation(Location existingLocation, Location updatedLocation)
     {

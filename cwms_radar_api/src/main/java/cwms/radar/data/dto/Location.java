@@ -214,9 +214,10 @@ public final class  Location implements CwmsDTO
         private static final String MISSING_NAME_ERROR_MSG = "Location name is required";
 
         @JsonCreator
-        public Builder(@JsonProperty("name") String name, @JsonProperty("locationKind") String locationKind,@JsonProperty ("timezoneId") ZoneId timeZoneId,
-                       @JsonProperty("latitude") double latitude, @JsonProperty("longitude") double longitude, @JsonProperty("horizontalDatum") String horizontalDatum,
-                       @JsonProperty("officeId") String officeId)
+        public Builder(@JsonProperty(value = "name", required = true) String name, @JsonProperty(value = "locationKind", required = true) String locationKind,
+                       @JsonProperty (value = "timezoneId", required = true) ZoneId timeZoneId, @JsonProperty(value = "latitude", required = true) double latitude,
+                       @JsonProperty(value = "longitude", required = true) double longitude, @JsonProperty(value = "horizontalDatum", required = true) String horizontalDatum,
+                       @JsonProperty(value = "officeId", required = true) String officeId)
         {
             this.name = Objects.requireNonNull(name, MISSING_NAME_ERROR_MSG);
             this.publicName = name;
