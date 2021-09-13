@@ -10,7 +10,7 @@ import java.time.ZoneId;
 import java.util.Objects;
 
 @JsonDeserialize(builder = Location.Builder.class)
-public final class Location implements CwmsDTO
+public final class  Location implements CwmsDTO
 {
     private final String name;
     private final Double latitude;

@@ -121,7 +121,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException(ex);
+            throw new IOException("Could not retrieve Location");
         }
         return locationRef.get();
     }
@@ -157,7 +157,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException(ex);
+            throw new IOException("Failed to store Location");
         }
     }
 
@@ -178,7 +178,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException(ex);
+            throw new IOException("Failed to rename Location");
         }
     }
 

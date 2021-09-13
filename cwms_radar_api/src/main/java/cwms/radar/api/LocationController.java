@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.Null;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -243,6 +244,7 @@ public class LocationController implements CrudHandler {
     public void update(Context ctx, @NotNull String locationId)
     {
         updateRequest.mark();
+        String deserializationErrorMsg = null;
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
@@ -258,30 +260,34 @@ public class LocationController implements CrudHandler {
             {
                 ObjectMapper om = new ObjectMapper();
                 om.registerModule(new JavaTimeModule());
+                deserializationErrorMsg = "Location object could not be deserialized. Please ensure there was not an attempt to set a required field to NULL.";
                 Location locationFromBody = om.readValue(ctx.body(), Location.class);
                 //getLocation will throw an error if location does not exist
+                deserializationErrorMsg = null; //successfully deserialized
                 Location existingLocation = locationsDao.getLocation(locationId, UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
                 //only store (update) if location does exist
                 Location updatedLocation = getUpdatedLocation(existingLocation, locationFromBody);
                 if(!updatedLocation.getName().equalsIgnoreCase(existingLocation.getName())) //if name changed then delete location with old name
                 {
                     locationsDao.renameLocation(locationId, updatedLocation);
-                    ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Updated and renamed to " + updatedLocation.getName());
+                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location");
                 }
                 else
                 {
                     locationsDao.storeLocation(updatedLocation);
-                    ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Updated");
+                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location");
                 }
 
             }
         }
         catch(IOException ex)
         {
-            RadarError re = new RadarError("Failed to process request");
+            String errorMsg = deserializationErrorMsg == null ? ex.getLocalizedMessage() : deserializationErrorMsg;
+            RadarError re = new RadarError("Failed to process request: " + errorMsg);
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+
     }
 
     @OpenApi(
@@ -307,7 +313,7 @@ public class LocationController implements CrudHandler {
         }
         catch(IOException ex)
         {
-            RadarError re = new RadarError("failed to process request");
+            RadarError re = new RadarError("Failed to delete location");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
