@@ -112,9 +112,7 @@ public class CatalogController implements CrudHandler{
 
             String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
             String cursor = ctx.queryParam("cursor",String.class,"").getValue();
-            logger.info("getting pageSize");
             int pageSize = ctx.queryParam("pageSize",Integer.class,"500").getValue().intValue();
-            logger.info("This is a test");
             String unitSystem = ctx.queryParam("unitSystem",UnitSystem.class,"SI").getValue().getValue();
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParam("office", String.class, null)

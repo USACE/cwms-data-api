@@ -28,6 +28,7 @@ import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
+import cwms.radar.api.BasinController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.FormattingException;
@@ -93,7 +94,7 @@ public class RadarAPI {
             if( System.getProperty("RADAR_DEBUG_LOGGING","false").equalsIgnoreCase("true")){
                 config.enableDevLogging();
             }
-            config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
+            config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.configureServletContextHandler( sch -> sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*"));
             config.addStaticFiles("/static");
         }).attribute(PolicyFactory.class,sanitizer)
@@ -106,7 +107,7 @@ public class RadarAPI {
             /* authorization on connection setup will go here
             Connection conn = ctx.attribute("db");
             */
-            logger.info(ctx.header("accept"));
+            logger.finest(ctx.header("accept"));
             total_requests.mark();
         }).after( ctx -> {
             try{
@@ -165,6 +166,7 @@ public class RadarAPI {
             crud("/ratings/:rating", new RatingController(metrics));
             crud("/catalog/:dataSet", new CatalogController(metrics));
             crud("/blobs/:blob-id", new BlobController(metrics));
+            crud("/basins/:basin-id", new BasinController(metrics));
             crud("/clobs/:clob-id", new ClobController(metrics));
             crud("/pools/:pool-id", new PoolController(metrics));
         });

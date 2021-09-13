@@ -1,5 +1,6 @@
 package cwms.radar.data.dao;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
@@ -42,5 +43,16 @@ public abstract class JooqDao<T> extends Dao<T>
 	public Optional<T> getByUniqueName(String uniqueName, Optional<String> limitToOffice)
 	{
 		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	static Double toDouble(BigDecimal bigDecimal)
+	{
+		Double retval = null;
+		if (bigDecimal != null)
+		{
+			retval = bigDecimal.doubleValue();
+		}
+
+		return retval;
 	}
 }

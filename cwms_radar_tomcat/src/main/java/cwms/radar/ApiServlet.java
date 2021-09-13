@@ -73,6 +73,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
                             "/units/*",
                             "/ratings/*",
                             "/levels/*",
+                            "/basins/*",
                             "/blobs/*",
                             "/clobs/*",
                             "/pools/*",
@@ -109,7 +110,7 @@ public class ApiServlet extends HttpServlet {
             config.contextPath = context;
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
-            config.requestLogger( (ctx,ms) -> logger.info(ctx.toString()));
+            config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.addStaticFiles("/static");
         })
                 .attribute(PolicyFactory.class,sanitizer)
@@ -169,6 +170,7 @@ public class ApiServlet extends HttpServlet {
                     crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
                     crud("/ratings/:rating", new RatingController(metrics));
                     crud("/catalog/:dataSet", new CatalogController(metrics));
+                    crud("/basins/:basin-id", new BasinController(metrics));
                     crud("/blobs/:blob-id", new BlobController(metrics));
                     crud("/clobs/:clob-id", new ClobController(metrics));
                     crud("/pools/:pool-id", new PoolController(metrics));
@@ -196,7 +198,7 @@ public class ApiServlet extends HttpServlet {
             req.setAttribute("database", db);
             javalin.service(req, resp);
         } catch (SQLException ex) {
-            Logger.getLogger(ApiServlet.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         }
 
     }

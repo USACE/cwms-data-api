@@ -32,12 +32,14 @@ public class Formats {
     public static final String TAB = "text/tab-separated-values";
     public static final String CSV = "text/csv";
     public static final String GEOJSON = "application/geo+json";
+    public static final String PGJSON = "application/vnd.pg+json";
+    public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
 
 
     private static List<ContentType> contentTypeList = new ArrayList<>();
     static {
         contentTypeList.addAll(
-            Arrays.asList(JSON,XML, XMLV2, WML2,JSONV2,TAB,CSV, GEOJSON)
+            Arrays.asList(JSON,XML, XMLV2, WML2,JSONV2,TAB,CSV, GEOJSON, PGJSON, NAMED_PGJSON)
             .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
     private static Map<String,String> typeMap = new LinkedHashMap<>();
@@ -48,6 +50,8 @@ public class Formats {
         typeMap.put("tab",Formats.TAB);
         typeMap.put("csv",Formats.CSV);
         typeMap.put("geojson",Formats.GEOJSON);
+        typeMap.put("pgjson", Formats.PGJSON);
+        typeMap.put("named-pgjson", Formats.NAMED_PGJSON);
     }
 
 
@@ -61,22 +65,22 @@ public class Formats {
         BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
         while( br.ready() ){
             String line = br.readLine();
-            logger.info(line);
+            logger.finest(line);
             String[] typeFormatterClasses = line.split(":");
 
             ContentType type = new ContentType(typeFormatterClasses[0]);
-            logger.info("Adding links for content-type: " + type.toString());
+            logger.finest("Adding links for content-type: " + type.toString());
 
             try {
                 @SuppressWarnings("unchecked")
                 Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
                 OutputFormatter formatterInstance;
-                logger.info("Formatter class: "+ typeFormatterClasses[1]);
+                logger.finest("Formatter class: "+ typeFormatterClasses[1]);
 				formatterInstance = formatter.getDeclaredConstructor().newInstance();
                 Map<Class<CwmsDTO>,OutputFormatter> tmp = new HashMap<>();
 
                 for(String clazz: typeFormatterClasses[2].split(";") ){
-                    logger.info("\tFor Class: " + clazz);
+                    logger.finest("\tFor Class: " + clazz);
 
                     @SuppressWarnings("unchecked")
                     Class<CwmsDTO> formatForClass = (Class<CwmsDTO>)Class.forName(clazz);
@@ -98,7 +102,7 @@ public class Formats {
     private String getFormatted(ContentType type, CwmsDTO toFormat) throws FormattingException{
         Objects.requireNonNull(toFormat,"Object to be formatted should not be null");
         for(ContentType key: formatters.keySet()){
-            logger.info(key.toString());
+            logger.fine(key.toString());
         }
 
         OutputFormatter outputFormatter = getOutputFormatter(type, toFormat.getClass());
@@ -124,7 +128,7 @@ public class Formats {
 
     private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos) throws FormattingException{
         for(ContentType key: formatters.keySet()){
-            logger.info(key.toString());
+            logger.finest(key.toString());
         }
 
         Class<? extends CwmsDTO> klass = dtos.get(0).getClass();
@@ -139,7 +143,7 @@ public class Formats {
 
     private static void init(){
         if( formats == null ){
-            logger.info("creating instance");
+            logger.finest("creating instance");
             try {
                 formats = new Formats();
             } catch( IOException err){
@@ -149,13 +153,13 @@ public class Formats {
     }
 
     public static String format(ContentType type, CwmsDTO toFormat) throws FormattingException{
-        logger.info("formats");
+        logger.finest("formats");
         init();
         return formats.getFormatted(type,toFormat);
     }
 
     public static String format(ContentType type, List<? extends CwmsDTO> toFormat) throws FormattingException{
-        logger.info("format list");
+        logger.finest("format list");
         init();
         return formats.getFormatted(type,toFormat);
     }
@@ -192,15 +196,15 @@ public class Formats {
     {
         String[] all = header.split(",");
         ArrayList<ContentType> contentTypes = new ArrayList<>();
-        logger.info("Finding handlers " + all.length);
+        logger.finest("Finding handlers " + all.length);
         for( String ct: all){
-            logger.info(ct);
+            logger.finest(ct);
             contentTypes.add(new ContentType(ct));
         }
         Collections.sort(contentTypes);
-        logger.info("have " + contentTypes.size());
+        logger.finest("have " + contentTypes.size());
         for( ContentType ct: contentTypes ){
-            logger.info("checking " + ct.toString());
+            logger.finest("checking " + ct.toString());
             if( contentTypeList.contains(ct)){
                 return ct;
             }
