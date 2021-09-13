@@ -3,13 +3,7 @@ package cwms.radar.data.dao;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -33,6 +27,9 @@ import org.jooq.SelectJoinStep;
 import org.jooq.Table;
 
 import org.jooq.exception.DataAccessException;
+import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.dao.util.services.CwmsLookupFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.dao.CwmsDbLocJooq;
 
@@ -60,7 +57,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) throws IOException
     {
-        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
         String[] locationId = new String[]{locationName};
         String elevationUnitId = (unitSystem.equals(UnitSystem.EN.getValue())) ? "ft" : "m";
         String[] locationType = new String[1];
@@ -88,6 +84,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         try {
             dsl.connection(c ->
             {
+                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 locJooq.retrieve2(c, officeId, locationId, elevationUnitId, locationType, elevation, verticalDatum, latitude, longitude,
                         horizontalDatum, publicName, longName, description, timezoneId, countyName, stateInitial, active, locationKindId,
                         mapLabel, publishedLatitude, publishedLongitude, boundingOfficeId, nationId, nearestCity, aliasResultSet);
@@ -129,9 +126,13 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void deleteLocation(String locationName, String officeId) throws IOException
     {
-        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
-        try {
-            dsl.connection(c -> locJooq.delete(c, officeId, locationName));
+        try
+        {
+            dsl.connection(c ->
+            {
+                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
+                locJooq.delete(c, officeId, locationName);
+            });
         }
         catch(DataAccessException ex)
         {
@@ -142,10 +143,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void storeLocation(Location location) throws IOException
     {
-        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
-        try {
+        try
+        {
             dsl.connection(c ->
             {
+                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = "m"; //this should be updated to use Unit enum once merged in
                 locJooq.store(c, location.getOfficeId(), location.getName(), location.getStateInitial(), location.getCountyName(),
                         location.getTimezoneId(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
@@ -164,10 +166,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void renameLocation(String oldLocationName, Location renamedLocation) throws IOException
     {
-        CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
         try {
             dsl.connection(c ->
             {
+                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = "m"; //this should be updated to use Unit enum once merged in
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName(), renamedLocation.getStateInitial(),
                         renamedLocation.getCountyName(), renamedLocation.getTimezoneId(), renamedLocation.getLocationType(),
