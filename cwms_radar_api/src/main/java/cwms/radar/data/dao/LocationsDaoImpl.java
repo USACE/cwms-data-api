@@ -29,9 +29,7 @@ import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
-import usace.cwms.db.dao.util.services.CwmsLookupFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.dao.CwmsDbLocJooq;
 
 import static org.jooq.impl.DSL.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
@@ -143,6 +141,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void storeLocation(Location location) throws IOException
     {
+        validateLocation(location);
         try
         {
             dsl.connection(c ->
@@ -153,7 +152,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                         location.getTimezoneId(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
                         elevationUnits, location.getVerticalDatum(), location.getHorizontalDatum(), location.getPublicName(), location.getLongName(),
                         location.getDescription(), location.active(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
-                        location.getPublishedLongitude(), location.getBoundingOfficeId(), location.getNation().getCode(), location.getNearestCity(), true);
+                        location.getPublishedLongitude(), location.getBoundingOfficeId(), location.getNation().getName(), location.getNearestCity(), true);
 
             });
         }
@@ -163,10 +162,49 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
     }
 
+    private void validateLocation(Location location) throws IOException
+    {
+        String missingField = null;
+        if(location.getName() == null)
+        {
+            missingField = "Name";
+        }
+        if(location.getLocationKind() == null)
+        {
+            missingField = "Location Kind";
+        }
+        if(location.getTimezoneId() == null)
+        {
+            missingField = "Timezone ID";
+        }
+        if(location.getOfficeId() == null)
+        {
+            missingField = "Office ID";
+        }
+        if(location.getHorizontalDatum() == null)
+        {
+            missingField = "Horizontal Datum";
+        }
+        if(location.getLongitude() == null)
+        {
+            missingField = "Longitude";
+        }
+        if(location.getLatitude() == null)
+        {
+            missingField = "Latitude";
+        }
+        if(missingField != null)
+        {
+            throw new IOException("Missing required field: " + missingField);
+        }
+    }
+
     @Override
     public void renameLocation(String oldLocationName, Location renamedLocation) throws IOException
     {
-        try {
+        validateLocation(renamedLocation);
+        try
+        {
             dsl.connection(c ->
             {
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);

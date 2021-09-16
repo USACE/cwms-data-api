@@ -3,20 +3,24 @@ package cwms.radar.api;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.Null;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
@@ -177,10 +181,13 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
-        requestBody = @OpenApiRequestBody(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the office in which Location will be created")
+            },
+            requestBody = @OpenApiRequestBody(
                 content = {
                           @OpenApiContent(from = Location.class, type = Formats.JSON ),
-
+                          @OpenApiContent(from = Location.class, type = Formats.XML )
 //                        @OpenApiContent(from = Location.class, type = Formats.TAB ),
 //                        @OpenApiContent(from = Location.class, type = Formats.CSV ),
 //                        @OpenApiContent(from = Location.class, type = Formats.XML ),
@@ -201,21 +208,17 @@ public class LocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx))
         {
             LocationsDao locationsDao = new LocationsDaoImpl(dsl);
-            String acceptHeader = ctx.header(Header.ACCEPT);
-            String formatHeader = (acceptHeader != null) ? acceptHeader : Formats.JSON;
+            String office = ctx.queryParam("office");
+            String acceptHeader = ctx.req.getContentType();
+            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if(contentType == null)
             {
                 throw new FormattingException("Format header could not be parsed");
             }
-            if(contentType.getType().equals(Formats.JSON))
-            {
-                ObjectMapper om = new ObjectMapper();
-                om.registerModule(new JavaTimeModule());
-                Location location = om.readValue(ctx.body(), Location.class);
-                locationsDao.storeLocation(location);
-                ctx.status(HttpServletResponse.SC_CREATED).json(location.getName() + " Created");
-            }
+            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType(), office);
+            locationsDao.storeLocation(locationFromBody);
+            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location");
         }
         catch(IOException ex)
         {
@@ -226,12 +229,15 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the office in which Location will be updated")
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
-                          @OpenApiContent(from = Location.class, type = Formats.JSON )
+                          @OpenApiContent(from = Location.class, type = Formats.JSON ),
+                          @OpenApiContent(from = Location.class, type = Formats.XML )
 //                        @OpenApiContent(from = Location.class, type = Formats.TAB ),
 //                        @OpenApiContent(from = Location.class, type = Formats.CSV ),
-//                        @OpenApiContent(from = Location.class, type = Formats.XML ),
 //                        @OpenApiContent(from = Location.class, type = Formats.WML2),
 //                        @OpenApiContent(from = Location.class, type = Formats.GEOJSON )
                     },
@@ -245,38 +251,33 @@ public class LocationController implements CrudHandler {
     public void update(Context ctx, @NotNull String locationId)
     {
         updateRequest.mark();
-        String deserializationErrorMsg = null;
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
             LocationsDao locationsDao = new LocationsDaoImpl(dsl);
-            String acceptHeader = ctx.header(Header.ACCEPT);
-            String formatHeader = (acceptHeader != null) ? acceptHeader : Formats.JSON;
+            String office = ctx.queryParam("office");
+            String acceptHeader = ctx.req.getContentType();
+            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if(contentType == null)
             {
                 throw new FormattingException("Format header could not be parsed");
             }
-            if(contentType.getType().equals(Formats.JSON))
+            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType(), office);
+            //getLocation will throw an error if location does not exist
+            Location existingLocation = locationsDao.getLocation(locationId, UnitSystem.EN.getValue(), office);
+            existingLocation = updatedClearedFields(ctx.body(), contentType.getType(), existingLocation);
+            //only store (update) if location does exist
+            Location updatedLocation = getUpdatedLocation(existingLocation, locationFromBody);
+            if(!updatedLocation.getName().equalsIgnoreCase(existingLocation.getName())) //if name changed then delete location with old name
             {
-                ObjectMapper om = new ObjectMapper();
-                om.registerModule(new JavaTimeModule());
-                Location locationFromBody = deserializeJSONLocation(ctx.body());
-                //getLocation will throw an error if location does not exist
-                Location existingLocation = locationsDao.getLocation(locationId, UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
-                //only store (update) if location does exist
-                Location updatedLocation = getUpdatedLocation(existingLocation, locationFromBody);
-                if(!updatedLocation.getName().equalsIgnoreCase(existingLocation.getName())) //if name changed then delete location with old name
-                {
-                    locationsDao.renameLocation(locationId, updatedLocation);
-                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location");
-                }
-                else
-                {
-                    locationsDao.storeLocation(updatedLocation);
-                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location");
-                }
-
+                locationsDao.renameLocation(locationId, updatedLocation);
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location");
+            }
+            else
+            {
+                locationsDao.storeLocation(updatedLocation);
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location");
             }
         }
         catch(IOException ex)
@@ -317,26 +318,60 @@ public class LocationController implements CrudHandler {
         }
     }
 
-    private Location deserializeJSONLocation(String body) throws IOException
+    private Location updatedClearedFields(String body, String format, Location existingLocation) throws IOException
     {
-        ObjectMapper om = new ObjectMapper();
-        om.registerModule(new JavaTimeModule());
-        Location retVal;
+        ObjectMapper om = getObjectMapperForFormat(format);
+        JsonNode root = om.readTree(body);
+        JavaType javaType = om.getTypeFactory().constructType(Location.class);
+        BeanDescription beanDescription = om.getSerializationConfig().introspect(javaType);
+        List<BeanPropertyDefinition> properties = beanDescription.findProperties();
+        Location retVal = new Location.Builder(existingLocation).build();
         try
         {
-            retVal = om.readValue(body, Location.class);
+            for (BeanPropertyDefinition propertyDefinition : properties) {
+                String propertyName = propertyDefinition.getName();
+                JsonNode propertyValue = root.findValue(propertyName);
+                if (propertyValue != null && "".equals(propertyValue.textValue())) {
+                    retVal = new Location.Builder(retVal)
+                            .withProperty(propertyName, null)
+                            .build();
+                }
+            }
         }
-        catch (MismatchedInputException ex)
+        catch (NullPointerException e) //gets thrown if required field is null
         {
-            String error = ex.getLocalizedMessage();
-            int firstQuoteIndex = error.indexOf('\'');
-            int secondQuoteIndex = error.indexOf('\'', firstQuoteIndex +1);
-            String missingField = error.substring(firstQuoteIndex + 1, secondQuoteIndex);
-            throw new IOException("Missing required field: " + missingField);
+            throw new IOException(e.getMessage());
         }
         return retVal;
     }
 
+    private Location deserializeLocation(String body, String format, String office) throws IOException
+    {
+        ObjectMapper om = getObjectMapperForFormat(format);
+        Location retVal;
+        try
+        {
+            retVal = new Location.Builder(om.readValue(body, Location.class))
+                    .withOfficeId(office)
+                    .build();
+        }
+        catch(Exception e)
+        {
+            throw new IOException("Failed to deserialize location");
+        }
+        return retVal;
+    }
+
+    private static ObjectMapper getObjectMapperForFormat(String format)
+    {
+        ObjectMapper om = new ObjectMapper();
+        if((Formats.XML).equals(format))
+        {
+            om = new XmlMapper();
+        }
+        om.registerModule(new JavaTimeModule());
+        return om;
+    }
 
     private Location getUpdatedLocation(Location existingLocation, Location updatedLocation)
     {

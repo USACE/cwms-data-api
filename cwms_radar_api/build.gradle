@@ -39,6 +39,7 @@ dependencies {
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.4'
     compile "com.fasterxml.jackson.core:jackson-databind:2.12.3"
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.11.1"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
 
     testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
