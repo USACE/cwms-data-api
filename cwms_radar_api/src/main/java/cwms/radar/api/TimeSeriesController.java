@@ -1,11 +1,8 @@
 package cwms.radar.api;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -30,7 +27,9 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
+import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.TimeSeriesDao;
+import cwms.radar.data.dao.TimeSeriesDaoImpl;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.Tsv;
@@ -44,13 +43,14 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-
-import usace.cwms.db.jooq.dao.CwmsDbTsJooq;
+import org.jooq.exception.DataAccessException;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
+
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
@@ -64,11 +64,14 @@ public class TimeSeriesController implements CrudHandler {
     private final Timer getRecentRequestsTime;
     private final Meter createRequests;
     private final Timer createRequestsTime;
+    private final Meter updateRequests;
+    private final Timer updateRequestsTime;
     private final Meter deleteRequests;
     private final Timer deleteRequestsTime;
 
     private final Histogram requestResultSize;
     private final int defaultPageSize = 500;
+
 
     public TimeSeriesController(MetricRegistry metrics){
         this.metrics=metrics;
@@ -82,33 +85,43 @@ public class TimeSeriesController implements CrudHandler {
         getRecentRequestsTime = this.metrics.timer(name(className,"getRecent","time"));
         createRequests = this.metrics.meter(name(className,"create","count"));
         createRequestsTime = this.metrics.timer(name(className,"create","time"));
+        updateRequests = this.metrics.meter(name(className,"update","count"));
+        updateRequestsTime = this.metrics.timer(name(className,"update","time"));
         deleteRequests = this.metrics.meter(name(className,"delete","count"));
         deleteRequestsTime = this.metrics.timer(name(className,"delete","time"));
     }
 
-    @OpenApi(
 
+    @OpenApi(
+            description = "Create new TimeSeries",
+            requestBody = @OpenApiRequestBody(
+                    content = {@OpenApiContent(from = TimeSeries.class, type = Formats.JSON)
+                            //                            ,
+                            //                                @OpenApiContent(from = TimeSeries.class, type = Formats.XML)
+                    },
+                    required = true
+            ),
+            method = HttpMethod.POST,
+            path = "/timeseries",
+            tags = {"TimeSeries"}
     )
     @Override
-    public void create(Context ctx) {
+    public void create(Context ctx)
+    {
         createRequests.mark();
-        // Not 100% sure I want to stick with TimeSeries here
-        // but it would make the most sense...
-        // Probably need to validate that the input arg
-        // doesn't do pagination
-        // possibly also validate the start/stop dates
-        // possibly validate the interval
-        TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
 
-        try (
-           final Timer.Context timeContext = createRequestsTime.time();
-           DSLContext dsl = getDslContext(ctx))
+        try(final Timer.Context timeContext = createRequestsTime.time(); DSLContext dsl = getDslContext(ctx))
         {
-            TimeSeriesDao dao = new TimeSeriesDao(dsl);
-            dao.createOrStore(timeSeries);
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
+
+            String tsStr = ctx.body();
+            TimeSeries timeSeries = JavalinJson.fromJson(tsStr, TimeSeries.class);
+            //        TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
+
+            dao.create(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
-        catch(SQLException ex)
+        catch(DataAccessException ex)
         {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -118,10 +131,23 @@ public class TimeSeriesController implements CrudHandler {
 
     }
 
+    protected DSLContext getDslContext(Context ctx)
+    {
+        return JooqDao.getDslContext(ctx);
+    }
+
+    @NotNull
+    protected TimeSeriesDao getTimeSeriesDao(DSLContext dsl)
+    {
+        return new TimeSeriesDaoImpl(dsl);
+    }
+
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the timeseries to be deleted.")
-            }
+            },
+            method = HttpMethod.DELETE,
+            tags = {"TimeSeries"}
     )
     @Override
     public void delete(Context ctx, String tsId) {
@@ -133,10 +159,10 @@ public class TimeSeriesController implements CrudHandler {
                 final Timer.Context timeContext = deleteRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
         {
-            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
             dao.delete(office, tsId);
         }
-        catch(SQLException ex)
+        catch(DataAccessException ex)
         {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -188,7 +214,7 @@ public class TimeSeriesController implements CrudHandler {
                 final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
         {
-            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParam("format","");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
@@ -251,11 +277,38 @@ public class TimeSeriesController implements CrudHandler {
 
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            description = "Update a TimeSeries",
+            requestBody = @OpenApiRequestBody(
+                    content = {@OpenApiContent(from = TimeSeries.class, type = Formats.JSON)},
+                    required = true
+            ),
+            method = HttpMethod.PATCH,
+            path = "/timeseries",
+            tags = {"TimeSeries"}
+    )
     @Override
     public void update(Context ctx, String id) {
 
-        throw new UnsupportedOperationException("Not supported yet.");
+        updateRequests.mark();
+        try (
+                final Timer.Context timeContext = updateRequestsTime.time();
+                DSLContext dsl = getDslContext(ctx))
+        {
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
+
+            String tsStr = ctx.body();
+            TimeSeries timeSeries = JavalinJson.fromJson(tsStr, TimeSeries.class);
+
+            dao.store(timeSeries);
+            ctx.status(HttpServletResponse.SC_OK);
+        }
+        catch(DataAccessException ex)
+        {
+            RadarError re = new RadarError("Internal Error");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
     }
 
     /**
@@ -305,18 +358,12 @@ public class TimeSeriesController implements CrudHandler {
     )
     public void getRecent(Context ctx)
     {
-        // what does recent do?
-        // automatically sets the time window to recent
-        // excludes null values
-        // gets value for each ts in ts_ids or value for each ts assigned to ts_group_id
-        // limit=1
-        // sort date_time desc.
-
         getRecentRequests.mark();
         try(final Timer.Context timeContext = getRecentRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
+
             String office = ctx.queryParam("office");
             String categoryId = ctx.queryParam("category-id", (String) null);
             String groupId = ctx.queryParam("group-id", (String) null);
