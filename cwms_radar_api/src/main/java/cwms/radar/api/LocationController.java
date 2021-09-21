@@ -10,8 +10,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
@@ -20,7 +19,6 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -91,7 +89,7 @@ public class LocationController implements CrudHandler {
             String datum = ctx.queryParam("datum");
             String office = ctx.queryParam("office");
 
-            String formatParm = ctx.queryParam("format", "");
+            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
             ctx.contentType(contentType.toString());
@@ -101,20 +99,23 @@ public class LocationController implements CrudHandler {
             {
                 logger.fine("units:" + units);
                 FeatureCollection collection = cdm.buildFeatureCollection(names, units, office);
-                ObjectMapper mapper = JavalinJackson.getObjectMapper();
-                results = mapper.writeValueAsString(collection);
+                ctx.json(collection);
+                /*ObjectMapper mapper = JavalinJackson.getObjectMapper();
+                results = mapper.writeValueAsString(collection);*/
+                requestResultSize.update(ctx.res.getBufferSize());
             }
             else
             {
                 String format = getFormatFromContent(contentType);
                 results = cdm.getLocations(names, format, units, datum, office);
+                ctx.result(results);
+                requestResultSize.update(results.length());
             }
 
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
-            requestResultSize.update(results.length());
+
         }
-        catch( JsonProcessingException ex)
+        catch( Exception ex)
         {
             RadarError re = new RadarError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);

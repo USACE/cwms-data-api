@@ -79,14 +79,14 @@ public class RatingController implements CrudHandler {
             final Timer.Context time_context = getAllRequestsTime.time();
                 CwmsDataManager cdm = new CwmsDataManager(ctx);
             ) {
-                String format = ctx.queryParam("format","json");
+                String format = ctx.queryParamAsClass("format",String.class).getOrDefault("json");
                 String names = ctx.queryParam("names");
                 String unit = ctx.queryParam("unit");
                 String datum = ctx.queryParam("datum");
                 String office = ctx.queryParam("office");
                 String start = ctx.queryParam("at");
                 String end = ctx.queryParam("end");
-                String timezone = ctx.queryParam("timezone","UTC");
+                String timezone = ctx.queryParamAsClass("timezone",String.class).getOrDefault("UTC");
                 String size = ctx.queryParam("size");
 
                 switch(format){

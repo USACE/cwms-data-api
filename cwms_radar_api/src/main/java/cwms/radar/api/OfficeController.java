@@ -85,7 +85,7 @@ public class OfficeController implements CrudHandler {
         {
                 OfficeDao dao = new OfficeDao(dsl);
                 List<Office> offices = dao.getOffices();
-                String formatParm = ctx.queryParam("format","");
+                String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
                 String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
@@ -128,7 +128,7 @@ public class OfficeController implements CrudHandler {
             OfficeDao dao = new OfficeDao(dsl);
             Optional<Office> office = dao.getOfficeById(officeId);
             if( office.isPresent() ){
-                String formatParm = ctx.queryParam("format","");
+                String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
                 String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
                 String result = Formats.format(contentType,office.get());
