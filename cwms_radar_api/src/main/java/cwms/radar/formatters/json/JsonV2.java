@@ -20,7 +20,7 @@ import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
-import io.javalin.plugin.json.JavalinJackson;
+
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
@@ -40,7 +40,7 @@ public class JsonV2 implements OutputFormatter {
 
 	public JsonV2()
 	{
-		this(JavalinJackson.getObjectMapper());
+		this(new ObjectMapper());
 	}
 
 	public JsonV2(ObjectMapper om)

@@ -1,8 +1,8 @@
 package cwms.radar.api;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -18,7 +18,12 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
+import io.javalin.core.validation.JavalinValidation;
+import io.javalin.core.validation.ValidationError;
+import io.javalin.core.validation.ValidationException;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -97,14 +102,24 @@ public class BlobController implements CrudHandler {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
 
-            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"")
-                .check(CwmsDTOPaginated.CURSOR_CHECK, "Invalid Cursor")
-            .getValue()).getValue();
-            int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
 
-            String like = ctx.queryParam("like",".*");
+            String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
+            cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
+            if( CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor) != true ) {
+                ctx.json(new RadarError("cursor or page passed in but failed validation"))
+                    .status(HttpCode.BAD_REQUEST);
+                return;
+            }
 
-            String formatParm = ctx.queryParam("format","");
+
+            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+								.getOrDefault(
+									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+								);
+
+            String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
+
+            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
@@ -157,19 +172,19 @@ public class BlobController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String blobId) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String blobId) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

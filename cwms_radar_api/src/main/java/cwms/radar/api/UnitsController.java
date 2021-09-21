@@ -69,7 +69,7 @@ public class UnitsController implements CrudHandler {
             final Timer.Context time_context = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
-            String format = ctx.queryParam("format","json");
+            String format = ctx.queryParamAsClass("format",String.class).getOrDefault("json");
 
 
             switch(format){

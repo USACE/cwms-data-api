@@ -62,7 +62,7 @@ public class TimeSeriesTest
 	@NotNull
 	public static ObjectMapper buildObjectMapper()
 	{
-		return buildObjectMapper(JavalinJackson.getObjectMapper());
+		return buildObjectMapper(new ObjectMapper());
 	}
 
 	@NotNull

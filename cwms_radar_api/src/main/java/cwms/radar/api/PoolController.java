@@ -85,18 +85,24 @@ public class PoolController implements CrudHandler
 			PoolDao dao = new PoolDao(dsl);
 			String office = ctx.queryParam("office");
 
-			String projectIdMask = ctx.queryParam("id-mask", ANY_MASK);
-			String nameMask = ctx.queryParam("name-mask", ANY_MASK)	;
-			String bottomMask = ctx.queryParam("bottom-mask", ANY_MASK);
-			String topMask = ctx.queryParam("top-mask", ANY_MASK);
+			String projectIdMask = ctx.queryParamAsClass("id-mask",String.class).getOrDefault(ANY_MASK);
+			String nameMask = ctx.queryParamAsClass("name-mask", String.class).getOrDefault(ANY_MASK);
+			String bottomMask = ctx.queryParamAsClass("bottom-mask", String.class).getOrDefault(ANY_MASK);
+			String topMask = ctx.queryParamAsClass("top-mask", String.class).getOrDefault(ANY_MASK);
 
-			String isExp = ctx.queryParam("include-explicit", "false");
+			String isExp = ctx.queryParamAsClass("include-explicit", String.class).getOrDefault("false");
 			boolean isExplicit = Boolean.parseBoolean(isExp);
-			String isImp = ctx.queryParam("include-implicit", "true");
+			String isImp = ctx.queryParamAsClass("include-implicit", String.class).getOrDefault("true");
 			boolean isImplicit = Boolean.parseBoolean(isImp);
 
-			String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"").getValue()).getValue();
-			int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
+			String cursor = ctx.queryParamAsClass("cursor",String.class)
+								.getOrDefault(
+									ctx.queryParamAsClass("page",String.class).getOrDefault("")
+								);
+			int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+								.getOrDefault(
+									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+								);
 
 			Pools pools = dao.retrievePools(cursor, pageSize, projectIdMask, nameMask, bottomMask, topMask, isExplicit, isImplicit, office);
 
@@ -149,11 +155,11 @@ public class PoolController implements CrudHandler
 			String projectId = ctx.queryParam("project-id");
 
 			// These are optional
-			String bottomMask = ctx.queryParam("bottom-mask", ANY_MASK);
-			String topMask = ctx.queryParam("top-mask", ANY_MASK);
-			String isExp = ctx.queryParam("include-explicit", "true");
+			String bottomMask = ctx.queryParamAsClass("bottom-mask", String.class).getOrDefault(ANY_MASK);
+			String topMask = ctx.queryParamAsClass("top-mask",String.class).getOrDefault(ANY_MASK);
+			String isExp = ctx.queryParamAsClass("include-explicit", String.class).getOrDefault("true");
 			boolean isExplicit = Boolean.parseBoolean(isExp);
-			String isImp = ctx.queryParam("include-implicit", "true");
+			String isImp = ctx.queryParamAsClass("include-implicit", String.class).getOrDefault("true");
 			boolean isImplicit = Boolean.parseBoolean(isImp);
 
 			// I want to call retrievePool but it doesn't return implicit pools

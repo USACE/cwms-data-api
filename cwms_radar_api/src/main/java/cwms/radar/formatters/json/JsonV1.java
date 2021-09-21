@@ -21,7 +21,7 @@ import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
-import io.javalin.plugin.json.JavalinJackson;
+
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class,
@@ -32,7 +32,7 @@ public class JsonV1 implements OutputFormatter{
 
 	public JsonV1()
 	{
-		this(JavalinJackson.getObjectMapper());
+		this(new ObjectMapper());
 	}
 
 	public JsonV1(ObjectMapper om)
