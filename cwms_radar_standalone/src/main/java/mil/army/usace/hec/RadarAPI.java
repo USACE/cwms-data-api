@@ -35,6 +35,7 @@ import cwms.radar.formatters.FormattingException;
 import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.http.staticfiles.Location;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -96,8 +97,9 @@ public class RadarAPI {
             }
             config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.configureServletContextHandler( sch -> sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*"));
-            config.addStaticFiles("/static");
+            config.addStaticFiles("/static",Location.CLASSPATH);
         }).attribute(PolicyFactory.class,sanitizer)
+          .attribute(ObjectMapper.class,om)
 
           .before( ctx -> {
             ctx.header("X-Content-Type-Options","nosniff");
