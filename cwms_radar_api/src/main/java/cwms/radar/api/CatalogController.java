@@ -2,7 +2,6 @@ package cwms.radar.api;
 
 import java.util.Optional;
 import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -20,6 +19,7 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -39,6 +39,8 @@ public class CatalogController implements CrudHandler{
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
 
+    private final int defaultPageSize = 500;
+
     public CatalogController(MetricRegistry metrics){
         this.metrics=metrics;
         String className = this.getClass().getName();
@@ -50,19 +52,19 @@ public class CatalogController implements CrudHandler{
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void delete(Context ctx, String entry) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void getAll(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
     @OpenApi(
@@ -110,14 +112,18 @@ public class CatalogController implements CrudHandler{
             DSLContext dsl = JooqDao.getDslContext(ctx)
         ) {
 
-            String valDataSet = ctx.appAttribute(PolicyFactory.class).sanitize(dataSet);
-            String cursor = ctx.queryParam("cursor",String.class,"").getValue();
-            int pageSize = ctx.queryParam("pageSize",Integer.class,"500").getValue().intValue();
-            String unitSystem = ctx.queryParam("unitSystem",UnitSystem.class,"SI").getValue().getValue();
+            String valDataSet = ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
+            String cursor = ctx.queryParamAsClass("cursor",String.class).getOrDefault("");
+            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+								.getOrDefault(
+									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+								);
+            String unitSystem = ctx.queryParamAsClass("unitSystem",String.class).getOrDefault(UnitSystem.SI.getValue());
             Optional<String> office = Optional.ofNullable(
-                                         ctx.queryParam("office", String.class, null)
-                                            .check( ofc -> Office.validOfficeCanNull(ofc)
-                                           ).getOrNull());
+                                         ctx.queryParamAsClass("office", String.class).allowNullable()
+                                            .check( ofc -> Office.validOfficeCanNull(ofc), "Invalid office provided" )
+                                            .get()
+                                        );
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
@@ -136,7 +142,7 @@ public class CatalogController implements CrudHandler{
                 final RadarError re = new RadarError("Cannot create catalog of requested information");
 
                 logger.info(() -> re.toString() + "with url:" + ctx.fullUrl());
-                ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
+                ctx.json(re).status(HttpCode.NOT_FOUND);
             }
         }
     }
@@ -144,7 +150,7 @@ public class CatalogController implements CrudHandler{
     @OpenApi(tags = {"Catalog"},ignore = true)
     @Override
     public void update(Context ctx, String entry) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
 }

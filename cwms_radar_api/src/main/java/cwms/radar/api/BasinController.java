@@ -13,6 +13,7 @@ import cwms.radar.formatters.json.NamedPgJsonFormatter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -23,7 +24,7 @@ import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
-import javax.servlet.http.HttpServletResponse;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
@@ -71,7 +72,7 @@ public class BasinController implements CrudHandler
         try(final Timer.Context timeContext = getAllRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            String units = ctx.queryParam("unit", UnitSystem.EN.value());
+            String units = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam("office");
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -114,7 +115,7 @@ public class BasinController implements CrudHandler
         try(final Timer.Context timeContext = getAllRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            String units = ctx.queryParam("unit", UnitSystem.EN.value());
+            String units = ctx.queryParamAsClass("unit",String.class).getOrDefault( UnitSystem.EN.value());
             String office = ctx.queryParam("office");
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -142,20 +143,20 @@ public class BasinController implements CrudHandler
     @Override
     public void update(@NotNull Context ctx, @NotNull String s)
     {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void create(@NotNull Context ctx)
     {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(@NotNull Context ctx, @NotNull String s)
     {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 }

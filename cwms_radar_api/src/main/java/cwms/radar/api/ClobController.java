@@ -20,6 +20,7 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -104,15 +105,22 @@ public class ClobController implements CrudHandler {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
 
-            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"")
-                .check(CwmsDTOPaginated.CURSOR_CHECK, "Invalid Cursor")
-            .getValue()).getValue();
-            int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
+            String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
+            cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
+            if( CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor) != true ) {
+                ctx.json(new RadarError("cursor or page passed in but failed validation"))
+                    .status(HttpCode.BAD_REQUEST);
+                return;
+            }
+            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+								.getOrDefault(
+									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+								);
 
-            boolean includeValues = ctx.queryParam("includeValues",Boolean.class,"false").getValue().booleanValue();
-            String like = ctx.queryParam("like",".*");
+            boolean includeValues = ctx.queryParamAsClass("includeValues",Boolean.class).getOrDefault(false);
+            String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
 
-            String formatParm = ctx.queryParam("format","");
+            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 

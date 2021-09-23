@@ -43,6 +43,7 @@ import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.JavalinServlet;
+import io.javalin.http.staticfiles.Location;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -100,7 +101,7 @@ public class ApiServlet extends HttpServlet {
         String context = this.getServletContext().getContextPath();
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
-        ObjectMapper om = JavalinJackson.getObjectMapper();
+        ObjectMapper om = new ObjectMapper();
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());            // Needed in Java 8 to properly format java.time classes
@@ -111,9 +112,10 @@ public class ApiServlet extends HttpServlet {
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
             config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
-            config.addStaticFiles("/static");
+            config.addStaticFiles("/static",Location.CLASSPATH);
         })
-                .attribute(PolicyFactory.class,sanitizer)
+                .attribute("PolicyFactory",sanitizer)
+                .attribute("ObjectMapper",om)
                 .before( ctx -> {
                     /* authorization on connection setup will go here
                     Connection conn = ctx.attribute("db");
@@ -155,26 +157,26 @@ public class ApiServlet extends HttpServlet {
                 })
                 .routes( () -> {
                     get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
-                    crud("/locations/:location_code", new LocationController(metrics));
-                    crud("/location/category/:category-id", new LocationCategoryController(metrics));
-                    crud("/location/group/:group-id", new LocationGroupController(metrics));
-                    crud("/offices/:office", new OfficeController(metrics));
-                    crud("/units/:unit_name", new UnitsController(metrics));
-                    crud("/parameters/:param_name", new ParametersController(metrics));
-                    crud("/timezones/:zone", new TimeZoneController(metrics));
-                    crud("/levels/:location", new LevelsController(metrics));
+                    crud("/locations/{location_code}", new LocationController(metrics));
+                    crud("/location/category/{category-id}", new LocationCategoryController(metrics));
+                    crud("/location/group/{group-id}", new LocationGroupController(metrics));
+                    crud("/offices/{office}", new OfficeController(metrics));
+                    crud("/units/{unit_name}", new UnitsController(metrics));
+                    crud("/parameters/{param_name}", new ParametersController(metrics));
+                    crud("/timezones/{zone}", new TimeZoneController(metrics));
+                    crud("/levels/{location}", new LevelsController(metrics));
                     TimeSeriesController tsController = new TimeSeriesController(metrics);
-                    crud("/timeseries/:timeseries", tsController);
-                    get("/timeseries/recent/:group-id", tsController::getRecent);
-                    crud("/timeseries/category/:category-id", new TimeSeriesCategoryController(metrics));
-                    crud("/timeseries/group/:group-id", new TimeSeriesGroupController(metrics));
-                    crud("/ratings/:rating", new RatingController(metrics));
-                    crud("/catalog/:dataSet", new CatalogController(metrics));
-                    crud("/basins/:basin-id", new BasinController(metrics));
-                    crud("/blobs/:blob-id", new BlobController(metrics));
-                    crud("/clobs/:clob-id", new ClobController(metrics));
-                    crud("/pools/:pool-id", new PoolController(metrics));
-                }).servlet();
+                    crud("/timeseries/{timeseries}", tsController);
+                    get("/timeseries/recent/{group-id}", tsController::getRecent);
+                    crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
+                    crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
+                    crud("/ratings/{rating}", new RatingController(metrics));
+                    crud("/catalog/{dataSet}", new CatalogController(metrics));
+                    crud("/basins/{basin-id}", new BasinController(metrics));
+                    crud("/blobs/{blob-id}", new BlobController(metrics));
+                    crud("/clobs/{clob-id}", new ClobController(metrics));
+                    crud("/pools/{pool-id}", new PoolController(metrics));
+                }).javalinServlet();
     }
 
     private OpenApiOptions getOpenApiOptions() {

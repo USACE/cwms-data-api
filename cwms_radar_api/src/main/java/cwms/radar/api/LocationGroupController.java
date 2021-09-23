@@ -143,7 +143,7 @@ public class LocationGroupController implements CrudHandler
 			if(Formats.GEOJSON.equals(contentType.getType()))
 			{
 				FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(office, categoryId, groupId,"EN");
-				ObjectMapper mapper = JavalinJackson.getObjectMapper();
+				ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
 				result = mapper.writeValueAsString(fc);
 			} else
 			{
