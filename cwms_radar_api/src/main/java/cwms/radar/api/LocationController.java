@@ -13,7 +13,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,7 +34,6 @@ import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.annotations.*;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -115,7 +114,7 @@ public class LocationController implements CrudHandler {
             String datum = ctx.queryParam("datum");
             String office = ctx.queryParam("office");
 
-            String formatParm = ctx.queryParam("format", "");
+            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
             ctx.contentType(contentType.toString());
@@ -125,20 +124,23 @@ public class LocationController implements CrudHandler {
             {
                 logger.fine("units:" + units);
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units, office);
-                ObjectMapper mapper = JavalinJackson.getObjectMapper();
-                results = mapper.writeValueAsString(collection);
+                ctx.json(collection);
+                /*ObjectMapper mapper = JavalinJackson.getObjectMapper();
+                results = mapper.writeValueAsString(collection);*/
+                requestResultSize.update(ctx.res.getBufferSize());
             }
             else
             {
                 String format = getFormatFromContent(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
+                ctx.result(results);
+                requestResultSize.update(results.length());
             }
 
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
-            requestResultSize.update(results.length());
+
         }
-        catch( JsonProcessingException ex)
+        catch( Exception ex)
         {
             RadarError re = new RadarError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);

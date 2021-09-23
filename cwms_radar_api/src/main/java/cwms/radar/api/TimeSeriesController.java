@@ -26,6 +26,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.RecentValue;
@@ -125,17 +127,24 @@ public class TimeSeriesController implements CrudHandler {
                 DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = new TimeSeriesDao(dsl);
-            String format = ctx.queryParam("format","");
+            String format = ctx.queryParamAsClass("format",String.class).getOrDefault("");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
-            String unit = ctx.queryParam("unit", "EN");
+            String unit = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.getValue());
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
             String timezone = ctx.queryParam("timezone");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = ctx.queryParam("cursor",String.class,ctx.queryParam("page",String.class,"").getValue()).getValue();
-            int pageSize = ctx.queryParam("pageSize",Integer.class,ctx.queryParam("pagesize",String.class,Integer.toString(defaultPageSize)).getValue()).getValue();
+            String cursor = ctx.queryParamAsClass("cursor",String.class)
+                                .getOrDefault(ctx.queryParamAsClass("page",String.class)
+                                .getOrDefault("")
+                                );
+
+            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+								.getOrDefault(
+									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+								);
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
@@ -248,9 +257,9 @@ public class TimeSeriesController implements CrudHandler {
         {
             TimeSeriesDao dao = new TimeSeriesDao(dsl);
             String office = ctx.queryParam("office");
-            String categoryId = ctx.queryParam("category-id", (String) null);
-            String groupId = ctx.queryParam("group-id", (String) null);
-            String tsIdsParam = ctx.queryParam("ts-ids", (String) null);
+            String categoryId = ctx.queryParamAsClass("category-id", String.class).allowNullable().get();
+            String groupId = ctx.queryParamAsClass("group-id", String.class).allowNullable().get();
+            String tsIdsParam = ctx.queryParamAsClass("ts-ids", String.class).allowNullable().get();
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
             gregorianCalendar.set(Calendar.HOUR, 0);
