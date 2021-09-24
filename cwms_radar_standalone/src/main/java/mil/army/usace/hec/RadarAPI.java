@@ -98,8 +98,8 @@ public class RadarAPI {
             config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.configureServletContextHandler( sch -> sch.addServlet(new ServletHolder(new MetricsServlet(metrics)),"/metrics/*"));
             config.addStaticFiles("/static",Location.CLASSPATH);
-        }).attribute(PolicyFactory.class,sanitizer)
-          .attribute(ObjectMapper.class,om)
+        }).attribute("PolicyFactory",sanitizer)
+          .attribute("ObjectMapper",om)
 
           .before( ctx -> {
             ctx.header("X-Content-Type-Options","nosniff");
