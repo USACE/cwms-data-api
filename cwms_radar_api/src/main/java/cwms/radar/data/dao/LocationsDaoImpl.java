@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.api.enums.Nation;
+import cwms.radar.api.enums.Unit;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Location;
@@ -29,9 +30,7 @@ import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
-import usace.cwms.db.dao.util.services.CwmsLookupFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.dao.CwmsDbLocJooq;
 
 import static org.jooq.impl.DSL.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
@@ -148,7 +147,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             dsl.connection(c ->
             {
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = "m"; //this should be updated to use Unit enum once merged in
+                String elevationUnits = Unit.METER.getValue();
                 locJooq.store(c, location.getOfficeId(), location.getName(), location.getStateInitial(), location.getCountyName(),
                         location.getTimezoneId(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
                         elevationUnits, location.getVerticalDatum(), location.getHorizontalDatum(), location.getPublicName(), location.getLongName(),
@@ -170,7 +169,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             dsl.connection(c ->
             {
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = "m"; //this should be updated to use Unit enum once merged in
+                String elevationUnits = Unit.METER.getValue();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName(), renamedLocation.getStateInitial(),
                         renamedLocation.getCountyName(), renamedLocation.getTimezoneId(), renamedLocation.getLocationType(),
                         renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getElevation(), elevationUnits,

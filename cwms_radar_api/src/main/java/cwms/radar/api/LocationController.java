@@ -186,13 +186,7 @@ public class LocationController implements CrudHandler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
                 content = {
-                          @OpenApiContent(from = Location.class, type = Formats.JSON ),
-
-//                        @OpenApiContent(from = Location.class, type = Formats.TAB ),
-//                        @OpenApiContent(from = Location.class, type = Formats.CSV ),
-//                        @OpenApiContent(from = Location.class, type = Formats.XML ),
-//                        @OpenApiContent(from = Location.class, type = Formats.WML2),
-//                        @OpenApiContent(from = Location.class, type = Formats.GEOJSON )
+                          @OpenApiContent(from = Location.class, type = Formats.JSON )
                 },
                 required = true),
         description = "Create new CWMS Location",
@@ -236,11 +230,6 @@ public class LocationController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                     content = {
                           @OpenApiContent(from = Location.class, type = Formats.JSON )
-//                        @OpenApiContent(from = Location.class, type = Formats.TAB ),
-//                        @OpenApiContent(from = Location.class, type = Formats.CSV ),
-//                        @OpenApiContent(from = Location.class, type = Formats.XML ),
-//                        @OpenApiContent(from = Location.class, type = Formats.WML2),
-//                        @OpenApiContent(from = Location.class, type = Formats.GEOJSON )
                     },
                     required = true),
             description = "Update CWMS Location",
