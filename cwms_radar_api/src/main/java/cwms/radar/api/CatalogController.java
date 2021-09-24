@@ -11,6 +11,7 @@ import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.LocationsDao;
+import cwms.radar.data.dao.LocationsDaoImpl;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Office;
@@ -130,7 +131,7 @@ public class CatalogController implements CrudHandler{
                 TimeSeriesDao tsDao = new TimeSeriesDao(dsl);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office );
             } else if ("locations".equalsIgnoreCase(valDataSet)){
-                LocationsDao dao = new LocationsDao(dsl);
+                LocationsDao dao = new LocationsDaoImpl(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office );
             }
             if( cat != null ){
