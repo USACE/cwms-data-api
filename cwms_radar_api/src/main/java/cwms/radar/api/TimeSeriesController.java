@@ -1,11 +1,8 @@
 package cwms.radar.api;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,7 +26,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
@@ -43,7 +39,6 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJson;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -55,7 +50,6 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
@@ -117,9 +111,7 @@ public class TimeSeriesController implements CrudHandler {
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            String tsStr = ctx.body();
-            TimeSeries timeSeries = JavalinJson.fromJson(tsStr, TimeSeries.class);
-            //        TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
+            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
 
             dao.create(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
@@ -217,8 +209,8 @@ public class TimeSeriesController implements CrudHandler {
                 final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
         {
-            TimeSeriesDao dao = new TimeSeriesDao(dsl);
-            String format = ctx.queryParam("format","");
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
+            String format = ctx.queryParamAsClass("format",String.class).getOrDefault("");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
             String unit = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.getValue());
@@ -307,8 +299,7 @@ public class TimeSeriesController implements CrudHandler {
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            String tsStr = ctx.body();
-            TimeSeries timeSeries = JavalinJson.fromJson(tsStr, TimeSeries.class);
+            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
 
             dao.store(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
