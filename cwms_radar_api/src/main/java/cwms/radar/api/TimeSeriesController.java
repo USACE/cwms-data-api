@@ -39,7 +39,6 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -50,6 +49,7 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
@@ -71,6 +71,7 @@ public class TimeSeriesController implements CrudHandler {
     private final Histogram requestResultSize;
     private final int defaultPageSize = 500;
 
+
     public TimeSeriesController(MetricRegistry metrics){
         this.metrics=metrics;
         String className = this.getClass().getName();
@@ -89,38 +90,10 @@ public class TimeSeriesController implements CrudHandler {
         deleteRequestsTime = this.metrics.timer(name(className,"delete","time"));
     }
 
-    @OpenApi(
-            description = "Create new TimeSeries",
-            requestBody = @OpenApiRequestBody(
-                    content = {@OpenApiContent(from = TimeSeries.class, type = Formats.JSON)
-                            //                            ,
-                            //                                @OpenApiContent(from = TimeSeries.class, type = Formats.XML)
-                    },
-                    required = true
-            ),
-            method = HttpMethod.POST,
-            path = "/timeseries",
-            tags = {"TimeSeries"}
-    )
+    @OpenApi(tags = {"TimeSeries"}, ignore = true)
     @Override
-    public void create(Context ctx)
-    {
-        createRequests.mark();
-
-        try(final Timer.Context timeContext = createRequestsTime.time(); DSLContext dsl = getDslContext(ctx))
-        {
-            TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
-
-            dao.create(timeSeries);
-            ctx.status(HttpServletResponse.SC_OK);
-        }
-        catch(DataAccessException ex)
-        {
-            RadarError re = new RadarError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+    public void create(Context ctx) {
+        ctx.status(HttpServletResponse.SC_NOT_FOUND);
         }
 
 
@@ -209,8 +182,8 @@ public class TimeSeriesController implements CrudHandler {
                 final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
         {
-            TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            String format = ctx.queryParamAsClass("format",String.class).getOrDefault("");
+            TimeSeriesDao dao = new TimeSeriesDao(dsl);
+            String format = ctx.queryParam("format","");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
             String unit = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.getValue());
@@ -291,25 +264,7 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, String id) {
-
-        updateRequests.mark();
-        try (
-                final Timer.Context timeContext = updateRequestsTime.time();
-                DSLContext dsl = getDslContext(ctx))
-        {
-            TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
-
-            dao.store(timeSeries);
-            ctx.status(HttpServletResponse.SC_OK);
-        }
-        catch(DataAccessException ex)
-        {
-            RadarError re = new RadarError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-        }
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -359,13 +314,6 @@ public class TimeSeriesController implements CrudHandler {
     )
     public void getRecent(Context ctx)
     {
-        // what does recent do?
-        // automatically sets the time window to recent
-        // excludes null values
-        // gets value for each ts in ts_ids or value for each ts assigned to ts_group_id
-        // limit=1
-        // sort date_time desc.
-
         getRecentRequests.mark();
         try(final Timer.Context timeContext = getRecentRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))

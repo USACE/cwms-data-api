@@ -1,11 +1,11 @@
 apply plugin: 'java-library'
 
+
 dependencies {
     implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
     implementation "com.sun.xml.bind:jaxb-impl:$JAXB_IMPL_VERSION"
     implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
-    implementation "mil.army.usace.hec:cwms-db-dao:8.0.0-SNAPSHOT"
-    implementation( "mil.army.usace.hec:cwms-db-jooq:8.0.0-SNAPSHOT"){
+    implementation( "mil.army.usace.hec:cwms-db-jooq:$CWMS_DB_VERSION"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -21,7 +21,6 @@ dependencies {
     implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
 
     compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
-    compileOnly "io.javalin:javalin-openapi:$JAVALIN_VERSION"
     compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
         exclude group: "jakarta.xml.bind", module: "*"
     }
@@ -38,15 +37,11 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     testImplementation "org.mockito:mockito-core:3.2.4"
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.4'
-    compileOnly "com.fasterxml.jackson.core:jackson-databind:2.12.3"
-    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
-    compileOnly "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.11.1"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.12.3"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
 
     testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
-    testImplementation "com.fasterxml.jackson.core:jackson-databind:2.12.3"
-    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
-    testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
 
 }
 

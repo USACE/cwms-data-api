@@ -21,6 +21,7 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.plugin.json.JavalinJackson;
+import org.jetbrains.annotations.NotNull;
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
