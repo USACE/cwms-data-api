@@ -46,7 +46,7 @@ public class TimeSeriesControllerTest
 		TimeSeriesDao dao = mock(TimeSeriesDao.class);
 
 		when(
-				dao.getTimeseries(isNull(), eq(500), eq(tsId), eq(officeId), eq("EN"),
+				dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
 						isNull(),
 						isNull(), isNull(), isNull())).thenReturn(fakeTs);
 
@@ -54,7 +54,7 @@ public class TimeSeriesControllerTest
 		// build mock request and response
 		final HttpServletRequest request= mock(HttpServletRequest.class);
 		final HttpServletResponse response = mock(HttpServletResponse.class);
-		final Map<Class<?>, ?> map = new LinkedHashMap<>();
+		final Map<String, ?> map = new LinkedHashMap<>();
 
 		when(request.getAttribute("office-id")).thenReturn(officeId);
 		when(request.getAttribute("database")).thenReturn(null);
@@ -95,7 +95,7 @@ public class TimeSeriesControllerTest
 
 		// Check that the controller accessed our mock dao in the expected way
 		verify(dao, times(1)).
-				getTimeseries(isNull(), eq(500), eq(tsId), eq(officeId), eq("EN"),
+				getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
 						isNull(),
 						isNull(), isNull(), isNull());
 
