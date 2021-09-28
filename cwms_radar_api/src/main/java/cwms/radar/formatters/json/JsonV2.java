@@ -20,7 +20,6 @@ import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
-import io.javalin.plugin.json.JavalinJackson;
 import org.jetbrains.annotations.NotNull;
 import service.annotations.FormatService;
 
@@ -41,7 +40,7 @@ public class JsonV2 implements OutputFormatter {
 
 	public JsonV2()
 	{
-		this(JavalinJackson.getObjectMapper());
+		this(new ObjectMapper());
 	}
 
 	public JsonV2(ObjectMapper om)
@@ -52,7 +51,7 @@ public class JsonV2 implements OutputFormatter {
 	@NotNull
 	public static ObjectMapper buildObjectMapper()
 	{
-		return buildObjectMapper(JavalinJackson.getObjectMapper());
+		return buildObjectMapper(new ObjectMapper());
 	}
 
 	@NotNull

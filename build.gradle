@@ -13,7 +13,7 @@ ext.JAXB_IMPL_VERSION="2.2.11"
 ext.JAVALIN_VERSION='4.0.0'
 ext.SWAGGER_CORE_VERSION='2.0.9'
 ext.JAVA_EE_WEB_VERSION='7.0'
-ext.CWMS_DB_VERSION='7.0.0-SNAPSHOT'
+ext.CWMS_DB_VERSION='8.0.0-SNAPSHOT'
 
 subprojects {
     apply plugin: 'java'
