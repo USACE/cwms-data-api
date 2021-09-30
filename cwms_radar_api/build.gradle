@@ -38,11 +38,17 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     testImplementation "org.mockito:mockito-core:3.2.4"
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.4'
-    implementation "com.fasterxml.jackson.core:jackson-databind:2.12.3"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.3"
 
+    compileOnly "com.fasterxml.jackson.core:jackson-databind:2.12.3"
+    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
+    compileOnly "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
+    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.3"
+   
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:2.12.3"
+    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.12.3"
+    testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.3"
+    testRuntimeOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.3"
+    
     testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
 
 }
@@ -59,4 +65,3 @@ sourceSets {
         resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
     }
 }
-
