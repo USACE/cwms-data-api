@@ -299,7 +299,7 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
 
-            dao.store(timeSeries);
+            dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
             ctx.status(HttpServletResponse.SC_OK);
         }
         catch(DataAccessException ex)

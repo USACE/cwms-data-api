@@ -10,10 +10,11 @@ import cwms.radar.data.dto.TimeSeries;
 
 public interface TimeSeriesDao
 {
+	Timestamp NON_VERSIONED = null;
 	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office);
 
 	void create(TimeSeries timeSeries);
-	void store(TimeSeries timeSeries);
+	void store(TimeSeries timeSeries, Timestamp versionDate);
 
 	void delete(String office, String tsId);
 

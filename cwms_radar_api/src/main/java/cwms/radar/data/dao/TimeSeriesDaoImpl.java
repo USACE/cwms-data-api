@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -72,7 +73,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 {
 	private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
 
-	public static final String STORE_RULE = "DELETE INSERT";
 	public static final boolean OVERRIDE_PROTECTION = true;
 
 	public TimeSeriesDaoImpl(DSLContext dsl)
@@ -551,15 +551,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			int intervalBackward = 0;
 			boolean versionedFlag = false;
 			boolean activeFlag = true;
-			tsDao.createTsCodeBigInteger(connection, input.getOfficeId(), input.getName(), utcOffsetMinutes,
-					intervalForward, intervalBackward, versionedFlag, activeFlag);
+			BigInteger tsCode = tsDao.createTsCodeBigInteger(connection, input.getOfficeId(), input.getName(),
+					utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
 		});
 	}
 
-	public void store(TimeSeries input)
+	public void store(TimeSeries input, Timestamp versionDate)
 	{
 		dsl.connection(connection -> {
-			store(connection, input.getOfficeId(), input.getName(), input.getUnits(), input.getValues());
+			store(connection, input.getOfficeId(), input.getName(), input.getUnits(), versionDate, input.getValues());
 		});
 	}
 
@@ -570,11 +570,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " first.");
 		}
 		dsl.connection(connection -> {
-			store(connection, input.getOfficeId(), name, input.getUnits(), input.getValues());
+			store(connection, input.getOfficeId(), name, input.getUnits(), NON_VERSIONED, input.getValues());
 		});
 	}
 
-	public void store(Connection connection, String officeId, String tsId, String units,
+	public void store(Connection connection, String officeId, String tsId, String units, Timestamp versionDate,
 						   List<TimeSeries.Record> values) throws SQLException
 	{
 		CwmsDbTs tsDao =  CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
@@ -597,11 +597,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			}
 		}
 
-		final Timestamp versionDate = null;  // Where does this come from?
 		final boolean createAsLrts = false;
+		StoreRule storeRule = StoreRule.DELETE_INSERT;
 
 		long completedAt = tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
-				STORE_RULE, OVERRIDE_PROTECTION, versionDate, createAsLrts);
+				storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
 	}
 
 	public void delete(String officeId, String tsId)
@@ -624,26 +624,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 	public boolean timeseriesExists(String tsId)
 	{
 		return retrieveTsCode(tsId) != null;
-	}
-
-	protected Duration getDuration(String tsId)
-	{
-		Long numMinutes = 0L;
-		try
-		{
-			BigDecimal intervalVal = CWMS_TS_PACKAGE.call_GET_INTERVAL(dsl.configuration(), tsId);
-			if(intervalVal != null)
-			{
-				numMinutes = intervalVal.longValue();
-			}
-		}catch(DataAccessException e){
-			if(!e.getMessage().contains("ORA-01403"))
-			{
-				throw e;
-			}
-			// no data found.
-		}
-		return Duration.ofMinutes(numMinutes);
 	}
 
 }
