@@ -77,8 +77,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
                             "/basins/*",
                             "/blobs/*",
                             "/clobs/*",
-                            "/pools/*",
-                            "/index*"
+                            "/pools/*"
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
@@ -112,7 +111,7 @@ public class ApiServlet extends HttpServlet {
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
             config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
-            config.addStaticFiles("/static",Location.CLASSPATH);
+            //config.addStaticFiles("/static",Location.CLASSPATH);
         })
                 .attribute("PolicyFactory",sanitizer)
                 .attribute("ObjectMapper",om)
