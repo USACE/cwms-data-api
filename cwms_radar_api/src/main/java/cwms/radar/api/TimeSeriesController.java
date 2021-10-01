@@ -1,5 +1,6 @@
 package cwms.radar.api;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +27,10 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
@@ -36,6 +41,8 @@ import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.Tsv;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
+import cwms.radar.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
