@@ -94,7 +94,8 @@ public class TimeSeriesController implements CrudHandler {
             description = "Create new TimeSeries",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON)
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML )
                     },
                     required = true
             ),
@@ -110,13 +111,11 @@ public class TimeSeriesController implements CrudHandler {
         try(final Timer.Context timeContext = createRequestsTime.time(); DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
-
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
-        catch(DataAccessException ex)
+        catch(IOException | DataAccessException ex)
         {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -280,7 +279,10 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Update a TimeSeries",
             requestBody = @OpenApiRequestBody(
-                    content = {@OpenApiContent(from = TimeSeries.class, type = Formats.JSON)},
+                    content = {
+                        @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                        @OpenApiContent(from = TimeSeries.class, type=Formats.XML)
+                    },
                     required = true
             ),
             method = HttpMethod.PATCH,
@@ -296,18 +298,70 @@ public class TimeSeriesController implements CrudHandler {
                 DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
             dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
             ctx.status(HttpServletResponse.SC_OK);
         }
-        catch(DataAccessException ex)
+        catch(IOException | DataAccessException ex)
         {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException
+    {
+        return deserializeTimeSeries(ctx.body(), getContentType(ctx));
+    }
+
+    private TimeSeries deserializeTimeSeries(String body, ContentType contentType) throws IOException
+    {
+        return deserializeTimeSeries(body, contentType.getType());
+    }
+
+    public static TimeSeries deserializeTimeSeries(String body, String contentType) throws IOException
+    {
+        ObjectMapper om = getObjectMapperForFormat(contentType);
+        return om.readValue(body, TimeSeries.class);
+    }
+
+    public static ObjectMapper getObjectMapperForFormat(String format) throws IOException
+    {
+        ObjectMapper retval = null;
+        if((Formats.XML).equals(format))
+        {
+            retval = buildXmlObjectMapper();
+        } else if((Formats.JSON).equals(format)){
+            retval = JsonV1.buildObjectMapper();
+        } else {
+            throw new IOException("Unexpected format:" + format);
+        }
+
+        return retval;
+    }
+
+    @NotNull
+    public static ObjectMapper buildXmlObjectMapper()
+    {
+        ObjectMapper retval = new XmlMapper();
+        retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        retval.registerModule(new JavaTimeModule());
+        return retval;
+    }
+
+    @NotNull
+    private ContentType getContentType(Context ctx)
+    {
+        String acceptHeader = ctx.req.getContentType();
+        String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
+        ContentType contentType = Formats.parseHeader(formatHeader);
+        if(contentType == null)
+        {
+            throw new FormattingException("Format header could not be parsed");
+        }
+        return contentType;
     }
 
     /**
