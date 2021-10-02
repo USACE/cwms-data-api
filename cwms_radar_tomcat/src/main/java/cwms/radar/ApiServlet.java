@@ -135,7 +135,9 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+                    final RadarError re = RadarError.notImplemented();
+                    logger.log(Level.WARNING, e, () -> re + "for request: " + ctx.fullUrl() );
+                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
                     RadarError re = new RadarError("Bad Request", e.getDetails());
