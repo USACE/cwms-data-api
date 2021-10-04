@@ -17,6 +17,7 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -72,16 +73,21 @@ public class TimeSeriesGroupController implements CrudHandler
 			String office = ctx.queryParam("office");
 
 			List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office);
+			if( grps.isEmpty() ){
+				RadarError re = new RadarError("No data found for The provided office");
+				logger.info( () -> { return re.toString() + " for request " + ctx.fullUrl(); } );
+				ctx.status(HttpCode.NOT_FOUND).json(re);
+			} else {
+				String formatHeader = ctx.header(Header.ACCEPT);
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+				String result = Formats.format(contentType,grps,TimeSeriesGroup.class);
 
-			String result = Formats.format(contentType,grps);
+				ctx.result(result).contentType(contentType.toString());
+				requestResultSize.update(result.length());
 
-			ctx.result(result).contentType(contentType.toString());
-			requestResultSize.update(result.length());
-
-			ctx.status(HttpServletResponse.SC_OK);
+				ctx.status(HttpServletResponse.SC_OK);
+			}
 		}
 
 	}

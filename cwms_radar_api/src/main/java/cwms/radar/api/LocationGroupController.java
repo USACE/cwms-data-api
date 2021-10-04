@@ -85,7 +85,7 @@ public class LocationGroupController implements CrudHandler
 				String formatHeader = ctx.header(Header.ACCEPT);
 				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-				String result = Formats.format(contentType, grps);
+				String result = Formats.format(contentType, grps, LocationGroup.class);
 
 				ctx.result(result);
 				ctx.contentType(contentType.toString());

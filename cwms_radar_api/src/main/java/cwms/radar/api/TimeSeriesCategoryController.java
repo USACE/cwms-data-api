@@ -75,7 +75,7 @@ public class TimeSeriesCategoryController implements CrudHandler
 			String formatHeader = ctx.header(Header.ACCEPT);
 			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-			String result = Formats.format(contentType,cats);
+			String result = Formats.format(contentType,cats,TimeSeriesCategory.class);
 
 			ctx.result(result).contentType(contentType.toString());
 			requestResultSize.update(result.length());

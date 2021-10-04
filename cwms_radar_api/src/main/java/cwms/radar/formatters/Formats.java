@@ -126,12 +126,12 @@ public class Formats {
         return outputFormatter;
     }
 
-    private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos) throws FormattingException{
+    private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos, Class<? extends CwmsDTO> rootType) throws FormattingException{
         for(ContentType key: formatters.keySet()){
             logger.finest(key.toString());
         }
 
-        Class<? extends CwmsDTO> klass = dtos.get(0).getClass();
+        Class<? extends CwmsDTO> klass = rootType; //dtos.get(0).getClass();
         OutputFormatter outputFormatter = getOutputFormatter(type, klass);
 
         if(outputFormatter != null){
@@ -158,10 +158,10 @@ public class Formats {
         return formats.getFormatted(type,toFormat);
     }
 
-    public static String format(ContentType type, List<? extends CwmsDTO> toFormat) throws FormattingException{
+    public static String format(ContentType type, List<? extends CwmsDTO> toFormat, Class<? extends CwmsDTO> rootType) throws FormattingException{
         logger.finest("format list");
         init();
-        return formats.getFormatted(type,toFormat);
+        return formats.getFormatted(type,toFormat,rootType);
     }
 
 

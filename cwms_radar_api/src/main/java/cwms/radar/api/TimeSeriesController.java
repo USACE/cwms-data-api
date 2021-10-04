@@ -412,6 +412,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group(s) were not found."),
                     @OpenApiResponse(status = "501", description = "request format is not implemented")
             },
+            path = "/timeseries/recent",
             description = "Returns CWMS Timeseries Groups Data",
             tags = {"TimeSeries"},
             method = HttpMethod.GET
@@ -426,7 +427,7 @@ public class TimeSeriesController implements CrudHandler {
 
             String office = ctx.queryParam("office");
             String categoryId = ctx.queryParamAsClass("category-id", String.class).allowNullable().get();
-            String groupId = ctx.queryParamAsClass("group-id", String.class).allowNullable().get();
+            String groupId = ctx.pathParamAsClass("group-id", String.class).allowNullable().get();
             String tsIdsParam = ctx.queryParamAsClass("ts-ids", String.class).allowNullable().get();
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
@@ -447,16 +448,18 @@ public class TimeSeriesController implements CrudHandler {
             List<RecentValue> latestValues = null;
             if(hasTsGroupInfo && hasTsIds){
                 // has both = this is an error
-                RadarError re = new RadarError("Invalid arguments supplied");
-                logger.log(Level.SEVERE, re.toString());
+                RadarError re = new RadarError("Invalid arguments supplied, group has both Timeseries Group info and Timeseries IDs.");
+                logger.log(Level.SEVERE, re.toString() + " for url " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
+                return;
             } else if(!hasTsGroupInfo && !hasTsIds){
                 // doesn't have either?  Just return empty results?
-                RadarError re = new RadarError("Invalid arguments supplied");
-                logger.log(Level.SEVERE, re.toString());
+                RadarError re = new RadarError("Invalid arguments supplied, group has neither Timeseries Group info nor Timeseries IDs");
+                logger.log(Level.SEVERE, re.toString()+ " for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
+                return;
             } else if( hasTsGroupInfo){
                 // just group provided
                 latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit);
@@ -467,7 +470,7 @@ public class TimeSeriesController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-            String result = Formats.format(contentType, latestValues);
+            String result = Formats.format(contentType, latestValues,RecentValue.class);
 
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
