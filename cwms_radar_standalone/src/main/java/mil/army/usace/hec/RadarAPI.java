@@ -161,12 +161,11 @@ public class RadarAPI {
             crud("/parameters/{param_name}", new ParametersController(metrics));
             crud("/timezones/{zone}", new TimeZoneController(metrics));
             crud("/levels/{location}", new LevelsController(metrics));
+            crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
+            crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
             TimeSeriesController tsController = new TimeSeriesController(metrics);
             crud("/timeseries/{timeseries}", tsController);
             get("/timeseries/recent/{group-id}", tsController::getRecent);
-
-            crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
-            crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
             crud("/ratings/{rating}", new RatingController(metrics));
             crud("/catalog/{dataSet}", new CatalogController(metrics));
             crud("/blobs/{blob-id}", new BlobController(metrics));
