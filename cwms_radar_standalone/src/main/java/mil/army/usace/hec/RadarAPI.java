@@ -100,7 +100,7 @@ public class RadarAPI {
             config.addStaticFiles("/static",Location.CLASSPATH);
         }).attribute("PolicyFactory",sanitizer)
           .attribute("ObjectMapper",om)
-
+          .attribute("RADAR_ALLOW_WRITE", System.getProperty("RADAR_ALLOW_WRITE", "false").equalsIgnoreCase("true") ? Boolean.TRUE: Boolean.FALSE )
           .before( ctx -> {
             ctx.header("X-Content-Type-Options","nosniff");
             ctx.header("X-Frame-Options","SAMEORIGIN");

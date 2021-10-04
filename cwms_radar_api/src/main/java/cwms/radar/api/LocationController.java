@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.naming.OperationNotSupportedException;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
@@ -201,6 +203,9 @@ public class LocationController implements CrudHandler {
     public void create(Context ctx)
     {
         createRequest.mark();
+        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
+            throw new UnsupportedOperationException("database is read only");
+        }
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
@@ -244,6 +249,9 @@ public class LocationController implements CrudHandler {
     public void update(Context ctx, @NotNull String locationId)
     {
         updateRequest.mark();
+        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
+            throw new UnsupportedOperationException("database is read only");
+        }
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
@@ -295,6 +303,9 @@ public class LocationController implements CrudHandler {
     public void delete(Context ctx, @NotNull String locationId)
     {
         deleteRequest.mark();
+        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
+            throw new UnsupportedOperationException("database is read only");
+        }
         try(final Timer.Context timeContext = deleteRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
