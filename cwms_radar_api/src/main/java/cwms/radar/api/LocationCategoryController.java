@@ -30,6 +30,7 @@ import cwms.radar.api.errors.RadarError;
 public class LocationCategoryController implements CrudHandler
 {
 	public static final Logger logger = Logger.getLogger(LocationCategoryController.class.getName());
+	private static final String TAG = "Location Categories-Beta";
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -59,7 +60,7 @@ public class LocationCategoryController implements CrudHandler
 			},
 
 			description = "Returns CWMS Location Category Data",
-			tags = {"Location Categories"}
+			tags = {TAG}
 	)
 	@Override
 	public void getAll(Context ctx)
@@ -113,7 +114,7 @@ public class LocationCategoryController implements CrudHandler
 					)
 			},
 			description = "Retrieves requested Location Category",
-			tags = {"Location Categories"})
+			tags = {TAG})
 	@Override
 	public void getOne(Context ctx, String categoryId)
 	{

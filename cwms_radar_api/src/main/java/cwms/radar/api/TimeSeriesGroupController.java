@@ -30,6 +30,7 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 public class TimeSeriesGroupController implements CrudHandler
 {
 	public static final Logger logger = Logger.getLogger(TimeSeriesGroupController.class.getName());
+	public static final String TAG = "Timeseries Groups-Beta";
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -61,7 +62,7 @@ public class TimeSeriesGroupController implements CrudHandler
 
 			),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group(s) were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Timeseries Groups Data", tags = {"Timeseries Groups"})
+					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS Timeseries Groups Data", tags = {TAG})
 	@Override
 	public void getAll(Context ctx)
 	{

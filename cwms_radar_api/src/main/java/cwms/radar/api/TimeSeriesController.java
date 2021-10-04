@@ -414,7 +414,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             path = "/timeseries/recent",
             description = "Returns CWMS Timeseries Groups Data",
-            tags = {"TimeSeries"},
+            tags = {"TimeSeries-Beta"},
             method = HttpMethod.GET
     )
     public void getRecent(Context ctx)

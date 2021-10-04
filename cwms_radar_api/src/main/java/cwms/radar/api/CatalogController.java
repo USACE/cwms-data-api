@@ -33,7 +33,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 public class CatalogController implements CrudHandler{
 
     private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
-
+    private static final String TAG = "Catalog-Beta";
 
     private final MetricRegistry metrics;
     private final Meter getOneRequest;
@@ -50,7 +50,7 @@ public class CatalogController implements CrudHandler{
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
-    @OpenApi(tags = {"Catalog"},ignore = true)
+    @OpenApi(tags = {TAG},ignore = true)
     @Override
     public void create(Context ctx) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
@@ -103,7 +103,7 @@ public class CatalogController implements CrudHandler{
                                        }
                       )
                     },
-        tags = {"Catalog"}
+        tags = {TAG}
     )
     @Override
     public void getOne(Context ctx, String dataSet) {

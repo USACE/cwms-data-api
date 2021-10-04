@@ -36,7 +36,7 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 public class LocationGroupController implements CrudHandler
 {
 	public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
-
+	public final String TAG = "Location Groups-Beta";
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
 	private final Timer getAllRequestsTime;
@@ -66,7 +66,7 @@ public class LocationGroupController implements CrudHandler
 					}
 
 			)},
-			description = "Returns CWMS Location Groups Data", tags = {"Location Groups"})
+			description = "Returns CWMS Location Groups Data", tags = {TAG})
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -123,7 +123,7 @@ public class LocationGroupController implements CrudHandler
 					}
 
 			)},
-			description = "Retrieves requested Location Group", tags = {"Location Groups"})
+			description = "Retrieves requested Location Group", tags = {TAG})
 	@Override
 	public void getOne(Context ctx, String groupId)
 	{

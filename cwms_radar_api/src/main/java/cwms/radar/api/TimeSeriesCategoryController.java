@@ -30,6 +30,7 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 public class TimeSeriesCategoryController implements CrudHandler
 {
 	public static final Logger logger = Logger.getLogger(TimeSeriesCategoryController.class.getName());
+	public static final String TAG = "TimeSeries Categories-Beta";
 
 	private final MetricRegistry metrics;
 	private final Meter getAllRequests;
@@ -59,7 +60,7 @@ public class TimeSeriesCategoryController implements CrudHandler
 			}
 			),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the categories were not found."),
-					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS timeseries category Data", tags = {"TimeSeries Categories"})
+					@OpenApiResponse(status = "501", description = "request format is not implemented")}, description = "Returns CWMS timeseries category Data", tags = {TAG})
 	@Override
 	public void getAll(Context ctx)
 	{
@@ -103,7 +104,7 @@ public class TimeSeriesCategoryController implements CrudHandler
 					),
 					@OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries category was not found."),
 					@OpenApiResponse(status = "501", description = "request format is not implemented")},
-			description = "Retrieves requested timeseries category", tags = {"TimeSeries Categories"})
+			description = "Retrieves requested timeseries category", tags = {TAG})
 	@Override
 	public void getOne(Context ctx, String categoryId)
 	{
