@@ -122,17 +122,18 @@ public class TimeSeriesControllerTest
 	private void assertSimilar(TimeSeries fakeTs, TimeSeries ts)
 	{
 		// Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
-		assertEquals(ts.getOfficeId(), fakeTs.getOfficeId());
-		assertEquals(ts.getName(), fakeTs.getName());
-		assertEquals(ts.getValues(), fakeTs.getValues());
-		assertTrue(ts.getBegin().isEqual(fakeTs.getBegin()));
-		assertTrue(ts.getEnd().isEqual(fakeTs.getEnd()));
+		assertEquals(ts.getOfficeId(), fakeTs.getOfficeId(), "offices did not match");
+		assertEquals(ts.getName(), fakeTs.getName(), "names did not match");
+		assertEquals(ts.getValues(), fakeTs.getValues(), "values did not match");
+		assertTrue(ts.getBegin().isEqual(fakeTs.getBegin()), "begin dates not equal");
+		assertTrue(ts.getEnd().isEqual(fakeTs.getEnd()), "end dates not equal");
 	}
 
-	public String loadResourceAsString(String fileName) throws IOException
+	public String loadResourceAsString(String fileName)
 	{
 		ClassLoader classLoader = getClass().getClassLoader();
 		InputStream stream = classLoader.getResourceAsStream(fileName);
+		assertNotNull(stream, "Could not load the resource as stream:" + fileName);
 		Scanner scanner = new Scanner(stream);
 		String contents = scanner.useDelimiter("\\A").next();
 		scanner.close();
@@ -140,7 +141,7 @@ public class TimeSeriesControllerTest
 	}
 
 	@Test
-	public void testDeserializeTimeSeriesJaxb() throws IOException, JAXBException
+	public void testDeserializeTimeSeriesJaxb() throws IOException
 	{
 		String officeId = "LRL";
 		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
@@ -156,12 +157,7 @@ public class TimeSeriesControllerTest
 	}
 
 	@Test
-	public void testFormatter(){
-
-	}
-
-	@Test
-	public void testDeserializeTimeSeriesXml() throws IOException, JAXBException
+	public void testDeserializeTimeSeriesXml() throws IOException
 	{
 		String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
 		assertNotNull(xml);
