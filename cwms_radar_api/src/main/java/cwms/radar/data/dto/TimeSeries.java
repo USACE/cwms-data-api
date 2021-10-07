@@ -261,6 +261,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         public final int ordinal;
         public final Class<?> datatype;
 
+        // JAXB seems to need a default ctor
+        private Column(){
+            this(null, 0,null);
+        }
+
         @JsonCreator
         protected Column(@JsonProperty("name") String name, @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {
             this.name = name;
