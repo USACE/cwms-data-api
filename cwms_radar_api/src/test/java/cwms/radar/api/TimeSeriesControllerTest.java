@@ -1,13 +1,17 @@
 package cwms.radar.api;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Scanner;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBException;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,6 +20,7 @@ import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
+import cwms.radar.formatters.xml.XMLv2;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.jetbrains.annotations.NotNull;
@@ -111,6 +116,11 @@ public class TimeSeriesControllerTest
 		ObjectMapper om = JsonV2.buildObjectMapper();
 		TimeSeries ts = om.readValue(result, TimeSeries.class);
 
+		assertSimilar(fakeTs, ts);
+	}
+
+	private void assertSimilar(TimeSeries fakeTs, TimeSeries ts)
+	{
 		// Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
 		assertEquals(ts.getOfficeId(), fakeTs.getOfficeId());
 		assertEquals(ts.getName(), fakeTs.getName());
@@ -118,6 +128,64 @@ public class TimeSeriesControllerTest
 		assertTrue(ts.getBegin().isEqual(fakeTs.getBegin()));
 		assertTrue(ts.getEnd().isEqual(fakeTs.getEnd()));
 	}
+
+	public String loadResourceAsString(String fileName) throws IOException
+	{
+		ClassLoader classLoader = getClass().getClassLoader();
+		InputStream stream = classLoader.getResourceAsStream(fileName);
+		Scanner scanner = new Scanner(stream);
+		String contents = scanner.useDelimiter("\\A").next();
+		scanner.close();
+		return contents;
+	}
+
+	@Test
+	public void testDeserializeTimeSeriesJaxb() throws IOException, JAXBException
+	{
+		String officeId = "LRL";
+		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+		TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
+
+		XMLv2 out = new XMLv2();
+		String str = out.format(fakeTs);
+
+		TimeSeries ts2 = TimeSeriesController.deserializeJaxb(str);
+		assertNotNull(ts2);
+
+		assertSimilar(fakeTs, ts2);
+	}
+
+	@Test
+	public void testFormatter(){
+
+	}
+
+	@Test
+	public void testDeserializeTimeSeriesXml() throws IOException, JAXBException
+	{
+		String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+		assertNotNull(xml);
+		TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);  // Should this be XMLv2?
+
+		assertNotNull(ts);
+
+		TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+		assertSimilar(fakeTs, ts);
+	}
+
+	@Test
+	public void testDeserializeTimeSeriesJSON() throws IOException
+	{
+		String jsonV2 = loadResourceAsString("cwms/radar/api/timeseries_create.json");
+		assertNotNull(jsonV2);
+		TimeSeries ts = TimeSeriesController.deserializeTimeSeries(jsonV2, Formats.JSONV2);
+
+		assertNotNull(ts);
+
+		TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+		assertSimilar(fakeTs, ts);
+	}
+
 
 	@NotNull
 	private TimeSeries buildTimeSeries(String officeId, String tsId)
