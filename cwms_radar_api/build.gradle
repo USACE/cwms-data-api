@@ -63,3 +63,8 @@ sourceSets {
         resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
     }
 }
+
+checkstyle {
+    toolVersion "7.6.1"
+}
+
