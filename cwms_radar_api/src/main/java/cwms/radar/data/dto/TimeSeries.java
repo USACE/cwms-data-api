@@ -253,6 +253,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             result = 31 * result + getQualityCode();
             return result;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Record{" + "dateTime=" + dateTime + ", value=" + value + ", qualityCode=" + qualityCode + '}';
+        }
     }
 
     @Schema(hidden = true, name = "TimeSeries.Column", accessMode = Schema.AccessMode.READ_ONLY)

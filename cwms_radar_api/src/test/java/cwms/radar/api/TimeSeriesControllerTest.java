@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Scanner;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -119,14 +118,14 @@ public class TimeSeriesControllerTest
 		assertSimilar(fakeTs, ts);
 	}
 
-	private void assertSimilar(TimeSeries fakeTs, TimeSeries ts)
+	private void assertSimilar(TimeSeries expected, TimeSeries actual)
 	{
 		// Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
-		assertEquals(ts.getOfficeId(), fakeTs.getOfficeId(), "offices did not match");
-		assertEquals(ts.getName(), fakeTs.getName(), "names did not match");
-		assertEquals(ts.getValues(), fakeTs.getValues(), "values did not match");
-		assertTrue(ts.getBegin().isEqual(fakeTs.getBegin()), "begin dates not equal");
-		assertTrue(ts.getEnd().isEqual(fakeTs.getEnd()), "end dates not equal");
+		assertEquals(actual.getOfficeId(), expected.getOfficeId(), "offices did not match");
+		assertEquals(actual.getName(), expected.getName(), "names did not match");
+		assertEquals(actual.getValues(), expected.getValues(), "values did not match");
+		assertTrue(actual.getBegin().isEqual(expected.getBegin()), "begin dates not equal");
+		assertTrue(actual.getEnd().isEqual(expected.getEnd()), "end dates not equal");
 	}
 
 	public String loadResourceAsString(String fileName)
