@@ -1,6 +1,9 @@
 package cwms.radar.api;
 
+import java.io.IOException;
 import java.sql.SQLException;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -10,16 +13,31 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.*;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Timer;
 
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.*;
+import cwms.radar.data.dto.Location;
+import cwms.radar.data.dto.LocationLevel;
+import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.*;
+import org.jooq.DSLContext;
+import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
 
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
@@ -29,6 +47,12 @@ public class LevelsController implements CrudHandler {
     private final Meter getOneRequest;
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
+    private final Meter createRequest;
+    private final Timer createRequestTime;
+    private final Meter deleteRequest;
+    private final Timer deleteRequestTime;
+    private final Meter updateRequest;
+    private final Timer updateRequestTime;
 
     public LevelsController(MetricRegistry metrics){
         this.metrics=metrics;
@@ -37,19 +61,82 @@ public class LevelsController implements CrudHandler {
         getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
         getOneRequest = this.metrics.meter(name(className,"getOne","count"));
         getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
+        createRequest = this.metrics.meter(name(className,"create","count"));
+        createRequestTime = this.metrics.timer(name(className,"create","time"));
+        deleteRequest = this.metrics.meter(name(className,"delete","count"));
+        deleteRequestTime = this.metrics.timer(name(className,"delete","time"));
+        updateRequest = this.metrics.meter(name(className,"update","count"));
+        updateRequestTime = this.metrics.timer(name(className,"update","time"));
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the office in which Location Level will be created")
+            },
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = LocationLevelPojo.class, type = Formats.JSON )
+                    },
+                    required = true),
+            description = "Create new CWMS Location Level",
+            method = HttpMethod.POST,
+            path = "/levels",
+            tags = {"Levels"}
+    )
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        createRequest.mark();
+        try(final Timer.Context timeContext = createRequestTime.time();
+            DSLContext dsl = getDslContext(ctx))
+        {
+            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
+            String office = ctx.queryParam("office");
+            String acceptHeader = ctx.req.getContentType();
+            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            if(contentType == null)
+            {
+                throw new FormattingException("Format header could not be parsed");
+            }
+            LocationLevel level = deserializeLocationLevel(ctx.body(),formatHeader, null, office); //timeZoneId is fetched from serialization
+            levelsDao.storeLocationLevel(level);
+        }
+        catch(IOException ex)
+        {
+            RadarError re = new RadarError("failed to process request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name = "office", description = "Specifies the owning office of the location level whose data is to be deleted. If this field is not specified, matching location level information will be deleted from all offices.")
+            },
+            description = "Delete CWMS Location Level",
+            method = HttpMethod.DELETE,
+            path = "/levels",
+            tags = {"Levels"}
+    )
     @Override
-    public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    public void delete(Context ctx, String id)
+    {
+        deleteRequest.mark();
+        try(final Timer.Context timeContext = deleteRequestTime.time();
+            DSLContext dsl = getDslContext(ctx))
+        {
+            String office = ctx.queryParam("office");
+            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
+            levelsDao.deleteLocationLevel(id, office);
+            ctx.status(HttpServletResponse.SC_ACCEPTED).json(id + " Deleted");
+        }
+        catch(IOException ex)
+        {
+            RadarError re = new RadarError("Failed to delete location level");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
     }
 
     @OpenApi(
@@ -109,22 +196,149 @@ public class LevelsController implements CrudHandler {
         }
     }
 
+
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        getOneRequest.mark();
-        try (
-            final Timer.Context time_context = getOneRequestTime.time();
-            ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    }
+
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the office in which Location Level will be updated"),
+                    @OpenApiParam(name="timezone", required = true, description="Specifies the timezone of Location Level will be updated")
+            },
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON )
+                    },
+                    required = true),
+            description = "Update CWMS Location Level",
+            method = HttpMethod.PATCH,
+            path = "/levels",
+            tags = {"Levels"}
+    )
+    @Override
+    public void update(Context ctx, String id) {
+        updateRequest.mark();
+        try(final Timer.Context timeContext = updateRequestTime.time();
+            DSLContext dsl = getDslContext(ctx))
+        {
+            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
+            String office = ctx.queryParam("office");
+            ZoneId timeZone = ZoneId.of(ctx.queryParam("timezone"));
+            String acceptHeader = ctx.req.getContentType();
+            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            if(contentType == null)
+            {
+                throw new FormattingException("Format header could not be parsed");
+            }
+            LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(), contentType.getType(), timeZone, office);
+            //getLocation will throw an error if location does not exist
+            LocationLevel existingLocationLevel = levelsDao.retrieveLocationLevel(id, UnitSystem.EN.getValue(), timeZone, office);
+            existingLocationLevel = updatedClearedFields(ctx.body(), contentType.getType(), existingLocationLevel);
+            //only store (update) if location does exist
+            LocationLevel updatedLocationLevel = getUpdatedLocation(existingLocationLevel, levelFromBody);
+            if(!updatedLocationLevel.getLocationId().equalsIgnoreCase(existingLocationLevel.getLocationId())) //if name changed then delete location with old name
+            {
+                levelsDao.renameLocationLevel(id, updatedLocationLevel);
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location Level");
+            }
+            else
+            {
+                levelsDao.storeLocationLevel(updatedLocationLevel);
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
+            }
+        }
+        catch(IOException ex)
+        {
+            RadarError re = new RadarError("Failed to process request: " + ex.getLocalizedMessage());
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
-    @OpenApi(ignore = true)
-    @Override
-    public void update(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    private LocationLevel getUpdatedLocation(LocationLevel existingLevel, LocationLevel updatedLevel)
+    {
+        existingLevel.setSeasonalTimeSeriesId(updatedLevel.getSeasonalTimeSeriesId() == null ? existingLevel.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
+        existingLevel.setSeasonalValues(updatedLevel.getSeasonalValues() == null ? existingLevel.getSeasonalValues() : updatedLevel.getSeasonalValues());
+        existingLevel.setSpecifiedLevelId(updatedLevel.getSpecifiedLevelId() == null ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
+        existingLevel.setParameterTypeId(updatedLevel.getParameterTypeId() == null ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
+        existingLevel.setParameterId(updatedLevel.getParameterId() == null ? existingLevel.getParameterId() : updatedLevel.getParameterId());
+        existingLevel.setSiParameterUnitsConstantValue(updatedLevel.getSiParameterUnitsConstantValue() == null ? existingLevel.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
+        existingLevel.setLevelUnitsId(updatedLevel.getLevelUnitsId() == null ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
+        existingLevel.setLevelDate(updatedLevel.getLevelDate() == null ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
+        existingLevel.setLevelComment(updatedLevel.getLevelComment() == null ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
+        existingLevel.setIntervalOrigin(updatedLevel.getIntervalOrigin() == null ? existingLevel.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
+        existingLevel.setIntervalMonths(updatedLevel.getIntervalMonths() == null ? existingLevel.getIntervalMonths() : updatedLevel.getIntervalMonths());
+        existingLevel.setIntervalMinutes(updatedLevel.getIntervalMinutes() == null ? existingLevel.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
+        existingLevel.setInterpolateString(updatedLevel.getInterpolateString() == null ? existingLevel.getInterpolateString() : updatedLevel.getInterpolateString());
+        existingLevel.setDurationId(updatedLevel.getDurationId() == null ? existingLevel.getDurationId() : updatedLevel.getDurationId());
+        existingLevel.setAttributeValue(updatedLevel.getAttributeValue() == null ? existingLevel.getAttributeValue() : updatedLevel.getAttributeValue());
+        existingLevel.setAttributeUnitsId(updatedLevel.getAttributeUnitsId() == null ? existingLevel.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
+        existingLevel.setAttributeParameterTypeId(updatedLevel.getAttributeParameterTypeId() == null ? existingLevel.getAttributeParameterTypeId() : updatedLevel.getAttributeParameterTypeId());
+        existingLevel.setAttributeParameterId(updatedLevel.getAttributeParameterId() == null ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
+        existingLevel.setAttributeDurationId(updatedLevel.getAttributeDurationId() == null ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
+        existingLevel.setAttributeComment(updatedLevel.getAttributeComment() == null ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
+        existingLevel.setLocationId(updatedLevel.getLocationId() == null ? existingLevel.getLocationId() : updatedLevel.getLocationId());
+        existingLevel.setOfficeId(updatedLevel.getOfficeId() == null ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
+        return existingLevel;
+    }
 
+    private LocationLevel deserializeLocationLevel(String body, String format, ZoneId timeZoneId, String office) throws IOException
+    {
+        ObjectMapper om = getObjectMapperForFormat(format);
+        LocationLevel retVal;
+        try
+        {
+            retVal = om.readValue(body, LocationLevel.class);
+            retVal.setOfficeId(office);
+            if(timeZoneId != null) {
+                retVal.setTimeZoneId(timeZoneId);
+            }
+        }
+        catch(Exception e)
+        {
+            throw new IOException("Failed to deserialize location");
+        }
+        return retVal;
+    }
+
+    private static ObjectMapper getObjectMapperForFormat(String format)
+    {
+        ObjectMapper om = new ObjectMapper();
+        if((Formats.XML).equals(format))
+        {
+            om = new XmlMapper();
+        }
+        om.registerModule(new JavaTimeModule());
+        return om;
+    }
+
+    private LocationLevel updatedClearedFields(String body, String format, LocationLevel existingLocation) throws IOException
+    {
+        ObjectMapper om = getObjectMapperForFormat(format);
+        JsonNode root = om.readTree(body);
+        JavaType javaType = om.getTypeFactory().constructType(Location.class);
+        BeanDescription beanDescription = om.getSerializationConfig().introspect(javaType);
+        List<BeanPropertyDefinition> properties = beanDescription.findProperties();
+        LocationLevel retVal = new LocationLevel();
+        try
+        {
+            for (BeanPropertyDefinition propertyDefinition : properties) {
+                String propertyName = propertyDefinition.getName();
+                JsonNode propertyValue = root.findValue(propertyName);
+                if (propertyValue != null && "".equals(propertyValue.textValue())) {
+                    retVal.setProperty(propertyName, propertyValue);
+                }
+            }
+        }
+        catch (NullPointerException e) //gets thrown if required field is null
+        {
+            throw new IOException(e.getMessage());
+        }
+        return retVal;
     }
 
 }
