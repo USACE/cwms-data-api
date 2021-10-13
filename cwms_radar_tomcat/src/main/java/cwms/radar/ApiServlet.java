@@ -1,6 +1,7 @@
 package cwms.radar;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -203,7 +204,15 @@ public class ApiServlet extends HttpServlet {
             req.setAttribute("database", db);
             javalin.service(req, resp);
         } catch (SQLException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            RadarError re = new RadarError("Major Database Issue");
+            logger.log(Level.SEVERE, ex, () -> { return re.toString() + " for url " + req.getRequestURI(); });
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.setContentType(ContentType.APPLICATION_JSON.toString());
+            try (PrintWriter out = resp.getWriter()) {
+                ObjectMapper om = new ObjectMapper();
+                out.println(om.writeValueAsString(re));
+            }
+
         }
 
     }
