@@ -9,6 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -39,12 +40,14 @@ import static org.mockito.Mockito.when;
 public class TimeSeriesControllerTest
 {
 
+
+
 	@Test
 	public void testDaoMock() throws JsonProcessingException
 	{
 		String officeId = "LRL";
 		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-		TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
+		TimeSeries expected = buildTimeSeries(officeId, tsId);
 
 		// build a mock dao that returns a pre-built ts when called a certain way
 		TimeSeriesDao dao = mock(TimeSeriesDao.class);
@@ -52,7 +55,7 @@ public class TimeSeriesControllerTest
 		when(
 				dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
 						isNull(),
-						isNull(), isNull(), isNull())).thenReturn(fakeTs);
+						isNull(), isNull(), isNull())).thenReturn(expected);
 
 
 		// build mock request and response
@@ -100,8 +103,7 @@ public class TimeSeriesControllerTest
 		// Check that the controller accessed our mock dao in the expected way
 		verify(dao, times(1)).
 				getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-						isNull(),
-						isNull(), isNull(), isNull());
+						isNull(), isNull(), isNull(), isNull());
 
 		// Make sure controller thought it was happy
 		verify(response).setStatus(200);
@@ -113,19 +115,19 @@ public class TimeSeriesControllerTest
 
 		// Turn json response back into a TimeSeries object
 		ObjectMapper om = JsonV2.buildObjectMapper();
-		TimeSeries ts = om.readValue(result, TimeSeries.class);
+		TimeSeries actual = om.readValue(result, TimeSeries.class);
 
-		assertSimilar(fakeTs, ts);
+		assertSimilar(expected, actual);
 	}
 
 	private void assertSimilar(TimeSeries expected, TimeSeries actual)
 	{
 		// Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
-		assertEquals(actual.getOfficeId(), expected.getOfficeId(), "offices did not match");
-		assertEquals(actual.getName(), expected.getName(), "names did not match");
-		assertEquals(actual.getValues(), expected.getValues(), "values did not match");
-		assertTrue(actual.getBegin().isEqual(expected.getBegin()), "begin dates not equal");
-		assertTrue(actual.getEnd().isEqual(expected.getEnd()), "end dates not equal");
+		assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
+		assertEquals(expected.getName(), actual.getName(), "names did not match");
+		assertEquals(expected.getValues(), actual.getValues(), "values did not match");
+		assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
+		assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
 	}
 
 	public String loadResourceAsString(String fileName)
@@ -156,16 +158,38 @@ public class TimeSeriesControllerTest
 	}
 
 	@Test
+	public void testDeserializeTimeSeriesXmlUTC() throws IOException
+	{
+		TimeZone aDefault = TimeZone.getDefault();
+		try
+		{
+			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
+			String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+			assertNotNull(xml);
+			TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);  // Should this be XMLv2?
+
+			assertNotNull(ts);
+
+			TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+			assertSimilar(fakeTs, ts);
+		} finally
+		{
+			TimeZone.setDefault(aDefault);
+		}
+	}
+
+	@Test
 	public void testDeserializeTimeSeriesXml() throws IOException
 	{
-		String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
-		assertNotNull(xml);
-		TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);  // Should this be XMLv2?
+			String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+			assertNotNull(xml);
+			TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);  // Should this be XMLv2?
 
-		assertNotNull(ts);
+			assertNotNull(ts);
 
-		TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
-		assertSimilar(fakeTs, ts);
+			TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+			assertSimilar(fakeTs, ts);
 	}
 
 	@Test
@@ -200,7 +224,7 @@ public class TimeSeriesControllerTest
 		ZonedDateTime next = start;
 		for(int i = 0; i < count; i++)
 		{
-			Timestamp dateTime = Timestamp.valueOf(next.toLocalDateTime());
+			Timestamp dateTime = Timestamp.from(next.toInstant());
 			ts.addValue(dateTime, (double) i, 0);
 			next = next.plus(minutes, ChronoUnit.MINUTES);
 		}
