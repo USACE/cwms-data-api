@@ -253,6 +253,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             result = 31 * result + getQualityCode();
             return result;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Record{" + "dateTime=" + dateTime + ", value=" + value + ", qualityCode=" + qualityCode + '}';
+        }
     }
 
     @Schema(hidden = true, name = "TimeSeries.Column", accessMode = Schema.AccessMode.READ_ONLY)
@@ -260,6 +266,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         public final String name;
         public final int ordinal;
         public final Class<?> datatype;
+
+        // JAXB seems to need a default ctor
+        private Column(){
+            this(null, 0,null);
+        }
 
         @JsonCreator
         protected Column(@JsonProperty("name") String name, @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {

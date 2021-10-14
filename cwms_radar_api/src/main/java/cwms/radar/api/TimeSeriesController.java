@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -259,7 +263,10 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results).contentType(contentType.toString());
             }
             else {
-                results = dao.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
+                if (format == null || format.isEmpty()){
+                    format = "json";
+                }
+                results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
@@ -330,23 +337,38 @@ public class TimeSeriesController implements CrudHandler {
 
     public static TimeSeries deserializeTimeSeries(String body, String contentType) throws IOException
     {
-        ObjectMapper om = getObjectMapperForFormat(contentType);
-        return om.readValue(body, TimeSeries.class);
-    }
+        TimeSeries retval;
 
-    public static ObjectMapper getObjectMapperForFormat(String format) throws IOException
-    {
-        ObjectMapper retval = null;
-        if((Formats.XML).equals(format))
+        if((Formats.XMLV2).equals(contentType))
         {
-            retval = buildXmlObjectMapper();
-        } else if((Formats.JSON).equals(format)){
-            retval = JsonV1.buildObjectMapper();
+            // This is how it would be done if we could use jackson to parse the xml
+            // it currently doesn't work because some of the jackson annotations
+            // use certain naming conventions (e.g. "value-columns" vs "valueColumns")
+            //  ObjectMapper om = buildXmlObjectMapper();
+            //  retval = om.readValue(body, TimeSeries.class);
+            retval = deserializeJaxb(body);
+        } else if((Formats.JSONV2).equals(contentType)){
+            ObjectMapper om = JsonV1.buildObjectMapper();
+            retval = om.readValue(body, TimeSeries.class);
         } else {
-            throw new IOException("Unexpected format:" + format);
+            throw new IOException("Unexpected format:" + contentType);
         }
 
         return retval;
+    }
+
+    public static TimeSeries deserializeJaxb(String body) throws IOException
+    {
+        try
+        {
+            JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            return (TimeSeries) unmarshaller.unmarshal(new StringReader(body));
+        }
+        catch(JAXBException e)
+        {
+            throw new IOException(e);
+        }
     }
 
     @NotNull
