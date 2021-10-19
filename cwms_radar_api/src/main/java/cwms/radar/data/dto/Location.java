@@ -308,25 +308,25 @@ public final class  Location implements CwmsDTO
             propertyFunctionMap.put("name", nameVal -> withName((String)nameVal));
             propertyFunctionMap.put("latitude", latitudeVal -> withLatitude((Double)latitudeVal));
             propertyFunctionMap.put("longitude", longitudeVal -> withLongitude((Double)longitudeVal));
-            propertyFunctionMap.put("officeId", officeIdVal -> withOfficeId((String)officeIdVal));
+            propertyFunctionMap.put("office-id", officeIdVal -> withOfficeId((String)officeIdVal));
             propertyFunctionMap.put("active", activeVal -> withActive((Boolean)activeVal));
-            propertyFunctionMap.put("publicName", publicNameVal -> withPublicName((String)publicNameVal));
-            propertyFunctionMap.put("longName", longNameVal -> withLongName((String)longNameVal));
+            propertyFunctionMap.put("public-name", publicNameVal -> withPublicName((String)publicNameVal));
+            propertyFunctionMap.put("long-name", longNameVal -> withLongName((String)longNameVal));
             propertyFunctionMap.put("description", descriptionVal -> withDescription((String)descriptionVal));
-            propertyFunctionMap.put("timezoneName", timezoneNameVal -> withTimeZoneName(ZoneId.of(Objects.requireNonNull((String)timezoneNameVal, "Timezone is a required field"))));
-            propertyFunctionMap.put("locationType", locationTypeVal -> withLocationType((String)locationTypeVal));
-            propertyFunctionMap.put("locationKind", locationKindVal -> withLocationKind((String)locationKindVal));
+            propertyFunctionMap.put("timezone-name", timezoneNameVal -> withTimeZoneName(ZoneId.of(Objects.requireNonNull((String)timezoneNameVal, "Timezone is a required field"))));
+            propertyFunctionMap.put("location-type", locationTypeVal -> withLocationType((String)locationTypeVal));
+            propertyFunctionMap.put("location-kind", locationKindVal -> withLocationKind((String)locationKindVal));
             propertyFunctionMap.put("nation", nationVal -> withNation(convertStringToNation((String)nationVal)));
-            propertyFunctionMap.put("stateInitial", stateInitialVal -> withStateInitial((String)stateInitialVal));
-            propertyFunctionMap.put("countyName", countyNameVal -> withCountyName((String)countyNameVal));
-            propertyFunctionMap.put("nearestCity", nearestCityVal -> withNearestCity((String)nearestCityVal));
-            propertyFunctionMap.put("horizontalDatum", horizontalDatumVal -> withHorizontalDatum((String)horizontalDatumVal));
-            propertyFunctionMap.put("publishedLongitude", publishedLongitudeVal -> withPublishedLongitude((Double)publishedLongitudeVal));
-            propertyFunctionMap.put("publishedLatitude", publishedLatitudeVal -> withPublishedLatitude((Double)publishedLatitudeVal));
-            propertyFunctionMap.put("verticalDatum", verticalDatumVal -> withVerticalDatum((String)verticalDatumVal));
+            propertyFunctionMap.put("state-initial", stateInitialVal -> withStateInitial((String)stateInitialVal));
+            propertyFunctionMap.put("county-name", countyNameVal -> withCountyName((String)countyNameVal));
+            propertyFunctionMap.put("nearest-city", nearestCityVal -> withNearestCity((String)nearestCityVal));
+            propertyFunctionMap.put("horizontal-datum", horizontalDatumVal -> withHorizontalDatum((String)horizontalDatumVal));
+            propertyFunctionMap.put("published-longitude", publishedLongitudeVal -> withPublishedLongitude((Double)publishedLongitudeVal));
+            propertyFunctionMap.put("published-latitude", publishedLatitudeVal -> withPublishedLatitude((Double)publishedLatitudeVal));
+            propertyFunctionMap.put("vertical-datum", verticalDatumVal -> withVerticalDatum((String)verticalDatumVal));
             propertyFunctionMap.put("elevation", elevationVal -> withElevation((Double)elevationVal));
-            propertyFunctionMap.put("mapLabel", mapLabelVal -> withMapLabel((String)mapLabelVal));
-            propertyFunctionMap.put("boundingOfficeId", boundingOfficeIdVal -> withBoundingOfficeId((String)boundingOfficeIdVal));
+            propertyFunctionMap.put("map-label", mapLabelVal -> withMapLabel((String)mapLabelVal));
+            propertyFunctionMap.put("bounding-office-id", boundingOfficeIdVal -> withBoundingOfficeId((String)boundingOfficeIdVal));
         }
 
         @JsonIgnore
