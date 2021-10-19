@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.radar.api.enums.Nation;
 
@@ -16,6 +18,7 @@ import java.util.function.Consumer;
 
 @JsonDeserialize(builder = Location.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class  Location implements CwmsDTO
 {
     private final String name;
@@ -25,7 +28,7 @@ public final class  Location implements CwmsDTO
     private final String publicName;
     private final String longName;
     private final String description;
-    private final String timezoneId;
+    private final String timezoneName;
     private final String locationType;
     private final String locationKind;
     private final Nation nation;
@@ -50,7 +53,7 @@ public final class  Location implements CwmsDTO
         this.publicName = builder.publicName;
         this.longName = builder.longName;
         this.description = builder.description;
-        this.timezoneId = builder.timezoneId;
+        this.timezoneName = builder.timezoneName;
         this.locationType = builder.locationType;
         this.locationKind = builder.locationKind;
         this.nation = builder.nation;
@@ -102,9 +105,9 @@ public final class  Location implements CwmsDTO
         return description;
     }
 
-    public String getTimezoneId()
+    public String getTimezoneName()
     {
-        return timezoneId;
+        return timezoneName;
     }
 
     public String getLocationType()
@@ -183,13 +186,13 @@ public final class  Location implements CwmsDTO
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Location location = (Location) o;
-        return Double.compare(location.getLatitude(), getLatitude()) == 0 && Double.compare(location.getLongitude(), getLongitude()) == 0 && active() == location.active() && getName().equals(location.getName()) && getPublicName().equals(location.getPublicName()) && Objects.equals(getLongName(), location.getLongName()) && Objects.equals(getDescription(), location.getDescription()) && getTimezoneId().equals(location.getTimezoneId()) && Objects.equals(getLocationType(), location.getLocationType()) && getLocationKind().equals(location.getLocationKind()) && Objects.equals(getNation(), location.getNation()) && Objects.equals(getStateInitial(), location.getStateInitial()) && Objects.equals(getCountyName(), location.getCountyName()) && getHorizontalDatum().equals(location.getHorizontalDatum()) && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude()) && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude()) && Objects.equals(getVerticalDatum(), location.getVerticalDatum()) && Objects.equals(getElevation(), location.getElevation()) && Objects.equals(getMapLabel(), location.getMapLabel()) && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId()) && getOfficeId().equals(location.getOfficeId());
+        return Double.compare(location.getLatitude(), getLatitude()) == 0 && Double.compare(location.getLongitude(), getLongitude()) == 0 && active() == location.active() && getName().equals(location.getName()) && getPublicName().equals(location.getPublicName()) && Objects.equals(getLongName(), location.getLongName()) && Objects.equals(getDescription(), location.getDescription()) && getTimezoneName().equals(location.getTimezoneName()) && Objects.equals(getLocationType(), location.getLocationType()) && getLocationKind().equals(location.getLocationKind()) && Objects.equals(getNation(), location.getNation()) && Objects.equals(getStateInitial(), location.getStateInitial()) && Objects.equals(getCountyName(), location.getCountyName()) && getHorizontalDatum().equals(location.getHorizontalDatum()) && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude()) && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude()) && Objects.equals(getVerticalDatum(), location.getVerticalDatum()) && Objects.equals(getElevation(), location.getElevation()) && Objects.equals(getMapLabel(), location.getMapLabel()) && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId()) && getOfficeId().equals(location.getOfficeId());
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getName(), getLatitude(), getLongitude(), active(), getPublicName(), getLongName(), getDescription(), getTimezoneId(), getLocationType(), getLocationKind(), getNation(), getStateInitial(), getCountyName(), getHorizontalDatum(), getPublishedLongitude(), getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(), getBoundingOfficeId(), getOfficeId());
+        return Objects.hash(getName(), getLatitude(), getLongitude(), active(), getPublicName(), getLongName(), getDescription(), getTimezoneName(), getLocationType(), getLocationKind(), getNation(), getStateInitial(), getCountyName(), getHorizontalDatum(), getPublishedLongitude(), getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(), getBoundingOfficeId(), getOfficeId());
     }
 
     @Override
@@ -202,7 +205,7 @@ public final class  Location implements CwmsDTO
                 ", publicName='" + publicName + '\'' +
                 ", longName='" + longName + '\'' +
                 ", description='" + description + '\'' +
-                ", timezoneId='" + timezoneId + '\'' +
+                ", timezoneName='" + timezoneName + '\'' +
                 ", locationType='" + locationType + '\'' +
                 ", locationKind='" + locationKind + '\'' +
                 ", nation=" + nation +
@@ -231,7 +234,7 @@ public final class  Location implements CwmsDTO
         private String publicName;
         private String longName;
         private String description;
-        private String timezoneId;
+        private String timezoneName;
         private String locationType;
         private String locationKind;
         private Nation nation;
@@ -250,14 +253,14 @@ public final class  Location implements CwmsDTO
 
         @JsonCreator
         public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "locationKind") String locationKind,
-                       @JsonProperty (value = "timezoneId") ZoneId timeZoneId, @JsonProperty(value = "latitude") double latitude,
+                       @JsonProperty (value = "timezoneName") ZoneId timezoneName, @JsonProperty(value = "latitude") double latitude,
                        @JsonProperty(value = "longitude") double longitude, @JsonProperty(value = "horizontalDatum") String horizontalDatum,
                        @JsonProperty(value = "officeId") String officeId)
         {
             this.name = name;
             this.publicName = name;
             this.locationKind = locationKind;
-            this.timezoneId = timeZoneId == null ? null : timeZoneId.getId();
+            this.timezoneName = timezoneName == null ? null : timezoneName.getId();
             this.latitude = latitude;
             this.longitude = longitude;
             this.horizontalDatum = horizontalDatum;
@@ -273,7 +276,7 @@ public final class  Location implements CwmsDTO
             this.horizontalDatum = location.getHorizontalDatum();
             this.locationKind = location.getLocationKind();
             this.officeId = location.getOfficeId();
-            this.timezoneId = location.getTimezoneId();
+            this.timezoneName = location.getTimezoneName();
             this.active = location.active();
             this.publicName = location.getPublicName();
             this.longName = location.getLongName();
@@ -304,7 +307,7 @@ public final class  Location implements CwmsDTO
             propertyFunctionMap.put("publicName", publicNameVal -> withPublicName((String)publicNameVal));
             propertyFunctionMap.put("longName", longNameVal -> withLongName((String)longNameVal));
             propertyFunctionMap.put("description", descriptionVal -> withDescription((String)descriptionVal));
-            propertyFunctionMap.put("timezoneId", timezoneIdVal -> withTimeZoneId(ZoneId.of(Objects.requireNonNull((String)timezoneIdVal, "Timezone is a required field"))));
+            propertyFunctionMap.put("timezoneName", timezoneNameVal -> withTimeZoneName(ZoneId.of(Objects.requireNonNull((String)timezoneNameVal, "Timezone is a required field"))));
             propertyFunctionMap.put("locationType", locationTypeVal -> withLocationType((String)locationTypeVal));
             propertyFunctionMap.put("locationKind", locationKindVal -> withLocationKind((String)locationKindVal));
             propertyFunctionMap.put("nation", nationVal -> withNation(convertStringToNation((String)nationVal)));
@@ -344,9 +347,9 @@ public final class  Location implements CwmsDTO
             return this;
         }
 
-        public Builder withTimeZoneId(ZoneId zoneId)
+        public Builder withTimeZoneName(ZoneId zoneId)
         {
-            this.timezoneId = zoneId.getId();
+            this.timezoneName = zoneId.getId();
             return this;
         }
 

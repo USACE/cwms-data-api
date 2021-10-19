@@ -375,7 +375,7 @@ public class LocationController implements CrudHandler {
         String updatedPublicName = updatedLocation.getPublicName() == null ? existingLocation.getPublicName() : updatedLocation.getPublicName();
         String updatedLongName = updatedLocation.getLongName() == null ? existingLocation.getLongName() : updatedLocation.getLongName();
         String updatedDescription = updatedLocation.getDescription() == null ? existingLocation.getDescription() : updatedLocation.getDescription();
-        String updatedTimeZoneId = updatedLocation.getTimezoneId() == null ? existingLocation.getTimezoneId() : updatedLocation.getTimezoneId();
+        String updatedTimeZoneId = updatedLocation.getTimezoneName() == null ? existingLocation.getTimezoneName() : updatedLocation.getTimezoneName();
         String updatedLocationType = updatedLocation.getLocationType() == null ? existingLocation.getLocationType() : updatedLocation.getLocationType();
         String updatedLocationKind = updatedLocation.getLocationKind() == null ? existingLocation.getLocationKind() : updatedLocation.getLocationKind();
         Nation updatedNation = updatedLocation.getNation() == null ? existingLocation.getNation() : updatedLocation.getNation();
