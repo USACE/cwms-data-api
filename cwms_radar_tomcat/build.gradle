@@ -33,6 +33,7 @@ dependencies {
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
     runtimeOnly 'jstl:jstl:1.2'
 
     testImplementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
@@ -22,6 +23,7 @@ import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
 
+import org.jetbrains.annotations.NotNull;
 import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class,
@@ -40,6 +42,23 @@ public class JsonV1 implements OutputFormatter{
 		this.om = om.copy();
 		this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
 		this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+	}
+
+	@NotNull
+	public static ObjectMapper buildObjectMapper()
+	{
+		return buildObjectMapper(new ObjectMapper());
+	}
+
+	@NotNull
+	public static ObjectMapper buildObjectMapper(ObjectMapper om)
+	{
+		ObjectMapper retval = om.copy();
+
+		retval.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
+		retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		retval.registerModule(new JavaTimeModule());
+		return retval;
 	}
 
 	@Override
