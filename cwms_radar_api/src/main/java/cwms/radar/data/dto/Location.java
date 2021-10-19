@@ -183,8 +183,14 @@ public final class  Location implements CwmsDTO
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
         Location location = (Location) o;
         return Double.compare(location.getLatitude(), getLatitude()) == 0 && Double.compare(location.getLongitude(), getLongitude()) == 0 && active() == location.active() && getName().equals(location.getName()) && getPublicName().equals(location.getPublicName()) && Objects.equals(getLongName(), location.getLongName()) && Objects.equals(getDescription(), location.getDescription()) && getTimezoneName().equals(location.getTimezoneName()) && Objects.equals(getLocationType(), location.getLocationType()) && getLocationKind().equals(location.getLocationKind()) && Objects.equals(getNation(), location.getNation()) && Objects.equals(getStateInitial(), location.getStateInitial()) && Objects.equals(getCountyName(), location.getCountyName()) && getHorizontalDatum().equals(location.getHorizontalDatum()) && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude()) && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude()) && Objects.equals(getVerticalDatum(), location.getVerticalDatum()) && Objects.equals(getElevation(), location.getElevation()) && Objects.equals(getMapLabel(), location.getMapLabel()) && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId()) && getOfficeId().equals(location.getOfficeId());
     }
