@@ -258,10 +258,10 @@ public final class  Location implements CwmsDTO
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
-        public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "locationKind") String locationKind,
-                       @JsonProperty (value = "timezoneName") ZoneId timezoneName, @JsonProperty(value = "latitude") double latitude,
-                       @JsonProperty(value = "longitude") double longitude, @JsonProperty(value = "horizontalDatum") String horizontalDatum,
-                       @JsonProperty(value = "officeId") String officeId)
+        public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "location-kind") String locationKind,
+                       @JsonProperty (value = "timezone-name") ZoneId timezoneName, @JsonProperty(value = "latitude") double latitude,
+                       @JsonProperty(value = "longitude") double longitude, @JsonProperty(value = "horizontal-datum") String horizontalDatum,
+                       @JsonProperty(value = "office-id") String officeId)
         {
             this.name = name;
             this.publicName = name;
