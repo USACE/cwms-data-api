@@ -1,18 +1,26 @@
 package cwms.radar.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
 import usace.cwms.db.dao.ifc.level.SeasonalValueBean;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 
 @JsonDeserialize
+@JsonPOJOBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class LocationLevel
 {
     private String seasonalTimeSeriesId;
@@ -22,9 +30,9 @@ public class LocationLevel
     private String parameterId;
     private Double siParameterUnitsConstantValue;
     private String levelUnitsId;
-    private Date levelDate;
+    private ZonedDateTime levelDate;
     private String levelComment;
-    private Date intervalOrigin;
+    private ZonedDateTime intervalOrigin;
     private Integer intervalMonths;
     private Integer intervalMinutes;
     private String interpolateString;
@@ -37,12 +45,14 @@ public class LocationLevel
     private String attributeComment;
     private String locationId;
     private String officeId;
-    private ZoneId timeZoneId;
     private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
-    public LocationLevel()
+    @JsonCreator
+    public LocationLevel(@JsonProperty(value = "location-id") String name, @JsonProperty(value = "level-date") ZonedDateTime effectiveDate)
     {
         super();
+        locationId = name;
+        levelDate = effectiveDate;
         buildPropertyFunctions();
     }
 
@@ -59,9 +69,9 @@ public class LocationLevel
         setInterpolateString(copyFrom.getInterpolateString());
         setIntervalMinutes(copyFrom.getIntervalMinutes());
         setIntervalMonths(copyFrom.getIntervalMonths());
-        setIntervalOrigin(copyFrom.getIntervalOrigin());
+        setIntervalOrigin(ZonedDateTime.ofInstant(copyFrom.getIntervalOrigin().toInstant(), ZoneId.systemDefault()));
         setLevelComment(copyFrom.getLevelComment());
-        setLevelDate(copyFrom.getLevelDate());
+        setLevelDate(ZonedDateTime.ofInstant(copyFrom.getLevelDate().toInstant(), ZoneId.systemDefault()));
         setLevelUnitsId(copyFrom.getLevelUnitsId());
         setOfficeId(copyFrom.getOfficeId());
         setParameterId(copyFrom.getParameterId());
@@ -75,28 +85,28 @@ public class LocationLevel
     private void buildPropertyFunctions()
     {
         propertyFunctionMap.clear();
-        propertyFunctionMap.put("locationId", nameVal -> setLocationId((String)nameVal));
-        propertyFunctionMap.put("seasonalTimeSeriesId", tsIdVal -> setSeasonalTimeSeriesId((String)tsIdVal));
-        propertyFunctionMap.put("seasonalValues", seasonalVals -> setSeasonalValues((List)seasonalVals));
-        propertyFunctionMap.put("officeId", officeIdVal -> setOfficeId((String)officeIdVal));
-        propertyFunctionMap.put("specifiedLevelId", specifiedLevelIdVal -> setSpecifiedLevelId((String)specifiedLevelIdVal));
-        propertyFunctionMap.put("parameterTypeId", parameterTypeIdVal -> setParameterTypeId((String)parameterTypeIdVal));
-        propertyFunctionMap.put("parameterId", parameterIdVal -> setParameterId((String)parameterIdVal));
-        propertyFunctionMap.put("siParameterUnitsConstantValue", paramUnitsConstVal -> setSiParameterUnitsConstantValue((Double)paramUnitsConstVal));
-        propertyFunctionMap.put("levelUnitsId", levelUnitsIdVal -> setLevelUnitsId((String)levelUnitsIdVal));
-        propertyFunctionMap.put("levelDate", levelDateVal -> setLevelDate((Date)levelDateVal));
-        propertyFunctionMap.put("levelComment", levelCommentVal -> setLevelComment((String)levelCommentVal));
-        propertyFunctionMap.put("intervalOrigin", intervalOriginVal -> setIntervalOrigin((Date)intervalOriginVal));
-        propertyFunctionMap.put("intervalMonths", months -> setIntervalMonths((Integer)months));
-        propertyFunctionMap.put("intervalMinutes", mins -> setIntervalMinutes((Integer)mins));
-        propertyFunctionMap.put("interpolateString", interpolateStr -> setInterpolateString((String)interpolateStr));
-        propertyFunctionMap.put("durationId", durationIdVal -> setDurationId((String)durationIdVal));
-        propertyFunctionMap.put("attributeValue", attributeVal -> setAttributeValue(BigDecimal.valueOf((Double)attributeVal)));
-        propertyFunctionMap.put("attributeUnitsId", attributeUnitsIdVal -> setAttributeUnitsId((String)attributeUnitsIdVal));
-        propertyFunctionMap.put("attributeParameterTypeId", attributeParameterTypeIdVal -> setAttributeParameterTypeId((String)attributeParameterTypeIdVal));
-        propertyFunctionMap.put("attributeParameterId", attributeParameterIdVal -> setAttributeParameterId((String)attributeParameterIdVal));
-        propertyFunctionMap.put("attributeDurationId", attributeDurationIdVal -> setAttributeDurationId((String)attributeDurationIdVal));
-        propertyFunctionMap.put("attributeComment", attributeCommentVal -> setAttributeComment((String)attributeCommentVal));
+        propertyFunctionMap.put("location-id", nameVal -> setLocationId((String)nameVal));
+        propertyFunctionMap.put("seasonal-time-series-id", tsIdVal -> setSeasonalTimeSeriesId((String)tsIdVal));
+        propertyFunctionMap.put("seasonal-values", seasonalVals -> setSeasonalValues((List)seasonalVals));
+        propertyFunctionMap.put("office-id", officeIdVal -> setOfficeId((String)officeIdVal));
+        propertyFunctionMap.put("specified-level-id", specifiedLevelIdVal -> setSpecifiedLevelId((String)specifiedLevelIdVal));
+        propertyFunctionMap.put("parameter-type-id", parameterTypeIdVal -> setParameterTypeId((String)parameterTypeIdVal));
+        propertyFunctionMap.put("parameter-id", parameterIdVal -> setParameterId((String)parameterIdVal));
+        propertyFunctionMap.put("si-parameter-units-constant-value", paramUnitsConstVal -> setSiParameterUnitsConstantValue((Double)paramUnitsConstVal));
+        propertyFunctionMap.put("level-units-id", levelUnitsIdVal -> setLevelUnitsId((String)levelUnitsIdVal));
+        propertyFunctionMap.put("level-date", levelDateVal -> setLevelDate((ZonedDateTime)levelDateVal));
+        propertyFunctionMap.put("level-comment", levelCommentVal -> setLevelComment((String)levelCommentVal));
+        propertyFunctionMap.put("interval-origin", intervalOriginVal -> setIntervalOrigin((ZonedDateTime) intervalOriginVal));
+        propertyFunctionMap.put("interval-months", months -> setIntervalMonths((Integer)months));
+        propertyFunctionMap.put("interval-minutes", mins -> setIntervalMinutes((Integer)mins));
+        propertyFunctionMap.put("interpolate-string", interpolateStr -> setInterpolateString((String)interpolateStr));
+        propertyFunctionMap.put("duration-id", durationIdVal -> setDurationId((String)durationIdVal));
+        propertyFunctionMap.put("attribute-value", attributeVal -> setAttributeValue(BigDecimal.valueOf((Double)attributeVal)));
+        propertyFunctionMap.put("attribute-units-id", attributeUnitsIdVal -> setAttributeUnitsId((String)attributeUnitsIdVal));
+        propertyFunctionMap.put("attribute-parameter-type-id", attributeParameterTypeIdVal -> setAttributeParameterTypeId((String)attributeParameterTypeIdVal));
+        propertyFunctionMap.put("attribute-parameter-id", attributeParameterIdVal -> setAttributeParameterId((String)attributeParameterIdVal));
+        propertyFunctionMap.put("attribute-duration-id", attributeDurationIdVal -> setAttributeDurationId((String)attributeDurationIdVal));
+        propertyFunctionMap.put("attribute-comment", attributeCommentVal -> setAttributeComment((String)attributeCommentVal));
     }
 
     public void setProperty(String propertyName, Object value)
@@ -108,15 +118,6 @@ public class LocationLevel
         }
         function.accept(value);
     }
-
-    public ZoneId getTimeZoneId() {
-        return timeZoneId;
-    }
-
-    public void setTimeZoneId(ZoneId timeZoneId) {
-        this.timeZoneId = timeZoneId;
-    }
-
 
     public String getSeasonalTimeSeriesId()
     {
@@ -188,15 +189,14 @@ public class LocationLevel
         this.levelUnitsId = levelUnitsId;
     }
 
-    public Date getLevelDate()
+    public ZonedDateTime getLevelDate()
     {
         return levelDate;
     }
 
-    public void setLevelDate(Date levelDate)
+    public void setLevelDate(ZonedDateTime levelDate)
     {
-        // java.sql.Timestamp fails on equals against a Date.
-        this.levelDate = new Date(levelDate.getTime());
+        this.levelDate = levelDate;
     }
 
     public String getLevelComment()
@@ -209,12 +209,12 @@ public class LocationLevel
         this.levelComment = levelComment;
     }
 
-    public Date getIntervalOrigin()
+    public ZonedDateTime getIntervalOrigin()
     {
         return intervalOrigin;
     }
 
-    public void setIntervalOrigin(Date intervalOrigin)
+    public void setIntervalOrigin(ZonedDateTime intervalOrigin)
     {
         this.intervalOrigin = intervalOrigin;
     }
