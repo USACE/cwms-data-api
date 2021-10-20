@@ -96,25 +96,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		}
 		else
 		{
-			ZoneId zoneId = ZoneId.of(timezone);
-			zone = zoneId;
+			zone = ZoneId.of(timezone);
 		}
 
-		// ISO_DATE_TIME format is like: 2021-10-05T15:26:23.658-07:00[America/Los_Angeles]
-		// swagger doc claims:           2021-06-10T13:00:00-0700[PST8PDT]
-
 		ZonedDateTime beginTime = getZonedDateTime(begin, zone, ZonedDateTime.now().minusDays(1));
-
-		ZoneId beginZone = beginTime.getZone();
-		ZonedDateTime endTime = getZonedDateTime(end, beginZone, ZonedDateTime.now());
+		ZonedDateTime endTime = getZonedDateTime(end, beginTime.getZone(), ZonedDateTime.now());
 
 		if(timezone == null) {
 			if(beginTime.getZone().equals(beginTime.getOffset()))
 			{
+				// Need to revisit if this exception is needed.  If it is, we should write a test that shows it.
 				throw new IllegalArgumentException("Time cannot contain only an offset without the timezone.");
 			}
-			// If no timezone was found, get it from begin_time
-			zone = beginTime.getZone();
 		}
 
 		return getTimeSeries(page, pageSize, names, office, units, beginTime, endTime);
@@ -122,6 +115,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 	public ZonedDateTime getZonedDateTime(String begin, ZoneId fallbackZone, ZonedDateTime beginFallback)
 	{
+		// May need to revisit the date time formats.
+		// ISO_DATE_TIME format is like: 2021-10-05T15:26:23.658-07:00[America/Los_Angeles]
+		// Swagger doc claims we expect:           2021-06-10T13:00:00-0700[PST8PDT]
+		// The getTimeSeries that calls a stored procedure and returns a string may be what expects
+		// the format given as an example in the swagger doc.
+
 		if(begin == null)
 		{
 			begin = beginFallback.toLocalDateTime().toString();
