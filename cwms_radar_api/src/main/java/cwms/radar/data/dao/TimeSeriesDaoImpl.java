@@ -86,59 +86,61 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				names, format, units,datum, begin, end, timezone, office);
 	}
 
-	public ZonedDateTime asZonedDateTime(String timeStr, ZonedDateTime fallback, String timezone){
-		if(timeStr == null){
-			timeStr = fallback.toLocalDateTime().toString();
-		}
-
-		ZoneId zone = timezone == null ? ZoneOffset.UTC.normalized() : ZoneId.of(timezone);
-
-		// Parse the date time in the best format it can find. Timezone is optional, but use it if it's found.
-		TemporalAccessor beginParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(timeStr, ZonedDateTime::from, LocalDateTime::from);
-
-		ZonedDateTime beginTime;
-		if(beginParsed instanceof ZonedDateTime)
-		{
-			beginTime = ZonedDateTime.from(beginParsed);
-		}
-		else
-		{
-			beginTime = LocalDateTime.from(beginParsed).atZone(zone);
-		}
-
-		return beginTime;
-
-	}
 
 	public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
 
 		if(begin == null)
 		{
-			begin = ZonedDateTime.now().minusDays(1).toLocalDateTime().toString();
+			ZonedDateTime beginFallback = ZonedDateTime.now().minusDays(1);
+			begin = beginFallback.toLocalDateTime().toString();
 		}
 		if(end == null)
 		{
-			end = ZonedDateTime.now().toLocalDateTime().toString();
+			ZonedDateTime endFallback = ZonedDateTime.now();
+			end = endFallback.toLocalDateTime().toString();
 		}
 
+		ZoneId zone;
+		if(timezone == null)
+		{
+			zone = ZoneOffset.UTC.normalized();
+		}
+		else
+		{
+			ZoneId zoneId = ZoneId.of(timezone);
+			zone = zoneId;
+		}
 
-		ZoneId zone = timezone == null ? ZoneOffset.UTC.normalized() : ZoneId.of(timezone);
+		// ISO_DATE_TIME format is like: 2021-10-05T15:26:23.658-07:00[America/Los_Angeles]
+		// swagger doc claims:           2021-06-10T13:00:00-0700[PST8PDT]
 
 		// Parse the date time in the best format it can find. Timezone is optional, but use it if it's found.
 		TemporalAccessor beginParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(begin, ZonedDateTime::from, LocalDateTime::from);
-		TemporalAccessor endParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(end, ZonedDateTime::from, LocalDateTime::from);
-
 		ZonedDateTime beginTime = beginParsed instanceof ZonedDateTime ? ZonedDateTime.from(beginParsed) : LocalDateTime.from(beginParsed).atZone(zone);
+
+
+		ZoneId beginZone = beginTime.getZone();
+
 		// If the end time doesn't have a timezone, but begin did, use begin's timezone as end's.
-		ZonedDateTime endTime = endParsed instanceof ZonedDateTime ? ZonedDateTime.from(endParsed) : LocalDateTime.from(endParsed).atZone(beginTime.getZone());
+		TemporalAccessor endParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(end, ZonedDateTime::from, LocalDateTime::from);
+		ZonedDateTime endTime = endParsed instanceof ZonedDateTime ? ZonedDateTime.from(endParsed) : LocalDateTime.from(endParsed).atZone(
+				beginZone);
 
 		if(timezone == null) {
 			if(beginTime.getZone().equals(beginTime.getOffset()))
+			{
 				throw new IllegalArgumentException("Time cannot contain only an offset without the timezone.");
+			}
 			// If no timezone was found, get it from begin_time
 			zone = beginTime.getZone();
 		}
 
+		return getTimeSeries(page, pageSize, names, office, units, beginTime, endTime);
+	}
+
+	protected TimeSeries getTimeSeries(String page, int pageSize, String names, String office, String units,
+									 ZonedDateTime beginTime, ZonedDateTime endTime)
+	{
 		String cursor = null;
 		Timestamp tsCursor = null;
 		Integer total = null;
@@ -172,7 +174,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
 		Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(tsId, officeId);
 		Field<String> unit = units.compareToIgnoreCase("SI") == 0 || units.compareToIgnoreCase("EN") == 0 ?
-				CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(units, String.class)) :
+				CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(
+						units, String.class)) :
 				DSL.val(units, String.class);
 
 		// This code assumes the database timezone is in UTC (per Oracle recommendation)
@@ -210,9 +213,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						recordPageSize,
 						tsMetadata.getValue("TOTAL", Integer.class),
 						tsMetadata.getValue("NAME", String.class),
-						tsMetadata.getValue("OFFICE_ID", String.class),
-						beginTime,
-						endTime,
+						tsMetadata.getValue("OFFICE_ID", String.class), beginTime, endTime,
 						tsMetadata.getValue("UNITS", String.class),
 						Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class)))
 		);
