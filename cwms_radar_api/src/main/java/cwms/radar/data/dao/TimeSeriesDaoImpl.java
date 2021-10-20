@@ -89,16 +89,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 	public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
 
-		ZonedDateTime beginFallback = ZonedDateTime.now().minusDays(1);
-		if(begin == null)
-		{
-			begin = beginFallback.toLocalDateTime().toString();
-		}
-		ZonedDateTime endFallback = ZonedDateTime.now();
-		if(end == null)
-		{
-			end = endFallback.toLocalDateTime().toString();
-		}
 
 		ZoneId zone;
 		if(timezone == null)
@@ -114,6 +104,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		// ISO_DATE_TIME format is like: 2021-10-05T15:26:23.658-07:00[America/Los_Angeles]
 		// swagger doc claims:           2021-06-10T13:00:00-0700[PST8PDT]
 
+		ZonedDateTime beginFallback = ZonedDateTime.now().minusDays(1);
+		if(begin == null)
+		{
+			begin = beginFallback.toLocalDateTime().toString();
+		}
 		// Parse the date time in the best format it can find. Timezone is optional, but use it if it's found.
 		TemporalAccessor beginParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(begin, ZonedDateTime::from, LocalDateTime::from);
 		ZonedDateTime beginTime = beginParsed instanceof ZonedDateTime ? ZonedDateTime.from(beginParsed) : LocalDateTime.from(beginParsed).atZone(zone);
@@ -121,6 +116,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 		ZoneId beginZone = beginTime.getZone();
 
+		ZonedDateTime endFallback = ZonedDateTime.now();
+		if(end == null)
+		{
+			end = endFallback.toLocalDateTime().toString();
+		}
 		// If the end time doesn't have a timezone, but begin did, use begin's timezone as end's.
 		TemporalAccessor endParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(end, ZonedDateTime::from, LocalDateTime::from);
 		ZonedDateTime endTime = endParsed instanceof ZonedDateTime ? ZonedDateTime.from(endParsed) : LocalDateTime.from(endParsed).atZone(
