@@ -89,14 +89,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 	public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
 
+		ZonedDateTime beginFallback = ZonedDateTime.now().minusDays(1);
 		if(begin == null)
 		{
-			ZonedDateTime beginFallback = ZonedDateTime.now().minusDays(1);
 			begin = beginFallback.toLocalDateTime().toString();
 		}
+		ZonedDateTime endFallback = ZonedDateTime.now();
 		if(end == null)
 		{
-			ZonedDateTime endFallback = ZonedDateTime.now();
 			end = endFallback.toLocalDateTime().toString();
 		}
 
