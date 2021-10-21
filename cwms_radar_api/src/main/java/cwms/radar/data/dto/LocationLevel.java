@@ -56,6 +56,33 @@ public class LocationLevel
         buildPropertyFunctions();
     }
 
+    public LocationLevel(LocationLevel copyFrom)
+    {
+        setAttributeComment(copyFrom.getAttributeComment());
+        setAttributeDurationId(copyFrom.getAttributeDurationId());
+        setAttributeParameterId(copyFrom.getAttributeParameterId());
+        setLocationId(copyFrom.getLocationId());
+        setAttributeValue(copyFrom.getAttributeValue());
+        setAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
+        setAttributeUnitsId(copyFrom.getAttributeUnitsId());
+        setDurationId(copyFrom.getDurationId());
+        setInterpolateString(copyFrom.getInterpolateString());
+        setIntervalMinutes(copyFrom.getIntervalMinutes());
+        setIntervalMonths(copyFrom.getIntervalMonths());
+        setIntervalOrigin(ZonedDateTime.ofInstant(copyFrom.getIntervalOrigin().toInstant(), ZoneId.systemDefault()));
+        setLevelComment(copyFrom.getLevelComment());
+        setLevelDate(ZonedDateTime.ofInstant(copyFrom.getLevelDate().toInstant(), ZoneId.systemDefault()));
+        setLevelUnitsId(copyFrom.getLevelUnitsId());
+        setOfficeId(copyFrom.getOfficeId());
+        setParameterId(copyFrom.getParameterId());
+        setParameterTypeId(copyFrom.getParameterTypeId());
+        setSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
+        setSeasonalValues(copyFrom.getSeasonalValues());
+        setSiParameterUnitsConstantValue(copyFrom.getSiParameterUnitsConstantValue());
+        setSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
+        buildPropertyFunctions();
+    }
+
     public LocationLevel(LocationLevelPojo copyFrom)
     {
         setAttributeComment(copyFrom.getAttributeComment());
@@ -80,6 +107,7 @@ public class LocationLevel
         setSeasonalValues(copyFrom.getSeasonalValues());
         setSiParameterUnitsConstantValue(copyFrom.getSiParameterUnitsConstantValue());
         setSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
+        buildPropertyFunctions();
     }
     @JsonIgnore
     private void buildPropertyFunctions()

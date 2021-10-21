@@ -86,7 +86,8 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void create(@NotNull Context ctx) {
+    public void create(@NotNull Context ctx)
+    {
         createRequest.mark();
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
@@ -175,7 +176,8 @@ public class LevelsController implements CrudHandler {
         tags = {"Levels"}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(Context ctx)
+    {
         getAllRequests.mark();
         try (
             final Timer.Context time_context = getAllRequestsTime.time();
@@ -238,7 +240,8 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void update(Context ctx, String id) {
+    public void update(Context ctx, String id)
+    {
         updateRequest.mark();
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
@@ -348,7 +351,7 @@ public class LevelsController implements CrudHandler {
         JavaType javaType = om.getTypeFactory().constructType(LocationLevel.class);
         BeanDescription beanDescription = om.getSerializationConfig().introspect(javaType);
         List<BeanPropertyDefinition> properties = beanDescription.findProperties();
-        LocationLevel retVal = new LocationLevel(existingLocation.getLocationId(), existingLocation.getLevelDate());
+        LocationLevel retVal = new LocationLevel(existingLocation);
         try
         {
             for (BeanPropertyDefinition propertyDefinition : properties) {

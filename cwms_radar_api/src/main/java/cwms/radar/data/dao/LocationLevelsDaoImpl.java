@@ -46,7 +46,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevelPojo> implements
                         TimeZone.getTimeZone(zoneId), locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(), locationLevel.getAttributeDurationId(),
                         locationLevel.getAttributeComment(), intervalOrigin, months,
                         minutes, Boolean.parseBoolean(locationLevel.getInterpolateString()), locationLevel.getSeasonalTimeSeriesId(),
-                        locationLevel.getSeasonalValues(), true, locationLevel.getOfficeId());
+                        locationLevel.getSeasonalValues(), false, locationLevel.getOfficeId());
             });
         }
         catch(DataAccessException ex)
