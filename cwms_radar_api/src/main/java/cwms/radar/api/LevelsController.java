@@ -289,9 +289,9 @@ public class LevelsController implements CrudHandler {
         }
     }
 
-    private LocationLevel getUpdatedLocationLevel(LocationLevel existinglocation, LocationLevel updatedLevel)
+    private LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel, LocationLevel updatedLevel)
     {
-        LocationLevel retVal = new LocationLevel(existinglocation);
+        LocationLevel retVal = new LocationLevel(existingLevel);
         retVal.setSeasonalTimeSeriesId(updatedLevel.getSeasonalTimeSeriesId() == null ? retVal.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
         retVal.setSeasonalValues(updatedLevel.getSeasonalValues() == null ? retVal.getSeasonalValues() : updatedLevel.getSeasonalValues());
         retVal.setSpecifiedLevelId(updatedLevel.getSpecifiedLevelId() == null ? retVal.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
