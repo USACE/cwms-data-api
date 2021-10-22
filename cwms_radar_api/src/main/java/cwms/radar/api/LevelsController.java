@@ -289,31 +289,53 @@ public class LevelsController implements CrudHandler {
         }
     }
 
-    private LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel, LocationLevel updatedLevel)
+    private LocationLevel getUpdatedLocationLevel(LocationLevel existinglocation, LocationLevel updatedLevel)
     {
-        existingLevel.setSeasonalTimeSeriesId(updatedLevel.getSeasonalTimeSeriesId() == null ? existingLevel.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
-        existingLevel.setSeasonalValues(updatedLevel.getSeasonalValues() == null ? existingLevel.getSeasonalValues() : updatedLevel.getSeasonalValues());
-        existingLevel.setSpecifiedLevelId(updatedLevel.getSpecifiedLevelId() == null ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
-        existingLevel.setParameterTypeId(updatedLevel.getParameterTypeId() == null ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
-        existingLevel.setParameterId(updatedLevel.getParameterId() == null ? existingLevel.getParameterId() : updatedLevel.getParameterId());
-        existingLevel.setSiParameterUnitsConstantValue(updatedLevel.getSiParameterUnitsConstantValue() == null ? existingLevel.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
-        existingLevel.setLevelUnitsId(updatedLevel.getLevelUnitsId() == null ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
-        existingLevel.setLevelDate(updatedLevel.getLevelDate() == null ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
-        existingLevel.setLevelComment(updatedLevel.getLevelComment() == null ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
-        existingLevel.setIntervalOrigin(updatedLevel.getIntervalOrigin() == null ? existingLevel.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
-        existingLevel.setIntervalMonths(updatedLevel.getIntervalMonths() == null ? existingLevel.getIntervalMonths() : updatedLevel.getIntervalMonths());
-        existingLevel.setIntervalMinutes(updatedLevel.getIntervalMinutes() == null ? existingLevel.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
-        existingLevel.setInterpolateString(updatedLevel.getInterpolateString() == null ? existingLevel.getInterpolateString() : updatedLevel.getInterpolateString());
-        existingLevel.setDurationId(updatedLevel.getDurationId() == null ? existingLevel.getDurationId() : updatedLevel.getDurationId());
-        existingLevel.setAttributeValue(updatedLevel.getAttributeValue() == null ? existingLevel.getAttributeValue() : updatedLevel.getAttributeValue());
-        existingLevel.setAttributeUnitsId(updatedLevel.getAttributeUnitsId() == null ? existingLevel.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
-        existingLevel.setAttributeParameterTypeId(updatedLevel.getAttributeParameterTypeId() == null ? existingLevel.getAttributeParameterTypeId() : updatedLevel.getAttributeParameterTypeId());
-        existingLevel.setAttributeParameterId(updatedLevel.getAttributeParameterId() == null ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
-        existingLevel.setAttributeDurationId(updatedLevel.getAttributeDurationId() == null ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
-        existingLevel.setAttributeComment(updatedLevel.getAttributeComment() == null ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
-        existingLevel.setLocationId(updatedLevel.getLocationId() == null ? existingLevel.getLocationId() : updatedLevel.getLocationId());
-        existingLevel.setOfficeId(updatedLevel.getOfficeId() == null ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
-        return existingLevel;
+        LocationLevel retVal = new LocationLevel(existinglocation);
+        retVal.setSeasonalTimeSeriesId(updatedLevel.getSeasonalTimeSeriesId() == null ? retVal.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
+        retVal.setSeasonalValues(updatedLevel.getSeasonalValues() == null ? retVal.getSeasonalValues() : updatedLevel.getSeasonalValues());
+        retVal.setSpecifiedLevelId(updatedLevel.getSpecifiedLevelId() == null ? retVal.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
+        retVal.setParameterTypeId(updatedLevel.getParameterTypeId() == null ? retVal.getParameterTypeId() : updatedLevel.getParameterTypeId());
+        retVal.setParameterId(updatedLevel.getParameterId() == null ? retVal.getParameterId() : updatedLevel.getParameterId());
+        retVal.setSiParameterUnitsConstantValue(updatedLevel.getSiParameterUnitsConstantValue() == null ? retVal.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
+        retVal.setLevelUnitsId(updatedLevel.getLevelUnitsId() == null ? retVal.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
+        retVal.setLevelDate(updatedLevel.getLevelDate() == null ? retVal.getLevelDate() : updatedLevel.getLevelDate());
+        retVal.setLevelComment(updatedLevel.getLevelComment() == null ? retVal.getLevelComment() : updatedLevel.getLevelComment());
+        retVal.setIntervalOrigin(updatedLevel.getIntervalOrigin() == null ? retVal.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
+        retVal.setIntervalMonths(updatedLevel.getIntervalMonths() == null ? retVal.getIntervalMonths() : updatedLevel.getIntervalMonths());
+        retVal.setInterpolateString(updatedLevel.getInterpolateString() == null ? retVal.getInterpolateString() : updatedLevel.getInterpolateString());
+        retVal.setDurationId(updatedLevel.getDurationId() == null ? retVal.getDurationId() : updatedLevel.getDurationId());
+        retVal.setAttributeValue(updatedLevel.getAttributeValue() == null ? retVal.getAttributeValue() : updatedLevel.getAttributeValue());
+        retVal.setAttributeUnitsId(updatedLevel.getAttributeUnitsId() == null ? retVal.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
+        retVal.setAttributeParameterTypeId(updatedLevel.getAttributeParameterTypeId() == null ? retVal.getAttributeParameterTypeId() : updatedLevel.getAttributeParameterTypeId());
+        retVal.setAttributeParameterId(updatedLevel.getAttributeParameterId() == null ? retVal.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
+        retVal.setAttributeDurationId(updatedLevel.getAttributeDurationId() == null ? retVal.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
+        retVal.setAttributeComment(updatedLevel.getAttributeComment() == null ? retVal.getAttributeComment() : updatedLevel.getAttributeComment());
+        retVal.setLocationId(updatedLevel.getLocationId() == null ? retVal.getLocationId() : updatedLevel.getLocationId());
+        retVal.setOfficeId(updatedLevel.getOfficeId() == null ? retVal.getOfficeId() : updatedLevel.getOfficeId());
+        if(retVal.getIntervalMonths() != null && retVal.getIntervalMonths() > 0)
+        {
+            retVal.setIntervalMinutes(null);
+        }
+        else if(retVal.getIntervalMinutes() != null && retVal.getIntervalMinutes() > 0)
+        {
+            retVal.setIntervalMonths(null);
+        }
+        if(retVal.getAttributeValue() == null)
+        {
+            retVal.setAttributeUnitsId(null);
+        }
+        if(!retVal.getSeasonalValues().isEmpty())
+        {
+            retVal.setSiParameterUnitsConstantValue(null);
+            retVal.setSeasonalTimeSeriesId(null);
+        }
+        else if(retVal.getSeasonalTimeSeriesId() != null && !retVal.getSeasonalTimeSeriesId().isEmpty())
+        {
+            retVal.setSiParameterUnitsConstantValue(null);
+            retVal.setSeasonalValues(null);
+        }
+        return retVal;
     }
 
     private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
