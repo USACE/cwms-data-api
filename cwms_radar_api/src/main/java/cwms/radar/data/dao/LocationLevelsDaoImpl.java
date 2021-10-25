@@ -105,8 +105,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevelPojo> implements
             dsl.connection(c ->
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                LocationLevelPojo level = levelJooq.retrieveLocationLevel(c, locationLevelName, unitIn, date, timezone, null, null, unitIn, false, officeId);
-                locationLevelRef.set(new LocationLevel(level));
+                LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c, locationLevelName, unitIn, date, timezone, null, null, unitIn, false, officeId);
+                LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
+                locationLevelRef.set(level);
             });
         }
         catch(DataAccessException ex)
@@ -115,5 +116,32 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevelPojo> implements
             throw new IOException("Failed to retrieve Location Level");
         }
         return locationLevelRef.get();
+    }
+
+    private LocationLevel getLevelFromPojo(LocationLevelPojo copyFromPojo, ZonedDateTime effectiveDate)
+    {
+        LocationLevel retval = new LocationLevel(copyFromPojo.getLocationId(), effectiveDate);
+        retval.setAttributeComment(copyFromPojo.getAttributeComment());
+        retval.setAttributeDurationId(copyFromPojo.getAttributeDurationId());
+        retval.setAttributeParameterId(copyFromPojo.getAttributeParameterId());
+        retval.setLocationId(copyFromPojo.getLocationId());
+        retval.setAttributeValue(copyFromPojo.getAttributeValue());
+        retval.setAttributeParameterTypeId(copyFromPojo.getAttributeParameterTypeId());
+        retval.setAttributeUnitsId(copyFromPojo.getAttributeUnitsId());
+        retval.setDurationId(copyFromPojo.getDurationId());
+        retval.setInterpolateString(copyFromPojo.getInterpolateString());
+        retval.setIntervalMinutes(copyFromPojo.getIntervalMinutes());
+        retval.setIntervalMonths(copyFromPojo.getIntervalMonths());
+        retval.setIntervalOrigin(ZonedDateTime.ofInstant(copyFromPojo.getIntervalOrigin().toInstant(), effectiveDate.getZone()));
+        retval.setLevelComment(copyFromPojo.getLevelComment());
+        retval.setLevelUnitsId(copyFromPojo.getLevelUnitsId());
+        retval.setOfficeId(copyFromPojo.getOfficeId());
+        retval.setParameterId(copyFromPojo.getParameterId());
+        retval.setParameterTypeId(copyFromPojo.getParameterTypeId());
+        retval.setSeasonalTimeSeriesId(copyFromPojo.getSeasonalTimeSeriesId());
+        retval.setSeasonalValues(copyFromPojo.getSeasonalValues());
+        retval.setSiParameterUnitsConstantValue(copyFromPojo.getSiParameterUnitsConstantValue());
+        retval.setSpecifiedLevelId(copyFromPojo.getSpecifiedLevelId());
+        return retval;
     }
 }

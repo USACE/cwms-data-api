@@ -18,6 +18,7 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Timer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -102,11 +103,7 @@ public class LevelsController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             LocationLevel level = deserializeLocationLevel(ctx.body(),formatHeader, office);
-            ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-            JsonNode root = om.readTree(ctx.body());
-            String dateString = root.findValue("level-date").toString().replace("\"", "");
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
+           ZonedDateTime unmarshalledDateTime = getUnmarshalledDateTime(ctx.body(), contentType.getType());
             ZoneId timezoneId = unmarshalledDateTime.getZone();
             if(timezoneId == null)
             {
@@ -122,6 +119,16 @@ public class LevelsController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    private ZonedDateTime getUnmarshalledDateTime(String body, String format) throws Exception
+    {
+        ObjectMapper om = getObjectMapperForFormat(format);
+        JsonNode root = om.readTree(body);
+        String dateString = root.findValue("level-date").toString().replace("\"", "");
+        ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
+       return zonedDateTimeAdapter.unmarshal(dateString);
+
     }
 
     @OpenApi(
@@ -231,7 +238,7 @@ public class LevelsController implements CrudHandler {
             },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON )
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON ),
                     },
                     required = true),
             description = "Update CWMS Location Level",

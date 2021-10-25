@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
 import usace.cwms.db.dao.ifc.level.SeasonalValueBean;
 
 import java.math.BigDecimal;
@@ -83,39 +82,13 @@ public class LocationLevel
         buildPropertyFunctions();
     }
 
-    public LocationLevel(LocationLevelPojo copyFrom)
-    {
-        setAttributeComment(copyFrom.getAttributeComment());
-        setAttributeDurationId(copyFrom.getAttributeDurationId());
-        setAttributeParameterId(copyFrom.getAttributeParameterId());
-        setLocationId(copyFrom.getLocationId());
-        setAttributeValue(copyFrom.getAttributeValue());
-        setAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
-        setAttributeUnitsId(copyFrom.getAttributeUnitsId());
-        setDurationId(copyFrom.getDurationId());
-        setInterpolateString(copyFrom.getInterpolateString());
-        setIntervalMinutes(copyFrom.getIntervalMinutes());
-        setIntervalMonths(copyFrom.getIntervalMonths());
-        setIntervalOrigin(ZonedDateTime.ofInstant(copyFrom.getIntervalOrigin().toInstant(), ZoneId.systemDefault()));
-        setLevelComment(copyFrom.getLevelComment());
-        setLevelDate(ZonedDateTime.ofInstant(copyFrom.getLevelDate().toInstant(), ZoneId.systemDefault()));
-        setLevelUnitsId(copyFrom.getLevelUnitsId());
-        setOfficeId(copyFrom.getOfficeId());
-        setParameterId(copyFrom.getParameterId());
-        setParameterTypeId(copyFrom.getParameterTypeId());
-        setSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
-        setSeasonalValues(copyFrom.getSeasonalValues());
-        setSiParameterUnitsConstantValue(copyFrom.getSiParameterUnitsConstantValue());
-        setSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-        buildPropertyFunctions();
-    }
     @JsonIgnore
     private void buildPropertyFunctions()
     {
         propertyFunctionMap.clear();
         propertyFunctionMap.put("location-id", nameVal -> setLocationId((String)nameVal));
         propertyFunctionMap.put("seasonal-time-series-id", tsIdVal -> setSeasonalTimeSeriesId((String)tsIdVal));
-        propertyFunctionMap.put("seasonal-values", seasonalVals -> setSeasonalValues((List)seasonalVals));
+        propertyFunctionMap.put("seasonal-values", seasonalVals -> setSeasonalValues((List<SeasonalValueBean>)seasonalVals));
         propertyFunctionMap.put("office-id", officeIdVal -> setOfficeId((String)officeIdVal));
         propertyFunctionMap.put("specified-level-id", specifiedLevelIdVal -> setSpecifiedLevelId((String)specifiedLevelIdVal));
         propertyFunctionMap.put("parameter-type-id", parameterTypeIdVal -> setParameterTypeId((String)parameterTypeIdVal));
