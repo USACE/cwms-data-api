@@ -3,6 +3,7 @@ package cwms.radar.data.dao;
 import cwms.radar.api.enums.Unit;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.LocationLevel;
+import cwms.radar.data.dto.SeasonalValueBean;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
@@ -13,7 +14,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -37,14 +40,24 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             BigInteger minutes = locationLevel.getIntervalMinutes() == null? null : BigInteger.valueOf(locationLevel.getIntervalMinutes());
             Date date = Date.from(locationLevel.getLevelDate().toLocalDateTime().atZone(zoneId).toInstant());
             Date intervalOrigin = locationLevel.getIntervalOrigin() == null ? null :  Date.from(locationLevel.getIntervalOrigin().toLocalDateTime().atZone(zoneId).toInstant());
+            List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues = new ArrayList<>();
+            for(SeasonalValueBean bean : locationLevel.getSeasonalValues())
+            {
+                usace.cwms.db.dao.ifc.level.SeasonalValueBean storeBean = new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
+                storeBean.setValue(bean.getValue());
+                storeBean.setOffsetMonths(bean.getOffsetMonths().byteValue());
+                storeBean.setOffsetMinutes(bean.getOffsetMinutes());
+                seasonalValues.add(storeBean);
+            }
             dsl.connection(c ->
+
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationId(), locationLevel.getSiParameterUnitsConstantValue(), locationLevel.getLevelUnitsId(), locationLevel.getLevelComment(), date,
                         TimeZone.getTimeZone(zoneId), locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(), locationLevel.getAttributeDurationId(),
                         locationLevel.getAttributeComment(), intervalOrigin, months,
                         minutes, Boolean.parseBoolean(locationLevel.getInterpolateString()), locationLevel.getSeasonalTimeSeriesId(),
-                        locationLevel.getSeasonalValues(), false, locationLevel.getOfficeId());
+                        seasonalValues, false, locationLevel.getOfficeId());
             });
         }
         catch(DataAccessException ex)
@@ -118,6 +131,15 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private LocationLevel getLevelFromPojo(LocationLevelPojo copyFromPojo, ZonedDateTime effectiveDate)
     {
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> copyFromSeasonalValues = copyFromPojo.getSeasonalValues();
+        List<SeasonalValueBean> seasonalValues = new ArrayList<>();
+        for(usace.cwms.db.dao.ifc.level.SeasonalValueBean copyFromBean : copyFromSeasonalValues)
+        {
+            seasonalValues.add(new SeasonalValueBean.Builder(copyFromBean.getValue())
+                .withOffsetMonths(copyFromBean.getOffsetMonths().intValue())
+                .withOffsetMinutes(copyFromBean.getOffsetMinutes())
+                .build());
+        }
         return new LocationLevel.Builder(copyFromPojo.getLocationId(), effectiveDate)
             .withAttributeComment(copyFromPojo.getAttributeComment())
             .withAttributeDurationId(copyFromPojo.getAttributeDurationId())
@@ -137,7 +159,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             .withParameterId(copyFromPojo.getParameterId())
             .withParameterTypeId(copyFromPojo.getParameterTypeId())
             .withSeasonalTimeSeriesId(copyFromPojo.getSeasonalTimeSeriesId())
-            .withSeasonalValues(copyFromPojo.getSeasonalValues())
+            .withSeasonalValues(seasonalValues)
             .withSiParameterUnitsConstantValue(copyFromPojo.getSiParameterUnitsConstantValue())
             .withSpecifiedLevelId(copyFromPojo.getSpecifiedLevelId())
             .build();

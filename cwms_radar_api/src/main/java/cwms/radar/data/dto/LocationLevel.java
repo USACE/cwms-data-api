@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import usace.cwms.db.dao.ifc.level.SeasonalValueBean;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -43,8 +42,7 @@ public final class LocationLevel implements CwmsDTO
     private final String locationId;
     private final String officeId;
 
-    @JsonCreator
-    public LocationLevel(Builder builder)
+    private LocationLevel(Builder builder)
     {
         seasonalTimeSeriesId = builder.seasonalTimeSeriesId;
         seasonalValues = builder.seasonalValues;
