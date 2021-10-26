@@ -66,7 +66,7 @@ public class TimeZoneController implements CrudHandler {
     public void getAll(Context ctx) {
         getAllRequests.mark();
         try (
-            final Timer.Context time_context = getAllRequestsTime.time();
+            final Timer.Context timeContext = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             String format = ctx.queryParamAsClass("format",String.class).getOrDefault("json");
@@ -101,7 +101,7 @@ public class TimeZoneController implements CrudHandler {
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
         try (
-            final Timer.Context time_context = getOneRequestTime.time();
+            final Timer.Context timeContext = getOneRequestTime.time();
             ){
                 throw new UnsupportedOperationException("Not supported yet.");
         }
