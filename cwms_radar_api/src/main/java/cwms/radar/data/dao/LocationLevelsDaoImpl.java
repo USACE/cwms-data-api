@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class LocationLevelsDaoImpl extends JooqDao<LocationLevelPojo> implements LocationLevelsDao
+public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao
 {
     private static final Logger logger = Logger.getLogger(LocationLevelsDaoImpl.class.getName());
 
@@ -27,8 +27,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevelPojo> implements
     {
         super(dsl);
     }
-
-
 
     @Override
     public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId) throws IOException
@@ -120,28 +118,28 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevelPojo> implements
 
     private LocationLevel getLevelFromPojo(LocationLevelPojo copyFromPojo, ZonedDateTime effectiveDate)
     {
-        LocationLevel retval = new LocationLevel(copyFromPojo.getLocationId(), effectiveDate);
-        retval.setAttributeComment(copyFromPojo.getAttributeComment());
-        retval.setAttributeDurationId(copyFromPojo.getAttributeDurationId());
-        retval.setAttributeParameterId(copyFromPojo.getAttributeParameterId());
-        retval.setLocationId(copyFromPojo.getLocationId());
-        retval.setAttributeValue(copyFromPojo.getAttributeValue());
-        retval.setAttributeParameterTypeId(copyFromPojo.getAttributeParameterTypeId());
-        retval.setAttributeUnitsId(copyFromPojo.getAttributeUnitsId());
-        retval.setDurationId(copyFromPojo.getDurationId());
-        retval.setInterpolateString(copyFromPojo.getInterpolateString());
-        retval.setIntervalMinutes(copyFromPojo.getIntervalMinutes());
-        retval.setIntervalMonths(copyFromPojo.getIntervalMonths());
-        retval.setIntervalOrigin(ZonedDateTime.ofInstant(copyFromPojo.getIntervalOrigin().toInstant(), effectiveDate.getZone()));
-        retval.setLevelComment(copyFromPojo.getLevelComment());
-        retval.setLevelUnitsId(copyFromPojo.getLevelUnitsId());
-        retval.setOfficeId(copyFromPojo.getOfficeId());
-        retval.setParameterId(copyFromPojo.getParameterId());
-        retval.setParameterTypeId(copyFromPojo.getParameterTypeId());
-        retval.setSeasonalTimeSeriesId(copyFromPojo.getSeasonalTimeSeriesId());
-        retval.setSeasonalValues(copyFromPojo.getSeasonalValues());
-        retval.setSiParameterUnitsConstantValue(copyFromPojo.getSiParameterUnitsConstantValue());
-        retval.setSpecifiedLevelId(copyFromPojo.getSpecifiedLevelId());
-        return retval;
+        return new LocationLevel.Builder(copyFromPojo.getLocationId(), effectiveDate)
+            .withAttributeComment(copyFromPojo.getAttributeComment())
+            .withAttributeDurationId(copyFromPojo.getAttributeDurationId())
+            .withAttributeParameterId(copyFromPojo.getAttributeParameterId())
+            .withLocationId(copyFromPojo.getLocationId())
+            .withAttributeValue(copyFromPojo.getAttributeValue())
+            .withAttributeParameterTypeId(copyFromPojo.getAttributeParameterTypeId())
+            .withAttributeUnitsId(copyFromPojo.getAttributeUnitsId())
+            .withDurationId(copyFromPojo.getDurationId())
+            .withInterpolateString(copyFromPojo.getInterpolateString())
+            .withIntervalMinutes(copyFromPojo.getIntervalMinutes())
+            .withIntervalMonths(copyFromPojo.getIntervalMonths())
+            .withIntervalOrigin(ZonedDateTime.ofInstant(copyFromPojo.getIntervalOrigin().toInstant(), effectiveDate.getZone()))
+            .withLevelComment(copyFromPojo.getLevelComment())
+            .withLevelUnitsId(copyFromPojo.getLevelUnitsId())
+            .withOfficeId(copyFromPojo.getOfficeId())
+            .withParameterId(copyFromPojo.getParameterId())
+            .withParameterTypeId(copyFromPojo.getParameterTypeId())
+            .withSeasonalTimeSeriesId(copyFromPojo.getSeasonalTimeSeriesId())
+            .withSeasonalValues(copyFromPojo.getSeasonalValues())
+            .withSiParameterUnitsConstantValue(copyFromPojo.getSiParameterUnitsConstantValue())
+            .withSpecifiedLevelId(copyFromPojo.getSpecifiedLevelId())
+            .build();
     }
 }

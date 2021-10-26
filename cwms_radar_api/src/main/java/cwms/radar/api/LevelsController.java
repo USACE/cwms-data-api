@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -18,7 +19,6 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Timer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,9 +40,10 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.*;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import usace.cwms.db.dao.ifc.level.SeasonalValueBean;
 
 public class LevelsController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
+    private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
     private final MetricRegistry metrics;
     private final Meter getAllRequests;
     private final Timer getAllRequestsTime;
@@ -95,8 +96,8 @@ public class LevelsController implements CrudHandler {
         {
             LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
             String office = ctx.queryParam("office");
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if(contentType == null)
             {
@@ -109,7 +110,7 @@ public class LevelsController implements CrudHandler {
             {
                 timezoneId = ZoneId.systemDefault();
             }
-            level.setLevelDate(unmarshalledDateTime);
+            level = new LocationLevel.Builder(level).withLevelDate(unmarshalledDateTime).build();
             levelsDao.storeLocationLevel(level, timezoneId);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location Level");
         }
@@ -143,7 +144,7 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void delete(Context ctx, String id)
+    public void delete(@NotNull Context ctx, String id)
     {
         deleteRequest.mark();
         try(final Timer.Context timeContext = deleteRequestTime.time();
@@ -227,7 +228,7 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String id) {
+    public void getOne(Context ctx, @NotNull String id) {
          ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
@@ -247,7 +248,7 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void update(Context ctx, String id)
+    public void update(@NotNull Context ctx, String id)
     {
         updateRequest.mark();
         try(final Timer.Context timeContext = updateRequestTime.time();
@@ -263,8 +264,8 @@ public class LevelsController implements CrudHandler {
             {
                 timezoneId = ZoneId.systemDefault();
             }
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if(contentType == null)
             {
@@ -272,12 +273,12 @@ public class LevelsController implements CrudHandler {
             }
             LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(), contentType.getType(), office);
             //retrieveLocationLevel will throw an error if level does not exist
-            LocationLevel existingLocationLevel = levelsDao.retrieveLocationLevel(id, UnitSystem.EN.getValue(), unmarshalledDateTime, office);
-            existingLocationLevel = updatedClearedFields(ctx.body(), contentType.getType(), existingLocationLevel);
+            LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(id, UnitSystem.EN.getValue(), unmarshalledDateTime, office);
+            existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(), existingLevelLevel);
             //only store (update) if level does exist
-            LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLocationLevel, levelFromBody);
-            updatedLocationLevel.setLevelDate(unmarshalledDateTime);
-            if(!updatedLocationLevel.getLocationId().equalsIgnoreCase(existingLocationLevel.getLocationId())) //if name changed then delete location with old name
+            LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel, levelFromBody);
+            updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel).withLevelDate(unmarshalledDateTime).build();
+            if(!updatedLocationLevel.getLocationId().equalsIgnoreCase(existingLevelLevel.getLocationId())) //if name changed then delete location with old name
             {
                 levelsDao.renameLocationLevel(id, updatedLocationLevel);
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location Level");
@@ -298,51 +299,72 @@ public class LevelsController implements CrudHandler {
 
     private LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel, LocationLevel updatedLevel)
     {
-        LocationLevel retVal = new LocationLevel(existingLevel);
-        retVal.setSeasonalTimeSeriesId(updatedLevel.getSeasonalTimeSeriesId() == null ? retVal.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
-        retVal.setSeasonalValues(updatedLevel.getSeasonalValues() == null ? retVal.getSeasonalValues() : updatedLevel.getSeasonalValues());
-        retVal.setSpecifiedLevelId(updatedLevel.getSpecifiedLevelId() == null ? retVal.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
-        retVal.setParameterTypeId(updatedLevel.getParameterTypeId() == null ? retVal.getParameterTypeId() : updatedLevel.getParameterTypeId());
-        retVal.setParameterId(updatedLevel.getParameterId() == null ? retVal.getParameterId() : updatedLevel.getParameterId());
-        retVal.setSiParameterUnitsConstantValue(updatedLevel.getSiParameterUnitsConstantValue() == null ? retVal.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
-        retVal.setLevelUnitsId(updatedLevel.getLevelUnitsId() == null ? retVal.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
-        retVal.setLevelDate(updatedLevel.getLevelDate() == null ? retVal.getLevelDate() : updatedLevel.getLevelDate());
-        retVal.setLevelComment(updatedLevel.getLevelComment() == null ? retVal.getLevelComment() : updatedLevel.getLevelComment());
-        retVal.setIntervalOrigin(updatedLevel.getIntervalOrigin() == null ? retVal.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
-        retVal.setIntervalMonths(updatedLevel.getIntervalMonths() == null ? retVal.getIntervalMonths() : updatedLevel.getIntervalMonths());
-        retVal.setInterpolateString(updatedLevel.getInterpolateString() == null ? retVal.getInterpolateString() : updatedLevel.getInterpolateString());
-        retVal.setDurationId(updatedLevel.getDurationId() == null ? retVal.getDurationId() : updatedLevel.getDurationId());
-        retVal.setAttributeValue(updatedLevel.getAttributeValue() == null ? retVal.getAttributeValue() : updatedLevel.getAttributeValue());
-        retVal.setAttributeUnitsId(updatedLevel.getAttributeUnitsId() == null ? retVal.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
-        retVal.setAttributeParameterTypeId(updatedLevel.getAttributeParameterTypeId() == null ? retVal.getAttributeParameterTypeId() : updatedLevel.getAttributeParameterTypeId());
-        retVal.setAttributeParameterId(updatedLevel.getAttributeParameterId() == null ? retVal.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
-        retVal.setAttributeDurationId(updatedLevel.getAttributeDurationId() == null ? retVal.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
-        retVal.setAttributeComment(updatedLevel.getAttributeComment() == null ? retVal.getAttributeComment() : updatedLevel.getAttributeComment());
-        retVal.setLocationId(updatedLevel.getLocationId() == null ? retVal.getLocationId() : updatedLevel.getLocationId());
-        retVal.setOfficeId(updatedLevel.getOfficeId() == null ? retVal.getOfficeId() : updatedLevel.getOfficeId());
-        if(retVal.getIntervalMonths() != null && retVal.getIntervalMonths() > 0)
+        String seasonalTimeSeriesId = (updatedLevel.getSeasonalTimeSeriesId() == null ? existingLevel.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
+        List<SeasonalValueBean> seasonalValues = (updatedLevel.getSeasonalValues() == null ? existingLevel.getSeasonalValues() : updatedLevel.getSeasonalValues());
+        String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
+        String parameterTypeId = (updatedLevel.getParameterTypeId() == null ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
+        String parameterId = (updatedLevel.getParameterId() == null ? existingLevel.getParameterId() : updatedLevel.getParameterId());
+        Double siParameterUnitsConstantValue = (updatedLevel.getSiParameterUnitsConstantValue() == null ? existingLevel.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
+        String levelUnitsId = (updatedLevel.getLevelUnitsId() == null ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
+        ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
+        String levelComment = (updatedLevel.getLevelComment() == null ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
+        ZonedDateTime intervalOrigin = (updatedLevel.getIntervalOrigin() == null ? existingLevel.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
+        Integer intervalMinutes = (updatedLevel.getIntervalMinutes() == null ? existingLevel.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
+        Integer intervalMonths = (updatedLevel.getIntervalMonths() == null ? existingLevel.getIntervalMonths() : updatedLevel.getIntervalMonths());
+        String interpolateString = (updatedLevel.getInterpolateString() == null ? existingLevel.getInterpolateString() : updatedLevel.getInterpolateString());
+        String durationId = (updatedLevel.getDurationId() == null ? existingLevel.getDurationId() : updatedLevel.getDurationId());
+        BigDecimal attributeValue = (updatedLevel.getAttributeValue() == null ? existingLevel.getAttributeValue() : updatedLevel.getAttributeValue());
+        String attributeUnitsId = (updatedLevel.getAttributeUnitsId() == null ? existingLevel.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
+        String attributeParameterTypeId = (updatedLevel.getAttributeParameterTypeId() == null ? existingLevel.getAttributeParameterTypeId() : updatedLevel.getAttributeParameterTypeId());
+        String attributeParameterId = (updatedLevel.getAttributeParameterId() == null ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
+        String attributeDurationId = (updatedLevel.getAttributeDurationId() == null ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
+        String attributeComment = (updatedLevel.getAttributeComment() == null ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
+        String locationId = (updatedLevel.getLocationId() == null ? existingLevel.getLocationId() : updatedLevel.getLocationId());
+        String officeId = (updatedLevel.getOfficeId() == null ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
+        if(existingLevel.getIntervalMonths() != null && existingLevel.getIntervalMonths() > 0)
         {
-            retVal.setIntervalMinutes(null);
+            intervalMinutes = null;
         }
-        else if(retVal.getIntervalMinutes() != null && retVal.getIntervalMinutes() > 0)
+        else if(existingLevel.getIntervalMinutes() != null && existingLevel.getIntervalMinutes() > 0)
         {
-            retVal.setIntervalMonths(null);
+            intervalMonths = null;
         }
-        if(retVal.getAttributeValue() == null)
+        if(existingLevel.getAttributeValue() == null)
         {
-            retVal.setAttributeUnitsId(null);
+            attributeUnitsId = null;
         }
-        if(!retVal.getSeasonalValues().isEmpty())
+        if(!existingLevel.getSeasonalValues().isEmpty())
         {
-            retVal.setSiParameterUnitsConstantValue(null);
-            retVal.setSeasonalTimeSeriesId(null);
+            siParameterUnitsConstantValue = null;
+            seasonalTimeSeriesId = null;
         }
-        else if(retVal.getSeasonalTimeSeriesId() != null && !retVal.getSeasonalTimeSeriesId().isEmpty())
+        else if(existingLevel.getSeasonalTimeSeriesId() != null && !existingLevel.getSeasonalTimeSeriesId().isEmpty())
         {
-            retVal.setSiParameterUnitsConstantValue(null);
-            retVal.setSeasonalValues(null);
+            siParameterUnitsConstantValue = null;
+            seasonalValues = null;
         }
-        return retVal;
+        return new LocationLevel.Builder(locationId, levelDate)
+                .withSeasonalValues(seasonalValues)
+                .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
+                .withSpecifiedLevelId(specifiedLevelId)
+                .withParameterTypeId(parameterTypeId)
+                .withParameterId(parameterId)
+                .withSiParameterUnitsConstantValue(siParameterUnitsConstantValue)
+                .withLevelUnitsId(levelUnitsId)
+                .withLevelComment(levelComment)
+                .withIntervalOrigin(intervalOrigin)
+                .withIntervalMinutes(intervalMinutes)
+                .withIntervalMonths(intervalMonths)
+                .withInterpolateString(interpolateString)
+                .withDurationId(durationId)
+                .withAttributeValue(attributeValue)
+                .withAttributeUnitsId(attributeUnitsId)
+                .withAttributeParameterTypeId(attributeParameterTypeId)
+                .withAttributeParameterId(attributeParameterId)
+                .withAttributeDurationId(attributeDurationId)
+                .withAttributeComment(attributeComment)
+                .withOfficeId(officeId)
+                .build();
     }
 
     private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
@@ -351,8 +373,9 @@ public class LevelsController implements CrudHandler {
         LocationLevel retVal;
         try
         {
-            retVal = om.readValue(body, LocationLevel.class);
-            retVal.setOfficeId(office);
+            retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
+                    .withOfficeId(office)
+                    .build();
         }
         catch(Exception e)
         {
@@ -364,30 +387,40 @@ public class LevelsController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format)
     {
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om;
         if((Formats.XML).equals(format))
         {
             om = new XmlMapper();
+        }
+        else if(Formats.JSON.equals(format))
+        {
+            om = new ObjectMapper();
+        }
+        else
+        {
+            throw new FormattingException("Format is not currently supported for Levels");
         }
         om.registerModule(new JavaTimeModule());
         return om;
     }
 
-    private LocationLevel updatedClearedFields(String body, String format, LocationLevel existingLocation) throws IOException
+    private LocationLevel updatedClearedFields(String body, String format, LocationLevel existingLevel) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         JsonNode root = om.readTree(body);
         JavaType javaType = om.getTypeFactory().constructType(LocationLevel.class);
         BeanDescription beanDescription = om.getSerializationConfig().introspect(javaType);
         List<BeanPropertyDefinition> properties = beanDescription.findProperties();
-        LocationLevel retVal = new LocationLevel(existingLocation);
+        LocationLevel retVal = new LocationLevel.Builder(existingLevel).build();
         try
         {
-            for (BeanPropertyDefinition propertyDefinition : properties) {
+            for (BeanPropertyDefinition propertyDefinition : properties)
+            {
                 String propertyName = propertyDefinition.getName();
                 JsonNode propertyValue = root.findValue(propertyName);
-                if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                    retVal.setProperty(propertyName, propertyValue);
+                if (propertyValue != null && "".equals(propertyValue.textValue()))
+                {
+                    retVal = new LocationLevel.Builder(retVal).withProperty(propertyName, null).build();
                 }
             }
         }
