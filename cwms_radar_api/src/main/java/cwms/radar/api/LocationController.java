@@ -350,6 +350,7 @@ public class LocationController implements CrudHandler {
         }
         catch(Exception e)
         {
+            logger.log(Level.SEVERE, "Failed to deserialize location", e);
             throw new IOException("Failed to deserialize location");
         }
         return retVal;
