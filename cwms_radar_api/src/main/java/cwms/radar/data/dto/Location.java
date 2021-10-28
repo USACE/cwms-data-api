@@ -230,6 +230,7 @@ public final class  Location implements CwmsDTO
     }
 
     @JsonPOJOBuilder
+    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder
     {
         private String name;
