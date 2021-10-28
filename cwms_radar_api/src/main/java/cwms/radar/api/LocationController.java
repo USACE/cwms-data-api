@@ -374,7 +374,7 @@ public class LocationController implements CrudHandler {
         return retVal;
     }
 
-    private Location deserializeLocation(String body, String format, String office) throws IOException
+    public static Location deserializeLocation(String body, String format, String office) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         Location retVal;

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TimeSeriesControllerTest
+public class TimeSeriesControllerTest extends ControllerTest
 {
 
 
@@ -128,17 +128,6 @@ public class TimeSeriesControllerTest
 		assertEquals(expected.getValues(), actual.getValues(), "values did not match");
 		assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
 		assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
-	}
-
-	public String loadResourceAsString(String fileName)
-	{
-		ClassLoader classLoader = getClass().getClassLoader();
-		InputStream stream = classLoader.getResourceAsStream(fileName);
-		assertNotNull(stream, "Could not load the resource as stream:" + fileName);
-		Scanner scanner = new Scanner(stream);
-		String contents = scanner.useDelimiter("\\A").next();
-		scanner.close();
-		return contents;
 	}
 
 	@Test
