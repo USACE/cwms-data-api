@@ -96,7 +96,7 @@ public class LevelsController implements CrudHandler {
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
+            LocationLevelsDao levelsDao = getLevelsDao(dsl);
             String office = ctx.queryParam("office");
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -106,7 +106,7 @@ public class LevelsController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             LocationLevel level = deserializeLocationLevel(ctx.body(),formatHeader, office);
-           ZonedDateTime unmarshalledDateTime = getUnmarshalledDateTime(ctx.body(), contentType.getType());
+            ZonedDateTime unmarshalledDateTime = getUnmarshalledDateTime(ctx.body(), contentType.getType());
             ZoneId timezoneId = unmarshalledDateTime.getZone();
             if(timezoneId == null)
             {
@@ -157,7 +157,7 @@ public class LevelsController implements CrudHandler {
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam("cascade-delete"));
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
-            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
+            LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(id, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(id + " Deleted");
         }
@@ -257,7 +257,7 @@ public class LevelsController implements CrudHandler {
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
+            LocationLevelsDao levelsDao = getLevelsDao(dsl);
             String office = ctx.queryParam("office");
             String dateString = ctx.queryParam("date");
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
@@ -370,7 +370,12 @@ public class LevelsController implements CrudHandler {
                 .build();
     }
 
-    private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
+    public static LocationLevelsDao getLevelsDao(DSLContext dsl)
+    {
+        return new LocationLevelsDaoImpl(dsl);
+    }
+
+    public static LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         LocationLevel retVal;
