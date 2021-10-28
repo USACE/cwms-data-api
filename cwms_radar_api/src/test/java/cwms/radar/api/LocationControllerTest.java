@@ -15,7 +15,7 @@ public class LocationControllerTest extends ControllerTest
     private static String OFFICE_ID = "LRL";
 
     @Test
-    public void testDeserializeTimeSeriesXml() throws IOException
+    public void testDeserializeLocationXml() throws IOException
     {
         String xml = loadResourceAsString("cwms/radar/api/location_create.xml");
         xml.replaceAll("\\s+","");
@@ -30,7 +30,7 @@ public class LocationControllerTest extends ControllerTest
     }
 
     @Test
-    public void testDeserializeTimeSeriesJSON() throws IOException
+    public void testDeserializeLocationJSON() throws IOException
     {
         String json = loadResourceAsString("cwms/radar/api/location_create.json");
         assertNotNull(json);
