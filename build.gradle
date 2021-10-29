@@ -22,6 +22,7 @@ subprojects {
     checkstyle {
         toolVersion "8.27"
     }
+    println 'Checkstyle version:' + checkstyle.toolVersion
 
     compileJava{
         sourceCompatibility = "1.8"
