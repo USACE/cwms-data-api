@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
@@ -31,6 +32,7 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.CwmsDataManager;
 import cwms.radar.data.dao.*;
 import cwms.radar.data.dto.LocationLevel;
+import cwms.radar.data.dto.SeasonalValueBean;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -40,7 +42,6 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.*;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.ifc.level.SeasonalValueBean;
 
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
@@ -79,7 +80,8 @@ public class LevelsController implements CrudHandler {
             },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON )
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             description = "Create new CWMS Location Level",
@@ -239,7 +241,8 @@ public class LevelsController implements CrudHandler {
             },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON ),
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             description = "Update CWMS Location Level",
@@ -390,7 +393,9 @@ public class LevelsController implements CrudHandler {
         ObjectMapper om;
         if((Formats.XML).equals(format))
         {
-            om = new XmlMapper();
+            JacksonXmlModule module = new JacksonXmlModule();
+            module.setDefaultUseWrapper(false);
+            om = new XmlMapper(module);
         }
         else if(Formats.JSON.equals(format))
         {
