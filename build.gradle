@@ -19,6 +19,9 @@ ext.CWMS_DB_VERSION='8.0.0-SNAPSHOT'
 subprojects {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
+    checkstyle {
+        toolVersion "8.27"
+    }
 
     compileJava{
         sourceCompatibility = "1.8"
@@ -44,7 +47,5 @@ subprojects {
         useJUnitPlatform()
     }
 
-    checkstyle {
-        toolVersion "8.27"
-    }
+
 }
