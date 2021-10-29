@@ -40,17 +40,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             BigInteger minutes = locationLevel.getIntervalMinutes() == null? null : BigInteger.valueOf(locationLevel.getIntervalMinutes());
             Date date = Date.from(locationLevel.getLevelDate().toLocalDateTime().atZone(zoneId).toInstant());
             Date intervalOrigin = locationLevel.getIntervalOrigin() == null ? null :  Date.from(locationLevel.getIntervalOrigin().toLocalDateTime().atZone(zoneId).toInstant());
-            List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues = new ArrayList<>();
-            for(SeasonalValueBean bean : locationLevel.getSeasonalValues())
-            {
-                usace.cwms.db.dao.ifc.level.SeasonalValueBean storeBean = new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
-                storeBean.setValue(bean.getValue());
-                storeBean.setOffsetMonths(bean.getOffsetMonths().byteValue());
-                storeBean.setOffsetMinutes(bean.getOffsetMinutes());
-                seasonalValues.add(storeBean);
-            }
+            List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues = getSeasonalValues(locationLevel);
             dsl.connection(c ->
-
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationId(), locationLevel.getSiParameterUnitsConstantValue(), locationLevel.getLevelUnitsId(), locationLevel.getLevelComment(), date,
@@ -65,6 +56,22 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             logger.log(Level.SEVERE, "Failed to store Location Level", ex);
             throw new IOException("Failed to store Location Level");
         }
+    }
+
+    private List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> getSeasonalValues(LocationLevel locationLevel)
+    {
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues = null;
+        if(locationLevel.getSeasonalValues() != null) {
+            seasonalValues = new ArrayList<>();
+            for (SeasonalValueBean bean : locationLevel.getSeasonalValues()) {
+                usace.cwms.db.dao.ifc.level.SeasonalValueBean storeBean = new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
+                storeBean.setValue(bean.getValue());
+                storeBean.setOffsetMonths(bean.getOffsetMonths().byteValue());
+                storeBean.setOffsetMinutes(bean.getOffsetMinutes());
+                seasonalValues.add(storeBean);
+            }
+        }
+        return seasonalValues;
     }
 
     @Override
