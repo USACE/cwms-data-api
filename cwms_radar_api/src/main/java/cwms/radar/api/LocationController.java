@@ -107,7 +107,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = getAllRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
 
             String names = ctx.queryParam("names");
             String units = ctx.queryParam("unit");
@@ -171,14 +171,44 @@ public class LocationController implements CrudHandler {
         return format;
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
+                    @OpenApiParam(name="unit",   description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters.")
+            },
+            responses = {
+                    @OpenApiResponse( status="200",
+                            content = {
+                                    @OpenApiContent(type = Formats.JSONV2 ),
+                                    @OpenApiContent(type = Formats.XMLV2 )
+                            })
+            },
+            description = "Returns CWMS Location Data",
+            tags = {"Locations"}
+    )
     @Override
-    public void getOne(Context ctx, String name) {
+    public void getOne(Context ctx, @NotNull String name) {
         getOneRequest.mark();
-        try (
-            final Timer.Context timeContext = getOneRequestTime.time()
-            ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        try(final Timer.Context timeContext = getAllRequestsTime.time();
+            DSLContext dsl = getDslContext(ctx))
+        {
+            String units = ctx.queryParamAsClass("unit",String.class).getOrDefault( UnitSystem.EN.value());
+            String office = ctx.queryParam("office");
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV2;
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            ctx.contentType(contentType.toString());
+            LocationsDao locationDao = getLocationsDao(dsl);
+            Location location = locationDao.getLocation(name, units, office);
+            ObjectMapper om = getObjectMapperForFormat(contentType.getType());
+            String serializedLocation = om.writeValueAsString(location);
+            ctx.result(serializedLocation);
+        }
+        catch (IOException ex)
+        {
+            String errorMsg = "Error retrieving " + name;
+            RadarError re = new RadarError(errorMsg);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            logger.log(Level.SEVERE, errorMsg, ex);
         }
     }
 
@@ -204,7 +234,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
             String office = ctx.queryParam("office");
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
@@ -247,7 +277,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
             String office = ctx.queryParam("office");
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
@@ -299,7 +329,7 @@ public class LocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx))
         {
             String office = ctx.queryParam("office");
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
             locationsDao.deleteLocation(locationId, office);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
         }
@@ -310,6 +340,12 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
+
+    public static LocationsDao getLocationsDao(DSLContext dsl)
+    {
+        return new LocationsDaoImpl(dsl);
+    }
+
 
     private Location updatedClearedFields(String body, String format, Location existingLocation) throws IOException
     {
@@ -338,7 +374,7 @@ public class LocationController implements CrudHandler {
         return retVal;
     }
 
-    private Location deserializeLocation(String body, String format, String office) throws IOException
+    public static Location deserializeLocation(String body, String format, String office) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         Location retVal;
@@ -358,10 +394,18 @@ public class LocationController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format)
     {
-        ObjectMapper om = new ObjectMapper();
-        if((Formats.XML).equals(format))
+        ObjectMapper om;
+        if((Formats.XML).equals(format) || (Formats.XMLV2).equals(format))
         {
             om = new XmlMapper();
+        }
+        else if(Formats.JSON.equals(format) || (Formats.JSONV2).equals(format))
+        {
+            om = new ObjectMapper();
+        }
+        else
+        {
+            throw new FormattingException("Format is not currently supported for Locations");
         }
         om.registerModule(new JavaTimeModule());
         return om;
