@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -45,17 +44,8 @@ public class RatingController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
-    public Timer.Context markAndTime(String subject)
-    {
-        String className = this.getClass().getName();
-        Meter meter = this.metrics.meter(name(className,subject,"count"));
-        meter.mark();
-        Timer timer = this.metrics.timer(name(className,subject,"time"));
-        return timer.time();
-    }
-
     @NotNull
-    private RatingDao getRatingDao(DSLContext dsl)
+    protected RatingDao getRatingDao(DSLContext dsl)
     {
         return new RatingSetDao(dsl);
     }
@@ -64,7 +54,7 @@ public class RatingController implements CrudHandler {
             description = "Create new RatingSet",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(type = Formats.XML )
+                            @OpenApiContent(type = Formats.XMLV2 )
                     },
                     required = true
             ),
@@ -78,16 +68,21 @@ public class RatingController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx))
         {
             RatingDao ratingDao = getRatingDao(dsl);
-            RatingSet ratingSet = deserializeRatingSet(ctx);
+           RatingSet ratingSet = deserializeRatingSet(ctx);
             ratingDao.create(ratingSet);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
         }
         catch(IOException | RatingException ex)
         {
-            RadarError re = new RadarError("failed to process request");
+            RadarError re = new RadarError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    private Timer.Context markAndTime(String subject)
+    {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     private RatingSet deserializeRatingSet(Context ctx) throws IOException, RatingException
@@ -108,18 +103,18 @@ public class RatingController implements CrudHandler {
         return contentType;
     }
 
-    private RatingSet deserializeRatingSet(String body, ContentType contentType) throws IOException, RatingException
+    public RatingSet deserializeRatingSet(String body, ContentType contentType) throws IOException, RatingException
     {
         return deserializeRatingSet(body, contentType.getType());
     }
 
-    public static RatingSet deserializeRatingSet(String body, String contentType) throws IOException, RatingException
+    public RatingSet deserializeRatingSet(String body, String contentType) throws IOException, RatingException
     {
         RatingSet retval;
 
-        if((Formats.XMLV2).equals(contentType))
+        if((Formats.XML).equals(contentType))
         {
-            retval = RatingSet.fromXml(body);
+            retval = deserializeFromXml(body);
         } else if((Formats.JSONV2).equals(contentType)){
             throw new IOException("JSONv2 RatingSet not implemented" );
         } else {
@@ -127,6 +122,12 @@ public class RatingController implements CrudHandler {
         }
 
         return retval;
+    }
+
+    @NotNull
+    public RatingSet deserializeFromXml(String body) throws RatingException
+    {
+        return RatingSet.fromXml(body);
     }
 
     @OpenApi(
@@ -150,7 +151,7 @@ public class RatingController implements CrudHandler {
         }
         catch(IOException | RatingException ex)
         {
-            RadarError re = new RadarError("failed to process request");
+            RadarError re = new RadarError("Failed to process delete request");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -279,7 +280,7 @@ public class RatingController implements CrudHandler {
         }
         catch(IOException | RatingException ex)
         {
-            RadarError re = new RadarError("failed to process request to update RatingSet");
+            RadarError re = new RadarError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
