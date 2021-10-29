@@ -47,7 +47,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
-			throw new IOException("Failed to create Rating");
+			throw new IOException("Failed to retrieve Rating");
 		}
 		return retval[0];
 	}
