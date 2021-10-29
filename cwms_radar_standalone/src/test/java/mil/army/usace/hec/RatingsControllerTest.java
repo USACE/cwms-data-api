@@ -13,7 +13,6 @@ import cwms.radar.formatters.Formats;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
 import io.restassured.config.RestAssuredConfig;
-import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
@@ -26,7 +25,6 @@ import hec.data.RatingException;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.restassured.RestAssured.post;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -96,12 +94,12 @@ public class RatingsControllerTest {
 
             final String testBody = "could be anything";
             RequestSpecification request = RestAssured.given();
-            Response response = request.config(RestAssuredConfig.config().encoderConfig(
+            request.config(RestAssuredConfig.config().encoderConfig(
                     EncoderConfig.encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false))).contentType(Formats.XMLV2).body(testBody).post("/ratings");
 
-            // For this test, its ok that the server throws a RatingException
+            // For this test, it's ok that the server throws a RatingException
             // Only want to check that the controller accessed our mock dao in the expected way
-            verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML);  // Curious that is is XML and not XMLv2
+            verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML);  // Curious that it is XML and not XMLv2
         } finally
         {
             radarAPI.stop();
