@@ -32,6 +32,8 @@ import java.util.logging.Logger;
 public class BasinController implements CrudHandler
 {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
+    public final String TAG = "Basins-Beta";
+
     private final MetricRegistry metrics;
     private final Meter getAllRequests;
     private final Timer getAllRequestsTime;
@@ -63,7 +65,7 @@ public class BasinController implements CrudHandler
                     @OpenApiResponse(status="501", description = "Requested format is not implemented")
             },
             description = "Returns CWMS Basin Data",
-            tags = {"Basins-Beta"}
+            tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx)
@@ -106,7 +108,7 @@ public class BasinController implements CrudHandler
                     @OpenApiResponse(status="501", description = "Requested format is not implemented")
             },
             description = "Returns CWMS Basin Data",
-            tags = {"Basins"}
+            tags = {TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String basinId)
