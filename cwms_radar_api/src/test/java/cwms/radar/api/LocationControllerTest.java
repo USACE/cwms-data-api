@@ -10,15 +10,14 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class LocationControllerTest extends ControllerTest
+class LocationControllerTest extends ControllerTest
 {
-    private static String OFFICE_ID = "LRL";
+    private static final String OFFICE_ID = "LRL";
 
     @Test
-    public void testDeserializeLocationXml() throws IOException
+    void testDeserializeLocationXml() throws IOException
     {
         String xml = loadResourceAsString("cwms/radar/api/location_create.xml");
-        xml.replaceAll("\\s+","");
         assertNotNull(xml);
         Location location = LocationController.deserializeLocation(xml, Formats.XML, OFFICE_ID);
         assertNotNull(location);
@@ -30,7 +29,7 @@ public class LocationControllerTest extends ControllerTest
     }
 
     @Test
-    public void testDeserializeLocationJSON() throws IOException
+    void testDeserializeLocationJSON() throws IOException
     {
         String json = loadResourceAsString("cwms/radar/api/location_create.json");
         assertNotNull(json);

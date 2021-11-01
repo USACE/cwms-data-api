@@ -17,6 +17,8 @@ import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
+import cwms.radar.data.dto.RecentValue;
+import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
@@ -26,8 +28,17 @@ import io.javalin.http.BadRequestResponse;
 import org.jetbrains.annotations.NotNull;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.JSON, dataTypes = {Office.class, Location.class,
-		LocationGroup.class, LocationCategory.class, Clob.class, Clobs.class})
+@FormatService(contentType = Formats.JSON,
+			   dataTypes = {
+				   Office.class,
+				   Location.class,
+				   LocationGroup.class,
+				   LocationCategory.class,
+				   Clob.class,
+				   Clobs.class,
+				   TimeSeriesGroup.class,
+				   RecentValue.class
+				})
 public class JsonV1 implements OutputFormatter{
 
 	private final ObjectMapper om;
