@@ -14,6 +14,7 @@ import cwms.radar.data.dto.LocationLevel;
 import cwms.radar.data.dto.SeasonalValueBean;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class LocationLevelsDaoTest extends DaoTest
 
     private static final String OFFICE_ID = "LRL";
 
-    @Test
+    @Disabled
     void testStore() throws Exception
     {
         LocationLevel levelToStore = null;
@@ -56,7 +57,7 @@ public class LocationLevelsDaoTest extends DaoTest
         }
     }
 
-    @Test
+    @Disabled
     void testDeleteLocationLevel() throws Exception
     {
         LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(getDslContext(getConnection(), "LRL"));
@@ -71,7 +72,7 @@ public class LocationLevelsDaoTest extends DaoTest
         assertThrows(IOException.class, () -> levelsDao.retrieveLocationLevel(levelToStore.getLocationId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID));
     }
 
-    @Test
+    @Disabled
     void testUpdate() throws Exception
     {
         LocationLevel updatedLocationLevel = null;
