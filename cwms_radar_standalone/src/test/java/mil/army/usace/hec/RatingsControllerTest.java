@@ -44,7 +44,7 @@ public class RatingsControllerTest {
     }
 
     @Test
-    public void unimplemented_methods_return_501(){
+    public void unimplemented_methods_return_501() throws Exception{
         new RadarAPI(ds,7000).start();
         post("/ratings").then()
         .statusCode(HttpServletResponse.SC_NOT_IMPLEMENTED);
