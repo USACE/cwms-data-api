@@ -4,12 +4,14 @@ import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.Location;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
 import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled
 class LocationsDaoTest extends DaoTest
 {
     private static final String OFFICE_ID = "LRL";
@@ -89,4 +91,46 @@ class LocationsDaoTest extends DaoTest
                 .withDescription("for testing")
                 .build();
     }
+}
+
+	@Test
+	void getLocationsGeoJson() throws SQLException, JsonProcessingException
+	{
+		try(DSLContext lrl = getDslContext(getConnection(), "LRL"))
+		{
+			LocationsDao dao = new LocationsDaoImpl(lrl);
+			final String names = null;
+
+			final String units = "EN";
+			final String datum = null;
+			final String office = "LRL";
+			FeatureCollection fc = dao.buildFeatureCollection(names, units, office);
+			assertNotNull(fc);
+			ObjectMapper mapper = JsonV2.buildObjectMapper();
+			String json =  mapper.writeValueAsString(fc);
+			assertNotNull(json);
+		}
+
+	}
+
+	@Test
+	void getLocationsGeoJsonWithNames() throws SQLException, JsonProcessingException
+	{
+		try(DSLContext lrl = getDslContext(getConnection(), "LRL"))
+		{
+			LocationsDao dao = new LocationsDaoImpl(lrl);
+			final String names = "Highbridge|Brookville";
+			final String format = "geojson";
+			final String units = "EN";
+			final String datum = null;
+			final String office = "LRL";
+
+			FeatureCollection fc = dao.buildFeatureCollection(names, units, office);
+			assertNotNull(fc);
+			ObjectMapper mapper = JsonV2.buildObjectMapper();
+			String json =  mapper.writeValueAsString(fc);
+			assertNotNull(json);
+		}
+	}
+
 }
