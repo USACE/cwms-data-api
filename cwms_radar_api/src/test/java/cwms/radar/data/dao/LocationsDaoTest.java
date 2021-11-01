@@ -1,12 +1,18 @@
 package cwms.radar.data.dao;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.Location;
+import cwms.radar.formatters.json.JsonV2;
+import org.geojson.FeatureCollection;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,7 +97,6 @@ class LocationsDaoTest extends DaoTest
                 .withDescription("for testing")
                 .build();
     }
-}
 
 	@Test
 	void getLocationsGeoJson() throws SQLException, JsonProcessingException
