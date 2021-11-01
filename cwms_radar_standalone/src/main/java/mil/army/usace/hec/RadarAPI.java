@@ -1,6 +1,8 @@
 package mil.army.usace.hec;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +34,9 @@ import cwms.radar.api.BasinController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.security.CwmsAuthException;
+import cwms.radar.security.CwmsAuthorizer;
+import cwms.radar.security.CwmsNoAuthorizer;
 import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
@@ -70,15 +75,18 @@ public class RadarAPI {
             ds.setMaxActive(Integer.parseInt(getconfig("RADAR_POOL_MAX_ACTIVE","10")));
             ds.setMaxIdle(Integer.parseInt(getconfig("RADAR_POOL_MAX_IDLE","5")));
             ds.setMinIdle(Integer.parseInt(getconfig("RADAR_POOL_MIN_IDLE","2")));
+
+
+            RadarAPI api = new RadarAPI(ds,port);
+            api.start();
         } catch( Exception err ){
-            logger.log(Level.SEVERE,"Required Parameter not set in environment",err);
+            logger.log(Level.SEVERE,"Error starting RADAR",err);
             System.exit(1);
         }
-        RadarAPI api = new RadarAPI(ds,port);
-        api.start();
+
     }
 
-    public RadarAPI(javax.sql.DataSource ds, int port){
+    public RadarAPI(javax.sql.DataSource ds, int port) throws Exception {
         this.port = port;
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
@@ -86,6 +94,8 @@ public class RadarAPI {
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
+
+        CwmsAuthorizer authorizer = getAuthorizer();
 
         //JavalinJackson.configure(om);
         app = Javalin.create( config -> {
@@ -100,6 +110,7 @@ public class RadarAPI {
             config.addStaticFiles("/static",Location.CLASSPATH);
         }).attribute("PolicyFactory",sanitizer)
           .attribute("ObjectMapper",om)
+          .attribute("Authorizer",authorizer)
           .attribute("RADAR_ALLOW_WRITE", System.getProperty("RADAR_ALLOW_WRITE", "false").equalsIgnoreCase("true") ? Boolean.TRUE: Boolean.FALSE )
           .before( ctx -> {
             ctx.header("X-Content-Type-Options","nosniff");
@@ -114,7 +125,7 @@ public class RadarAPI {
         }).after( ctx -> {
             try{
                 ((java.sql.Connection)ctx.attribute("database")).close();
-            } catch( SQLException e ){
+            } catch( Exception e ){
                 logger.log(Level.WARNING, "Failed to close database connection", e);
             }
         })
@@ -143,6 +154,12 @@ public class RadarAPI {
             RadarError re = new RadarError("Bad Request");
             logger.log(Level.INFO, re.toString(), e );
             ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+        })
+        .exception(CwmsAuthException.class, (e,ctx) -> {
+            RadarError re = new RadarError("Unauthorized");
+            logger.log(Level.INFO, re.toString(), e);
+            ctx.status(403).contentType(ContentType.APPLICATION_JSON.toString())
+               .json(re);
         })
         .exception(Exception.class, (e,ctx) -> {
             RadarError errResponse = new RadarError("System Error");
@@ -206,5 +223,16 @@ public class RadarAPI {
     private static String getconfig(String envName,String defaultVal){
         String val = System.getenv(envName);
         return val != null ? val : defaultVal;
+    }
+
+    private CwmsAuthorizer getAuthorizer() throws NoSuchMethodException, SecurityException, ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
+        String authorizerClassName = System.getProperty("cwms.authorizer.class");
+        if( authorizerClassName == null ){
+            return new CwmsNoAuthorizer();
+        } else {
+            Class<CwmsAuthorizer> authorizerClass = (Class<CwmsAuthorizer>) Class.forName(authorizerClassName);
+            Constructor<CwmsAuthorizer> declaredConstructor = authorizerClass.getDeclaredConstructor();
+            return declaredConstructor.newInstance();
+        }
     }
 }
