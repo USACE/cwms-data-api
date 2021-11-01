@@ -100,7 +100,7 @@ public class RadarAPI {
             config.addStaticFiles("/static",Location.CLASSPATH);
         }).attribute("PolicyFactory",sanitizer)
           .attribute("ObjectMapper",om)
-
+          .attribute("RADAR_ALLOW_WRITE", System.getProperty("RADAR_ALLOW_WRITE", "false").equalsIgnoreCase("true") ? Boolean.TRUE: Boolean.FALSE )
           .before( ctx -> {
             ctx.header("X-Content-Type-Options","nosniff");
             ctx.header("X-Frame-Options","SAMEORIGIN");
@@ -130,7 +130,9 @@ public class RadarAPI {
             ctx.json(re);
         })
         .exception(UnsupportedOperationException.class, (e, ctx) -> {
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+            final RadarError re = RadarError.notImplemented();
+            logger.log(Level.WARNING, e, () -> re + "for request: " + ctx.fullUrl() );
+            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
         })
         .exception(BadRequestResponse.class, (e, ctx) -> {
             RadarError re = new RadarError("Bad Request", e.getDetails());
@@ -159,12 +161,11 @@ public class RadarAPI {
             crud("/parameters/{param_name}", new ParametersController(metrics));
             crud("/timezones/{zone}", new TimeZoneController(metrics));
             crud("/levels/{location}", new LevelsController(metrics));
+            crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
+            crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
             TimeSeriesController tsController = new TimeSeriesController(metrics);
             crud("/timeseries/{timeseries}", tsController);
             get("/timeseries/recent/{group-id}", tsController::getRecent);
-
-            crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
-            crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
             crud("/ratings/{rating}", new RatingController(metrics));
             crud("/catalog/{dataSet}", new CatalogController(metrics));
             crud("/blobs/{blob-id}", new BlobController(metrics));

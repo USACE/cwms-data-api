@@ -2,6 +2,7 @@ apply plugin: 'war'
 
 configurations {
     info
+    webjars
 }
 
 dependencies {
@@ -28,43 +29,20 @@ dependencies {
     implementation( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
         exclude group: "jakarta.xml.bind", module: "*"
     }
-    implementation 'org.webjars:swagger-ui:3.24.3'
+
     implementation 'org.slf4j:slf4j-simple:1.7.28'
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
     implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.11.1"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
     runtimeOnly 'jstl:jstl:1.2'
 
     testImplementation 'com.oracle.ojdbc:ojdbc8:19.3.0.0'
 
-
-}
-
-// get
-
-task getSwagger {
-    doLast {
-        project.mkdir("$buildDir/downloaded")
-        project.mkdir("$buildDir/extra/swagger-ui")
-        def f = new File("$buildDir/downloaded/swagger-ui.zip")
-        if(!f.exists()){
-            new URL("https://github.com/swagger-api/swagger-ui/archive/v3.39.0.zip").withInputStream{ i -> f.withOutputStream{ it << i }}
-        }
+    webjars( 'org.webjars:swagger-ui:3.52.3' ){
+        transitive = false
     }
-}
 
-task unzipSwagger(type: Copy) {
-    dependsOn getSwagger
-
-    eachFile {
-        path -= ~/^.+?\/.+?\//
-    }
-    from zipTree("$buildDir/downloaded/swagger-ui.zip")
-    into "$buildDir/extra/"
-    exclude "**/index.html"
-    include "**/dist/**"
-    includeEmptyDirs = false
 }
 
 task extractInfo( type: Copy ){
@@ -80,9 +58,24 @@ task extractInfo( type: Copy ){
     includeEmptyDirs false
 }
 
+task extractWebJars( type: Copy ){
+    doFirst {
+        project.mkdir("$buildDir/extra/swagger-ui")
+    }
+    from zipTree(configurations.webjars.singleFile)
+    into file("$buildDir/extra")
+    includeEmptyDirs false
+    eachFile {
+        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
+    }
+    exclude "**/index.html*"
+    include "/META-INF/resources/webjars/swagger-ui/**"
+    includeEmptyDirs = false
+}
+
 war {
-    dependsOn unzipSwagger
     dependsOn extractInfo
+    dependsOn extractWebJars
     from "$buildDir/extra"
     from "src/resources/"
 

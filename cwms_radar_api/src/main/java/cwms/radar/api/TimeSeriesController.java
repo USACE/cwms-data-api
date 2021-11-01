@@ -1,5 +1,7 @@
 package cwms.radar.api;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -21,11 +23,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
@@ -36,6 +45,8 @@ import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.Tsv;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.FormattingException;
+import cwms.radar.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -94,7 +105,8 @@ public class TimeSeriesController implements CrudHandler {
             description = "Create new TimeSeries",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON)
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML )
                     },
                     required = true
             ),
@@ -110,13 +122,11 @@ public class TimeSeriesController implements CrudHandler {
         try(final Timer.Context timeContext = createRequestsTime.time(); DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
-
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
-        catch(DataAccessException ex)
+        catch(IOException | DataAccessException ex)
         {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -145,6 +155,9 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void delete(Context ctx, String tsId) {
         deleteRequests.mark();
+        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
+            throw new UnsupportedOperationException("database is read only");
+        }
 
         String office = ctx.queryParam("office");
 
@@ -253,7 +266,10 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results).contentType(contentType.toString());
             }
             else {
-                results = dao.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
+                if (format == null || format.isEmpty()){
+                    format = "json";
+                }
+                results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
@@ -270,6 +286,9 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
+        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
+            throw new UnsupportedOperationException("database is read only");
+        }
         try( final Timer.Context timeContext = getOneRequestTime.time() ){
 
             throw new UnsupportedOperationException("Not supported yet.");
@@ -280,7 +299,10 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Update a TimeSeries",
             requestBody = @OpenApiRequestBody(
-                    content = {@OpenApiContent(from = TimeSeries.class, type = Formats.JSON)},
+                    content = {
+                        @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                        @OpenApiContent(from = TimeSeries.class, type=Formats.XML)
+                    },
                     required = true
             ),
             method = HttpMethod.PATCH,
@@ -291,23 +313,93 @@ public class TimeSeriesController implements CrudHandler {
     public void update(Context ctx, String id) {
 
         updateRequests.mark();
+        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
+            throw new UnsupportedOperationException("database is read only");
+        }
         try (
                 final Timer.Context timeContext = updateRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            TimeSeries timeSeries = ctx.bodyAsClass(TimeSeries.class);
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
             dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
             ctx.status(HttpServletResponse.SC_OK);
         }
-        catch(DataAccessException ex)
+        catch(IOException | DataAccessException ex)
         {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException
+    {
+        return deserializeTimeSeries(ctx.body(), getContentType(ctx));
+    }
+
+    private TimeSeries deserializeTimeSeries(String body, ContentType contentType) throws IOException
+    {
+        return deserializeTimeSeries(body, contentType.getType());
+    }
+
+    public static TimeSeries deserializeTimeSeries(String body, String contentType) throws IOException
+    {
+        TimeSeries retval;
+
+        if((Formats.XMLV2).equals(contentType))
+        {
+            // This is how it would be done if we could use jackson to parse the xml
+            // it currently doesn't work because some of the jackson annotations
+            // use certain naming conventions (e.g. "value-columns" vs "valueColumns")
+            //  ObjectMapper om = buildXmlObjectMapper();
+            //  retval = om.readValue(body, TimeSeries.class);
+            retval = deserializeJaxb(body);
+        } else if((Formats.JSONV2).equals(contentType)){
+            ObjectMapper om = JsonV1.buildObjectMapper();
+            retval = om.readValue(body, TimeSeries.class);
+        } else {
+            throw new IOException("Unexpected format:" + contentType);
+        }
+
+        return retval;
+    }
+
+    public static TimeSeries deserializeJaxb(String body) throws IOException
+    {
+        try
+        {
+            JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            return (TimeSeries) unmarshaller.unmarshal(new StringReader(body));
+        }
+        catch(JAXBException e)
+        {
+            throw new IOException(e);
+        }
+    }
+
+    @NotNull
+    public static ObjectMapper buildXmlObjectMapper()
+    {
+        ObjectMapper retval = new XmlMapper();
+        retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        retval.registerModule(new JavaTimeModule());
+        return retval;
+    }
+
+    @NotNull
+    private ContentType getContentType(Context ctx)
+    {
+        String acceptHeader = ctx.req.getContentType();
+        String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
+        ContentType contentType = Formats.parseHeader(formatHeader);
+        if(contentType == null)
+        {
+            throw new FormattingException("Format header could not be parsed");
+        }
+        return contentType;
     }
 
     /**
@@ -351,8 +443,9 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiResponse(status = "404", description = "Based on the combination of inputs provided the timeseries group(s) were not found."),
                     @OpenApiResponse(status = "501", description = "request format is not implemented")
             },
+            path = "/timeseries/recent",
             description = "Returns CWMS Timeseries Groups Data",
-            tags = {"TimeSeries"},
+            tags = {"TimeSeries-Beta"},
             method = HttpMethod.GET
     )
     public void getRecent(Context ctx)
@@ -365,7 +458,7 @@ public class TimeSeriesController implements CrudHandler {
 
             String office = ctx.queryParam("office");
             String categoryId = ctx.queryParamAsClass("category-id", String.class).allowNullable().get();
-            String groupId = ctx.queryParamAsClass("group-id", String.class).allowNullable().get();
+            String groupId = ctx.pathParamAsClass("group-id", String.class).allowNullable().get();
             String tsIdsParam = ctx.queryParamAsClass("ts-ids", String.class).allowNullable().get();
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
@@ -386,16 +479,18 @@ public class TimeSeriesController implements CrudHandler {
             List<RecentValue> latestValues = null;
             if(hasTsGroupInfo && hasTsIds){
                 // has both = this is an error
-                RadarError re = new RadarError("Invalid arguments supplied");
-                logger.log(Level.SEVERE, re.toString());
+                RadarError re = new RadarError("Invalid arguments supplied, group has both Timeseries Group info and Timeseries IDs.");
+                logger.log(Level.SEVERE, re.toString() + " for url " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
+                return;
             } else if(!hasTsGroupInfo && !hasTsIds){
                 // doesn't have either?  Just return empty results?
-                RadarError re = new RadarError("Invalid arguments supplied");
-                logger.log(Level.SEVERE, re.toString());
+                RadarError re = new RadarError("Invalid arguments supplied, group has neither Timeseries Group info nor Timeseries IDs");
+                logger.log(Level.SEVERE, re.toString()+ " for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
+                return;
             } else if( hasTsGroupInfo){
                 // just group provided
                 latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit);
@@ -406,7 +501,7 @@ public class TimeSeriesController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
 
-            String result = Formats.format(contentType, latestValues);
+            String result = Formats.format(contentType, latestValues,RecentValue.class);
 
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
