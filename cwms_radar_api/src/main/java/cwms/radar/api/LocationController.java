@@ -183,8 +183,8 @@ public class LocationController implements CrudHandler {
             responses = {
                     @OpenApiResponse( status="200",
                             content = {
-                                    @OpenApiContent(type = Formats.JSONV2 ),
-                                    @OpenApiContent(type = Formats.XMLV2 )
+                                    @OpenApiContent(type = Formats.JSONV2, from = Location.class),
+                                    @OpenApiContent(type = Formats.XMLV2,  from = Location.class )
                             })
             },
             description = "Returns CWMS Location Data",

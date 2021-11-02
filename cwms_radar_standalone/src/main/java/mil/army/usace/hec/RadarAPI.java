@@ -194,7 +194,7 @@ public class RadarAPI {
     }
 
     private static OpenApiOptions getOpenApiOptions() {
-        Info applicationInfo = new Info().version("2.0").description("CWMS REST API for Data Retrieval");
+        Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
                     .swagger( new SwaggerOptions("/swagger-ui.html"))
