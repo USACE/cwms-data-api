@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -9,13 +10,16 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
+import cwms.radar.data.dao.JsonRatingUtils;
 import cwms.radar.data.dao.RatingDao;
 import cwms.radar.data.dao.RatingSetDao;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -23,6 +27,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 
 import hec.data.RatingException;
@@ -54,7 +59,8 @@ public class RatingController implements CrudHandler {
             description = "Create new RatingSet",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(type = Formats.XMLV2 )
+                            @OpenApiContent(type = Formats.XMLV2 ),
+                            @OpenApiContent(type = Formats.JSONV2 )
                     },
                     required = true
             ),
@@ -68,7 +74,7 @@ public class RatingController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx))
         {
             RatingDao ratingDao = getRatingDao(dsl);
-           RatingSet ratingSet = deserializeRatingSet(ctx);
+            RatingSet ratingSet = deserializeRatingSet(ctx);
             ratingDao.create(ratingSet);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
         }
@@ -115,8 +121,8 @@ public class RatingController implements CrudHandler {
         if((Formats.XML).equals(contentType))
         {
             retval = deserializeFromXml(body);
-        } else if((Formats.JSONV2).equals(contentType)){
-            throw new IOException("JSONv2 RatingSet not implemented" );
+        } else if((Formats.JSON).equals(contentType)){
+            retval = JsonRatingUtils.fromJson(body);
         } else {
             throw new IOException("Unexpected format:" + contentType);
         }
@@ -238,25 +244,102 @@ public class RatingController implements CrudHandler {
         }
     }
 
-
-
-    @OpenApi(ignore = true)
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the owning office of the ratingset to be included in the response."),
+            },
+            responses = {
+                    @OpenApiResponse( status="200",
+                            content = {
+                                    @OpenApiContent(type = Formats.JSONV2 ),
+                                    @OpenApiContent(type = Formats.XMLV2 )
+                            })
+            },
+            description = "Returns CWMS Rating Data",
+            tags = {"Ratings"}
+    )
     @Override
     public void getOne(Context ctx, String rating) {
+        String officeId = ctx.queryParam("office");
 
-        try (
-            final Timer.Context timeContext = markAndTime("getOne")
-            ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+            // If we wanted to do async I think it would be like this
+//            ctx.future(getRatingSet(ctx, officeId, rating));
+
+        try
+        {
+            String body = getRatingSetString(ctx, officeId, rating);
+            if(body != null)
+            {
+                ctx.result(body);
+                ctx.status(HttpCode.OK);
+            }
+        }
+        catch(RatingException |IOException e)
+        {
+            RadarError re = new RadarError("Failed to process request to retrieve RatingSet");
+            logger.log(Level.SEVERE, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
+
+    public CompletableFuture<String> getRatingSet(Context ctx, String officeId, String rating)
+    {
+        return CompletableFuture.supplyAsync(() -> {
+            String retval = null;
+            try
+            {
+                retval = getRatingSetString(ctx, officeId, rating);
+            }
+            catch(RatingException | IOException e)
+            {
+                RadarError re = new RadarError("Failed to process request to retrieve RatingSet");
+                logger.log(Level.SEVERE, re.toString(), e);
+                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            }
+            return retval;
+        });
+    }
+
+    @Nullable
+    private String getRatingSetString(Context ctx, String officeId, String rating) throws IOException, RatingException
+    {
+        String retval = null;
+        try(final Timer.Context timeContext = markAndTime("getRatingSetString");
+            DSLContext dsl = getDslContext(ctx))
+        {
+            RatingDao ratingDao = getRatingDao(dsl);
+            String acceptHeader = ctx.header(Header.ACCEPT);
+            if(Formats.JSONV2.equals(acceptHeader))
+            {
+                RatingSet ratingSet = ratingDao.retrieve(officeId, rating);
+                retval = JsonRatingUtils.toJson(ratingSet);
+            }
+            else if(Formats.XMLV2.equals(acceptHeader))
+            {
+                RatingSet ratingSet = ratingDao.retrieve(officeId, rating);
+                retval = ratingSet.toXmlString(" ");
+            }
+            else
+            {
+                RadarError re = new RadarError("Currently supporting only: "
+                        + Formats.JSONV2 + " and " + Formats.XMLV2);
+                logger.log(Level.WARNING, "Provided accept header not recognized:" + acceptHeader , re);
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                ctx.json(RadarError.notImplemented());
+            }
+        }
+
+        return retval;
+    }
 
     @OpenApi(
             description = "Update a RatingSet",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(type = Formats.XML )
+                            @OpenApiContent(type = Formats.XMLV2 ),
+                            @OpenApiContent(type = Formats.JSONV2 )
+
                     },
                     required = true
             ),
