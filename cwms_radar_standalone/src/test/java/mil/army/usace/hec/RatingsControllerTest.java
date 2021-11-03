@@ -70,12 +70,12 @@ public class RatingsControllerTest {
     // This is only supposed to test that when XML data is posted to create,
     // that data is forward to the method deserializeFromXml
     @Test
-    void post_to_create_passed_to_deserializeXml() throws RatingException, IOException
+    void post_to_create_passed_to_deserializeXml() throws Exception
     {
         RatingController controller = spy(new RatingController(new MetricRegistry()));
 
         class MyRadar extends RadarAPI {
-            public MyRadar(DataSource ds, int port)
+            public MyRadar(DataSource ds, int port) throws Exception
             {
                 super(ds, port);
             }
