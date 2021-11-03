@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 
 @Schema(
-    name = "LocationGroup CSV",
+    name = "LocationGroup_CSV",
     description = "Single LocationGroup or List of LocationGroups in comma separated format",
     example =
     "#LocationGroup Id, OfficeId, Description, CategoryId, CategoryOfficeId, SharedLocAliasId, SharedRefLocationId, LocGroupAttribute\r\n"+

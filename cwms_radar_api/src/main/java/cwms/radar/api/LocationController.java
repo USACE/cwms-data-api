@@ -41,6 +41,8 @@ import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
+import cwms.radar.security.CwmsAuthorizer;
+
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
@@ -181,8 +183,8 @@ public class LocationController implements CrudHandler {
             responses = {
                     @OpenApiResponse( status="200",
                             content = {
-                                    @OpenApiContent(type = Formats.JSONV2 ),
-                                    @OpenApiContent(type = Formats.XMLV2 )
+                                    @OpenApiContent(type = Formats.JSONV2, from = Location.class),
+                                    @OpenApiContent(type = Formats.XMLV2,  from = Location.class )
                             })
             },
             description = "Returns CWMS Location Data",
@@ -233,9 +235,8 @@ public class LocationController implements CrudHandler {
     public void create(Context ctx)
     {
         createRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
+        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {

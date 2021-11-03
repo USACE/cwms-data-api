@@ -55,7 +55,7 @@ public class RatingsControllerTest {
     }
 
     @Test
-    void unimplemented_methods_return_501(){
+    void unimplemented_methods_return_501() throws Exception{
         RadarAPI radarAPI = new RadarAPI(ds, 7000);
         try
         {
