@@ -9,7 +9,7 @@ import cwms.radar.formatters.OutputFormatter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
-    name = "Office Tabulation",
+    name = "Office_Tabulation",
     description = "Single Office or List of Offices in tab separated format",
     example = 
     "#Office Name<tab>Long Name<tab>Office Type<tab>Reports To Office\r\n"+

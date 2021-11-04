@@ -2,7 +2,7 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.3-SNAPSHOT'
+    version = '2.4-SNAPSHOT'
 }
 
 // versions for shared dependencies
@@ -10,7 +10,7 @@ ext.dropwizard_version="4.1.2"
 ext.OWASP_SANITIZER_VERSION="20180219.1"
 ext.JAXB_API_VERSION="2.2.12"
 ext.JAXB_IMPL_VERSION="2.2.11"
-ext.JAVALIN_VERSION='4.0.1'
+ext.JAVALIN_VERSION='4.1.1'
 ext.JACKSON_VERSION='2.12.3'
 ext.SWAGGER_CORE_VERSION='2.0.9'
 ext.JAVA_EE_WEB_VERSION='7.0'
@@ -19,6 +19,9 @@ ext.CWMS_DB_VERSION='8.0.0-SNAPSHOT'
 subprojects {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
+
+    println 'Checkstyle version:' + checkstyle.toolVersion
+    
 
     compileJava{
         sourceCompatibility = "1.8"
@@ -43,4 +46,6 @@ subprojects {
     test {
         useJUnitPlatform()
     }
+
+
 }

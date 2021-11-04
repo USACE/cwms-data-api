@@ -10,6 +10,11 @@ dependencies {
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
     }
+
+    // For RatingSet
+    implementation 'mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.1-20211021.222041-2'
+    implementation "mil.army.usace.hec:hec-data:6.0-SNAPSHOT" // Need RatingException and IRating
+
     implementation('org.jooq.pro:jooq:3.11.2'){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"

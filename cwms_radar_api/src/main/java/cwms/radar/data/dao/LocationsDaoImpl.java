@@ -150,7 +150,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.store(c, location.getOfficeId(), location.getName(), location.getStateInitial(), location.getCountyName(),
-                        location.getTimezoneId(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
+                        location.getTimezoneName(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
                         elevationUnits, location.getVerticalDatum(), location.getHorizontalDatum(), location.getPublicName(), location.getLongName(),
                         location.getDescription(), location.active(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
                         location.getPublishedLongitude(), location.getBoundingOfficeId(), location.getNation().getName(), location.getNearestCity(), true);
@@ -174,7 +174,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         {
             missingField = "Location Kind";
         }
-        if(location.getTimezoneId() == null)
+        if(location.getTimezoneName() == null)
         {
             missingField = "Timezone ID";
         }
@@ -211,7 +211,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName(), renamedLocation.getStateInitial(),
-                        renamedLocation.getCountyName(), renamedLocation.getTimezoneId(), renamedLocation.getLocationType(),
+                        renamedLocation.getCountyName(), renamedLocation.getTimezoneName(), renamedLocation.getLocationType(),
                         renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getElevation(), elevationUnits,
                         renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(), renamedLocation.getPublicName(),
                         renamedLocation.getLongName(), renamedLocation.getDescription(), renamedLocation.active(),  true);

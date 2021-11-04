@@ -9,7 +9,7 @@ import cwms.radar.formatters.OutputFormatter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
-    name = "Office CSV",
+    name = "Office_CSV",
     description = "Single Office or List of Offices in comma separated format",
     example =
     "#Office Name,Long Name,Office Type,Reports To Office\r\n"+

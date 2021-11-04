@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LocationLevel>
+    <seasonal-values>
+        <value>10</value>
+        <offset-months>0</offset-months>
+        <offset-minutes>0</offset-minutes>
+    </seasonal-values>
+    <level-units-id>ft</level-units-id>
+    <level-date>2008-12-03T10:15:30+01:00[UTC]</level-date>
+    <level-comment>for testing purposes</level-comment>
+    <interval-origin>2008-12-03T10:15:30+01:00[UTC]</interval-origin>
+    <interval-months>1</interval-months>
+    <interpolate-string>false</interpolate-string>
+    <location-id>LOC_TEST.Elev.Inst.0.Bottom of Inlet</location-id>
+    <office-id>LRL</office-id>
+</LocationLevel>
