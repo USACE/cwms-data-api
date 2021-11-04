@@ -99,6 +99,10 @@ public class JsonRatingUtils
 	{
 		String resourceLocation = "/cwms/radar/data/rating/" + filename;
 		InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
+		if(resourceAsStream == null){
+			throw new IllegalArgumentException("Could not find resource: " + resourceLocation);
+		}
+
 		return new StreamSource(resourceAsStream);
 	}
 
