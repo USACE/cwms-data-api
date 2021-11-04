@@ -26,7 +26,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
-import org.eclipse.jetty.http.HttpStatus;
 import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -172,7 +171,7 @@ public class ClobController implements CrudHandler {
 
                 requestResultSize.update(result.length());
             } else {
-                ctx.status(HttpStatus.NOT_FOUND_404).json(new RadarError("Unable to find clob based on given parameters"));
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unable to find clob based on given parameters"));
             }
 
 

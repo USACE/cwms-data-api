@@ -1,4 +1,10 @@
-apply plugin: 'java-library'
+apply plugin: 'war'
+
+configurations {
+    info
+    webjars
+}
+
 
 dependencies {
     implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
@@ -25,28 +31,43 @@ dependencies {
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
 
-    compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
-    compileOnly "io.javalin:javalin-openapi:$JAVALIN_VERSION"
-    compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+    implementation("io.javalin:javalin:$JAVALIN_VERSION") {
+        exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"
+    }
+    implementation("io.javalin:javalin-openapi:$JAVALIN_VERSION") {
+        //exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"
         exclude group: "jakarta.xml.bind", module: "*"
     }
+    implementation( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+        exclude group: "jakarta.xml.bind", module: "*"
+    }
+    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
-    compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
-    testImplementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+
+
+    runtimeOnly 'jstl:jstl:1.2'
 
     // Now using the FormatService annotation in runtime in JsonV1 too.
     implementation project(":annotations")
     annotationProcessor project(":annotations")
+
+    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+    implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
+
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
     testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     testImplementation "org.mockito:mockito-core:3.2.4"
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.4'
-    compileOnly "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
-    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
-    compileOnly "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
-    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
     testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
     testImplementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
@@ -54,7 +75,57 @@ dependencies {
     testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
     testRuntimeOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
+     webjars( 'org.webjars:swagger-ui:3.52.3' ){
+        transitive = false
+    }
+
 }
+
+/*
+task extractInfo( type: Copy ){
+    from zipTree("src/resources")
+    into file("$buildDir/extra")
+    include "/static/**"
+    eachFile {
+        def segments = it.getRelativePath().getSegments() as List
+        it.setPath(segments.tail().join("/"))
+        return it
+    }
+
+    includeEmptyDirs false
+}*/
+
+task extractWebJars( type: Copy ){
+    doFirst {
+        project.mkdir("$buildDir/extra/swagger-ui")
+    }
+    from zipTree(configurations.webjars.singleFile)
+    into file("$buildDir/extra")
+    includeEmptyDirs false
+    eachFile {
+        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
+    }
+    exclude "**/index.html*"
+    include "/META-INF/resources/webjars/swagger-ui/**"
+    includeEmptyDirs = false
+}
+
+war {
+    //dependsOn extractInfo
+    dependsOn extractWebJars
+    from "$buildDir/extra"
+    from "src/resources/"
+
+    doLast {
+        println( "::set-output name=WARFILE::${project.name}-${project.version}.war")
+    }
+}
+
+
+test {
+	useJUnitPlatform()
+}
+
 
 test {
 	useJUnitPlatform()
