@@ -157,33 +157,37 @@ public class ApiServlet extends HttpServlet {
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
                 })
-                .routes( () -> {
-                    get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
-                    crud("/locations/{location_code}", new LocationController(metrics));
-                    crud("/location/category/{category-id}", new LocationCategoryController(metrics));
-                    crud("/location/group/{group-id}", new LocationGroupController(metrics));
-                    crud("/offices/{office}", new OfficeController(metrics));
-                    crud("/units/{unit_name}", new UnitsController(metrics));
-                    crud("/parameters/{param_name}", new ParametersController(metrics));
-                    crud("/timezones/{zone}", new TimeZoneController(metrics));
-                    crud("/levels/{location}", new LevelsController(metrics));
-                    crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
-                    crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
-                    TimeSeriesController tsController = new TimeSeriesController(metrics);
-                    crud("/timeseries/{timeseries}", tsController);
-                    get("/timeseries/recent/{group-id}", tsController::getRecent);
 
-                    crud("/ratings/{rating}", new RatingController(metrics));
-                    crud("/catalog/{dataSet}", new CatalogController(metrics));
-                    crud("/basins/{basin-id}", new BasinController(metrics));
-                    crud("/blobs/{blob-id}", new BlobController(metrics));
-                    crud("/clobs/{clob-id}", new ClobController(metrics));
-                    crud("/pools/{pool-id}", new PoolController(metrics));
-                }).javalinServlet();
+                .routes( () -> configureRoutes())
+                .javalinServlet();
+    }
+
+    protected void configureRoutes()
+    {
+        get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
+        crud("/locations/{location_code}", new LocationController(metrics));
+        crud("/location/category/{category-id}", new LocationCategoryController(metrics));
+        crud("/location/group/{group-id}", new LocationGroupController(metrics));
+        crud("/offices/{office}", new OfficeController(metrics));
+        crud("/units/{unit_name}", new UnitsController(metrics));
+        crud("/parameters/{param_name}", new ParametersController(metrics));
+        crud("/timezones/{zone}", new TimeZoneController(metrics));
+        crud("/levels/{location}", new LevelsController(metrics));
+        TimeSeriesController tsController = new TimeSeriesController(metrics);
+        crud("/timeseries/{timeseries}", tsController);
+        get("/timeseries/recent/{group-id}", tsController::getRecent);
+        crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
+        crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
+        crud("/ratings/{rating}", new RatingController(metrics));
+        crud("/catalog/{dataSet}", new CatalogController(metrics));
+        crud("/basins/{basin-id}", new BasinController(metrics));
+        crud("/blobs/{blob-id}", new BlobController(metrics));
+        crud("/clobs/{clob-id}", new ClobController(metrics));
+        crud("/pools/{pool-id}", new PoolController(metrics));
     }
 
     private OpenApiOptions getOpenApiOptions() {
-        Info applicationInfo = new Info().version("2.0").description("CWMS REST API for Data Retrieval");
+        Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         OpenApiOptions options = new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
 

@@ -38,7 +38,7 @@ public class ClobControllerTest {
     }
 
     @BeforeEach
-    public void baseLineDbMocks() throws SQLException, IOException{
+    public void baseLineDbMocks() throws Exception{
         this.conn = new MockConnection(
                                 new MockFileDatabase(
                                     RatingsControllerTest.class.getResourceAsStream("/ratings_db.txt")
