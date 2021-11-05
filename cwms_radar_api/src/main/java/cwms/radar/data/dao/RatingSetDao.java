@@ -12,15 +12,14 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 {
-	private static final Logger logger = Logger.getLogger(RatingSetDao.class.getName());
-
+	
 	public RatingSetDao(DSLContext dsl)
 	{
 		super(dsl);
 	}
 
 	@Override
-	public void create(RatingSet ratingSet) throws IOException
+	public void create(RatingSet ratingSet) throws IOException, RatingException
 	{
 		try
 		{
@@ -33,12 +32,16 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
+			Throwable cause = ex.getCause();
+			if(cause instanceof RatingException){
+				throw (RatingException)cause;
+			}
 			throw new IOException("Failed to create Rating", ex);
 		}
 	}
 
 	@Override
-	public RatingSet retrieve(String officeId, String specificationId) throws IOException
+	public RatingSet retrieve(String officeId, String specificationId) throws IOException, RatingException
 	{
 		final RatingSet[] retval = new RatingSet[1];
 		try
@@ -47,6 +50,14 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
+			Throwable cause = ex.getCause();
+			if(cause instanceof RatingException){
+				if(cause.getMessage().contains("contains no rating templates")){
+					return null;
+				}
+
+				throw (RatingException)cause;
+			}
 			throw new IOException("Failed to retrieve Rating", ex);
 		}
 		return retval[0];
@@ -54,7 +65,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 
 	// store/update
 	@Override
-	public void store(RatingSet ratingSet) throws IOException
+	public void store(RatingSet ratingSet) throws IOException, RatingException
 	{
 		try
 		{
@@ -66,6 +77,10 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
+			Throwable cause = ex.getCause();
+			if(cause instanceof RatingException){
+				throw (RatingException)cause;
+			}
 			throw new IOException("Failed to store Rating", ex);
 		}
 	}
@@ -85,12 +100,17 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
+			Throwable cause = ex.getCause();
+			if(cause instanceof RatingException){
+				throw (RatingException)cause;
+			}
 			throw new IOException("Failed to delete Rating", ex);
 		}
 
 	}
 
-	public void delete(String officeId, String specificationId, long[] effectiveDates) throws IOException
+	public void delete(String officeId, String specificationId, long[] effectiveDates)
+			throws IOException, RatingException
 	{
 
 		try
@@ -109,6 +129,10 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
+			Throwable cause = ex.getCause();
+			if(cause instanceof RatingException){
+				throw (RatingException)cause;
+			}
 			throw new IOException("Failed to delete Rating", ex);
 		}
 	}
