@@ -41,7 +41,7 @@ import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.staticfiles.Location;
-import io.javalin.plugin.json.JavalinJackson;
+
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
@@ -185,11 +185,10 @@ public class RadarAPI {
         crud("/timezones/{zone}", new TimeZoneController(metrics));
         crud("/levels/{location}", new LevelsController(metrics));
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        crud("/timeseries/{timeseries}", tsController);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
-
         crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
         crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
+        crud("/timeseries/{timeseries}", tsController); // moving this below category and group allows them to work
         crud("/ratings/{rating}", new RatingController(metrics));
         crud("/catalog/{dataSet}", new CatalogController(metrics));
         crud("/blobs/{blob-id}", new BlobController(metrics));

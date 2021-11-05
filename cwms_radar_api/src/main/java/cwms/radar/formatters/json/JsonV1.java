@@ -18,6 +18,7 @@ import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.RecentValue;
+import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -34,6 +35,7 @@ import service.annotations.FormatService;
 				   Location.class,
 				   LocationGroup.class,
 				   LocationCategory.class,
+				   TimeSeriesCategory.class, TimeSeriesGroup.class,
 				   Clob.class,
 				   Clobs.class,
 				   TimeSeriesGroup.class,
