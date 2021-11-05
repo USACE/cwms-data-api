@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Resource name="jdbc/CWMS3" auth="Container" type="javax.sql.DataSource"
+              username="RADAR_JDBC_USERNAME" password="RADAR_JDBC_PASSWORD"
+              url="RADAR_JDBC_URL"
+              driverClassName="oracle.jdbc.driver.OracleDriver"
+              initialSize="5" maxWait="5000"
+              maxActive="120" maxIdle="5"
+              validationQuery="select 1 from dual"
+              poolPreparedStatements="true"
+              factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+    />
+
+    <ResourceLink
+        name="jdbc/CWMS3"
+        global="jdbc/CWMS3"
+        type="javax.sql.DataSource"
+    />
+    <JarScanner scanBootstrapClassPath="false" scanClassPath="false"/>
+</Context>

@@ -90,19 +90,7 @@ dependencies {
 
 }
 
-/*
-task extractInfo( type: Copy ){
-    from zipTree("src/resources")
-    into file("$buildDir/extra")
-    include "/static/**"
-    eachFile {
-        def segments = it.getRelativePath().getSegments() as List
-        it.setPath(segments.tail().join("/"))
-        return it
-    }
 
-    includeEmptyDirs false
-}*/
 
 task extractWebJars( type: Copy ){
     doFirst {
@@ -136,15 +124,33 @@ test {
 }
 
 
-test {
-	useJUnitPlatform()
-
-}
-
 description = 'CWMS RADAR API'
 
 sourceSets {
     main {
         resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
     }
+}
+
+
+task generateConfig( type: Copy ){
+    from 'src/test/resources/tomcat'
+    into "$buildDir/tomcat"
+
+    rename "context.xml", "context.xml.template"
+
+    inputs.dir  "src/test/resources"
+    outputs.dir "$buildDir/tomcat/conf"
+}
+
+task run(type: JavaExec) {
+    dependsOn generateConfig
+    dependsOn war
+    classpath = sourceSets.main.runtimeClasspath
+    classpath += sourceSets.test.runtimeClasspath
+
+    mainClass = "fixtures.TomcatServer"
+    systemProperties += project.properties.findAll{ k,v -> k.startsWith("RADAR") }
+    args "$buildDir/tomcat",war.archiveFile.toString(),"cwms-data"
+    jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
 }

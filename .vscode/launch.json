@@ -5,7 +5,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "type": "java",
+            "name": "Launch TomcatServer",
+            "request": "launch",
+            "mainClass": "fixtures.TomcatServer",
+            "projectName": "cwms_radar_api"
+        },
         {
             "type": "java",
             "name": "Launch RadarAPI",
@@ -17,10 +23,10 @@
                 "RADAR_JDBC_USERNAME": "${env:RADAR_DB_USER}",
                 "RADAR_JDBC_PASSWORD": "${env:RADAR_DB_PASSWORD}",
                 "RADAR_LISTEN_PORT": "7000",
-                "RADAR_DEBUG_LOGGING": "true",
+                "RADAR_DEBUG_LOGGING": "true"
             },
             "sourcePaths": [
-                "build/generated/sources/annotationProcessor/java/main",
+                "build/generated/sources/annotationProcessor/java/main"
             ]
         },
         {
@@ -28,8 +34,7 @@
             "name": "Remote Debug-Gradle",
             "request": "attach",
             "port": 5005,
-            "hostName": "localhost",
-
-        },
+            "hostName": "localhost"
+        }
     ]
 }
