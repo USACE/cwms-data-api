@@ -33,7 +33,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
-			throw new IOException("Failed to create Rating");
+			throw new IOException("Failed to create Rating", ex);
 		}
 	}
 
@@ -43,11 +43,11 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		final RatingSet[] retval = new RatingSet[1];
 		try
 		{
-			dsl.connection(c -> retval[0] = RatingSet.fromDatabase(c, officeId, specificationId));
+			dsl.connection(c -> retval[0] = RatingSet.fromDatabase(RatingSet.DatabaseLoadMethod.EAGER, c, officeId, specificationId));
 		}
 		catch(DataAccessException ex)
 		{
-			throw new IOException("Failed to retrieve Rating");
+			throw new IOException("Failed to retrieve Rating", ex);
 		}
 		return retval[0];
 	}
@@ -66,14 +66,13 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
-			throw new IOException("Failed to store Rating");
+			throw new IOException("Failed to store Rating", ex);
 		}
 	}
 
 	@Override
 	public void delete(String officeId, String ratingSpecId) throws IOException, RatingException
 	{
-
 		try
 		{
 			dsl.connection(c ->
@@ -86,7 +85,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
-			throw new IOException("Failed to delete Rating");
+			throw new IOException("Failed to delete Rating", ex);
 		}
 
 	}
@@ -110,9 +109,8 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		}
 		catch(DataAccessException ex)
 		{
-			throw new IOException("Failed to delete Rating");
+			throw new IOException("Failed to delete Rating", ex);
 		}
-
 	}
 
 
