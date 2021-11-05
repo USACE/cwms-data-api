@@ -1,72 +1,97 @@
 package mil.army.usace.hec;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.isNotNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
 
+import java.io.InputStream;
+import java.sql.Connection;
+import java.util.HashMap;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
+
+import com.codahale.metrics.MetricRegistry;
 
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import cwms.radar.api.ClobController;
+import cwms.radar.formatters.FormattingException;
+import fixtures.TestServletInputStream;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+import io.javalin.http.util.ContextUtil;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.json.JsonMapperKt;
 
 import static io.restassured.RestAssured.*;
-import static io.restassured.matcher.RestAssuredMatchers.*;
-import static org.hamcrest.Matchers.*;
 
-import io.restassured.RestAssured;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class ClobControllerTest {
 
-    private DataSource ds = mock(DataSource.class);
     private Connection conn = null;
-    private RadarAPI api = null;
 
-    @BeforeAll
-    public static void startServer(){
-
-        RestAssured.port = 7001;
-    }
 
     @BeforeEach
     public void baseLineDbMocks() throws Exception{
+        InputStream stream = RatingsControllerTest.class.getResourceAsStream("/ratings_db.txt");
+        assertNotNull(stream);
         this.conn = new MockConnection(
-                                new MockFileDatabase(
-                                    RatingsControllerTest.class.getResourceAsStream("/ratings_db.txt")
+                                new MockFileDatabase(stream
                                 )
-                );
-        when(ds.getConnection()).thenReturn(conn);
-        api = new RadarAPI(ds,7001);
-        api.start();
+                    );
+        assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
     }
 
-    @AfterEach
-    public void stopAPI(){
-        api.stop();
-    }
+
 
 
 
 
     @Test
-    public void bad_format_returns_501(){
-        given()
-        .header("Accept","Not_valid")
-        .get("/clobs").then()
-        .body("message",equalTo("Formatting error"))
-        .statusCode(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    public void bad_format_returns_501() throws Exception {
+
+        final String testBody = "";
+        ClobController controller = spy(new ClobController(new MetricRegistry()));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        HashMap<String,Object> attributes = new HashMap<>();
+        attributes.put(ContextUtil.maxRequestSizeKey,Integer.MAX_VALUE);
+
+        when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
+
+        Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.GET,attributes);
+        context.attribute("database",this.conn);
+
+        when(request.getAttribute("database")).thenReturn(this.conn);
+
+        assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
+
+        when(request.getHeader(Header.ACCEPT)).thenReturn("BAD FORMAT");
+
+        assertThrows( FormattingException.class, () -> {
+            controller.getAll(context);
+        });
 
     }
 
+    /*
     @Test
     public void pagination_elements_returned_json(){
         given()
@@ -92,4 +117,6 @@ public class ClobControllerTest {
         .body("clobs.clobs.children().size()",is(2))
         ;
     }
+    */
+
 }

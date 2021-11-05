@@ -103,6 +103,9 @@ public class ClobController implements CrudHandler {
         ) {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
+            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
             cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
@@ -119,9 +122,7 @@ public class ClobController implements CrudHandler {
             boolean includeValues = ctx.queryParamAsClass("includeValues",Boolean.class).getOrDefault(false);
             String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
 
-            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+
 
             ClobDao dao = new ClobDao(dsl);
             Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);

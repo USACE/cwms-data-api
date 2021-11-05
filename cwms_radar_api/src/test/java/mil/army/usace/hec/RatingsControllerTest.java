@@ -1,30 +1,39 @@
 package mil.army.usace.hec;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import cwms.radar.api.RatingController;
 import cwms.radar.formatters.Formats;
-import io.restassured.RestAssured;
-import io.restassured.config.EncoderConfig;
-import io.restassured.config.RestAssuredConfig;
-import io.restassured.specification.RequestSpecification;
+import fixtures.TestServletInputStream;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+import io.javalin.http.util.ContextUtil;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.json.JsonMapperKt;
+
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import hec.data.RatingException;
 
-import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.restassured.RestAssured.post;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -37,11 +46,11 @@ public class RatingsControllerTest {
     private DataSource ds = mock(DataSource.class);
     private Connection conn = null;
 
-    @BeforeAll
-    public static void startServer(){
+    private static final MetricRegistry metrics = mock(MetricRegistry.class);
+    private static final Meter meter = mock(Meter.class);
+    private static final Timer timer = mock(Timer.class);
 
-        RestAssured.port = 7000;
-    }
+
 
     @BeforeEach
     public void baseLineDbMocks() throws SQLException, IOException{
@@ -51,59 +60,44 @@ public class RatingsControllerTest {
                                 new MockFileDatabase(stream
                                 )
                     );
-        when(ds.getConnection()).thenReturn(conn);
+        assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
     }
 
-    @Test
-    void unimplemented_methods_return_501() throws Exception{
-        RadarAPI radarAPI = new RadarAPI(ds, 7000);
-        try
-        {
-            radarAPI.start();
-            post("/ratings").then().statusCode(HttpServletResponse.SC_NOT_IMPLEMENTED);
-        }finally
-        {
-            radarAPI.stop();
-        }
-    }
 
-    // This is only supposed to test that when XML data is posted to create,
+        // This is only supposed to test that when XML data is posted to create,
     // that data is forward to the method deserializeFromXml
     @Test
     void post_to_create_passed_to_deserializeXml() throws Exception
     {
+        final String testBody = "could be anything";
+
+
         RatingController controller = spy(new RatingController(new MetricRegistry()));
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        HashMap<String,Object> attributes = new HashMap<>();
+        attributes.put(ContextUtil.maxRequestSizeKey,Integer.MAX_VALUE);
+        attributes.put(JsonMapperKt.JSON_MAPPER_KEY,new JavalinJackson());
 
-        class MyRadar extends RadarAPI {
-            public MyRadar(DataSource ds, int port) throws Exception
-            {
-                super(ds, port);
-            }
+        when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
+        //Context context = new Context(request,response, attributes);
+        Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.POST,attributes);
+        context.attribute("database",this.conn);
 
-            @Override
-            protected void configureRoutes()
-            {
-                crud("/ratings/{rating}", controller);
-            }
-        }
-        MyRadar radarAPI = new MyRadar(ds, 7000);
+        when(request.getContentLength()).thenReturn(testBody.length());
+        when(request.getAttribute("database")).thenReturn(this.conn);
 
-        try
-        {
-            radarAPI.start();
+        assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
 
-            final String testBody = "could be anything";
-            RequestSpecification request = RestAssured.given();
-            request.config(RestAssuredConfig.config().encoderConfig(
-                    EncoderConfig.encoderConfig().appendDefaultContentCharsetToContentTypeIfUndefined(false))).contentType(Formats.XMLV2).body(testBody).post("/ratings");
+        when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.XMLV2);
+        when(request.getContentType()).thenReturn(Formats.XMLV2);
 
-            // For this test, it's ok that the server throws a RatingException
-            // Only want to check that the controller accessed our mock dao in the expected way
-            verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML);  // Curious that it is XML and not XMLv2
-        } finally
-        {
-            radarAPI.stop();
-        }
+
+        controller.create(context);
+        // For this test, it's ok that the server throws a RatingException
+        // Only want to check that the controller accessed our mock dao in the expected way
+        verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML);  // Curious that it is XML and not XMLv2
+
     }
 
 }

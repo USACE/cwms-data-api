@@ -15,13 +15,14 @@ ext.JACKSON_VERSION='2.12.3'
 ext.SWAGGER_CORE_VERSION='2.0.9'
 ext.JAVA_EE_WEB_VERSION='7.0'
 ext.CWMS_DB_VERSION='8.0.0-SNAPSHOT'
+ext.tomcatVersion='9.0.54'
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
 
     println 'Checkstyle version:' + checkstyle.toolVersion
-    
+
 
     compileJava{
         sourceCompatibility = "1.8"
