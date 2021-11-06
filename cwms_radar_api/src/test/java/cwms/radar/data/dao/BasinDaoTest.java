@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Disabled
-public class BasinDaoTest
+public class BasinDaoTest extends DaoTest
 {
 	private static final String OFFICE_ID = "LRL";
 
