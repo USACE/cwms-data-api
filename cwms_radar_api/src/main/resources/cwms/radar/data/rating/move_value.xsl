@@ -7,15 +7,19 @@
 		</xsl:copy>
 	</xsl:template>
 
-
-	<!-- move contents of <element-value>1231231</element-value> into parent -->
-	<xsl:template match="*[./element-value]">
+	<!--	match anything that has a child that is value and move value to an attribute -->
+	<xsl:template match="*[name() != 'offset' and ./value]">
 		<xsl:copy>
-			<xsl:apply-templates select="@*"/>
-			<xsl:value-of select="./element-value"/>
+			<xsl:attribute name='value'>
+				<xsl:value-of select="./value"/>
+			</xsl:attribute>
+			<xsl:apply-templates/>
 		</xsl:copy>
 	</xsl:template>
-	<!--	drop element-value elements-->
-	<xsl:template match="element-value"/>
+
+	<!-- find elements named 'value' whose parent is not named 'offset' -->
+	<xsl:template match="value[not(parent::offset)]"/>
+
+
 
 </xsl:stylesheet>
