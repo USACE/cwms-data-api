@@ -6,10 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -81,16 +84,31 @@ public class JsonRatingUtils
 		// The way we are writing out json, all the xml attributes were turned into
 		// child json fields.  We know certain fields (e.g. office-id, position)
 		// should be attributes.
+		String resourceLocation = "/cwms/radar/data/rating/remove_office.xsl" ;
+		InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
+		String officeXsl = readStream(resourceAsStream);
+
+		xml = applyTransform(xml, new StreamSource(new StringReader(officeXsl)));
+
+
+		String[] additionalAttributes = new String[]{"position", "estimate", "unit", };
+
+		for(String attributeName : additionalAttributes)
+		{
+			String template = officeXsl.replace("office-id", attributeName);
+			xml = applyTransform(xml, new StreamSource(new StringReader(template)));
+		}
+
+		// Value should become an attribute except when its inside offset so it needs
+		// a special transform.
+		xml = applyTransform(xml, buildSourceFromResource("move_value.xsl"));
+
 		// There is also the issue where the value of some elements was being
 		// written as an empty child field.  We manually renamed
-		// those to element-value move_value will move the value of element-value
+		// those to element-value in the json transformation.
+		// move_element-value will move the value of element-value
 		// back into the value of the parent element.
-		String[] steps = new String[]{"remove_office.xsl","remove_position.xsl", "move_value.xsl" };
-
-		for(String step : steps)
-		{
-			xml = applyTransform(xml, buildSourceFromResource(step));
-		}
+		xml = applyTransform(xml, buildSourceFromResource("move_element-value.xsl"));
 
 		return xml;
 	}
@@ -106,6 +124,11 @@ public class JsonRatingUtils
 		return new StreamSource(resourceAsStream);
 	}
 
+	private static String readStream(InputStream inputStream){
+		return new BufferedReader(new InputStreamReader(inputStream))
+				.lines().collect(Collectors.joining("\n"));
+	}
+
 	private static String applyTransform(String xml, Source xslt) throws TransformerException
 	{
 		TransformerFactory factory =TransformerFactory.newInstance();
@@ -116,7 +139,6 @@ public class JsonRatingUtils
 
 		StringReader input = new StringReader(xml);
 		StreamSource source = new StreamSource(input);
-
 
 		StringWriter sw = new StringWriter();
 		StreamResult outputResult = new StreamResult(sw);
@@ -149,7 +171,7 @@ public class JsonRatingUtils
 		//			}
 		//		}
 		//
-		// There is a weird field with an empty name in the json.
+		// There is a weird field with an empty name in the json...
 		// Lets find those and rename the empty field to something else.
 
 		json = json.replace("\"\":", "\"element-value\":");

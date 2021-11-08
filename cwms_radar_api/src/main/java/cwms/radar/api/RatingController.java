@@ -153,7 +153,8 @@ public class RatingController implements CrudHandler {
             RatingDao ratingDao = getRatingDao(dsl);
             ratingDao.delete(office, ratingSpecId);
 
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Deleted RatingSet");
+            ctx.status(HttpServletResponse.SC_ACCEPTED);
+            ctx.json("Deleted RatingSet");
         }
         catch(IOException | RatingException ex)
         {
@@ -258,15 +259,17 @@ public class RatingController implements CrudHandler {
             description = "Returns CWMS Rating Data",
             tags = {"Ratings"}
     )
+
     @Override
     public void getOne(Context ctx, String rating) {
-        String officeId = ctx.queryParam("office");
+
+        try(final Timer.Context timeContext = markAndTime("getOne"))
+        {
+            String officeId = ctx.queryParam("office");
 
             // If we wanted to do async I think it would be like this
-//            ctx.future(getRatingSet(ctx, officeId, rating));
+            //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
 
-        try
-        {
             String body = getRatingSetString(ctx, officeId, rating);
             if(body != null)
             {
@@ -274,63 +277,80 @@ public class RatingController implements CrudHandler {
                 ctx.status(HttpCode.OK);
             }
         }
-        catch(RatingException |IOException e)
-        {
-            RadarError re = new RadarError("Failed to process request to retrieve RatingSet");
-            logger.log(Level.SEVERE, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-        }
     }
 
-
-    public CompletableFuture<String> getRatingSet(Context ctx, String officeId, String rating)
+    public CompletableFuture<String> getRatingSetAsync(Context ctx, String officeId, String rating)
     {
-        return CompletableFuture.supplyAsync(() -> {
-            String retval = null;
-            try
-            {
-                retval = getRatingSetString(ctx, officeId, rating);
-            }
-            catch(RatingException | IOException e)
-            {
-                RadarError re = new RadarError("Failed to process request to retrieve RatingSet");
-                logger.log(Level.SEVERE, re.toString(), e);
-                ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-            }
-            return retval;
-        });
+        return CompletableFuture.supplyAsync(() -> getRatingSetString(ctx, officeId, rating));
     }
 
     @Nullable
-    private String getRatingSetString(Context ctx, String officeId, String rating) throws IOException, RatingException
+    private String getRatingSetString(Context ctx, String officeId, String rating)
     {
         String retval = null;
-        try(final Timer.Context timeContext = markAndTime("getRatingSetString");
-            DSLContext dsl = getDslContext(ctx))
+
+        try(final Timer.Context timeContext = markAndTime("getRatingSetString"))
         {
-            RatingDao ratingDao = getRatingDao(dsl);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            if(Formats.JSONV2.equals(acceptHeader))
+
+            if(Formats.JSONV2.equals(acceptHeader) || Formats.XMLV2.equals(acceptHeader))
             {
-                RatingSet ratingSet = ratingDao.retrieve(officeId, rating);
-                retval = JsonRatingUtils.toJson(ratingSet);
-            }
-            else if(Formats.XMLV2.equals(acceptHeader))
-            {
-                RatingSet ratingSet = ratingDao.retrieve(officeId, rating);
-                retval = ratingSet.toXmlString(" ");
+                try
+                {
+                    RatingSet ratingSet = getRatingSet(ctx, officeId, rating);
+                    if(ratingSet != null)
+                    {
+                        if(Formats.JSONV2.equals(acceptHeader))
+                        {
+                            retval = JsonRatingUtils.toJson(ratingSet);
+                        }
+                        else if(Formats.XMLV2.equals(acceptHeader))
+                        {
+                            retval = ratingSet.toXmlString(" ");
+                        }
+                    }
+                    else
+                    {
+                        ctx.status(HttpCode.NOT_FOUND);
+                    }
+                }
+                catch(RatingException e)
+                {
+                    RadarError re = new RadarError("Failed to process request to retrieve RatingSet");
+                    logger.log(Level.SEVERE, re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    ctx.json(re);
+                }
+                catch(IOException e)
+                {
+                    RadarError re = new RadarError("Failed to process request to retrieve RatingSet");
+                    logger.log(Level.SEVERE, re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+                }
+
             }
             else
             {
-                RadarError re = new RadarError("Currently supporting only: "
-                        + Formats.JSONV2 + " and " + Formats.XMLV2);
-                logger.log(Level.WARNING, "Provided accept header not recognized:" + acceptHeader , re);
+                RadarError re = new RadarError("Currently supporting only: " + Formats.JSONV2 + " and " + Formats.XMLV2);
+                logger.log(Level.WARNING, "Provided accept header not recognized:" + acceptHeader, re);
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 ctx.json(RadarError.notImplemented());
             }
         }
-
         return retval;
+    }
+
+    private RatingSet getRatingSet(Context ctx, String officeId, String rating) throws IOException, RatingException
+    {
+        RatingSet ratingSet;
+        try(final Timer.Context timeContext = markAndTime("getRatingSet");
+        DSLContext dsl = getDslContext(ctx))
+        {
+            RatingDao ratingDao = getRatingDao(dsl);
+            ratingSet = ratingDao.retrieve(officeId, rating);
+        }
+
+        return ratingSet;
     }
 
     @OpenApi(
@@ -343,7 +363,7 @@ public class RatingController implements CrudHandler {
                     },
                     required = true
             ),
-            method = HttpMethod.PATCH,
+            method = HttpMethod.PUT,
             path = "/ratings",
             tags = {"Ratings"}
     )
