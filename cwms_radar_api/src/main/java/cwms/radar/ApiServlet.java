@@ -174,10 +174,10 @@ public class ApiServlet extends HttpServlet {
         crud("/timezones/{zone}", new TimeZoneController(metrics));
         crud("/levels/{location}", new LevelsController(metrics));
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        crud("/timeseries/{timeseries}", tsController);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
         crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
         crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
+        crud("/timeseries/{timeseries}", tsController);
         crud("/ratings/{rating}", new RatingController(metrics));
         crud("/catalog/{dataSet}", new CatalogController(metrics));
         crud("/basins/{basin-id}", new BasinController(metrics));
@@ -199,11 +199,8 @@ public class ApiServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         total_requests.mark();
         try (Connection db = cwms.getConnection()) {
-            String office = req.getContextPath().substring(1).split("-")[0];//
-            if( office.equalsIgnoreCase("cwms")){
-                office = "HQ";
-            }
-            req.setAttribute("office_id", office.toUpperCase());
+            String office = officeFromContext(req.getContextPath());
+            req.setAttribute("office_id", office);
             req.setAttribute("database", db);
             javalin.service(req, resp);
         } catch (SQLException ex) {
@@ -217,6 +214,14 @@ public class ApiServlet extends HttpServlet {
         metrics = (MetricRegistry)config.getServletContext().getAttribute(MetricsServlet.METRICS_REGISTRY);
         total_requests = metrics.meter("radar.total_requests");
         super.init(config);
+    }
+
+    public static String officeFromContext(String contextPath){
+        String office = contextPath.split(".*(-data)?")[0];
+        if( office.isEmpty() || office.equalsIgnoreCase("cwms")){
+            office = "HQ";
+        }
+        return office.toUpperCase();
     }
 
 }
