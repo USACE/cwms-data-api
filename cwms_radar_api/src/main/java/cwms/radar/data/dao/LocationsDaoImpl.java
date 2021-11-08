@@ -392,7 +392,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             return ce;
         }).collect(Collectors.toList());
 
-        Catalog cat = new Catalog(cursor,total,pageSize,entries);
+        Catalog cat = new Catalog(locCursor,total,pageSize,entries);
         return cat;
     }
 
