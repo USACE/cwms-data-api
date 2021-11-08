@@ -6,6 +6,7 @@ import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -35,6 +36,8 @@ public class TomcatServer {
         tomcatInstance.getEngine();
         tomcatInstance.getHost().addLifecycleListener(new HostConfig());
         tomcatInstance.addContext("", null);
+        File radar = new File(radarWar);
+        tomcatInstance.addWebapp(contextName,radar.toURI().toURL());
         tomcatInstance.getServer();
 
 
