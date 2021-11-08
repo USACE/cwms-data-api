@@ -63,7 +63,7 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
-    testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
+    //testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     testImplementation "org.mockito:mockito-core:3.2.4"
@@ -82,6 +82,8 @@ dependencies {
     testImplementation "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion"
     testImplementation "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
     testImplementation "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6"
+    testImplementation "org.apache.tomcat:tomcat-dbcp:$tomcatVersion"
+    testImplementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
     testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
 
      webjars( 'org.webjars:swagger-ui:3.52.3' ){
