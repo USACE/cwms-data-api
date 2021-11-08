@@ -151,7 +151,7 @@ task generateConfig( type: Copy ){
 
 task run(type: JavaExec) {
     doFirst {
-        project.delete "$buildDir/tomat/*.war"
+        project.delete "$buildDir/tomcat/*.war"
     }
     dependsOn generateConfig
     dependsOn war
