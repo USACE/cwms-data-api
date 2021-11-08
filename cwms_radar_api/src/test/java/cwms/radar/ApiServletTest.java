@@ -14,7 +14,7 @@ public class ApiServletTest {
     public void test_office_from_context_hq(){
         String office = null;
 
-        office = ApiServlet.officeFromContext("cwms-data");
+        office = ApiServlet.officeFromContext("/cwms-data");
         assertTrue("HQ".equals(office),"failed to get HQ result cwms-data context");
 
 
@@ -25,7 +25,7 @@ public class ApiServletTest {
     }
 
     @ParameterizedTest
-    @CsvSource( value = { "spk-data,SPK", "nwdm-data,NWDM", "nww-data,NWW", "swt-data,SWT"} )
+    @CsvSource( value = { "/spk-data,SPK", "/nwdm-data,NWDM", "/nww-data,NWW", "/swt-data,SWT"} )
     void test_office_from_context_district(String context, String office) {
         String returnedOffice = ApiServlet.officeFromContext(context);
         assertTrue(office.equals(returnedOffice), "failed to process an office context correctly");
