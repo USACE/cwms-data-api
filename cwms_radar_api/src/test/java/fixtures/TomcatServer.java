@@ -20,7 +20,7 @@ public class TomcatServer {
 
     public TomcatServer(final String baseDir, final String radarWar, final int port, final String contextName) throws Exception{
 
-        setupContext();
+        //setupContext();
         tomcatInstance = new Tomcat();
         tomcatInstance.setBaseDir(baseDir);
         tomcatInstance.getHost().setAppBase(baseDir);

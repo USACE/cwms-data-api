@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context>
     <Resource name="jdbc/CWMS3" auth="Container" type="javax.sql.DataSource"
-              username="RADAR_JDBC_USERNAME" password="RADAR_JDBC_PASSWORD"
-              url="RADAR_JDBC_URL"
+              username="${RADAR_JDBC_USERNAME}" password="${RADAR_JDBC_PASSWORD}"
+              url="${RADAR_JDBC_URL}"
               driverClassName="oracle.jdbc.driver.OracleDriver"
-              initialSize="5" maxWait="5000"
-              maxActive="120" maxIdle="5"
+              initialSize="${RADAR_POOL_INIT_SIZE}" maxWait="5000"
+              maxActive="${RADAR_POOL_MAX_ACTIVE}" maxIdle="${RADAR_POOL_MAX_IDLE}"
+              minIdle="${RADAR_POOL_MIN_IDLE}"
               validationQuery="select 1 from dual"
               factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
     />
