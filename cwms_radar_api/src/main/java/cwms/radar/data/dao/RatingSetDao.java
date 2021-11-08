@@ -1,18 +1,20 @@
 package cwms.radar.data.dao;
 
 import java.io.IOException;
-import java.util.logging.Logger;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
-import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.data.RatingException;
+import usace.cwms.db.dao.ifc.rating.CwmsDbRating;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 {
-	
 	public RatingSetDao(DSLContext dsl)
 	{
 		super(dsl);
@@ -92,10 +94,8 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		{
 			dsl.connection(c ->
 			{
-				RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, ratingSpecId);
-				ratingSet.removeAllRatings();
-				final boolean overwriteExisting = true;
-				ratingSet.storeToDatabase(c, overwriteExisting);  // Does this actually delete?
+//				deleteWithRatingSet(c, officeId, ratingSpecId);
+				delete(c, officeId, ratingSpecId);
 			});
 		}
 		catch(DataAccessException ex)
@@ -109,6 +109,27 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 
 	}
 
+	public void delete(Connection c, String officeId, String ratingSpecId) throws SQLException, RatingException
+    {
+	    delete(c, DeleteRule.DELETE_ALL, ratingSpecId, officeId);
+    }
+
+	public void delete(Connection c, DeleteRule deleteRule, String ratingSpecId, String officeId)
+			throws SQLException
+	{
+		CwmsDbRating cwmsDbRating = CwmsDbServiceLookup.buildCwmsDb(CwmsDbRating.class, c);
+		cwmsDbRating.deleteSpecs(c, ratingSpecId, deleteRule.getRule(), officeId);
+	}
+
+	// This doesn't seem to work.
+	private void deleteWithRatingSet(Connection c, String officeId, String ratingSpecId) throws RatingException
+	{
+		RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, ratingSpecId);
+		ratingSet.removeAllRatings();
+		final boolean overwriteExisting = true;
+		ratingSet.storeToDatabase(c, overwriteExisting);  // Does this actually delete?
+	}
+
 	public void delete(String officeId, String specificationId, long[] effectiveDates)
 			throws IOException, RatingException
 	{
@@ -117,14 +138,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		{
 			dsl.connection(c ->
 			{
-				RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, specificationId);
-				for(final long effectiveDate : effectiveDates)
-				{
-					ratingSet.removeRating(effectiveDate);
-
-				}
-				final boolean overwriteExisting = true;
-				ratingSet.storeToDatabase(c, overwriteExisting);
+				deleteWithRatingSet(c, officeId, specificationId, effectiveDates); // This doesn't seem to work.
 			});
 		}
 		catch(DataAccessException ex)
@@ -135,6 +149,20 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 			}
 			throw new IOException("Failed to delete Rating", ex);
 		}
+	}
+
+
+	private void deleteWithRatingSet(Connection c, String officeId, String specificationId, long[] effectiveDates)
+			throws RatingException
+	{
+		RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, specificationId);
+		for(final long effectiveDate : effectiveDates)
+		{
+			ratingSet.removeRating(effectiveDate);
+		}
+
+		final boolean overwriteExisting = true;
+		ratingSet.storeToDatabase(c, overwriteExisting);
 	}
 
 
