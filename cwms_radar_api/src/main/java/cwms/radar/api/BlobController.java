@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import javax.servlet.http.HttpServletResponse;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -28,7 +30,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.eclipse.jetty.http.HttpStatus;
 import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -162,7 +163,7 @@ public class BlobController implements CrudHandler {
 
                 requestResultSize.update(value.length);
             } else {
-                ctx.status(HttpStatus.NOT_FOUND_404).json(new RadarError("Unable to find blob based on given parameters"));
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unable to find blob based on given parameters"));
             }
 
         }

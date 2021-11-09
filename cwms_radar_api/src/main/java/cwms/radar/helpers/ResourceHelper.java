@@ -1,11 +1,15 @@
 package cwms.radar.helpers;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-
-import org.eclipse.jetty.util.IO;
+import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class ResourceHelper {
+    private static final Logger logger = Logger.getLogger(ResourceHelper.class.getName());
     /**
      * Returns resource as a string, null if resource can't be found.
      * @param resource The path to the resource
@@ -14,10 +18,10 @@ public final class ResourceHelper {
      * */
     public static String getResourceAsString(String resource, Class<?> context) {
         InputStream formatList = getResourceAsStream(resource, context);
-        try {
-            return IO.toString(formatList);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(formatList));) {
+            reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE,"Error access resource",e);
         }
         return null;
     }

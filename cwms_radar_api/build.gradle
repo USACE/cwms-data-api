@@ -1,4 +1,12 @@
-apply plugin: 'java-library'
+apply plugin: 'war'
+
+configurations {
+    info
+    webjars
+    docker
+    baseLibs
+}
+
 
 dependencies {
     implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
@@ -25,41 +33,102 @@ dependencies {
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
 
-    compileOnly "io.javalin:javalin:$JAVALIN_VERSION"
-    compileOnly "io.javalin:javalin-openapi:$JAVALIN_VERSION"
-    compileOnly( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+    implementation("io.javalin:javalin:$JAVALIN_VERSION") {
+        exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"
+    }
+    implementation("io.javalin:javalin-openapi:$JAVALIN_VERSION") {
+        //exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"
         exclude group: "jakarta.xml.bind", module: "*"
     }
+    implementation( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+        exclude group: "jakarta.xml.bind", module: "*"
+    }
+    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+
     compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
-    compileOnly "io.dropwizard.metrics:metrics-core:$dropwizard_version"
-    testImplementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+
+
+    runtimeOnly 'jstl:jstl:1.2'
 
     // Now using the FormatService annotation in runtime in JsonV1 too.
     implementation project(":annotations")
     annotationProcessor project(":annotations")
 
-    testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
+    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
+    implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
+
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
+
+    //testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     testImplementation "org.mockito:mockito-core:3.2.4"
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.4'
-    compileOnly "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
-    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
-    compileOnly "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
-    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
-    testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
+    baseLibs 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
     testImplementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
     testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
     testRuntimeOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
+    testImplementation "org.mockito:mockito-core:3.2.4"
+    testImplementation "io.rest-assured:rest-assured:4.4.0"
+
+
+    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion"
+    testImplementation "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
+    testImplementation "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6"
+    testImplementation "org.apache.tomcat:tomcat-dbcp:$tomcatVersion"
+    testImplementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
+    testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
+
+     webjars( 'org.webjars:swagger-ui:3.52.3' ){
+        transitive = false
+    }
+
 }
+
+
+
+task extractWebJars( type: Copy ){
+    doFirst {
+        project.mkdir("$buildDir/extra/swagger-ui")
+    }
+    from zipTree(configurations.webjars.singleFile)
+    into file("$buildDir/extra")
+    includeEmptyDirs false
+    eachFile {
+        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
+    }
+    exclude "**/index.html*"
+    include "/META-INF/resources/webjars/swagger-ui/**"
+    includeEmptyDirs = false
+}
+
+war {
+    //dependsOn extractInfo
+    dependsOn extractWebJars
+    from "$buildDir/extra"
+    from "src/resources/"
+
+    doLast {
+        println( war.archiveFileName.toString() )
+        println( "::set-output name=WARFILE::${project.name}-${project.version}.war")
+    }
+}
+
 
 test {
 	useJUnitPlatform()
-
 }
+
 
 description = 'CWMS RADAR API'
 
@@ -67,4 +136,71 @@ sourceSets {
     main {
         resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
     }
+}
+
+
+task generateConfig( type: Copy ){
+    from 'src/test/resources/tomcat'
+    into "$buildDir/tomcat"
+
+    //rename "context.xml", "context.xml.template"
+
+    inputs.dir  "src/test/resources"
+    outputs.dir "$buildDir/tomcat/conf"
+}
+
+task run(type: JavaExec) {
+    doFirst {
+        project.delete "$buildDir/tomat/*.war"
+    }
+    dependsOn generateConfig
+    dependsOn war
+
+    classpath = sourceSets.main.runtimeClasspath
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+
+    mainClass = "fixtures.TomcatServer"
+    systemProperties += project.properties.findAll{ k,v -> k.startsWith("RADAR") }
+    args "$buildDir/tomcat","$buildDir/libs/${project.name}-${project.version}.war","cwms-data"
+    jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+}
+
+
+task prepareDockerBuild(type:Copy, dependsOn: war){
+    doFirst{
+        project.mkdir( "$buildDir/docker")
+    }
+    from "src/docker"
+    into "$buildDir/docker"
+
+    from(configurations.docker)
+
+    from(configurations.baseLibs) {
+        into "libs"
+    }
+
+    from(sourceSets.test.resources){
+
+        include "**/conf/context.xml"
+        eachFile {
+            path = name
+        }
+        includeEmptyDirs = false
+    }
+
+    from( war.outputs.files.singleFile ){
+        //include "${project.name}-${project.version}.jar"
+        into "radar/webapps"
+        rename(".*\\.war","ROOT.war")
+    }
+}
+
+task dockerBuild(type: Exec, dependsOn: prepareDockerBuild) {
+    inputs.files configurations.docker.files
+
+    workingDir "$buildDir/docker"
+    executable "docker"
+    args "build","--tag=cwms-rest-api:"+project.version, "."
 }
