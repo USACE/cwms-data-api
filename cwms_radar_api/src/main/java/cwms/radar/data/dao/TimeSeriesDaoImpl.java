@@ -42,11 +42,13 @@ import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Record5;
+import org.jooq.Record6;
 import org.jooq.Result;
 import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.SelectQuery;
 import org.jooq.SelectSelectStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
@@ -269,28 +271,41 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				total = Integer.parseInt(parts[1]);
 			}
 		}
-
-		SelectJoinStep<Record3<String, String, String>> query = dsl.select(
-				AV_CWMS_TS_ID2.DB_OFFICE_ID,
-				AV_CWMS_TS_ID2.CWMS_TS_ID,
-				AV_CWMS_TS_ID2.UNIT_ID
-		)
-				.from(AV_CWMS_TS_ID2);
+		SelectQuery query = dsl.selectQuery();
+		query.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
+		query.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
+		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
+		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
+		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
+			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
+		}
+		query.addFrom(AV_CWMS_TS_ID2);
 
 		if( office.isPresent() ){
-			query.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()))
-					.and(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().greaterThan(tsCursor));
-		} else {
-			query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
+			query.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
-		query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
-		logger.fine( () -> query.getSQL(ParamType.INLINED));
-		Result<Record3<String, String, String>> result = query.fetch();
+		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
+
+
+		query.addOrderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		query.addLimit(pageSize);
+		logger.info( () -> query.getSQL(ParamType.INLINED));
+		Result<?> result = query.fetch();
 		List<? extends CatalogEntry> entries = result.stream()
 				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
-				.map( e -> new TimeseriesCatalogEntry(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID),
-						e.get(AV_CWMS_TS_ID2.CWMS_TS_ID),
-						e.get(AV_CWMS_TS_ID2.UNIT_ID) )
+				.map( e -> {
+						TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
+						.officeId(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
+						.cwmsTsId(e.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
+						.units(e.get(AV_CWMS_TS_ID2.UNIT_ID) )
+						.interval(e.get(AV_CWMS_TS_ID2.INTERVAL_ID))
+						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
+						if( this.getDbVersion() >= Dao.CWMS_21_1_1 ) {
+							builder.timeZone(e.get(AV_CWMS_TS_ID2.TIME_ZONE_ID));
+						}
+						return builder.build();
+				}
 				)
 				.collect(Collectors.toList());
 		return new Catalog(tsCursor,total,pageSize,entries);
