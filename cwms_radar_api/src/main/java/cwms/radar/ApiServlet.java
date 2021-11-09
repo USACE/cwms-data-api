@@ -217,7 +217,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     public static String officeFromContext(String contextPath){
-        String office = contextPath.split("\\-")[0];
+        String office = contextPath.split("\\-")[0].replaceFirst("/","");
         if( office.isEmpty() || office.equalsIgnoreCase("cwms")){
             office = "HQ";
         }

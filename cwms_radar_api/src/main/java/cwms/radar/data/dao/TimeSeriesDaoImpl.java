@@ -284,7 +284,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			query.where(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
 		}
 		query.orderBy(AV_CWMS_TS_ID2.CWMS_TS_ID).limit(pageSize);
-		logger.finest( () -> query.getSQL(ParamType.INLINED));
+		logger.fine( () -> query.getSQL(ParamType.INLINED));
 		Result<Record3<String, String, String>> result = query.fetch();
 		List<? extends CatalogEntry> entries = result.stream()
 				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )

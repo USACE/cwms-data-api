@@ -70,7 +70,7 @@ public class CatalogController implements CrudHandler{
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="cursor",
+            @OpenApiParam(name="page",
                           required = false,
                           description = "This end point can return a lot of data, this identifies where in the request you are."
             ),
@@ -114,7 +114,8 @@ public class CatalogController implements CrudHandler{
         ) {
 
             String valDataSet = ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
-            String cursor = ctx.queryParamAsClass("cursor",String.class).getOrDefault("");
+            String cursor = ctx.queryParamAsClass("cursor",String.class)
+                               .getOrDefault(ctx.queryParamAsClass("page", String.class).getOrDefault(""));
             int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
 								.getOrDefault(
 									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)

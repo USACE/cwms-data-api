@@ -26,7 +26,7 @@ import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectJoinStep;
 import org.jooq.Table;
-
+import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -324,12 +324,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
 
         SelectConditionStep<Record1<String>> tmp = dsl.select(AV_LOC.LOCATION_ID)
                                .from(AV_LOC)
-                               .where(AV_LOC.LOCATION_ID.greaterThan(locCursor))
+                               .where(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor))
                                .and(AV_LOC.UNIT_SYSTEM.eq(unitSystem));
         if( office.isPresent()){
             tmp = tmp.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
         }
-        Table<?> forLimit = tmp.orderBy(AV_LOC.BASE_LOCATION_ID).limit(pageSize).asTable();
+        Table<?> forLimit = tmp.orderBy(AV_LOC.LOCATION_ID).limit(pageSize).asTable();
         SelectConditionStep<Record> query = dsl.select(
                                     AV_LOC.asterisk(),
                                     AV_LOC_GRP_ASSGN.asterisk()
@@ -343,7 +343,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         if( office.isPresent() ){
             query.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
         }
+
         query.orderBy(AV_LOC.LOCATION_ID);
+        logger.info( () -> query.getSQL(ParamType.INLINED));
         HashMap<usace.cwms.db.jooq.codegen.tables.records.AV_LOC, ArrayList<usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS>> theMap = new HashMap<>();
         //Result<?> result = query.fetch();
         query.fetch().forEach( row -> {
@@ -359,7 +361,13 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         });
 
         List<? extends CatalogEntry> entries =
-        theMap.entrySet().stream().map( e -> {
+        theMap.entrySet().stream()
+            .sorted( (left, right) -> (
+                left.getKey().getLOCATION_ID()
+                    .compareTo(right.getKey().getBASE_LOCATION_ID())
+            ))
+
+            .map( e -> {
             LocationCatalogEntry ce = new LocationCatalogEntry(
                 e.getKey().getDB_OFFICE_ID(),
                 e.getKey().getLOCATION_ID(),
@@ -392,7 +400,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             return ce;
         }).collect(Collectors.toList());
 
-        Catalog cat = new Catalog(cursor,total,pageSize,entries);
+        Catalog cat = new Catalog(locCursor,total,pageSize,entries);
         return cat;
     }
 
