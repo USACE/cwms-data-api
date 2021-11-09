@@ -35,7 +35,7 @@ public class LocationCategoryDao extends JooqDao<LocationCategory>
 		}
 		AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		return dsl.select(table.CAT_DB_OFFICE_ID,
+		return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
 				table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
 				.from(table)
 				.where(table.CAT_DB_OFFICE_ID.eq(officeId))

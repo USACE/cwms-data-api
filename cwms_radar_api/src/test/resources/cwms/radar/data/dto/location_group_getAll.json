@@ -1,0 +1,28 @@
+[
+  {
+    "id": "NID Dam Name",
+    "location-category": {
+      "office-id": "CWMS",
+      "id": "Agency Aliases",
+      "description": "Location aliases for other agencies"
+    },
+    "office-id": "LRL"
+  },
+  {
+    "id": "Lakes",
+    "location-category": {
+      "office-id": "LRL",
+      "id": "CWMS Mobile Location Listings"
+    },
+    "office-id": "LRL"
+  },
+  {
+    "id": "Green River Basin",
+    "location-category": {
+      "office-id": "LRL",
+      "id": "Basin"
+    },
+    "office-id": "LRL",
+    "description": "Green River Basin KY"
+  }
+]
