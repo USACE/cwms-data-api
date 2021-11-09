@@ -277,7 +277,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
 		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
 		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
-		//query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
+		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
+			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
+		}
 		query.addFrom(AV_CWMS_TS_ID2);
 
 		if( office.isPresent() ){
@@ -292,14 +294,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		Result<?> result = query.fetch();
 		List<? extends CatalogEntry> entries = result.stream()
 				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
-				.map( e -> new TimeseriesCatalogEntry.Builder()
+				.map( e -> {
+						TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
 						.officeId(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
 						.cwmsTsId(e.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
 						.units(e.get(AV_CWMS_TS_ID2.UNIT_ID) )
 						.interval(e.get(AV_CWMS_TS_ID2.INTERVAL_ID))
-						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET))
-						//.timeZone(e.get(AV_CWMS_TS_ID2.TIME_ZONE_ID))
-						.build()
+						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
+						if( this.getDbVersion() >= Dao.CWMS_21_1_1 ) {
+							builder.timeZone(e.get(AV_CWMS_TS_ID2.TIME_ZONE_ID));
+						}
+						return builder.build();
+				}
 				)
 				.collect(Collectors.toList());
 		return new Catalog(tsCursor,total,pageSize,entries);
