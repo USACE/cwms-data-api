@@ -1,0 +1,28 @@
+{
+  "id": "Lakes",
+  "location-category": {
+    "office-id": "LRL",
+    "id": "CWMS Mobile Location Listings"
+  },
+  "office-id": "LRL",
+  "assigned-locations": [
+    {
+      "location-id": "FakeLake",
+      "base-location-id": "FakeLake",
+      "alias-id": "FakeLake",
+      "location-code": 540009
+    },
+    {
+      "location-id": "Testing",
+      "base-location-id": "Testing",
+      "alias-id": "Testing",
+      "location-code": 542009
+    },
+    {
+      "location-id": "NotThere",
+      "base-location-id": "NotThere",
+      "alias-id": "NotThere",
+      "location-code": 541009
+    }
+  ]
+}
