@@ -3,6 +3,9 @@ package cwms.radar.api;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.data.dto.Location;
 import cwms.radar.formatters.Formats;
+import cwms.radar.security.CwmsAuthException;
+import cwms.radar.security.CwmsAuthorizer;
+import cwms.radar.security.CwmsNoAuthorizer;
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
 import io.javalin.http.Context;
@@ -68,36 +71,37 @@ class LocationControllerTest extends ControllerTest
     @Test
     public void test_basic_operations() throws Exception {
         final String testBody = "";
-        LocationController instance = spy(new LocationController(new MetricRegistry()));
+        LocationController instance = new LocationController(new MetricRegistry());
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = new TestHttpServletResponse();
         HashMap<String,Object> attributes = new HashMap<>();
         attributes.put(ContextUtil.maxRequestSizeKey,Integer.MAX_VALUE);
         attributes.put(JsonMapperKt.JSON_MAPPER_KEY,new JavalinJackson());
+        attributes.put("Authorizer",new CwmsNoAuthorizer());
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
 
-        Context context = spy( ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.GET,attributes) );
+        final Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.GET,attributes);
         context.attribute("database",getTestConnection());
 
         when(request.getAttribute("database")).thenReturn(getTestConnection());
 
         assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
         System.out.println("getOne");
-        String Location_id = "1";
+        String Location_id = "SimpleNoAlias";
 
 
         instance.getOne(context, Location_id);
         assertEquals(200,context.status(), "incorrect status code returned");
 
-        assertThrows( UnsupportedOperationException.class , () -> {
+        assertThrows( CwmsAuthException.class , () -> {
             instance.create(context);
         });
 
-        assertThrows( UnsupportedOperationException.class, () -> {
+        assertThrows( CwmsAuthException.class, () -> {
             instance.update(context, Location_id);
         });
 
-        assertThrows( UnsupportedOperationException.class, () -> {
+        assertThrows( CwmsAuthException.class, () -> {
             instance.delete(context, Location_id);
         });
 

@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.time.ZoneId;
 import java.util.*;
@@ -25,6 +26,7 @@ import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.SelectQuery;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
@@ -56,70 +58,49 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) throws IOException
     {
-        String[] locationId = new String[]{locationName};
-        String elevationUnitId = (unitSystem.equals(UnitSystem.EN.getValue())) ? "ft" : "m";
-        String[] locationType = new String[1];
-        Number[] elevation = new Number[1];
-        String[] verticalDatum = new String[1];
-        Number[] latitude = new Number[1];
-        Number[] longitude = new Number[1];
-        String[] horizontalDatum = new String[1];
-        String[] publicName = new String[1];
-        String[] longName = new String[1];
-        String[] description = new String[1];
-        String[] timezoneId = new String[1];
-        String[] countyName = new String[1];
-        String[] stateInitial = new String[1];
-        Boolean[] active = new Boolean[1];
-        String[] locationKindId = new String[1];
-        String[] mapLabel = new String[1];
-        Number[] publishedLatitude = new Number[1];
-        Number[] publishedLongitude = new Number[1];
-        String[] boundingOfficeId = new String[1];
-        String[] nationId = new String[1];
-        String[] nearestCity = new String[1];
-        ResultSet[] aliasResultSet = new ResultSet[1];
-        AtomicReference<Location> locationRef = new AtomicReference<>();
-        try {
-            dsl.connection(c ->
-            {
-                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                locJooq.retrieve2(c, officeId, locationId, elevationUnitId, locationType, elevation, verticalDatum, latitude, longitude,
-                        horizontalDatum, publicName, longName, description, timezoneId, countyName, stateInitial, active, locationKindId,
-                        mapLabel, publishedLatitude, publishedLongitude, boundingOfficeId, nationId, nearestCity, aliasResultSet);
-                Location location = new Location.Builder(locationId[0], locationKindId[0], ZoneId.of(timezoneId[0]), latitude[0].doubleValue(), longitude[0].doubleValue(), horizontalDatum[0], officeId)
-                        .withLocationType(locationType[0])
-                        .withElevation(elevation[0].doubleValue())
-                        .withVerticalDatum(verticalDatum[0])
-                        .withPublicName(publicName[0])
-                        .withLongName(longName[0])
-                        .withDescription(description[0])
-                        .withCountyName(countyName[0])
-                        .withStateInitial(stateInitial[0])
-                        .withActive(active[0])
-                        .withMapLabel(mapLabel[0])
-                        .withBoundingOfficeId(boundingOfficeId[0])
-                        .withNearestCity(nearestCity[0])
-                        .withNation(Nation.NationForName(nationId[0]))
-                        .build();
-                if (publishedLatitude[0] != null) {
-                    location = new Location.Builder(location)
-                            .withPublishedLatitude(publishedLatitude[0].doubleValue())
-                            .build();
-                }
-                if (publishedLongitude[0] != null) {
-                    location = new Location.Builder(location)
-                            .withPublishedLongitude(publishedLongitude[0].doubleValue())
-                            .build();
-                }
-                locationRef.set(location);
-            });
-        }
-        catch(DataAccessException ex)
-        {
-            throw new IOException("Could not retrieve Location",ex);
-        }
-        return locationRef.get();
+
+        SelectQuery<Record> query = dsl.selectQuery();
+        query.addFrom(AV_LOC);
+        query.addSelect(AV_LOC.asterisk());
+        query.addConditions(      AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                             .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                             .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))));
+
+        Record loc = query.fetchOne();
+        Location.Builder locationBuilder =  new Location.Builder(
+                    loc.get(AV_LOC.LOCATION_ID),
+                    loc.get(AV_LOC.LOCATION_KIND_ID),
+
+                    ZoneId.of(loc.get(AV_LOC.TIME_ZONE_NAME)),
+                    loc.get(AV_LOC.LATITUDE).doubleValue(),
+                    loc.get(AV_LOC.LONGITUDE).doubleValue(),
+                    loc.get(AV_LOC.HORIZONTAL_DATUM),
+                    loc.get(AV_LOC.DB_OFFICE_ID)
+            )
+            .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
+            .withElevation(loc.get(AV_LOC.ELEVATION).doubleValue())
+            .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
+            .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
+            .withLongName(loc.get(AV_LOC.LONG_NAME))
+            .withDescription(loc.get(AV_LOC.DESCRIPTION))
+            .withCountyName(loc.get(AV_LOC.COUNTY_NAME))
+            .withStateInitial(loc.get(AV_LOC.STATE_INITIAL))
+            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T") ? true : false)
+            .withMapLabel(loc.get(AV_LOC.MAP_LABEL))
+            .withBoundingOfficeId(loc.get(AV_LOC.BOUNDING_OFFICE_ID))
+            .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
+            .withNation(Nation.NationForName(loc.get(AV_LOC.NATION_ID)));
+
+            BigDecimal pubLatitude =loc.get(AV_LOC.PUBLISHED_LATITUDE);
+            BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
+            if (pubLatitude != null) {
+                locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
+
+            }
+            if (pubLongitude != null) {
+                locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
+            }
+        return locationBuilder.build();
     }
 
     @Override

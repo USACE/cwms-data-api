@@ -9,9 +9,11 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
+import io.javalin.http.HttpCode;
+
 public class TestHttpServletResponse implements HttpServletResponse {
 
-    private int status;
+    private int status = HttpCode.OK.getStatus(); // we will default to OK in all handlers as that is the behavior we see from javalin
 
     @Override
     public void flushBuffer() throws IOException {
