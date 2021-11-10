@@ -17,6 +17,11 @@
 > Empty
 > -----
 @ rows: 0
+{ ? = call "CWMS_20"."CWMS_DB_CHG_LOG"."GET_VERSION" (?) };
+> Empty
+> -----
+> 18.1.1
+@ rows: 1
 # This is always called
 select "v0" "VERSION" from (select "x"."v0", rownum "rn" from (select "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION" "v0" from "CWMS_20"."AV_DB_CHANGE_LOG" order by "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION_DATE" desc) "x" where rownum <= (0 + ?)) where "rn" > 0 order by "rn";
 > VERSION
@@ -42,3 +47,8 @@ select "CWMS_20"."AV_OFFICE"."OFFICE_ID", "CWMS_20"."AV_CLOB".* from "CWMS_20"."
 > SPK       44          TEST1 ATest       Random Clob
 > NAE       20          TEST2 YAT         More tests in this Clob
 @ rows: 2
+{ ? = call "CWMS_20"."CWMS_LOC"."RETRIEVE_LOCATION" (?, ?) };
+> Empty
+> -----------------------------------------------------------------------------------------------------------------------------------------------------------------
+> {     "fields": [        {"name": "location", "type": "object"}    ],    "records": [        [            [{                "base_location_id": "Alder Springs",                "sub_location_id": null,                "office_id": "SPK"            },            "CA",            "Glenn",            "PST8PDT",            null,            0,            0,            "WSG84",            30.48,            "m",            "NAVD88",            "Alder Springs",            "Alder Springs",            "Climate Gage",            "T",            "SITE",            null,            null,            null,            null,            null,            "UNITED STATES",            "Persque Isle"]        ]    ]}
+@ rows: 1

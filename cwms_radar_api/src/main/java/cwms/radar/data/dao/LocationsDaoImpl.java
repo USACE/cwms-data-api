@@ -117,7 +117,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Could not retrieve Location");
+            throw new IOException("Could not retrieve Location",ex);
         }
         return locationRef.get();
     }

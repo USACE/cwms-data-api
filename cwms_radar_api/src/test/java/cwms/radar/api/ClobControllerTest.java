@@ -1,4 +1,4 @@
-package mil.army.usace.hec;
+package cwms.radar.api;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.isNotNull;
@@ -43,25 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
-public class ClobControllerTest {
+public class ClobControllerTest extends ControllerTest{
 
     private Connection conn = null;
-
-
-    @BeforeEach
-    public void baseLineDbMocks() throws Exception{
-        InputStream stream = RatingsControllerTest.class.getResourceAsStream("/ratings_db.txt");
-        assertNotNull(stream);
-        this.conn = new MockConnection(
-                                new MockFileDatabase(stream
-                                )
-                    );
-        assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
-    }
-
-
-
-
 
 
     @Test
@@ -73,13 +57,14 @@ public class ClobControllerTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
         HashMap<String,Object> attributes = new HashMap<>();
         attributes.put(ContextUtil.maxRequestSizeKey,Integer.MAX_VALUE);
+        attributes.put(JsonMapperKt.JSON_MAPPER_KEY,new JavalinJackson());
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
 
         Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.GET,attributes);
-        context.attribute("database",this.conn);
+        context.attribute("database",getTestConnection());
 
-        when(request.getAttribute("database")).thenReturn(this.conn);
+        when(request.getAttribute("database")).thenReturn(getTestConnection());
 
         assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
 
