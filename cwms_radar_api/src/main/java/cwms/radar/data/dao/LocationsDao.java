@@ -16,4 +16,6 @@ public interface LocationsDao
     void renameLocation(String oldLocationName, Location renamedLocation) throws IOException;
     FeatureCollection buildFeatureCollection(String names, String units, String officeId);
     Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office);
+	Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office, String idLike);
+
 }

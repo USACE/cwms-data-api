@@ -42,16 +42,13 @@ import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Record5;
-import org.jooq.Record6;
 import org.jooq.Result;
 import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
-import org.jooq.SelectJoinStep;
 import org.jooq.SelectQuery;
 import org.jooq.SelectSelectStep;
 import org.jooq.conf.ParamType;
-import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
@@ -112,7 +109,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			}
 		}
 
-		return getTimeSeries(page, pageSize, names, office, units, beginTime, endTime);
+		return getTimeseries(page, pageSize, names, office, units, beginTime, endTime);
 	}
 
 	public ZonedDateTime getZonedDateTime(String begin, ZoneId fallbackZone, ZonedDateTime beginFallback)
@@ -137,7 +134,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		return LocalDateTime.from(beginParsed).atZone(fallbackZone);
 	}
 
-	protected TimeSeries getTimeSeries(String page, int pageSize, String names, String office, String units,
+	protected TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units,
 									 ZonedDateTime beginTime, ZonedDateTime endTime)
 	{
 		String cursor = null;
@@ -248,13 +245,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 	}
 
 	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
+		return getTimeSeriesCatalog(page, pageSize, office, ".*");
+	}
+
+	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office, String idLike){
 		int total = 0;
 		String tsCursor = "*";
 		if( page == null || page.isEmpty() ){
-			SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_CWMS_TS_ID2);
+
+			Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike);
 			if( office.isPresent() ){
-				count.where(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
+				condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
 			}
+
+			SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
+					.from(AV_CWMS_TS_ID2)
+					.where(condition);
+
 			total = count.fetchOne().value1();
 		} else {
 			logger.fine("getting non-default page");
@@ -282,6 +289,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		}
 		query.addFrom(AV_CWMS_TS_ID2);
 
+		// add the regexp_like clause.
+		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
+
 		if( office.isPresent() ){
 			query.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
@@ -308,7 +318,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				}
 				)
 				.collect(Collectors.toList());
-		return new Catalog(tsCursor,total,pageSize,entries);
+		return new Catalog(tsCursor, total, pageSize, entries);
 	}
 
 
@@ -571,9 +581,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 	public void store(TimeSeries input, Timestamp versionDate)
 	{
-		dsl.connection(connection -> {
-			store(connection, input.getOfficeId(), input.getName(), input.getUnits(), versionDate, input.getValues());
-		});
+		dsl.connection(connection ->
+				store(connection, input.getOfficeId(), input.getName(), input.getUnits(), versionDate, input.getValues())
+		);
 	}
 
 	public void update(TimeSeries input) throws SQLException
