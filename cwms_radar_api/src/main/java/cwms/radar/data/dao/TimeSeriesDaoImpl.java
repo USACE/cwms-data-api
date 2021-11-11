@@ -244,11 +244,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		return timeseries;
 	}
 
+	@Override
 	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
-		return getTimeSeriesCatalog(page, pageSize, office, ".*");
+		return getTimeSeriesCatalog(page, pageSize, office, ".*", null, null);
 	}
 
-	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office, String idLike){
+	@Override
+	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office,
+	                                    String idLike, String categoryLike, String groupLike){
 		int total = 0;
 		String tsCursor = "*";
 		if( page == null || page.isEmpty() ){
@@ -256,6 +259,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike);
 			if( office.isPresent() ){
 				condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
+			}
+
+			if(categoryLike != null){
+				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
+			}
+
+			if(groupLike != null){
+				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
 			}
 
 			SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
@@ -295,6 +306,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		if( office.isPresent() ){
 			query.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
+
+		if(categoryLike != null){
+			query.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
+		}
+
+		if(groupLike != null){
+			query.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
+		}
+
 		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
 
 

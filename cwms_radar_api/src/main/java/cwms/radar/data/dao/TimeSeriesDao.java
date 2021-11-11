@@ -12,7 +12,7 @@ public interface TimeSeriesDao
 {
 	Timestamp NON_VERSIONED = null;
 	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office);
-	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike);
+	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike, String categoryLike, String groupLike);
 
 	void create(TimeSeries timeSeries);
 	void store(TimeSeries timeSeries, Timestamp versionDate);
@@ -23,6 +23,8 @@ public interface TimeSeriesDao
 	String getTimeseries(String format, String names, String office, String unit, String datum, String begin, String end, String timezone);
 
 
+
 	List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId, Timestamp pastLimit, Timestamp futureLimit);
 	List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastLimit, Timestamp futureLimit);
+
 }

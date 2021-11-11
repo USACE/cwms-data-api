@@ -300,20 +300,21 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office)
     {
-        return getLocationCatalog(cursor, pageSize, unitSystem, office, null);
+        return getLocationCatalog(cursor, pageSize, unitSystem, office, null, null, null);
     }
 
     @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office, String idLike) {
+    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office, String idLike, String categoryLike, String groupLike) {
         int total = 0;
         String locCursor = "*";
         if( cursor == null || cursor.isEmpty() ){
-            Condition condition = buildCatalogWhere(unitSystem, office, idLike);
+            Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike);
 
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
-                    .from(AV_LOC)
+                    .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
                     .where(condition);
 
+            logger.info( () ->  count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1().intValue();
         } else {
             logger.info("getting non-default page");
@@ -331,14 +332,15 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             }
         }
 
-        Condition condition = buildCatalogWhere(unitSystem, office, idLike)
+        Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike)
                 .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
 
         SelectConditionStep<Record1<String>> tmp = dsl.select(AV_LOC.LOCATION_ID)
-                               .from(AV_LOC)
+                               .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
                                 .where(condition);
 
         Table<?> forLimit = tmp.orderBy(AV_LOC.LOCATION_ID).limit(pageSize).asTable();
+
 
         SelectConditionStep<Record> query = dsl.select(
                                     AV_LOC.asterisk(),
@@ -418,6 +420,22 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         if( office.isPresent() ){
             condition = condition.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
         }
+        return condition;
+    }
+
+    private Condition buildCatalogWhere(String unitSystem, Optional<String> office,
+                                        String idLike, String categoryLike, String groupLike)
+    {
+        Condition condition = buildCatalogWhere(unitSystem, office, idLike);
+
+        if(categoryLike != null){
+            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.likeRegex(categoryLike));
+        }
+
+        if(groupLike != null){
+            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.likeRegex(groupLike));
+        }
+
         return condition;
     }
 

@@ -92,7 +92,17 @@ public class CatalogController implements CrudHandler{
                     required = false,
                     type = String.class,
                     description = "Posix regular expression matching against the id"
-            )
+            ),
+                @OpenApiParam(name="categoryLike",
+                        required = false,
+                        type = String.class,
+                        description = "Posix regular expression matching against the category id"
+                ),
+                @OpenApiParam(name="groupLike",
+                        required = false,
+                        type = String.class,
+                        description = "Posix regular expression matching against the group id"
+                )
         },
         pathParams = {
             @OpenApiParam(name="dataSet",
@@ -133,16 +143,18 @@ public class CatalogController implements CrudHandler{
                                         );
 
             String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
+            String categoryLike = ctx.queryParamAsClass("categoryLike",String.class).getOrDefault(".*");
+            String groupLike = ctx.queryParamAsClass("groupLike",String.class).getOrDefault(".*");
 
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if( "timeseries".equalsIgnoreCase(valDataSet)){
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
-                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like );
+                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, categoryLike, groupLike);
             } else if ("locations".equalsIgnoreCase(valDataSet)){
                 LocationsDao dao = new LocationsDaoImpl(dsl);
-                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like );
+                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like, categoryLike, groupLike );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);
