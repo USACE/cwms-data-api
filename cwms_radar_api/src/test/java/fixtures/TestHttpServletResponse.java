@@ -1,5 +1,7 @@
 package fixtures;
 
+import io.javalin.http.HttpCode;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -9,11 +11,14 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
-import io.javalin.http.HttpCode;
+
 
 public class TestHttpServletResponse implements HttpServletResponse {
 
-    private int status = HttpCode.OK.getStatus(); // we will default to OK in all handlers as that is the behavior we see from javalin
+    /**
+     * We will default to OK in all handlers as that is the behavior we see from javalin.
+     */
+    private int status = HttpCode.OK.getStatus();
 
     @Override
     public void flushBuffer() throws IOException {

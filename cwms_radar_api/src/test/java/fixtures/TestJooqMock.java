@@ -16,11 +16,11 @@ import org.junit.jupiter.api.Test;
 public class TestJooqMock {
 
     @Test
-    public void test_json_mock_result() throws Exception{
+    public void test_json_mock_result() throws Exception {
         DSLContext dsl = DSL.using(SQLDialect.ORACLE12C);
         InputStream is = TestJooqMock.class.getResourceAsStream("/mock_location_test.json");
 
-        Result<Record> record = dsl.fetchFromJSON(new String(  is.readAllBytes() ));
+        Result<Record> record = dsl.fetchFromJSON(new String(is.readAllBytes()));
         MockResult result = new MockResult(1,record);
         System.out.println(result.toString());
     }

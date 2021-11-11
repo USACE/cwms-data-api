@@ -7,16 +7,16 @@ import java.io.InputStream;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 
-public class TestServletInputStream extends ServletInputStream{
+public class TestServletInputStream extends ServletInputStream {
 
 
     private InputStream realStream = null;
 
-    public TestServletInputStream(String data){
-        this( new ByteArrayInputStream(data.getBytes()) );
+    public TestServletInputStream(String data) {
+        this(new ByteArrayInputStream(data.getBytes()));
     }
 
-    public TestServletInputStream( InputStream stream) {
+    public TestServletInputStream(InputStream stream) {
         realStream = stream;
     }
 
