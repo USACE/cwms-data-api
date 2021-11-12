@@ -221,31 +221,28 @@ public class TimeSeriesController implements CrudHandler {
                 DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            String format = ctx.queryParamAsClass("format",String.class).getOrDefault("");
+            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
-            String unit = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.getValue());
+            String unit = ctx.queryParamAsClass("unit", String.class).getOrDefault(UnitSystem.EN.getValue());
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
             String timezone = ctx.queryParam("timezone");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = ctx.queryParamAsClass("cursor",String.class)
-                                .getOrDefault(ctx.queryParamAsClass("page",String.class)
-                                .getOrDefault("")
-                                );
+            String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
+                    ctx.queryParamAsClass("page", String.class).getOrDefault(""));
 
-            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-								.getOrDefault(
-									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-								);
+            int pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(
+                    ctx.queryParamAsClass("pagesize", Integer.class).getOrDefault(defaultPageSize));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
 
             String results;
             String version = contentType.getParameters().get("version");
-            if(version != null && version.equals("2")) {
+            if(version != null && version.equals("2"))
+            {
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
 
                 results = Formats.format(contentType, ts);
@@ -256,17 +253,21 @@ public class TimeSeriesController implements CrudHandler {
                 linkValue.append(String.format("<%s>; rel=self; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getPage()),
                         contentType));
 
-                if(ts.getNextPage() != null) {
+                if(ts.getNextPage() != null)
+                {
                     linkValue.append(",");
-                    linkValue.append(String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()),
-                            contentType));
+                    linkValue.append(
+                            String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()),
+                                    contentType));
                 }
 
                 ctx.header("Link", linkValue.toString());
                 ctx.result(results).contentType(contentType.toString());
             }
-            else {
-                if (format == null || format.isEmpty()){
+            else
+            {
+                if(format == null || format.isEmpty())
+                {
                     format = "json";
                 }
                 results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
@@ -274,6 +275,11 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results);
             }
             requestResultSize.update(results.length());
+        } catch (NotFoundException e){
+            RadarError re = new RadarError("Not found.");
+            logger.log(Level.WARNING, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_NOT_FOUND);
+            ctx.json(re);
         } catch (IllegalArgumentException ex) {
             RadarError re = new RadarError("Invalid arguments supplied");
             logger.log(Level.SEVERE, re.toString(), ex);
