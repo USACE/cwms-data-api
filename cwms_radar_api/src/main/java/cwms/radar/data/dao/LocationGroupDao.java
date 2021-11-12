@@ -1,6 +1,7 @@
 package cwms.radar.data.dao;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -135,10 +136,52 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 
 	public List<LocationGroup> getLocationGroups(String officeId)
 	{
+		List<LocationGroup> retval = new ArrayList<>();
+		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+		AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+
+		final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = record17 -> {
+			LocationGroup group = buildLocationGroup(record17);
+			AssignedLocation loc = buildAssignedLocation(record17);
+
+			return new Pair<>(group, loc);
+		};
+
+		List<Pair<LocationGroup, AssignedLocation>> assignments = dsl
+				.select(alga.CATEGORY_ID, alga.GROUP_ID,
+						alga.LOCATION_CODE, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
+						alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+						alcg.CAT_DB_OFFICE_ID,
+						alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
+				.from(alcg)
+				.join(alga)
+				.on(
+						alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+								.and(
+										alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+				.where(alga.DB_OFFICE_ID.eq(officeId))
+				.orderBy(alga.ATTRIBUTE)
+				.fetch(mapper);
+
+		Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
+		for(Pair<LocationGroup, AssignedLocation> pair : assignments){
+			List<AssignedLocation> list = map.computeIfAbsent(pair.component1(), k -> new ArrayList<>());
+			list.add(pair.component2());
+		}
+
+		for(final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet())
+		{
+			retval.add(new LocationGroup(entry.getKey(),entry.getValue()));
+		}
+		return retval;
+	}
+
+	private List<LocationGroup> getGroupsWithoutAssignedLocations(String officeId)
+	{
 		List<LocationGroup> retval;
 		AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		org.jooq.TableField [] columns = new TableField[]{
+		TableField [] columns = new TableField[]{
 				table.CAT_DB_OFFICE_ID, table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC, table.GRP_DB_OFFICE_ID,
 				table.LOC_GROUP_ID, table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID, table.SHARED_REF_LOCATION_ID,
 				table.LOC_GROUP_ATTRIBUTE
@@ -203,8 +246,6 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 								.and(alga.GROUP_ID.eq(groupId))
 								.and(al.UNIT_SYSTEM.eq(units))))
 				.orderBy(alga.ATTRIBUTE);
-
-
 
 		List<Feature> features = select.stream()
 				.map(this::buildFeatureFromAvLocRecordWithLocGroup)
