@@ -81,7 +81,7 @@ public class ClobController implements CrudHandler {
                 @OpenApiParam(name="like",
                     required = false,
                     type = String.class,
-                    description = "Posix regular expression describing the clob id's you want"
+                    description = "Posix regular expression matching against the id"
                 )
             },
         responses = { @OpenApiResponse(status="200",
@@ -109,7 +109,7 @@ public class ClobController implements CrudHandler {
 
             String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
             cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
-            if( CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor) != true ) {
+            if(!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
                     .status(HttpCode.BAD_REQUEST);
                 return;

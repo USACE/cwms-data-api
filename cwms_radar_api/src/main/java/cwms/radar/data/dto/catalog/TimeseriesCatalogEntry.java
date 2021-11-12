@@ -1,6 +1,7 @@
 package cwms.radar.data.dto.catalog;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -20,6 +21,10 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
     @Schema(description="Offset from top of interval")
     private Long intervalOffset;
     private String timeZone;
+    private Timestamp earliestTime;
+    private Timestamp latestTime;
+
+
 
     public String getTsName() {
         return this.tsName;
@@ -42,15 +47,27 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         return timeZone;
     }
 
+    public Timestamp getEarliestTime()
+    {
+        return earliestTime;
+    }
+
+    public Timestamp getLatestTime()
+    {
+        return latestTime;
+    }
+
     private TimeseriesCatalogEntry(){ super(null);}
 
-    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone){
+    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, Timestamp earliestTime, Timestamp latestTime){
         super(office);
         this.tsName=name;
         this.units = units;
         this.interval = interval;
         this.intervalOffset = intervalOffset;
         this.timeZone = timeZone;
+        this.earliestTime = earliestTime;
+        this.latestTime = latestTime;
     }
 
     public String getFullName(){
@@ -76,6 +93,8 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         private String interval;
         private Long intervalOffset;
         private String timeZone = null;
+        private Timestamp earliestTime;
+        private Timestamp latestTime;
 
         public Builder officeId(final String office) {
             this.office = office;
@@ -112,8 +131,19 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
             return this;
         }
 
+        public Builder earliestTime(final Timestamp earliest) {
+            this.earliestTime = earliest;
+            return this;
+        }
+
+        public Builder latestTime(final Timestamp latest) {
+            this.latestTime = latest;
+            return this;
+        }
+
+
         public TimeseriesCatalogEntry build(){
-            return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone);
+            return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone, earliestTime, latestTime);
         }
     }
 }
