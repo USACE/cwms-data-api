@@ -188,6 +188,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
         @XmlJavaTypeAdapter(TimestampAdapter.class)
+        @XmlElement(name = "date-time")
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch)")
         Timestamp dateTime;
 
@@ -195,6 +196,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         @Schema(description = "Requested time-series data value")
         Double value;
 
+        @XmlElement(name = "quality-code")
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
 

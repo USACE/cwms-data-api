@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <timeseries>
 	<page>MTYyNDI4NzYwMDAwMHx8MHx8LTE=</page>
-	<pageSize>-1</pageSize>
+	<page-size>-1</page-size>
 	<total>0</total>
 	<begin>2021-06-21T08:00:00-07:00[PST8PDT]</begin>
 	<end>2021-06-21T09:00:00-07:00[PST8PDT]</end>
 	<interval>PT15M</interval>
-	<intervalMinutes>15</intervalMinutes>
+	<interval-minutes>15</interval-minutes>
 	<name>RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST</name>
-	<officeId>LRL</officeId>
+	<office-id>LRL</office-id>
 	<units>m</units>
-	<valueColumns>
+	<value-columns>
 		<column>
 			<name>dateTime</name>
 			<ordinal>1</ordinal>
@@ -26,27 +26,27 @@
 			<ordinal>3</ordinal>
 			<datatype>int</datatype>
 		</column>
-	</valueColumns>
+	</value-columns>
 	<values>
 		<record>
-			<dateTime>1624287600000</dateTime>
+			<date-time>1624287600000</date-time>
 			<value>0.0</value>
-			<qualityCode>0</qualityCode>
+			<quality-code>0</quality-code>
 		</record>
 		<record>
-			<dateTime>1624288500000</dateTime>
+			<date-time>1624288500000</date-time>
 			<value>1.0</value>
-			<qualityCode>0</qualityCode>
+			<quality-code>0</quality-code>
 		</record>
 		<record>
-			<dateTime>1624289400000</dateTime>
+			<date-time>1624289400000</date-time>
 			<value>2.0</value>
-			<qualityCode>0</qualityCode>
+			<quality-code>0</quality-code>
 		</record>
 		<record>
-			<dateTime>1624290300000</dateTime>
+			<date-time>1624290300000</date-time>
 			<value>3.0</value>
-			<qualityCode>0</qualityCode>
+			<quality-code>0</quality-code>
 		</record>
 	</values>
 </timeseries>
