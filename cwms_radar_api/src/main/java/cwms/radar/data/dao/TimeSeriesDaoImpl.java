@@ -57,9 +57,11 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ROUNDING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+
 
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
@@ -67,6 +69,7 @@ import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.partitionBy;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
+import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao
 {
@@ -295,10 +298,24 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
 		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
 		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
+		query.addSelect(AV_LOC.AV_LOC.TIME_ZONE_NAME);
+		query.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
+		query.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
+		query.addSelect(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY);
+		query.addSelect(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP);
 		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
 			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
 		}
-		query.addFrom(AV_CWMS_TS_ID2);
+
+
+		query.addFrom(AV_TS_EXTENTS_UTC
+				.innerJoin(AV_LOC.AV_LOC)
+					.on(AV_TS_EXTENTS_UTC.LOCATION_ID.eq(AV_LOC.AV_LOC.LOCATION_ID)
+							.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_LOC.AV_LOC.DB_OFFICE_ID)))
+				.innerJoin(AV_CWMS_TS_ID2)
+					.on(AV_TS_EXTENTS_UTC.TS_ID.eq(AV_CWMS_TS_ID2.CWMS_TS_ID)
+								.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)))
+		);
 
 		// add the regexp_like clause.
 		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
@@ -330,7 +347,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						.cwmsTsId(e.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
 						.units(e.get(AV_CWMS_TS_ID2.UNIT_ID) )
 						.interval(e.get(AV_CWMS_TS_ID2.INTERVAL_ID))
-						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
+						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET))
+						.earliestTime(e.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME))
+						.latestTime(e.get(AV_TS_EXTENTS_UTC.LATEST_TIME))
+								;
 						if( this.getDbVersion() >= Dao.CWMS_21_1_1 ) {
 							builder.timeZone(e.get(AV_CWMS_TS_ID2.TIME_ZONE_ID));
 						}

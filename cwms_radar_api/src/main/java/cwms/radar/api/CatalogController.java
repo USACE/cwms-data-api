@@ -138,13 +138,13 @@ public class CatalogController implements CrudHandler{
             String unitSystem = ctx.queryParamAsClass("unitSystem",String.class).getOrDefault(UnitSystem.SI.getValue());
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParamAsClass("office", String.class).allowNullable()
-                                            .check( ofc -> Office.validOfficeCanNull(ofc), "Invalid office provided" )
+                                            .check(Office::validOfficeCanNull, "Invalid office provided" )
                                             .get()
                                         );
 
             String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
-            String categoryLike = ctx.queryParamAsClass("categoryLike",String.class).getOrDefault(".*");
-            String groupLike = ctx.queryParamAsClass("groupLike",String.class).getOrDefault(".*");
+            String categoryLike = ctx.queryParamAsClass("categoryLike",String.class).getOrDefault(null);
+            String groupLike = ctx.queryParamAsClass("groupLike",String.class).getOrDefault(null);
 
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
