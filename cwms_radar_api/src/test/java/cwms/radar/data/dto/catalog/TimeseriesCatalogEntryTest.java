@@ -32,7 +32,7 @@ class TimeseriesCatalogEntryTest
 
 		XmlPath path = XmlPath.from(xml);
 
-		assertThat(path.getString("catalog.entries.entry.@ts-name"), equalTo("Barren-Lake.Elev.Inst.0.0.USGS-raw"));
+		assertThat(path.getString("catalog.entries.entry.@name"), equalTo("Barren-Lake.Elev.Inst.0.0.USGS-raw"));
 		assertThat(path.getString("catalog.entries.entry.units"), equalTo("m"));
 		assertThat(path.getInt("catalog.entries.entry.interval"), equalTo(0));
 		assertThat(path.getLong("catalog.entries.entry.interval-offset"), equalTo(-2147483648L));
@@ -56,7 +56,7 @@ class TimeseriesCatalogEntryTest
 
 		JsonPath path = JsonPath.from(json);
 
-		assertThat(path.getString("entries[0].ts-name"), equalTo("Barren-Lake.Elev.Inst.0.0.USGS-raw"));
+		assertThat(path.getString("entries[0].name"), equalTo("Barren-Lake.Elev.Inst.0.0.USGS-raw"));
 		assertThat(path.getString("entries[0].units"), equalTo("m"));
 		assertThat(path.getInt("entries[0].interval"), equalTo(0));
 		assertThat(path.getLong("entries[0].interval-offset"), equalTo(-2147483648L));

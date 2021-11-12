@@ -19,9 +19,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @XmlRootElement(name="entry")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TimeseriesCatalogEntry extends CatalogEntry{
-    @XmlAttribute(name="ts-name")
-    private String tsName;
-    private String longName;
+    @XmlAttribute
+    private String name;
+
     private String units;
     private String interval;
 
@@ -43,17 +43,10 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
     private ZonedDateTime latestTime;
 
 
-    public String getTsName() {
-        return this.tsName;
+    public String getName() {
+        return this.name;
     }
 
-    public String getLongName() {
-        return this.longName;
-    }
-
-    public String getFullName(){
-        return tsName;
-    }
 
     public String getInterval() {
         return interval;
@@ -82,7 +75,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
 
     private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, ZonedDateTime earliestTime, ZonedDateTime latestTime){
         super(office);
-        this.tsName=name;
+        this.name=name;
         this.units = units;
         this.interval = interval;
         this.intervalOffset = intervalOffset;
@@ -98,14 +91,13 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
     @Override
     public String toString(){
         StringBuilder builder = new StringBuilder();
-        builder.append(getOffice()).append("/").append(tsName).append(";units=").append(units);
+        builder.append(getOffice()).append("/").append(name).append(";units=").append(units);
         return builder.toString();
     }
 
     public static class Builder {
         private String office;
         private String tsName;
-        private String longName;
         private String units;
         private String interval;
         private Long intervalOffset;
