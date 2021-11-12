@@ -9,11 +9,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import cwms.radar.formatters.xml.XMLv1;
+import cwms.radar.formatters.xml.XMLv2;
 import io.javalin.plugin.json.JavalinJackson;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,13 +24,9 @@ public class TimeSeriesTest
 {
 
 	@Test
-	public void testRoundtripJson() throws JsonProcessingException
+	void testRoundtripJson() throws JsonProcessingException
 	{
-		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-
-		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
-		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO);
+		TimeSeries ts = buildTimeSeries();
 
 		ObjectMapper om = buildObjectMapper();
 
@@ -45,9 +44,20 @@ public class TimeSeriesTest
 		assertEquals(ts.getValues(), ts2.getValues());
 	}
 
+	@NotNull
+	private TimeSeries buildTimeSeries()
+	{
+		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+
+		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
+		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO);
+		return ts;
+	}
+
 
 	@Test
-	public void testFormatter()
+	void testFormatter()
 	{
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern(TimeSeries.ZONED_DATE_TIME_FORMAT);
@@ -78,4 +88,21 @@ public class TimeSeriesTest
 	}
 
 
+    @Test
+    void test_xml_value_columns()
+    {
+	    TimeSeries ts = buildTimeSeries();
+
+	    XMLv2 xmlV2 = new XMLv2();
+	    String xmlStr = xmlV2.format(ts);
+	    assertNotNull(xmlStr);
+
+	    assertFalse(xmlStr.contains("valueColumns"));
+	    assertTrue(xmlStr.contains("value-columns"));
+
+	    assertFalse(xmlStr.contains("officeId"));
+	    assertTrue(xmlStr.contains("office-id"));
+    }
 }
+
+
