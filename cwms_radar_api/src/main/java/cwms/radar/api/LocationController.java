@@ -280,9 +280,6 @@ public class LocationController implements CrudHandler {
     public void update(Context ctx, @NotNull String locationId)
     {
         updateRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
         ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
@@ -335,9 +332,6 @@ public class LocationController implements CrudHandler {
     public void delete(Context ctx, @NotNull String locationId)
     {
         deleteRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
         ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
 
         try(final Timer.Context timeContext = deleteRequestTime.time();
