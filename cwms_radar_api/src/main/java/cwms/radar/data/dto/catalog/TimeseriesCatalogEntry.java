@@ -2,28 +2,45 @@ package cwms.radar.data.dto.catalog;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement(name="entry")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TimeseriesCatalogEntry extends CatalogEntry{
-    @XmlAttribute
+    @XmlAttribute(name="ts-name")
     private String tsName;
     private String longName;
     private String units;
     private String interval;
-    @Schema(description="Offset from top of interval")
-    private Long intervalOffset;
-    private String timeZone;
-    private Timestamp earliestTime;
-    private Timestamp latestTime;
 
+    @Schema(description="Offset from top of interval")
+    @XmlElement(name="interval-offset")
+    private Long intervalOffset;
+
+    @XmlElement(name="time-zone")
+    private String timeZone;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
+    @XmlElement(name="earliest-time")
+    private ZonedDateTime earliestTime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
+    @XmlElement(name="latest-time")
+    private ZonedDateTime latestTime;
 
 
     public String getTsName() {
@@ -32,6 +49,10 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
 
     public String getLongName() {
         return this.longName;
+    }
+
+    public String getFullName(){
+        return tsName;
     }
 
     public String getInterval() {
@@ -47,19 +68,19 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         return timeZone;
     }
 
-    public Timestamp getEarliestTime()
+    public ZonedDateTime getEarliestTime()
     {
         return earliestTime;
     }
 
-    public Timestamp getLatestTime()
+    public ZonedDateTime getLatestTime()
     {
         return latestTime;
     }
 
     private TimeseriesCatalogEntry(){ super(null);}
 
-    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, Timestamp earliestTime, Timestamp latestTime){
+    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, ZonedDateTime earliestTime, ZonedDateTime latestTime){
         super(office);
         this.tsName=name;
         this.units = units;
@@ -68,10 +89,6 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         this.timeZone = timeZone;
         this.earliestTime = earliestTime;
         this.latestTime = latestTime;
-    }
-
-    public String getFullName(){
-        return tsName;
     }
 
     public String getUnits(){
@@ -93,8 +110,8 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         private String interval;
         private Long intervalOffset;
         private String timeZone = null;
-        private Timestamp earliestTime;
-        private Timestamp latestTime;
+        private ZonedDateTime earliestTime;
+        private ZonedDateTime latestTime;
 
         public Builder officeId(final String office) {
             this.office = office;
@@ -122,8 +139,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         }
 
         public Builder intervalOffset( final BigDecimal intervalOffset ) {
-            this.intervalOffset = intervalOffset.longValue();
-            return this;
+            return intervalOffset(intervalOffset.longValue());
         }
 
         public Builder timeZone(final String timeZone) {
@@ -132,15 +148,32 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         }
 
         public Builder earliestTime(final Timestamp earliest) {
+            ZonedDateTime zdt = null;
+            if(earliest != null)
+            {
+                zdt = ZonedDateTime.ofInstant(earliest.toInstant(), ZoneId.of("UTC"));
+            }
+            return earliestTime(zdt);
+        }
+
+        public Builder earliestTime(final ZonedDateTime earliest) {
             this.earliestTime = earliest;
             return this;
         }
 
         public Builder latestTime(final Timestamp latest) {
+            ZonedDateTime zdt = null;
+            if(latest != null)
+            {
+                zdt = ZonedDateTime.ofInstant(latest.toInstant(), ZoneId.of("UTC"));
+            }
+            return latestTime(zdt);
+        }
+
+        public Builder latestTime(final ZonedDateTime latest) {
             this.latestTime = latest;
             return this;
         }
-
 
         public TimeseriesCatalogEntry build(){
             return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone, earliestTime, latestTime);
