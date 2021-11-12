@@ -29,12 +29,17 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
 
     @Schema(description = "The cursor to the current page of data")
     protected String page;
+
     @Schema(description = "The cursor to the next page of data; null if there is no more data")
+    @XmlElement(name = "next-page")
     protected String nextPage;
+
     @JsonInclude(value = Include.NON_NULL)
     @Schema(description = "The total number of records retrieved; null or not present if not supported or unknown")
     protected Integer total;
+
     @Schema(description = "The number of records fetched per-page; this may be larger than the number of records actually retrieved")
+    @XmlElement(name = "page-size")
     protected int pageSize;
 
     static final Encoder encoder = Base64.getEncoder();
@@ -104,8 +109,7 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
     public static String[] decodeCursor(String cursor, String delimiter) {
         if(cursor != null && !cursor.isEmpty()) {
             String _cursor = new String(decoder.decode(cursor));
-            String parts[] = _cursor.split(Pattern.quote(delimiter));
-            return parts;
+            return _cursor.split(Pattern.quote(delimiter));
         }
 
         // Return empty array
@@ -127,7 +131,7 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
     public static String encodeCursor(String delimiter, Object ... parts)
     {
         return (parts.length == 0 || parts[0] == null || parts[0].equals("*")) ? null :
-            encoder.encodeToString(Arrays.stream(parts).map(o -> String.valueOf(o)).collect(Collectors.joining(delimiter)).getBytes());
+            encoder.encodeToString(Arrays.stream(parts).map(String::valueOf).collect(Collectors.joining(delimiter)).getBytes());
     }
 
     public static class CursorCheck implements Function1<String,Boolean> {

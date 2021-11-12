@@ -2,17 +2,15 @@ package cwms.radar.data.dao;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.ResultSet;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
-import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.Catalog;
+import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationAlias;
@@ -21,11 +19,11 @@ import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectJoinStep;
 import org.jooq.SelectQuery;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
@@ -278,19 +276,28 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     }
 
     @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office) {
+    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office)
+    {
+        return getLocationCatalog(cursor, pageSize, unitSystem, office, null, null, null);
+    }
+
+    @Override
+    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office, String idLike, String categoryLike, String groupLike) {
         int total = 0;
         String locCursor = "*";
         if( cursor == null || cursor.isEmpty() ){
-            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk())).from(AV_LOC);
-            if( office.isPresent() ){
-                count.where(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
-            }
+            Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike);
+
+            SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
+                    .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
+                    .where(condition);
+
+            logger.info( () ->  count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1().intValue();
         } else {
             logger.info("getting non-default page");
             // get totally from page
-            String[] parts = Catalog.decodeCursor(cursor, "|||");
+            String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "|||");
 
             logger.info("decoded cursor: " + String.join("|||", parts));
             for( String p: parts){
@@ -303,14 +310,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             }
         }
 
+        Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike)
+                .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
+
         SelectConditionStep<Record1<String>> tmp = dsl.select(AV_LOC.LOCATION_ID)
-                               .from(AV_LOC)
-                               .where(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor))
-                               .and(AV_LOC.UNIT_SYSTEM.eq(unitSystem));
-        if( office.isPresent()){
-            tmp = tmp.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
-        }
+                               .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
+                                .where(condition);
+
         Table<?> forLimit = tmp.orderBy(AV_LOC.LOCATION_ID).limit(pageSize).asTable();
+
+
         SelectConditionStep<Record> query = dsl.select(
                                     AV_LOC.asterisk(),
                                     AV_LOC_GRP_ASSGN.asterisk()
@@ -318,17 +327,13 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                                 .from(AV_LOC)
                                 .innerJoin(forLimit).on(forLimit.field(AV_LOC.LOCATION_ID).eq(AV_LOC.LOCATION_ID))
                                 .leftJoin(AV_LOC_GRP_ASSGN).on(AV_LOC_GRP_ASSGN.LOCATION_ID.eq(AV_LOC.LOCATION_ID))
-                                .where(AV_LOC.UNIT_SYSTEM.eq(unitSystem))
-                                .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
-
-        if( office.isPresent() ){
-            query.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
-        }
+                                .where(condition)
+                                ;
 
         query.orderBy(AV_LOC.LOCATION_ID);
         logger.info( () -> query.getSQL(ParamType.INLINED));
         HashMap<usace.cwms.db.jooq.codegen.tables.records.AV_LOC, ArrayList<usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS>> theMap = new HashMap<>();
-        //Result<?> result = query.fetch();
+
         query.fetch().forEach( row -> {
             usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc = row.into(AV_LOC);
             if( !theMap.containsKey(loc)){
@@ -348,8 +353,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                     .compareTo(right.getKey().getBASE_LOCATION_ID())
             ))
 
-            .map( e -> {
-            LocationCatalogEntry ce = new LocationCatalogEntry(
+            .map( e -> new LocationCatalogEntry(
                 e.getKey().getDB_OFFICE_ID(),
                 e.getKey().getLOCATION_ID(),
                 e.getKey().getNEAREST_CITY(),
@@ -372,18 +376,45 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                 e.getKey().getCOUNTY_NAME(),
                 e.getKey().getBOUNDING_OFFICE_ID(),
                 e.getKey().getMAP_LABEL(),
-                e.getKey().getACTIVE_FLAG().equalsIgnoreCase("T") ? true : false,
-                e.getValue().stream().map( a -> {
-                    return new LocationAlias(a.getCATEGORY_ID()+"-"+a.getGROUP_ID(),a.getALIAS_ID());
-                }).collect(Collectors.toList())
-            );
+                e.getKey().getACTIVE_FLAG().equalsIgnoreCase("T"),
+                e.getValue().stream().map(a ->
+                        new LocationAlias(a.getCATEGORY_ID() + "-" + a.getGROUP_ID(), a.getALIAS_ID())
+                ).collect(Collectors.toList())
+            )
+        ).collect(Collectors.toList());
 
-            return ce;
-        }).collect(Collectors.toList());
-
-        Catalog cat = new Catalog(locCursor,total,pageSize,entries);
+        Catalog cat = new Catalog(locCursor, total, pageSize, entries);
         return cat;
     }
 
+    private Condition buildCatalogWhere(String unitSystem, Optional<String> office, String idLike)
+    {
+        Condition condition = AV_LOC.UNIT_SYSTEM.eq(unitSystem);
+
+        if(idLike != null){
+            condition = condition.and(AV_LOC.LOCATION_ID.likeRegex(idLike));
+        }
+
+        if( office.isPresent() ){
+            condition = condition.and(AV_LOC.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
+        }
+        return condition;
+    }
+
+    private Condition buildCatalogWhere(String unitSystem, Optional<String> office,
+                                        String idLike, String categoryLike, String groupLike)
+    {
+        Condition condition = buildCatalogWhere(unitSystem, office, idLike);
+
+        if(categoryLike != null){
+            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.likeRegex(categoryLike));
+        }
+
+        if(groupLike != null){
+            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.likeRegex(groupLike));
+        }
+
+        return condition;
+    }
 
 }
