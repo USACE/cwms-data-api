@@ -87,7 +87,22 @@ public class CatalogController implements CrudHandler{
             @OpenApiParam(name="office",
                           required = false,
                           description = "3-4 letter office name representing the district you want to isolate data to."
-            )
+            ),
+            @OpenApiParam(name="like",
+                    required = false,
+                    type = String.class,
+                    description = "Posix regular expression matching against the id"
+            ),
+                @OpenApiParam(name="categoryLike",
+                        required = false,
+                        type = String.class,
+                        description = "Posix regular expression matching against the category id"
+                ),
+                @OpenApiParam(name="groupLike",
+                        required = false,
+                        type = String.class,
+                        description = "Posix regular expression matching against the group id"
+                )
         },
         pathParams = {
             @OpenApiParam(name="dataSet",
@@ -123,18 +138,23 @@ public class CatalogController implements CrudHandler{
             String unitSystem = ctx.queryParamAsClass("unitSystem",String.class).getOrDefault(UnitSystem.SI.getValue());
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParamAsClass("office", String.class).allowNullable()
-                                            .check( ofc -> Office.validOfficeCanNull(ofc), "Invalid office provided" )
+                                            .check(Office::validOfficeCanNull, "Invalid office provided" )
                                             .get()
                                         );
+
+            String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
+            String categoryLike = ctx.queryParamAsClass("categoryLike",String.class).getOrDefault(null);
+            String groupLike = ctx.queryParamAsClass("groupLike",String.class).getOrDefault(null);
+
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if( "timeseries".equalsIgnoreCase(valDataSet)){
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
-                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office );
+                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, categoryLike, groupLike);
             } else if ("locations".equalsIgnoreCase(valDataSet)){
                 LocationsDao dao = new LocationsDaoImpl(dsl);
-                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office );
+                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like, categoryLike, groupLike );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);
