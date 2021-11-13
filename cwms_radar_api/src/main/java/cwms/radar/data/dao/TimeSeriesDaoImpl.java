@@ -105,7 +105,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		ZonedDateTime beginTime = getZonedDateTime(begin, zone, ZonedDateTime.now().minusDays(1));
 		ZonedDateTime endTime = getZonedDateTime(end, beginTime.getZone(), ZonedDateTime.now());
 
-		return getTimeSeries(page, pageSize, names, office, units, beginTime, endTime);
+		return getTimeseries(page, pageSize, names, office, units, beginTime, endTime);
 	}
 
 	public ZonedDateTime getZonedDateTime(String begin, ZoneId fallbackZone, ZonedDateTime beginFallback)
