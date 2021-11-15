@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cwms.radar.api.NotFoundException;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.RecentValue;
@@ -104,14 +105,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		ZonedDateTime beginTime = getZonedDateTime(begin, zone, ZonedDateTime.now().minusDays(1));
 		ZonedDateTime endTime = getZonedDateTime(end, beginTime.getZone(), ZonedDateTime.now());
 
-		if(timezone == null) {
-			if(beginTime.getZone().equals(beginTime.getOffset()))
-			{
-				// Need to revisit if this exception is needed.  If it is, we should write a test that shows it.
-				throw new IllegalArgumentException("Time cannot contain only an offset without the timezone.");
-			}
-		}
-
 		return getTimeseries(page, pageSize, names, office, units, beginTime, endTime);
 	}
 
@@ -140,6 +133,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 	protected TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units,
 									 ZonedDateTime beginTime, ZonedDateTime endTime)
 	{
+		TimeSeries retval = null;
 		String cursor = null;
 		Timestamp tsCursor = null;
 		Integer total = null;
@@ -169,58 +163,43 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		final String recordCursor = cursor;
 		final int recordPageSize = pageSize;
 
-		Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
-		Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
-		Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(tsId, officeId);
-		Field<String> unit = units.compareToIgnoreCase("SI") == 0 || units.compareToIgnoreCase("EN") == 0 ?
-				CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(
-						units, String.class)) :
-				DSL.val(units, String.class);
+		try
+		{
 
-		// This code assumes the database timezone is in UTC (per Oracle recommendation)
-		// Wrap in table() so JOOQ can parse the result
-		@SuppressWarnings("deprecated") SQL retrieveTable = DSL.sql("table(" + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
-				tsId,
-				unit,
-				CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
-				CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
-				DSL.inline("UTC", String.class),    // All times are sent as UTC to the database, regardless of requested timezone.
-				null,
-				null,
-				null,
-				null,
-				null,
-				null,
-				null,
-				officeId) + ")"
-		);
+			Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
+			Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
+			Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(tsId, officeId);
+			Field<String> unit = units.compareToIgnoreCase("SI") == 0 || units.compareToIgnoreCase(
+					"EN") == 0 ? CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(units, String.class)) : DSL.val(units,
+					String.class);
 
-		SelectSelectStep<Record5<String,String,String,BigDecimal,Integer>> metadataQuery = dsl.select(
-				tsId.as("NAME"),
-				officeId.as("OFFICE_ID"),
-				unit.as("UNITS"),
-				CWMS_TS_PACKAGE.call_GET_INTERVAL(tsId).as("INTERVAL"),
-				// If we don't know the total, fetch it from the database (only for first fetch).
-				// Total is only an estimate, as it can change if fetching current data, or the timeseries otherwise changes between queries.
-				total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL")
-		);
+			// This code assumes the database timezone is in UTC (per Oracle recommendation)
+			// Wrap in table() so JOOQ can parse the result
+			@SuppressWarnings("deprecated") SQL retrieveTable = DSL.sql(
+					"table(" + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(tsId, unit, CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
+							CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
+							DSL.inline("UTC", String.class),
+							// All times are sent as UTC to the database, regardless of requested timezone.
+							null, null, null, null, null, null, null, officeId) + ")");
 
-		logger.finest( () -> metadataQuery.getSQL(ParamType.INLINED));
+			SelectSelectStep<Record5<String, String, String, BigDecimal, Integer>> metadataQuery = dsl.select(tsId.as("NAME"),
+					officeId.as("OFFICE_ID"), unit.as("UNITS"), CWMS_TS_PACKAGE.call_GET_INTERVAL(tsId).as("INTERVAL"),
+					// If we don't know the total, fetch it from the database (only for first fetch).
+					// Total is only an estimate, as it can change if fetching current data, or the timeseries otherwise changes between queries.
+					total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL"));
 
-		TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata ->
-				new TimeSeries(recordCursor,
-						recordPageSize,
-						tsMetadata.getValue("TOTAL", Integer.class),
-						tsMetadata.getValue("NAME", String.class),
-						tsMetadata.getValue("OFFICE_ID", String.class), beginTime, endTime,
-						tsMetadata.getValue("UNITS", String.class),
-						Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class)))
-		);
+			logger.finest(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-		if(pageSize != 0) {
-			SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
-					DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME"),
-					CWMS_ROUNDING_PACKAGE.call_ROUND_DD_F(DSL.field("VALUE", Double.class), DSL.inline("5567899996"), DSL.inline('T')).as("VALUE"),
+			TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> new TimeSeries(recordCursor, recordPageSize,
+					tsMetadata.getValue("TOTAL", Integer.class), tsMetadata.getValue("NAME", String.class),
+					tsMetadata.getValue("OFFICE_ID", String.class), beginTime, endTime,
+					tsMetadata.getValue("UNITS", String.class),
+					Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class))));
+
+			if(pageSize != 0)
+			{
+				SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME"),
+						CWMS_ROUNDING_PACKAGE.call_ROUND_DD_F(DSL.field("VALUE", Double.class), DSL.inline("5567899996"), DSL.inline('T')).as("VALUE"),
 					CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(DSL.field("QUALITY_CODE", Integer.class), DSL.inline(5))).as("QUALITY_CODE")
 			)
 					.from(retrieveTable)
@@ -232,19 +211,46 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 							.lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
 					);
 
-			if(pageSize > 0)
-				query.limit(DSL.val(pageSize + 1));
+				if(pageSize > 0)
+					query.limit(DSL.val(pageSize + 1));
 
-			logger.finest( () -> query.getSQL(ParamType.INLINED));
+				logger.finest(() -> query.getSQL(ParamType.INLINED));
 
-			query.fetchInto(tsRecord -> timeseries.addValue(
-					tsRecord.getValue("DATE_TIME", Timestamp.class),
-					tsRecord.getValue("VALUE", Double.class),
-					tsRecord.getValue("QUALITY_CODE", Integer.class)
-			)
-			);
+				query.fetchInto(tsRecord -> timeseries.addValue(
+								tsRecord.getValue("DATE_TIME", Timestamp.class),
+								tsRecord.getValue("VALUE", Double.class),
+								tsRecord.getValue("QUALITY_CODE", Integer.class)
+						)
+				);
+				retval = timeseries;
+			}
+		} catch(org.jooq.exception.DataAccessException e){
+			if(isNotFound(e.getCause())){
+				throw new NotFoundException(e.getCause());
+			}
+			throw e;
 		}
-		return timeseries;
+		return retval;
+	}
+
+
+	private boolean isNotFound(Throwable cause)
+	{
+		boolean retval = false;
+		if(cause instanceof SQLException){
+			SQLException sqlException = (SQLException) cause;
+
+			// When we type in a garbage tsId the cause is a SQLException.  Its cause is an OracleDatabaseException.
+			// Note: The message I saw looked like this:
+			//ORA-20001: TS_ID_NOT_FOUND: The timeseries identifier "%1" was not found for office "%2"
+			//ORA-06512: at "CWMS_20.CWMS_ERR", line 59
+			//ORA-06512: at "CWMS_20.CWMS_TS", line 48
+			//ORA-01403: no data found
+			//ORA-06512: at "CWMS_20.CWMS_TS", line 41
+			//ORA-06512: at "CWMS_20.CWMS_TS", line 26
+			retval = (20001 == sqlException.getErrorCode());
+		}
+		return retval;
 	}
 
 	@Override
@@ -447,8 +453,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;
 			AV_CWMS_TS_ID2 tsView = AV_CWMS_TS_ID2;
 			SelectConditionStep<Record> innerSelect
-					= dsl.select(tsvView.asterisk(),
-					max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as("max_date_time"), tsView.CWMS_TS_ID)
+					= dsl.select(
+							tsvView.asterisk(),
+							max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as("max_date_time"),
+							tsView.CWMS_TS_ID)
 					.from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
 					.where(
 							tsView.CWMS_TS_ID.in(tsIds)
