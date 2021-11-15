@@ -1,0 +1,37 @@
+{
+    "fields": [
+        {"name": "location", "type": "object"}
+
+    ],
+    "records": [
+        [
+            [{
+                "base_location_id": "Alder Springs",
+                "sub_location_id": null,
+                "office_id": "SPK"
+            },
+            "CA",
+            "Glenn",
+            "PST8PDT",
+            null,
+            0,
+            0,
+            "WSG84",
+            30.48,
+            "m",
+            "NAVD88",
+            "Alder Springs",
+            "Alder Springs",
+            "Climate Gage",
+            "T",
+            "SITE",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "UNITED STATES",
+            "Persque Isle"]
+        ]
+    ]
+}
