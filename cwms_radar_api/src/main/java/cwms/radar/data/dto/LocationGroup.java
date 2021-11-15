@@ -107,4 +107,62 @@ public class LocationGroup implements CwmsDTO
 		return assignedLocations;
 	}
 
+	@Override
+	public boolean equals(Object o)
+	{
+		if(this == o)
+		{
+			return true;
+		}
+		if(o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+
+		final LocationGroup that = (LocationGroup) o;
+
+		if(getId() != null ? !getId().equals(that.getId()) : that.getId() != null)
+		{
+			return false;
+		}
+		if(getLocationCategory() != null ? !getLocationCategory().equals(
+				that.getLocationCategory()) : that.getLocationCategory() != null)
+		{
+			return false;
+		}
+		if(getOfficeId() != null ? !getOfficeId().equals(that.getOfficeId()) : that.getOfficeId() != null)
+		{
+			return false;
+		}
+		if(getSharedLocAliasId() != null ? !getSharedLocAliasId().equals(
+				that.getSharedLocAliasId()) : that.getSharedLocAliasId() != null)
+		{
+			return false;
+		}
+		if(getSharedRefLocationId() != null ? !getSharedRefLocationId().equals(
+				that.getSharedRefLocationId()) : that.getSharedRefLocationId() != null)
+		{
+			return false;
+		}
+		if(getLocGroupAttribute() != null ? !getLocGroupAttribute().equals(
+				that.getLocGroupAttribute()) : that.getLocGroupAttribute() != null)
+		{
+			return false;
+		}
+		return getAssignedLocations() != null ? getAssignedLocations().equals(
+				that.getAssignedLocations()) : that.getAssignedLocations() == null;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = getId() != null ? getId().hashCode() : 0;
+		result = 31 * result + (getLocationCategory() != null ? getLocationCategory().hashCode() : 0);
+		result = 31 * result + (getOfficeId() != null ? getOfficeId().hashCode() : 0);
+		result = 31 * result + (getSharedLocAliasId() != null ? getSharedLocAliasId().hashCode() : 0);
+		result = 31 * result + (getSharedRefLocationId() != null ? getSharedRefLocationId().hashCode() : 0);
+		result = 31 * result + (getLocGroupAttribute() != null ? getLocGroupAttribute().hashCode() : 0);
+		result = 31 * result + (getAssignedLocations() != null ? getAssignedLocations().hashCode() : 0);
+		return result;
+	}
 }

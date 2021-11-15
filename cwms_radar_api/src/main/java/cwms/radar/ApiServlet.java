@@ -68,6 +68,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
                             "/swagger-docs",
                             "/timeseries/*",
                             "/offices/*",
+                            "/location/*",
                             "/locations/*",
                             "/parameters/*",
                             "/timezones/*",
@@ -165,9 +166,9 @@ public class ApiServlet extends HttpServlet {
     protected void configureRoutes()
     {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
-        crud("/locations/{location_code}", new LocationController(metrics));
         crud("/location/category/{category-id}", new LocationCategoryController(metrics));
         crud("/location/group/{group-id}", new LocationGroupController(metrics));
+        crud("/locations/{location_code}", new LocationController(metrics));
         crud("/offices/{office}", new OfficeController(metrics));
         crud("/units/{unit_name}", new UnitsController(metrics));
         crud("/parameters/{param_name}", new ParametersController(metrics));
