@@ -240,11 +240,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		if(cause instanceof SQLException){
 			SQLException sqlException = (SQLException) cause;
 
-			// There may be better ways to figure out if the exception was b/c Not found.
-
 			// When we type in a garbage tsId the cause is a SQLException.  Its cause is an OracleDatabaseException.
-			String message = sqlException.getMessage();
-
 			// Note: The message I saw looked like this:
 			//ORA-20001: TS_ID_NOT_FOUND: The timeseries identifier "%1" was not found for office "%2"
 			//ORA-06512: at "CWMS_20.CWMS_ERR", line 59
@@ -252,9 +248,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			//ORA-01403: no data found
 			//ORA-06512: at "CWMS_20.CWMS_TS", line 41
 			//ORA-06512: at "CWMS_20.CWMS_TS", line 26
-			if(message.contains("ORA-01403: no data found")){
-				retval = true;
-			}
+			retval = (20001 == sqlException.getErrorCode());
 		}
 		return retval;
 	}
