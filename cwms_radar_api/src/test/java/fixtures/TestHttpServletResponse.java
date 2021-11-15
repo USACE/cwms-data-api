@@ -19,6 +19,9 @@ public class TestHttpServletResponse implements HttpServletResponse {
      * We will default to OK in all handlers as that is the behavior we see from javalin.
      */
     private int status = HttpCode.OK.getStatus();
+    private String contentType="<not set by application>";
+
+    private ServletOutputStream output = new TestServletOutputStream();
 
     @Override
     public void flushBuffer() throws IOException {
@@ -40,8 +43,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
 
     @Override
     public String getContentType() {
-        // TODO Auto-generated method stub
-        return null;
+        return contentType;
     }
 
     @Override
@@ -52,14 +54,12 @@ public class TestHttpServletResponse implements HttpServletResponse {
 
     @Override
     public ServletOutputStream getOutputStream() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        return output;
     }
 
     @Override
     public PrintWriter getWriter() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        return new PrintWriter(output);
     }
 
     @Override
@@ -236,8 +236,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
 
     @Override
     public void setStatus(int arg0, String arg1) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Don't use this form");
     }
 
 }

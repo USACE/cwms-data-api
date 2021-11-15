@@ -292,7 +292,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				total = Integer.parseInt(parts[1]);
 			}
 		}
-		SelectQuery query = dsl.selectQuery();
+		SelectQuery<?> query = dsl.selectQuery();
 		query.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
 		query.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
 		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
@@ -301,12 +301,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		query.addSelect(AV_LOC.AV_LOC.TIME_ZONE_NAME);
 		query.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
 		query.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
-		query.addSelect(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY);
-		query.addSelect(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP);
 		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
 			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
 		}
-
 
 		query.addFrom(AV_TS_EXTENTS_UTC
 				.innerJoin(AV_LOC.AV_LOC)
@@ -317,6 +314,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 								.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)))
 		);
 
+		query.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 		// add the regexp_like clause.
 		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
 
