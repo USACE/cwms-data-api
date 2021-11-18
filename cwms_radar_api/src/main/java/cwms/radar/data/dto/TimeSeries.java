@@ -71,10 +71,16 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(implementation = Record.class, description = "List of retrieved time-series values")
     List<Record> values;
 
+    VerticalDatumInfo verticalDatumInfo;
+
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     private TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
+        this(page, pageSize, total, name, officeId, begin, end, units, interval, null);
+    }
+
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
@@ -82,6 +88,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         this.end = end;
         this.interval = interval;
         this.units = units;
+        this.verticalDatumInfo = info;
         values = new ArrayList<>();
     }
 
@@ -118,6 +125,12 @@ public class TimeSeries extends CwmsDTOPaginated {
     public List<Record> getValues() {
         return values;
     }
+
+    public VerticalDatumInfo getVerticalDatumInfo()
+    {
+        return verticalDatumInfo;
+    }
+
 
     @XmlElementWrapper(name="value-columns")
     @XmlElement(name="column")
