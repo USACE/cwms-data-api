@@ -92,12 +92,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
 								String end, String timezone) {
 		return CWMS_TS_PACKAGE.call_RETRIEVE_TIME_SERIES_F(dsl.configuration(),
-				names, format, units,datum, begin, end, timezone, office);
+				names, format, units, datum, begin, end, timezone, office);
 	}
 
 
 	public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
-
+		// Looks like the datum field is currently being ignored by this method.
+		// Should we warn if the datum is not null?
 		ZoneId zone;
 		if(timezone == null)
 		{
@@ -111,7 +112,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		ZonedDateTime beginTime = getZonedDateTime(begin, zone, ZonedDateTime.now().minusDays(1));
 		ZonedDateTime endTime = getZonedDateTime(end, beginTime.getZone(), ZonedDateTime.now());
 
-		return getTimeseries(page, pageSize, names, office, units, datum, beginTime, endTime);
+		return getTimeseries(page, pageSize, names, office, units, beginTime, endTime);
 	}
 
 	public ZonedDateTime getZonedDateTime(String begin, ZoneId fallbackZone, ZonedDateTime beginFallback)
@@ -136,7 +137,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		return LocalDateTime.from(beginParsed).atZone(fallbackZone);
 	}
 
-	protected TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum,
+	protected TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units,
 									 ZonedDateTime beginTime, ZonedDateTime endTime)
 	{
 		TimeSeries retval = null;
