@@ -1,5 +1,6 @@
 package cwms.radar.data.dao;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -21,8 +22,12 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import cwms.radar.api.NotFoundException;
 import cwms.radar.data.dto.Catalog;
@@ -33,6 +38,7 @@ import cwms.radar.data.dto.Tsv;
 import cwms.radar.data.dto.TsvDqu;
 import cwms.radar.data.dto.TsvDquId;
 import cwms.radar.data.dto.TsvId;
+import cwms.radar.data.dto.VerticalDatumInfo;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +48,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
-import org.jooq.Record5;
+import org.jooq.Record8;
 import org.jooq.Result;
 import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
@@ -54,6 +60,7 @@ import org.jooq.impl.DSL;
 
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ROUNDING_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
@@ -62,7 +69,6 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
-
 
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
@@ -86,12 +92,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
 								String end, String timezone) {
 		return CWMS_TS_PACKAGE.call_RETRIEVE_TIME_SERIES_F(dsl.configuration(),
-				names, format, units,datum, begin, end, timezone, office);
+				names, format, units, datum, begin, end, timezone, office);
 	}
 
 
 	public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
-
+		// Looks like the datum field is currently being ignored by this method.
+		// Should we warn if the datum is not null?
 		ZoneId zone;
 		if(timezone == null)
 		{
@@ -165,7 +172,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 		try
 		{
-
 			Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
 			Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
 			Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(tsId, officeId);
@@ -182,23 +188,45 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 							// All times are sent as UTC to the database, regardless of requested timezone.
 							null, null, null, null, null, null, null, officeId) + ")");
 
-			SelectSelectStep<Record5<String, String, String, BigDecimal, Integer>> metadataQuery = dsl.select(tsId.as("NAME"),
-					officeId.as("OFFICE_ID"), unit.as("UNITS"), CWMS_TS_PACKAGE.call_GET_INTERVAL(tsId).as("INTERVAL"),
+			Field<String> loc = CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(tsId,
+					DSL.val(BigInteger.valueOf(1L)), DSL.val("."),
+					DSL.val(BigInteger.valueOf(6L)));
+			Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(tsId,
+					DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
+					DSL.val(BigInteger.valueOf(6L))));
+			SelectSelectStep<Record8<String, String, String, BigDecimal, String, String, String, Integer>> metadataQuery = dsl.select(
+					tsId.as("NAME"),
+					officeId.as("OFFICE_ID"),
+					unit.as("UNITS"),
+					CWMS_TS_PACKAGE.call_GET_INTERVAL(tsId).as("INTERVAL"),
+					loc.as("LOC_PART"),
+					param.as("PARM_PART"),
+					DSL.choose(param)
+							.when("ELEV", CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(loc, unit, officeId))
+							.otherwise("")
+							.as("VERTICAL_DATUM"),
 					// If we don't know the total, fetch it from the database (only for first fetch).
 					// Total is only an estimate, as it can change if fetching current data, or the timeseries otherwise changes between queries.
 					total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL"));
 
 			logger.finest(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-			TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> new TimeSeries(recordCursor, recordPageSize,
-					tsMetadata.getValue("TOTAL", Integer.class), tsMetadata.getValue("NAME", String.class),
-					tsMetadata.getValue("OFFICE_ID", String.class), beginTime, endTime,
-					tsMetadata.getValue("UNITS", String.class),
-					Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class))));
+			TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
+				String vert = (String)tsMetadata.getValue("VERTICAL_DATUM");
+				VerticalDatumInfo verticalDatumInfo= parseVerticalDatumInfo(vert);
+
+				return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL", Integer.class),
+						tsMetadata.getValue("NAME", String.class), tsMetadata.getValue("OFFICE_ID", String.class),
+						beginTime, endTime, tsMetadata.getValue("UNITS", String.class),
+						Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class)),
+						verticalDatumInfo
+				);
+			});
 
 			if(pageSize != 0)
 			{
-				SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME"),
+				SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
+						DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME"),
 						CWMS_ROUNDING_PACKAGE.call_ROUND_DD_F(DSL.field("VALUE", Double.class), DSL.inline("5567899996"), DSL.inline('T')).as("VALUE"),
 					CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(DSL.field("QUALITY_CODE", Integer.class), DSL.inline(5))).as("QUALITY_CODE")
 			)
@@ -222,6 +250,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 								tsRecord.getValue("QUALITY_CODE", Integer.class)
 						)
 				);
+
 				retval = timeseries;
 			}
 		} catch(org.jooq.exception.DataAccessException e){
@@ -229,6 +258,35 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				throw new NotFoundException(e.getCause());
 			}
 			throw e;
+		}
+		return retval;
+	}
+
+	// datumInfo comes back like:
+	//						<vertical-datum-info office="LRL" unit="m">
+	//						  <location>Buckhorn</location>
+	//						  <native-datum>NGVD-29</native-datum>
+	//						  <elevation>230.7</elevation>
+	//						  <offset estimate="true">
+	//						    <to-datum>NAVD-88</to-datum>
+	//						    <value>-.1666</value>
+	//						  </offset>
+	//						</vertical-datum-info>
+	public static VerticalDatumInfo parseVerticalDatumInfo(String body)
+	{
+		VerticalDatumInfo retval = null;
+		if(body != null && !body.isEmpty())
+		{
+			try
+			{
+				JAXBContext jaxbContext = JAXBContext.newInstance(VerticalDatumInfo.class);
+				Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+				retval = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
+			}
+			catch(JAXBException e)
+			{
+				logger.log(Level.WARNING, "Failed to parse:" + body, e);
+			}
 		}
 		return retval;
 	}
@@ -248,7 +306,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			//ORA-01403: no data found
 			//ORA-06512: at "CWMS_20.CWMS_TS", line 41
 			//ORA-06512: at "CWMS_20.CWMS_TS", line 26
-			retval = (20001 == sqlException.getErrorCode());
+			int errorCode = sqlException.getErrorCode();
+
+			// 20001 happens when the ts id doesn't exist
+			// 20025 happens when the location doesn't exist
+			retval = (20001 == errorCode || 20025 == errorCode);
 		}
 		return retval;
 	}
