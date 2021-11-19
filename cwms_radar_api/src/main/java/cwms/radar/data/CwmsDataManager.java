@@ -58,7 +58,7 @@ public class CwmsDataManager implements AutoCloseable {
 	public String getLocationLevels(String format, String names, String office, String unit, String datum, String begin,
 			String end, String timezone) {
         return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVELS_F(dsl.configuration(),
-                names, format, office,unit,datum, begin, end, timezone);
+                names, format, unit, datum, begin, end, timezone, office);
     }
 
 
