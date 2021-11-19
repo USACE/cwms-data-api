@@ -51,11 +51,24 @@ public class TimeSeriesGroup implements CwmsDTO
 		return timeSeriesCategory;
 	}
 
-
-
 	public String getDescription()
 	{
 		return description;
+	}
+
+	public String getOfficeId()
+	{
+		return officeId;
+	}
+
+	public String getSharedAliasId()
+	{
+		return sharedAliasId;
+	}
+
+	public String getSharedRefTsId()
+	{
+		return sharedRefTsId;
 	}
 
 
