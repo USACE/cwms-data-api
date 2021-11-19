@@ -2,23 +2,17 @@ package cwms.radar.api;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import static com.codahale.metrics.MetricRegistry.*;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
-
 import com.codahale.metrics.Timer;
-
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,8 +23,8 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.data.CwmsDataManager;
-import cwms.radar.data.dao.*;
+import cwms.radar.data.dao.LocationLevelsDao;
+import cwms.radar.data.dao.LocationLevelsDaoImpl;
 import cwms.radar.data.dto.LocationLevel;
 import cwms.radar.data.dto.SeasonalValueBean;
 import cwms.radar.formatters.ContentType;
@@ -39,9 +33,17 @@ import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.*;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
@@ -191,8 +193,10 @@ public class LevelsController implements CrudHandler {
         getAllRequests.mark();
         try (
             final Timer.Context time_context = getAllRequestsTime.time();
-            CwmsDataManager cdm = new CwmsDataManager(ctx);
+            DSLContext dsl = getDslContext(ctx);
         ) {
+            LocationLevelsDao levelsDao = getLevelsDao(dsl);
+
             String format = ctx.queryParamAsClass("format",String.class).getOrDefault("json");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
@@ -216,14 +220,10 @@ public class LevelsController implements CrudHandler {
                 }
             }
 
-            String results = cdm.getLocationLevels(format,names,office,unit,datum,begin,end,timezone);
+            String results = levelsDao.getLocationLevels(format,names,office,unit,datum,begin,end,timezone);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
             requestResultSize.update(results.length());
-        } catch (SQLException ex) {
-            RadarError re = new RadarError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
