@@ -10,7 +10,6 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.BeanDescription;
@@ -48,32 +47,19 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
-    private final Meter createRequest;
-    private final Timer createRequestTime;
-    private final Meter deleteRequest;
-    private final Timer deleteRequestTime;
-    private final Meter updateRequest;
-    private final Timer updateRequestTime;
+
 
     public LevelsController(MetricRegistry metrics){
         this.metrics=metrics;
-        String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
-        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
-        getOneRequest = this.metrics.meter(name(className,"getOne","count"));
-        getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
-        createRequest = this.metrics.meter(name(className,"create","count"));
-        createRequestTime = this.metrics.timer(name(className,"create","time"));
-        deleteRequest = this.metrics.meter(name(className,"delete","count"));
-        deleteRequestTime = this.metrics.timer(name(className,"delete","time"));
-        updateRequest = this.metrics.meter(name(className,"update","count"));
-        updateRequestTime = this.metrics.timer(name(className,"update","time"));
-        requestResultSize = this.metrics.histogram((name(className,"results","size")));
+
+        requestResultSize = this.metrics.histogram((name(this.getClass().getName(),"results","size")));
+    }
+
+    private Timer.Context markAndTime(String subject)
+    {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(
@@ -94,8 +80,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx)
     {
-        createRequest.mark();
-        try(final Timer.Context timeContext = createRequestTime.time();
+
+        try(final Timer.Context timeContext = markAndTime("create");
             DSLContext dsl = getDslContext(ctx))
         {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
@@ -150,8 +136,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, String id)
     {
-        deleteRequest.mark();
-        try(final Timer.Context timeContext = deleteRequestTime.time();
+
+        try(final Timer.Context timeContext = markAndTime("delete");
             DSLContext dsl = getDslContext(ctx))
         {
             String office = ctx.queryParam("office");
@@ -173,14 +159,14 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="name", required=false, description="Specifies the name(s) of the location level(s) whose data is to be included in the response. Uses * for all."),
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
-            @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
-            @OpenApiParam(name="datum", required=false, description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
-            @OpenApiParam(name="begin", required=false, description="Specifies the start of the time window for data to be included in the response. If this field is not specified, any required time window begins 24 hours prior to the specified or default end time."),
-            @OpenApiParam(name="end", required=false, description="Specifies the end of the time window for data to be included in the response. If this field is not specified, any required time window ends at the current time"),
-            @OpenApiParam(name="timezone", required=false, description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used."),
-            @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")
+            @OpenApiParam(name="name", description="Specifies the name(s) of the location level(s) whose data is to be included in the response. Uses * for all."),
+            @OpenApiParam(name="office", description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
+            @OpenApiParam(name="unit", description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location level values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location level values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters."),
+            @OpenApiParam(name="datum", description="Specifies the elevation datum of the response. This field affects only elevation location levels. Valid values for this field are:\r\n1. NAVD88.  The elevation values will in the specified or default units above the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the specified or default units above the NGVD-29 datum."),
+            @OpenApiParam(name="begin", description="Specifies the start of the time window for data to be included in the response. If this field is not specified, any required time window begins 24 hours prior to the specified or default end time."),
+            @OpenApiParam(name="end", description="Specifies the end of the time window for data to be included in the response. If this field is not specified, any required time window ends at the current time"),
+            @OpenApiParam(name="timezone", description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used."),
+            @OpenApiParam(name="format", description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)")
         },
         responses = {
             @OpenApiResponse(status="200" )
@@ -190,10 +176,10 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getAll(Context ctx)
     {
-        getAllRequests.mark();
+
         try (
-            final Timer.Context time_context = getAllRequestsTime.time();
-            DSLContext dsl = getDslContext(ctx);
+            final Timer.Context timeContext = markAndTime("getAll");
+            DSLContext dsl = getDslContext(ctx)
         ) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
@@ -253,8 +239,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, String id)
     {
-        updateRequest.mark();
-        try(final Timer.Context timeContext = updateRequestTime.time();
+
+        try(final Timer.Context timeContext = markAndTime("update");
             DSLContext dsl = getDslContext(ctx))
         {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
