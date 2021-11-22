@@ -13,6 +13,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
 public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory>
 {
+
 	public TimeSeriesCategoryDao(DSLContext dsl)
 	{
 		super(dsl);
@@ -31,7 +32,6 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory>
 
 		return fetchOne != null ?
 			Optional.of(fetchOne.into(TimeSeriesCategory.class)) : Optional.empty();
-
 	}
 
 	public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId)
@@ -41,11 +41,14 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory>
 		SelectWhereStep<Record3<String, String, String>> step = dsl.selectDistinct(
 				table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,table.TS_CATEGORY_DESC)
 				.from(table);
-		Select select = step;
+		Select select;
 		if ( officeId != null && !officeId.isEmpty())
 		{
 			select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId));
+		}else {
+			 select = step;
 		}
+
 		return select.fetch().into(TimeSeriesCategory.class);
 	}
 
@@ -53,7 +56,5 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory>
 	{
 		return getTimeSeriesCategories(null);
 	}
-
-
 
 }
