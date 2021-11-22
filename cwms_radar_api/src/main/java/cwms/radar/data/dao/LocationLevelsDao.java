@@ -12,4 +12,6 @@ public interface LocationLevelsDao
     void storeLocationLevel(LocationLevel level, ZoneId zoneId) throws IOException;
     void renameLocationLevel(String oldLocationLevelName, LocationLevel renamedLocationLevel) throws IOException;
     LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem, ZonedDateTime effectiveDate, String officeId) throws IOException;
+    String getLocationLevels(String format, String names, String office, String unit, String datum, String begin,
+                             String end, String timezone);
 }
