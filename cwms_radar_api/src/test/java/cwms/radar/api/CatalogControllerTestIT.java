@@ -32,7 +32,7 @@ public class CatalogControllerTestIT {
         .get("/catalog/TIMESERIES").then().assertThat()
         .statusCode(is(200))
         .body("$",hasKey("total"))
-        .body("total",is(5))
-        .body("entries.size()",is(5));
+        .body("total",is(4))
+        .body("entries.size()",is(4));
     }
 }

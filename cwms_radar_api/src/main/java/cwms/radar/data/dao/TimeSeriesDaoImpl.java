@@ -259,7 +259,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		String tsCursor = "*";
 		if( page == null || page.isEmpty() ){
 
-			Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike);
+			Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike)
+								  .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 			if( office.isPresent() ){
 				condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
 			}
@@ -306,10 +307,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		}
 
 		query.addFrom(AV_TS_EXTENTS_UTC
-				.innerJoin(AV_LOC.AV_LOC)
+				.rightJoin(AV_LOC.AV_LOC)
 					.on(AV_TS_EXTENTS_UTC.LOCATION_ID.eq(AV_LOC.AV_LOC.LOCATION_ID)
 							.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_LOC.AV_LOC.DB_OFFICE_ID)))
-				.innerJoin(AV_CWMS_TS_ID2)
+				.rightJoin(AV_CWMS_TS_ID2)
 					.on(AV_TS_EXTENTS_UTC.TS_ID.eq(AV_CWMS_TS_ID2.CWMS_TS_ID)
 								.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)))
 		);
