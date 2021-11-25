@@ -14,9 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Record16;
 import org.jooq.RecordMapper;
-import org.jooq.SelectConditionStep;
 import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectOrderByStep;
 
@@ -53,15 +51,14 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 		AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
 		AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
-		final RecordMapper<Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper = record15 -> {
-			TimeSeriesGroup group = buildTimeSeriesGroup(record15);
-			AssignedTimeSeries loc = buildAssignedTimeSeries(record15);
+		final RecordMapper<Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper = queryRecord -> {
+			TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
+			AssignedTimeSeries loc = buildAssignedTimeSeries(queryRecord);
 
 			return new Pair<>(group, loc);
 		};
 
-		SelectOnConditionStep<Record16<String, String, String, String, String, String, String, String, String, String, String, String, BigDecimal, BigDecimal, String, String>>
-				selectOn = dsl.select(
+		SelectOnConditionStep<?> selectOn = dsl.select(
 				catGrp.CAT_DB_OFFICE_ID, catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
 				catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID, catGrp.SHARED_REF_TS_ID,
 				grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID, grpAssgn.GROUP_ID, grpAssgn.TS_ID,
@@ -75,12 +72,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 						.and(catGrp.GRP_DB_OFFICE_ID.eq(grpAssgn.DB_OFFICE_ID)));
 
 
-		SelectOrderByStep<Record16<String, String, String, String, String, String, String, String, String, String, String, String, BigDecimal, BigDecimal, String, String>> select = selectOn;
+		SelectOrderByStep<?> select = selectOn;
 		if(whereCond != null)
 		{
-			SelectConditionStep<Record16<String, String, String, String, String, String, String, String, String, String, String, String, BigDecimal, BigDecimal, String, String>> selectWhere = selectOn.where(
-					whereCond);
-			select = selectWhere;
+			select = selectOn.where(whereCond);
 		}
 
 		List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments = select
@@ -99,23 +94,22 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 		for(final Map.Entry<TimeSeriesGroup, List<AssignedTimeSeries>> entry : map.entrySet())
 		{
 			List<AssignedTimeSeries> assigned = entry.getValue();
-
 			retval.add(new TimeSeriesGroup(entry.getKey(), assigned));
 		}
 		return retval;
 	}
 
-	private AssignedTimeSeries buildAssignedTimeSeries(Record record15)
+	private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord)
 	{
 		AssignedTimeSeries retval = null;
 
-		String timeseriesId = record15.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
-		BigDecimal tsCode = record15.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
+		String timeseriesId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
+		BigDecimal tsCode = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
 
 		if(timeseriesId != null && tsCode != null){
-			String aliasId = record15.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ALIAS_ID);
-			String refTsId = record15.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.REF_TS_ID);
-			BigDecimal attrBD = record15.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE);
+			String aliasId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ALIAS_ID);
+			String refTsId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.REF_TS_ID);
+			BigDecimal attrBD = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE);
 
 			Integer attr = null;
 			if(attrBD != null){
@@ -127,28 +121,26 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 		return retval;
 	}
 
-	private TimeSeriesGroup buildTimeSeriesGroup(Record record15)
+	private TimeSeriesGroup buildTimeSeriesGroup(Record queryRecord)
 	{
-		TimeSeriesCategory cat = buildTimeSeriesCategory(record15);
+		TimeSeriesCategory cat = buildTimeSeriesCategory(queryRecord);
 
-		String grpOfficeId = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
-		String grpId = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID);
-		String grpDesc = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC);
-		String sharedAliasId = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID);
-		String sharedRefTsId = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID);
+		String grpOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
+		String grpId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID);
+		String grpDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC);
+		String sharedAliasId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID);
+		String sharedRefTsId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID);
 
-		return new TimeSeriesGroup(cat, grpOfficeId, grpId,	 grpDesc,
-				sharedAliasId, sharedRefTsId);
+		return new TimeSeriesGroup(cat, grpOfficeId, grpId,	 grpDesc, sharedAliasId, sharedRefTsId);
 	}
 
 	@NotNull
-	private TimeSeriesCategory buildTimeSeriesCategory(Record record15)
+	private TimeSeriesCategory buildTimeSeriesCategory(Record queryRecord)
 	{
-		String catOfficeId = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
-		String catId = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
-		String catDesc = record15.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);
-		TimeSeriesCategory cat = new TimeSeriesCategory(catOfficeId, catId, catDesc);
-		return cat;
+		String catOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
+		String catId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
+		String catDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);
+		return new TimeSeriesCategory(catOfficeId, catId, catDesc);
 	}
 
 	public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId, String groupId)
@@ -178,7 +170,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 
 	private Condition and(Condition whereCondition, Condition cond)
 	{
-		Condition retval = null;
+		Condition retval;
 		if(whereCondition == null){
 			retval = cond;
 		} else {
