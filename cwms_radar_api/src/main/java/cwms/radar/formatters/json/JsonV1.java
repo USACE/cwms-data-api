@@ -10,6 +10,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
@@ -33,6 +35,7 @@ import service.annotations.FormatService;
 			   dataTypes = {
 				   Office.class,
 				   Location.class,
+				   Catalog.class,
 				   LocationGroup.class,
 				   LocationCategory.class,
 				   TimeSeriesCategory.class, TimeSeriesGroup.class,

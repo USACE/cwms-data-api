@@ -3,6 +3,9 @@ package fixtures;
 import hthurow.tomcatjndi.TomcatJNDI;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.connector.Connector;
@@ -37,8 +40,9 @@ public class TomcatServer {
 
         tomcatInstance = new Tomcat();
         tomcatInstance.setBaseDir(baseDir);
-        tomcatInstance.getHost().setAppBase(baseDir);
+        tomcatInstance.getHost().setAppBase("webapps");
         new File(tomcatInstance.getServer().getCatalinaBase(),"temp").mkdirs();
+        new File(tomcatInstance.getServer().getCatalinaBase(),"webapps").mkdirs();
         tomcatInstance.setPort(port);
         Connector connector = tomcatInstance.getConnector();
         connector.setSecure(true);
@@ -50,11 +54,24 @@ public class TomcatServer {
         tomcatInstance.getEngine();
         tomcatInstance.getHost().addLifecycleListener(new HostConfig());
         tomcatInstance.addContext("", null);
+
         File radar = new File(radarWar);
+        try{
+            File existingRadar = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
+            Files.walk(existingRadar.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            existingRadar.delete();
+            new File(existingRadar.getAbsolutePath()+".war").delete();
+        } catch( Exception err) {
+            System.out.println(err.getLocalizedMessage());
+        }
         tomcatInstance.addWebapp(contextName,radar.toURI().toURL());
         tomcatInstance.getServer();
 
 
+    }
+
+    public int getPort() {
+        return tomcatInstance.getConnector().getLocalPort();
     }
 
     /**
@@ -80,7 +97,7 @@ public class TomcatServer {
      */
     public void stop() throws LifecycleException {
         tomcatInstance.stop();
-        tomcatJndi.tearDown();
+        //tomcatJndi.tearDown();
     }
 
     /**

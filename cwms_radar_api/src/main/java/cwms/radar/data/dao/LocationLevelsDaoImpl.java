@@ -9,6 +9,7 @@ import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
 import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -29,6 +30,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public LocationLevelsDaoImpl(DSLContext dsl)
     {
         super(dsl);
+    }
+
+    // This is the legacy method that is used by the old API.
+    @Override
+    public String getLocationLevels(String format, String names, String office, String unit, String datum, String begin,
+                                    String end, String timezone) {
+        return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVELS_F(dsl.configuration(),
+                names, format, unit, datum, begin, end, timezone, office);
     }
 
     @Override
