@@ -9,9 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import cwms.radar.formatters.xml.XMLv1;
 import cwms.radar.formatters.xml.XMLv2;
-import io.javalin.plugin.json.JavalinJackson;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -86,8 +84,7 @@ public class TimeSeriesTest
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 
-		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi);
-		return ts;
+		return new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi);
 	}
 
 	VerticalDatumInfo buildVerticalDatumInfo()
@@ -95,7 +92,7 @@ public class TimeSeriesTest
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
 				.withNativeDatum("NGVD-29").withElevation(230.7).withOffset(
-						new VerticalDatumInfo.Offset(true, "NAVD-88", -.1666));
+						true, "NAVD-88", -.1666);
 		return builder.build();
 	}
 
@@ -129,21 +126,21 @@ public class TimeSeriesTest
 	}
 
 
-    @Test
-    void test_xml_value_columns()
-    {
-	    TimeSeries ts = buildTimeSeries();
+	@Test
+	void test_xml_value_columns()
+	{
+		TimeSeries ts = buildTimeSeries();
 
-	    XMLv2 xmlV2 = new XMLv2();
-	    String xmlStr = xmlV2.format(ts);
-	    assertNotNull(xmlStr);
+		XMLv2 xmlV2 = new XMLv2();
+		String xmlStr = xmlV2.format(ts);
+		assertNotNull(xmlStr);
 
-	    assertFalse(xmlStr.contains("valueColumns"));
-	    assertTrue(xmlStr.contains("value-columns"));
+		assertFalse(xmlStr.contains("valueColumns"));
+		assertTrue(xmlStr.contains("value-columns"));
 
-	    assertFalse(xmlStr.contains("officeId"));
-	    assertTrue(xmlStr.contains("office-id"));
-    }
+		assertFalse(xmlStr.contains("officeId"));
+		assertTrue(xmlStr.contains("office-id"));
+	}
 }
 
 

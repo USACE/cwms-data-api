@@ -1,5 +1,7 @@
 package cwms.radar.data.dto;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -10,9 +12,13 @@ import javax.xml.bind.Unmarshaller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.radar.data.dao.TimeSeriesDaoImpl;
 import cwms.radar.formatters.json.JsonV2;
 import org.junit.jupiter.api.Test;
 
+import hec.data.VerticalDatumException;
+
+import static cwms.radar.data.dao.JsonRatingUtilsTest.readFully;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,8 +61,9 @@ class VerticalDatumInfoTest
 		assertEquals("Buckhorn", vdi.getLocation());
 		assertEquals("NGVD-29", vdi.getNativeDatum());
 		assertEquals(230.7, vdi.getElevation());
-		VerticalDatumInfo.Offset offset = vdi.getOffset();
-		assertNotNull(offset);
+		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
+		assertNotNull(offsets);
+		VerticalDatumInfo.Offset offset = offsets[0];
 		assertEquals("NAVD-88", offset.getToDatum());
 		assertTrue(offset.isEstimate());
 		assertEquals(-.1666, offset.getValue());
@@ -70,7 +77,16 @@ class VerticalDatumInfoTest
 		assertEquals(expected.getNativeDatum(), vdi.getNativeDatum());
 		assertEquals(expected.getElevation(), vdi.getElevation());
 
-		assertOffsetEquals(expected.getOffset(), vdi.getOffset());
+		assertOffsetsEquals(expected.getOffsets(), vdi.getOffsets());
+	}
+
+	private void assertOffsetsEquals(VerticalDatumInfo.Offset[] offsets, VerticalDatumInfo.Offset[] offsets1)
+	{
+		assertEquals(offsets.length, offsets1.length);
+        for (int i = 0; i < offsets.length; i++)
+        {
+            assertOffsetEquals(offsets[i], offsets1[i]);
+        }
 	}
 
 	private void assertOffsetEquals(VerticalDatumInfo.Offset expectedOffset, VerticalDatumInfo.Offset offset)
@@ -84,8 +100,8 @@ class VerticalDatumInfoTest
 	{
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
-				.withNativeDatum("NGVD-29").withElevation(230.7).withOffset(
-				new VerticalDatumInfo.Offset(true, "NAVD-88", -.1666));
+				.withNativeDatum("NGVD-29").withElevation(230.7).withOffsets(new VerticalDatumInfo.Offset[]{
+				new VerticalDatumInfo.Offset(true, "NAVD-88", -.1666)});
 		return builder.build();
 	}
 
@@ -126,6 +142,68 @@ class VerticalDatumInfoTest
 		VerticalDatumInfo actual = objectMapper.readValue(body, VerticalDatumInfo.class);
 
 		assertVDIEquals(expected, actual);
+	}
+
+	@Test
+	void testVertDatum1() throws VerticalDatumException, IOException
+	{
+		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/radar/data/dto/vert1.xml");
+		assertNotNull(stream);
+		String v = readFully(stream);
+
+		VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(v);
+		assertNotNull(vdi);
+
+		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
+		assertNotNull(offsets);
+		assertEquals(1, offsets.length);
+
+//		VerticalDatumContainer vdc = new VerticalDatumContainer(v);
+//		assertNotNull(vdc);
+
+	}
+
+	@Test
+	void testVertDatum2() throws VerticalDatumException, IOException
+	{
+		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/radar/data/dto/vert2.xml");
+		assertNotNull(stream);
+		String v = readFully(stream);
+
+		VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(v);
+		assertNotNull(vdi);
+
+		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
+		assertNotNull(offsets);
+		assertEquals(2, offsets.length);
+
+//		// Should also be able to build the CWMS class from the same input.
+//		VerticalDatumContainer vdc = new VerticalDatumContainer(v);
+//		assertNotNull(vdc);
+	}
+
+	@Test
+	void testVertDatum3() throws VerticalDatumException, IOException, JAXBException
+	{
+		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/radar/data/dto/vert3.xml");
+		assertNotNull(stream);
+		String v = readFully(stream);
+
+		VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(v);
+		assertNotNull(vdi);
+
+		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
+		assertNotNull(offsets);
+		assertEquals(3, offsets.length);
+
+
+		String body = getXml(vdi);
+//		assertNotNull(body);
+//		assertThat(body, isIdenticalTo(new WhitespaceStrippedSource(Input.from(v).build())));
+
+		VerticalDatumInfo actual = parseXml(body);
+		assertVDIEquals(vdi, actual);
+
 	}
 
 }

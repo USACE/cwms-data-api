@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vertical-datum-info office="LRL" unit="m">
+	<location>Buckhorn</location>
+	<native-datum>NGVD-29</native-datum>
+	<elevation>230.7</elevation>
+	<offset estimate="true">
+		<to-datum>NAVD-88</to-datum>
+		<value>-.1666</value>
+	</offset>
+</vertical-datum-info>
