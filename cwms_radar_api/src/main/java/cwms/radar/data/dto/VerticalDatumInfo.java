@@ -29,7 +29,9 @@ public class VerticalDatumInfo
 	@XmlElement(name="native-datum")
 	String nativeDatum;
 	Double elevation;
-	VerticalDatumInfo.Offset offset;
+
+	@XmlElement(name="offset")
+	VerticalDatumInfo.Offset[] offsets;
 
 	private VerticalDatumInfo()
 	{
@@ -60,9 +62,9 @@ public class VerticalDatumInfo
 		return elevation;
 	}
 
-	public Offset getOffset()
+	public Offset[] getOffsets()
 	{
-		return offset;
+		return offsets;
 	}
 
 	@XmlAccessorType(XmlAccessType.FIELD)
@@ -100,6 +102,40 @@ public class VerticalDatumInfo
             this.toDatum = toDatum;
             this.value = value;
 		}
+
+		@Override
+		public boolean equals(Object o)
+		{
+			if(this == o)
+			{
+				return true;
+			}
+			if(o == null || getClass() != o.getClass())
+			{
+				return false;
+			}
+
+			final Offset offset = (Offset) o;
+
+			if(isEstimate() != offset.isEstimate())
+			{
+				return false;
+			}
+			if(getToDatum() != null ? !getToDatum().equals(offset.getToDatum()) : offset.getToDatum() != null)
+			{
+				return false;
+			}
+			return getValue() != null ? getValue().equals(offset.getValue()) : offset.getValue() == null;
+		}
+
+		@Override
+		public int hashCode()
+		{
+			int result = (isEstimate() ? 1 : 0);
+			result = 31 * result + (getToDatum() != null ? getToDatum().hashCode() : 0);
+			result = 31 * result + (getValue() != null ? getValue().hashCode() : 0);
+			return result;
+		}
 	}
 
 	private VerticalDatumInfo(VerticalDatumInfo.Builder builder){
@@ -108,7 +144,7 @@ public class VerticalDatumInfo
         this.location = builder.location;
         this.nativeDatum = builder.nativeDatum;
         this.elevation = builder.elevation;
-        this.offset = builder.offset;
+        this.offsets = builder.offsets;
 	}
 
 	@JsonPOJOBuilder
@@ -119,7 +155,7 @@ public class VerticalDatumInfo
 		String location;
 		String nativeDatum;
 		Double elevation;
-		Offset offset;
+		Offset[] offsets;
 
 
 		public VerticalDatumInfo.Builder withOffice(String office)
@@ -152,15 +188,15 @@ public class VerticalDatumInfo
             return this;
         }
 
-		public VerticalDatumInfo.Builder withOffset(VerticalDatumInfo.Offset offset)
+		public VerticalDatumInfo.Builder withOffsets(VerticalDatumInfo.Offset[] offsets)
         {
-            this.offset = offset;
+            this.offsets = offsets;
             return this;
         }
 
 		public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum, Double value)
 		{
-			this.offset = new Offset(isEstimate, toDatum, value);
+			this.offsets = new Offset[]{new Offset(isEstimate, toDatum, value)};
 			return this;
 		}
 

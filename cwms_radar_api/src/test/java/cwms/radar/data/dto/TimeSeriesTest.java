@@ -9,9 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import cwms.radar.formatters.xml.XMLv1;
 import cwms.radar.formatters.xml.XMLv2;
-import io.javalin.plugin.json.JavalinJackson;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +52,6 @@ public class TimeSeriesTest
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO);
 		return ts;
 	}
-
 
 	@Test
 	void testFormatter()
