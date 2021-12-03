@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.persistence.criteria.JoinType;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -57,6 +59,7 @@ import org.jooq.SelectQuery;
 import org.jooq.SelectSelectStep;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
+import org.jooq.impl.*;
 
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -66,6 +69,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -75,6 +79,7 @@ import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.partitionBy;
+import static org.jooq.impl.DSL.condition;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -367,21 +372,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
 		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
 		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
-		query.addSelect(AV_LOC.AV_LOC.TIME_ZONE_NAME);
-		query.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
-		query.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
 		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
 			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
 		}
+		query.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
+		query.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
 
-		query.addFrom(AV_TS_EXTENTS_UTC
-				.rightJoin(AV_LOC.AV_LOC)
-					.on(AV_TS_EXTENTS_UTC.LOCATION_ID.eq(AV_LOC.AV_LOC.LOCATION_ID)
-							.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_LOC.AV_LOC.DB_OFFICE_ID)))
-				.rightJoin(AV_CWMS_TS_ID2)
-					.on(AV_TS_EXTENTS_UTC.TS_ID.eq(AV_CWMS_TS_ID2.CWMS_TS_ID)
-								.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)))
+		query.addFrom(AV_CWMS_TS_ID2);
+
+		query.addJoin(AV_TS_EXTENTS_UTC,org.jooq.JoinType.RIGHT_OUTER_JOIN,
+			AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)
+			.and(
+			condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = cwms_20.av_cwms_ts_id2.ts_code "))
 		);
+		//AV_TS_EXTENTS_UTC.TS_CODE.cast(BigDecimal.class).eq(AV_CWMS_TS_ID2.TS_CODE));
+
+
 
 		query.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 		// add the regexp_like clause.
@@ -416,10 +422,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						.interval(e.get(AV_CWMS_TS_ID2.INTERVAL_ID))
 						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET))
 						.earliestTime(e.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME))
-						.latestTime(e.get(AV_TS_EXTENTS_UTC.LATEST_TIME))
-								;
-						if( this.getDbVersion() >= Dao.CWMS_21_1_1 ) {
-							builder.timeZone(e.get(AV_CWMS_TS_ID2.TIME_ZONE_ID));
+						.latestTime(e.get(AV_TS_EXTENTS_UTC.LATEST_TIME));
+						if( this.getDbVersion() > TimeSeriesDaoImpl.CWMS_21_1_1){
+							builder.timeZone(e.get("TIME_ZONE_ID",String.class));
 						}
 						return builder.build();
 				}
