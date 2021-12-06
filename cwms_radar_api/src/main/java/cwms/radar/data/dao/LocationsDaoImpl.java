@@ -26,7 +26,7 @@ import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectQuery;
 import org.jooq.Table;
-import org.jooq.conf.ParamType;
+
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -76,14 +76,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                     loc.get(AV_LOC.DB_OFFICE_ID)
             )
             .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
-            .withElevation(loc.get(AV_LOC.ELEVATION).doubleValue())
+            .withElevation(loc.get(AV_LOC.ELEVATION))
             .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
             .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
             .withLongName(loc.get(AV_LOC.LONG_NAME))
             .withDescription(loc.get(AV_LOC.DESCRIPTION))
             .withCountyName(loc.get(AV_LOC.COUNTY_NAME))
             .withStateInitial(loc.get(AV_LOC.STATE_INITIAL))
-            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T") ? true : false)
+            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T"))
             .withMapLabel(loc.get(AV_LOC.MAP_LABEL))
             .withBoundingOfficeId(loc.get(AV_LOC.BOUNDING_OFFICE_ID))
             .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
@@ -131,7 +131,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                 locJooq.store(c, location.getOfficeId(), location.getName(), location.getStateInitial(), location.getCountyName(),
                         location.getTimezoneName(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
                         elevationUnits, location.getVerticalDatum(), location.getHorizontalDatum(), location.getPublicName(), location.getLongName(),
-                        location.getDescription(), location.active(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
+                        location.getDescription(), location.getActive(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
                         location.getPublishedLongitude(), location.getBoundingOfficeId(), location.getNation().getName(), location.getNearestCity(), true);
 
             });
@@ -193,7 +193,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                         renamedLocation.getCountyName(), renamedLocation.getTimezoneName(), renamedLocation.getLocationType(),
                         renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getElevation(), elevationUnits,
                         renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(), renamedLocation.getPublicName(),
-                        renamedLocation.getLongName(), renamedLocation.getDescription(), renamedLocation.active(),  true);
+                        renamedLocation.getLongName(), renamedLocation.getDescription(), renamedLocation.getActive(),  true);
             });
         }
         catch(DataAccessException ex)
@@ -292,17 +292,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                     .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
                     .where(condition);
 
-            logger.info( () ->  count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1().intValue();
         } else {
-            logger.info("getting non-default page");
             // get totally from page
             String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "|||");
-
-            logger.info("decoded cursor: " + String.join("|||", parts));
-            for( String p: parts){
-                logger.info(p);
-            }
 
             if(parts.length > 1) {
                 locCursor = parts[0].split("\\/")[1];
@@ -331,7 +324,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                                 ;
 
         query.orderBy(AV_LOC.LOCATION_ID);
-        logger.info( () -> query.getSQL(ParamType.INLINED));
+//        logger.info( () -> query.getSQL(ParamType.INLINED));
         HashMap<usace.cwms.db.jooq.codegen.tables.records.AV_LOC, ArrayList<usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS>> theMap = new HashMap<>();
 
         query.fetch().forEach( row -> {
@@ -383,8 +376,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             )
         ).collect(Collectors.toList());
 
-        Catalog cat = new Catalog(locCursor, total, pageSize, entries);
-        return cat;
+        return new Catalog(locCursor, total, pageSize, entries);
     }
 
     private Condition buildCatalogWhere(String unitSystem, Optional<String> office, String idLike)
