@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.AssignedLocation;
@@ -32,6 +33,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 
 public class LocationGroupDao extends JooqDao<LocationGroup>
 {
+	private static final Logger logger = Logger.getLogger(LocationGroupDao.class.getName());
 
 	public LocationGroupDao(DSLContext dsl)
 	{
@@ -43,16 +45,17 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 		AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = record17 -> {
-			LocationGroup group = buildLocationGroup(record17);
-			AssignedLocation loc = buildAssignedLocation(record17);
+		final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
+			LocationCategory locationCategory = buildLocationCategory(grpRecord);
+			LocationGroup group = buildLocationGroup(grpRecord, locationCategory);
+			AssignedLocation loc = buildAssignedLocation(grpRecord);
 
 			return new Pair<>(group, loc);
 		};
 
 		List<Pair<LocationGroup, AssignedLocation>> assignments = dsl
 				.select(alga.CATEGORY_ID, alga.GROUP_ID,
-						alga.LOCATION_CODE, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
+						alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
 						alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
 						alcg.CAT_DB_OFFICE_ID,
 						alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
@@ -90,14 +93,14 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		String subLocationId = resultRecord.get(alga.SUB_LOCATION_ID);
 		String aliasId = resultRecord.get(alga.ALIAS_ID);
 		Number attribute = resultRecord.get(alga.ATTRIBUTE);
-		Number locationCode = resultRecord.get(alga.LOCATION_CODE);
+
 		String refLocationId = resultRecord.get(alga.REF_LOCATION_ID);
 
 		return new AssignedLocation(locationId, baseLocationId, subLocationId, aliasId, attribute,
-				locationCode, refLocationId);
+				refLocationId);
 	}
 
-	private LocationGroup buildLocationGroup(Record resultRecord)
+	private LocationGroup buildLocationGroup(Record resultRecord, LocationCategory locationCategory)
 	{
 		// This method needs the record to have fields
 		// from both AV_LOC_GRP_ASSGN _and_ AV_LOC_CAT_GRP
@@ -112,8 +115,6 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		String grpDesc = resultRecord.get(alcg.LOC_GROUP_DESC);
 		Number grpAttribute = resultRecord.get(alcg.LOC_GROUP_ATTRIBUTE);
 
-		LocationCategory locationCategory = buildLocationCategory(resultRecord);
-
 		return new LocationGroup(
 				locationCategory,
 				officeId, groupId, grpDesc,
@@ -124,9 +125,9 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 	{
 		AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
+		String catDbOfficeId = resultRecord.get(alcg.CAT_DB_OFFICE_ID);
 		String categoryId = resultRecord.get(alcg.LOC_CATEGORY_ID);
 		String catDesc = resultRecord.get(alcg.LOC_CATEGORY_DESC);
-		String catDbOfficeId = resultRecord.get(alcg.CAT_DB_OFFICE_ID);
 		return new LocationCategory(catDbOfficeId, categoryId, catDesc);
 	}
 
@@ -136,42 +137,42 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 
 	public List<LocationGroup> getLocationGroups(String officeId)
 	{
-		List<LocationGroup> retval = new ArrayList<>();
 		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 		AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = record17 -> {
-			LocationGroup group = buildLocationGroup(record17);
-			AssignedLocation loc = buildAssignedLocation(record17);
+		final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
+			LocationCategory category = buildLocationCategory(grpRecord);
+
+			LocationGroup group = buildLocationGroup(grpRecord, category);
+			AssignedLocation loc = buildAssignedLocation(grpRecord);
 
 			return new Pair<>(group, loc);
 		};
 
-		List<Pair<LocationGroup, AssignedLocation>> assignments = dsl
-				.select(alga.CATEGORY_ID, alga.GROUP_ID,
-						alga.LOCATION_CODE, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
-						alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-						alcg.CAT_DB_OFFICE_ID,
-						alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
+		Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
+
+		dsl.select(
+				alga.CATEGORY_ID, alga.GROUP_ID, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID,
+				alga.LOCATION_ID, alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID,
+				alga.SHARED_REF_LOCATION_ID, alcg.CAT_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC,
+				alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
 				.from(alcg)
 				.join(alga)
-				.on(
-						alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-								.and(
-										alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+				.on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID).and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
 				.where(alga.DB_OFFICE_ID.eq(officeId))
-				.orderBy(alga.ATTRIBUTE)
-				.fetch(mapper);
+				.orderBy(alga.CATEGORY_ID, alga.GROUP_ID, alga.ATTRIBUTE)
+				.fetchSize(1000)    // This made the query go from 2 minutes to 10 seconds?
+				.stream().map(mapper::map)
+				.forEach(pair -> {
+					LocationGroup locationGroup = pair.component1();
+					List<AssignedLocation> list = map.computeIfAbsent(locationGroup, k -> new ArrayList<>());
+					list.add(pair.component2());
+				});
 
-		Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
-		for(Pair<LocationGroup, AssignedLocation> pair : assignments){
-			List<AssignedLocation> list = map.computeIfAbsent(pair.component1(), k -> new ArrayList<>());
-			list.add(pair.component2());
-		}
-
+		List<LocationGroup> retval = new ArrayList<>();
 		for(final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet())
 		{
-			retval.add(new LocationGroup(entry.getKey(),entry.getValue()));
+			retval.add(new LocationGroup(entry.getKey(), entry.getValue()));
 		}
 		return retval;
 	}
