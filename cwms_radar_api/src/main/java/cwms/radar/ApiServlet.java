@@ -43,8 +43,6 @@ import io.javalin.Javalin;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.JavalinServlet;
-import io.javalin.http.staticfiles.Location;
-import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.info.Info;
@@ -53,8 +51,6 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import cwms.radar.api.*;
-import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.api.errors.RadarError;
 
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -150,6 +146,11 @@ public class ApiServlet extends HttpServlet {
                     logger.log(Level.INFO, re.toString(), e );
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(NotFoundException.class, (e, ctx ) -> {
+                    RadarError re = new RadarError("Not Found.");
+                    logger.log(Level.INFO, re.toString(), e );
+                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
+                })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
                     logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
@@ -188,11 +189,9 @@ public class ApiServlet extends HttpServlet {
 
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
-        OpenApiOptions options = new OpenApiOptions(applicationInfo)
+        return new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
-
                     .activateAnnotationScanningFor("cwms.radar.api");
-        return options;
     }
 
     @Override

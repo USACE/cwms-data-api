@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cwms.radar.api.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
 import cwms.radar.data.dto.Catalog;
@@ -24,7 +25,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectQuery;
 import org.jooq.Table;
 
 import org.jooq.exception.DataAccessException;
@@ -56,15 +56,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) throws IOException
     {
+        Record loc = dsl.select(AV_LOC.asterisk())
+                .from(AV_LOC)
+                .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                    .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                    .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
+                .fetchOne();
+        if(loc == null){
+            throw new NotFoundException("Location not found for office:" + officeId + " and unit system:" + unitSystem + " and id:" + locationName);
+        }
+        return buildLocation(loc);
+    }
 
-        SelectQuery<Record> query = dsl.selectQuery();
-        query.addFrom(AV_LOC);
-        query.addSelect(AV_LOC.asterisk());
-        query.addConditions(      AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                             .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                             .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))));
-
-        Record loc = query.fetchOne();
+    private Location buildLocation(Record loc)
+    {
         Location.Builder locationBuilder =  new Location.Builder(
                     loc.get(AV_LOC.LOCATION_ID),
                     loc.get(AV_LOC.LOCATION_KIND_ID),
@@ -89,15 +94,15 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
             .withNation(Nation.NationForName(loc.get(AV_LOC.NATION_ID)));
 
-            BigDecimal pubLatitude =loc.get(AV_LOC.PUBLISHED_LATITUDE);
-            BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
-            if (pubLatitude != null) {
-                locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
+        BigDecimal pubLatitude = loc.get(AV_LOC.PUBLISHED_LATITUDE);
+        BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
+        if (pubLatitude != null) {
+            locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
 
-            }
-            if (pubLongitude != null) {
-                locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
-            }
+        }
+        if (pubLongitude != null) {
+            locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
+        }
         return locationBuilder.build();
     }
 
