@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cwms.radar.api.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
 import cwms.radar.data.dto.Catalog;
@@ -24,7 +25,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectQuery;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
@@ -56,15 +56,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) throws IOException
     {
+        Record loc = dsl.select(AV_LOC.asterisk())
+                .from(AV_LOC)
+                .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                    .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                    .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
+                .fetchOne();
+        if(loc == null){
+            throw new NotFoundException("Location not found for office:" + officeId + " and unit system:" + unitSystem + " and id:" + locationName);
+        }
+        return buildLocation(loc);
+    }
 
-        SelectQuery<Record> query = dsl.selectQuery();
-        query.addFrom(AV_LOC);
-        query.addSelect(AV_LOC.asterisk());
-        query.addConditions(      AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                             .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                             .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))));
-
-        Record loc = query.fetchOne();
+    private Location buildLocation(Record loc)
+    {
         Location.Builder locationBuilder =  new Location.Builder(
                     loc.get(AV_LOC.LOCATION_ID),
                     loc.get(AV_LOC.LOCATION_KIND_ID),
@@ -76,28 +81,28 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                     loc.get(AV_LOC.DB_OFFICE_ID)
             )
             .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
-            .withElevation(loc.get(AV_LOC.ELEVATION).doubleValue())
+            .withElevation(loc.get(AV_LOC.ELEVATION))
             .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
             .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
             .withLongName(loc.get(AV_LOC.LONG_NAME))
             .withDescription(loc.get(AV_LOC.DESCRIPTION))
             .withCountyName(loc.get(AV_LOC.COUNTY_NAME))
             .withStateInitial(loc.get(AV_LOC.STATE_INITIAL))
-            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T") ? true : false)
+            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T"))
             .withMapLabel(loc.get(AV_LOC.MAP_LABEL))
             .withBoundingOfficeId(loc.get(AV_LOC.BOUNDING_OFFICE_ID))
             .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
             .withNation(Nation.NationForName(loc.get(AV_LOC.NATION_ID)));
 
-            BigDecimal pubLatitude =loc.get(AV_LOC.PUBLISHED_LATITUDE);
-            BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
-            if (pubLatitude != null) {
-                locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
+        BigDecimal pubLatitude = loc.get(AV_LOC.PUBLISHED_LATITUDE);
+        BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
+        if (pubLatitude != null) {
+            locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
 
-            }
-            if (pubLongitude != null) {
-                locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
-            }
+        }
+        if (pubLongitude != null) {
+            locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
+        }
         return locationBuilder.build();
     }
 
@@ -295,14 +300,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             logger.info( () ->  count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1().intValue();
         } else {
-            logger.info("getting non-default page");
             // get totally from page
             String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "|||");
-
-            logger.info("decoded cursor: " + String.join("|||", parts));
-            for( String p: parts){
-                logger.info(p);
-            }
 
             if(parts.length > 1) {
                 locCursor = parts[0].split("\\/")[1];
@@ -383,8 +382,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             )
         ).collect(Collectors.toList());
 
-        Catalog cat = new Catalog(locCursor, total, pageSize, entries);
-        return cat;
+        return new Catalog(locCursor, total, pageSize, entries);
     }
 
     private Condition buildCatalogWhere(String unitSystem, Optional<String> office, String idLike)
