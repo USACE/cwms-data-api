@@ -7,18 +7,17 @@ public class AssignedLocation implements CwmsDTO
 	private String subLocationId;
 	private String aliasId;
 	private Number attribute;
-	private Number locationCode;
+
 	private String refLocationId;
 
 	public AssignedLocation(String locationId, String baseLocationId, String subLocationId, String aliasId,
-							Number attribute, Number locationCode, String refLocationId)
+							Number attribute, String refLocationId)
 	{
 		this.locationId = locationId;
 		this.baseLocationId = baseLocationId;
 		this.subLocationId = subLocationId;
 		this.aliasId = aliasId;
 		this.attribute = attribute;
-		this.locationCode = locationCode;
 		this.refLocationId = refLocationId;
 	}
 
@@ -45,11 +44,6 @@ public class AssignedLocation implements CwmsDTO
 	public Number getAttribute()
 	{
 		return attribute;
-	}
-
-	public Number getLocationCode()
-	{
-		return locationCode;
 	}
 
 	public String getRefLocationId()
