@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
 import cwms.radar.data.dto.Catalog;
+import cwms.radar.data.dto.TimeSeriesExtents;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.restassured.path.json.JsonPath;
@@ -37,8 +38,10 @@ class TimeseriesCatalogEntryTest
 		assertThat(path.getInt("catalog.entries.entry.interval"), equalTo(0));
 		assertThat(path.getLong("catalog.entries.entry.interval-offset"), equalTo(-2147483648L));
 		assertThat(path.getString("catalog.entries.entry.time-zone"), equalTo("US/Central"));
-		assertThat(path.getString("catalog.entries.entry.earliest-time"), equalTo("2017-07-27T05:00:00Z"));
-		assertThat(path.getString("catalog.entries.entry.latest-time"), equalTo("2017-11-24T22:30:00Z"));
+		Object tmp = path.get("catalog.entries.entry.extents");
+		System.out.println(tmp.toString());
+		assertThat(path.getString("catalog.entries.entry.extents.extents.earliest-time"), equalTo("2017-07-27T05:00:00Z"));
+		assertThat(path.getString("catalog.entries.entry.extents.extents.latest-time"), equalTo("2017-11-24T22:30:00Z"));
 
 	}
 
@@ -61,8 +64,8 @@ class TimeseriesCatalogEntryTest
 		assertThat(path.getInt("entries[0].interval"), equalTo(0));
 		assertThat(path.getLong("entries[0].interval-offset"), equalTo(-2147483648L));
 		assertThat(path.getString("entries[0].time-zone"), equalTo("US/Central"));
-		assertThat(path.getString("entries[0].earliest-time"), equalTo("2017-07-27T05:00:00Z"));
-		assertThat(path.getString("entries[0].latest-time"), equalTo("2017-11-24T22:30:00Z"));
+		assertThat(path.getString("entries[0].extents[0].earliest-time"), equalTo("2017-07-27T05:00:00Z"));
+		assertThat(path.getString("entries[0].extents[0].latest-time"), equalTo("2017-11-24T22:30:00Z"));
 
 	}
 
@@ -75,8 +78,9 @@ class TimeseriesCatalogEntryTest
 				.units("m")
 				.interval("0").intervalOffset(-2147483648L)
 				.timeZone("US/Central")
-				.earliestTime(ZonedDateTime.parse("2017-07-27T05:00:00Z"))
-				.latestTime(ZonedDateTime.parse("2017-11-24T22:30:00Z"));
+				.withExtent(new TimeSeriesExtents(null,
+				                                  ZonedDateTime.parse("2017-07-27T05:00:00Z"),
+				                                  ZonedDateTime.parse("2017-11-24T22:30:00Z")));
 		return builder
 				.build();
 

@@ -19,12 +19,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.persistence.criteria.JoinType;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -34,6 +37,7 @@ import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.data.dto.TimeSeriesExtents;
 import cwms.radar.data.dto.Tsv;
 import cwms.radar.data.dto.TsvDqu;
 import cwms.radar.data.dto.TsvDquId;
@@ -55,8 +59,10 @@ import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectQuery;
 import org.jooq.SelectSelectStep;
+import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
+import org.jooq.impl.*;
 
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -66,6 +72,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -75,6 +82,7 @@ import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.partitionBy;
+import static org.jooq.impl.DSL.condition;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -361,67 +369,93 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				total = Integer.parseInt(parts[1]);
 			}
 		}
-		SelectQuery<?> query = dsl.selectQuery();
-		query.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
-		query.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
-		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
-		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
-		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
-		query.addSelect(AV_LOC.AV_LOC.TIME_ZONE_NAME);
-		query.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
-		query.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
+		SelectQuery<?> primaryDataQuery = dsl.selectQuery();
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.TS_CODE);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
 		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
-			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
+			primaryDataQuery.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
 		}
 
-		query.addFrom(AV_TS_EXTENTS_UTC
-				.rightJoin(AV_LOC.AV_LOC)
-					.on(AV_TS_EXTENTS_UTC.LOCATION_ID.eq(AV_LOC.AV_LOC.LOCATION_ID)
-							.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_LOC.AV_LOC.DB_OFFICE_ID)))
-				.rightJoin(AV_CWMS_TS_ID2)
-					.on(AV_TS_EXTENTS_UTC.TS_ID.eq(AV_CWMS_TS_ID2.CWMS_TS_ID)
-								.and(AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)))
-		);
+		primaryDataQuery.addFrom(AV_CWMS_TS_ID2);
 
-		query.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 		// add the regexp_like clause.
-		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
 
 		if( office.isPresent() ){
-			query.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
 
 		if(categoryLike != null){
-			query.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
 		}
 
 		if(groupLike != null){
-			query.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
 		}
 
-		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
 
 
-		query.addOrderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
-		query.addLimit(pageSize);
-		logger.info( () -> query.getSQL(ParamType.INLINED));
-		Result<?> result = query.fetch();
-		List<? extends CatalogEntry> entries = result.stream()
-				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
-				.map( e -> {
-						TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
-						.officeId(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
-						.cwmsTsId(e.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
-						.units(e.get(AV_CWMS_TS_ID2.UNIT_ID) )
-						.interval(e.get(AV_CWMS_TS_ID2.INTERVAL_ID))
-						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET))
-						.earliestTime(e.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME))
-						.latestTime(e.get(AV_TS_EXTENTS_UTC.LATEST_TIME))
-								;
-						if( this.getDbVersion() >= Dao.CWMS_21_1_1 ) {
-							builder.timeZone(e.get(AV_CWMS_TS_ID2.TIME_ZONE_ID));
+		primaryDataQuery.addOrderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		Table<?> dataTable = primaryDataQuery.asTable("data");
+		//query.addConditions(field("rownum").lessOrEqual(pageSize));
+		//query.addConditions(condition("rownum < 500"));
+		SelectQuery<?> limitQuery = dsl.selectQuery();
+		//limitQuery.addSelect(field("rownum"));
+		limitQuery.addSelect(dataTable.fields());
+		limitQuery.addFrom(dataTable);//.limit(pageSize);
+		limitQuery.addConditions(field("rownum").lessOrEqual(pageSize));
+
+		Table<?> limitTable = limitQuery.asTable("limiter");
+
+		SelectQuery<?> overallQuery = dsl.selectQuery();
+		overallQuery.addSelect(limitTable.fields());
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.VERSION_TIME);
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
+		overallQuery.addFrom(limitTable);
+		overallQuery.addJoin(AV_TS_EXTENTS_UTC,org.jooq.JoinType.LEFT_OUTER_JOIN,
+			condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = " + field("\"limiter\".\"TS_CODE\"")));
+
+		logger.info( () -> overallQuery.getSQL(ParamType.INLINED));
+		Result<?> result = overallQuery.fetch();
+
+		HashMap<String,	TimeseriesCatalogEntry.Builder> tsIdExtentMap= new HashMap<>();
+		result.forEach( row -> {
+			String tsId = row.get(AV_CWMS_TS_ID2.CWMS_TS_ID);
+			if( !tsIdExtentMap.containsKey(tsId) ) {
+				TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
+						.officeId(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
+						.cwmsTsId(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
+						.units(row.get(AV_CWMS_TS_ID2.UNIT_ID) )
+						.interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
+						.intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
+						if( this.getDbVersion() > TimeSeriesDaoImpl.CWMS_21_1_1){
+							builder.timeZone(row.get("TIME_ZONE_ID",String.class));
 						}
-						return builder.build();
+				tsIdExtentMap.put(tsId, builder);
+			}
+
+			if( row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null ){
+				//tsIdExtentMap.get(tsId)
+				TimeSeriesExtents extents = new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
+																  row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
+																  row.get(AV_TS_EXTENTS_UTC.LATEST_TIME)
+				);
+				tsIdExtentMap.get(tsId).withExtent(extents);
+			}
+		});
+
+		List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
+				.sorted( (left,right) -> left.getKey().compareTo(right.getKey()) )
+				.map( e -> {
+
+						return e.getValue().build();
 				}
 				)
 				.collect(Collectors.toList());

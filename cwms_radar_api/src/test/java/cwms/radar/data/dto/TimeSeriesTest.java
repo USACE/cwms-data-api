@@ -142,5 +142,3 @@ public class TimeSeriesTest
 		assertTrue(xmlStr.contains("office-id"));
 	}
 }
-
-
