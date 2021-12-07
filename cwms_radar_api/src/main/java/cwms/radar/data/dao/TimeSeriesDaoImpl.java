@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.data.dto.TimeSeriesExtents;
 import cwms.radar.data.dto.Tsv;
 import cwms.radar.data.dto.TsvDqu;
 import cwms.radar.data.dto.TsvDquId;
@@ -422,21 +424,38 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 		logger.info( () -> overallQuery.getSQL(ParamType.INLINED));
 		Result<?> result = overallQuery.fetch();
-		List<? extends CatalogEntry> entries = result.stream()
-				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
-				.map( e -> {
-						TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
-						.officeId(e.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
-						.cwmsTsId(e.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
-						.units(e.get(AV_CWMS_TS_ID2.UNIT_ID) )
-						.interval(e.get(AV_CWMS_TS_ID2.INTERVAL_ID))
-						.intervalOffset(e.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET))
-						.earliestTime(e.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME))
-						.latestTime(e.get(AV_TS_EXTENTS_UTC.LATEST_TIME));
+
+		HashMap<String,	TimeseriesCatalogEntry.Builder> tsIdExtentMap= new HashMap<>();
+		result.forEach( row -> {
+			String tsId = row.get(AV_CWMS_TS_ID2.CWMS_TS_ID);
+			if( !tsIdExtentMap.containsKey(tsId) ) {
+				TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
+						.officeId(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
+						.cwmsTsId(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
+						.units(row.get(AV_CWMS_TS_ID2.UNIT_ID) )
+						.interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
+						.intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
 						if( this.getDbVersion() > TimeSeriesDaoImpl.CWMS_21_1_1){
-							builder.timeZone(e.get("TIME_ZONE_ID",String.class));
+							builder.timeZone(row.get("TIME_ZONE_ID",String.class));
 						}
-						return builder.build();
+				tsIdExtentMap.put(tsId, builder);
+			}
+
+			if( row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null ){
+				//tsIdExtentMap.get(tsId)
+				TimeSeriesExtents extents = new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
+																  row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
+																  row.get(AV_TS_EXTENTS_UTC.LATEST_TIME)
+				);
+				tsIdExtentMap.get(tsId).withExtent(extents);
+			}
+		});
+
+		List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
+				.sorted( (left,right) -> left.getKey().compareTo(right.getKey()) )
+				.map( e -> {
+
+						return e.getValue().build();
 				}
 				)
 				.collect(Collectors.toList());

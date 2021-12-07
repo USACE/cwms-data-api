@@ -4,15 +4,20 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+
+import cwms.radar.data.dto.TimeSeriesExtents;
 import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -32,15 +37,9 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
     @XmlElement(name="time-zone")
     private String timeZone;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @XmlElement(name="earliest-time")
-    private ZonedDateTime earliestTime;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @XmlElement(name="latest-time")
-    private ZonedDateTime latestTime;
+    @XmlElementWrapper(name="extents")
+    @XmlElement(name="extents")
+    private List<TimeSeriesExtents> extents;
 
 
     public String getName() {
@@ -61,27 +60,23 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         return timeZone;
     }
 
-    public ZonedDateTime getEarliestTime()
+    public List<TimeSeriesExtents> getExtents()
     {
-        return earliestTime;
+        return extents;
     }
 
-    public ZonedDateTime getLatestTime()
-    {
-        return latestTime;
-    }
+
 
     private TimeseriesCatalogEntry(){ super(null);}
 
-    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, ZonedDateTime earliestTime, ZonedDateTime latestTime){
+    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, List<TimeSeriesExtents> extents){
         super(office);
         this.name=name;
         this.units = units;
         this.interval = interval;
         this.intervalOffset = intervalOffset;
         this.timeZone = timeZone;
-        this.earliestTime = earliestTime;
-        this.latestTime = latestTime;
+        this.extents = extents;
     }
 
     public String getUnits(){
@@ -104,6 +99,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         private String timeZone = null;
         private ZonedDateTime earliestTime;
         private ZonedDateTime latestTime;
+        private ArrayList<TimeSeriesExtents> extents = new ArrayList<>();
 
         public Builder officeId(final String office) {
             this.office = office;
@@ -139,36 +135,15 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
             return this;
         }
 
-        public Builder earliestTime(final Timestamp earliest) {
-            ZonedDateTime zdt = null;
-            if(earliest != null)
-            {
-                zdt = ZonedDateTime.ofInstant(earliest.toInstant(), ZoneId.of("UTC"));
-            }
-            return earliestTime(zdt);
-        }
-
-        public Builder earliestTime(final ZonedDateTime earliest) {
-            this.earliestTime = earliest;
+        public Builder withExtent(final TimeSeriesExtents extent ) {
+            this.extents.add(extent);
             return this;
         }
 
-        public Builder latestTime(final Timestamp latest) {
-            ZonedDateTime zdt = null;
-            if(latest != null)
-            {
-                zdt = ZonedDateTime.ofInstant(latest.toInstant(), ZoneId.of("UTC"));
-            }
-            return latestTime(zdt);
-        }
 
-        public Builder latestTime(final ZonedDateTime latest) {
-            this.latestTime = latest;
-            return this;
-        }
 
         public TimeseriesCatalogEntry build(){
-            return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone, earliestTime, latestTime);
+            return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone, extents);
         }
     }
 }
