@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.naming.OperationNotSupportedException;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
@@ -126,11 +125,9 @@ public class LocationController implements CrudHandler {
             final String results;
             if(contentType.getType().equals(Formats.GEOJSON))
             {
-                logger.fine("units:" + units);
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units, office);
                 ctx.json(collection);
-                /*ObjectMapper mapper = JavalinJackson.getObjectMapper();
-                results = mapper.writeValueAsString(collection);*/
+
                 requestResultSize.update(ctx.res.getBufferSize());
             }
             else
@@ -425,7 +422,7 @@ public class LocationController implements CrudHandler {
         String updatedName = updatedLocation.getName() == null ? existingLocation.getName() : updatedLocation.getName();
         Double updatedLatitude = updatedLocation.getLatitude() == null ? existingLocation.getLatitude() : updatedLocation.getLatitude();
         Double updatedLongitude = updatedLocation.getLongitude() == null ? existingLocation.getLongitude() : updatedLocation.getLongitude();
-        Boolean updatedIsActive = updatedLocation.active() == null ? existingLocation.active() : updatedLocation.active();
+        Boolean updatedIsActive = updatedLocation.getActive() == null ? existingLocation.getActive() : updatedLocation.getActive();
         String updatedPublicName = updatedLocation.getPublicName() == null ? existingLocation.getPublicName() : updatedLocation.getPublicName();
         String updatedLongName = updatedLocation.getLongName() == null ? existingLocation.getLongName() : updatedLocation.getLongName();
         String updatedDescription = updatedLocation.getDescription() == null ? existingLocation.getDescription() : updatedLocation.getDescription();

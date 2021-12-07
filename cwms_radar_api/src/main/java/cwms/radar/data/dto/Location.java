@@ -85,7 +85,7 @@ public final class  Location implements CwmsDTO
         return longitude;
     }
 
-    public Boolean active()
+    public Boolean getActive()
     {
         return active;
     }
@@ -192,13 +192,33 @@ public final class  Location implements CwmsDTO
             return false;
         }
         Location location = (Location) o;
-        return Double.compare(location.getLatitude(), getLatitude()) == 0 && Double.compare(location.getLongitude(), getLongitude()) == 0 && active() == location.active() && getName().equals(location.getName()) && getPublicName().equals(location.getPublicName()) && Objects.equals(getLongName(), location.getLongName()) && Objects.equals(getDescription(), location.getDescription()) && getTimezoneName().equals(location.getTimezoneName()) && Objects.equals(getLocationType(), location.getLocationType()) && getLocationKind().equals(location.getLocationKind()) && Objects.equals(getNation(), location.getNation()) && Objects.equals(getStateInitial(), location.getStateInitial()) && Objects.equals(getCountyName(), location.getCountyName()) && getHorizontalDatum().equals(location.getHorizontalDatum()) && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude()) && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude()) && Objects.equals(getVerticalDatum(), location.getVerticalDatum()) && Objects.equals(getElevation(), location.getElevation()) && Objects.equals(getMapLabel(), location.getMapLabel()) && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId()) && getOfficeId().equals(location.getOfficeId());
+        return Double.compare(location.getLatitude(), getLatitude()) == 0
+                && Double.compare(location.getLongitude(), getLongitude()) == 0
+                && getActive() == location.getActive()
+                && getName().equals(location.getName())
+                && getPublicName().equals(location.getPublicName())
+                && Objects.equals(getLongName(), location.getLongName())
+                && Objects.equals(getDescription(), location.getDescription())
+                && getTimezoneName().equals(location.getTimezoneName())
+                && Objects.equals(getLocationType(), location.getLocationType())
+                && getLocationKind().equals(location.getLocationKind())
+                && Objects.equals(getNation(), location.getNation())
+                && Objects.equals(getStateInitial(), location.getStateInitial())
+                && Objects.equals(getCountyName(), location.getCountyName())
+                && getHorizontalDatum().equals(location.getHorizontalDatum())
+                && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude())
+                && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude())
+                && Objects.equals(getVerticalDatum(), location.getVerticalDatum())
+                && Objects.equals(getElevation(), location.getElevation())
+                && Objects.equals(getMapLabel(), location.getMapLabel())
+                && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId())
+                && getOfficeId().equals(location.getOfficeId());
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getName(), getLatitude(), getLongitude(), active(), getPublicName(), getLongName(), getDescription(), getTimezoneName(), getLocationType(), getLocationKind(), getNation(), getStateInitial(), getCountyName(), getHorizontalDatum(), getPublishedLongitude(), getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(), getBoundingOfficeId(), getOfficeId());
+        return Objects.hash(getName(), getLatitude(), getLongitude(), getActive(), getPublicName(), getLongName(), getDescription(), getTimezoneName(), getLocationType(), getLocationKind(), getNation(), getStateInitial(), getCountyName(), getHorizontalDatum(), getPublishedLongitude(), getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(), getBoundingOfficeId(), getOfficeId());
     }
 
     @Override
@@ -284,7 +304,7 @@ public final class  Location implements CwmsDTO
             this.locationKind = location.getLocationKind();
             this.officeId = location.getOfficeId();
             this.timezoneName = location.getTimezoneName();
-            this.active = location.active();
+            this.active = location.getActive();
             this.publicName = location.getPublicName();
             this.longName = location.getLongName();
             this.description = location.getDescription();
