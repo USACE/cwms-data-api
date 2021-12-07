@@ -35,6 +35,13 @@
             "request": "attach",
             "port": 5005,
             "hostName": "localhost"
+        },
+        {
+            "type": "java",
+            "name": "Remote Debug-Tomcat/Netbeans",
+            "request": "attach",
+            "port": 11550,
+            "hostName": "localhost"
         }
     ]
 }
