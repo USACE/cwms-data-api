@@ -57,6 +57,7 @@ import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectQuery;
 import org.jooq.SelectSelectStep;
+import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import org.jooq.impl.*;
@@ -366,58 +367,61 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				total = Integer.parseInt(parts[1]);
 			}
 		}
-		SelectQuery<?> query = dsl.selectQuery();
-		query.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
-		query.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
-		query.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
-		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
-		query.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
+		SelectQuery<?> primaryDataQuery = dsl.selectQuery();
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.TS_CODE);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
+		primaryDataQuery.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
 		if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
-			query.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
+			primaryDataQuery.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
 		}
-		query.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
-		query.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
 
-		query.addFrom(AV_CWMS_TS_ID2);
+		primaryDataQuery.addFrom(AV_CWMS_TS_ID2);
 
-		query.addJoin(AV_TS_EXTENTS_UTC,org.jooq.JoinType.RIGHT_OUTER_JOIN,
-			AV_TS_EXTENTS_UTC.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)
-			.and(
-			condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = cwms_20.av_cwms_ts_id2.ts_code "))
-		);
-		//AV_TS_EXTENTS_UTC.TS_CODE.cast(BigDecimal.class).eq(AV_CWMS_TS_ID2.TS_CODE));
-
-
-
-		query.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 		// add the regexp_like clause.
-		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
 
 		if( office.isPresent() ){
-			query.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
 
 		if(categoryLike != null){
-			query.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
 		}
 
 		if(groupLike != null){
-			query.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
 		}
 
-		query.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
 
 
-		query.addOrderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		primaryDataQuery.addOrderBy(AV_CWMS_TS_ID2.CWMS_TS_ID);
+		Table<?> dataTable = primaryDataQuery.asTable("data");
 		//query.addConditions(field("rownum").lessOrEqual(pageSize));
 		//query.addConditions(condition("rownum < 500"));
-		SelectQuery<?> query2 = dsl.selectQuery();
-		query2.addSelect(field("rownum"));
-		query2.addSelect(query.fields());
-		query2.addFrom(query);//.limit(pageSize);
-		query2.addConditions(field("rownum").lessOrEqual(pageSize));
-		logger.info( () -> query2.getSQL(ParamType.INLINED));
-		Result<?> result = query2.fetch();
+		SelectQuery<?> limitQuery = dsl.selectQuery();
+		//limitQuery.addSelect(field("rownum"));
+		limitQuery.addSelect(dataTable.fields());
+		limitQuery.addFrom(dataTable);//.limit(pageSize);
+		limitQuery.addConditions(field("rownum").lessOrEqual(pageSize));
+
+		Table<?> limitTable = limitQuery.asTable("limiter");
+
+		SelectQuery<?> overallQuery = dsl.selectQuery();
+		overallQuery.addSelect(limitTable.fields());
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.VERSION_TIME);
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
+		overallQuery.addFrom(limitTable);
+		overallQuery.addJoin(AV_TS_EXTENTS_UTC,org.jooq.JoinType.LEFT_OUTER_JOIN,
+			condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = " + field("\"limiter\".\"TS_CODE\"")));
+
+		logger.info( () -> overallQuery.getSQL(ParamType.INLINED));
+		Result<?> result = overallQuery.fetch();
 		List<? extends CatalogEntry> entries = result.stream()
 				//.map( e -> e.into(usace.cwms.db.jooq.codegen.tables.records.AV_CWMS_TIMESERIES_ID2) )
 				.map( e -> {
