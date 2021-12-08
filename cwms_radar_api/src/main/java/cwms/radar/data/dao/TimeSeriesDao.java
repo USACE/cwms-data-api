@@ -12,7 +12,7 @@ public interface TimeSeriesDao
 {
 	Timestamp NON_VERSIONED = null;
 	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office);
-	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike, String categoryLike, String groupLike);
+	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike, String locCategoryLike, String locGroupLike, String tsCategoryLike, String tsGroupLike);
 
 	void create(TimeSeries timeSeries);
 	void store(TimeSeries timeSeries, Timestamp versionDate);

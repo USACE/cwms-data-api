@@ -325,12 +325,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 	@Override
 	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office){
-		return getTimeSeriesCatalog(page, pageSize, office, ".*", null, null);
+		return getTimeSeriesCatalog(page, pageSize, office, ".*", null, null, null, null);
 	}
 
 	@Override
 	public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office,
-	                                    String idLike, String categoryLike, String groupLike){
+	                                    String idLike, String locCategoryLike, String locGroupLike,
+	                                    String tsCategoryLike, String tsGroupLike){
 		int total = 0;
 		String tsCursor = "*";
 		if( page == null || page.isEmpty() ){
@@ -341,12 +342,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
 			}
 
-			if(categoryLike != null){
-				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
+			if(locCategoryLike != null){
+				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(locCategoryLike));
 			}
 
-			if(groupLike != null){
-				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
+			if(locGroupLike != null){
+				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(locGroupLike));
+			}
+
+			if(tsCategoryLike != null){
+				condition.and(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.likeRegex(tsCategoryLike));
+			}
+
+			if(tsGroupLike != null){
+				condition.and(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.likeRegex(tsGroupLike));
 			}
 
 			SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
@@ -390,12 +399,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
 
-		if(categoryLike != null){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(categoryLike));
+		if(locCategoryLike != null){
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(locCategoryLike));
 		}
 
-		if(groupLike != null){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(groupLike));
+		if(locGroupLike != null){
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(locGroupLike));
+		}
+
+		if(tsCategoryLike != null){
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.likeRegex(tsCategoryLike));
+		}
+
+		if(tsGroupLike != null){
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.likeRegex(tsGroupLike));
 		}
 
 		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
