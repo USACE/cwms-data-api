@@ -242,7 +242,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 					tzName
 			);
 
-			logger.info(() -> metadataQuery.getSQL(ParamType.INLINED));
+			logger.finest(() -> metadataQuery.getSQL(ParamType.INLINED));
 
 			TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
 				String vert = (String)tsMetadata.getValue("VERTICAL_DATUM");
