@@ -22,7 +22,9 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
+import org.jooq.SelectConnectByStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectOrderByStep;
 import org.jooq.SelectSeekStep1;
 import org.jooq.TableField;
@@ -55,7 +57,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 
 		List<Pair<LocationGroup, AssignedLocation>> assignments = dsl
 				.select(alga.CATEGORY_ID, alga.GROUP_ID,
-						alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID, alga.LOCATION_ID,
+						alga.DB_OFFICE_ID, alga.LOCATION_ID,
 						alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
 						alcg.CAT_DB_OFFICE_ID,
 						alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
@@ -67,6 +69,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 										alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
 				.where(alcg.LOC_CATEGORY_ID.eq(categoryId).and(alcg.LOC_GROUP_ID.eq(groupId)).and(alga.DB_OFFICE_ID.eq(officeId)))
 				.orderBy(alga.ATTRIBUTE)
+				.fetchSize(1000)
 				.fetch(mapper);
 
 		// Might want to verify that all the groups in the list are the same?
@@ -89,15 +92,14 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 
 		String locationId = resultRecord.get(alga.LOCATION_ID);
-		String baseLocationId = resultRecord.get(alga.BASE_LOCATION_ID);
-		String subLocationId = resultRecord.get(alga.SUB_LOCATION_ID);
+		String officeId = resultRecord.get(alga.DB_OFFICE_ID);
+
 		String aliasId = resultRecord.get(alga.ALIAS_ID);
 		Number attribute = resultRecord.get(alga.ATTRIBUTE);
 
 		String refLocationId = resultRecord.get(alga.REF_LOCATION_ID);
 
-		return new AssignedLocation(locationId, baseLocationId, subLocationId, aliasId, attribute,
-				refLocationId);
+		return new AssignedLocation(locationId, officeId, aliasId, attribute, refLocationId);
 	}
 
 	private LocationGroup buildLocationGroup(Record resultRecord, LocationCategory locationCategory)
@@ -135,6 +137,14 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		return getLocationGroups(null);
 	}
 
+	public List<LocationGroup> getLocationGroups(String officeId, boolean includeAssigned){
+		if(includeAssigned){
+			return getLocationGroups(officeId);
+		} else {
+			return getGroupsWithoutAssignedLocations(officeId);
+		}
+	}
+
 	public List<LocationGroup> getLocationGroups(String officeId)
 	{
 		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
@@ -151,15 +161,20 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 
 		Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
 
-		dsl.select(
-				alga.CATEGORY_ID, alga.GROUP_ID, alga.DB_OFFICE_ID, alga.BASE_LOCATION_ID, alga.SUB_LOCATION_ID,
-				alga.LOCATION_ID, alga.ALIAS_ID, alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID,
-				alga.SHARED_REF_LOCATION_ID, alcg.CAT_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC,
-				alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
-				.from(alcg)
-				.join(alga)
-				.on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID).and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
-				.where(alga.DB_OFFICE_ID.eq(officeId))
+		SelectConnectByStep<? extends Record> connectBy;
+		SelectOnConditionStep<? extends Record> onStep = dsl.select(
+				alga.CATEGORY_ID, alga.GROUP_ID, alga.DB_OFFICE_ID, alga.LOCATION_ID, alga.ALIAS_ID, alga.ATTRIBUTE,
+				alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID, alcg.CAT_DB_OFFICE_ID,
+				alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE).from(
+				alcg).join(alga).on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID).and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+		if(officeId != null){
+			connectBy = onStep.where(
+					alga.DB_OFFICE_ID.eq(officeId));
+		} else {
+			connectBy = onStep;
+		}
+
+		connectBy
 				.orderBy(alga.CATEGORY_ID, alga.GROUP_ID, alga.ATTRIBUTE)
 				.fetchSize(1000)    // This made the query go from 2 minutes to 10 seconds?
 				.stream().map(mapper::map)
@@ -197,7 +212,8 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 					table.GRP_DB_OFFICE_ID.eq(officeId));
 		}
 
-		retval = select.orderBy(table.LOC_GROUP_ATTRIBUTE)
+		retval =select.orderBy(table.LOC_CATEGORY_ID, table.LOC_GROUP_ATTRIBUTE, table.LOC_GROUP_ID)
+				.fetchSize(1000)
 				.fetch().into(LocationGroup.class);
 
 		return retval;
