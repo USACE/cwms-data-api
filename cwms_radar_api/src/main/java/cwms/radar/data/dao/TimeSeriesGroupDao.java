@@ -38,7 +38,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 		Condition whereCond = null;
 		if(officeId != null)
 		{
-			whereCond = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(officeId);
+			whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId);
 		}
 
 		return getTimeSeriesGroupsWhere(whereCond);
@@ -68,8 +68,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
 				.leftOuterJoin(grpAssgn)
 				.on(
 				catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
-						.and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID))
-						.and(catGrp.GRP_DB_OFFICE_ID.eq(grpAssgn.DB_OFFICE_ID)));
+						.and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)))
+						;
 
 
 		SelectOrderByStep<?> select = selectOn;

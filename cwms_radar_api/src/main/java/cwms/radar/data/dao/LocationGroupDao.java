@@ -67,7 +67,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 						alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
 								.and(
 										alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
-				.where(alcg.LOC_CATEGORY_ID.eq(categoryId).and(alcg.LOC_GROUP_ID.eq(groupId)).and(alga.DB_OFFICE_ID.eq(officeId)))
+				.where(alcg.LOC_CATEGORY_ID.eq(categoryId).and(alcg.LOC_GROUP_ID.eq(groupId)).and(alcg.GRP_DB_OFFICE_ID.eq(officeId)))
 				.orderBy(alga.ATTRIBUTE)
 				.fetchSize(1000)
 				.fetch(mapper);
@@ -109,17 +109,17 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 		AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		String officeId = resultRecord.get(alga.DB_OFFICE_ID);
 		String groupId = resultRecord.get(alga.GROUP_ID);
 		String sharedAliasId = resultRecord.get(alga.SHARED_ALIAS_ID);
 		String sharedRefLocationId = resultRecord.get(alga.SHARED_REF_LOCATION_ID);
 
+		String grpOfficeId = resultRecord.get(alcg.GRP_DB_OFFICE_ID);
 		String grpDesc = resultRecord.get(alcg.LOC_GROUP_DESC);
 		Number grpAttribute = resultRecord.get(alcg.LOC_GROUP_ATTRIBUTE);
 
 		return new LocationGroup(
 				locationCategory,
-				officeId, groupId, grpDesc,
+				grpOfficeId, groupId, grpDesc,
 				sharedAliasId, sharedRefLocationId, grpAttribute);
 	}
 
@@ -164,12 +164,13 @@ public class LocationGroupDao extends JooqDao<LocationGroup>
 		SelectConnectByStep<? extends Record> connectBy;
 		SelectOnConditionStep<? extends Record> onStep = dsl.select(
 				alga.CATEGORY_ID, alga.GROUP_ID, alga.DB_OFFICE_ID, alga.LOCATION_ID, alga.ALIAS_ID, alga.ATTRIBUTE,
-				alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID, alcg.CAT_DB_OFFICE_ID,
+				alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+				alcg.CAT_DB_OFFICE_ID, alcg.GRP_DB_OFFICE_ID,
 				alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE).from(
 				alcg).join(alga).on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID).and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 		if(officeId != null){
 			connectBy = onStep.where(
-					alga.DB_OFFICE_ID.eq(officeId));
+					alcg.GRP_DB_OFFICE_ID.eq(officeId));
 		} else {
 			connectBy = onStep;
 		}
