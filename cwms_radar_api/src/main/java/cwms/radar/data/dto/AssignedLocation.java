@@ -3,22 +3,19 @@ package cwms.radar.data.dto;
 public class AssignedLocation implements CwmsDTO
 {
 	private String locationId;
-	private String baseLocationId;
-	private String subLocationId;
+	private String officeId;
 	private String aliasId;
 	private Number attribute;
-	private Number locationCode;
+
 	private String refLocationId;
 
-	public AssignedLocation(String locationId, String baseLocationId, String subLocationId, String aliasId,
-							Number attribute, Number locationCode, String refLocationId)
+	public AssignedLocation(String locationId, String office, String aliasId,
+							Number attribute, String refLocationId)
 	{
 		this.locationId = locationId;
-		this.baseLocationId = baseLocationId;
-		this.subLocationId = subLocationId;
+		this.officeId = office;
 		this.aliasId = aliasId;
 		this.attribute = attribute;
-		this.locationCode = locationCode;
 		this.refLocationId = refLocationId;
 	}
 
@@ -27,14 +24,9 @@ public class AssignedLocation implements CwmsDTO
 		return locationId;
 	}
 
-	public String getBaseLocationId()
+	public String getOfficeId()
 	{
-		return baseLocationId;
-	}
-
-	public String getSubLocationId()
-	{
-		return subLocationId;
+		return officeId;
 	}
 
 	public String getAliasId()
@@ -45,11 +37,6 @@ public class AssignedLocation implements CwmsDTO
 	public Number getAttribute()
 	{
 		return attribute;
-	}
-
-	public Number getLocationCode()
-	{
-		return locationCode;
 	}
 
 	public String getRefLocationId()

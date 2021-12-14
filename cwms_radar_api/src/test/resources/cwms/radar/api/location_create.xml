@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Location>
+    <name>LOC_TEST</name>
+    <latitude>10.0</latitude>
+    <longitude>50.0</longitude>
+    <public-name>LOC_TEST</public-name>
+    <long-name>LOCATION_TEST</long-name>
+    <description>For Testing</description>
+    <timezone-name>UTC</timezone-name>
+    <location-kind>SITE</location-kind>
+    <nation>US</nation>
+    <state-initial>CA</state-initial>
+    <county-name>Sacramento</county-name>
+    <nearest-city>Sacramento</nearest-city>
+    <horizontal-datum>NGVD-29</horizontal-datum>
+    <published-longitude>10.0</published-longitude>
+    <published-latitude>50.0</published-latitude>
+    <elevation>0</elevation>
+    <map-label>label</map-label>
+    <bounding-office-id>LRL</bounding-office-id>
+    <office-id>LRL</office-id>
+</Location>

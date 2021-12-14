@@ -18,7 +18,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.eclipse.jetty.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -29,6 +28,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.servlet.http.HttpServletResponse;
 public class BasinController implements CrudHandler
 {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
@@ -132,7 +133,7 @@ public class BasinController implements CrudHandler
             }
             else
             {
-                ctx.status(HttpStatus.NOT_FOUND_404).json(new RadarError("Unsupported format for basins"));
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unsupported format for basins"));
             }
         }
         catch (SQLException ex)

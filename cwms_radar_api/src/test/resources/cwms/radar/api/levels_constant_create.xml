@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LocationLevel>
+    <si-parameter-units-constant-value>10</si-parameter-units-constant-value>
+    <level-units-id>ft</level-units-id>
+    <level-date>2008-12-03T10:15:30+01:00[UTC]</level-date>
+    <level-comment>for testing purposes</level-comment>
+    <interpolate-string>false</interpolate-string>
+    <location-id>LOC_TEST.Elev.Inst.0.Bottom of Inlet</location-id>
+    <office-id>LRL</office-id>
+</LocationLevel>
