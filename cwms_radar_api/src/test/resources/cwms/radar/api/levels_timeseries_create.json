@@ -1,0 +1,9 @@
+{
+  "seasonal-time-series-id": "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST630",
+  "level-units-id":"ft",
+  "level-date":"2008-12-03T10:15:30+01:00[UTC]",
+  "level-comment":"for testing purposes",
+  "interpolate-string":"false",
+  "location-id":"LOC_TEST.Elev.Inst.0.Bottom of Inlet",
+  "office-id":"LRL"
+}

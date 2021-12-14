@@ -29,13 +29,12 @@ public class Catalog extends CwmsDTOPaginated {
     private Catalog(){}
 
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries ){
-        super(page, pageSize);
-        this.total = total;
+        super(page, pageSize, total);
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
         this.entries = entries;
         if( entries.size() == pageSize){
-            nextPage = encodeCursor(entries.get(entries.size()-1).toString().toUpperCase(), total, "|||");
+            nextPage = encodeCursor("|||",entries.get(entries.size()-1).toString().toUpperCase(),total);
         } else {
             nextPage = null;
         }

@@ -26,7 +26,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
-import org.eclipse.jetty.http.HttpStatus;
 import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -82,7 +81,7 @@ public class ClobController implements CrudHandler {
                 @OpenApiParam(name="like",
                     required = false,
                     type = String.class,
-                    description = "Posix regular expression describing the clob id's you want"
+                    description = "Posix regular expression matching against the id"
                 )
             },
         responses = { @OpenApiResponse(status="200",
@@ -104,10 +103,13 @@ public class ClobController implements CrudHandler {
         ) {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
+            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
             cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
-            if( CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor) != true ) {
+            if(!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
                     .status(HttpCode.BAD_REQUEST);
                 return;
@@ -120,9 +122,7 @@ public class ClobController implements CrudHandler {
             boolean includeValues = ctx.queryParamAsClass("includeValues",Boolean.class).getOrDefault(false);
             String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
 
-            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+
 
             ClobDao dao = new ClobDao(dsl);
             Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);
@@ -172,7 +172,7 @@ public class ClobController implements CrudHandler {
 
                 requestResultSize.update(result.length());
             } else {
-                ctx.status(HttpStatus.NOT_FOUND_404).json(new RadarError("Unable to find clob based on given parameters"));
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unable to find clob based on given parameters"));
             }
 
 

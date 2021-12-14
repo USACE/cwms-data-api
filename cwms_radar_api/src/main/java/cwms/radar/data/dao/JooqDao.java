@@ -14,6 +14,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 public abstract class JooqDao<T> extends Dao<T>
 {
+
 	protected JooqDao(DSLContext dsl)
 	{
 		super(dsl);
@@ -30,6 +31,7 @@ public abstract class JooqDao<T> extends Dao<T>
 	{
 		DSLContext dsl =  DSL.using(database, SQLDialect.ORACLE11G);
 		CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+
 		return dsl;
 	}
 

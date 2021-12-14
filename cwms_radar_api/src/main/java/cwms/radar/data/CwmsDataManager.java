@@ -11,8 +11,6 @@ import org.jooq.impl.DSL;
 
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 
 
 public class CwmsDataManager implements AutoCloseable {
@@ -44,13 +42,6 @@ public class CwmsDataManager implements AutoCloseable {
     }
 
 
-
-	public String getRatings(String names, String format, String unit, String datum, String office, String start,
-			String end, String timezone, String size) {
-        return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(),
-                names, format, unit, datum, start, end, timezone, office);
-	}
-
 	public String getUnits(String format) {
         return CWMS_CAT_PACKAGE.call_RETRIEVE_UNITS_F(dsl.configuration(), format);
 	}
@@ -61,12 +52,6 @@ public class CwmsDataManager implements AutoCloseable {
 
 	public String getTimeZones(String format) {
             return CWMS_CAT_PACKAGE.call_RETRIEVE_TIME_ZONES_F(dsl.configuration(), format);
-    }
-
-	public String getLocationLevels(String format, String names, String office, String unit, String datum, String begin,
-			String end, String timezone) {
-        return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVELS_F(dsl.configuration(),
-                names, format, office,unit,datum, begin, end, timezone);
     }
 
 
