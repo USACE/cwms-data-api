@@ -3,4 +3,11 @@
     "cSpell.words": [
         "clobs"
     ],
+    "gradle.javaDebug": {
+        "tasks": [
+            "run",
+
+        ],
+        "clean": true
+    }
 }

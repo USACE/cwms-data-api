@@ -1,14 +1,5 @@
 package cwms.radar.api;
 
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,14 +7,38 @@ import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
+import cwms.radar.formatters.xml.XMLv2;
+import cwms.radar.security.CwmsAuthException;
+import cwms.radar.security.CwmsNoAuthorizer;
+
+import fixtures.TestHttpServletResponse;
+import fixtures.TestServletInputStream;
+
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+import io.javalin.http.util.ContextUtil;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TimeZone;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -32,129 +47,229 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TimeSeriesControllerTest
-{
-
-	@Test
-	public void testDaoMock() throws JsonProcessingException
-	{
-		String officeId = "LRL";
-		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-		TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
-
-		// build a mock dao that returns a pre-built ts when called a certain way
-		TimeSeriesDao dao = mock(TimeSeriesDao.class);
-
-		when(
-				dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-						isNull(),
-						isNull(), isNull(), isNull())).thenReturn(fakeTs);
+public class TimeSeriesControllerTest extends ControllerTest {
 
 
-		// build mock request and response
-		final HttpServletRequest request= mock(HttpServletRequest.class);
-		final HttpServletResponse response = mock(HttpServletResponse.class);
-		final Map<String, ?> map = new LinkedHashMap<>();
 
-		when(request.getAttribute("office-id")).thenReturn(officeId);
-		when(request.getAttribute("database")).thenReturn(null);
+    @Test
+    public void testDaoMock() throws JsonProcessingException     {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries expected = buildTimeSeries(officeId, tsId);
 
-		when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
+        // build a mock dao that returns a pre-built ts when called a certain way
+        TimeSeriesDao dao = mock(TimeSeriesDao.class);
 
-		Map<String, String> urlParams = new LinkedHashMap<>();
-		urlParams.put("office", officeId);
-		urlParams.put("name", tsId);
+        when(
+                dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
+                        isNull(),
+                        isNull(), isNull(), isNull())).thenReturn(expected);
 
-		String paramStr = buildParamStr(urlParams);
 
-		when(request.getQueryString()).thenReturn(paramStr);
-		when(request.getRequestURL()).thenReturn(new StringBuffer( "http://127.0.0.1:7001/timeseries"));
+        // build mock request and response
+        final HttpServletRequest request= mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Map<String, ?> map = new LinkedHashMap<>();
 
-		// build real context that uses the mock request/response
-		Context ctx = new Context(request, response, map);
+        when(request.getAttribute("office-id")).thenReturn(officeId);
+        when(request.getAttribute("database")).thenReturn(null);
 
-		// Build a controller that doesn't actually talk to database
-		TimeSeriesController controller = new TimeSeriesController(new MetricRegistry()){
-			@Override
-			protected DSLContext getDslContext(Context ctx)
-			{
-				return null;
-			}
+        when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
 
-			@NotNull
-			@Override
-			protected TimeSeriesDao getTimeSeriesDao(DSLContext dsl)
-			{
-				return dao;
-			}
-		};
-		// make controller use our mock dao
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put("office", officeId);
+        urlParams.put("name", tsId);
 
-		// Do a controller getAll with our context
-		controller.getAll(ctx);
+        String paramStr = buildParamStr(urlParams);
 
-		// Check that the controller accessed our mock dao in the expected way
-		verify(dao, times(1)).
-				getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-						isNull(),
-						isNull(), isNull(), isNull());
+        when(request.getQueryString()).thenReturn(paramStr);
+        when(request.getRequestURL()).thenReturn(new StringBuffer( "http://127.0.0.1:7001/timeseries"));
 
-		// Make sure controller thought it was happy
-		verify(response).setStatus(200);
-		// And make sure controller returned json
-		verify(response).setContentType(Formats.JSONV2);
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, map);
 
-		String result = ctx.resultString();
-		assertNotNull(result);  // MAke sure we got some sort of response
+        // Build a controller that doesn't actually talk to database
+        TimeSeriesController controller = new TimeSeriesController(new MetricRegistry()){
+            @Override
+            protected DSLContext getDslContext(Context ctx) {
+                return null;
+            }
 
-		// Turn json response back into a TimeSeries object
-		ObjectMapper om = JsonV2.buildObjectMapper();
-		TimeSeries ts = om.readValue(result, TimeSeries.class);
+            @NotNull
+            @Override
+            protected TimeSeriesDao getTimeSeriesDao(DSLContext dsl) {
+                return dao;
+            }
+        };
+        // make controller use our mock dao
 
-		// Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
-		assertEquals(ts.getOfficeId(), fakeTs.getOfficeId());
-		assertEquals(ts.getName(), fakeTs.getName());
-		assertEquals(ts.getValues(), fakeTs.getValues());
-		assertTrue(ts.getBegin().isEqual(fakeTs.getBegin()));
-		assertTrue(ts.getEnd().isEqual(fakeTs.getEnd()));
-	}
+        // Do a controller getAll with our context
+        controller.getAll(ctx);
 
-	@NotNull
-	private TimeSeries buildTimeSeries(String officeId, String tsId)
-	{
-		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-		ZonedDateTime end = ZonedDateTime.parse("2021-06-21T09:00:00-07:00[PST8PDT]");
+        // Check that the controller accessed our mock dao in the expected way
+        verify(dao, times(1)).
+                getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
+                        isNull(), isNull(), isNull(), isNull());
 
-		long diff = end.toEpochSecond() - start.toEpochSecond();
-		assertEquals(3600, diff); // just to make sure I've got the date parsing thing right.
+        // Make sure controller thought it was happy
+        verify(response).setStatus(200);
+        // And make sure controller returned json
+        verify(response).setContentType(Formats.JSONV2);
 
-		int minutes = 15;
-		int count = 60/15 ; // do I need a +1?  ie should this be 12 or 13?
-		// Also, should end be the last point or the next interval?
+        String result = ctx.resultString();
+        assertNotNull(result);  // MAke sure we got some sort of response
 
-		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, officeId, start, end, "m", Duration.ofMinutes(minutes));
+        // Turn json response back into a TimeSeries object
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        TimeSeries actual = om.readValue(result, TimeSeries.class);
 
-		ZonedDateTime next = start;
-		for(int i = 0; i < count; i++)
-		{
-			Timestamp dateTime = Timestamp.valueOf(next.toLocalDateTime());
-			ts.addValue(dateTime, (double) i, 0);
-			next = next.plus(minutes, ChronoUnit.MINUTES);
-		}
-		return ts;
-	}
+        assertSimilar(expected, actual);
+    }
 
-	@NotNull
-	private String buildParamStr(Map<String, String> urlParams)
-	{
-		StringBuilder sb = new StringBuilder();
-		urlParams.entrySet().forEach(e->sb.append(e.getKey()).append("=").append(e.getValue()).append("&"));
+    private void assertSimilar(TimeSeries expected, TimeSeries actual) {
+        // Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
+        assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
+        assertEquals(expected.getName(), actual.getName(), "names did not match");
+        assertEquals(expected.getValues(), actual.getValues(), "values did not match");
+        assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
+        assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
+    }
 
-		if(sb.length() > 0){
-			sb.setLength(sb.length()-1);
-		}
+    @Test
+    public void testDeserializeTimeSeriesJaxb() throws IOException {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
 
-		return sb.toString();
-	}
+        XMLv2 out = new XMLv2();
+        String str = out.format(fakeTs);
 
+        TimeSeries ts2 = TimeSeriesController.deserializeJaxb(str);
+        assertNotNull(ts2);
+
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @Test
+    public void testDeserializeTimeSeriesXmlUTC() throws IOException {
+        TimeZone aDefault = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
+            String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+            assertNotNull(xml);
+            TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);  // Should this be XMLv2?
+
+            assertNotNull(ts);
+
+            TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+            assertSimilar(fakeTs, ts);
+        } finally {
+            TimeZone.setDefault(aDefault);
+        }
+    }
+
+    @Test
+    public void testDeserializeTimeSeriesXml() throws IOException {
+            String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+            assertNotNull(xml);
+			 // Should this be XMLv2?
+            TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);
+
+            assertNotNull(ts);
+
+            TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+            assertSimilar(fakeTs, ts);
+    }
+
+    @Test
+    public void testDeserializeTimeSeriesJSON() throws IOException     {
+        String jsonV2 = loadResourceAsString("cwms/radar/api/timeseries_create.json");
+        assertNotNull(jsonV2);
+        TimeSeries ts = TimeSeriesController.deserializeTimeSeries(jsonV2, Formats.JSONV2);
+
+        assertNotNull(ts);
+
+        TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+        assertSimilar(fakeTs, ts);
+    }
+
+
+    @NotNull
+    private TimeSeries buildTimeSeries(String officeId, String tsId) {
+        ZonedDateTime start = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+        ZonedDateTime end = ZonedDateTime.parse("2021-06-21T09:00:00-07:00[PST8PDT]");
+
+        long diff = end.toEpochSecond() - start.toEpochSecond();
+        assertEquals(3600, diff); // just to make sure I've got the date parsing thing right.
+
+        int minutes = 15;
+        int count = 60/15 ; // do I need a +1?  ie should this be 12 or 13?
+        // Also, should end be the last point or the next interval?
+
+        TimeSeries ts = new TimeSeries(null,
+                                      -1,
+                                       0,
+                                       tsId,
+                                       officeId,
+                                       start,
+                                       end,
+                                       "m",
+                                       Duration.ofMinutes(minutes));
+
+        ZonedDateTime next = start;
+        for(int i = 0; i < count; i++) {
+            Timestamp dateTime = Timestamp.from(next.toInstant());
+            ts.addValue(dateTime, (double) i, 0);
+            next = next.plus(minutes, ChronoUnit.MINUTES);
+        }
+        return ts;
+    }
+
+    @NotNull
+    private String buildParamStr(Map<String, String> urlParams) {
+        StringBuilder sb = new StringBuilder();
+        urlParams.entrySet()
+                 .forEach(e->sb.append(e.getKey()).append("=").append(e.getValue()).append("&"));
+
+        if(sb.length() > 0) {
+            sb.setLength(sb.length()-1);
+        }
+
+        return sb.toString();
+    }
+
+
+    @Test
+    public void test_no_authorizer_throws_no_authorizer() throws Exception {
+        final String testBody = "";
+        LocationController instance = new LocationController(new MetricRegistry());
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = new TestHttpServletResponse();
+        HashMap<String,Object> attributes = new HashMap<>();
+
+        attributes.put("Authorizer",new CwmsNoAuthorizer());
+        when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
+
+        final Context context = ContextUtil.init(request,
+                                                 response,
+                                                 "*",
+                                                 new HashMap<String,String>(),
+                                                 HandlerType.GET,
+                                                 attributes);
+
+        final String tsId = "doesn't matter in this context";
+        assertThrows( CwmsAuthException.class , () -> {
+            instance.create(context);
+        });
+
+        assertThrows( CwmsAuthException.class, () -> {
+            instance.update(context, tsId);
+        });
+
+        assertThrows( CwmsAuthException.class, () -> {
+            instance.delete(context, tsId);
+        });
+
+    }
 }

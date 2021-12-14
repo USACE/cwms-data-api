@@ -1,0 +1,59 @@
+{
+  "noNamespaceSchemaLocation": "http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd",
+  "rating-template": {
+    "office-id": "LRL",
+    "parameters-id": "Stage;Flow",
+    "version": "Logarithmic",
+    "ind-parameter-specs": {
+      "ind-parameter-spec": {
+        "position": "1",
+        "parameter": "Stage",
+        "in-range-method": "LOGARITHMIC",
+        "out-range-low-method": "ERROR",
+        "out-range-high-method": "ERROR"
+      }
+    },
+    "dep-parameter": "Flow",
+    "description": "Stream Rating (Base + Shifts and Offsets)"
+  },
+  "rating-spec": {
+    "office-id": "LRL",
+    "rating-spec-id": "DANVILLE KY.Stage;Flow.Logarithmic.USGS-NWIS",
+    "template-id": "Stage;Flow.Logarithmic",
+    "location-id": "DANVILLE KY",
+    "version": "USGS-NWIS",
+    "source-agency": "",
+    "in-range-method": "LINEAR",
+    "out-range-low-method": "NEAREST",
+    "out-range-high-method": "NEAREST",
+    "active": "true",
+    "auto-update": "true",
+    "auto-activate": "true",
+    "auto-migrate-extension": "true",
+    "ind-rounding-specs": {
+      "ind-rounding-spec": {
+        "position": "1",
+        "element-value": "2223456782"
+      }
+    },
+    "dep-rounding-spec": "2222233332",
+    "description": "DIX RIVER NEAR DANVILLE, KY USGS-NWIS Stream Rating (Base + Shifts and Offsets)"
+  },
+  "usgs-stream-rating": {
+    "office-id": "LRL",
+    "rating-spec-id": "DANVILLE KY.Stage;Flow.Logarithmic.USGS-NWIS",
+    "units-id": "ft;cfs",
+    "effective-date": "2013-10-01T04:00:00Z",
+    "transition-start-date": "",
+    "create-date": "2015-11-18T14:24:00Z",
+    "active": "true",
+    "description": "24.0",
+    "height-shifts": {
+      "effective-date": "2014-12-16T15:57:00Z",
+      "transition-start-date": "",
+      "create-date": "1970-01-01T00:00:00Z",
+      "active": "true"
+    },
+    "rating-points": ""
+  }
+}

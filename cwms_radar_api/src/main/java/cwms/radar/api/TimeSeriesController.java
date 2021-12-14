@@ -1,6 +1,7 @@
 package cwms.radar.api;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -43,6 +47,7 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.JsonV1;
+import cwms.radar.security.CwmsAuthorizer;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -151,9 +156,7 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void delete(Context ctx, String tsId) {
         deleteRequests.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
+        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
 
         String office = ctx.queryParam("office");
 
@@ -217,31 +220,28 @@ public class TimeSeriesController implements CrudHandler {
                 DSLContext dsl = getDslContext(ctx))
         {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            String format = ctx.queryParamAsClass("format",String.class).getOrDefault("");
+            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
             String names = ctx.queryParam("name");
             String office = ctx.queryParam("office");
-            String unit = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.getValue());
+            String unit = ctx.queryParamAsClass("unit", String.class).getOrDefault(UnitSystem.EN.getValue());
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
             String timezone = ctx.queryParam("timezone");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = ctx.queryParamAsClass("cursor",String.class)
-                                .getOrDefault(ctx.queryParamAsClass("page",String.class)
-                                .getOrDefault("")
-                                );
+            String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
+                    ctx.queryParamAsClass("page", String.class).getOrDefault(""));
 
-            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-								.getOrDefault(
-									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-								);
+            int pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(
+                    ctx.queryParamAsClass("pagesize", Integer.class).getOrDefault(defaultPageSize));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
 
             String results;
             String version = contentType.getParameters().get("version");
-            if(version != null && version.equals("2")) {
+            if(version != null && version.equals("2"))
+            {
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
 
                 results = Formats.format(contentType, ts);
@@ -252,21 +252,33 @@ public class TimeSeriesController implements CrudHandler {
                 linkValue.append(String.format("<%s>; rel=self; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getPage()),
                         contentType));
 
-                if(ts.getNextPage() != null) {
+                if(ts.getNextPage() != null)
+                {
                     linkValue.append(",");
-                    linkValue.append(String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()),
-                            contentType));
+                    linkValue.append(
+                            String.format("<%s>; rel=next; type=\"%s\"", buildRequestUrl(ctx, ts, ts.getNextPage()),
+                                    contentType));
                 }
 
                 ctx.header("Link", linkValue.toString());
                 ctx.result(results).contentType(contentType.toString());
             }
-            else {
-                results = dao.getTimeseries(format == null || format.isEmpty() ? "json" : format,names,office,unit,datum,begin,end,timezone);
+            else
+            {
+                if(format == null || format.isEmpty())
+                {
+                    format = "json";
+                }
+                results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
             requestResultSize.update(results.length());
+        } catch (NotFoundException e){
+            RadarError re = new RadarError("Not found.");
+            logger.log(Level.WARNING, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_NOT_FOUND);
+            ctx.json(re);
         } catch (IllegalArgumentException ex) {
             RadarError re = new RadarError("Invalid arguments supplied");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -279,9 +291,6 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String id) {
         getOneRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
         try( final Timer.Context timeContext = getOneRequestTime.time() ){
 
             throw new UnsupportedOperationException("Not supported yet.");
@@ -306,9 +315,7 @@ public class TimeSeriesController implements CrudHandler {
     public void update(Context ctx, String id) {
 
         updateRequests.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
+        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
         try (
                 final Timer.Context timeContext = updateRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
@@ -339,23 +346,38 @@ public class TimeSeriesController implements CrudHandler {
 
     public static TimeSeries deserializeTimeSeries(String body, String contentType) throws IOException
     {
-        ObjectMapper om = getObjectMapperForFormat(contentType);
-        return om.readValue(body, TimeSeries.class);
-    }
+        TimeSeries retval;
 
-    public static ObjectMapper getObjectMapperForFormat(String format) throws IOException
-    {
-        ObjectMapper retval = null;
-        if((Formats.XML).equals(format))
+        if((Formats.XMLV2).equals(contentType))
         {
-            retval = buildXmlObjectMapper();
-        } else if((Formats.JSON).equals(format)){
-            retval = JsonV1.buildObjectMapper();
+            // This is how it would be done if we could use jackson to parse the xml
+            // it currently doesn't work because some of the jackson annotations
+            // use certain naming conventions (e.g. "value-columns" vs "valueColumns")
+            //  ObjectMapper om = buildXmlObjectMapper();
+            //  retval = om.readValue(body, TimeSeries.class);
+            retval = deserializeJaxb(body);
+        } else if((Formats.JSONV2).equals(contentType)){
+            ObjectMapper om = JsonV1.buildObjectMapper();
+            retval = om.readValue(body, TimeSeries.class);
         } else {
-            throw new IOException("Unexpected format:" + format);
+            throw new IOException("Unexpected format:" + contentType);
         }
 
         return retval;
+    }
+
+    public static TimeSeries deserializeJaxb(String body) throws IOException
+    {
+        try
+        {
+            JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            return (TimeSeries) unmarshaller.unmarshal(new StringReader(body));
+        }
+        catch(JAXBException e)
+        {
+            throw new IOException(e);
+        }
     }
 
     @NotNull

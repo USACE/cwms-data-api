@@ -66,7 +66,7 @@ public class UnitsController implements CrudHandler {
     public void getAll(Context ctx) {
         getAllRequests.mark();
         try (
-            final Timer.Context time_context = getAllRequestsTime.time();
+            final Timer.Context timeContext = getAllRequestsTime.time();
             CwmsDataManager cdm = new CwmsDataManager(ctx);
         ) {
             String format = ctx.queryParamAsClass("format",String.class).getOrDefault("json");
@@ -98,7 +98,7 @@ public class UnitsController implements CrudHandler {
     public void getOne(Context ctx, String unit) {
         getOneRequest.mark();
         try (
-            final Timer.Context time_context = getOneRequestTime.time();
+            final Timer.Context timeContext = getOneRequestTime.time();
             ){
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }

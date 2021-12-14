@@ -24,12 +24,12 @@ jobs:
           java-package: jdk
       - name: build and test
         id: thebuild
-        run: ./gradlew build --init-script init.gradle
+        run: ./gradlew build --info --init-script init.gradle
       - name: Upload WAR
         uses: actions/upload-artifact@v2
         with:
           name: warfile
-          path: cwms_radar_tomcat/build/libs/${{steps.thebuild.outputs.WARFILE}}
+          path: cwms_radar_api/build/libs/${{steps.thebuild.outputs.WARFILE}}
           retention-days: 1
           if-no-files-found: error
       - name: Build docker image

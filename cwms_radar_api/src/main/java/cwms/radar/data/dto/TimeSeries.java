@@ -43,6 +43,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     String name;
 
     @Schema(description = "Office ID that owns the time-series")
+    @XmlElement(name = "office-id")
     String officeId;
 
     @Schema(description = "The units of the time series data")
@@ -70,10 +71,16 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(implementation = Record.class, description = "List of retrieved time-series values")
     List<Record> values;
 
+    VerticalDatumInfo verticalDatumInfo;
+
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     private TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
+        this(page, pageSize, total, name, officeId, begin, end, units, interval, null);
+    }
+
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
@@ -81,6 +88,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         this.end = end;
         this.interval = interval;
         this.units = units;
+        this.verticalDatumInfo = info;
         values = new ArrayList<>();
     }
 
@@ -96,8 +104,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         return units;
     }
 
-    @Schema(description = "The interval of the time-series in minutes")
-    @XmlElement
+    @XmlTransient
     @JsonIgnore
     public long getIntervalMinutes() {
          return interval.toMinutes();
@@ -119,7 +126,13 @@ public class TimeSeries extends CwmsDTOPaginated {
         return values;
     }
 
-    @XmlElementWrapper(name="valueColumns")
+    public VerticalDatumInfo getVerticalDatumInfo()
+    {
+        return verticalDatumInfo;
+    }
+
+
+    @XmlElementWrapper(name="value-columns")
     @XmlElement(name="column")
     @JsonIgnore
     public List<Column> getValueColumnsXML() {
@@ -128,7 +141,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @XmlTransient
     @JsonProperty(value = "value-columns")
-    @Schema(name = "valueColumns", accessMode = AccessMode.READ_ONLY)
+    @Schema(name = "value-columns", accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
         return getColumnDescriptor("json");
     }
@@ -188,6 +201,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
         @XmlJavaTypeAdapter(TimestampAdapter.class)
+        @XmlElement(name = "date-time")
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch)")
         Timestamp dateTime;
 
@@ -195,6 +209,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         @Schema(description = "Requested time-series data value")
         Double value;
 
+        @XmlElement(name = "quality-code")
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
 
@@ -253,6 +268,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             result = 31 * result + getQualityCode();
             return result;
         }
+
+        @Override
+        public String toString()
+        {
+            return "Record{" + "dateTime=" + dateTime + ", value=" + value + ", qualityCode=" + qualityCode + '}';
+        }
     }
 
     @Schema(hidden = true, name = "TimeSeries.Column", accessMode = Schema.AccessMode.READ_ONLY)
@@ -260,6 +281,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         public final String name;
         public final int ordinal;
         public final Class<?> datatype;
+
+        // JAXB seems to need a default ctor
+        private Column(){
+            this(null, 0,null);
+        }
 
         @JsonCreator
         protected Column(@JsonProperty("name") String name, @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {

@@ -70,23 +70,34 @@ public class CatalogController implements CrudHandler{
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="cursor",
-                          required = false,
+            @OpenApiParam(name="page",
                           description = "This end point can return a lot of data, this identifies where in the request you are."
             ),
             @OpenApiParam(name="pageSize",
-                          required= false,
                           type=Integer.class,
                           description = "How many entires per page returned. Default 500."
             ),
             @OpenApiParam(name="unitSystem",
-                          required = false,
                           type = UnitSystem.class,
                           description = UnitSystem.DESCRIPTION
             ),
             @OpenApiParam(name="office",
-                          required = false,
                           description = "3-4 letter office name representing the district you want to isolate data to."
+            ),
+            @OpenApiParam(name="like",
+                    description = "Posix regular expression matching against the id"
+            ),
+            @OpenApiParam(name="timeseriesCategoryLike",
+                    description = "Posix regular expression matching against the timeseries category id"
+            ),
+            @OpenApiParam(name="timeseriesGroupLike",
+                    description = "Posix regular expression matching against the timeseries group id"
+            ),
+            @OpenApiParam(name="locationCategoryLike",
+                    description = "Posix regular expression matching against the location category id"
+            ),
+            @OpenApiParam(name="locationGroupLike",
+                    description = "Posix regular expression matching against the location group id"
             )
         },
         pathParams = {
@@ -114,7 +125,8 @@ public class CatalogController implements CrudHandler{
         ) {
 
             String valDataSet = ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
-            String cursor = ctx.queryParamAsClass("cursor",String.class).getOrDefault("");
+            String cursor = ctx.queryParamAsClass("cursor",String.class)
+                               .getOrDefault(ctx.queryParamAsClass("page", String.class).getOrDefault(""));
             int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
 								.getOrDefault(
 									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
@@ -122,18 +134,25 @@ public class CatalogController implements CrudHandler{
             String unitSystem = ctx.queryParamAsClass("unitSystem",String.class).getOrDefault(UnitSystem.SI.getValue());
             Optional<String> office = Optional.ofNullable(
                                          ctx.queryParamAsClass("office", String.class).allowNullable()
-                                            .check( ofc -> Office.validOfficeCanNull(ofc), "Invalid office provided" )
+                                            .check(Office::validOfficeCanNull, "Invalid office provided" )
                                             .get()
                                         );
+
+            String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
+            String tsCategoryLike = ctx.queryParamAsClass("timeseriesCategoryLike",String.class).getOrDefault(null);
+            String tsGroupLike = ctx.queryParamAsClass("timeseriesGroupLike",String.class).getOrDefault(null);
+            String locCategoryLike = ctx.queryParamAsClass("locationCategoryLike",String.class).getOrDefault(null);
+            String locGroupLike = ctx.queryParamAsClass("locationGroupLike",String.class).getOrDefault(null);
+
             String acceptHeader = ctx.header("Accept");
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if( "timeseries".equalsIgnoreCase(valDataSet)){
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
-                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office );
+                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike, locGroupLike,tsCategoryLike, tsGroupLike);
             } else if ("locations".equalsIgnoreCase(valDataSet)){
                 LocationsDao dao = new LocationsDaoImpl(dsl);
-                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office );
+                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like, locCategoryLike, locGroupLike );
             }
             if( cat != null ){
                 String data = Formats.format(contentType, cat);

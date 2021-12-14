@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.naming.OperationNotSupportedException;
 import javax.servlet.http.HttpServletResponse;
 
 import com.codahale.metrics.Histogram;
@@ -40,6 +39,8 @@ import io.javalin.plugin.openapi.annotations.*;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+
+import cwms.radar.security.CwmsAuthorizer;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
@@ -109,7 +110,7 @@ public class LocationController implements CrudHandler {
         try(final Timer.Context timeContext = getAllRequestsTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
 
             String names = ctx.queryParam("names");
             String units = ctx.queryParam("unit");
@@ -124,11 +125,9 @@ public class LocationController implements CrudHandler {
             final String results;
             if(contentType.getType().equals(Formats.GEOJSON))
             {
-                logger.fine("units:" + units);
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units, office);
                 ctx.json(collection);
-                /*ObjectMapper mapper = JavalinJackson.getObjectMapper();
-                results = mapper.writeValueAsString(collection);*/
+
                 requestResultSize.update(ctx.res.getBufferSize());
             }
             else
@@ -173,14 +172,44 @@ public class LocationController implements CrudHandler {
         return format;
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name="office", required = true, description="Specifies the owning office of the location level(s) whose data is to be included in the response. If this field is not specified, matching location level information from all offices shall be returned."),
+                    @OpenApiParam(name="unit",   description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system.  Location values will be in the default English units for their parameters.\r\n2. SI.   Specifies the SI unit system.  Location values will be in the default SI units for their parameters.\r\n3. Other. Any unit returned in the response to the units URI request that is appropriate for the requested parameters.")
+            },
+            responses = {
+                    @OpenApiResponse( status="200",
+                            content = {
+                                    @OpenApiContent(type = Formats.JSONV2, from = Location.class),
+                                    @OpenApiContent(type = Formats.XMLV2,  from = Location.class )
+                            })
+            },
+            description = "Returns CWMS Location Data",
+            tags = {"Locations"}
+    )
     @Override
-    public void getOne(Context ctx, String name) {
+    public void getOne(Context ctx, @NotNull String name) {
         getOneRequest.mark();
-        try (
-            final Timer.Context timeContext = getOneRequestTime.time()
-            ){
-                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        try(final Timer.Context timeContext = getOneRequestTime.time();
+            DSLContext dsl = getDslContext(ctx))
+        {
+            String units = ctx.queryParamAsClass("unit",String.class).getOrDefault( UnitSystem.EN.value());
+            String office = ctx.queryParam("office");
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV2;
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            ctx.contentType(contentType.toString());
+            LocationsDao locationDao = getLocationsDao(dsl);
+            Location location = locationDao.getLocation(name, units, office);
+            ObjectMapper om = getObjectMapperForFormat(contentType.getType());
+            String serializedLocation = om.writeValueAsString(location);
+            ctx.result(serializedLocation);
+        }
+        catch (IOException ex)
+        {
+            String errorMsg = "Error retrieving " + name;
+            RadarError re = new RadarError(errorMsg);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            logger.log(Level.SEVERE, errorMsg, ex);
         }
     }
 
@@ -203,13 +232,12 @@ public class LocationController implements CrudHandler {
     public void create(Context ctx)
     {
         createRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
+        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
             String office = ctx.queryParam("office");
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
@@ -249,13 +277,11 @@ public class LocationController implements CrudHandler {
     public void update(Context ctx, @NotNull String locationId)
     {
         updateRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
+        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
             String office = ctx.queryParam("office");
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
@@ -303,14 +329,13 @@ public class LocationController implements CrudHandler {
     public void delete(Context ctx, @NotNull String locationId)
     {
         deleteRequest.mark();
-        if( ctx.attribute("RADAR_ALLOW_WRITE") == Boolean.FALSE ){
-            throw new UnsupportedOperationException("database is read only");
-        }
+        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
         try(final Timer.Context timeContext = deleteRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
             String office = ctx.queryParam("office");
-            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
             locationsDao.deleteLocation(locationId, office);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
         }
@@ -321,6 +346,12 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
+
+    public static LocationsDao getLocationsDao(DSLContext dsl)
+    {
+        return new LocationsDaoImpl(dsl);
+    }
+
 
     private Location updatedClearedFields(String body, String format, Location existingLocation) throws IOException
     {
@@ -349,7 +380,7 @@ public class LocationController implements CrudHandler {
         return retVal;
     }
 
-    private Location deserializeLocation(String body, String format, String office) throws IOException
+    public static Location deserializeLocation(String body, String format, String office) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         Location retVal;
@@ -361,6 +392,7 @@ public class LocationController implements CrudHandler {
         }
         catch(Exception e)
         {
+            logger.log(Level.SEVERE, "Failed to deserialize location", e);
             throw new IOException("Failed to deserialize location");
         }
         return retVal;
@@ -368,10 +400,18 @@ public class LocationController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format)
     {
-        ObjectMapper om = new ObjectMapper();
-        if((Formats.XML).equals(format))
+        ObjectMapper om;
+        if((Formats.XML).equals(format) || (Formats.XMLV2).equals(format))
         {
             om = new XmlMapper();
+        }
+        else if(Formats.JSON.equals(format) || (Formats.JSONV2).equals(format))
+        {
+            om = new ObjectMapper();
+        }
+        else
+        {
+            throw new FormattingException("Format is not currently supported for Locations");
         }
         om.registerModule(new JavaTimeModule());
         return om;
@@ -382,11 +422,11 @@ public class LocationController implements CrudHandler {
         String updatedName = updatedLocation.getName() == null ? existingLocation.getName() : updatedLocation.getName();
         Double updatedLatitude = updatedLocation.getLatitude() == null ? existingLocation.getLatitude() : updatedLocation.getLatitude();
         Double updatedLongitude = updatedLocation.getLongitude() == null ? existingLocation.getLongitude() : updatedLocation.getLongitude();
-        Boolean updatedIsActive = updatedLocation.active() == null ? existingLocation.active() : updatedLocation.active();
+        Boolean updatedIsActive = updatedLocation.getActive() == null ? existingLocation.getActive() : updatedLocation.getActive();
         String updatedPublicName = updatedLocation.getPublicName() == null ? existingLocation.getPublicName() : updatedLocation.getPublicName();
         String updatedLongName = updatedLocation.getLongName() == null ? existingLocation.getLongName() : updatedLocation.getLongName();
         String updatedDescription = updatedLocation.getDescription() == null ? existingLocation.getDescription() : updatedLocation.getDescription();
-        String updatedTimeZoneId = updatedLocation.getTimezoneId() == null ? existingLocation.getTimezoneId() : updatedLocation.getTimezoneId();
+        String updatedTimeZoneId = updatedLocation.getTimezoneName() == null ? existingLocation.getTimezoneName() : updatedLocation.getTimezoneName();
         String updatedLocationType = updatedLocation.getLocationType() == null ? existingLocation.getLocationType() : updatedLocation.getLocationType();
         String updatedLocationKind = updatedLocation.getLocationKind() == null ? existingLocation.getLocationKind() : updatedLocation.getLocationKind();
         Nation updatedNation = updatedLocation.getNation() == null ? existingLocation.getNation() : updatedLocation.getNation();
