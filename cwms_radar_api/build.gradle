@@ -17,7 +17,11 @@ dependencies {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
     }
+
+    implementation "org.slf4j:slf4j-jdk14:1.7.32"
 
     // For RatingSet
     implementation 'mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.1-20211021.222041-2'
