@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,6 +48,7 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.JsonV1;
+import cwms.radar.helpers.DateUtils;
 import cwms.radar.security.CwmsAuthorizer;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -269,6 +271,17 @@ public class TimeSeriesController implements CrudHandler {
                 {
                     format = "json";
                 }
+                timezone = timezone != null ? timezone : "UTC";
+                if( begin != null ){
+                    ZonedDateTime beginZdt = DateUtils.parseUserDate(begin, timezone);
+                    begin = beginZdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                }
+
+                if( end != null ){
+                    ZonedDateTime endZdt = DateUtils.parseUserDate(end, timezone);
+                    end = endZdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                }
+
                 results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
