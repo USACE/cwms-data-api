@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -229,7 +230,7 @@ public class TimeSeriesController implements CrudHandler {
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
-            String timezone = ctx.queryParam("timezone");
+            String timezone = ctx.queryParamAsClass("timezone",String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
                     ctx.queryParamAsClass("page", String.class).getOrDefault(""));
@@ -242,9 +243,18 @@ public class TimeSeriesController implements CrudHandler {
 
             String results;
             String version = contentType.getParameters().get("version");
+
+            ZoneId tz = ZoneId.of(timezone,ZoneId.SHORT_IDS);
+            begin = begin != null ? begin : "PT-24H";
+
+            ZonedDateTime beginZdt = DateUtils.parseUserDate(begin, timezone);
+            ZonedDateTime endZdt = end != null
+                                        ? DateUtils.parseUserDate(end, timezone)
+                                        : ZonedDateTime.now(tz);
+
             if(version != null && version.equals("2"))
             {
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, beginZdt, endZdt, tz);
 
                 results = Formats.format(contentType, ts);
                 ctx.status(HttpServletResponse.SC_OK);
@@ -271,18 +281,9 @@ public class TimeSeriesController implements CrudHandler {
                 {
                     format = "json";
                 }
-                timezone = timezone != null ? timezone : "UTC";
-                if( begin != null ){
-                    ZonedDateTime beginZdt = DateUtils.parseUserDate(begin, timezone);
-                    begin = beginZdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                }
 
-                if( end != null ){
-                    ZonedDateTime endZdt = DateUtils.parseUserDate(end, timezone);
-                    end = endZdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                }
 
-                results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
+                results = dao.getTimeseries(format, names, office, unit, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
