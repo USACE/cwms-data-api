@@ -35,4 +35,17 @@ public class CatalogControllerTestIT {
         .body("total",is(4))
         .body("entries.size()",is(4));
     }
+
+
+    @Test
+    public void test_queries_are_case_insensitive(){
+        given().accept("application/json;version=2")
+        .queryParam("office", "SPK")
+        .queryParam("like","ALDER.*")
+        .get("/catalog/TIMESERIES").then().assertThat()
+        .statusCode(is(200))
+        .body("$",hasKey("total"))
+        .body("total",is(2))
+        .body("entries.size()",is(2));
+    }
 }

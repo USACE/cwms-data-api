@@ -389,7 +389,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         Condition condition = AV_LOC.UNIT_SYSTEM.eq(unitSystem);
 
         if(idLike != null){
-            condition = condition.and(AV_LOC.LOCATION_ID.likeRegex(idLike));
+            condition = condition.and(AV_LOC.LOCATION_ID.upper().likeRegex(idLike.toUpperCase()));
         }
 
         if( office.isPresent() ){
@@ -404,11 +404,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         Condition condition = buildCatalogWhere(unitSystem, office, idLike);
 
         if(categoryLike != null){
-            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.likeRegex(categoryLike));
+            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.upper().likeRegex(categoryLike.toUpperCase()));
         }
 
         if(groupLike != null){
-            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.likeRegex(groupLike));
+            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.upper().likeRegex(groupLike.toUpperCase()));
         }
 
         return condition;
