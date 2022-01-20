@@ -8,4 +8,13 @@
         <servlet-name>metrics</servlet-name>
         <url-pattern>/status/*</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>metrics-prometheus</servlet-name>
+        <servlet-class>io.prometheus.client.exporter.MetricsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>metrics-prometheus</servlet-name>
+        <url-pattern>/status/prometheus</url-pattern>
+    </servlet-mapping>
 </web-app>

@@ -62,6 +62,8 @@ dependencies {
 
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
     implementation "io.dropwizard.metrics:metrics-servlets:$dropwizard_version"
+    implementation "io.prometheus:simpleclient_dropwizard:0.14.1"
+    implementation "io.prometheus:simpleclient_servlet:0.14.1"
 
 
     implementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
