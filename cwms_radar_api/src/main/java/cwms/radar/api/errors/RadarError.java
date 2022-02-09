@@ -53,5 +53,8 @@ public class RadarError{
     public static RadarError notImplemented() {
         return new RadarError("Not Implemented");
     }
+    public static RadarError notAuthorized() {
+        return new RadarError("Not Authorized");
+    }
 
 }
