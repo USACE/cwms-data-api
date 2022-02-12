@@ -1,7 +1,7 @@
 package cwms.radar.security;
 
+import java.security.Principal;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +15,7 @@ import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -29,37 +30,98 @@ public class CwmsAccessManager implements AccessManager
 	public void manage(@NotNull Handler handler, @NotNull Context ctx, @NotNull Set<RouteRole> requiredRoles)
 			throws Exception
 	{
-		CwmsUserPrincipal principal = ctx.attribute("principal");
+		boolean shouldProceed = isAuthorized(ctx, requiredRoles);
 
-		Set<RouteRole> specifiedRoles = extractRoles(principal);
-		if(specifiedRoles.containsAll(requiredRoles))
+		if(shouldProceed)
 		{
-			// Set the user's session key in the database.
-			setSessionKey(ctx, principal.getSessionKey());
+			setSessionKey(ctx);
 
 			// Let the handler handle the request.
 			handler.handle(ctx);
 		}
 		else
 		{
-			Set<RouteRole> missing = new LinkedHashSet<>(specifiedRoles);
-			missing.removeAll(requiredRoles);
-
-			logger.info("Request for: " + ctx.req.getRequestURI() + " denied. Missing roles: " + missing);
+			String msg = getFailMessage(ctx, requiredRoles);
+			logger.info(msg);
 			ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
 			ctx.status(401).result("Unauthorized");
 		}
 
-
 	}
 
-	private Set<RouteRole> extractRoles(CwmsUserPrincipal principal)
+	private void setSessionKey(@NotNull Context ctx)
+	{
+		String sessionKey = getSessionKey(ctx);
+		if(sessionKey != null)
+		{
+			// Set the user's session key in the database.
+			Connection conn = ctx.attribute("database");
+			setSession(conn, sessionKey);
+		}
+	}
+
+	@NotNull
+	private String getFailMessage(@NotNull Context ctx, @NotNull Set<RouteRole> requiredRoles)
+	{
+		Set<RouteRole> specifiedRoles = getRoles(ctx);
+		Set<RouteRole> missing = new LinkedHashSet<>(requiredRoles);
+		missing.removeAll(specifiedRoles);
+
+		return "Request for: " + ctx.req.getRequestURI() + " denied. Missing roles: " + missing;
+	}
+
+	@Nullable
+	private String getSessionKey(@NotNull Context ctx)
+	{
+		String sessionKey = null;
+
+		Principal userPrincipal = ctx.req.getUserPrincipal();
+		CwmsUserPrincipal principal = ctx.attribute("principal");
+
+		if(principal != null){
+			sessionKey = principal.getSessionKey();
+		}
+		return sessionKey;
+	}
+
+	public boolean isAuthorized(Context ctx, Set<RouteRole> requiredRoles)
+	{
+		boolean retval;
+		if(requiredRoles == null || requiredRoles.isEmpty())
+		{
+			retval = true;
+		}
+		else
+		{
+			Set<RouteRole> specifiedRoles = getRoles(ctx);
+			retval = specifiedRoles.containsAll(requiredRoles);
+		}
+		return retval;
+	}
+
+	public Set<RouteRole> getRoles(Context ctx){
+		Set<RouteRole> retval = new LinkedHashSet<>();
+		if(ctx != null)
+		{
+			CwmsUserPrincipal principal = ctx.attribute("principal");
+			Principal userPrincipal = ctx.req.getUserPrincipal();
+			Set<RouteRole> specifiedRoles = getRoles(principal);
+			if(specifiedRoles != null && !specifiedRoles.isEmpty())
+			{
+				retval.addAll(specifiedRoles);
+			}
+		}
+		return retval;
+	}
+
+	private Set<RouteRole> getRoles(CwmsUserPrincipal principal)
 	{
 		Set<RouteRole> retval = new LinkedHashSet<>();
 		if(principal != null)
 		{
 			List<String> roleNames = principal.getRoles();
 			roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+			logger.info("Principal had roles: " + retval);
 		}
 		return retval;
 	}
@@ -67,12 +129,6 @@ public class CwmsAccessManager implements AccessManager
 	public static RouteRole buildRole(String roleName)
 	{
 		return new Role(roleName);
-	}
-
-	private void setSessionKey(Context ctx, String sessionKey)
-	{
-		Connection conn = ctx.attribute("database");
-		setSession(conn, sessionKey);
 	}
 
 	@NotNull

@@ -92,6 +92,10 @@ import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
+
+    // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
+    public static final String CWMS_USERS_ROLE = "CWMS Users";
+
     private MetricRegistry metrics;
     private Meter total_requests;
     /**
@@ -188,7 +192,7 @@ public class ApiServlet extends HttpServlet {
     protected void configureRoutes()
     {
 
-        RouteRole[] requiredRoles = {new Role("CWMS_USER")};
+        RouteRole[] requiredRoles = {new Role(CWMS_USERS_ROLE)};
 
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
         radarCrud("/location/category/{category-id}", new LocationCategoryController(metrics), requiredRoles);

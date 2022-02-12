@@ -28,6 +28,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     private static TomcatServer radarInstance;
     private static CwmsDatabaseContainer cwmsDb;
+    private static TestRealm realm;
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -59,8 +60,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser());
             System.setProperty("RADAR_JDBC_PASSWORD", cwmsDb.getPassword());
             //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
-            System.out.println(System.getProperty("warFile"));
-            radarInstance = new TomcatServer("build/tomcat", System.getProperty("warFile"), 0, System.getProperty("warContext"));
+            System.out.println("warFile property:" + System.getProperty("warFile"));
+
+            realm = new TestRealm();
+
+            radarInstance = new TomcatServer("build/tomcat", System.getProperty("warFile"), 0, System.getProperty("warContext"), realm);
             radarInstance.start();
             System.out.println("Tomcat Listing on " + radarInstance.getPort());
             RestAssured.baseURI=RadarApiSetupCallback.httpUrl();
@@ -106,6 +110,10 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     public static int httpPort() {
         return radarInstance.getPort();
+    }
+
+    public static TestRealm realm(){
+        return realm;
     }
 
     public static CwmsDatabaseContainer getDatabaseLink() {

@@ -33,4 +33,10 @@ public class Role implements RouteRole
 	{
 		return name != null ? name.hashCode() : 0;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Role{" + "name='" + name + '\'' + '}';
+	}
 }
