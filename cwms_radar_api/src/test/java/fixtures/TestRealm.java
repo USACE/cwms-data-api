@@ -44,6 +44,10 @@ public class TestRealm extends RealmBase
 		}
 	}
 
+	public CwmsUserPrincipal getCurrentPrincipal(){
+		return principal;
+	}
+
 	@Override
 	protected String getPassword(String username)
 	{

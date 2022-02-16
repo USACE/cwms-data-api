@@ -25,6 +25,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 public class CwmsAccessManager implements AccessManager
 {
 	public static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
+	public static final String DATABASE = "database";
 
 	@Override
 	public void manage(@NotNull Handler handler, @NotNull Context ctx, @NotNull Set<RouteRole> requiredRoles)
@@ -55,7 +56,7 @@ public class CwmsAccessManager implements AccessManager
 		if(sessionKey != null)
 		{
 			// Set the user's session key in the database.
-			Connection conn = ctx.attribute("database");
+			Connection conn = ctx.attribute(DATABASE);
 			setSession(conn, sessionKey);
 		}
 	}
@@ -75,13 +76,20 @@ public class CwmsAccessManager implements AccessManager
 	{
 		String sessionKey = null;
 
-		Principal userPrincipal = ctx.req.getUserPrincipal();
-		CwmsUserPrincipal principal = ctx.attribute("principal");
+		CwmsUserPrincipal principal = getPrincipal(ctx);
 
 		if(principal != null){
 			sessionKey = principal.getSessionKey();
 		}
 		return sessionKey;
+	}
+
+	@Nullable
+	private CwmsUserPrincipal getPrincipal(@NotNull Context ctx)
+	{
+//		CwmsUserPrincipal principal = ctx.attribute("principal"); // wrong
+		Principal userPrincipal = ctx.req.getUserPrincipal();
+		return (CwmsUserPrincipal) userPrincipal;
 	}
 
 	public boolean isAuthorized(Context ctx, Set<RouteRole> requiredRoles)
@@ -103,10 +111,9 @@ public class CwmsAccessManager implements AccessManager
 		Set<RouteRole> retval = new LinkedHashSet<>();
 		if(ctx != null)
 		{
-			CwmsUserPrincipal principal = ctx.attribute("principal");
-			Principal userPrincipal = ctx.req.getUserPrincipal();
+			CwmsUserPrincipal principal = getPrincipal(ctx);
 			Set<RouteRole> specifiedRoles = getRoles(principal);
-			if(specifiedRoles != null && !specifiedRoles.isEmpty())
+			if(!specifiedRoles.isEmpty())
 			{
 				retval.addAll(specifiedRoles);
 			}

@@ -5,15 +5,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 
+import javax.servlet.ServletContext;
+
 import hthurow.tomcatjndi.TomcatJNDI;
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
+import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Realm;
 import org.apache.catalina.Server;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
 
 
 /**
@@ -43,7 +48,9 @@ public class TomcatServer {
 
         tomcatInstance = new Tomcat();
         tomcatInstance.setBaseDir(baseDir);
-        tomcatInstance.getHost().setAppBase("webapps");
+        Host host = tomcatInstance.getHost();
+
+        host.setAppBase("webapps");
         new File(tomcatInstance.getServer().getCatalinaBase(),"temp").mkdirs();
         new File(tomcatInstance.getServer().getCatalinaBase(),"webapps").mkdirs();
         tomcatInstance.setPort(port);
@@ -55,8 +62,12 @@ public class TomcatServer {
         tomcatInstance.setSilent(false);
         tomcatInstance.enableNaming();
         Engine engine = tomcatInstance.getEngine();
-        tomcatInstance.getHost().addLifecycleListener(new HostConfig());
-        tomcatInstance.addContext("", null);
+
+        host.addLifecycleListener(new HostConfig());
+
+
+        Context blankToNull = tomcatInstance.addContext("", null);
+
 
         File radar = new File(radarWar);
         try{
@@ -67,14 +78,26 @@ public class TomcatServer {
         } catch( Exception err) {
             System.out.println(err.getLocalizedMessage());
         }
+
         Context context = tomcatInstance.addWebapp(contextName, radar.toURI().toURL());
-        Server server = tomcatInstance.getServer();
+
+
+        Class filterClass = UserInjectFilter.class;
+        FilterDef myFilterDef = new FilterDef();
+        myFilterDef.setFilterClass(filterClass.getName());
+        myFilterDef.setFilterName(filterClass.getSimpleName());
+        context.addFilterDef(myFilterDef);
+
+        FilterMap myFilterMap = new FilterMap();
+        myFilterMap.setFilterName(filterClass.getSimpleName());
+        myFilterMap.addURLPattern("/*");
+        context.addFilterMap(myFilterMap);
+
 
         if(realm != null)
         {
             engine.setRealm(realm);
         }
-
 
     }
 
