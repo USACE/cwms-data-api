@@ -34,16 +34,22 @@ public class TestAuthValve extends AuthenticatorBase{
     protected boolean doAuthenticate(Request request, HttpServletResponse response) throws IOException {
         logger.fine("handling test authentication");
         String authHeader = request.getHeader("Authorization");
-        int idx = authHeader.indexOf("name");
-        if( idx >= 0) {
-            String name = authHeader.substring(idx+5).trim();
-            Principal p = usernameMap.get(name);
-            if( p != null ) {
-                register(request,response, p, HttpServletRequest.BASIC_AUTH,p.getName(),"");
-                return true;
-            }
+        if(authHeader != null)
+        {
+            int idx = authHeader.indexOf("name");
+            if(idx >= 0)
+            {
+                String name = authHeader.substring(idx + 5).trim();
+                Principal p = usernameMap.get(name);
+                if(p != null)
+                {
+                    register(request, response, p, HttpServletRequest.BASIC_AUTH, p.getName(), "");
+                    return true;
+                }
 
+            }
         }
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         return false;
     }
 

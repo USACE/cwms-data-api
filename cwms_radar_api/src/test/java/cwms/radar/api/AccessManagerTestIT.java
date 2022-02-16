@@ -112,7 +112,7 @@ public class AccessManagerTestIT
 				.when()
 				.post(  "/locations")
 				.then()
-				.assertThat().statusCode(is(401));
+				.assertThat().statusCode(is(403));
 	}
 
 
