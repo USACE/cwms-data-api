@@ -27,9 +27,6 @@ public class AccessManagerTestIT
 	public void can_getOne_without_user(){
 		logger.info("can_getOne_without_user");
 
-		TestRealm realm = RadarApiSetupCallback.realm();
-		realm.setCurrentPrincipal(TestRealm.NULL);
-
 		Response response = given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
@@ -45,14 +42,13 @@ public class AccessManagerTestIT
 	@Test
 	public void can_getOne_with_user(){
 		logger.info("can_getOne_with_user");
-		TestRealm realm = RadarApiSetupCallback.realm();
-		realm.setCurrentPrincipal(TestRealm.USER1);
 
 		Response response = given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.queryParam("names", "AR*")
 				.queryParam("unit", "EN")
+				.header("Authorization","name user1")
 				.get(  "/locations");
 		String bodyStrig = response.body().asString();
 
@@ -64,8 +60,6 @@ public class AccessManagerTestIT
 	public void cant_create_without_user() throws IOException
 	{
 		logger.info("cant_create_without_user");
-		TestRealm realm = RadarApiSetupCallback.realm();
-		realm.setCurrentPrincipal(TestRealm.NULL);
 
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");
 		assertNotNull(json);
@@ -85,8 +79,6 @@ public class AccessManagerTestIT
 	public void can_create_with_user() throws IOException
 	{
 		logger.info("can_create_with_user");
-		TestRealm realm = RadarApiSetupCallback.realm();
-		realm.setCurrentPrincipal(TestRealm.USER1);
 
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");
 		assertNotNull(json);
@@ -95,6 +87,7 @@ public class AccessManagerTestIT
 		given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
+				.header("Authorization","name user1")
 				.body(json)
 				.when()
 				.post(  "/locations")
@@ -106,8 +99,6 @@ public class AccessManagerTestIT
 	public void cant_create_with_user_without_role() throws IOException
 	{
 		logger.info("cant_create_with_user_without_role");
-		TestRealm realm = RadarApiSetupCallback.realm();
-		realm.setCurrentPrincipal(TestRealm.USER2);
 
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");
 		assertNotNull(json);
@@ -116,6 +107,7 @@ public class AccessManagerTestIT
 		given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
+				.header("Authorization","name user2")
 				.body(json)
 				.when()
 				.post(  "/locations")

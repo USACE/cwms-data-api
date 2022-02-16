@@ -17,4 +17,5 @@
         type="javax.sql.DataSource"
     />
     <JarScanner scanBootstrapClassPath="false" scanClassPath="false"/>
+    <!--<Valve className="fixtures.TestAuthValve"/>-->
 </Context>
