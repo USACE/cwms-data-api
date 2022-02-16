@@ -16,9 +16,9 @@ public class TestRealm extends RealmBase
 	public final static Logger logger = Logger.getLogger(TestRealm.class.getName());
 
 	public static CwmsUserPrincipal NULL = null;
-	public static CwmsUserPrincipal USER1 = new TestCwmsUserPrincipal("user1", "user1SessionKey", Arrays.asList(
+	public static CwmsUserPrincipal USER1 = new TestCwmsUserPrincipal("user1", "testingUser1SessionKey", Arrays.asList(
 			ApiServlet.CWMS_USERS_ROLE));
-	public static CwmsUserPrincipal USER2 = new TestCwmsUserPrincipal("user2", "user2SessionKey", Collections.emptyList());
+	public static CwmsUserPrincipal USER2 = new TestCwmsUserPrincipal("user2", "testingUser2SessionKey", Collections.emptyList());
 
 
 	private Map<String, Principal> usernameMap = new LinkedHashMap<>();

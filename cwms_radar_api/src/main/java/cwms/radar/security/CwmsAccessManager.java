@@ -1,14 +1,17 @@
 package cwms.radar.security;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.Principal;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
-import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.api.errors.RadarError;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
@@ -71,25 +74,15 @@ public class CwmsAccessManager implements AccessManager
 		return "Request for: " + ctx.req.getRequestURI() + " denied. Missing roles: " + missing;
 	}
 
-	@Nullable
-	private String getSessionKey(@NotNull Context ctx)
-	{
-		String sessionKey = null;
 
-		CwmsUserPrincipal principal = getPrincipal(ctx);
-
-		if(principal != null){
-			sessionKey = principal.getSessionKey();
-		}
-		return sessionKey;
-	}
 
 	@Nullable
-	private CwmsUserPrincipal getPrincipal(@NotNull Context ctx)
+	private Principal getPrincipal(@NotNull Context ctx)
 	{
-//		CwmsUserPrincipal principal = ctx.attribute("principal"); // wrong
+		//		CwmsUserPrincipal principal = ctx.attribute("principal"); // wrong
 		Principal userPrincipal = ctx.req.getUserPrincipal();
-		return (CwmsUserPrincipal) userPrincipal;
+
+		return userPrincipal;
 	}
 
 	public boolean isAuthorized(Context ctx, Set<RouteRole> requiredRoles)
@@ -111,7 +104,7 @@ public class CwmsAccessManager implements AccessManager
 		Set<RouteRole> retval = new LinkedHashSet<>();
 		if(ctx != null)
 		{
-			CwmsUserPrincipal principal = getPrincipal(ctx);
+			Principal principal = getPrincipal(ctx);
 			Set<RouteRole> specifiedRoles = getRoles(principal);
 			if(!specifiedRoles.isEmpty())
 			{
@@ -121,17 +114,71 @@ public class CwmsAccessManager implements AccessManager
 		return retval;
 	}
 
-	private Set<RouteRole> getRoles(CwmsUserPrincipal principal)
+	@Nullable
+	private String getSessionKey(@NotNull Context ctx)
+	{
+		String sessionKey = null;
+
+		Principal principal = getPrincipal(ctx);
+
+		if(principal != null){
+			sessionKey = callGetSessionKeyReflectively(principal);
+		}
+		return sessionKey;
+	}
+
+	private String callGetSessionKeyReflectively( Principal principal)
+	{
+		String sessionKey = null;
+		Method getSessionKeyMethod;
+		try
+		{
+			getSessionKeyMethod = principal.getClass().getMethod("getSessionKey", new Class[]{});
+			Object retval = getSessionKeyMethod.invoke(principal, new Object[]{});
+			if(retval instanceof String){
+				sessionKey = (String)retval;
+			}
+			//			sessionKey = principal.getSessionKey();
+		}
+		catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException e)
+		{
+			logger.log(Level.WARNING, "Could not call getSessionKey() on principal.", e);
+		}
+
+		return sessionKey;
+	}
+
+	private Set<RouteRole> getRoles(Principal principal)
 	{
 		Set<RouteRole> retval = new LinkedHashSet<>();
 		if(principal != null)
 		{
-			List<String> roleNames = principal.getRoles();
+			List<String> roleNames = callGetRolesReflectively(principal); // principal.getRoles();
+
 			roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
 			logger.info("Principal had roles: " + retval);
 		}
 		return retval;
 	}
+
+	List<String> callGetRolesReflectively(Principal principal){
+		List<String> retval = new ArrayList<>();
+		Method getRolesMethod;
+		try
+		{
+			getRolesMethod = principal.getClass().getMethod("getRoles", new Class[]{});
+			Object retvalObj = getRolesMethod.invoke(principal, new Object[]{});
+			if(retvalObj instanceof List){
+				retval = (List<String>)retvalObj;
+			}
+		}
+		catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException e)
+		{
+			logger.log(Level.WARNING, "Could not call getRoles() on principal.", e);
+		}
+		return retval;
+	}
+
 
 	public static RouteRole buildRole(String roleName)
 	{
@@ -141,9 +188,14 @@ public class CwmsAccessManager implements AccessManager
 	@NotNull
 	private static Connection setSession(Connection conn, String sessionKey)
 	{
-		try(DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G))
+		// Need to figure out a legit way to skip this if we are doing testing.
+		if(sessionKey == null || !sessionKey.startsWith("testing"))
 		{
-			CWMS_ENV_PACKAGE.call_SET_SESSION_USER(dsl.configuration(), sessionKey);
+			try(DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G))
+			{
+				CWMS_ENV_PACKAGE.call_SET_SESSION_USER(dsl.configuration(), sessionKey);
+			}
+
 		}
 
 		return conn;

@@ -31,7 +31,7 @@ public class AccessManagerTestIT
 		realm.setCurrentPrincipal(TestRealm.NULL);
 
 		Response response = given()
-				.accept("application/json;version=2")
+				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.queryParam("names", "AR*")
 				.queryParam("unit", "EN")
@@ -49,7 +49,7 @@ public class AccessManagerTestIT
 		realm.setCurrentPrincipal(TestRealm.USER1);
 
 		Response response = given()
-				.accept("application/json;version=2")
+				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.queryParam("names", "AR*")
 				.queryParam("unit", "EN")
@@ -72,7 +72,7 @@ public class AccessManagerTestIT
 
 		final String postBody = "";
 		given()
-				.accept("application/json;version=2")
+				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.body(json)
 				.when()
@@ -93,13 +93,13 @@ public class AccessManagerTestIT
 
 		final String postBody = "";
 		given()
-				.accept("application/json;version=2")
+				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.body(json)
 				.when()
 				.post(  "/locations")
 				.then()
-				.assertThat().statusCode(is(200));
+				.assertThat().statusCode(202);
 	}
 
 	@Test
@@ -114,7 +114,7 @@ public class AccessManagerTestIT
 
 		final String postBody = "";
 		given()
-				.accept("application/json;version=2")
+				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.body(json)
 				.when()
