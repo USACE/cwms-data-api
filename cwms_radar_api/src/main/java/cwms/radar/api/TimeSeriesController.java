@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,6 +49,7 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.JsonV1;
+import cwms.radar.helpers.DateUtils;
 import cwms.radar.security.CwmsAuthorizer;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -227,7 +230,7 @@ public class TimeSeriesController implements CrudHandler {
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
-            String timezone = ctx.queryParam("timezone");
+            String timezone = ctx.queryParamAsClass("timezone",String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
                     ctx.queryParamAsClass("page", String.class).getOrDefault(""));
@@ -240,9 +243,18 @@ public class TimeSeriesController implements CrudHandler {
 
             String results;
             String version = contentType.getParameters().get("version");
+
+            ZoneId tz = ZoneId.of(timezone,ZoneId.SHORT_IDS);
+            begin = begin != null ? begin : "PT-24H";
+
+            ZonedDateTime beginZdt = DateUtils.parseUserDate(begin, timezone);
+            ZonedDateTime endZdt = end != null
+                                        ? DateUtils.parseUserDate(end, timezone)
+                                        : ZonedDateTime.now(tz);
+
             if(version != null && version.equals("2"))
             {
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, beginZdt, endZdt, tz);
 
                 results = Formats.format(contentType, ts);
                 ctx.status(HttpServletResponse.SC_OK);
@@ -269,7 +281,9 @@ public class TimeSeriesController implements CrudHandler {
                 {
                     format = "json";
                 }
-                results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
+
+
+                results = dao.getTimeseries(format, names, office, unit, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
