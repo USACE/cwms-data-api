@@ -67,7 +67,7 @@ class LocationControllerTest extends ControllerTest
         HashMap<String,Object> attributes = new HashMap<>();
         attributes.put(ContextUtil.maxRequestSizeKey,Integer.MAX_VALUE);
         attributes.put(JsonMapperKt.JSON_MAPPER_KEY,new JavalinJackson());
-//        attributes.put("Authorizer",new CwmsNoAuthorizer());
+
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
 
         final Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.GET,attributes);
@@ -76,12 +76,12 @@ class LocationControllerTest extends ControllerTest
         when(request.getAttribute("database")).thenReturn(getTestConnection());
 
         assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
-//        System.out.println("getOne");
-        String Location_id = "SimpleNoAlias";
 
+        String Location_id = "SimpleNoAlias";
 
         instance.getOne(context, Location_id);
         assertEquals(200,context.status(), "incorrect status code returned");
+
 
     }
 

@@ -217,7 +217,13 @@ public class ApiServlet extends HttpServlet {
     }
 
 
-
+    /**
+     * This method is very similar to the ApiBuilder.crud method but the specified roles
+     * are only required for the post, patch and delete methods.    getOne and getAll are always allowed.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param roles the accessmanager will require these roles are present to access post, patch and delete methods
+     */
     public static void radarCrud(@NotNull String path, @NotNull CrudHandler crudHandler, @NotNull RouteRole... roles) {
         String fullPath = prefixPath(path);
         String[] subPaths = Arrays.stream(fullPath.split("/")).filter(it -> !it.isEmpty()).toArray(String[]::new);
