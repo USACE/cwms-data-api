@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
+import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.api.errors.RadarError;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
@@ -75,16 +76,6 @@ public class CwmsAccessManager implements AccessManager
 	}
 
 
-
-	@Nullable
-	private Principal getPrincipal(@NotNull Context ctx)
-	{
-		//		CwmsUserPrincipal principal = ctx.attribute("principal"); // wrong
-		Principal userPrincipal = ctx.req.getUserPrincipal();
-
-		return userPrincipal;
-	}
-
 	public boolean isAuthorized(Context ctx, Set<RouteRole> requiredRoles)
 	{
 		boolean retval;
@@ -104,7 +95,8 @@ public class CwmsAccessManager implements AccessManager
 		Set<RouteRole> retval = new LinkedHashSet<>();
 		if(ctx != null)
 		{
-			Principal principal = getPrincipal(ctx);
+			Principal principal = ctx.req.getUserPrincipal();
+
 			Set<RouteRole> specifiedRoles = getRoles(principal);
 			if(!specifiedRoles.isEmpty())
 			{
@@ -119,10 +111,20 @@ public class CwmsAccessManager implements AccessManager
 	{
 		String sessionKey = null;
 
-		Principal principal = getPrincipal(ctx);
-
-		if(principal != null){
-			sessionKey = callGetSessionKeyReflectively(principal);
+		Principal principal = ctx.req.getUserPrincipal();
+		if(principal != null)
+		{
+			try
+			{
+				CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
+				sessionKey = cup.getSessionKey();
+			}
+			catch(ClassCastException e)
+			{
+				// The object is created by cwms_aaa with the cwms_aaa classloader.
+				// It's a CwmsUserPrincipal but it's not our CwmsUserPrincipal.
+				sessionKey = callGetSessionKeyReflectively(principal);
+			}
 		}
 		return sessionKey;
 	}
@@ -133,12 +135,11 @@ public class CwmsAccessManager implements AccessManager
 		Method getSessionKeyMethod;
 		try
 		{
-			getSessionKeyMethod = principal.getClass().getMethod("getSessionKey", new Class[]{});
+			getSessionKeyMethod = principal.getClass().getMethod("getSess'ionKey", new Class[]{});
 			Object retval = getSessionKeyMethod.invoke(principal, new Object[]{});
 			if(retval instanceof String){
 				sessionKey = (String)retval;
 			}
-			//			sessionKey = principal.getSessionKey();
 		}
 		catch(NoSuchMethodException | InvocationTargetException | IllegalAccessException e)
 		{
@@ -153,9 +154,20 @@ public class CwmsAccessManager implements AccessManager
 		Set<RouteRole> retval = new LinkedHashSet<>();
 		if(principal != null)
 		{
-			List<String> roleNames = callGetRolesReflectively(principal); // principal.getRoles();
+			List<String> roleNames;
+			try{
+				CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
+				roleNames = cup.getRoles();
+			} catch(ClassCastException e){
+				// The object is created by cwms_aaa with the cwms_aaa classloader.
+				// It's a CwmsUserPrincipal but it's not our CwmsUserPrincipal.
+				roleNames = callGetRolesReflectively(principal);
+			}
 
-			roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+			if(roleNames != null)
+			{
+				roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+			}
 			logger.info("Principal had roles: " + retval);
 		}
 		return retval;
@@ -163,6 +175,7 @@ public class CwmsAccessManager implements AccessManager
 
 	List<String> callGetRolesReflectively(Principal principal){
 		List<String> retval = new ArrayList<>();
+
 		Method getRolesMethod;
 		try
 		{
