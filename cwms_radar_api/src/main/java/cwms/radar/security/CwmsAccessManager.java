@@ -135,7 +135,7 @@ public class CwmsAccessManager implements AccessManager
 		Method getSessionKeyMethod;
 		try
 		{
-			getSessionKeyMethod = principal.getClass().getMethod("getSess'ionKey", new Class[]{});
+			getSessionKeyMethod = principal.getClass().getMethod("getSessionKey", new Class[]{});
 			Object retval = getSessionKeyMethod.invoke(principal, new Object[]{});
 			if(retval instanceof String){
 				sessionKey = (String)retval;
