@@ -50,7 +50,7 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.JsonV1;
 import cwms.radar.helpers.DateUtils;
-import cwms.radar.security.CwmsAuthorizer;
+
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -159,7 +159,7 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void delete(Context ctx, String tsId) {
         deleteRequests.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
 
         String office = ctx.queryParam("office");
 
@@ -329,7 +329,7 @@ public class TimeSeriesController implements CrudHandler {
     public void update(Context ctx, String id) {
 
         updateRequests.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
         try (
                 final Timer.Context timeContext = updateRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
