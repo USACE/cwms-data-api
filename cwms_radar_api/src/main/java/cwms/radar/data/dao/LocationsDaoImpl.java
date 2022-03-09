@@ -143,7 +143,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Failed to store Location");
+            throw new IOException("Failed to store Location",ex);
         }
     }
 
