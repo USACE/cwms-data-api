@@ -52,6 +52,7 @@ import cwms.radar.security.CwmsAccessManager;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.core.validation.JavalinValidation;
@@ -67,6 +68,7 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 
@@ -243,7 +245,7 @@ public class ApiServlet extends HttpServlet {
             throw new IllegalArgumentException("CrudHandler requires a resource base at the beginning of the provided path, e.g. '/users/{user-id}'");
         }
 
-        Map<CrudFunction, Handler> crudFunctions = getHanders(crudHandler, resourceId);
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);//getHanders(crudHandler, resourceId);
 
         // getOne and getAll are assumed not to need authorization
         staticInstance().get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
@@ -253,12 +255,6 @@ public class ApiServlet extends HttpServlet {
         staticInstance().post(fullPath.replace(resourceId, ""), crudFunctions.get(CrudFunction.CREATE), roles);
         staticInstance().patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
         staticInstance().delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
-    }
-
-
-    private static Map<CrudFunction, Handler> getHanders(@NotNull CrudHandler crudHandler, String resourceId){
-        return Arrays.stream(CrudFunction.values()).collect(
-                Collectors.toMap(cf -> cf, cf ->cf.getCreateHandler().invoke(crudHandler, resourceId)));
     }
 
     private OpenApiOptions getOpenApiOptions() {
