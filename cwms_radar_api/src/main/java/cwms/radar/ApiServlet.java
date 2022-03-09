@@ -44,6 +44,7 @@ import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.RadarError;
+import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.security.Role;
@@ -168,6 +169,9 @@ public class ApiServlet extends HttpServlet {
                     RadarError re = new RadarError("Not Found.");
                     logger.log(Level.INFO, re.toString(), e );
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
+                })
+                .exception(RequiredFieldException.class, (e,ctx) -> {
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(e.getDetails());
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");

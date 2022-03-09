@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import cwms.radar.api.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
+import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.Location;
@@ -180,7 +181,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         if(missingField != null)
         {
-            throw new IOException("Missing required field: " + missingField);
+            throw new RequiredFieldException("Missing required field: " + missingField);
         }
     }
 
@@ -203,7 +204,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Failed to rename Location");
+            throw new IOException("Failed to rename Location",ex);
         }
     }
 
