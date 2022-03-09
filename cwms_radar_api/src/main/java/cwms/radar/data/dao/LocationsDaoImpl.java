@@ -150,38 +150,38 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
 
     private void validateLocation(Location location) throws IOException
     {
-        String missingField = null;
+        ArrayList<String> missingFields = new ArrayList<>();
         if(location.getName() == null)
         {
-            missingField = "Name";
+            missingFields.add("Name");
         }
         if(location.getLocationKind() == null)
         {
-            missingField = "Location Kind";
+            missingFields.add("Location Kind");
         }
         if(location.getTimezoneName() == null)
         {
-            missingField = "Timezone ID";
+            missingFields.add("Timezone ID");
         }
         if(location.getOfficeId() == null)
         {
-            missingField = "Office ID";
+            missingFields.add("Office ID");
         }
         if(location.getHorizontalDatum() == null)
         {
-            missingField = "Horizontal Datum";
+            missingFields.add("Horizontal Datum");
         }
         if(location.getLongitude() == null)
         {
-            missingField = "Longitude";
+            missingFields.add("Longitude");
         }
         if(location.getLatitude() == null)
         {
-            missingField = "Latitude";
+            missingFields.add("Latitude");
         }
-        if(missingField != null)
+        if(!missingFields.isEmpty())
         {
-            throw new RequiredFieldException("Missing required field: " + missingField);
+            throw new RequiredFieldException(missingFields);
         }
     }
 

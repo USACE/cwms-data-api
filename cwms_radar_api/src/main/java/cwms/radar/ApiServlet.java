@@ -173,7 +173,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
                 .exception(RequiredFieldException.class, (e,ctx) -> {
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(e.getDetails());
+                    RadarError re = new RadarError("Missing Fields",e.getDetails(),true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
@@ -261,6 +262,13 @@ public class ApiServlet extends HttpServlet {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
+                    .defaultDocumentation((doc) -> {
+                        doc.json("500", RadarError.class);
+                        doc.json("400", RadarError.class);
+                        doc.json("401", RadarError.class);
+                        doc.json("403", RadarError.class);
+                        doc.json("404", RadarError.class);
+                    })
                     .activateAnnotationScanningFor("cwms.radar.api");
     }
 

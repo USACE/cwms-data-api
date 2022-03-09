@@ -1,24 +1,28 @@
 package cwms.radar.api.errors;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class RequiredFieldException extends RuntimeException{
-    private String field;
-    private Map<String,String> details = new HashMap<>();
+    private Map<String,ArrayList<String>> details = new HashMap<>();
+
+    private RequiredFieldException(){
+        super();
+        details.put("missing fields",new ArrayList<String>());
+    }
 
     public RequiredFieldException(String field) {
-        super("Missing Required field " + field);
-        this.field = field;
-        details.put("Field Missing",field);
+        this();
+        details.get("missing fields").add(field);
     }
 
-
-    public String getField(){
-        return field;
+    public RequiredFieldException(ArrayList<String> fields){
+        this();
+        details.get("missing fields").addAll(fields);
     }
 
-    public Map<String,String> getDetails() {
+    public Map<String,ArrayList<String>> getDetails() {
         return details;
     }
 }
