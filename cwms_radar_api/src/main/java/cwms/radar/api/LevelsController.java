@@ -126,7 +126,7 @@ public class LevelsController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = "cascade-delete", type = Boolean.class),
                     @OpenApiParam(name = "office", description = "Specifies the owning office of the location level whose data is to be deleted. If this field is not specified, matching location level information will be deleted from all offices."),
-                    @OpenApiParam(name = "date", description = "Specifies the effective date of the level to be deleted")
+                    @OpenApiParam(name = "date", description = "Specifies the effective date of the level to be deleted. If not provided will delete all data and reference to the location level.")
             },
             description = "Delete CWMS Location Level",
             method = HttpMethod.DELETE,
@@ -144,7 +144,7 @@ public class LevelsController implements CrudHandler {
             String dateString = ctx.queryParam("date");
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam("cascade-delete"));
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
+            ZonedDateTime unmarshalledDateTime = dateString != null ? zonedDateTimeAdapter.unmarshal(dateString) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(id, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(id + " Deleted");

@@ -1,10 +1,13 @@
 package cwms.radar.data.dao;
 
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
+
 import cwms.radar.api.enums.Unit;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.LocationLevel;
 import cwms.radar.data.dto.SeasonalValueBean;
 import org.jooq.DSLContext;
+import org.jooq.Record1;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
 import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
@@ -88,12 +91,23 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     {
         try
         {
-            Date date = Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant());
-            dsl.connection(c ->
-            {
-                CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                levelJooq.deleteLocationLevel(c, locationLevelName, date, null, null, null, cascadeDelete, officeId);
-            });
+            Date date = zonedDateTime != null ? Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant()) : null;
+            if (date != null) {
+                dsl.connection(c -> {
+                    CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
+                    levelJooq.deleteLocationLevel(c, locationLevelName, date, null, null, null, cascadeDelete, officeId);
+                });
+            } else {
+                Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
+
+                                                .from(AV_LOCATION_LEVEL)
+                                                .where(AV_LOCATION_LEVEL.LOCATION_LEVEL_ID.eq(locationLevelName))
+                                                .and(AV_LOCATION_LEVEL.OFFICE_ID.eq(officeId)
+                                                )
+                                                .fetchOne();
+                CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL__2(dsl.configuration(), BigInteger.valueOf(levelCode.value1()), cascadeDelete ? "T" : "F");
+            }
+
         }
         catch(DataAccessException ex)
         {
