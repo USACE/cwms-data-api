@@ -4,10 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -19,19 +22,38 @@ import java.util.function.Consumer;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class LocationLevel implements CwmsDTO
 {
+    @JsonProperty(required = true)
+    @Schema(description = "Name of the location level")
+    private final String locationId;
+    @JsonProperty(required = true)
+    @Schema(description = "Owning office of the level")
+    private final String officeId;
+    @Schema(description="Timeseries ID (e.g. from the times series catalog) to use as the location level. Mutually exclusive with seasonalValues and siParameterUnitsConstantValue")
     private final String seasonalTimeSeriesId;
+    @Schema(description="List of Repeating seasonal values. The values repeater after the specified interval."
+                            + " A yearly interval seasonable could have 12 different values, one for each month for"
+                            + " example. Mutually exclusive with seasonalTimeSeriesId and siParameterUnitsConstantValue")
     private final List<SeasonalValueBean> seasonalValues;
+    @Schema(description="Generic name of this location level. Common names are 'Top of Dam', 'Streambed', 'Bottom of Dam'.")
     private final String specifiedLevelId;
+    @Schema(description="To indicate if single or aggregate value", allowableValues = {"Inst","Ave","Min","Max","Total"})
     private final String parameterTypeId;
+    @Schema(description="Data Type such as Stage, Elevation, or others.")
     private final String parameterId;
+    @Schema(description="Single value for this location level. Mutually exclusive with seasonableTimeSeriesId and seasonValues.")
     private final Double siParameterUnitsConstantValue;
+    @Schema(description="Units thhe provided levels are in")
     private final String levelUnitsId;
+    @Schema(description="The date/time at which this location level configuration takes affect.")
     private final ZonedDateTime levelDate;
     private final String levelComment;
+    @Schema(description="The start point of provided seasonal values")
     private final ZonedDateTime intervalOrigin;
     private final Integer intervalMonths;
     private final Integer intervalMinutes;
+    @Schema(description="Indicating whether or not to interpolate between seasonal values.", allowableValues = {"T","F"})
     private final String interpolateString;
+    @Schema(description="0 if parameterTypeId is Inst. Otherwise duration indicating the time window of the aggregate value.")
     private final String durationId;
     private final BigDecimal attributeValue;
     private final String attributeUnitsId;
@@ -39,8 +61,6 @@ public final class LocationLevel implements CwmsDTO
     private final String attributeParameterId;
     private final String attributeDurationId;
     private final String attributeComment;
-    private final String locationId;
-    private final String officeId;
 
     private LocationLevel(Builder builder)
     {
@@ -168,6 +188,7 @@ public final class LocationLevel implements CwmsDTO
         return attributeComment;
     }
 
+    @Schema(description="Name of the location level")
     public String getLocationId()
     {
         return locationId;
@@ -205,9 +226,9 @@ public final class LocationLevel implements CwmsDTO
         private String locationId;
         private String officeId;
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
-        
+
         @JsonCreator
-        public Builder(@JsonProperty(value = "location-id") String name, @JsonProperty(value = "level-date") ZonedDateTime effectiveDate)
+        public Builder(@JsonProperty(value = "location-id", required = true ) String name, @JsonProperty(value = "level-date", required=true) ZonedDateTime effectiveDate)
         {
             locationId = name;
             levelDate = effectiveDate;
