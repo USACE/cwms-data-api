@@ -39,9 +39,9 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
         System.out.println("After all called");
         if( radarInstance != null ){
-            cwmsDb.stop();
-            cwmsDb.close();
-            radarInstance.stop();
+            //cwmsDb.stop();
+            //cwmsDb.close();
+            //radarInstance.stop();
         }
 
     }

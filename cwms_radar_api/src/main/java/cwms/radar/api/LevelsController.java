@@ -267,7 +267,7 @@ public class LevelsController implements CrudHandler {
             //only store (update) if level does exist
             LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel, levelFromBody);
             updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel).withLevelDate(unmarshalledDateTime).build();
-            if(!updatedLocationLevel.getLocationId().equalsIgnoreCase(existingLevelLevel.getLocationId())) //if name changed then delete location with old name
+            if(!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(existingLevelLevel.getLocationLevelId())) //if name changed then delete location with old name
             {
                 levelsDao.renameLocationLevel(id, updatedLocationLevel);
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location Level");
@@ -293,7 +293,7 @@ public class LevelsController implements CrudHandler {
         String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
         String parameterTypeId = (updatedLevel.getParameterTypeId() == null ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
         String parameterId = (updatedLevel.getParameterId() == null ? existingLevel.getParameterId() : updatedLevel.getParameterId());
-        Double siParameterUnitsConstantValue = (updatedLevel.getSiParameterUnitsConstantValue() == null ? existingLevel.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
+        Double siParameterUnitsConstantValue = (updatedLevel.getConstantValue() == null ? existingLevel.getConstantValue() : updatedLevel.getConstantValue());
         String levelUnitsId = (updatedLevel.getLevelUnitsId() == null ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
         ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
         String levelComment = (updatedLevel.getLevelComment() == null ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
@@ -308,7 +308,7 @@ public class LevelsController implements CrudHandler {
         String attributeParameterId = (updatedLevel.getAttributeParameterId() == null ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
         String attributeDurationId = (updatedLevel.getAttributeDurationId() == null ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
         String attributeComment = (updatedLevel.getAttributeComment() == null ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
-        String locationId = (updatedLevel.getLocationId() == null ? existingLevel.getLocationId() : updatedLevel.getLocationId());
+        String locationId = (updatedLevel.getLocationLevelId() == null ? existingLevel.getLocationLevelId() : updatedLevel.getLocationLevelId());
         String officeId = (updatedLevel.getOfficeId() == null ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
         if(existingLevel.getIntervalMonths() != null && existingLevel.getIntervalMonths() > 0)
         {
@@ -338,7 +338,7 @@ public class LevelsController implements CrudHandler {
                 .withSpecifiedLevelId(specifiedLevelId)
                 .withParameterTypeId(parameterTypeId)
                 .withParameterId(parameterId)
-                .withSiParameterUnitsConstantValue(siParameterUnitsConstantValue)
+                .withConstantValue(siParameterUnitsConstantValue)
                 .withLevelUnitsId(levelUnitsId)
                 .withLevelComment(levelComment)
                 .withIntervalOrigin(intervalOrigin)

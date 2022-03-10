@@ -24,7 +24,7 @@ public final class LocationLevel implements CwmsDTO
 {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
-    private final String locationId;
+    private final String locationLevelId;
     @JsonProperty(required = true)
     @Schema(description = "Owning office of the level")
     private final String officeId;
@@ -41,7 +41,7 @@ public final class LocationLevel implements CwmsDTO
     @Schema(description="Data Type such as Stage, Elevation, or others.")
     private final String parameterId;
     @Schema(description="Single value for this location level. Mutually exclusive with seasonableTimeSeriesId and seasonValues.")
-    private final Double siParameterUnitsConstantValue;
+    private final Double constantValue;
     @Schema(description="Units thhe provided levels are in")
     private final String levelUnitsId;
     @Schema(description="The date/time at which this location level configuration takes affect.")
@@ -69,7 +69,7 @@ public final class LocationLevel implements CwmsDTO
         specifiedLevelId = builder.specifiedLevelId;
         parameterTypeId = builder.parameterTypeId;
         parameterId = builder.parameterId;
-        siParameterUnitsConstantValue = builder.siParameterUnitsConstantValue;
+        constantValue = builder.constantValue;
         levelUnitsId = builder.levelUnitsId;
         levelDate = builder.levelDate;
         levelComment = builder.levelComment;
@@ -84,7 +84,7 @@ public final class LocationLevel implements CwmsDTO
         attributeParameterId = builder.attributeParameterId;
         attributeDurationId = builder.attributeDurationId;
         attributeComment = builder.attributeComment;
-        locationId = builder.locationId;
+        locationLevelId = builder.locationId;
         officeId = builder.officeId;
     }
 
@@ -113,9 +113,9 @@ public final class LocationLevel implements CwmsDTO
         return parameterId;
     }
 
-    public Double getSiParameterUnitsConstantValue()
+    public Double getConstantValue()
     {
-        return siParameterUnitsConstantValue;
+        return constantValue;
     }
 
     public String getLevelUnitsId()
@@ -188,10 +188,9 @@ public final class LocationLevel implements CwmsDTO
         return attributeComment;
     }
 
-    @Schema(description="Name of the location level")
-    public String getLocationId()
+    public String getLocationLevelId()
     {
-        return locationId;
+        return locationLevelId;
     }
 
     public String getOfficeId()
@@ -208,7 +207,7 @@ public final class LocationLevel implements CwmsDTO
         private String specifiedLevelId;
         private String parameterTypeId;
         private String parameterId;
-        private Double siParameterUnitsConstantValue;
+        private Double constantValue;
         private String levelUnitsId;
         private ZonedDateTime levelDate;
         private String levelComment;
@@ -228,7 +227,7 @@ public final class LocationLevel implements CwmsDTO
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
-        public Builder(@JsonProperty(value = "location-id", required = true ) String name, @JsonProperty(value = "level-date", required=true) ZonedDateTime effectiveDate)
+        public Builder(@JsonProperty(value = "location-level-id", required = true ) String name, @JsonProperty(value = "level-date", required=true) ZonedDateTime effectiveDate)
         {
             locationId = name;
             levelDate = effectiveDate;
@@ -240,7 +239,7 @@ public final class LocationLevel implements CwmsDTO
             withAttributeComment(copyFrom.getAttributeComment());
             withAttributeDurationId(copyFrom.getAttributeDurationId());
             withAttributeParameterId(copyFrom.getAttributeParameterId());
-            withLocationId(copyFrom.getLocationId());
+            withLocationLevelId(copyFrom.getLocationLevelId());
             withAttributeValue(copyFrom.getAttributeValue());
             withAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
             withAttributeUnitsId(copyFrom.getAttributeUnitsId());
@@ -257,7 +256,7 @@ public final class LocationLevel implements CwmsDTO
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
             withSeasonalValues(copyFrom.getSeasonalValues());
-            withSiParameterUnitsConstantValue(copyFrom.getSiParameterUnitsConstantValue());
+            withConstantValue(copyFrom.getConstantValue());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
             buildPropertyFunctions();
         }
@@ -266,14 +265,14 @@ public final class LocationLevel implements CwmsDTO
         private void buildPropertyFunctions()
         {
             propertyFunctionMap.clear();
-            propertyFunctionMap.put("location-id", nameVal -> withLocationId((String)nameVal));
+            propertyFunctionMap.put("location-level-id", nameVal -> withLocationLevelId((String)nameVal));
             propertyFunctionMap.put("seasonal-time-series-id", tsIdVal -> withSeasonalTimeSeriesId((String)tsIdVal));
             propertyFunctionMap.put("seasonal-values", seasonalVals -> withSeasonalValues((List<SeasonalValueBean>)seasonalVals));
             propertyFunctionMap.put("office-id", officeIdVal -> withOfficeId((String)officeIdVal));
             propertyFunctionMap.put("specified-level-id", specifiedLevelIdVal -> withSpecifiedLevelId((String)specifiedLevelIdVal));
             propertyFunctionMap.put("parameter-type-id", parameterTypeIdVal -> withParameterTypeId((String)parameterTypeIdVal));
             propertyFunctionMap.put("parameter-id", parameterIdVal -> withParameterId((String)parameterIdVal));
-            propertyFunctionMap.put("si-parameter-units-constant-value", paramUnitsConstVal -> withSiParameterUnitsConstantValue((Double)paramUnitsConstVal));
+            propertyFunctionMap.put("si-parameter-units-constant-value", paramUnitsConstVal -> withConstantValue((Double)paramUnitsConstVal));
             propertyFunctionMap.put("level-units-id", levelUnitsIdVal -> withLevelUnitsId((String)levelUnitsIdVal));
             propertyFunctionMap.put("level-date", levelDateVal -> withLevelDate((ZonedDateTime)levelDateVal));
             propertyFunctionMap.put("level-comment", levelCommentVal -> withLevelComment((String)levelCommentVal));
@@ -332,9 +331,9 @@ public final class LocationLevel implements CwmsDTO
             return this;
         }
 
-        public Builder withSiParameterUnitsConstantValue(Double siParameterUnitsConstantValue)
+        public Builder withConstantValue(Double constantValue)
         {
-            this.siParameterUnitsConstantValue = siParameterUnitsConstantValue;
+            this.constantValue = constantValue;
             return this;
         }
 
@@ -422,7 +421,7 @@ public final class LocationLevel implements CwmsDTO
             return this;
         }
 
-        public Builder withLocationId(String locationId)
+        public Builder withLocationLevelId(String locationId)
         {
             this.locationId = locationId;
             return this;

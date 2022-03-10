@@ -56,7 +56,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             dsl.connection(c ->
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                levelJooq.storeLocationLevel(c, locationLevel.getLocationId(), locationLevel.getSiParameterUnitsConstantValue(), locationLevel.getLevelUnitsId(), locationLevel.getLevelComment(), date,
+                levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(), locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(), locationLevel.getLevelComment(), date,
                         TimeZone.getTimeZone(zoneId), locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(), locationLevel.getAttributeDurationId(),
                         locationLevel.getAttributeComment(), intervalOrigin, months,
                         minutes, Boolean.parseBoolean(locationLevel.getInterpolateString()), locationLevel.getSeasonalTimeSeriesId(),
@@ -124,7 +124,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             dsl.connection(c ->
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                levelJooq.renameLocationLevel(c, oldLocationLevelName, renamedLocationLevel.getLocationId(), renamedLocationLevel.getOfficeId());
+                levelJooq.renameLocationLevel(c, oldLocationLevelName, renamedLocationLevel.getLocationLevelId(), renamedLocationLevel.getOfficeId());
             });
         }
         catch(DataAccessException ex)
@@ -174,7 +174,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             .withAttributeComment(copyFromPojo.getAttributeComment())
             .withAttributeDurationId(copyFromPojo.getAttributeDurationId())
             .withAttributeParameterId(copyFromPojo.getAttributeParameterId())
-            .withLocationId(copyFromPojo.getLocationId())
+            .withLocationLevelId(copyFromPojo.getLocationId())
             .withAttributeValue(copyFromPojo.getAttributeValue())
             .withAttributeParameterTypeId(copyFromPojo.getAttributeParameterTypeId())
             .withAttributeUnitsId(copyFromPojo.getAttributeUnitsId())
@@ -190,7 +190,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             .withParameterTypeId(copyFromPojo.getParameterTypeId())
             .withSeasonalTimeSeriesId(copyFromPojo.getSeasonalTimeSeriesId())
             .withSeasonalValues(seasonalValues)
-            .withSiParameterUnitsConstantValue(copyFromPojo.getSiParameterUnitsConstantValue())
+            .withConstantValue(copyFromPojo.getSiParameterUnitsConstantValue())
             .withSpecifiedLevelId(copyFromPojo.getSpecifiedLevelId())
             .build();
     }
