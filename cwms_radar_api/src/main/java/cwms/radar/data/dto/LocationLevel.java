@@ -10,7 +10,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+import cwms.radar.api.errors.ExclusiveFieldsException;
 import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.FieldsException;
+import cwms.radar.api.errors.RequiredFieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -442,7 +445,23 @@ public final class LocationLevel implements CwmsDTO
 
     @Override
     public void validate() throws FieldException {
-        // TODO Auto-generated method stub
+        ArrayList<String> fields = new ArrayList<>();
+        if( seasonalValues != null ) {
+            fields.add("seasonal-values");
+        }
 
+        if( constantValue != null ){
+            fields.add("constant-value");
+        }
+
+        if( seasonalTimeSeriesId != null ){
+            fields.add("seasonable-time-series-id");
+        }
+        if( fields.size() == 0 ){
+            throw new RequiredFieldException(Arrays.asList("seasonal-values","constant-value","season-time-series-id"));
+        }
+        if( fields.size() != 1 ){
+            throw new ExclusiveFieldsException(fields);
+        }
     }
 }
