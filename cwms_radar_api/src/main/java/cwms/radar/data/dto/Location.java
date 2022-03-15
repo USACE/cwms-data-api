@@ -9,8 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.radar.api.enums.Nation;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.RequiredFieldException;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -514,5 +517,42 @@ public final class  Location implements CwmsDTO
             return nationConverted;
         }
 
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        ArrayList<String> missingFields = new ArrayList<>();
+        if(this.getName() == null)
+        {
+            missingFields.add("Name");
+        }
+        if(this.getLocationKind() == null)
+        {
+            missingFields.add("Location Kind");
+        }
+        if(this.getTimezoneName() == null)
+        {
+            missingFields.add("Timezone ID");
+        }
+        if(this.getOfficeId() == null)
+        {
+            missingFields.add("Office ID");
+        }
+        if(this.getHorizontalDatum() == null)
+        {
+            missingFields.add("Horizontal Datum");
+        }
+        if(this.getLongitude() == null)
+        {
+            missingFields.add("Longitude");
+        }
+        if(this.getLatitude() == null)
+        {
+            missingFields.add("Latitude");
+        }
+        if(!missingFields.isEmpty())
+        {
+            throw new RequiredFieldException(missingFields);
+        }
     }
  }

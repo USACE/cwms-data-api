@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a CWMS office")
@@ -57,5 +58,11 @@ public class Office implements CwmsDTO{
 
     public static boolean validOfficeCanNull(String office){
         return office == null || validOfficeNotNull(office);
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
+
     }
 }

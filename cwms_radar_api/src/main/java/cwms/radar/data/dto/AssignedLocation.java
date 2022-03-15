@@ -1,5 +1,7 @@
 package cwms.radar.data.dto;
 
+import cwms.radar.api.errors.FieldException;
+
 public class AssignedLocation implements CwmsDTO
 {
 	private String locationId;
@@ -42,5 +44,10 @@ public class AssignedLocation implements CwmsDTO
 	public String getRefLocationId()
 	{
 		return refLocationId;
+	}
+
+	@Override
+	public void validate() throws FieldException {
+
 	}
 }

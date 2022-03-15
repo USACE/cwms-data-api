@@ -14,6 +14,8 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
+import cwms.radar.api.errors.FieldException;
+
 @XmlRootElement(name="pools")
 @XmlSeeAlso(Pool.class)
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -70,6 +72,13 @@ public class Pools extends CwmsDTOPaginated {
             this.workingPools.pools.addAll(pools);
             return this;
         }
+    }
+
+
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
+
     }
 
 

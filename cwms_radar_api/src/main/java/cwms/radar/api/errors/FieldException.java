@@ -1,5 +1,7 @@
 package cwms.radar.api.errors;
 
-public class FieldException extends RuntimeException{
+import java.io.IOException;
+
+public class FieldException extends IOException{
 
 }

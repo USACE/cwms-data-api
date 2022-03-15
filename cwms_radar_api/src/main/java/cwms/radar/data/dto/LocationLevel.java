@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -437,5 +438,11 @@ public final class LocationLevel implements CwmsDTO
         {
             return new LocationLevel(this);
         }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
+
     }
 }

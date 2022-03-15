@@ -1,5 +1,6 @@
 package cwms.radar.data.dto.basinconnectivity;
 
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
 
 public final class Basin implements CwmsDTO
@@ -115,5 +116,10 @@ public final class Basin implements CwmsDTO
         {
             return new Basin(this);
         }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+
     }
 }

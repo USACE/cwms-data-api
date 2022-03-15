@@ -127,7 +127,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void storeLocation(Location location) throws IOException
     {
-        validateLocation(location);
+        location.validate();
         try
         {
             dsl.connection(c ->
@@ -148,47 +148,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
     }
 
-    private void validateLocation(Location location) throws IOException
-    {
-        ArrayList<String> missingFields = new ArrayList<>();
-        if(location.getName() == null)
-        {
-            missingFields.add("Name");
-        }
-        if(location.getLocationKind() == null)
-        {
-            missingFields.add("Location Kind");
-        }
-        if(location.getTimezoneName() == null)
-        {
-            missingFields.add("Timezone ID");
-        }
-        if(location.getOfficeId() == null)
-        {
-            missingFields.add("Office ID");
-        }
-        if(location.getHorizontalDatum() == null)
-        {
-            missingFields.add("Horizontal Datum");
-        }
-        if(location.getLongitude() == null)
-        {
-            missingFields.add("Longitude");
-        }
-        if(location.getLatitude() == null)
-        {
-            missingFields.add("Latitude");
-        }
-        if(!missingFields.isEmpty())
-        {
-            throw new RequiredFieldException(missingFields);
-        }
-    }
-
     @Override
     public void renameLocation(String oldLocationName, Location renamedLocation) throws IOException
     {
-        validateLocation(renamedLocation);
+        renamedLocation.validate();
         try
         {
             dsl.connection(c ->

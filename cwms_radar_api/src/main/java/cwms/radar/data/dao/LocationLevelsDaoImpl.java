@@ -46,6 +46,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     @Override
     public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId) throws IOException
     {
+        locationLevel.validate();
         try
         {
             BigInteger months = locationLevel.getIntervalMonths() == null ? null : BigInteger.valueOf(locationLevel.getIntervalMonths());
@@ -119,6 +120,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     @Override
     public void renameLocationLevel(String oldLocationLevelName, LocationLevel renamedLocationLevel) throws IOException
     {
+        // no need to validate the level here we are just using the name and office field
         try
         {
             dsl.connection(c ->
