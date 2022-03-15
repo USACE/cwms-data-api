@@ -196,7 +196,29 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(tsId,
 					DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
 					DSL.val(BigInteger.valueOf(6L))));
-			SelectSelectStep<Record8<String, String, String, BigDecimal, String, String, String, Integer>> metadataQuery = dsl.select(
+
+			// What is the syntax for selecting tzName and offsetField from the same subquery?
+			// It works when each field comes from its own subquery.
+			// This didn't work.
+			//			Field<?>[] fields = DSL.select(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET.as("INTERVAL_UTC_OFFSET"),
+			//					AV_CWMS_TS_ID2.TIME_ZONE_ID.as("TIME_ZONE_ID"))
+			//					.from(AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId))
+			//					.fields();
+			//			Field<BigDecimal> offsetField = (Field<BigDecimal>) fields[0];
+			//			Field<String> tzName = (Field<String>) fields[1];
+
+			Field<BigDecimal> offsetField = DSL.select(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET.as("INTERVAL_UTC_OFFSET"))
+					.from(AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId))
+					.asField();
+			Field<String> tzName;
+			if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
+				tzName = DSL.select(AV_CWMS_TS_ID2.TIME_ZONE_ID).from(AV_CWMS_TS_ID2).where(
+						AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)).asField("TIME_ZONE_ID");
+			} else {
+				tzName = DSL.val((String) null).as("TIME_ZONE_ID");
+			}
+
+			SelectSelectStep< ? extends Record> metadataQuery = dsl.select(
 					tsId.as("NAME"),
 					officeId.as("OFFICE_ID"),
 					unit.as("UNITS"),
@@ -209,7 +231,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 							.as("VERTICAL_DATUM"),
 					// If we don't know the total, fetch it from the database (only for first fetch).
 					// Total is only an estimate, as it can change if fetching current data, or the timeseries otherwise changes between queries.
-					total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL"));
+					total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL"),
+					offsetField,
+					tzName
+			);
 
 			logger.finest(() -> metadataQuery.getSQL(ParamType.INLINED));
 
@@ -221,7 +246,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						tsMetadata.getValue("NAME", String.class), tsMetadata.getValue("OFFICE_ID", String.class),
 						beginTime, endTime, tsMetadata.getValue("UNITS", String.class),
 						Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class)),
-						verticalDatumInfo
+						verticalDatumInfo,
+						tsMetadata.getValue(offsetField).longValue(),
+						tsMetadata.getValue(tzName)
 				);
 			});
 
@@ -446,7 +473,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						.units(row.get(AV_CWMS_TS_ID2.UNIT_ID) )
 						.interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
 						.intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
-						if( this.getDbVersion() > TimeSeriesDaoImpl.CWMS_21_1_1){
+						if( this.getDbVersion() > Dao.CWMS_21_1_1){
 							builder.timeZone(row.get("TIME_ZONE_ID",String.class));
 						}
 				tsIdExtentMap.put(tsId, builder);
@@ -777,7 +804,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		final boolean createAsLrts = false;
 		StoreRule storeRule = StoreRule.DELETE_INSERT;
 
-		long completedAt = tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
+		tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
 				storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
 	}
 
