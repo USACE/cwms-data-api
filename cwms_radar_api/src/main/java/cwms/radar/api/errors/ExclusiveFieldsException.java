@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ExclusiveFieldsException extends RuntimeException {
+public class ExclusiveFieldsException extends FieldException {
     private Map<String,ArrayList<String>> details = new HashMap<>();
 
     private ExclusiveFieldsException(){
