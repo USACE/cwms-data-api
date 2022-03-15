@@ -2,10 +2,11 @@ package cwms.radar.api.errors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class RequiredFieldException extends RuntimeException{
-    private Map<String,ArrayList<String>> details = new HashMap<>();
+public class RequiredFieldException extends FieldException{
+    private Map<String,List<String>> details = new HashMap<>();
 
     private RequiredFieldException(){
         super();
@@ -17,12 +18,12 @@ public class RequiredFieldException extends RuntimeException{
         details.get("missing fields").add(field);
     }
 
-    public RequiredFieldException(ArrayList<String> fields){
+    public RequiredFieldException(List<String> fields){
         this();
         details.get("missing fields").addAll(fields);
     }
 
-    public Map<String,ArrayList<String>> getDetails() {
+    public Map<String,List<String>> getDetails() {
         return details;
     }
 }
