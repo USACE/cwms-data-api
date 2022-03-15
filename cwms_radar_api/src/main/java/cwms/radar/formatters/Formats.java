@@ -173,6 +173,13 @@ public class Formats {
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam){
         if( queryParam != null && !queryParam.isEmpty() ){
+            if(header != null && !header.isEmpty()){
+                // If the user supplies an accept header and also a format= parameter, which should we use?
+                // The older format= query parameters don't give us the option to supply a version the
+                // way that the accept header does.
+                throw new FormattingException("Accept header and query parameter are both present, this is not supported.");
+            }
+
             String val = typeMap.get(queryParam);
             if( val != null ){
                 return new ContentType(val);
