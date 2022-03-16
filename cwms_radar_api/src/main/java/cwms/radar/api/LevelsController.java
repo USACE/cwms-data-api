@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationLevelsDao;
 import cwms.radar.data.dao.LocationLevelsDaoImpl;
@@ -360,17 +362,18 @@ public class LevelsController implements CrudHandler {
     public static LocationLevel deserializeLocationLevel(String body, String format, String office) {
         ObjectMapper om = getObjectMapperForFormat(format);
         LocationLevel retVal;
-        try
-        {
+
+        try {
             retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
                     .withOfficeId(office)
                     .build();
+            return retVal;
+        } catch (JsonProcessingException e) {
+            throw new JsonFieldsException(e);
         }
-        catch(Exception e)
-        {
-            throw new RuntimeException("Failed to deserialize level", e);
-        }
-        return retVal;
+
+
+
     }
 
     private static ObjectMapper getObjectMapperForFormat(String format)

@@ -23,6 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
@@ -45,6 +46,7 @@ import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.ExclusiveFieldsException;
 import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.formatters.Formats;
@@ -176,6 +178,10 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
                 .exception(FieldException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(JsonFieldsException.class, (e,ctx) -> {
                     RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })

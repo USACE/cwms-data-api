@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class  Location implements CwmsDTO
 {
+    @JsonProperty(required = true)
     private final String name;
     private final Double latitude;
     private final Double longitude;
