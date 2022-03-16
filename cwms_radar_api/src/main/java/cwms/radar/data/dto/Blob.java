@@ -1,11 +1,14 @@
 package cwms.radar.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import cwms.radar.api.errors.FieldException;
-import cwms.radar.api.errors.FieldsException;
 
 public class Blob implements CwmsDTO
 {
+	@JsonProperty(required=true)
 	private String office;
+	@JsonProperty(required=true)
 	private String id;
 	private String description;
 	private String mediaTypeId;
@@ -54,11 +57,5 @@ public class Blob implements CwmsDTO
 
 	@Override
 	public void validate() throws FieldException {
-		if( id.isEmpty() ){
-			throw new FieldsException("clob id cannot be blank");
-		}
-		if( office.isEmpty() ){
-			throw new FieldsException("office cannot be blank");
-		}
 	}
 }

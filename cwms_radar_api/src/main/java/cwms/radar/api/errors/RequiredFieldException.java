@@ -9,7 +9,7 @@ public class RequiredFieldException extends FieldException{
     private Map<String,List<String>> details = new HashMap<>();
 
     private RequiredFieldException(){
-        super();
+        super("required fields not present");
         details.put("missing fields",new ArrayList<String>());
     }
 
@@ -23,7 +23,8 @@ public class RequiredFieldException extends FieldException{
         details.get("missing fields").addAll(fields);
     }
 
-    public Map<String,List<String>> getDetails() {
+    @Override
+    public Map<String,? extends List<String>> getDetails() {
         return details;
     }
 }

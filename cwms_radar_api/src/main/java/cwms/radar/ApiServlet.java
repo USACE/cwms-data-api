@@ -43,6 +43,8 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.ExclusiveFieldsException;
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.formatters.Formats;
@@ -141,7 +143,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options","nosniff");
                     ctx.header("X-Frame-Options","SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
-                }).exception(FormattingException.class, (fe, ctx ) -> {
+                })
+                .exception(FormattingException.class, (fe, ctx ) -> {
                     final RadarError re = new RadarError("Formatting error");
 
                     if( fe.getCause() instanceof IOException ){
@@ -172,8 +175,8 @@ public class ApiServlet extends HttpServlet {
                     logger.log(Level.INFO, re.toString(), e );
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
-                .exception(RequiredFieldException.class, (e,ctx) -> {
-                    RadarError re = new RadarError("Missing Fields",e.getDetails(),true);
+                .exception(FieldException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(Exception.class, (e,ctx) -> {

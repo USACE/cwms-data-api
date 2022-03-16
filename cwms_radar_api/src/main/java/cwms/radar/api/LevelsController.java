@@ -94,21 +94,17 @@ public class LevelsController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             LocationLevel level = deserializeLocationLevel(ctx.body(),formatHeader, office);
-            ZonedDateTime unmarshalledDateTime = getUnmarshalledDateTime(ctx.body(), contentType.getType());
+
+            ZonedDateTime unmarshalledDateTime = level.getLevelDate(); //getUnmarshalledDateTime(ctx.body(), contentType.getType());
             ZoneId timezoneId = unmarshalledDateTime.getZone();
             if(timezoneId == null)
             {
                 timezoneId = ZoneId.systemDefault();
             }
             level = new LocationLevel.Builder(level).withLevelDate(unmarshalledDateTime).build();
+            level.validate();
             levelsDao.storeLocationLevel(level, timezoneId);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location Level");
-        }
-        catch(Exception ex)
-        {
-            RadarError re = new RadarError("failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -361,8 +357,7 @@ public class LevelsController implements CrudHandler {
         return new LocationLevelsDaoImpl(dsl);
     }
 
-    public static LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
-    {
+    public static LocationLevel deserializeLocationLevel(String body, String format, String office) {
         ObjectMapper om = getObjectMapperForFormat(format);
         LocationLevel retVal;
         try
@@ -373,8 +368,7 @@ public class LevelsController implements CrudHandler {
         }
         catch(Exception e)
         {
-            logger.log(Level.SEVERE, "Failed to deserialize level", e);
-            throw new IOException("Failed to deserialize level");
+            throw new RuntimeException("Failed to deserialize level", e);
         }
         return retVal;
     }

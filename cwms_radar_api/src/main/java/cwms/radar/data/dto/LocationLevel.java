@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 import cwms.radar.api.errors.ExclusiveFieldsException;
 import cwms.radar.api.errors.FieldException;
-import cwms.radar.api.errors.FieldsException;
 import cwms.radar.api.errors.RequiredFieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 

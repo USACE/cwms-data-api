@@ -4,14 +4,19 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import cwms.radar.api.errors.FieldException;
-import cwms.radar.api.errors.FieldsException;
+
+
 
 @XmlRootElement(name="clob")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Clob implements CwmsDTO
 {
+	@JsonProperty(required = true)
 	private String office;
+	@JsonProperty(required = true)
 	private String id;
 	private String description;
 	private String value;
@@ -56,11 +61,5 @@ public class Clob implements CwmsDTO
 
 	@Override
 	public void validate() throws FieldException {
-		if( id.isEmpty() ){
-			throw new FieldsException("clob id cannot be blank");
-		}
-		if( office.isEmpty() ){
-			throw new FieldsException("office cannot be blank");
-		}
 	}
 }

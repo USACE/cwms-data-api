@@ -44,9 +44,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     @Override
-    public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId) throws IOException
+    public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId)
     {
-        locationLevel.validate();
+
         try
         {
             BigInteger months = locationLevel.getIntervalMonths() == null ? null : BigInteger.valueOf(locationLevel.getIntervalMonths());
@@ -66,8 +66,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to store Location Level", ex);
-            throw new IOException("Failed to store Location Level");
+            throw new RuntimeException("Failed to store Location Level", ex);
         }
     }
 
@@ -88,7 +87,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     @Override
-    public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime, String officeId, Boolean cascadeDelete) throws IOException
+    public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime, String officeId, Boolean cascadeDelete)
     {
         try
         {
@@ -112,13 +111,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to delete Location Level", ex);
-            throw new IOException("Failed to delete Location Level ");
+            //logger.log(Level.SEVERE, "Failed to delete Location Level", ex);
+            throw new RuntimeException("Failed to delete Location Level ",ex);
         }
     }
 
     @Override
-    public void renameLocationLevel(String oldLocationLevelName, LocationLevel renamedLocationLevel) throws IOException
+    public void renameLocationLevel(String oldLocationLevelName, LocationLevel renamedLocationLevel)
     {
         // no need to validate the level here we are just using the name and office field
         try
@@ -131,13 +130,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to rename Location Level", ex);
-            throw new IOException("Failed to rename Location Level");
+            //logger.log(Level.SEVERE, "Failed to rename Location Level", ex);
+            throw new RuntimeException("Failed to rename Location Level", ex);
         }
     }
 
     @Override
-    public LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem, ZonedDateTime effectiveDate, String officeId) throws IOException
+    public LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem, ZonedDateTime effectiveDate, String officeId)
     {
         TimeZone timezone = TimeZone.getTimeZone(effectiveDate.getZone());
         Date date = Date.from(effectiveDate.toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
@@ -155,8 +154,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to retrieve Location Level", ex);
-            throw new IOException("Failed to retrieve Location Level");
+            throw new RuntimeException("Failed to retrieve Location Level", ex);
         }
         return locationLevelRef.get();
     }

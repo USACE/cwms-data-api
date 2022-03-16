@@ -6,19 +6,21 @@ import java.util.List;
 import java.util.Map;
 
 public class ExclusiveFieldsException extends FieldException {
+    private static final String DETAIL_KEY = "Use only one of";
     private Map<String,List<String>> details = new HashMap<>();
 
     private ExclusiveFieldsException(){
-        super();
-        details.put("use only one of",new ArrayList<String>());
+        super("Mutually exclusive fields used.");
+        details.put(DETAIL_KEY,new ArrayList<String>());
     }
 
     public ExclusiveFieldsException(List<String> fields){
         this();
-        details.get("missing fields").addAll(fields);
+        details.get(DETAIL_KEY).addAll(fields);
     }
 
-    public Map<String,List<String>> getDetails() {
+    @Override
+    public Map<String,? extends List<String>> getDetails() {
         return details;
     }
 }
