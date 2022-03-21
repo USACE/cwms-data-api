@@ -23,6 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
@@ -43,7 +44,11 @@ import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.ExclusiveFieldsException;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
+import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.security.Role;
@@ -51,6 +56,7 @@ import cwms.radar.security.CwmsAccessManager;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.core.validation.JavalinValidation;
@@ -66,6 +72,7 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 
@@ -138,7 +145,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options","nosniff");
                     ctx.header("X-Frame-Options","SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
-                }).exception(FormattingException.class, (fe, ctx ) -> {
+                })
+                .exception(FormattingException.class, (fe, ctx ) -> {
                     final RadarError re = new RadarError("Formatting error");
 
                     if( fe.getCause() instanceof IOException ){
@@ -168,6 +176,14 @@ public class ApiServlet extends HttpServlet {
                     RadarError re = new RadarError("Not Found.");
                     logger.log(Level.INFO, re.toString(), e );
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
+                })
+                .exception(FieldException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(JsonFieldsException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
@@ -239,7 +255,7 @@ public class ApiServlet extends HttpServlet {
             throw new IllegalArgumentException("CrudHandler requires a resource base at the beginning of the provided path, e.g. '/users/{user-id}'");
         }
 
-        Map<CrudFunction, Handler> crudFunctions = getHanders(crudHandler, resourceId);
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);//getHanders(crudHandler, resourceId);
 
         // getOne and getAll are assumed not to need authorization
         staticInstance().get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
@@ -251,16 +267,17 @@ public class ApiServlet extends HttpServlet {
         staticInstance().delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
-
-    private static Map<CrudFunction, Handler> getHanders(@NotNull CrudHandler crudHandler, String resourceId){
-        return Arrays.stream(CrudFunction.values()).collect(
-                Collectors.toMap(cf -> cf, cf ->cf.getCreateHandler().invoke(crudHandler, resourceId)));
-    }
-
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
+                    .defaultDocumentation((doc) -> {
+                        doc.json("500", RadarError.class);
+                        doc.json("400", RadarError.class);
+                        doc.json("401", RadarError.class);
+                        doc.json("403", RadarError.class);
+                        doc.json("404", RadarError.class);
+                    })
                     .activateAnnotationScanningFor("cwms.radar.api");
     }
 

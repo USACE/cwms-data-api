@@ -19,7 +19,7 @@ class LevelControllerTest extends ControllerTest
         assertNotNull(xml);
         LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML, OFFICE_ID);
         assertNotNull(level);
-        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationId());
+        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
         assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[UTC]"), level.getLevelDate());
@@ -34,7 +34,7 @@ class LevelControllerTest extends ControllerTest
         assertNotNull(json);
         LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON, OFFICE_ID);
         assertNotNull(level);
-        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationId());
+        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
         assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[UTC]"), level.getLevelDate());
@@ -49,11 +49,11 @@ class LevelControllerTest extends ControllerTest
         assertNotNull(xml);
         LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML, OFFICE_ID);
         assertNotNull(level);
-        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationId());
+        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
         assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[UTC]"), level.getLevelDate());
-        assertEquals(10.0, level.getSiParameterUnitsConstantValue());
+        assertEquals(10.0, level.getConstantValue());
     }
 
     @Test
@@ -64,11 +64,11 @@ class LevelControllerTest extends ControllerTest
         assertNotNull(json);
         LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON, OFFICE_ID);
         assertNotNull(level);
-        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationId());
+        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
         assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[UTC]"), level.getLevelDate());
-        assertEquals(10.0, level.getSiParameterUnitsConstantValue());
+        assertEquals(10.0, level.getConstantValue());
     }
 
     @Test
@@ -79,7 +79,7 @@ class LevelControllerTest extends ControllerTest
         assertNotNull(xml);
         LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML, OFFICE_ID);
         assertNotNull(level);
-        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationId());
+        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
         assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[UTC]"), level.getLevelDate());
@@ -94,7 +94,7 @@ class LevelControllerTest extends ControllerTest
         assertNotNull(json);
         LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON, OFFICE_ID);
         assertNotNull(level);
-        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationId());
+        assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
         assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[UTC]"), level.getLevelDate());

@@ -24,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.DurationAdapter;
 import cwms.radar.formatters.xml.adapters.TimestampAdapter;
@@ -321,5 +323,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         public String getDatatype() {
             return datatype.getTypeName();
         }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
+
     }
 }

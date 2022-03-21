@@ -1,5 +1,6 @@
 package cwms.radar.data.dto.basinconnectivity;
 
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
 import cwms.radar.data.dto.basinconnectivity.buildercontracts.stream.*;
 
@@ -228,5 +229,10 @@ public final class Stream implements CwmsDTO
         }
     }
 
-}
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
 
+    }
+
+}

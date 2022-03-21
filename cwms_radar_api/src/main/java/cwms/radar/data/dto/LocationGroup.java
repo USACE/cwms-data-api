@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a location group")
@@ -164,5 +165,11 @@ public class LocationGroup implements CwmsDTO
 		result = 31 * result + (getLocGroupAttribute() != null ? getLocGroupAttribute().hashCode() : 0);
 		result = 31 * result + (getAssignedLocations() != null ? getAssignedLocations().hashCode() : 0);
 		return result;
+	}
+
+	@Override
+	public void validate() throws FieldException {
+		// TODO Auto-generated method stub
+
 	}
 }
