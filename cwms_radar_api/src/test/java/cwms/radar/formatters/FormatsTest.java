@@ -6,6 +6,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,5 +118,43 @@ public class FormatsTest
 
 
 	}
+
+	@Test
+	public void testParseHeader(){
+		ContentType contentType;
+
+		contentType = Formats.parseHeader("application/json");
+		assertNotNull(contentType);
+		assertEquals("application/json", contentType.getType());
+
+		contentType = Formats.parseHeader("application/json;version=2");
+		assertNotNull(contentType);
+		assertEquals("application/json", contentType.getType());
+
+		contentType = Formats.parseHeader(null);
+		assertNull(contentType);
+
+		contentType = Formats.parseHeader("");
+		assertNull(contentType);
+
+	}
+
+	@Test
+	public void testParseQueryParam(){
+		ContentType contentType;
+		contentType	= Formats.parseQueryParam("json");
+		assertNotNull(contentType);
+		assertEquals("application/json", contentType.getType());
+
+		contentType	= Formats.parseQueryParam("");
+		assertNull(contentType);
+
+		contentType	= Formats.parseQueryParam(null);
+		assertNull(contentType);
+
+	}
+
+
+
 
 }
