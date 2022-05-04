@@ -166,7 +166,8 @@ public class Formats {
 
 
     /**
-     * Given the history of RADAR, this function allows the old way to mix with the new way.
+     * Parses the supplied header param or queryParam to determine the content type.
+     * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
      * @param header Accept header value
      * @param queryParam format query parameter value
      * @return an appropriate standard mimetype for lookup
@@ -180,9 +181,9 @@ public class Formats {
                 throw new FormattingException("Accept header and query parameter are both present, this is not supported.");
             }
 
-            String val = typeMap.get(queryParam);
-            if( val != null ){
-                return new ContentType(val);
+            ContentType ct = parseQueryParam(queryParam);
+            if(ct != null){
+                return ct;
             } else {
                 throw new FormattingException("content-type " + queryParam + " is not implemented");
             }
@@ -199,16 +200,34 @@ public class Formats {
     }
 
 
+    public static ContentType parseQueryParam(String queryParam){
+        ContentType retval = null;
+        if( queryParam != null && !queryParam.isEmpty() ){
+            String val = typeMap.get(queryParam);
+            if( val != null ){
+                retval = new ContentType(val);
+            }
+        }
+
+        return retval;
+    }
+
+
     public static ContentType parseHeader(String header)
     {
-        String[] all = header.split(",");
         ArrayList<ContentType> contentTypes = new ArrayList<>();
-        logger.finest("Finding handlers " + all.length);
-        for( String ct: all){
-            logger.finest(ct);
-            contentTypes.add(new ContentType(ct));
+
+        if( header != null && !header.isEmpty() )
+        {
+            String[] all = header.split(",");
+            logger.finest("Finding handlers " + all.length);
+            for(String ct : all)
+            {
+                logger.finest(ct);
+                contentTypes.add(new ContentType(ct));
+            }
+            Collections.sort(contentTypes);
         }
-        Collections.sort(contentTypes);
         logger.finest("have " + contentTypes.size());
         for( ContentType ct: contentTypes ){
             logger.finest("checking " + ct.toString());

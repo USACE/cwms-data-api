@@ -513,7 +513,7 @@ public class TimeSeriesController implements CrudHandler {
             }
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
             String result = Formats.format(contentType, latestValues,RecentValue.class);
 

@@ -76,9 +76,9 @@ public class LocationCategoryController implements CrudHandler
 
 			if( !cats.isEmpty()) {
 				String formatHeader = ctx.header(Header.ACCEPT);
-				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
-				String result = Formats.format(contentType,cats,LocationCategory.class);
+				String result = Formats.format(contentType, cats, LocationCategory.class);
 
 				ctx.result(result).contentType(contentType.toString());
 				requestResultSize.update(result.length());
@@ -128,7 +128,7 @@ public class LocationCategoryController implements CrudHandler
 			Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
 			if( grp.isPresent() ){
 				String formatHeader = ctx.header(Header.ACCEPT);
-				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
 				String result = Formats.format(contentType,grp.get());
 
