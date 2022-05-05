@@ -9,8 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.radar.api.enums.Nation;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.RequiredFieldException;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +24,7 @@ import java.util.function.Consumer;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class  Location implements CwmsDTO
 {
+    @JsonProperty(required = true)
     private final String name;
     private final Double latitude;
     private final Double longitude;
@@ -85,7 +89,7 @@ public final class  Location implements CwmsDTO
         return longitude;
     }
 
-    public Boolean active()
+    public Boolean getActive()
     {
         return active;
     }
@@ -192,13 +196,33 @@ public final class  Location implements CwmsDTO
             return false;
         }
         Location location = (Location) o;
-        return Double.compare(location.getLatitude(), getLatitude()) == 0 && Double.compare(location.getLongitude(), getLongitude()) == 0 && active() == location.active() && getName().equals(location.getName()) && getPublicName().equals(location.getPublicName()) && Objects.equals(getLongName(), location.getLongName()) && Objects.equals(getDescription(), location.getDescription()) && getTimezoneName().equals(location.getTimezoneName()) && Objects.equals(getLocationType(), location.getLocationType()) && getLocationKind().equals(location.getLocationKind()) && Objects.equals(getNation(), location.getNation()) && Objects.equals(getStateInitial(), location.getStateInitial()) && Objects.equals(getCountyName(), location.getCountyName()) && getHorizontalDatum().equals(location.getHorizontalDatum()) && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude()) && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude()) && Objects.equals(getVerticalDatum(), location.getVerticalDatum()) && Objects.equals(getElevation(), location.getElevation()) && Objects.equals(getMapLabel(), location.getMapLabel()) && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId()) && getOfficeId().equals(location.getOfficeId());
+        return Double.compare(location.getLatitude(), getLatitude()) == 0
+                && Double.compare(location.getLongitude(), getLongitude()) == 0
+                && getActive() == location.getActive()
+                && getName().equals(location.getName())
+                && getPublicName().equals(location.getPublicName())
+                && Objects.equals(getLongName(), location.getLongName())
+                && Objects.equals(getDescription(), location.getDescription())
+                && getTimezoneName().equals(location.getTimezoneName())
+                && Objects.equals(getLocationType(), location.getLocationType())
+                && getLocationKind().equals(location.getLocationKind())
+                && Objects.equals(getNation(), location.getNation())
+                && Objects.equals(getStateInitial(), location.getStateInitial())
+                && Objects.equals(getCountyName(), location.getCountyName())
+                && getHorizontalDatum().equals(location.getHorizontalDatum())
+                && Objects.equals(getPublishedLongitude(), location.getPublishedLongitude())
+                && Objects.equals(getPublishedLatitude(), location.getPublishedLatitude())
+                && Objects.equals(getVerticalDatum(), location.getVerticalDatum())
+                && Objects.equals(getElevation(), location.getElevation())
+                && Objects.equals(getMapLabel(), location.getMapLabel())
+                && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId())
+                && getOfficeId().equals(location.getOfficeId());
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getName(), getLatitude(), getLongitude(), active(), getPublicName(), getLongName(), getDescription(), getTimezoneName(), getLocationType(), getLocationKind(), getNation(), getStateInitial(), getCountyName(), getHorizontalDatum(), getPublishedLongitude(), getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(), getBoundingOfficeId(), getOfficeId());
+        return Objects.hash(getName(), getLatitude(), getLongitude(), getActive(), getPublicName(), getLongName(), getDescription(), getTimezoneName(), getLocationType(), getLocationKind(), getNation(), getStateInitial(), getCountyName(), getHorizontalDatum(), getPublishedLongitude(), getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(), getBoundingOfficeId(), getOfficeId());
     }
 
     @Override
@@ -284,7 +308,7 @@ public final class  Location implements CwmsDTO
             this.locationKind = location.getLocationKind();
             this.officeId = location.getOfficeId();
             this.timezoneName = location.getTimezoneName();
-            this.active = location.active();
+            this.active = location.getActive();
             this.publicName = location.getPublicName();
             this.longName = location.getLongName();
             this.description = location.getDescription();
@@ -494,5 +518,42 @@ public final class  Location implements CwmsDTO
             return nationConverted;
         }
 
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        ArrayList<String> missingFields = new ArrayList<>();
+        if(this.getName() == null)
+        {
+            missingFields.add("Name");
+        }
+        if(this.getLocationKind() == null)
+        {
+            missingFields.add("Location Kind");
+        }
+        if(this.getTimezoneName() == null)
+        {
+            missingFields.add("Timezone ID");
+        }
+        if(this.getOfficeId() == null)
+        {
+            missingFields.add("Office ID");
+        }
+        if(this.getHorizontalDatum() == null)
+        {
+            missingFields.add("Horizontal Datum");
+        }
+        if(this.getLongitude() == null)
+        {
+            missingFields.add("Longitude");
+        }
+        if(this.getLatitude() == null)
+        {
+            missingFields.add("Latitude");
+        }
+        if(!missingFields.isEmpty())
+        {
+            throw new RequiredFieldException(missingFields);
+        }
     }
  }

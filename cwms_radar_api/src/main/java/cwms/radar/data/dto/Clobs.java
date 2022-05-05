@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement(name="clobs")
@@ -69,6 +70,11 @@ public class Clobs extends CwmsDTOPaginated {
             this.workingClobs.addClob(clob);
             return this;
         }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+         // Clobs always contains a valid array even empty.
     }
 
 }

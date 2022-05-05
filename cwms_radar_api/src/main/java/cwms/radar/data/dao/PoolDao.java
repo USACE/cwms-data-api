@@ -79,23 +79,23 @@ public class PoolDao extends JooqDao<PoolType>
 		Condition condition = view.DEFINITION_TYPE.in(types);
 
 		if(projectIdMask != null){
-			condition = condition.and(view.PROJECT_ID.likeRegex(projectIdMask));
+			condition = condition.and(view.PROJECT_ID.upper().likeRegex(projectIdMask.toUpperCase()));
 		}
 
 		if(poolNameMask != null){
-			condition = condition.and(view.POOL_NAME.likeRegex(poolNameMask));
+			condition = condition.and(view.POOL_NAME.upper().likeRegex(poolNameMask.toUpperCase()));
 		}
 
 		if(bottomLevelMask != null){
-			condition = condition.and(view.BOTTOM_LEVEL.likeRegex(bottomLevelMask));
+			condition = condition.and(view.BOTTOM_LEVEL.upper().likeRegex(bottomLevelMask.toUpperCase()));
 		}
 
 		if(topLevelMask != null){
-			condition = condition.and(view.TOP_LEVEL.likeRegex(topLevelMask));
+			condition = condition.and(view.TOP_LEVEL.upper().likeRegex(topLevelMask.toUpperCase()));
 		}
 
 		if(officeIdMask != null){
-			condition = condition.and(view.OFFICE_ID.likeRegex(officeIdMask));
+			condition = condition.and(view.OFFICE_ID.upper().likeRegex(officeIdMask.toUpperCase()));
 		}
 		return condition;
 	}

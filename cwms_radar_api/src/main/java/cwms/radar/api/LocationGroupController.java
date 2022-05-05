@@ -22,7 +22,6 @@ import cwms.radar.formatters.csv.CsvV1LocationGroup;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -57,6 +56,8 @@ public class LocationGroupController implements CrudHandler
 
 	@OpenApi(queryParams = {
 			@OpenApiParam(name = "office", description = "Specifies the owning office of the location group(s) whose data is to be included in the response. If this field is not specified, matching location groups information from all offices shall be returned."),
+			@OpenApiParam(name="includeAssigned", type = Boolean.class,	description = "Include the assigned locations in the returned location groups. (default: false)"
+			),
 			},
 			responses = {
 			@OpenApiResponse(status = "200",
@@ -78,8 +79,9 @@ public class LocationGroupController implements CrudHandler
 			LocationGroupDao cdm = new LocationGroupDao(dsl);
 
 			String office = ctx.queryParam("office");
+			boolean includeValues = ctx.queryParamAsClass("includeAssigned",Boolean.class).getOrDefault(false);
 
-			List<LocationGroup> grps = cdm.getLocationGroups(office);
+			List<LocationGroup> grps = cdm.getLocationGroups(office, includeValues);
 
 			if( !grps.isEmpty() ){
 				String formatHeader = ctx.header(Header.ACCEPT);

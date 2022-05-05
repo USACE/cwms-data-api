@@ -7,8 +7,10 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import cwms.radar.api.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
+import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.Location;
@@ -24,9 +26,8 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectQuery;
 import org.jooq.Table;
-import org.jooq.conf.ParamType;
+
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -56,15 +57,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) throws IOException
     {
+        Record loc = dsl.select(AV_LOC.asterisk())
+                .from(AV_LOC)
+                .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                    .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                    .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
+                .fetchOne();
+        if(loc == null){
+            throw new NotFoundException("Location not found for office:" + officeId + " and unit system:" + unitSystem + " and id:" + locationName);
+        }
+        return buildLocation(loc);
+    }
 
-        SelectQuery<Record> query = dsl.selectQuery();
-        query.addFrom(AV_LOC);
-        query.addSelect(AV_LOC.asterisk());
-        query.addConditions(      AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                             .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                             .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))));
-
-        Record loc = query.fetchOne();
+    private Location buildLocation(Record loc)
+    {
         Location.Builder locationBuilder =  new Location.Builder(
                     loc.get(AV_LOC.LOCATION_ID),
                     loc.get(AV_LOC.LOCATION_KIND_ID),
@@ -76,28 +82,28 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                     loc.get(AV_LOC.DB_OFFICE_ID)
             )
             .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
-            .withElevation(loc.get(AV_LOC.ELEVATION).doubleValue())
+            .withElevation(loc.get(AV_LOC.ELEVATION))
             .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
             .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
             .withLongName(loc.get(AV_LOC.LONG_NAME))
             .withDescription(loc.get(AV_LOC.DESCRIPTION))
             .withCountyName(loc.get(AV_LOC.COUNTY_NAME))
             .withStateInitial(loc.get(AV_LOC.STATE_INITIAL))
-            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T") ? true : false)
+            .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T"))
             .withMapLabel(loc.get(AV_LOC.MAP_LABEL))
             .withBoundingOfficeId(loc.get(AV_LOC.BOUNDING_OFFICE_ID))
             .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
             .withNation(Nation.NationForName(loc.get(AV_LOC.NATION_ID)));
 
-            BigDecimal pubLatitude =loc.get(AV_LOC.PUBLISHED_LATITUDE);
-            BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
-            if (pubLatitude != null) {
-                locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
+        BigDecimal pubLatitude = loc.get(AV_LOC.PUBLISHED_LATITUDE);
+        BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
+        if (pubLatitude != null) {
+            locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
 
-            }
-            if (pubLongitude != null) {
-                locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
-            }
+        }
+        if (pubLongitude != null) {
+            locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
+        }
         return locationBuilder.build();
     }
 
@@ -121,7 +127,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void storeLocation(Location location) throws IOException
     {
-        validateLocation(location);
+        location.validate();
         try
         {
             dsl.connection(c ->
@@ -131,58 +137,21 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                 locJooq.store(c, location.getOfficeId(), location.getName(), location.getStateInitial(), location.getCountyName(),
                         location.getTimezoneName(), location.getLocationType(), location.getLatitude(), location.getLongitude(), location.getElevation(),
                         elevationUnits, location.getVerticalDatum(), location.getHorizontalDatum(), location.getPublicName(), location.getLongName(),
-                        location.getDescription(), location.active(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
+                        location.getDescription(), location.getActive(), location.getLocationKind(), location.getMapLabel(), location.getPublishedLatitude(),
                         location.getPublishedLongitude(), location.getBoundingOfficeId(), location.getNation().getName(), location.getNearestCity(), true);
 
             });
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Failed to store Location");
-        }
-    }
-
-    private void validateLocation(Location location) throws IOException
-    {
-        String missingField = null;
-        if(location.getName() == null)
-        {
-            missingField = "Name";
-        }
-        if(location.getLocationKind() == null)
-        {
-            missingField = "Location Kind";
-        }
-        if(location.getTimezoneName() == null)
-        {
-            missingField = "Timezone ID";
-        }
-        if(location.getOfficeId() == null)
-        {
-            missingField = "Office ID";
-        }
-        if(location.getHorizontalDatum() == null)
-        {
-            missingField = "Horizontal Datum";
-        }
-        if(location.getLongitude() == null)
-        {
-            missingField = "Longitude";
-        }
-        if(location.getLatitude() == null)
-        {
-            missingField = "Latitude";
-        }
-        if(missingField != null)
-        {
-            throw new IOException("Missing required field: " + missingField);
+            throw new IOException("Failed to store Location",ex);
         }
     }
 
     @Override
     public void renameLocation(String oldLocationName, Location renamedLocation) throws IOException
     {
-        validateLocation(renamedLocation);
+        renamedLocation.validate();
         try
         {
             dsl.connection(c ->
@@ -193,12 +162,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                         renamedLocation.getCountyName(), renamedLocation.getTimezoneName(), renamedLocation.getLocationType(),
                         renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getElevation(), elevationUnits,
                         renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(), renamedLocation.getPublicName(),
-                        renamedLocation.getLongName(), renamedLocation.getDescription(), renamedLocation.active(),  true);
+                        renamedLocation.getLongName(), renamedLocation.getDescription(), renamedLocation.getActive(),  true);
             });
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Failed to rename Location");
+            throw new IOException("Failed to rename Location",ex);
         }
     }
 
@@ -292,17 +261,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                     .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
                     .where(condition);
 
-            logger.info( () ->  count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1().intValue();
         } else {
-            logger.info("getting non-default page");
             // get totally from page
             String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "|||");
-
-            logger.info("decoded cursor: " + String.join("|||", parts));
-            for( String p: parts){
-                logger.info(p);
-            }
 
             if(parts.length > 1) {
                 locCursor = parts[0].split("\\/")[1];
@@ -331,7 +293,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
                                 ;
 
         query.orderBy(AV_LOC.LOCATION_ID);
-        logger.info( () -> query.getSQL(ParamType.INLINED));
+//        logger.info( () -> query.getSQL(ParamType.INLINED));
         HashMap<usace.cwms.db.jooq.codegen.tables.records.AV_LOC, ArrayList<usace.cwms.db.jooq.codegen.tables.records.AV_LOC_ALIAS>> theMap = new HashMap<>();
 
         query.fetch().forEach( row -> {
@@ -383,8 +345,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
             )
         ).collect(Collectors.toList());
 
-        Catalog cat = new Catalog(locCursor, total, pageSize, entries);
-        return cat;
+        return new Catalog(locCursor, total, pageSize, entries);
     }
 
     private Condition buildCatalogWhere(String unitSystem, Optional<String> office, String idLike)
@@ -392,7 +353,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         Condition condition = AV_LOC.UNIT_SYSTEM.eq(unitSystem);
 
         if(idLike != null){
-            condition = condition.and(AV_LOC.LOCATION_ID.likeRegex(idLike));
+            condition = condition.and(AV_LOC.LOCATION_ID.upper().likeRegex(idLike.toUpperCase()));
         }
 
         if( office.isPresent() ){
@@ -407,11 +368,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         Condition condition = buildCatalogWhere(unitSystem, office, idLike);
 
         if(categoryLike != null){
-            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.likeRegex(categoryLike));
+            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.upper().likeRegex(categoryLike.toUpperCase()));
         }
 
         if(groupLike != null){
-            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.likeRegex(groupLike));
+            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.upper().likeRegex(groupLike.toUpperCase()));
         }
 
         return condition;

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vertical-datum-info unit="m">
+	<native-datum>GUVD04</native-datum>
+	<elevation>243.8</elevation>
+	<offset estimate="true">
+		<to-datum>NGVD-29</to-datum>
+		<value>0.053</value>
+	</offset>
+	<offset estimate="true">
+		<to-datum>NAVD-88</to-datum>
+		<value>0.0632</value>
+	</offset>
+	<offset estimate="true">
+		<to-datum>GUVD04</to-datum>
+		<value>0.0</value>
+	</offset>
+</vertical-datum-info>

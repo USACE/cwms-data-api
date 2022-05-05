@@ -1,5 +1,16 @@
 package cwms.radar.api;
 
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TimeZone;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,39 +19,17 @@ import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
 import cwms.radar.formatters.xml.XMLv2;
-import cwms.radar.security.CwmsAuthException;
-import cwms.radar.security.CwmsNoAuthorizer;
-
-import fixtures.TestHttpServletResponse;
-import fixtures.TestServletInputStream;
-
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HandlerType;
-import io.javalin.http.util.ContextUtil;
-
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -63,7 +52,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
                         isNull(),
-                        isNull(), isNull(), isNull())).thenReturn(expected);
+                        isNotNull(), isNotNull(), isNotNull())).thenReturn(expected);
 
 
         // build mock request and response
@@ -109,7 +98,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(), isNull(), isNull(), isNull());
+                        isNull(), isNotNull(), isNotNull(), isNotNull());
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -240,36 +229,4 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
 
-    @Test
-    public void test_no_authorizer_throws_no_authorizer() throws Exception {
-        final String testBody = "";
-        LocationController instance = new LocationController(new MetricRegistry());
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletResponse response = new TestHttpServletResponse();
-        HashMap<String,Object> attributes = new HashMap<>();
-
-        attributes.put("Authorizer",new CwmsNoAuthorizer());
-        when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
-
-        final Context context = ContextUtil.init(request,
-                                                 response,
-                                                 "*",
-                                                 new HashMap<String,String>(),
-                                                 HandlerType.GET,
-                                                 attributes);
-
-        final String tsId = "doesn't matter in this context";
-        assertThrows( CwmsAuthException.class , () -> {
-            instance.create(context);
-        });
-
-        assertThrows( CwmsAuthException.class, () -> {
-            instance.update(context, tsId);
-        });
-
-        assertThrows( CwmsAuthException.class, () -> {
-            instance.delete(context, tsId);
-        });
-
-    }
 }
