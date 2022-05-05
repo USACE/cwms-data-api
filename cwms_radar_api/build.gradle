@@ -12,16 +12,18 @@ dependencies {
     implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
     implementation "com.sun.xml.bind:jaxb-impl:$JAXB_IMPL_VERSION"
     implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
-    implementation "mil.army.usace.hec:cwms-db-dao:8.0.0-SNAPSHOT"
-    implementation( "mil.army.usace.hec:cwms-db-jooq:8.0.0-SNAPSHOT"){
+    implementation "mil.army.usace.hec:cwms-db-dao:9.0.2"
+    implementation( "mil.army.usace.hec:cwms-db-jooq:9.0.2"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
     }
 
-    // For RatingSet
-    implementation 'mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.1-20211021.222041-2'
-    implementation "mil.army.usace.hec:hec-data:6.0-SNAPSHOT" // Need RatingException and IRating
+    implementation "mil.army.usace.hec:hec-monolith:2.0.2"
+    implementation "mil.army.usace.hec:hec-nucleus-metadata:1.0.33"
+    implementation 'mil.army.usace.hec:hec-cwms-ratings-core:1.0.0'
+
+    implementation 'org.slf4j:slf4j-jdk14:1.7.36'
 
     implementation('org.jooq.pro:jooq:3.11.2'){
         exclude group: "com.oracle", module: "*"
