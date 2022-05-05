@@ -74,7 +74,7 @@ public class TimeSeriesCategoryController implements CrudHandler
 			List<TimeSeriesCategory> cats = dao.getTimeSeriesCategories(office);
 
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
 			String result = Formats.format(contentType,cats,TimeSeriesCategory.class);
 
@@ -116,7 +116,7 @@ public class TimeSeriesCategoryController implements CrudHandler
 			String office = ctx.queryParam("office");
 
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
 			Optional<TimeSeriesCategory> grp = dao.getTimeSeriesCategory(office, categoryId);
 			if( grp.isPresent()){
@@ -128,12 +128,10 @@ public class TimeSeriesCategoryController implements CrudHandler
 				ctx.status(HttpServletResponse.SC_OK);
 			} else {
 				RadarError re = new RadarError("Unable to find category based on parameters given");
-				logger.info( () -> {
-					return new StringBuilder()
-					.append( re.toString()).append(System.lineSeparator())
-					.append( "for request ").append( ctx.fullUrl() )
-					.toString();
-				});
+				logger.info( () -> new StringBuilder()
+				.append( re.toString()).append(System.lineSeparator())
+				.append( "for request ").append( ctx.fullUrl() )
+				.toString());
 				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
 			}
 

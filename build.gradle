@@ -45,7 +45,9 @@ subprojects {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform() {
+            excludeTags "integration"
+        }
     }
 
 

@@ -11,6 +11,8 @@ import org.jooq.tools.jdbc.MockFileDatabase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -18,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ControllerTest
 {
     protected Connection conn = null;
+    protected PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
+
     public Connection getTestConnection() throws SQLException, IOException{
         if( conn == null ){
             InputStream stream = ControllerTest.class.getResourceAsStream("/ratings_db.txt");

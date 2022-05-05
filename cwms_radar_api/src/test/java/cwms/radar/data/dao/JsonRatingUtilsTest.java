@@ -38,7 +38,7 @@ public class JsonRatingUtilsTest
 		return retval;
 	}
 
-	private static String readFully(InputStream inputStream) throws IOException
+	public static String readFully(InputStream inputStream) throws IOException
 	{
 		ByteArrayOutputStream result = new ByteArrayOutputStream();
 		byte[] buffer = new byte[2048];

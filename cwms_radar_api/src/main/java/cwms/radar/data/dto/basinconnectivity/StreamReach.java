@@ -1,5 +1,6 @@
 package cwms.radar.data.dto.basinconnectivity;
 
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
 
 public class StreamReach implements CwmsDTO
@@ -100,6 +101,12 @@ public class StreamReach implements CwmsDTO
         public StreamReach build() {
             return new StreamReach(this);
         }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
+
     }
 
 }

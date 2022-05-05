@@ -1,6 +1,8 @@
 package cwms.radar.data.dao;
 
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,15 +14,15 @@ public interface TimeSeriesDao
 {
 	Timestamp NON_VERSIONED = null;
 	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office);
-	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike, String categoryLike, String groupLike);
+	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike, String locCategoryLike, String locGroupLike, String tsCategoryLike, String tsGroupLike);
 
 	void create(TimeSeries timeSeries);
 	void store(TimeSeries timeSeries, Timestamp versionDate);
 
 	void delete(String office, String tsId);
 
-	TimeSeries getTimeseries(String cursor, int pageSize, String names, String office, String unit, String datum, String begin, String end, String timezone);
-	String getTimeseries(String format, String names, String office, String unit, String datum, String begin, String end, String timezone);
+	TimeSeries getTimeseries(String cursor, int pageSize, String names, String office, String unit, String datum, ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);
+	String getTimeseries(String format, String names, String office, String unit, String datum, ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);
 
 
 

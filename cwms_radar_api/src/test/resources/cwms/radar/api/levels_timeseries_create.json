@@ -4,6 +4,6 @@
   "level-date":"2008-12-03T10:15:30+01:00[UTC]",
   "level-comment":"for testing purposes",
   "interpolate-string":"false",
-  "location-id":"LOC_TEST.Elev.Inst.0.Bottom of Inlet",
+  "location-level-id":"LOC_TEST.Elev.Inst.0.Bottom of Inlet",
   "office-id":"LRL"
 }

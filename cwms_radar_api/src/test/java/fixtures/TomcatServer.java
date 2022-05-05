@@ -1,14 +1,30 @@
 package fixtures;
 
-import hthurow.tomcatjndi.TomcatJNDI;
-
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.logging.Logger;
 
+import javax.servlet.ServletContext;
+
+import hthurow.tomcatjndi.TomcatJNDI;
+import org.apache.catalina.Context;
+import org.apache.catalina.Engine;
+import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Realm;
+import org.apache.catalina.Server;
+import org.apache.catalina.authenticator.AuthenticatorBase;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
 
+import cwms.radar.ApiServlet;
 
 
 /**
@@ -18,10 +34,11 @@ import org.apache.catalina.startup.Tomcat;
  * @Since 2021-11-05
  */
 public class TomcatServer {
+    private static final Logger logger = Logger.getLogger(TomcatServer.class.getName());
     private Tomcat tomcatInstance = null;
     private TomcatJNDI tomcatJndi = null;
     /**
-     * Default, and only, constructure. Setups the baseline for tomcat to run.
+     * Setups the baseline for tomcat to run.
      * @param baseDir set to the CATALINA_BASE directory the build has setup
      * @param radarWar points to the actual WAR file to load
      * @param port Network port to listen on
@@ -29,16 +46,21 @@ public class TomcatServer {
      *                    etc
      * @throws Exception any error that gets thrown
      */
-
     public TomcatServer(final String baseDir,
                         final String radarWar,
                         final int port,
-                        final String contextName) throws Exception {
+                        final String contextName,
+                        final Realm realm,
+                        final AuthenticatorBase authValve
+    ) throws Exception {
 
         tomcatInstance = new Tomcat();
         tomcatInstance.setBaseDir(baseDir);
-        tomcatInstance.getHost().setAppBase(baseDir);
+        Host host = tomcatInstance.getHost();
+
+        host.setAppBase("webapps");
         new File(tomcatInstance.getServer().getCatalinaBase(),"temp").mkdirs();
+        new File(tomcatInstance.getServer().getCatalinaBase(),"webapps").mkdirs();
         tomcatInstance.setPort(port);
         Connector connector = tomcatInstance.getConnector();
         connector.setSecure(true);
@@ -47,14 +69,50 @@ public class TomcatServer {
 
         tomcatInstance.setSilent(false);
         tomcatInstance.enableNaming();
-        tomcatInstance.getEngine();
-        tomcatInstance.getHost().addLifecycleListener(new HostConfig());
-        tomcatInstance.addContext("", null);
+        Engine engine = tomcatInstance.getEngine();
+
+        host.addLifecycleListener(new HostConfig());
+
+
+
+        Context blankToNull = tomcatInstance.addContext("", null);
+
+
         File radar = new File(radarWar);
-        tomcatInstance.addWebapp(contextName,radar.toURI().toURL());
-        tomcatInstance.getServer();
+        try{
+            File existingRadar = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
+            Files.walk(existingRadar.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            existingRadar.delete();
+            new File(existingRadar.getAbsolutePath()+".war").delete();
+        } catch( Exception err) {
+            System.out.println(err.getLocalizedMessage());
+        }
 
+        Context context = tomcatInstance.addWebapp(contextName, radar.toURI().toURL());
 
+        if(authValve != null && realm != null)
+        {
+            logger.info("Setting Realm and Valve");
+            engine.setRealm(realm);
+            context.getPipeline().addValve(authValve);
+        }
+
+    }
+
+    public TomcatServer(final String baseDir,
+                        final String radarWar,
+                        final int port,
+                        final String contextName
+    ) throws Exception{
+        this(baseDir,radarWar,port,contextName,null,null);
+    }
+
+    public int getPort() {
+        return tomcatInstance.getConnector().getLocalPort();
+    }
+
+    public Realm getRealm(){
+        return tomcatInstance.getEngine().getRealm();
     }
 
     /**
@@ -80,7 +138,7 @@ public class TomcatServer {
      */
     public void stop() throws LifecycleException {
         tomcatInstance.stop();
-        tomcatJndi.tearDown();
+        //tomcatJndi.tearDown();
     }
 
     /**
@@ -96,7 +154,16 @@ public class TomcatServer {
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","0").trim());
 
         try {
-            TomcatServer tomcat = new TomcatServer(baseDir, radarWar, port, contextName);
+            TestAuthValve authValve = new TestAuthValve();
+            authValve.addUser("user1",
+                              new TestCwmsUserPrincipal("user1",
+                                                        "testingUser1SessionKey",
+                                                        Arrays.asList(ApiServlet.CWMS_USERS_ROLE)
+                                                        )
+                            );
+	        authValve.addUser("user2", new TestCwmsUserPrincipal("user2", "testingUser2SessionKey", Collections.emptyList()));
+            TestRealm realm = new TestRealm();
+            TomcatServer tomcat = new TomcatServer(baseDir, radarWar, port, contextName, realm, authValve);
             tomcat.start();
             tomcat.await();
         } catch (Exception e) {
