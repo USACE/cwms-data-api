@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.data.dto.CwmsDTO;
 import org.jetbrains.annotations.NotNull;
 
 import hec.data.Version;
@@ -16,7 +18,8 @@ import hec.data.rating.IRatingTemplate;
 @JsonDeserialize(builder = RatingTemplate.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class RatingTemplate {
+public class RatingTemplate implements CwmsDTO
+{
 	private final String officeId;
 	private final String id;
 	private String  version;
@@ -119,6 +122,12 @@ public class RatingTemplate {
 		result = 31 * result + (getDependentParameter() != null ? getDependentParameter().hashCode() : 0);
 		result = 31 * result + (getIndependentParameterSpecs() != null ? getIndependentParameterSpecs().hashCode() : 0);
 		return result;
+	}
+
+	@Override
+	public void validate() throws FieldException {
+		// TODO Auto-generated method stub
+
 	}
 
 	@JsonPOJOBuilder

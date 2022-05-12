@@ -11,11 +11,13 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.data.dto.CwmsDTO;
 
 @JsonDeserialize(builder = RatingSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class RatingSpec
+public class RatingSpec implements CwmsDTO
 {
 	private final String officeId;
 	private final String ratingSpecId;
@@ -141,6 +143,12 @@ public class RatingSpec
 
 	public List<ZonedDateTime> getEffectiveDates() {
 		return effectiveDates;
+	}
+
+	@Override
+	public void validate() throws FieldException
+	{
+
 	}
 
 	public static class IndRoundingSpec {

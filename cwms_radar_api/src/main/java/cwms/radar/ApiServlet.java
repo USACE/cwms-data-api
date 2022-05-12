@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -23,7 +22,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
@@ -38,21 +36,21 @@ import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
+import cwms.radar.api.RatingSpecController;
+import cwms.radar.api.RatingTemplateController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.api.errors.ExclusiveFieldsException;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
-import cwms.radar.security.Role;
 import cwms.radar.security.CwmsAccessManager;
+import cwms.radar.security.Role;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -72,7 +70,6 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 
@@ -224,6 +221,8 @@ public class ApiServlet extends HttpServlet {
         radarCrud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics), requiredRoles);
         radarCrud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics), requiredRoles);
         radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
+        radarCrud("/ratings/template/{template-id}", new RatingTemplateController(metrics), requiredRoles);
+        radarCrud("/ratings/spec/{template-id}", new RatingSpecController(metrics), requiredRoles);
         radarCrud("/ratings/{rating}", new RatingController(metrics), requiredRoles);
         radarCrud("/catalog/{dataSet}", new CatalogController(metrics), requiredRoles);
         radarCrud("/basins/{basin-id}", new BasinController(metrics), requiredRoles);
@@ -255,6 +254,7 @@ public class ApiServlet extends HttpServlet {
             throw new IllegalArgumentException("CrudHandler requires a resource base at the beginning of the provided path, e.g. '/users/{user-id}'");
         }
 
+        //noinspection KotlinInternalInJava
         Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);//getHanders(crudHandler, resourceId);
 
         // getOne and getAll are assumed not to need authorization
@@ -298,9 +298,7 @@ public class ApiServlet extends HttpServlet {
                 ObjectMapper om = new ObjectMapper();
                 out.println(om.writeValueAsString(re));
             }
-
         }
-
     }
 
     @Override
