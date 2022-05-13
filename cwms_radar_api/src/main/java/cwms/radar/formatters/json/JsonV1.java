@@ -22,6 +22,8 @@ import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
+import cwms.radar.data.dto.rating.RatingSpec;
+import cwms.radar.data.dto.rating.RatingTemplate;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
@@ -42,7 +44,8 @@ import service.annotations.FormatService;
 				   Clob.class,
 				   Clobs.class,
 				   TimeSeriesGroup.class,
-				   RecentValue.class
+				   RecentValue.class,
+				   RatingTemplate.class, RatingSpec.class
 				})
 public class JsonV1 implements OutputFormatter{
 
