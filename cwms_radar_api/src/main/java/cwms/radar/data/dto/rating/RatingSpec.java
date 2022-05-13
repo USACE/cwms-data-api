@@ -25,9 +25,10 @@ public class RatingSpec implements CwmsDTO
 	private final String locationId;
 	private final String version;
 	private final String sourceAgency;
-//	private final String inRangeMethod;
-//	private final String outRangeLowMethod;
-//	private final String outRangeHighMethod;
+
+	private final String inRangeMethod;
+	private final String outRangeLowMethod;
+	private final String outRangeHighMethod;
 	private final boolean active;
 	private final boolean autoUpdate;
 	private final boolean autoActivate;
@@ -48,9 +49,9 @@ public class RatingSpec implements CwmsDTO
 		this.locationId = builder.locationId;
 		this.version = builder.version;
 		this.sourceAgency = builder.sourceAgency;
-//		this.inRangeMethod = builder.inRangeMethod;
-//		this.outRangeLowMethod = builder.outRangeLowMethod;
-//		this.outRangeHighMethod = builder.outRangeHighMethod;
+		this.inRangeMethod = builder.inRangeMethod;
+		this.outRangeLowMethod = builder.outRangeLowMethod;
+		this.outRangeHighMethod = builder.outRangeHighMethod;
 		this.active = builder.active;
 		this.autoUpdate = builder.autoUpdate;
 		this.autoActivate = builder.autoActivate;
@@ -91,20 +92,20 @@ public class RatingSpec implements CwmsDTO
 		return sourceAgency;
 	}
 
-//	public String getInRangeMethod()
-//	{
-//		return inRangeMethod;
-//	}
-//
-//	public String getOutRangeLowMethod()
-//	{
-//		return outRangeLowMethod;
-//	}
-//
-//	public String getOutRangeHighMethod()
-//	{
-//		return outRangeHighMethod;
-//	}
+	public String getInRangeMethod()
+	{
+		return inRangeMethod;
+	}
+
+	public String getOutRangeLowMethod()
+	{
+		return outRangeLowMethod;
+	}
+
+	public String getOutRangeHighMethod()
+	{
+		return outRangeHighMethod;
+	}
 
 	public boolean isActive()
 	{
@@ -298,9 +299,9 @@ public class RatingSpec implements CwmsDTO
 		private String locationId;
 		private String version;
 		private String sourceAgency;
-//		private String inRangeMethod;
-//		private String outRangeLowMethod;
-//		private String outRangeHighMethod;
+		private String inRangeMethod;
+		private String outRangeLowMethod;
+		private String outRangeHighMethod;
 		private boolean active;
 		private boolean autoUpdate;
 		private boolean autoActivate;
@@ -342,20 +343,20 @@ public class RatingSpec implements CwmsDTO
 			return this;
 		}
 
-//		public Builder inRangeMethod(String inRangeMethod) {
-//			this.inRangeMethod = inRangeMethod;
-//			return this;
-//		}
-//
-//		public Builder outRangeLowMethod(String outRangeLowMethod) {
-//			this.outRangeLowMethod = outRangeLowMethod;
-//			return this;
-//		}
-//
-//		public Builder outRangeHighMethod(String outRangeHighMethod) {
-//			this.outRangeHighMethod = outRangeHighMethod;
-//			return this;
-//		}
+		public Builder inRangeMethod(String inRangeMethod) {
+			this.inRangeMethod = inRangeMethod;
+			return this;
+		}
+
+		public Builder outRangeLowMethod(String outRangeLowMethod) {
+			this.outRangeLowMethod = outRangeLowMethod;
+			return this;
+		}
+
+		public Builder outRangeHighMethod(String outRangeHighMethod) {
+			this.outRangeHighMethod = outRangeHighMethod;
+			return this;
+		}
 
 		public Builder active(boolean active) {
 			this.active = active;
@@ -433,9 +434,9 @@ public class RatingSpec implements CwmsDTO
 			locationId(spec.getLocationId());
 			version(spec.getVersion());
 			sourceAgency(spec.getSourceAgency());
-//			inRangeMethod(spec.getInRangeMethod());
-//			outRangeLowMethod(spec.getOutRangeLowMethod());
-//			outRangeHighMethod(spec.getOutRangeHighMethod());
+			inRangeMethod(spec.getInRangeMethod());
+			outRangeLowMethod(spec.getOutRangeLowMethod());
+			outRangeHighMethod(spec.getOutRangeHighMethod());
 			active(spec.isActive());
 			autoUpdate(spec.isAutoUpdate());
 			autoActivate(spec.isAutoActivate());
@@ -448,5 +449,27 @@ public class RatingSpec implements CwmsDTO
 			return this;
 		}
 
+		public Builder dateMethods(String dateMethods)
+		{
+			if(dateMethods != null && !dateMethods.isEmpty()) {
+				String[] parts = dateMethods.split(",");
+				if(parts.length > 0) {
+					inRangeMethod(parts[0]);
+				}
+
+				if(parts.length > 1) {
+					outRangeLowMethod(parts[1]);
+				}
+
+				if(parts.length > 2) {
+					outRangeHighMethod(parts[2]);
+				}
+			} else {
+				inRangeMethod(null);
+				outRangeLowMethod(null);
+				outRangeHighMethod(null);
+			}
+			return this;
+		}
 	}
 }

@@ -59,6 +59,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
 						AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
 						AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
+						AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
 						AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
 						AV_RATING.AV_RATING.EFFECTIVE_DATE
 				)
@@ -122,6 +123,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
 						AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
 						AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
+						AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
 						AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
 						AV_RATING.AV_RATING.EFFECTIVE_DATE
 				)
@@ -197,11 +199,14 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 			String depRndSpecs = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC);
 			String desc = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION);
 
+			String dateMethods = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS);
+
 			retval = new RatingSpec.Builder().officeId(officeId).ratingId(ratingId)
 					.templateId(templateId).locationId(locId).version(version).sourceAgency(agency)
 					.active(activeFlag).autoUpdate(autoUpdateFlag).autoActivate(autoActivateFlag)
 					.autoMigrateExtension(autoMigrateExtFlag).indRoundingSpecs(indRndSpecs)
-					.depRoundingSpec(depRndSpecs).description(							desc)
+					.depRoundingSpec(depRndSpecs).description(desc)
+					.dateMethods(dateMethods)
 					.build();
 		}
 
