@@ -29,7 +29,7 @@ public class RatingTemplate implements CwmsDTO
 
 	private List<ParameterSpec> independentParameterSpecs;
 
-	private List<String> specs;
+	private List<String> ratingIds;
 	public RatingTemplate(Builder builder)
 	{
 		this.id = builder.id;
@@ -38,7 +38,7 @@ public class RatingTemplate implements CwmsDTO
 		this.description = builder.description;
 		this.dependentParameter = builder.dependentParameter;
 		this.independentParameterSpecs = builder.independentParameterList;
-		this.specs = builder.specs;
+		this.ratingIds = builder.ratingIds;
 	}
 
 	public String getId()
@@ -73,9 +73,9 @@ public class RatingTemplate implements CwmsDTO
 
 
 
-	public List<String> getSpecs()
+	public List<String> getRatingIds()
 	{
-		return specs;
+		return ratingIds;
 	}
 
 	@Override
@@ -142,7 +142,7 @@ public class RatingTemplate implements CwmsDTO
 
 		private List<ParameterSpec> independentParameterList;
 
-		private List<String> specs;
+		private List<String> ratingIds;
 
 		public Builder withVersion(String  templateVersion) {
 			this.version = templateVersion;
@@ -178,15 +178,6 @@ public class RatingTemplate implements CwmsDTO
 			this.independentParameterList = independentParameterList;
 			return this;
 		}
-
-
-
-//		public Builder withIndependentParameterList(List<? extends mil.army.usace.hec.metadata.Parameter> independentParameterList) {
-//			this.independentParameterList = independentParameterList.stream().map(Parameter::getParameter).collect(
-//					Collectors.toList());
-//
-//			return this;
-//		}
 
 		static String getVersion(IRatingTemplate template) {
 			String retval = null;
@@ -235,16 +226,16 @@ public class RatingTemplate implements CwmsDTO
 			retval = retval.withDescription(template.getDescription());
 			retval = retval.withDependentParameter(template.getDependentParameter());
 			retval = retval.withIndependentParameters(template.getIndependentParameterSpecs());
-			retval = retval.withSpecs(template.getSpecs());
+			retval = retval.withRatingIds(template.getRatingIds());
 
 			return retval;
 		}
 
-		public Builder withSpecs(List<String> specs) {
+		public Builder withRatingIds(List<String> specs) {
 			if(specs != null) {
-				this.specs = new ArrayList<>(specs);
+				this.ratingIds = new ArrayList<>(specs);
 			} else {
-				this.specs = null;
+				this.ratingIds = null;
 			}
 			return this;
 		}

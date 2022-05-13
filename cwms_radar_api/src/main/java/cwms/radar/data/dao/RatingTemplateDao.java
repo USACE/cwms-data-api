@@ -73,7 +73,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate>
 		retval = map.entrySet().stream()
 				.map( entry -> new RatingTemplate.Builder()
 						.fromRatingTemplate(entry.getKey())
-						.withSpecs(entry.getValue())
+						.withRatingIds(entry.getValue())
 						.build())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -122,7 +122,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate>
 		retval = map.entrySet().stream()
 				.map( entry -> new RatingTemplate.Builder()
 						.fromRatingTemplate(entry.getKey())
-						.withSpecs(entry.getValue())
+						.withRatingIds(entry.getValue())
 						.build())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 

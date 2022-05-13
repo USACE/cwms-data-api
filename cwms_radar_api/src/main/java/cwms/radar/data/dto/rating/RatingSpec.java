@@ -20,7 +20,7 @@ import cwms.radar.data.dto.CwmsDTO;
 public class RatingSpec implements CwmsDTO
 {
 	private final String officeId;
-	private final String ratingSpecId;
+	private final String ratingId;
 	private final String templateId;
 	private final String locationId;
 	private final String version;
@@ -43,7 +43,7 @@ public class RatingSpec implements CwmsDTO
 
 	public RatingSpec(Builder builder){
 		this.officeId = builder.officeId;
-		this.ratingSpecId = builder.ratingSpecId;
+		this.ratingId = builder.ratingId;
 		this.templateId = builder.templateId;
 		this.locationId = builder.locationId;
 		this.version = builder.version;
@@ -66,9 +66,9 @@ public class RatingSpec implements CwmsDTO
 		return officeId;
 	}
 
-	public String getRatingSpecId()
+	public String getRatingId()
 	{
-		return ratingSpecId;
+		return ratingId;
 	}
 
 	public String getTemplateId()
@@ -233,8 +233,8 @@ public class RatingSpec implements CwmsDTO
 		{
 			return false;
 		}
-		if(getRatingSpecId() != null ? !getRatingSpecId().equals(
-				that.getRatingSpecId()) : that.getRatingSpecId() != null)
+		if(getRatingId() != null ? !getRatingId().equals(
+				that.getRatingId()) : that.getRatingId() != null)
 		{
 			return false;
 		}
@@ -273,7 +273,7 @@ public class RatingSpec implements CwmsDTO
 	public int hashCode()
 	{
 		int result = getOfficeId() != null ? getOfficeId().hashCode() : 0;
-		result = 31 * result + (getRatingSpecId() != null ? getRatingSpecId().hashCode() : 0);
+		result = 31 * result + (getRatingId() != null ? getRatingId().hashCode() : 0);
 		result = 31 * result + (getTemplateId() != null ? getTemplateId().hashCode() : 0);
 		result = 31 * result + (getLocationId() != null ? getLocationId().hashCode() : 0);
 		result = 31 * result + (getVersion() != null ? getVersion().hashCode() : 0);
@@ -293,7 +293,7 @@ public class RatingSpec implements CwmsDTO
 	public static class Builder {
 
 		private String officeId;
-		private String ratingSpecId;
+		private String ratingId;
 		private String templateId;
 		private String locationId;
 		private String version;
@@ -317,8 +317,8 @@ public class RatingSpec implements CwmsDTO
 			return this;
 		}
 
-		public Builder ratingSpecId(String ratingSpecId) {
-			this.ratingSpecId = ratingSpecId;
+		public Builder ratingId(String ratingSpecId) {
+			this.ratingId = ratingSpecId;
 			return this;
 		}
 
@@ -428,7 +428,7 @@ public class RatingSpec implements CwmsDTO
 		public Builder fromRatingSpec(RatingSpec spec)
 		{
 			officeId(spec.getOfficeId());
-			ratingSpecId(spec.getRatingSpecId());
+			ratingId(spec.getRatingId());
 			templateId(spec.getTemplateId());
 			locationId(spec.getLocationId());
 			version(spec.getVersion());

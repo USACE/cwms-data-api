@@ -179,6 +179,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		if(rec != null)
 		{
 			String officeId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID);
+			String ratingId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
 			String templateId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID);
 			String locId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID);
 			String version = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.VERSION);
@@ -196,7 +197,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 			String depRndSpecs = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC);
 			String desc = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION);
 
-			retval = new RatingSpec.Builder().officeId(officeId)
+			retval = new RatingSpec.Builder().officeId(officeId).ratingId(ratingId)
 					.templateId(templateId).locationId(locId).version(version).sourceAgency(agency)
 					.active(activeFlag).autoUpdate(autoUpdateFlag).autoActivate(autoActivateFlag)
 					.autoMigrateExtension(autoMigrateExtFlag).indRoundingSpecs(indRndSpecs)
