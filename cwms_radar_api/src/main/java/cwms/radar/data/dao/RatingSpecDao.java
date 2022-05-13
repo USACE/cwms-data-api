@@ -36,7 +36,8 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		Set<RatingSpec> retval;
 
 		Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-				.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull());
+				.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
+						.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull());
 
 		if( office != null ) {
 			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
@@ -103,6 +104,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 
 		Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
 				.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
+				.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
 				.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(specId))
 				;
 
