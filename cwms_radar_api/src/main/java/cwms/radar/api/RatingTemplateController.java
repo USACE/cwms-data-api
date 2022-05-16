@@ -1,8 +1,6 @@
 package cwms.radar.api;
 
-import java.util.ArrayList;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -15,6 +13,7 @@ import cwms.radar.data.dao.RatingDao;
 import cwms.radar.data.dao.RatingSetDao;
 import cwms.radar.data.dao.RatingTemplateDao;
 import cwms.radar.data.dto.rating.RatingTemplate;
+import cwms.radar.data.dto.rating.RatingTemplates;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -34,6 +33,8 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 public class RatingTemplateController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingTemplateController.class.getName());
     private final MetricRegistry metrics;
+
+    private static final int defaultPageSize = 100;
 
     private final Histogram requestResultSize;
 
@@ -61,11 +62,20 @@ public class RatingTemplateController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Rating Templates whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
             @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating template IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
+                @OpenApiParam(name="page",
+                        required = false,
+                        description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+                ),
+                @OpenApiParam(name="pageSize",
+                        required=false,
+                        type=Integer.class,
+                        description = "How many entries per page returned. Default " + defaultPageSize + "."
+                ),
         },
             responses = {
                     @OpenApiResponse(status = "200",
                             content = {
-                                    @OpenApiContent(isArray = true, from = RatingTemplate.class, type = Formats.JSON),
+                                    @OpenApiContent(from = RatingTemplates.class, type = Formats.JSON),
                             }
 
                     )},
@@ -74,6 +84,15 @@ public class RatingTemplateController implements CrudHandler {
     @Override
     public void getAll(Context ctx)
     {
+        String cursor = ctx.queryParamAsClass("cursor",String.class)
+                .getOrDefault(
+                        ctx.queryParamAsClass("page",String.class).getOrDefault("")
+                );
+        int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+                .getOrDefault(
+                        ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+                );
+
         String office = ctx.queryParam("office");
         String templateIdMask = ctx.queryParam("template-id-mask");
 
@@ -83,12 +102,12 @@ public class RatingTemplateController implements CrudHandler {
         {
             RatingTemplateDao ratingTemplateDao = new RatingTemplateDao(dsl);
 
-            Set<RatingTemplate> ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(office, templateIdMask);
+            RatingTemplates ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(cursor, pageSize, office, templateIdMask);
             ctx.status(HttpServletResponse.SC_OK);
 
             ctx.contentType(contentType.toString());
 
-            String result = Formats.format(contentType, new ArrayList<>(ratingTemplates), RatingTemplate.class);
+            String result = Formats.format(contentType, ratingTemplates);
             ctx.result(result);
             requestResultSize.update(result.length());
         }

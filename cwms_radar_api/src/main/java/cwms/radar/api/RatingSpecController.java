@@ -1,8 +1,6 @@
 package cwms.radar.api;
 
-import java.util.ArrayList;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -15,6 +13,7 @@ import cwms.radar.data.dao.RatingDao;
 import cwms.radar.data.dao.RatingSetDao;
 import cwms.radar.data.dao.RatingSpecDao;
 import cwms.radar.data.dto.rating.RatingSpec;
+import cwms.radar.data.dto.rating.RatingSpecs;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -35,6 +34,8 @@ public class RatingSpecController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingSpecController.class.getName());
     private final MetricRegistry metrics;
 
+    private static final int defaultPageSize = 100;
+
     private final Histogram requestResultSize;
 
     public RatingSpecController(MetricRegistry metrics){
@@ -54,18 +55,26 @@ public class RatingSpecController implements CrudHandler {
     {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
-
     
     
     @OpenApi(
         queryParams = {
             @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
             @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating spec IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
+                @OpenApiParam(name="page",
+                        required = false,
+                        description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+                ),
+                @OpenApiParam(name="pageSize",
+                        required=false,
+                        type=Integer.class,
+                        description = "How many entries per page returned. Default " + defaultPageSize + "."
+                ),
         },
             responses = {
                     @OpenApiResponse(status = "200",
                             content = {
-                                    @OpenApiContent(isArray = true, from = RatingSpec.class, type = Formats.JSON),
+                                    @OpenApiContent(type = Formats.JSON, from = RatingSpecs.class)
                             }
 
                     )},
@@ -74,6 +83,16 @@ public class RatingSpecController implements CrudHandler {
     @Override
     public void getAll(Context ctx)
     {
+
+        String cursor = ctx.queryParamAsClass("cursor",String.class)
+                .getOrDefault(
+                        ctx.queryParamAsClass("page",String.class).getOrDefault("")
+                );
+        int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
+                .getOrDefault(
+                        ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
+                );
+
         String office = ctx.queryParam("office");
         String templateIdMask = ctx.queryParam("template-id-mask");
         
@@ -82,15 +101,14 @@ public class RatingSpecController implements CrudHandler {
         try(final Timer.Context timeContext = markAndTime("getAll"); DSLContext dsl = getDslContext(ctx))
         {
             RatingSpecDao ratingSpecDao = new RatingSpecDao(dsl);
-
-            Set<RatingSpec> ratingSpecs = ratingSpecDao.retrieveRatingSpecs(office, templateIdMask);
-            ctx.status(HttpServletResponse.SC_OK);
+            RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office, templateIdMask);
 
             ctx.contentType(contentType.toString());
 
-            String result = Formats.format(contentType, new ArrayList<>(ratingSpecs), RatingSpec.class);
+            String result = Formats.format(contentType, ratingSpecs);
             ctx.result(result);
             requestResultSize.update(result.length());
+            ctx.status(HttpServletResponse.SC_OK);
         }
         catch(Exception ex)
         {
