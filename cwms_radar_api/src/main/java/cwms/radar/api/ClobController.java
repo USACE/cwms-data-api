@@ -66,6 +66,10 @@ public class ClobController implements CrudHandler {
                 @OpenApiParam(name="page",
                             description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
+                    @OpenApiParam(name="cursor",
+                            deprecated = true,
+                            description = "Deprecated. Use 'page' instead."
+                    ),
                 @OpenApiParam(name="page-size",
                             type=Integer.class,
                             description = "How many entries per page returned. Default " + defaultPageSize + "."
@@ -113,8 +117,9 @@ public class ClobController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
-            String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
-            cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
+            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
+                    String.class, "", metrics, name(ClobController.class.getName(), "getAll"));
+
             if(!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
                     .status(HttpCode.BAD_REQUEST);

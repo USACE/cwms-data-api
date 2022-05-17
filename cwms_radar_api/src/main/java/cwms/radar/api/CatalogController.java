@@ -73,6 +73,10 @@ public class CatalogController implements CrudHandler{
             @OpenApiParam(name="page",
                           description = "This end point can return a lot of data, this identifies where in the request you are."
             ),
+            @OpenApiParam(name="cursor",
+                        deprecated = true,
+                        description = "Deprecated. Use 'page' instead."
+            ),
             @OpenApiParam(name="page-size",
                           type=Integer.class,
                           description = "How many entires per page returned. Default 500."
@@ -150,8 +154,9 @@ public class CatalogController implements CrudHandler{
         ) {
 
             String valDataSet = ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
-            String cursor = ctx.queryParamAsClass("cursor",String.class)
-                               .getOrDefault(ctx.queryParamAsClass("page", String.class).getOrDefault(""));
+
+            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
+                    String.class, "", metrics, name(CatalogController.class.getName(), "getOne"));
 
             int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
                     Integer.class, defaultPageSize, metrics, name(CatalogController.class.getName(), "getOne"));

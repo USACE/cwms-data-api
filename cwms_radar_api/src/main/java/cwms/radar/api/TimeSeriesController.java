@@ -193,9 +193,12 @@ public class TimeSeriesController implements CrudHandler {
             @OpenApiParam(name="timezone", required=false, description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used.\r\nIgnored if begin was specified with offset and timezone."),
             @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)"),
             @OpenApiParam(name="page",
-                          required = false,
                           description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
             ),
+            @OpenApiParam(name="cursor",
+                        deprecated = true,
+                        description = "Deprecated. Use 'page' instead."
+                ),
             @OpenApiParam(name="page-size",
                           type=Integer.class,
                           description = "How many entries per page returned. Default " + defaultPageSize + "."
@@ -238,8 +241,8 @@ public class TimeSeriesController implements CrudHandler {
             String end = ctx.queryParam("end");
             String timezone = ctx.queryParamAsClass("timezone",String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
-                    ctx.queryParamAsClass("page", String.class).getOrDefault(""));
+            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
+                    String.class, "", metrics, name(TimeSeriesController.class.getName(), "getAll"));
 
             int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
                     Integer.class, defaultPageSize, metrics, name(TimeSeriesController.class.getName(), "getAll"));
