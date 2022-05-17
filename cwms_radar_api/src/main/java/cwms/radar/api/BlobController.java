@@ -73,10 +73,14 @@ public class BlobController implements CrudHandler {
                             description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
                 @OpenApiParam(name="pageSize",
-                            required=false,
+                            deprecated = true,
+                            type=Integer.class,
+                            description = "Deprecated.  Use page-size instead."
+                ),
+                @OpenApiParam(name="page-size",
                             type=Integer.class,
                             description = "How many entries per page returned. Default " + defaultPageSize + "."
-                ),
+                    ),
                 @OpenApiParam(name="like",
                     required = false,
                     type = String.class,
@@ -106,17 +110,14 @@ public class BlobController implements CrudHandler {
 
             String cursor = ctx.queryParamAsClass("cursor",String.class).allowNullable().get();
             cursor = cursor != null ? cursor : ctx.queryParamAsClass("page",String.class).getOrDefault("");
-            if( CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor) != true ) {
+            if(!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
                     .status(HttpCode.BAD_REQUEST);
                 return;
             }
 
-
-            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-								.getOrDefault(
-									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-								);
+            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                    Integer.class, defaultPageSize, metrics, name(BlobController.class.getName(), "getAll"));
 
             String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
 
