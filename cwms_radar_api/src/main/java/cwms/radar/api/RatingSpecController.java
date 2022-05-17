@@ -34,7 +34,7 @@ public class RatingSpecController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingSpecController.class.getName());
     private final MetricRegistry metrics;
 
-    private static final int defaultPageSize = 100;
+    private static final int DEFAULT_PAGE_SIZE = 100;
 
     private final Histogram requestResultSize;
 
@@ -62,13 +62,11 @@ public class RatingSpecController implements CrudHandler {
             @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
             @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating spec IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
                 @OpenApiParam(name="page",
-                        required = false,
                         description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
-                @OpenApiParam(name="pageSize",
-                        required=false,
+                @OpenApiParam(name="page-size",
                         type=Integer.class,
-                        description = "How many entries per page returned. Default " + defaultPageSize + "."
+                        description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
                 ),
         },
             responses = {
@@ -83,15 +81,8 @@ public class RatingSpecController implements CrudHandler {
     @Override
     public void getAll(Context ctx)
     {
-
-        String cursor = ctx.queryParamAsClass("cursor",String.class)
-                .getOrDefault(
-                        ctx.queryParamAsClass("page",String.class).getOrDefault("")
-                );
-        int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-                .getOrDefault(
-                        ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-                );
+        String cursor = ctx.queryParamAsClass("page",String.class).getOrDefault("");
+        int pageSize = ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         String office = ctx.queryParam("office");
         String templateIdMask = ctx.queryParam("template-id-mask");

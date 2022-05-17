@@ -34,7 +34,7 @@ public class RatingTemplateController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingTemplateController.class.getName());
     private final MetricRegistry metrics;
 
-    private static final int defaultPageSize = 100;
+    private static final int DEFAULT_PAGE_SIZE = 100;
 
     private final Histogram requestResultSize;
 
@@ -66,10 +66,10 @@ public class RatingTemplateController implements CrudHandler {
                         required = false,
                         description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
-                @OpenApiParam(name="pageSize",
+                @OpenApiParam(name="page-size",
                         required=false,
                         type=Integer.class,
-                        description = "How many entries per page returned. Default " + defaultPageSize + "."
+                        description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
                 ),
         },
             responses = {
@@ -84,14 +84,8 @@ public class RatingTemplateController implements CrudHandler {
     @Override
     public void getAll(Context ctx)
     {
-        String cursor = ctx.queryParamAsClass("cursor",String.class)
-                .getOrDefault(
-                        ctx.queryParamAsClass("page",String.class).getOrDefault("")
-                );
-        int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-                .getOrDefault(
-                        ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-                );
+        String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
+        int pageSize = ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         String office = ctx.queryParam("office");
         String templateIdMask = ctx.queryParam("template-id-mask");
@@ -101,10 +95,9 @@ public class RatingTemplateController implements CrudHandler {
         try(final Timer.Context timeContext = markAndTime("getAll"); DSLContext dsl = getDslContext(ctx))
         {
             RatingTemplateDao ratingTemplateDao = new RatingTemplateDao(dsl);
-
-            RatingTemplates ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(cursor, pageSize, office, templateIdMask);
+            RatingTemplates ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(cursor, pageSize, office,
+                    templateIdMask);
             ctx.status(HttpServletResponse.SC_OK);
-
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, ratingTemplates);
@@ -117,7 +110,6 @@ public class RatingTemplateController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
 
     }
 

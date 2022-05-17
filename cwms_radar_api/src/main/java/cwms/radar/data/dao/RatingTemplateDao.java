@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.CwmsDTOPaginated;
-import cwms.radar.data.dto.Pools;
 import cwms.radar.data.dto.rating.ParameterSpec;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import cwms.radar.data.dto.rating.RatingTemplates;

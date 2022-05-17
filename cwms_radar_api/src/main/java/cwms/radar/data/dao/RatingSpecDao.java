@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import cwms.radar.data.dto.CwmsDTOPaginated;
-import cwms.radar.data.dto.Pools;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.data.dto.rating.RatingSpecs;
 import org.jetbrains.annotations.NotNull;
@@ -41,8 +40,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 	}
 
 
-	public Collection<RatingSpec> retrieveRatingSpecs(
-			String office, String specIdMask)
+	public Collection<RatingSpec> retrieveRatingSpecs(String office, String specIdMask)
 	{
 		Set<RatingSpec> retval;
 
@@ -135,7 +133,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 						logger.log(Level.INFO, "Could not parse " + parts[1]);
 					}
 				}
-				pageSize = Integer.parseInt(parts[2]); // Why are we taking pageSize as an arg and also pulling it from cursor?
+				pageSize = Integer.parseInt(parts[2]);
 			}
 		}
 
