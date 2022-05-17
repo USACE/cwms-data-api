@@ -20,6 +20,7 @@ import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.RecentValue;
+import cwms.radar.data.dto.SpecifiedLevel;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.Formats;
@@ -42,7 +43,7 @@ import service.annotations.FormatService;
 				   Clob.class,
 				   Clobs.class,
 				   TimeSeriesGroup.class,
-				   RecentValue.class
+				   RecentValue.class, SpecifiedLevel.class
 				})
 public class JsonV1 implements OutputFormatter{
 
