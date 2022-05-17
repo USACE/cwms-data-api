@@ -60,7 +60,7 @@ public class RatingSpecController implements CrudHandler {
     @OpenApi(
         queryParams = {
             @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
-            @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating spec IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
+            @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating spec IDs to be included in the response. If this field is not specified, all Rating Specs shall be returned."),
                 @OpenApiParam(name="page",
                         description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
