@@ -87,10 +87,10 @@ public class CatalogController implements CrudHandler{
                           type = UnitSystem.class,
                           description = "Deprecated. Use unit-system."
             ),
-                @OpenApiParam(name="unit-system",
-                        type = UnitSystem.class,
-                        description = UnitSystem.DESCRIPTION
-                ),
+            @OpenApiParam(name="unit-system",
+                    type = UnitSystem.class,
+                    description = UnitSystem.DESCRIPTION
+            ),
             @OpenApiParam(name="office",
                           description = "3-4 letter office name representing the district you want to isolate data to."
             ),
@@ -127,8 +127,7 @@ public class CatalogController implements CrudHandler{
                 )
         },
         pathParams = {
-            @OpenApiParam(name="dataSet",
-                          required = false,
+            @OpenApiParam(name="dataset",
                           type = CatalogableEndpoint.class,
                           description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
         },

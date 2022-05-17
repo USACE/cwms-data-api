@@ -213,10 +213,10 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
         radarCrud("/location/category/{category-id}", new LocationCategoryController(metrics), requiredRoles);
         radarCrud("/location/group/{group-id}", new LocationGroupController(metrics), requiredRoles);
-        radarCrud("/locations/{location_code}", new LocationController(metrics), requiredRoles);
+        radarCrud("/locations/{location-id}", new LocationController(metrics), requiredRoles);
         radarCrud("/offices/{office}", new OfficeController(metrics), requiredRoles);
-        radarCrud("/units/{unit_name}", new UnitsController(metrics), requiredRoles);
-        radarCrud("/parameters/{param_name}", new ParametersController(metrics), requiredRoles);
+        radarCrud("/units/{unit-id}", new UnitsController(metrics), requiredRoles);
+        radarCrud("/parameters/{param-id}", new ParametersController(metrics), requiredRoles);
         radarCrud("/timezones/{zone}", new TimeZoneController(metrics), requiredRoles);
         radarCrud("/levels/{location}", new LevelsController(metrics), requiredRoles);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
@@ -225,7 +225,7 @@ public class ApiServlet extends HttpServlet {
         radarCrud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics), requiredRoles);
         radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
         radarCrud("/ratings/{rating}", new RatingController(metrics), requiredRoles);
-        radarCrud("/catalog/{dataSet}", new CatalogController(metrics), requiredRoles);
+        radarCrud("/catalog/{dataset}", new CatalogController(metrics), requiredRoles);
         radarCrud("/basins/{basin-id}", new BasinController(metrics), requiredRoles);
         radarCrud("/blobs/{blob-id}", new BlobController(metrics), requiredRoles);
         radarCrud("/clobs/{clob-id}", new ClobController(metrics), requiredRoles);
@@ -255,7 +255,8 @@ public class ApiServlet extends HttpServlet {
             throw new IllegalArgumentException("CrudHandler requires a resource base at the beginning of the provided path, e.g. '/users/{user-id}'");
         }
 
-        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);//getHanders(crudHandler, resourceId);
+        //noinspection KotlinInternalInJava
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
 
         // getOne and getAll are assumed not to need authorization
         staticInstance().get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
