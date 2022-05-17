@@ -208,12 +208,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			//			Field<String> tzName = (Field<String>) fields[1];
 
 			Field<BigDecimal> offsetField = DSL.select(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET.as("INTERVAL_UTC_OFFSET"))
-					.from(AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId))
+					.from(AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)
+							.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull()))
 					.asField();
 			Field<String> tzName;
 			if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
 				tzName = DSL.select(AV_CWMS_TS_ID2.TIME_ZONE_ID).from(AV_CWMS_TS_ID2).where(
-						AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)).asField("TIME_ZONE_ID");
+						AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)
+								.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
+				).asField("TIME_ZONE_ID");
 			} else {
 				tzName = DSL.val((String) null).as("TIME_ZONE_ID");
 			}
