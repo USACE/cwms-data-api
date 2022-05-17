@@ -4,7 +4,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import io.javalin.core.validation.Validator;
-import org.apache.poi.ss.formula.functions.T;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
