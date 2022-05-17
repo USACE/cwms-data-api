@@ -62,10 +62,14 @@ public class PoolController implements CrudHandler
 					required = false,
 					description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
 			),
-			@OpenApiParam(name="pageSize",
-					required=false,
+			@OpenApiParam(name="page-size",
 					type=Integer.class,
 					description = "How many entries per page returned. Default " + defaultPageSize + "."
+			),
+			@OpenApiParam(name="pageSize",
+					deprecated = true,
+					type=Integer.class,
+					description = "Deprecated. Use 'page-size' instead."
 			),
 	}, responses = {
 			@OpenApiResponse(status = "200", content = {
@@ -99,10 +103,9 @@ public class PoolController implements CrudHandler
 								.getOrDefault(
 									ctx.queryParamAsClass("page",String.class).getOrDefault("")
 								);
-			int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-								.getOrDefault(
-									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-								);
+
+			int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+					Integer.class, defaultPageSize, metrics, name(PoolController.class.getName(), "getAll"));
 
 			Pools pools = dao.retrievePools(cursor, pageSize, projectIdMask, nameMask, bottomMask, topMask, isExplicit, isImplicit, office);
 
