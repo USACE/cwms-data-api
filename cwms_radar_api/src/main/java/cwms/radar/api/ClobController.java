@@ -62,21 +62,27 @@ public class ClobController implements CrudHandler {
     @OpenApi(
             queryParams = {
                 @OpenApiParam(name="office",
-                            required=false,
                             description="Specifies the owning office. If this field is not specified, matching information from all offices shall be returned."),
                 @OpenApiParam(name="page",
-                            required = false,
                             description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
-                @OpenApiParam(name="pageSize",
-                            required=false,
+                @OpenApiParam(name="page-size",
                             type=Integer.class,
                             description = "How many entries per page returned. Default " + defaultPageSize + "."
                 ),
+                @OpenApiParam(name="pageSize",
+                        deprecated = true,
+                        type=Integer.class,
+                        description = "Deprecated, use 'page-size' instead."
+                ),
+                @OpenApiParam(name="include-values",
+                        type = Boolean.class,
+                        description = "Do you want the value associated with this particular clob (default: false)"
+                ),
                 @OpenApiParam(name="includeValues",
-                    required = false,
+                                                deprecated = true,
                     type = Boolean.class,
-                    description = "Do you want the value associated with this particular clob (default: false)"
+                    description = "Deprecated, use 'include-values' instead."
                 ),
                 @OpenApiParam(name="like",
                     required = false,
@@ -114,15 +120,13 @@ public class ClobController implements CrudHandler {
                     .status(HttpCode.BAD_REQUEST);
                 return;
             }
-            int pageSize = ctx.queryParamAsClass("pageSize",Integer.class)
-								.getOrDefault(
-									ctx.queryParamAsClass("pagesize",Integer.class).getOrDefault(defaultPageSize)
-								);
 
-            boolean includeValues = ctx.queryParamAsClass("includeValues",Boolean.class).getOrDefault(false);
+            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                    Integer.class, defaultPageSize, metrics, name(ClobController.class.getName(), "getAll"));
+
+            boolean includeValues = Controllers.queryParamAsClass(ctx, new String[]{"include-values", "includeValues"}, Boolean.class,
+                    false, metrics, name(ClobController.class.getName(), "getAll"));
             String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
-
-
 
             ClobDao dao = new ClobDao(dsl);
             Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);
