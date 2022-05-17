@@ -154,6 +154,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the timeseries to be deleted.")
             },
             method = HttpMethod.DELETE,
+            path = "/timeseries",
             tags = {"TimeSeries"}
     )
     @Override
@@ -195,10 +196,14 @@ public class TimeSeriesController implements CrudHandler {
                           required = false,
                           description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
             ),
-            @OpenApiParam(name="pageSize",
-                          required=false,
+            @OpenApiParam(name="page-size",
                           type=Integer.class,
                           description = "How many entries per page returned. Default " + defaultPageSize + "."
+            ),
+            @OpenApiParam(name="pageSize",
+                    deprecated = true,
+                    type=Integer.class,
+                    description = "Deprecated. Please use page-size instead."
             )
         },
         responses = { @OpenApiResponse(status="200",
@@ -213,6 +218,7 @@ public class TimeSeriesController implements CrudHandler {
                       @OpenApiResponse(status="501",description = "Requested format is not implemented")
                     },
             method = HttpMethod.GET,
+            path = "/timeseries",
         tags = {"TimeSeries"}
     )
     @Override
@@ -235,8 +241,8 @@ public class TimeSeriesController implements CrudHandler {
             String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
                     ctx.queryParamAsClass("page", String.class).getOrDefault(""));
 
-            int pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(
-                    ctx.queryParamAsClass("pagesize", Integer.class).getOrDefault(defaultPageSize));
+            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                    Integer.class, defaultPageSize, metrics, name(TimeSeriesController.class.getName(), "getAll"));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
@@ -494,14 +500,14 @@ public class TimeSeriesController implements CrudHandler {
             if(hasTsGroupInfo && hasTsIds){
                 // has both = this is an error
                 RadarError re = new RadarError("Invalid arguments supplied, group has both Timeseries Group info and Timeseries IDs.");
-                logger.log(Level.SEVERE, re.toString() + " for url " + ctx.fullUrl());
+                logger.log(Level.SEVERE, re + " for url " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;
             } else if(!hasTsGroupInfo && !hasTsIds){
                 // doesn't have either?  Just return empty results?
                 RadarError re = new RadarError("Invalid arguments supplied, group has neither Timeseries Group info nor Timeseries IDs");
-                logger.log(Level.SEVERE, re.toString()+ " for request " + ctx.fullUrl());
+                logger.log(Level.SEVERE, re + " for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;
