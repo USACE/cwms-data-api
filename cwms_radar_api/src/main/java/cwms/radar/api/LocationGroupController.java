@@ -56,8 +56,8 @@ public class LocationGroupController implements CrudHandler
 
 	@OpenApi(queryParams = {
 			@OpenApiParam(name = "office", description = "Specifies the owning office of the location group(s) whose data is to be included in the response. If this field is not specified, matching location groups information from all offices shall be returned."),
-			@OpenApiParam(name="includeAssigned", type = Boolean.class,	description = "Include the assigned locations in the returned location groups. (default: false)"
-			),
+			@OpenApiParam(name="include-assigned", type = Boolean.class,	description = "Include the assigned locations in the returned location groups. (default: false)"),
+			@OpenApiParam(name="includeAssigned", deprecated = true, type = Boolean.class,	description = "Deprecated. Use include-assigned instead."),
 			},
 			responses = {
 			@OpenApiResponse(status = "200",
@@ -79,9 +79,11 @@ public class LocationGroupController implements CrudHandler
 			LocationGroupDao cdm = new LocationGroupDao(dsl);
 
 			String office = ctx.queryParam("office");
-			boolean includeValues = ctx.queryParamAsClass("includeAssigned",Boolean.class).getOrDefault(false);
 
-			List<LocationGroup> grps = cdm.getLocationGroups(office, includeValues);
+			boolean includeAssigned = Controllers.queryParamAsClass(ctx, new String[]{"include-assigned", "includeAssigned"},
+					Boolean.class, false,metrics,name(LocationGroupController.class.getName(), "getAll"));
+
+			List<LocationGroup> grps = cdm.getLocationGroups(office, includeAssigned);
 
 			if( !grps.isEmpty() ){
 				String formatHeader = ctx.header(Header.ACCEPT);
@@ -96,12 +98,12 @@ public class LocationGroupController implements CrudHandler
 				ctx.status(HttpServletResponse.SC_OK);
 			} else {
 				RadarError re = new RadarError("No location groups for office provided");
-				logger.info( () -> {
-					return new StringBuilder()
-					.append( re.toString()).append(System.lineSeparator())
+				logger.info( () ->
+					new StringBuilder()
+					.append( re).append(System.lineSeparator())
 					.append( "for request ").append( ctx.fullUrl() )
-					.toString();
-				});
+					.toString()
+				);
 				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
 			}
 
@@ -154,12 +156,12 @@ public class LocationGroupController implements CrudHandler
 					result = Formats.format(contentType, grp.get());
 				} else {
 					RadarError re = new RadarError("Unable to find location group based on parameters given");
-					logger.info( () -> {
-						return new StringBuilder()
-						.append( re.toString()).append(System.lineSeparator())
+					logger.info( () ->
+						new StringBuilder()
+						.append( re).append(System.lineSeparator())
 						.append( "for request ").append( ctx.fullUrl() )
-						.toString();
-					});
+						.toString()
+					);
 					ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
 					return;
 				}
