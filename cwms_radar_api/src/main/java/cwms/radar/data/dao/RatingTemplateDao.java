@@ -162,7 +162,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate>
 				.withVersion(version)
 				.withDescription(description)
 				.withDependentParameter(depParameter)
-				.withIndependentParameters(independentParameters)
+				.withIndependentParameterSpecs(independentParameters)
 				.build();
 	}
 

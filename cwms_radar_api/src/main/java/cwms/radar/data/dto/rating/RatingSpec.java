@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -154,9 +155,10 @@ public class RatingSpec implements CwmsDTO
 
 	public static class IndRoundingSpec {
 		private final Integer position;
+
 		private final String value;
 
-		public IndRoundingSpec(Integer position, String value){
+		public IndRoundingSpec(@JsonProperty("position") Integer position, @JsonProperty("value") String value){
 			this.position = position;
 			this.value = value;
 		}
@@ -313,83 +315,79 @@ public class RatingSpec implements CwmsDTO
 		private List<ZonedDateTime> effectiveDates;
 
 
-		public Builder officeId(String officeId) {
+		public Builder withOfficeId(String officeId) {
 			this.officeId = officeId;
 			return this;
 		}
 
-		public Builder ratingId(String ratingSpecId) {
+		public Builder withRatingId(String ratingSpecId) {
 			this.ratingId = ratingSpecId;
 			return this;
 		}
 
-		public Builder templateId(String templateId) {
+		public Builder withTemplateId(String templateId) {
 			this.templateId = templateId;
 			return this;
 		}
 
-		public Builder locationId(String locationId) {
+		public Builder withLocationId(String locationId) {
 			this.locationId = locationId;
 			return this;
 		}
 
-		public Builder version(String version) {
+		public Builder withVersion(String version) {
 			this.version = version;
 			return this;
 		}
 
-		public Builder sourceAgency(String sourceAgency) {
+
+		public Builder withSourceAgency(String sourceAgency) {
 			this.sourceAgency = sourceAgency;
 			return this;
 		}
 
-		public Builder inRangeMethod(String inRangeMethod) {
+		public Builder withInRangeMethod(String inRangeMethod) {
 			this.inRangeMethod = inRangeMethod;
 			return this;
 		}
 
-		public Builder outRangeLowMethod(String outRangeLowMethod) {
+
+		public Builder withOutRangeLowMethod(String outRangeLowMethod) {
 			this.outRangeLowMethod = outRangeLowMethod;
 			return this;
 		}
 
-		public Builder outRangeHighMethod(String outRangeHighMethod) {
+		public Builder withOutRangeHighMethod(String outRangeHighMethod) {
 			this.outRangeHighMethod = outRangeHighMethod;
 			return this;
 		}
 
-		public Builder active(boolean active) {
+		public Builder withActive(boolean active) {
 			this.active = active;
 			return this;
 		}
 
-		public Builder autoUpdate(boolean autoUpdate) {
+		public Builder withAutoUpdate(boolean autoUpdate) {
 			this.autoUpdate = autoUpdate;
 			return this;
 		}
 
-		public Builder autoActivate(boolean autoActivate) {
+		public Builder withAutoActivate(boolean autoActivate) {
 			this.autoActivate = autoActivate;
 			return this;
 		}
 
-		public Builder autoMigrateExtension(boolean autoMigrateExtension) {
+		public Builder withAutoMigrateExtension(boolean autoMigrateExtension) {
 			this.autoMigrateExtension = autoMigrateExtension;
 			return this;
 		}
 
-		public Builder indRoundingSpecs(IndRoundingSpec[] indRoundingSpecs) {
+		public Builder withIndRoundingSpecs(IndRoundingSpec[] indRoundingSpecs) {
 			this.indRoundingSpecs = indRoundingSpecs;
 			return this;
 		}
 
-		public Builder indRoundingSpecs(String indRoundingSpecsStr) {
-			indRoundingSpecs(buildIndRoundingSpecs(indRoundingSpecsStr));
-
-			return this;
-		}
-
-		private static IndRoundingSpec[] buildIndRoundingSpecs(String indRoundingSpecsStr)
+		public static IndRoundingSpec[] buildIndRoundingSpecs(String indRoundingSpecsStr)
 		{
 			IndRoundingSpec[] retval = null;
 			if(indRoundingSpecsStr != null && !indRoundingSpecsStr.isEmpty()) {
@@ -402,16 +400,16 @@ public class RatingSpec implements CwmsDTO
 			return retval;
 		}
 
-		public Builder depRoundingSpec(String depRoundingSpec) {
+		public Builder withDepRoundingSpec(String depRoundingSpec) {
 			this.depRoundingSpec = depRoundingSpec;
 			return this;
 		}
 
-		public Builder description(String description) {
+		public Builder withDescription(String description) {
 			this.description = description;
 			return this;
 		}
-		public Builder effectiveDates(List<ZonedDateTime> dates)
+		public Builder withEffectiveDates(List<ZonedDateTime> dates)
 		{
 			if(dates != null && !dates.isEmpty()) {
 				this.effectiveDates = new ArrayList<>(dates);
@@ -428,46 +426,46 @@ public class RatingSpec implements CwmsDTO
 
 		public Builder fromRatingSpec(RatingSpec spec)
 		{
-			officeId(spec.getOfficeId());
-			ratingId(spec.getRatingId());
-			templateId(spec.getTemplateId());
-			locationId(spec.getLocationId());
-			version(spec.getVersion());
-			sourceAgency(spec.getSourceAgency());
-			inRangeMethod(spec.getInRangeMethod());
-			outRangeLowMethod(spec.getOutRangeLowMethod());
-			outRangeHighMethod(spec.getOutRangeHighMethod());
-			active(spec.isActive());
-			autoUpdate(spec.isAutoUpdate());
-			autoActivate(spec.isAutoActivate());
-			autoMigrateExtension(spec.isAutoMigrateExtension());
-			indRoundingSpecs(spec.getIndRoundingSpecs());
-			depRoundingSpec(spec.getDepRoundingSpec());
-			description(spec.getDescription());
-			effectiveDates(spec.getEffectiveDates());
+			withOfficeId(spec.getOfficeId());
+			withRatingId(spec.getRatingId());
+			withTemplateId(spec.getTemplateId());
+			withLocationId(spec.getLocationId());
+			withVersion(spec.getVersion());
+			withSourceAgency(spec.getSourceAgency());
+			withInRangeMethod(spec.getInRangeMethod());
+			withOutRangeLowMethod(spec.getOutRangeLowMethod());
+			withOutRangeHighMethod(spec.getOutRangeHighMethod());
+			withActive(spec.isActive());
+			withAutoUpdate(spec.isAutoUpdate());
+			withAutoActivate(spec.isAutoActivate());
+			withAutoMigrateExtension(spec.isAutoMigrateExtension());
+			withIndRoundingSpecs(spec.getIndRoundingSpecs());
+			withDepRoundingSpec(spec.getDepRoundingSpec());
+			withDescription(spec.getDescription());
+			withEffectiveDates(spec.getEffectiveDates());
 
 			return this;
 		}
 
-		public Builder dateMethods(String dateMethods)
+		public Builder withDateMethods(String dateMethods)
 		{
 			if(dateMethods != null && !dateMethods.isEmpty()) {
 				String[] parts = dateMethods.split(",");
 				if(parts.length > 0) {
-					inRangeMethod(parts[0]);
+					withInRangeMethod(parts[0]);
 				}
 
 				if(parts.length > 1) {
-					outRangeLowMethod(parts[1]);
+					withOutRangeLowMethod(parts[1]);
 				}
 
 				if(parts.length > 2) {
-					outRangeHighMethod(parts[2]);
+					withOutRangeHighMethod(parts[2]);
 				}
 			} else {
-				inRangeMethod(null);
-				outRangeLowMethod(null);
-				outRangeHighMethod(null);
+				withInRangeMethod(null);
+				withOutRangeLowMethod(null);
+				withOutRangeHighMethod(null);
 			}
 			return this;
 		}

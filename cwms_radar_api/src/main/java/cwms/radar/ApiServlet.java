@@ -222,7 +222,7 @@ public class ApiServlet extends HttpServlet {
         radarCrud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics), requiredRoles);
         radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
         radarCrud("/ratings/template/{template-id}", new RatingTemplateController(metrics), requiredRoles);
-        radarCrud("/ratings/spec/{template-id}", new RatingSpecController(metrics), requiredRoles);
+        radarCrud("/ratings/spec/{rating-id}", new RatingSpecController(metrics), requiredRoles);
         radarCrud("/ratings/{rating}", new RatingController(metrics), requiredRoles);
         radarCrud("/catalog/{dataSet}", new CatalogController(metrics), requiredRoles);
         radarCrud("/basins/{basin-id}", new BasinController(metrics), requiredRoles);
@@ -255,7 +255,7 @@ public class ApiServlet extends HttpServlet {
         }
 
         //noinspection KotlinInternalInJava
-        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);//getHanders(crudHandler, resourceId);
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
 
         // getOne and getAll are assumed not to need authorization
         staticInstance().get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
@@ -271,7 +271,7 @@ public class ApiServlet extends HttpServlet {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
-                    .defaultDocumentation((doc) -> {
+                    .defaultDocumentation(doc -> {
                         doc.json("500", RadarError.class);
                         doc.json("400", RadarError.class);
                         doc.json("401", RadarError.class);

@@ -9,8 +9,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.data.dao.RatingDao;
-import cwms.radar.data.dao.RatingSetDao;
 import cwms.radar.data.dao.RatingTemplateDao;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import cwms.radar.data.dto.rating.RatingTemplates;
@@ -44,12 +42,6 @@ public class RatingTemplateController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
-    @NotNull
-    protected RatingDao getRatingDao(DSLContext dsl)
-    {
-        return new RatingSetDao(dsl);
-    }
-
 
     private Timer.Context markAndTime(String subject)
     {
@@ -60,14 +52,12 @@ public class RatingTemplateController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Rating Templates whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
-            @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating template IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
+            @OpenApiParam(name="office", description="Specifies the owning office of the Rating Templates whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
+            @OpenApiParam(name="template-id-mask", description="RegExp that specifies the rating template IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
                 @OpenApiParam(name="page",
-                        required = false,
                         description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
                 @OpenApiParam(name="page-size",
-                        required=false,
                         type=Integer.class,
                         description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
                 ),
@@ -94,7 +84,7 @@ public class RatingTemplateController implements CrudHandler {
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try(final Timer.Context timeContext = markAndTime("getAll"); DSLContext dsl = getDslContext(ctx))
         {
-            RatingTemplateDao ratingTemplateDao = new RatingTemplateDao(dsl);
+            RatingTemplateDao ratingTemplateDao = getRatingTemplateDao(dsl);
             RatingTemplates ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(cursor, pageSize, office,
                     templateIdMask);
             ctx.status(HttpServletResponse.SC_OK);
@@ -111,6 +101,12 @@ public class RatingTemplateController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
+    }
+
+    @NotNull
+    private RatingTemplateDao getRatingTemplateDao(DSLContext dsl)
+    {
+        return new RatingTemplateDao(dsl);
     }
 
     @OpenApi(
@@ -138,7 +134,7 @@ public class RatingTemplateController implements CrudHandler {
 
         try(final Timer.Context timeContext = markAndTime("getOne"); DSLContext dsl = getDslContext(ctx))
         {
-            RatingTemplateDao ratingSetDao = new RatingTemplateDao(dsl);
+            RatingTemplateDao ratingSetDao = getRatingTemplateDao(dsl);
 
             Optional<RatingTemplate> template= ratingSetDao.retrieveRatingTemplate(office, templateId);
             if( template.isPresent() ) {

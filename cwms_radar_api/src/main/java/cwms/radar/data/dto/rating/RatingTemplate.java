@@ -136,10 +136,8 @@ public class RatingTemplate implements CwmsDTO
 		private String id;
 		private String version;
 		private String officeId;
-
 		private String description;
 		private String dependentParameter;
-
 		private List<ParameterSpec> independentParameterList;
 
 		private List<String> ratingIds;
@@ -174,7 +172,7 @@ public class RatingTemplate implements CwmsDTO
 			return this;
 		}
 
-		public Builder withIndependentParameters(List<ParameterSpec> independentParameterList) {
+		public Builder withIndependentParameterSpecs(List<ParameterSpec> independentParameterList) {
 			this.independentParameterList = independentParameterList;
 			return this;
 		}
@@ -201,7 +199,7 @@ public class RatingTemplate implements CwmsDTO
 			retval = retval.withDependentParameter(template.getDependentParameter());
 
 			List<ParameterSpec> independentParameterSpecs = buildParameterSpecs(template.getIndependentParameterList());
-			retval = retval.withIndependentParameters(independentParameterSpecs);
+			retval = retval.withIndependentParameterSpecs(independentParameterSpecs);
 
 			return retval;
 		}
@@ -225,7 +223,7 @@ public class RatingTemplate implements CwmsDTO
 			retval = retval.withOfficeId(template.getOfficeId());
 			retval = retval.withDescription(template.getDescription());
 			retval = retval.withDependentParameter(template.getDependentParameter());
-			retval = retval.withIndependentParameters(template.getIndependentParameterSpecs());
+			retval = retval.withIndependentParameterSpecs(template.getIndependentParameterSpecs());
 			retval = retval.withRatingIds(template.getRatingIds());
 
 			return retval;

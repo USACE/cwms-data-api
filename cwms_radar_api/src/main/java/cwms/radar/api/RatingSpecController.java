@@ -9,8 +9,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.data.dao.RatingDao;
-import cwms.radar.data.dao.RatingSetDao;
+import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.RatingSpecDao;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.data.dto.rating.RatingSpecs;
@@ -27,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 
 public class RatingSpecController implements CrudHandler {
@@ -44,12 +42,10 @@ public class RatingSpecController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className,"results","size")));
     }
 
-    @NotNull
-    protected RatingDao getRatingDao(DSLContext dsl)
+    protected DSLContext getDslContext(Context ctx)
     {
-        return new RatingSetDao(dsl);
+        return JooqDao.getDslContext(ctx);
     }
-
 
     private Timer.Context markAndTime(String subject)
     {
@@ -59,13 +55,12 @@ public class RatingSpecController implements CrudHandler {
     
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
-            @OpenApiParam(name="template-id-mask", required=false, description="RegExp that specifies the rating spec IDs to be included in the response. If this field is not specified, all Rating Specs shall be returned."),
+            @OpenApiParam(name="office", description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
+            @OpenApiParam(name="rating-id-mask", description="RegExp that specifies the rating IDs to be included in the response. If this field is not specified, all Rating Specs shall be returned."),
                 @OpenApiParam(name="page",
                         description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
                 ),
-                @OpenApiParam(name="page-size",
-                        type=Integer.class,
+                @OpenApiParam(name="page-size", type=Integer.class,
                         description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
                 ),
         },
@@ -85,14 +80,14 @@ public class RatingSpecController implements CrudHandler {
         int pageSize = ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         String office = ctx.queryParam("office");
-        String templateIdMask = ctx.queryParam("template-id-mask");
+        String ratingIdMask = ctx.queryParam("rating-id-mask");
         
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try(final Timer.Context timeContext = markAndTime("getAll"); DSLContext dsl = getDslContext(ctx))
         {
-            RatingSpecDao ratingSpecDao = new RatingSpecDao(dsl);
-            RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office, templateIdMask);
+            RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
+            RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office, ratingIdMask);
 
             ctx.contentType(contentType.toString());
 
@@ -113,7 +108,7 @@ public class RatingSpecController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "template-id", required = true, description = "Specifies the template whose data is to be included in the response")
+                    @OpenApiParam(name = "rating-id", required = true, description = "Specifies the rating-id of the Rating Spec to be included in the response")
             },
             queryParams = {
                     @OpenApiParam(name="office", required=true, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
@@ -128,7 +123,7 @@ public class RatingSpecController implements CrudHandler {
             tags = {"Ratings"}
     )
     @Override
-    public void getOne(Context ctx, String templateId) {
+    public void getOne(Context ctx, String ratingId) {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
@@ -136,9 +131,9 @@ public class RatingSpecController implements CrudHandler {
         
         try(final Timer.Context timeContext = markAndTime("getOne"); DSLContext dsl = getDslContext(ctx))
         {
-            RatingSpecDao ratingSpecDao = new RatingSpecDao(dsl);
-       
-            Optional<RatingSpec> template= ratingSpecDao.retrieveRatingSpec(office, templateId);
+            RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
+
+            Optional<RatingSpec> template= ratingSpecDao.retrieveRatingSpec(office, ratingId);
             if( template.isPresent() ) {
                 String result = Formats.format(contentType, template.get());
 
@@ -157,7 +152,13 @@ public class RatingSpecController implements CrudHandler {
             }
         }
     }
-    
+
+    @NotNull
+    protected RatingSpecDao getRatingSpecDao(DSLContext dsl)
+    {
+        return new RatingSpecDao(dsl);
+    }
+
 
     @OpenApi(ignore = true)
     @Override

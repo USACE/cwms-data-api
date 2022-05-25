@@ -31,6 +31,8 @@ import org.jooq.util.oracle.OracleDSL;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
+import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndRoundingSpecs;
+
 public class RatingSpecDao extends JooqDao<RatingSpec>
 {
 	private static final Logger logger = Logger.getLogger(RatingSpecDao.class.getName());
@@ -104,7 +106,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		retval = map.entrySet().stream()
 				.map( entry -> new RatingSpec.Builder()
 						.fromRatingSpec(entry.getKey())
-						.effectiveDates(entry.getValue())
+						.withEffectiveDates(entry.getValue())
 						.build())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -226,7 +228,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		retval = map.entrySet().stream()
 				.map( entry -> new RatingSpec.Builder()
 						.fromRatingSpec(entry.getKey())
-						.effectiveDates(entry.getValue())
+						.withEffectiveDates(entry.getValue())
 						.build())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 		return retval;
@@ -294,7 +296,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		retval = map.entrySet().stream()
 				.map( entry -> new RatingSpec.Builder()
 						.fromRatingSpec(entry.getKey())
-						.effectiveDates(entry.getValue())
+						.withEffectiveDates(entry.getValue())
 						.build())
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -341,12 +343,15 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 
 			String dateMethods = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS);
 
-			retval = new RatingSpec.Builder().officeId(officeId).ratingId(ratingId)
-					.templateId(templateId).locationId(locId).version(version).sourceAgency(agency)
-					.active(activeFlag).autoUpdate(autoUpdateFlag).autoActivate(autoActivateFlag)
-					.autoMigrateExtension(autoMigrateExtFlag).indRoundingSpecs(indRndSpecs)
-					.depRoundingSpec(depRndSpecs).description(desc)
-					.dateMethods(dateMethods)
+			retval = new RatingSpec.Builder().withOfficeId(officeId).withRatingId(ratingId)
+					.withTemplateId(templateId).withLocationId(locId).withVersion(version).withSourceAgency(agency)
+					.withActive(activeFlag).withAutoUpdate(autoUpdateFlag).withAutoActivate(autoActivateFlag)
+					.withAutoMigrateExtension(autoMigrateExtFlag)
+//					.withIndRoundingSpecsString(indRndSpecs)
+					.withIndRoundingSpecs(buildIndRoundingSpecs(indRndSpecs))
+
+					.withDepRoundingSpec(depRndSpecs).withDescription(desc)
+					.withDateMethods(dateMethods)
 					.build();
 		}
 
