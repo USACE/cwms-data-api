@@ -45,6 +45,8 @@ import cwms.radar.data.dto.TsvId;
 import cwms.radar.data.dto.VerticalDatumInfo;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.radar.helpers.DateUtils;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -97,30 +99,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		super(dsl);
 	}
 
-	public String getTimeseries(String format, String names, String office, String units, String datum, String begin,
-								String end, String timezone) {
+	public String getTimeseries(String format, String names, String office, String units, String datum,
+								ZonedDateTime begin, ZonedDateTime end, ZoneId timezone) {
 		return CWMS_TS_PACKAGE.call_RETRIEVE_TIME_SERIES_F(dsl.configuration(),
-				names, format, units, datum, begin, end, timezone, office);
+				names, format, units, datum,
+				begin.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+				end.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+				timezone.getId(), office);
 	}
 
 
-	public TimeSeries getTimeseries(String page, int pageSize, String names, String office, String units, String datum, String begin, String end, String timezone) {
+	public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
+									String units, String datum,
+									ZonedDateTime begin, ZonedDateTime end, ZoneId timezone) {
 		// Looks like the datum field is currently being ignored by this method.
 		// Should we warn if the datum is not null?
-		ZoneId zone;
-		if(timezone == null)
-		{
-			zone = ZoneOffset.UTC.normalized();
-		}
-		else
-		{
-			zone = ZoneId.of(timezone);
-		}
-
-		ZonedDateTime beginTime = getZonedDateTime(begin, zone, ZonedDateTime.now().minusDays(1));
-		ZonedDateTime endTime = getZonedDateTime(end, beginTime.getZone(), ZonedDateTime.now());
-
-		return getTimeseries(page, pageSize, names, office, units, beginTime, endTime);
+		return getTimeseries(page, pageSize, names, office, units, begin, end);
 	}
 
 	public ZonedDateTime getZonedDateTime(String begin, ZoneId fallbackZone, ZonedDateTime beginFallback)
@@ -202,7 +196,32 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(tsId,
 					DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
 					DSL.val(BigInteger.valueOf(6L))));
-			SelectSelectStep<Record8<String, String, String, BigDecimal, String, String, String, Integer>> metadataQuery = dsl.select(
+
+			// What is the syntax for selecting tzName and offsetField from the same subquery?
+			// It works when each field comes from its own subquery.
+			// This didn't work.
+			//			Field<?>[] fields = DSL.select(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET.as("INTERVAL_UTC_OFFSET"),
+			//					AV_CWMS_TS_ID2.TIME_ZONE_ID.as("TIME_ZONE_ID"))
+			//					.from(AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId))
+			//					.fields();
+			//			Field<BigDecimal> offsetField = (Field<BigDecimal>) fields[0];
+			//			Field<String> tzName = (Field<String>) fields[1];
+
+			Field<BigDecimal> offsetField = DSL.select(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET.as("INTERVAL_UTC_OFFSET"))
+					.from(AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)
+							.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull()))
+					.asField();
+			Field<String> tzName;
+			if( this.getDbVersion() >= Dao.CWMS_21_1_1) {
+				tzName = DSL.select(AV_CWMS_TS_ID2.TIME_ZONE_ID).from(AV_CWMS_TS_ID2).where(
+						AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)
+								.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
+				).asField("TIME_ZONE_ID");
+			} else {
+				tzName = DSL.val((String) null).as("TIME_ZONE_ID");
+			}
+
+			SelectSelectStep< ? extends Record> metadataQuery = dsl.select(
 					tsId.as("NAME"),
 					officeId.as("OFFICE_ID"),
 					unit.as("UNITS"),
@@ -215,7 +234,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 							.as("VERTICAL_DATUM"),
 					// If we don't know the total, fetch it from the database (only for first fetch).
 					// Total is only an estimate, as it can change if fetching current data, or the timeseries otherwise changes between queries.
-					total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL"));
+					total != null ? DSL.val(total).as("TOTAL") : DSL.selectCount().from(retrieveTable).asField("TOTAL"),
+					offsetField,
+					tzName
+			);
 
 			logger.finest(() -> metadataQuery.getSQL(ParamType.INLINED));
 
@@ -227,7 +249,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						tsMetadata.getValue("NAME", String.class), tsMetadata.getValue("OFFICE_ID", String.class),
 						beginTime, endTime, tsMetadata.getValue("UNITS", String.class),
 						Duration.ofMinutes(tsMetadata.get("INTERVAL") == null ? 0 : tsMetadata.getValue("INTERVAL", Long.class)),
-						verticalDatumInfo
+						verticalDatumInfo,
+						tsMetadata.getValue(offsetField).longValue(),
+						tsMetadata.getValue(tzName)
 				);
 			});
 
@@ -336,26 +360,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		String tsCursor = "*";
 		if( page == null || page.isEmpty() ){
 
-			Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike)
+			Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.upper().likeRegex(idLike.toUpperCase())
 								  .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 			if( office.isPresent() ){
-				condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.get()));
+				condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 			}
 
 			if(locCategoryLike != null){
-				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(locCategoryLike));
+				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.upper().likeRegex(locCategoryLike.toUpperCase()));
 			}
 
 			if(locGroupLike != null){
-				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(locGroupLike));
+				condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.upper().likeRegex(locGroupLike.toUpperCase()));
 			}
 
 			if(tsCategoryLike != null){
-				condition.and(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.likeRegex(tsCategoryLike));
+				condition.and(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.upper().likeRegex(tsCategoryLike.toUpperCase()));
 			}
 
 			if(tsGroupLike != null){
-				condition.and(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.likeRegex(tsGroupLike));
+				condition.and(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.upper().likeRegex(tsGroupLike.toUpperCase()));
 			}
 
 			SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
@@ -393,26 +417,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 		// add the regexp_like clause.
-		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.likeRegex(idLike));
+		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().likeRegex(idLike.toUpperCase()));
 
 		if( office.isPresent() ){
 			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
 		}
 
 		if(locCategoryLike != null){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.likeRegex(locCategoryLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.upper().likeRegex(locCategoryLike.toUpperCase()));
 		}
 
 		if(locGroupLike != null){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.likeRegex(locGroupLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.upper().likeRegex(locGroupLike.toUpperCase()));
 		}
 
 		if(tsCategoryLike != null){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.likeRegex(tsCategoryLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.upper().likeRegex(tsCategoryLike.toUpperCase()));
 		}
 
 		if(tsGroupLike != null){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.likeRegex(tsGroupLike));
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.upper().likeRegex(tsGroupLike.toUpperCase()));
 		}
 
 		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
@@ -452,7 +476,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						.units(row.get(AV_CWMS_TS_ID2.UNIT_ID) )
 						.interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
 						.intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
-						if( this.getDbVersion() > TimeSeriesDaoImpl.CWMS_21_1_1){
+						if( this.getDbVersion() > Dao.CWMS_21_1_1){
 							builder.timeZone(row.get("TIME_ZONE_ID",String.class));
 						}
 				tsIdExtentMap.put(tsId, builder);
@@ -783,7 +807,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		final boolean createAsLrts = false;
 		StoreRule storeRule = StoreRule.DELETE_INSERT;
 
-		long completedAt = tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
+		tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
 				storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
 	}
 

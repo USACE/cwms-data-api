@@ -57,7 +57,7 @@ public class BlobDao extends JooqDao<Blob>
 		ResultQuery<Record> query;
 		if(limitToOffice.isPresent())
 		{
-			queryStr = queryStr + " and CWMS_OFFICE.OFFICE_ID = ?";
+			queryStr = queryStr + " and upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
 			query = dsl.resultQuery(queryStr, limitToOffice.get());
 		} else {
 			query = dsl.resultQuery(queryStr);
@@ -79,13 +79,14 @@ public class BlobDao extends JooqDao<Blob>
 				+ " FROM CWMS_20.AT_BLOB \n" +
 				"join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
 				+ "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
-				+ " where REGEXP_LIKE (AT_BLOB.ID, ?)"
+				+ " where REGEXP_LIKE (upper(AT_BLOB.ID), upper(?))"
 				;
+
 
 		ResultQuery<Record> query;
 		if(limitToOffice.isPresent())
 		{
-			queryStr = queryStr + " and CWMS_OFFICE.OFFICE_ID = ?";
+			queryStr = queryStr + " and upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
 			query = dsl.resultQuery(queryStr, like, limitToOffice.get());
 		} else {
 			query = dsl.resultQuery(queryStr, like);

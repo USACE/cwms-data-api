@@ -24,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.DurationAdapter;
 import cwms.radar.formatters.xml.adapters.TimestampAdapter;
@@ -73,14 +75,27 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     VerticalDatumInfo verticalDatumInfo;
 
+    @Schema(description="Offset from top of interval")
+    @XmlElement(name="interval-offset")
+    private Long intervalOffset;
+
+    @Schema( description = "Only on 21.1.1 Database. The timezone the Interval Offset is from.")
+    @XmlElement(name="time-zone")
+    private String timeZone;
+
+
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     private TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
-        this(page, pageSize, total, name, officeId, begin, end, units, interval, null);
+        this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info) {
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info){
+        this(page, pageSize, total, name, officeId, begin, end, units, interval, info, null, null);
+    }
+
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
@@ -89,6 +104,8 @@ public class TimeSeries extends CwmsDTOPaginated {
         this.interval = interval;
         this.units = units;
         this.verticalDatumInfo = info;
+        this.intervalOffset = intervalOffset;
+        this.timeZone = timeZone;
         values = new ArrayList<>();
     }
 
@@ -131,6 +148,13 @@ public class TimeSeries extends CwmsDTOPaginated {
         return verticalDatumInfo;
     }
 
+    public Long getIntervalOffset() {
+        return intervalOffset;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
 
     @XmlElementWrapper(name="value-columns")
     @XmlElement(name="column")
@@ -192,6 +216,8 @@ public class TimeSeries extends CwmsDTOPaginated {
 
         return columns;
     }
+
+
 
     @Schema(name = "TimeSeries.Record", description = "A representation of a time-series record")
     @XmlAccessorType(XmlAccessType.FIELD)
@@ -297,5 +323,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         public String getDatatype() {
             return datatype.getTypeName();
         }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        // TODO Auto-generated method stub
+
     }
 }

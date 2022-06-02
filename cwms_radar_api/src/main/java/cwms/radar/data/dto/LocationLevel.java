@@ -4,10 +4,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
+import cwms.radar.api.errors.ExclusiveFieldsException;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.RequiredFieldException;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -19,19 +25,38 @@ import java.util.function.Consumer;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class LocationLevel implements CwmsDTO
 {
+    @JsonProperty(required = true)
+    @Schema(description = "Name of the location level")
+    private final String locationLevelId;
+    @JsonProperty(required = true)
+    @Schema(description = "Owning office of the level")
+    private final String officeId;
+    @Schema(description="Timeseries ID (e.g. from the times series catalog) to use as the location level. Mutually exclusive with seasonalValues and siParameterUnitsConstantValue")
     private final String seasonalTimeSeriesId;
+    @Schema(description="List of Repeating seasonal values. The values repeater after the specified interval."
+                            + " A yearly interval seasonable could have 12 different values, one for each month for"
+                            + " example. Mutually exclusive with seasonalTimeSeriesId and siParameterUnitsConstantValue")
     private final List<SeasonalValueBean> seasonalValues;
+    @Schema(description="Generic name of this location level. Common names are 'Top of Dam', 'Streambed', 'Bottom of Dam'.")
     private final String specifiedLevelId;
+    @Schema(description="To indicate if single or aggregate value", allowableValues = {"Inst","Ave","Min","Max","Total"})
     private final String parameterTypeId;
+    @Schema(description="Data Type such as Stage, Elevation, or others.")
     private final String parameterId;
-    private final Double siParameterUnitsConstantValue;
+    @Schema(description="Single value for this location level. Mutually exclusive with seasonableTimeSeriesId and seasonValues.")
+    private final Double constantValue;
+    @Schema(description="Units thhe provided levels are in")
     private final String levelUnitsId;
+    @Schema(description="The date/time at which this location level configuration takes affect.")
     private final ZonedDateTime levelDate;
     private final String levelComment;
+    @Schema(description="The start point of provided seasonal values")
     private final ZonedDateTime intervalOrigin;
     private final Integer intervalMonths;
     private final Integer intervalMinutes;
+    @Schema(description="Indicating whether or not to interpolate between seasonal values.", allowableValues = {"T","F"})
     private final String interpolateString;
+    @Schema(description="0 if parameterTypeId is Inst. Otherwise duration indicating the time window of the aggregate value.")
     private final String durationId;
     private final BigDecimal attributeValue;
     private final String attributeUnitsId;
@@ -39,8 +64,6 @@ public final class LocationLevel implements CwmsDTO
     private final String attributeParameterId;
     private final String attributeDurationId;
     private final String attributeComment;
-    private final String locationId;
-    private final String officeId;
 
     private LocationLevel(Builder builder)
     {
@@ -49,7 +72,7 @@ public final class LocationLevel implements CwmsDTO
         specifiedLevelId = builder.specifiedLevelId;
         parameterTypeId = builder.parameterTypeId;
         parameterId = builder.parameterId;
-        siParameterUnitsConstantValue = builder.siParameterUnitsConstantValue;
+        constantValue = builder.constantValue;
         levelUnitsId = builder.levelUnitsId;
         levelDate = builder.levelDate;
         levelComment = builder.levelComment;
@@ -64,7 +87,7 @@ public final class LocationLevel implements CwmsDTO
         attributeParameterId = builder.attributeParameterId;
         attributeDurationId = builder.attributeDurationId;
         attributeComment = builder.attributeComment;
-        locationId = builder.locationId;
+        locationLevelId = builder.locationId;
         officeId = builder.officeId;
     }
 
@@ -93,9 +116,9 @@ public final class LocationLevel implements CwmsDTO
         return parameterId;
     }
 
-    public Double getSiParameterUnitsConstantValue()
+    public Double getConstantValue()
     {
-        return siParameterUnitsConstantValue;
+        return constantValue;
     }
 
     public String getLevelUnitsId()
@@ -168,9 +191,9 @@ public final class LocationLevel implements CwmsDTO
         return attributeComment;
     }
 
-    public String getLocationId()
+    public String getLocationLevelId()
     {
-        return locationId;
+        return locationLevelId;
     }
 
     public String getOfficeId()
@@ -187,7 +210,7 @@ public final class LocationLevel implements CwmsDTO
         private String specifiedLevelId;
         private String parameterTypeId;
         private String parameterId;
-        private Double siParameterUnitsConstantValue;
+        private Double constantValue;
         private String levelUnitsId;
         private ZonedDateTime levelDate;
         private String levelComment;
@@ -205,9 +228,9 @@ public final class LocationLevel implements CwmsDTO
         private String locationId;
         private String officeId;
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
-        
+
         @JsonCreator
-        public Builder(@JsonProperty(value = "location-id") String name, @JsonProperty(value = "level-date") ZonedDateTime effectiveDate)
+        public Builder(@JsonProperty(value = "location-level-id", required = true ) String name, @JsonProperty(value = "level-date", required=true) ZonedDateTime effectiveDate)
         {
             locationId = name;
             levelDate = effectiveDate;
@@ -219,7 +242,7 @@ public final class LocationLevel implements CwmsDTO
             withAttributeComment(copyFrom.getAttributeComment());
             withAttributeDurationId(copyFrom.getAttributeDurationId());
             withAttributeParameterId(copyFrom.getAttributeParameterId());
-            withLocationId(copyFrom.getLocationId());
+            withLocationLevelId(copyFrom.getLocationLevelId());
             withAttributeValue(copyFrom.getAttributeValue());
             withAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
             withAttributeUnitsId(copyFrom.getAttributeUnitsId());
@@ -236,7 +259,7 @@ public final class LocationLevel implements CwmsDTO
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
             withSeasonalValues(copyFrom.getSeasonalValues());
-            withSiParameterUnitsConstantValue(copyFrom.getSiParameterUnitsConstantValue());
+            withConstantValue(copyFrom.getConstantValue());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
             buildPropertyFunctions();
         }
@@ -245,14 +268,14 @@ public final class LocationLevel implements CwmsDTO
         private void buildPropertyFunctions()
         {
             propertyFunctionMap.clear();
-            propertyFunctionMap.put("location-id", nameVal -> withLocationId((String)nameVal));
+            propertyFunctionMap.put("location-level-id", nameVal -> withLocationLevelId((String)nameVal));
             propertyFunctionMap.put("seasonal-time-series-id", tsIdVal -> withSeasonalTimeSeriesId((String)tsIdVal));
             propertyFunctionMap.put("seasonal-values", seasonalVals -> withSeasonalValues((List<SeasonalValueBean>)seasonalVals));
             propertyFunctionMap.put("office-id", officeIdVal -> withOfficeId((String)officeIdVal));
             propertyFunctionMap.put("specified-level-id", specifiedLevelIdVal -> withSpecifiedLevelId((String)specifiedLevelIdVal));
             propertyFunctionMap.put("parameter-type-id", parameterTypeIdVal -> withParameterTypeId((String)parameterTypeIdVal));
             propertyFunctionMap.put("parameter-id", parameterIdVal -> withParameterId((String)parameterIdVal));
-            propertyFunctionMap.put("si-parameter-units-constant-value", paramUnitsConstVal -> withSiParameterUnitsConstantValue((Double)paramUnitsConstVal));
+            propertyFunctionMap.put("si-parameter-units-constant-value", paramUnitsConstVal -> withConstantValue((Double)paramUnitsConstVal));
             propertyFunctionMap.put("level-units-id", levelUnitsIdVal -> withLevelUnitsId((String)levelUnitsIdVal));
             propertyFunctionMap.put("level-date", levelDateVal -> withLevelDate((ZonedDateTime)levelDateVal));
             propertyFunctionMap.put("level-comment", levelCommentVal -> withLevelComment((String)levelCommentVal));
@@ -311,9 +334,9 @@ public final class LocationLevel implements CwmsDTO
             return this;
         }
 
-        public Builder withSiParameterUnitsConstantValue(Double siParameterUnitsConstantValue)
+        public Builder withConstantValue(Double constantValue)
         {
-            this.siParameterUnitsConstantValue = siParameterUnitsConstantValue;
+            this.constantValue = constantValue;
             return this;
         }
 
@@ -401,7 +424,7 @@ public final class LocationLevel implements CwmsDTO
             return this;
         }
 
-        public Builder withLocationId(String locationId)
+        public Builder withLocationLevelId(String locationId)
         {
             this.locationId = locationId;
             return this;
@@ -416,6 +439,28 @@ public final class LocationLevel implements CwmsDTO
         public LocationLevel build()
         {
             return new LocationLevel(this);
+        }
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        ArrayList<String> fields = new ArrayList<>();
+        if( seasonalValues != null ) {
+            fields.add("seasonal-values");
+        }
+
+        if( constantValue != null ){
+            fields.add("constant-value");
+        }
+
+        if( seasonalTimeSeriesId != null ){
+            fields.add("seasonable-time-series-id");
+        }
+        if( fields.size() == 0 ){
+            throw new RequiredFieldException(Arrays.asList("seasonal-values","constant-value","season-time-series-id"));
+        }
+        if( fields.size() != 1 ){
+            throw new ExclusiveFieldsException(fields);
         }
     }
 }

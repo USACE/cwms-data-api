@@ -3,6 +3,7 @@ package cwms.radar.data.dto;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cwms.radar.api.errors.FieldException;
 import usace.cwms.db.dao.ifc.pool.PoolNameType;
 import usace.cwms.db.dao.ifc.pool.PoolType;
 
@@ -229,6 +230,12 @@ public class Pool extends PoolType implements CwmsDTO
 
 			return this;
 		}
+	}
+
+	@Override
+	public void validate() throws FieldException {
+		// TODO Auto-generated method stub
+
 	}
 
 

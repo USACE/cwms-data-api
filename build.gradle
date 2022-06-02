@@ -31,13 +31,19 @@ subprojects {
 
     repositories {
         mavenLocal()
-	    mavenCentral()
-        maven {
-            url = uri('https://repo.maven.apache.org/maven2')
-        }
         maven {
             url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
         }
+
+        mavenCentral().content {
+            // The jai_core on maven central has the pom but not the jar.
+            excludeModule("javax.media", "jai_core")
+        }
+
+        maven {
+            url = uri('https://repo.maven.apache.org/maven2')
+        }
+
     }
 
     tasks.withType(JavaCompile) {

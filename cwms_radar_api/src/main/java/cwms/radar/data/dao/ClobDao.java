@@ -117,8 +117,8 @@ public class ClobDao extends JooqDao<Clob>
 				dsl.select(count(asterisk()))
 				   .from(v_clob)
 				   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-				   .where(v_clob.ID.likeRegex(like))
-				   .and(v_office.OFFICE_ID.like(office.isPresent() ? office.get() : "%"));
+				   .where(v_clob.ID.upper().likeRegex(like.toUpperCase()))
+				   .and(v_office.OFFICE_ID.upper().like(office.isPresent() ? office.get().toUpperCase() : "%"));
 
 			total = count.fetchOne().value1().intValue();
 		} else {
@@ -155,7 +155,7 @@ public class ClobDao extends JooqDao<Clob>
 									   .from(v_clob)
 									   //.innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
 									   .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-									   .where(v_clob.ID.likeRegex(like))
+									   .where(v_clob.ID.upper().likeRegex(like.toUpperCase()))
 									   .and(v_clob.ID.upper().greaterThan(clobCursor))
 									   .orderBy(v_clob.ID).limit(pageSize);
 									   ;
@@ -183,10 +183,10 @@ public class ClobDao extends JooqDao<Clob>
 		AV_CLOB ac = AV_CLOB.AV_CLOB;
 		AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
 
-		Condition cond = ac.ID.like(idLike);
+		Condition cond = ac.ID.upper().like(idLike.toUpperCase());
 		if(office != null && !office.isEmpty())
 		{
-			cond = cond.and(ao.OFFICE_ID.eq(office));
+			cond = cond.and(ao.OFFICE_ID.upper().eq(office.toUpperCase()));
 		}
 
 		RecordMapper<Record, Clob> mapper = joinRecord ->

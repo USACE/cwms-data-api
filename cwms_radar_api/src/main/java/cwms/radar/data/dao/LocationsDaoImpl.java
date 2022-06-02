@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import cwms.radar.api.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
+import cwms.radar.api.errors.RequiredFieldException;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.Location;
@@ -126,7 +127,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
     @Override
     public void storeLocation(Location location) throws IOException
     {
-        validateLocation(location);
+        location.validate();
         try
         {
             dsl.connection(c ->
@@ -143,51 +144,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Failed to store Location");
-        }
-    }
-
-    private void validateLocation(Location location) throws IOException
-    {
-        String missingField = null;
-        if(location.getName() == null)
-        {
-            missingField = "Name";
-        }
-        if(location.getLocationKind() == null)
-        {
-            missingField = "Location Kind";
-        }
-        if(location.getTimezoneName() == null)
-        {
-            missingField = "Timezone ID";
-        }
-        if(location.getOfficeId() == null)
-        {
-            missingField = "Office ID";
-        }
-        if(location.getHorizontalDatum() == null)
-        {
-            missingField = "Horizontal Datum";
-        }
-        if(location.getLongitude() == null)
-        {
-            missingField = "Longitude";
-        }
-        if(location.getLatitude() == null)
-        {
-            missingField = "Latitude";
-        }
-        if(missingField != null)
-        {
-            throw new IOException("Missing required field: " + missingField);
+            throw new IOException("Failed to store Location",ex);
         }
     }
 
     @Override
     public void renameLocation(String oldLocationName, Location renamedLocation) throws IOException
     {
-        validateLocation(renamedLocation);
+        renamedLocation.validate();
         try
         {
             dsl.connection(c ->
@@ -203,7 +167,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         }
         catch(DataAccessException ex)
         {
-            throw new IOException("Failed to rename Location");
+            throw new IOException("Failed to rename Location",ex);
         }
     }
 
@@ -389,7 +353,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         Condition condition = AV_LOC.UNIT_SYSTEM.eq(unitSystem);
 
         if(idLike != null){
-            condition = condition.and(AV_LOC.LOCATION_ID.likeRegex(idLike));
+            condition = condition.and(AV_LOC.LOCATION_ID.upper().likeRegex(idLike.toUpperCase()));
         }
 
         if( office.isPresent() ){
@@ -404,11 +368,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao
         Condition condition = buildCatalogWhere(unitSystem, office, idLike);
 
         if(categoryLike != null){
-            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.likeRegex(categoryLike));
+            condition = condition.and(AV_LOC_GRP_ASSGN.CATEGORY_ID.upper().likeRegex(categoryLike.toUpperCase()));
         }
 
         if(groupLike != null){
-            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.likeRegex(groupLike));
+            condition = condition.and(AV_LOC_GRP_ASSGN.GROUP_ID.upper().likeRegex(groupLike.toUpperCase()));
         }
 
         return condition;

@@ -7,6 +7,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a timeseries group")
@@ -151,5 +153,11 @@ public class TimeSeriesGroup implements CwmsDTO
 		result = 31 * result + (getSharedRefTsId() != null ? getSharedRefTsId().hashCode() : 0);
 		result = 31 * result + (assignedTimeSeries != null ? assignedTimeSeries.hashCode() : 0);
 		return result;
+	}
+
+	@Override
+	public void validate() throws FieldException {
+		// TODO Auto-generated method stub
+
 	}
 }

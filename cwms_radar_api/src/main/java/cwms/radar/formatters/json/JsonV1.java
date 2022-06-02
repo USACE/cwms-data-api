@@ -58,6 +58,7 @@ public class JsonV1 implements OutputFormatter{
 		this.om = om.copy();
 		this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
 		this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		this.om.registerModule(new JavaTimeModule());
 	}
 
 	@NotNull

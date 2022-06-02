@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationLevelsDao;
 import cwms.radar.data.dao.LocationLevelsDaoImpl;
@@ -94,21 +96,17 @@ public class LevelsController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             LocationLevel level = deserializeLocationLevel(ctx.body(),formatHeader, office);
-            ZonedDateTime unmarshalledDateTime = getUnmarshalledDateTime(ctx.body(), contentType.getType());
+
+            ZonedDateTime unmarshalledDateTime = level.getLevelDate(); //getUnmarshalledDateTime(ctx.body(), contentType.getType());
             ZoneId timezoneId = unmarshalledDateTime.getZone();
             if(timezoneId == null)
             {
                 timezoneId = ZoneId.systemDefault();
             }
             level = new LocationLevel.Builder(level).withLevelDate(unmarshalledDateTime).build();
+            level.validate();
             levelsDao.storeLocationLevel(level, timezoneId);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location Level");
-        }
-        catch(Exception ex)
-        {
-            RadarError re = new RadarError("failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -126,7 +124,7 @@ public class LevelsController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = "cascade-delete", type = Boolean.class),
                     @OpenApiParam(name = "office", description = "Specifies the owning office of the location level whose data is to be deleted. If this field is not specified, matching location level information will be deleted from all offices."),
-                    @OpenApiParam(name = "date", description = "Specifies the effective date of the level to be deleted")
+                    @OpenApiParam(name = "date", description = "Specifies the effective date of the level to be deleted. If not provided will delete all data and reference to the location level.")
             },
             description = "Delete CWMS Location Level",
             method = HttpMethod.DELETE,
@@ -144,7 +142,7 @@ public class LevelsController implements CrudHandler {
             String dateString = ctx.queryParam("date");
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam("cascade-delete"));
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
+            ZonedDateTime unmarshalledDateTime = dateString != null ? zonedDateTimeAdapter.unmarshal(dateString) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(id, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(id + " Deleted");
@@ -267,7 +265,7 @@ public class LevelsController implements CrudHandler {
             //only store (update) if level does exist
             LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel, levelFromBody);
             updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel).withLevelDate(unmarshalledDateTime).build();
-            if(!updatedLocationLevel.getLocationId().equalsIgnoreCase(existingLevelLevel.getLocationId())) //if name changed then delete location with old name
+            if(!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(existingLevelLevel.getLocationLevelId())) //if name changed then delete location with old name
             {
                 levelsDao.renameLocationLevel(id, updatedLocationLevel);
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location Level");
@@ -293,7 +291,7 @@ public class LevelsController implements CrudHandler {
         String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
         String parameterTypeId = (updatedLevel.getParameterTypeId() == null ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
         String parameterId = (updatedLevel.getParameterId() == null ? existingLevel.getParameterId() : updatedLevel.getParameterId());
-        Double siParameterUnitsConstantValue = (updatedLevel.getSiParameterUnitsConstantValue() == null ? existingLevel.getSiParameterUnitsConstantValue() : updatedLevel.getSiParameterUnitsConstantValue());
+        Double siParameterUnitsConstantValue = (updatedLevel.getConstantValue() == null ? existingLevel.getConstantValue() : updatedLevel.getConstantValue());
         String levelUnitsId = (updatedLevel.getLevelUnitsId() == null ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
         ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
         String levelComment = (updatedLevel.getLevelComment() == null ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
@@ -308,7 +306,7 @@ public class LevelsController implements CrudHandler {
         String attributeParameterId = (updatedLevel.getAttributeParameterId() == null ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
         String attributeDurationId = (updatedLevel.getAttributeDurationId() == null ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
         String attributeComment = (updatedLevel.getAttributeComment() == null ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
-        String locationId = (updatedLevel.getLocationId() == null ? existingLevel.getLocationId() : updatedLevel.getLocationId());
+        String locationId = (updatedLevel.getLocationLevelId() == null ? existingLevel.getLocationLevelId() : updatedLevel.getLocationLevelId());
         String officeId = (updatedLevel.getOfficeId() == null ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
         if(existingLevel.getIntervalMonths() != null && existingLevel.getIntervalMonths() > 0)
         {
@@ -338,7 +336,7 @@ public class LevelsController implements CrudHandler {
                 .withSpecifiedLevelId(specifiedLevelId)
                 .withParameterTypeId(parameterTypeId)
                 .withParameterId(parameterId)
-                .withSiParameterUnitsConstantValue(siParameterUnitsConstantValue)
+                .withConstantValue(siParameterUnitsConstantValue)
                 .withLevelUnitsId(levelUnitsId)
                 .withLevelComment(levelComment)
                 .withIntervalOrigin(intervalOrigin)
@@ -361,22 +359,21 @@ public class LevelsController implements CrudHandler {
         return new LocationLevelsDaoImpl(dsl);
     }
 
-    public static LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
-    {
+    public static LocationLevel deserializeLocationLevel(String body, String format, String office) {
         ObjectMapper om = getObjectMapperForFormat(format);
         LocationLevel retVal;
-        try
-        {
+
+        try {
             retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
                     .withOfficeId(office)
                     .build();
+            return retVal;
+        } catch (JsonProcessingException e) {
+            throw new JsonFieldsException(e);
         }
-        catch(Exception e)
-        {
-            logger.log(Level.SEVERE, "Failed to deserialize level", e);
-            throw new IOException("Failed to deserialize level");
-        }
-        return retVal;
+
+
+
     }
 
     private static ObjectMapper getObjectMapperForFormat(String format)

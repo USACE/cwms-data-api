@@ -4,11 +4,19 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import cwms.radar.api.errors.FieldException;
+
+
+
 @XmlRootElement(name="clob")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Clob implements CwmsDTO
 {
+	@JsonProperty(required = true)
 	private String office;
+	@JsonProperty(required = true)
 	private String id;
 	private String description;
 	private String value;
@@ -49,5 +57,9 @@ public class Clob implements CwmsDTO
 		StringBuilder builder = new StringBuilder();
 		builder.append(getOffice()).append("/").append(id).append(";description=").append(description);
 		return builder.toString();
+	}
+
+	@Override
+	public void validate() throws FieldException {
 	}
 }
