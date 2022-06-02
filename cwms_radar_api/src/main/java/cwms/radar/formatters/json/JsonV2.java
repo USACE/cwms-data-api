@@ -17,6 +17,10 @@ import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.Pool;
 import cwms.radar.data.dto.Pools;
 import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.data.dto.rating.RatingSpec;
+import cwms.radar.data.dto.rating.RatingSpecs;
+import cwms.radar.data.dto.rating.RatingTemplate;
+import cwms.radar.data.dto.rating.RatingTemplates;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
@@ -32,7 +36,8 @@ import service.annotations.FormatService;
 	Clobs.class,
 	Pool.class,
 	Pools.class,
-	Blobs.class
+	Blobs.class,
+	RatingTemplate.class, RatingTemplates.class, RatingSpec.class, RatingSpecs.class
 })
 public class JsonV2 implements OutputFormatter {
 

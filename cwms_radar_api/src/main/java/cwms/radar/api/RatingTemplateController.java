@@ -49,26 +49,24 @@ public class RatingTemplateController implements CrudHandler {
     }
 
 
-
     @OpenApi(
         queryParams = {
             @OpenApiParam(name="office", description="Specifies the owning office of the Rating Templates whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
             @OpenApiParam(name="template-id-mask", description="RegExp that specifies the rating template IDs to be included in the response. If this field is not specified, all rating templates shall be returned."),
-                @OpenApiParam(name="page",
-                        description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
-                ),
-                @OpenApiParam(name="page-size",
-                        type=Integer.class,
-                        description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
-                ),
+            @OpenApiParam(name="page",
+                description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+            ),
+            @OpenApiParam(name="page-size",
+                type=Integer.class,
+                description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
+            ),
         },
-            responses = {
-                    @OpenApiResponse(status = "200",
-                            content = {
-                                    @OpenApiContent(from = RatingTemplates.class, type = Formats.JSON),
-                            }
-
-                    )},
+        responses = {
+            @OpenApiResponse(status = "200",
+                content = {
+                    @OpenApiContent(from = RatingTemplates.class, type = Formats.JSONV2),
+                }
+            )},
         tags = {"Ratings"}
     )
     @Override
@@ -110,20 +108,19 @@ public class RatingTemplateController implements CrudHandler {
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = "template-id", required = true, description = "Specifies the template whose data is to be included in the response")
-            },
-            queryParams = {
-                    @OpenApiParam(name="office", required=true, description="Specifies the owning office of the Rating Templates whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
-            },
-            responses = {
-                    @OpenApiResponse(status = "200",
-                            content = {
-                                    @OpenApiContent(isArray = true, from = RatingTemplate.class, type = Formats.JSON),
-                            }
-
-                    )},
-            tags = {"Ratings"}
+        pathParams = {
+            @OpenApiParam(name = "template-id", required = true, description = "Specifies the template whose data is to be included in the response")
+        },
+        queryParams = {
+            @OpenApiParam(name="office", required=true, description="Specifies the owning office of the Rating Templates whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
+        },
+        responses = {
+            @OpenApiResponse(status = "200",
+                content = {
+                    @OpenApiContent(isArray = true, from = RatingTemplate.class, type = Formats.JSONV2),
+                }
+            )},
+        tags = {"Ratings"}
     )
     @Override
     public void getOne(Context ctx, String templateId) {
@@ -147,10 +144,7 @@ public class RatingTemplateController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 RadarError re = new RadarError("Unable to find Rating Template based on parameters given");
-                logger.info( () -> new StringBuilder()
-                        .append(re).append(System.lineSeparator())
-                        .append( "for request ").append( ctx.fullUrl() )
-                        .toString());
+                logger.info( () -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
             }
         }

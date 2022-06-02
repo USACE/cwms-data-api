@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
@@ -22,16 +21,11 @@ import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
-import cwms.radar.data.dto.rating.RatingSpec;
-import cwms.radar.data.dto.rating.RatingSpecs;
-import cwms.radar.data.dto.rating.RatingTemplate;
-import cwms.radar.data.dto.rating.RatingTemplates;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
-
 import org.jetbrains.annotations.NotNull;
 import service.annotations.FormatService;
 
@@ -46,8 +40,7 @@ import service.annotations.FormatService;
 				   Clob.class,
 				   Clobs.class,
 				   TimeSeriesGroup.class,
-				   RecentValue.class,
-				   RatingTemplate.class, RatingTemplates.class, RatingSpec.class, RatingSpecs.class
+				   RecentValue.class
 				})
 public class JsonV1 implements OutputFormatter{
 

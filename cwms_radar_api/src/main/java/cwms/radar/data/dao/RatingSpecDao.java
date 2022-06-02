@@ -31,7 +31,7 @@ import org.jooq.util.oracle.OracleDSL;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
-import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndRoundingSpecs;
+import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
 
 public class RatingSpecDao extends JooqDao<RatingSpec>
 {
@@ -47,12 +47,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		Set<RatingSpec> retval;
 
 		Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-				.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
-				.and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull())
-				.and(AV_RATING.AV_RATING.ALIASED_ITEM.isNull())
-				;
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
+			.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
+			.and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull())
+			.and(AV_RATING.AV_RATING.ALIASED_ITEM.isNull());
 
 		if( office != null ) {
 			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
@@ -63,31 +62,30 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		}
 
 		ResultQuery< ? extends Record> query = dsl.select(
-						AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
-						AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
-						AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
-						AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
-						AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
-						AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
-						AV_RATING.AV_RATING.EFFECTIVE_DATE
-				)
-				.from(AV_RATING_SPEC.AV_RATING_SPEC)
-				.leftOuterJoin(AV_RATING.AV_RATING)
-				.on(
-						AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(AV_RATING.AV_RATING.RATING_ID))
-				.where(condition)
-				.fetchSize(1000)
-				;
+				AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
+				AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
+				AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
+				AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
+				AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
+				AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
+				AV_RATING.AV_RATING.EFFECTIVE_DATE
+			)
+			.from(AV_RATING_SPEC.AV_RATING_SPEC)
+			.leftOuterJoin(AV_RATING.AV_RATING)
+			.on(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(AV_RATING.AV_RATING.RATING_ID))
+			.where(condition)
+			.fetchSize(1000)
+		;
 
-//				logger.info(() -> query.getSQL(ParamType.INLINED));
+		//	logger.info(() -> query.getSQL(ParamType.INLINED));
 
 		Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
 		query.fetchStream().forEach(rec -> {
@@ -104,11 +102,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		});
 
 		retval = map.entrySet().stream()
-				.map( entry -> new RatingSpec.Builder()
-						.fromRatingSpec(entry.getKey())
-						.withEffectiveDates(entry.getValue())
-						.build())
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+			.map( entry -> new RatingSpec.Builder()
+				.fromRatingSpec(entry.getKey())
+				.withEffectiveDates(entry.getValue())
+				.build())
+			.collect(Collectors.toCollection(LinkedHashSet::new));
 
 		return retval;
 	}
@@ -123,8 +121,6 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		if(cursor != null && !cursor.isEmpty())
 		{
 			String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
-
-//			logger.info("decoded cursor: " + Arrays.toString(parts));
 
 			if(parts.length > 2) {
 				offset = Integer.parseInt(parts[0]);
@@ -152,9 +148,9 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		Set<RatingSpec> retval;
 
 		Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-				;
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
+			;
 
 		if( office != null ) {
 			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
@@ -165,49 +161,48 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		}
 
 		Condition ratingAliasNullCond = AV_RATING.AV_RATING.ALIASED_ITEM.isNull().and(
-				AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull()).and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull());
+			AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull()).and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull());
 
 		SelectLimitStep<? extends  Record> innerSelect = dsl.select(
-				OracleDSL.rownum().as("rnum"), AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
-				AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID, AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
-				AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID, AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
-				AV_RATING_SPEC.AV_RATING_SPEC.VERSION, AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
-				AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG, AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
-				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG, AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
-				AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS, AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
-				AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION, AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM).from(
-				AV_RATING_SPEC.AV_RATING_SPEC).where(condition)
-				.orderBy(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID)
-				;
+			OracleDSL.rownum().as("rnum"), AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
+			AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID, AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
+			AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID, AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
+			AV_RATING_SPEC.AV_RATING_SPEC.VERSION, AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
+			AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG, AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
+			AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG, AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
+			AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS, AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
+			AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION, AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM).from(
+			AV_RATING_SPEC.AV_RATING_SPEC).where(condition)
+			.orderBy(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID);
 
 		ResultQuery< ? extends Record> query = dsl.select(
-						DSL.field(DSL.quotedName("rnum"), Integer.class),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.VERSION),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION),
-						innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM),
-						AV_RATING.AV_RATING.EFFECTIVE_DATE)
-				.from(innerSelect)
-				.leftOuterJoin(AV_RATING.AV_RATING)
-				.on(innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID).eq(AV_RATING.AV_RATING.RATING_ID))
-				.where(ratingAliasNullCond
-						// This is the limit condition - the whole reason for the weird query....rnum starts at 1...
-						.and(DSL.field(DSL.quotedName("rnum")).greaterThan(firstRow))
-								.and(DSL.field(DSL.quotedName("rnum")).lessOrEqual(lastRow))
-						)
-				.orderBy(DSL.field(DSL.quotedName("rnum")),
-						AV_RATING.AV_RATING.EFFECTIVE_DATE.asc());
+				DSL.field(DSL.quotedName("rnum"), Integer.class),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.VERSION),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION),
+				innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM),
+				AV_RATING.AV_RATING.EFFECTIVE_DATE)
+			.from(innerSelect)
+			.leftOuterJoin(AV_RATING.AV_RATING)
+			.on(innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID).eq(AV_RATING.AV_RATING.RATING_ID))
+			.where(ratingAliasNullCond
+				// This is the limit condition - the whole reason for the weird query....rnum starts at 1...
+				.and(DSL.field(DSL.quotedName("rnum")).greaterThan(firstRow))
+						.and(DSL.field(DSL.quotedName("rnum")).lessOrEqual(lastRow))
+				)
+			.orderBy(DSL.field(DSL.quotedName("rnum")),
+				AV_RATING.AV_RATING.EFFECTIVE_DATE.asc());
 
 		logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -226,11 +221,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		});
 
 		retval = map.entrySet().stream()
-				.map( entry -> new RatingSpec.Builder()
-						.fromRatingSpec(entry.getKey())
-						.withEffectiveDates(entry.getValue())
-						.build())
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+			.map( entry -> new RatingSpec.Builder()
+				.fromRatingSpec(entry.getKey())
+				.withEffectiveDates(entry.getValue())
+				.build())
+			.collect(Collectors.toCollection(LinkedHashSet::new));
 		return retval;
 	}
 
@@ -240,42 +235,40 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		Set<RatingSpec> retval;
 
 		Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-				.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
-				.and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull())
-				.and(AV_RATING.AV_RATING.ALIASED_ITEM.isNull())
-				.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(specId))
-				;
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
+			.and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
+			.and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull())
+			.and(AV_RATING.AV_RATING.ALIASED_ITEM.isNull())
+			.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(specId))
+			;
 
 		if( office != null ) {
 			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
 		}
 
 		ResultQuery< ? extends Record> query = dsl.select(
-						AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
-						AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
-						AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
-						AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
-						AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
-						AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
-						AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
-						AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
-						AV_RATING.AV_RATING.EFFECTIVE_DATE
-				)
-				.from(AV_RATING_SPEC.AV_RATING_SPEC)
-				.leftOuterJoin(AV_RATING.AV_RATING)
-				.on(
-						AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(AV_RATING.AV_RATING.RATING_ID))
-				.where(condition)
-				.fetchSize(1000)
-				;
+				AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
+				AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
+				AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
+				AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
+				AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
+				AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
+				AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
+				AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
+				AV_RATING.AV_RATING.EFFECTIVE_DATE
+			)
+			.from(AV_RATING_SPEC.AV_RATING_SPEC)
+			.leftOuterJoin(AV_RATING.AV_RATING)
+			.on(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(AV_RATING.AV_RATING.RATING_ID))
+			.where(condition)
+			.fetchSize(1000);
 
 		//		logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -294,11 +287,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		});
 
 		retval = map.entrySet().stream()
-				.map( entry -> new RatingSpec.Builder()
-						.fromRatingSpec(entry.getKey())
-						.withEffectiveDates(entry.getValue())
-						.build())
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+			.map( entry -> new RatingSpec.Builder()
+				.fromRatingSpec(entry.getKey())
+				.withEffectiveDates(entry.getValue())
+				.build())
+			.collect(Collectors.toCollection(LinkedHashSet::new));
 
 		// There should only be one key in the map
 		if(retval.size()!= 1){
@@ -343,16 +336,22 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 
 			String dateMethods = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS);
 
-			retval = new RatingSpec.Builder().withOfficeId(officeId).withRatingId(ratingId)
-					.withTemplateId(templateId).withLocationId(locId).withVersion(version).withSourceAgency(agency)
-					.withActive(activeFlag).withAutoUpdate(autoUpdateFlag).withAutoActivate(autoActivateFlag)
-					.withAutoMigrateExtension(autoMigrateExtFlag)
-//					.withIndRoundingSpecsString(indRndSpecs)
-					.withIndRoundingSpecs(buildIndRoundingSpecs(indRndSpecs))
-
-					.withDepRoundingSpec(depRndSpecs).withDescription(desc)
-					.withDateMethods(dateMethods)
-					.build();
+			retval = new RatingSpec.Builder()
+				.withOfficeId(officeId)
+				.withRatingId(ratingId)
+				.withTemplateId(templateId)
+				.withLocationId(locId)
+				.withVersion(version)
+				.withSourceAgency(agency)
+				.withActive(activeFlag)
+				.withAutoUpdate(autoUpdateFlag)
+				.withAutoActivate(autoActivateFlag)
+				.withAutoMigrateExtension(autoMigrateExtFlag)
+				.withIndependentRoundingSpecs(buildIndependentRoundingSpecs(indRndSpecs))
+				.withDependentRoundingSpec(depRndSpecs)
+				.withDescription(desc)
+				.withDateMethods(dateMethods)
+				.build();
 		}
 
 		return retval;

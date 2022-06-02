@@ -3,27 +3,9 @@ package cwms.radar.data.dao;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import cwms.radar.data.dto.rating.ParameterSpec;
-import cwms.radar.data.dto.rating.RatingSpec;
-import cwms.radar.data.dto.rating.RatingTemplate;
-import kotlin.Pair;
-import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
-import org.jooq.ResultQuery;
 import org.jooq.exception.DataAccessException;
 
 import hec.data.RatingException;
@@ -31,13 +13,9 @@ import hec.data.cwmsRating.RatingSet;
 import usace.cwms.db.dao.ifc.rating.CwmsDbRating;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_RATING;
-import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
-import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 {
-	private static final Logger logger = Logger.getLogger(RatingSetDao.class.getName());
 	public RatingSetDao(DSLContext dsl)
 	{
 		super(dsl);
@@ -118,10 +96,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 	{
 		try
 		{
-			dsl.connection(c -> {
-				//				deleteWithRatingSet(c, officeId, ratingSpecId);
-				delete(c, officeId, ratingSpecId);
-			});
+			dsl.connection(c -> delete(c, officeId, ratingSpecId));
 		}
 		catch(DataAccessException ex)
 		{
@@ -161,9 +136,9 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 
 		try
 		{
-			dsl.connection(c -> {
-				deleteWithRatingSet(c, officeId, specificationId, effectiveDates); // This doesn't seem to work.
-			});
+			dsl.connection(c ->
+				deleteWithRatingSet(c, officeId, specificationId, effectiveDates) // This doesn't seem to work.
+			);
 		}
 		catch(DataAccessException ex)
 		{
@@ -198,8 +173,5 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(), names, format, unit, datum, start, end,
 				timezone, office);
 	}
-
-
-
 
 }

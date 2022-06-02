@@ -2,11 +2,11 @@ package cwms.radar.data.dto.rating;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.json.JsonV1;
+import cwms.radar.formatters.json.JsonV2;
 import org.junit.jupiter.api.Test;
 
-import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndRoundingSpecs;
+import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RatingSpecTest
@@ -20,7 +20,7 @@ public class RatingSpecTest
 
 		RatingSpec spec = buildRatingSpec(officeId, ratingId);
 
-		ObjectMapper om = new ObjectMapper();
+		ObjectMapper om = JsonV2.buildObjectMapper();
 		String serializedLocation = om.writeValueAsString(spec);
 		assertNotNull(serializedLocation);
 
@@ -34,7 +34,7 @@ public class RatingSpecTest
 
 		RatingSpec spec = buildRatingSpec(officeId, ratingId);
 
-		ObjectMapper om = JsonV1.buildObjectMapper();
+		ObjectMapper om = JsonV2.buildObjectMapper();
 		String serializedLocation = om.writeValueAsString(spec);
 		assertNotNull(serializedLocation);
 
@@ -71,9 +71,8 @@ public class RatingSpecTest
 				.withTemplateId(templateId).withLocationId(locId).withVersion(version).withSourceAgency(agency)
 				.withActive(activeFlag).withAutoUpdate(autoUpdateFlag).withAutoActivate(autoActivateFlag)
 				.withAutoMigrateExtension(autoMigrateExtFlag)
-				//				.withIndRoundingSpecsString(indRndSpecs)
-				.withIndRoundingSpecs(buildIndRoundingSpecs(indRndSpecs))
-				.withDepRoundingSpec(depRndSpecs).withDescription(desc)
+				.withIndependentRoundingSpecs(buildIndependentRoundingSpecs(indRndSpecs))
+				.withDependentRoundingSpec(depRndSpecs).withDescription(desc)
 				.withDateMethods(dateMethods)
 				.build();
 

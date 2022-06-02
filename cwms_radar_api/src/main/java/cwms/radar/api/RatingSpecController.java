@@ -57,20 +57,19 @@ public class RatingSpecController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name="office", description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
             @OpenApiParam(name="rating-id-mask", description="RegExp that specifies the rating IDs to be included in the response. If this field is not specified, all Rating Specs shall be returned."),
-                @OpenApiParam(name="page",
-                        description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
-                ),
-                @OpenApiParam(name="page-size", type=Integer.class,
-                        description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
-                ),
+            @OpenApiParam(name="page",
+                description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
+            ),
+            @OpenApiParam(name="page-size", type=Integer.class,
+                description = "How many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."
+            ),
         },
-            responses = {
-                    @OpenApiResponse(status = "200",
-                            content = {
-                                    @OpenApiContent(type = Formats.JSON, from = RatingSpecs.class)
-                            }
-
-                    )},
+        responses = {
+            @OpenApiResponse(status = "200",
+                content = {
+                    @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
+                }
+            )},
         tags = {"Ratings"}
     )
     @Override
@@ -103,24 +102,23 @@ public class RatingSpecController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
-
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = "rating-id", required = true, description = "Specifies the rating-id of the Rating Spec to be included in the response")
-            },
-            queryParams = {
-                    @OpenApiParam(name="office", required=true, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
-            },
-            responses = {
-                    @OpenApiResponse(status = "200",
-                            content = {
-                                    @OpenApiContent(isArray = true, from = RatingSpec.class, type = Formats.JSON),
-                            }
-
-                    )},
-            tags = {"Ratings"}
+        pathParams = {
+            @OpenApiParam(name = "rating-id", required = true, description = "Specifies the rating-id of the Rating Spec to be included in the response")
+        },
+        queryParams = {
+            @OpenApiParam(name="office", required=true, description="Specifies the owning office of the Rating Specs whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
+        },
+        responses = {
+            @OpenApiResponse(status = "200",
+                content = {
+                    @OpenApiContent(isArray = true, from = RatingSpec.class, type = Formats.JSONV2),
+                }
+            )
+        },
+        tags = {"Ratings"}
     )
     @Override
     public void getOne(Context ctx, String ratingId) {
@@ -144,10 +142,7 @@ public class RatingSpecController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 RadarError re = new RadarError("Unable to find Rating Spec based on parameters given");
-                logger.info( () -> new StringBuilder()
-                        .append(re).append(System.lineSeparator())
-                        .append( "for request ").append( ctx.fullUrl() )
-                        .toString());
+                logger.info( () -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
             }
         }

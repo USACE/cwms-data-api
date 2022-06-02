@@ -34,13 +34,12 @@ public class RatingSpec implements CwmsDTO
 	private final boolean autoUpdate;
 	private final boolean autoActivate;
 	private final boolean autoMigrateExtension;
-	private final IndRoundingSpec[] indRoundingSpecs;
-	private final String depRoundingSpec;
+	private final IndependentRoundingSpec[] independentRoundingSpecs;
+	private final String dependentRoundingSpec;
 	private final String description;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 	private List<ZonedDateTime> effectiveDates;
-
 
 
 	public RatingSpec(Builder builder){
@@ -57,8 +56,8 @@ public class RatingSpec implements CwmsDTO
 		this.autoUpdate = builder.autoUpdate;
 		this.autoActivate = builder.autoActivate;
 		this.autoMigrateExtension = builder.autoMigrateExtension;
-		this.indRoundingSpecs = builder.indRoundingSpecs;
-		this.depRoundingSpec = builder.depRoundingSpec;
+		this.independentRoundingSpecs = builder.independentRoundingSpecs;
+		this.dependentRoundingSpec = builder.dependentRoundingSpec;
 		this.description = builder.description;
 		this.effectiveDates = builder.effectiveDates;
 	}
@@ -128,14 +127,14 @@ public class RatingSpec implements CwmsDTO
 		return autoMigrateExtension;
 	}
 
-	public IndRoundingSpec[] getIndRoundingSpecs()
+	public IndependentRoundingSpec[] getIndependentRoundingSpecs()
 	{
-		return indRoundingSpecs;
+		return independentRoundingSpecs;
 	}
 
-	public String getDepRoundingSpec()
+	public String getDependentRoundingSpec()
 	{
-		return depRoundingSpec;
+		return dependentRoundingSpec;
 	}
 
 	public String getDescription()
@@ -153,17 +152,18 @@ public class RatingSpec implements CwmsDTO
 
 	}
 
-	public static class IndRoundingSpec {
+	public static class IndependentRoundingSpec
+	{
 		private final Integer position;
 
 		private final String value;
 
-		public IndRoundingSpec(@JsonProperty("position") Integer position, @JsonProperty("value") String value){
+		public IndependentRoundingSpec(@JsonProperty("position") Integer position, @JsonProperty("value") String value){
 			this.position = position;
 			this.value = value;
 		}
 
-		public IndRoundingSpec(String value){
+		public IndependentRoundingSpec(String value){
 			this.position = null;
 			this.value = value;
 		}
@@ -190,7 +190,7 @@ public class RatingSpec implements CwmsDTO
 				return false;
 			}
 
-			final IndRoundingSpec that = (IndRoundingSpec) o;
+			final IndependentRoundingSpec that = (IndependentRoundingSpec) o;
 
 			return getValue() != null ? getValue().equals(that.getValue()) : that.getValue() == null;
 		}
@@ -259,12 +259,12 @@ public class RatingSpec implements CwmsDTO
 			return false;
 		}
 		// Probably incorrect - comparing Object[] arrays with Arrays.equals
-		if(!Arrays.equals(getIndRoundingSpecs(), that.getIndRoundingSpecs()))
+		if(!Arrays.equals(getIndependentRoundingSpecs(), that.getIndependentRoundingSpecs()))
 		{
 			return false;
 		}
-		if(getDepRoundingSpec() != null ? !getDepRoundingSpec().equals(
-				that.getDepRoundingSpec()) : that.getDepRoundingSpec() != null)
+		if(getDependentRoundingSpec() != null ? !getDependentRoundingSpec().equals(
+				that.getDependentRoundingSpec()) : that.getDependentRoundingSpec() != null)
 		{
 			return false;
 		}
@@ -285,8 +285,8 @@ public class RatingSpec implements CwmsDTO
 		result = 31 * result + (isAutoUpdate() ? 1 : 0);
 		result = 31 * result + (isAutoActivate() ? 1 : 0);
 		result = 31 * result + (isAutoMigrateExtension() ? 1 : 0);
-		result = 31 * result + Arrays.hashCode(getIndRoundingSpecs());
-		result = 31 * result + (getDepRoundingSpec() != null ? getDepRoundingSpec().hashCode() : 0);
+		result = 31 * result + Arrays.hashCode(getIndependentRoundingSpecs());
+		result = 31 * result + (getDependentRoundingSpec() != null ? getDependentRoundingSpec().hashCode() : 0);
 		result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
 		return result;
 	}
@@ -308,8 +308,8 @@ public class RatingSpec implements CwmsDTO
 		private boolean autoUpdate;
 		private boolean autoActivate;
 		private boolean autoMigrateExtension;
-		private IndRoundingSpec[] indRoundingSpecs;
-		private String depRoundingSpec;
+		private IndependentRoundingSpec[] independentRoundingSpecs;
+		private String dependentRoundingSpec;
 		private String description;
 
 		private List<ZonedDateTime> effectiveDates;
@@ -382,26 +382,26 @@ public class RatingSpec implements CwmsDTO
 			return this;
 		}
 
-		public Builder withIndRoundingSpecs(IndRoundingSpec[] indRoundingSpecs) {
-			this.indRoundingSpecs = indRoundingSpecs;
+		public Builder withIndependentRoundingSpecs(IndependentRoundingSpec[] indRoundingSpecs) {
+			this.independentRoundingSpecs = indRoundingSpecs;
 			return this;
 		}
 
-		public static IndRoundingSpec[] buildIndRoundingSpecs(String indRoundingSpecsStr)
+		public static IndependentRoundingSpec[] buildIndependentRoundingSpecs(String indRoundingSpecsStr)
 		{
-			IndRoundingSpec[] retval = null;
+			IndependentRoundingSpec[] retval = null;
 			if(indRoundingSpecsStr != null && !indRoundingSpecsStr.isEmpty()) {
 				String[] indRoundingSpecsStrArr = indRoundingSpecsStr.split("/");
-				retval = new IndRoundingSpec[indRoundingSpecsStrArr.length];
+				retval = new IndependentRoundingSpec[indRoundingSpecsStrArr.length];
 				for(int i = 0; i < indRoundingSpecsStrArr.length; i++) {
-					retval[i] = new IndRoundingSpec(indRoundingSpecsStrArr[i]);
+					retval[i] = new IndependentRoundingSpec(indRoundingSpecsStrArr[i]);
 				}
 			}
 			return retval;
 		}
 
-		public Builder withDepRoundingSpec(String depRoundingSpec) {
-			this.depRoundingSpec = depRoundingSpec;
+		public Builder withDependentRoundingSpec(String depRoundingSpec) {
+			this.dependentRoundingSpec = depRoundingSpec;
 			return this;
 		}
 
@@ -439,8 +439,8 @@ public class RatingSpec implements CwmsDTO
 			withAutoUpdate(spec.isAutoUpdate());
 			withAutoActivate(spec.isAutoActivate());
 			withAutoMigrateExtension(spec.isAutoMigrateExtension());
-			withIndRoundingSpecs(spec.getIndRoundingSpecs());
-			withDepRoundingSpec(spec.getDepRoundingSpec());
+			withIndependentRoundingSpecs(spec.getIndependentRoundingSpecs());
+			withDependentRoundingSpec(spec.getDependentRoundingSpec());
 			withDescription(spec.getDescription());
 			withEffectiveDates(spec.getEffectiveDates());
 
