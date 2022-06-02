@@ -16,6 +16,7 @@ import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.Office;
 import cwms.radar.data.dto.Pool;
 import cwms.radar.data.dto.Pools;
+import cwms.radar.data.dto.SpecifiedLevel;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.data.dto.rating.RatingSpecs;
@@ -37,8 +38,14 @@ import service.annotations.FormatService;
 	Pool.class,
 	Pools.class,
 	Blobs.class,
-	RatingTemplate.class, RatingTemplates.class, RatingSpec.class, RatingSpecs.class
+	Blobs.class,
+	SpecifiedLevel.class,
+	RatingTemplate.class, RatingTemplates.class,
+	RatingSpec.class, RatingSpecs.class
 })
+/**
+ * Formatter for RADAR generated JSON.
+ */
 public class JsonV2 implements OutputFormatter {
 
 	private final ObjectMapper om;

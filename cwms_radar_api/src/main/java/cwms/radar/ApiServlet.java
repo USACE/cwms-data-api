@@ -36,8 +36,6 @@ import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
-import cwms.radar.api.RatingSpecController;
-import cwms.radar.api.RatingTemplateController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
@@ -92,7 +90,8 @@ import static io.javalin.apibuilder.ApiBuilder.staticInstance;
                             "/basins/*",
                             "/blobs/*",
                             "/clobs/*",
-                            "/pools/*"
+                            "/pools/*",
+                            "/specified-levels/*"
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
@@ -210,10 +209,10 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
         radarCrud("/location/category/{category-id}", new LocationCategoryController(metrics), requiredRoles);
         radarCrud("/location/group/{group-id}", new LocationGroupController(metrics), requiredRoles);
-        radarCrud("/locations/{location_code}", new LocationController(metrics), requiredRoles);
+        radarCrud("/locations/{location-id}", new LocationController(metrics), requiredRoles);
         radarCrud("/offices/{office}", new OfficeController(metrics), requiredRoles);
-        radarCrud("/units/{unit_name}", new UnitsController(metrics), requiredRoles);
-        radarCrud("/parameters/{param_name}", new ParametersController(metrics), requiredRoles);
+        radarCrud("/units/{unit-id}", new UnitsController(metrics), requiredRoles);
+        radarCrud("/parameters/{param-id}", new ParametersController(metrics), requiredRoles);
         radarCrud("/timezones/{zone}", new TimeZoneController(metrics), requiredRoles);
         radarCrud("/levels/{location}", new LevelsController(metrics), requiredRoles);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
@@ -224,11 +223,12 @@ public class ApiServlet extends HttpServlet {
         radarCrud("/ratings/template/{template-id}", new RatingTemplateController(metrics), requiredRoles);
         radarCrud("/ratings/spec/{rating-id}", new RatingSpecController(metrics), requiredRoles);
         radarCrud("/ratings/{rating}", new RatingController(metrics), requiredRoles);
-        radarCrud("/catalog/{dataSet}", new CatalogController(metrics), requiredRoles);
+        radarCrud("/catalog/{dataset}", new CatalogController(metrics), requiredRoles);
         radarCrud("/basins/{basin-id}", new BasinController(metrics), requiredRoles);
         radarCrud("/blobs/{blob-id}", new BlobController(metrics), requiredRoles);
         radarCrud("/clobs/{clob-id}", new ClobController(metrics), requiredRoles);
         radarCrud("/pools/{pool-id}", new PoolController(metrics), requiredRoles);
+        radarCrud("/specified-levels/{level-id}", new SpecifiedLevelController(metrics), requiredRoles);
     }
 
 
