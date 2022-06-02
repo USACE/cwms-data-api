@@ -12,7 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.data.dao.RatingSpecDao;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.formatters.Formats;
-import cwms.radar.formatters.json.JsonV1;
+
+import cwms.radar.formatters.json.JsonV2;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +52,7 @@ class RatingSpecControllerTest
 		when(request.getAttribute("office")).thenReturn(officeId);
 		when(request.getAttribute("rating-id")).thenReturn(ratingId);
 
-		when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSON);
+		when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
 
 		Map<String, String> urlParams = new LinkedHashMap<>();
 		urlParams.put("office", officeId);
@@ -91,13 +92,13 @@ class RatingSpecControllerTest
 		// Make sure controller thought it was happy
 		verify(response).setStatus(200);
 		// And make sure controller returned json
-		verify(response).setContentType(Formats.JSON);
+		verify(response).setContentType(Formats.JSONV2);
 
 		String result = ctx.resultString();
 		assertNotNull(result);  // MAke sure we got some sort of response
 
 		// Turn json response back into a spec object
-		ObjectMapper om = JsonV1.buildObjectMapper();
+		ObjectMapper om = JsonV2.buildObjectMapper();
 		RatingSpec actual = om.readValue(result, RatingSpec.class);
 
 		assertNotNull(actual);
