@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,7 +49,8 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.JsonV1;
-import cwms.radar.security.CwmsAuthorizer;
+import cwms.radar.helpers.DateUtils;
+
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -151,12 +154,13 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = "office", required = true, description = "Specifies the owning office of the timeseries to be deleted.")
             },
             method = HttpMethod.DELETE,
+            path = "/timeseries",
             tags = {"TimeSeries"}
     )
     @Override
     public void delete(Context ctx, String tsId) {
         deleteRequests.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
 
         String office = ctx.queryParam("office");
 
@@ -189,13 +193,20 @@ public class TimeSeriesController implements CrudHandler {
             @OpenApiParam(name="timezone", required=false, description="Specifies the time zone of the values of the begin and end fields (unless otherwise specified), as well as the time zone of any times in the response. If this field is not specified, the default time zone of UTC shall be used.\r\nIgnored if begin was specified with offset and timezone."),
             @OpenApiParam(name="format", required=false, description="Specifies the encoding format of the response. Valid values for the format field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json (default)"),
             @OpenApiParam(name="page",
-                          required = false,
                           description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
             ),
-            @OpenApiParam(name="pageSize",
-                          required=false,
+            @OpenApiParam(name="cursor",
+                        deprecated = true,
+                        description = "Deprecated. Use 'page' instead."
+                ),
+            @OpenApiParam(name="page-size",
                           type=Integer.class,
                           description = "How many entries per page returned. Default " + defaultPageSize + "."
+            ),
+            @OpenApiParam(name="pageSize",
+                    deprecated = true,
+                    type=Integer.class,
+                    description = "Deprecated. Please use page-size instead."
             )
         },
         responses = { @OpenApiResponse(status="200",
@@ -210,6 +221,7 @@ public class TimeSeriesController implements CrudHandler {
                       @OpenApiResponse(status="501",description = "Requested format is not implemented")
                     },
             method = HttpMethod.GET,
+            path = "/timeseries",
         tags = {"TimeSeries"}
     )
     @Override
@@ -227,22 +239,31 @@ public class TimeSeriesController implements CrudHandler {
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
-            String timezone = ctx.queryParam("timezone");
+            String timezone = ctx.queryParamAsClass("timezone",String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = ctx.queryParamAsClass("cursor", String.class).getOrDefault(
-                    ctx.queryParamAsClass("page", String.class).getOrDefault(""));
+            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
+                    String.class, "", metrics, name(TimeSeriesController.class.getName(), "getAll"));
 
-            int pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(
-                    ctx.queryParamAsClass("pagesize", Integer.class).getOrDefault(defaultPageSize));
+            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                    Integer.class, defaultPageSize, metrics, name(TimeSeriesController.class.getName(), "getAll"));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
 
             String results;
             String version = contentType.getParameters().get("version");
+
+            ZoneId tz = ZoneId.of(timezone,ZoneId.SHORT_IDS);
+            begin = begin != null ? begin : "PT-24H";
+
+            ZonedDateTime beginZdt = DateUtils.parseUserDate(begin, timezone);
+            ZonedDateTime endZdt = end != null
+                                        ? DateUtils.parseUserDate(end, timezone)
+                                        : ZonedDateTime.now(tz);
+
             if(version != null && version.equals("2"))
             {
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, begin, end, timezone);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum, beginZdt, endZdt, tz);
 
                 results = Formats.format(contentType, ts);
                 ctx.status(HttpServletResponse.SC_OK);
@@ -269,7 +290,9 @@ public class TimeSeriesController implements CrudHandler {
                 {
                     format = "json";
                 }
-                results = dao.getTimeseries(format, names, office, unit, datum, begin, end, timezone);
+
+
+                results = dao.getTimeseries(format, names, office, unit, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
@@ -315,7 +338,7 @@ public class TimeSeriesController implements CrudHandler {
     public void update(Context ctx, String id) {
 
         updateRequests.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
         try (
                 final Timer.Context timeContext = updateRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx))
@@ -480,14 +503,14 @@ public class TimeSeriesController implements CrudHandler {
             if(hasTsGroupInfo && hasTsIds){
                 // has both = this is an error
                 RadarError re = new RadarError("Invalid arguments supplied, group has both Timeseries Group info and Timeseries IDs.");
-                logger.log(Level.SEVERE, re.toString() + " for url " + ctx.fullUrl());
+                logger.log(Level.SEVERE, re + " for url " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;
             } else if(!hasTsGroupInfo && !hasTsIds){
                 // doesn't have either?  Just return empty results?
                 RadarError re = new RadarError("Invalid arguments supplied, group has neither Timeseries Group info nor Timeseries IDs");
-                logger.log(Level.SEVERE, re.toString()+ " for request " + ctx.fullUrl());
+                logger.log(Level.SEVERE, re + " for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;
@@ -499,7 +522,7 @@ public class TimeSeriesController implements CrudHandler {
             }
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
             String result = Formats.format(contentType, latestValues,RecentValue.class);
 

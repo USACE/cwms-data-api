@@ -1,5 +1,7 @@
 package cwms.radar.data.dto;
 
+import cwms.radar.api.errors.FieldException;
+
 public class RecentValue implements CwmsDTO
 {
 	String id;
@@ -19,5 +21,11 @@ public class RecentValue implements CwmsDTO
 	public TsvDqu getDqu()
 	{
 		return dqu;
+	}
+
+	@Override
+	public void validate() throws FieldException {
+		// TODO Auto-generated method stub
+
 	}
 }

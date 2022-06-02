@@ -40,7 +40,6 @@ import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import cwms.radar.security.CwmsAuthorizer;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
@@ -232,7 +231,7 @@ public class LocationController implements CrudHandler {
     public void create(Context ctx)
     {
         createRequest.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
 
         try(final Timer.Context timeContext = createRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
@@ -277,7 +276,7 @@ public class LocationController implements CrudHandler {
     public void update(Context ctx, @NotNull String locationId)
     {
         updateRequest.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
         try(final Timer.Context timeContext = updateRequestTime.time();
             DSLContext dsl = getDslContext(ctx))
         {
@@ -329,7 +328,7 @@ public class LocationController implements CrudHandler {
     public void delete(Context ctx, @NotNull String locationId)
     {
         deleteRequest.mark();
-        ((CwmsAuthorizer)ctx.appAttribute("Authorizer")).can_perform(ctx);
+
 
         try(final Timer.Context timeContext = deleteRequestTime.time();
             DSLContext dsl = getDslContext(ctx))

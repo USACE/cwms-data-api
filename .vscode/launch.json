@@ -26,7 +26,8 @@
                 "RADAR_DEBUG_LOGGING": "true"
             },
             "sourcePaths": [
-                "build/generated/sources/annotationProcessor/java/main"
+                "**src/main/**",
+                "build/generated/sources/annotationProcessor/java/main",
             ]
         },
         {
@@ -34,14 +35,20 @@
             "name": "Remote Debug-Gradle",
             "request": "attach",
             "port": 5005,
-            "hostName": "localhost"
+            "hostName": "localhost",
+            "sourcePaths": [
+                "build/generated/sources/annotationProcessor/java/main",
+            ]
         },
         {
             "type": "java",
             "name": "Remote Debug-Tomcat/Netbeans",
             "request": "attach",
             "port": 11550,
-            "hostName": "localhost"
+            "hostName": "localhost",
+            "sourcePaths": [
+                "build/generated/sources/annotationProcessor/java/main",
+            ]
         }
     ]
 }

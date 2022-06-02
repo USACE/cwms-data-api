@@ -1,8 +1,14 @@
 package cwms.radar.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import cwms.radar.api.errors.FieldException;
+
 public class Blob implements CwmsDTO
 {
+	@JsonProperty(required=true)
 	private String office;
+	@JsonProperty(required=true)
 	private String id;
 	private String description;
 	private String mediaTypeId;
@@ -47,5 +53,9 @@ public class Blob implements CwmsDTO
 		StringBuilder builder = new StringBuilder();
 		builder.append(getOffice()).append("/").append(id).append(";description=").append(description);
 		return builder.toString();
+	}
+
+	@Override
+	public void validate() throws FieldException {
 	}
 }

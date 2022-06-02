@@ -5,6 +5,6 @@
     <level-date>2008-12-03T10:15:30+01:00[UTC]</level-date>
     <level-comment>for testing purposes</level-comment>
     <interpolate-string>false</interpolate-string>
-    <location-id>LOC_TEST.Elev.Inst.0.Bottom of Inlet</location-id>
+    <location-level-id>LOC_TEST.Elev.Inst.0.Bottom of Inlet</location-level-id>
     <office-id>LRL</office-id>
 </LocationLevel>

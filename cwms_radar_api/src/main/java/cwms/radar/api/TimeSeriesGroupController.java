@@ -76,11 +76,11 @@ public class TimeSeriesGroupController implements CrudHandler
 			List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office);
 			if( grps.isEmpty() ){
 				RadarError re = new RadarError("No data found for The provided office");
-				logger.info( () -> { return re.toString() + " for request " + ctx.fullUrl(); } );
+				logger.info( () -> re.toString() + " for request " + ctx.fullUrl());
 				ctx.status(HttpCode.NOT_FOUND).json(re);
 			} else {
 				String formatHeader = ctx.header(Header.ACCEPT);
-				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+				ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
 				String result = Formats.format(contentType,grps,TimeSeriesGroup.class);
 
@@ -120,7 +120,7 @@ public class TimeSeriesGroupController implements CrudHandler
 			String categoryId = ctx.queryParam("category-id");
 
 			String formatHeader = ctx.header(Header.ACCEPT);
-			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "json");
+			ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader,null);
 
 			TimeSeriesGroup group = null;
 			List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(office, categoryId, groupId);
@@ -151,12 +151,10 @@ public class TimeSeriesGroupController implements CrudHandler
 				ctx.status(HttpServletResponse.SC_OK);
 			} else {
 				RadarError re = new RadarError("Unable to find group based on parameters given");
-				logger.info( () -> {
-					return new StringBuilder()
-					.append( re.toString()).append(System.lineSeparator())
-					.append( "for request ").append( ctx.fullUrl() )
-					.toString();
-				});
+				logger.info( () -> new StringBuilder()
+				.append( re.toString()).append(System.lineSeparator())
+				.append( "for request ").append( ctx.fullUrl() )
+				.toString());
 				ctx.status(HttpServletResponse.SC_NOT_FOUND).json( re );
 			}
 

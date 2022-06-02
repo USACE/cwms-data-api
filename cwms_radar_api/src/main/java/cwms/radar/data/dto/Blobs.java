@@ -10,6 +10,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
+import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement(name="blobs")
@@ -70,4 +71,8 @@ public class Blobs extends CwmsDTOPaginated {
 
     }
 
+    @Override
+    public void validate() throws FieldException {
+        // always valid even if just empty list.
+    }
 }

@@ -2,6 +2,8 @@ package cwms.radar.data.dto;
 
 import java.math.BigDecimal;
 
+import cwms.radar.api.errors.FieldException;
+
 public class AssignedTimeSeries implements CwmsDTO
 {
 	private String timeseriesId;
@@ -44,5 +46,10 @@ public class AssignedTimeSeries implements CwmsDTO
 	public Integer getAttribute()
 	{
 		return attribute;
+	}
+
+	@Override
+	public void validate() throws FieldException {
+
 	}
 }
