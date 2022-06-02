@@ -31,7 +31,6 @@ public class SpecifiedLevelController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(SpecifiedLevelController.class.getName());
     private final MetricRegistry metrics;
 
-
     private final Histogram requestResultSize;
 
     public SpecifiedLevelController(MetricRegistry metrics){
@@ -51,20 +50,19 @@ public class SpecifiedLevelController implements CrudHandler {
     {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
-    
-    
+
+
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name="office", required=false, description="Specifies the owning office of the Specified Levels whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
-            @OpenApiParam(name="template-id-mask", required=false, description="Mask that specifies the IDs to be included in the response. If this field is not specified, all specified levels shall be returned."),
+            @OpenApiParam(name="office", description="Specifies the owning office of the Specified Levels whose data is to be included in the response. If this field is not specified, matching rating information from all offices shall be returned."),
+            @OpenApiParam(name="template-id-mask", description="Mask that specifies the IDs to be included in the response. If this field is not specified, all specified levels shall be returned."),
         },
-            responses = {
-                    @OpenApiResponse(status = "200",
-                            content = {
-                                    @OpenApiContent(type = Formats.JSON, from = SpecifiedLevel.class)
-                            }
-
-                    )},
+        responses = {
+            @OpenApiResponse(status = "200",
+                content = {
+                    @OpenApiContent(type = Formats.JSONV2, from = SpecifiedLevel.class)
+                }
+            )},
         tags = {"Specified Levels"}
     )
     @Override
@@ -93,7 +91,6 @@ public class SpecifiedLevelController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
 
     }
 
