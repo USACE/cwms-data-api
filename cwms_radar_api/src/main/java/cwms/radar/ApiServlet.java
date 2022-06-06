@@ -36,6 +36,8 @@ import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
+import cwms.radar.api.RatingSpecController;
+import cwms.radar.api.RatingTemplateController;
 import cwms.radar.api.SpecifiedLevelController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
@@ -221,6 +223,8 @@ public class ApiServlet extends HttpServlet {
         radarCrud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics), requiredRoles);
         radarCrud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics), requiredRoles);
         radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
+        radarCrud("/ratings/template/{template-id}", new RatingTemplateController(metrics), requiredRoles);
+        radarCrud("/ratings/spec/{rating-id}", new RatingSpecController(metrics), requiredRoles);
         radarCrud("/ratings/{rating}", new RatingController(metrics), requiredRoles);
         radarCrud("/catalog/{dataset}", new CatalogController(metrics), requiredRoles);
         radarCrud("/basins/{basin-id}", new BasinController(metrics), requiredRoles);
@@ -270,7 +274,7 @@ public class ApiServlet extends HttpServlet {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
-                    .defaultDocumentation((doc) -> {
+                    .defaultDocumentation(doc -> {
                         doc.json("500", RadarError.class);
                         doc.json("400", RadarError.class);
                         doc.json("401", RadarError.class);
@@ -297,9 +301,7 @@ public class ApiServlet extends HttpServlet {
                 ObjectMapper om = new ObjectMapper();
                 out.println(om.writeValueAsString(re));
             }
-
         }
-
     }
 
     @Override

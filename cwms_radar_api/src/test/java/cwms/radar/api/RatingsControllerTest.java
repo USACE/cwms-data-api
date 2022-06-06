@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,25 +47,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-public class RatingsControllerTest {
+class RatingsControllerTest {
+
+    private static final Logger logger = Logger.getLogger(RatingsControllerTest.class.getName());
 
     private DataSource ds = mock(DataSource.class);
     private Connection conn = null;
 
 
     @BeforeEach
-    public void baseLineDbMocks() throws SQLException, IOException{
+    public void baseLineDbMocks() throws IOException{
         InputStream stream = RatingsControllerTest.class.getResourceAsStream("/ratings_db.txt");
         assertNotNull(stream);
-        this.conn = new MockConnection(
-                                new MockFileDatabase(stream
-                                )
-                    );
+        this.conn = new MockConnection(new MockFileDatabase(stream));
         assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
     }
 
 
-        // This is only supposed to test that when XML data is posted to create,
+    // This is only supposed to test that when XML data is posted to create,
     // that data is forward to the method deserializeFromXml
     @Test
     void post_to_create_passed_to_deserializeXml() throws Exception
@@ -92,7 +92,7 @@ public class RatingsControllerTest {
         when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.XMLV2);
         when(request.getContentType()).thenReturn(Formats.XMLV2);
 
-
+        logger.log(Level.INFO, "Test post_to_create_passed_to_deserializeXml may trigger a RatingException - this is fine.");
         controller.create(context);
         // For this test, it's ok that the server throws a RatingException
         // Only want to check that the controller accessed our mock dao in the expected way
@@ -128,41 +128,40 @@ public class RatingsControllerTest {
             {
                 // Make sure we can't find the new rating
                 Response missingReponse = given()
-                        .baseUri(baseUri)
-                        .accept("application/json;version=2")
-                        .param("office", office)
-                        .when()
-                        .get("/ratings/" + testSpecId)
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .accept("application/json;version=2")
+                    .param("office", office)
+                    .when()
+                    .get("/ratings/" + testSpecId)
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(404, missingReponse.statusCode());
                 // Cool, it's not there.
 
                 // Now lets create it from json.
                 Response createReponse = given()
-                        .baseUri(baseUri)
-                        .body(testRatingJson)
-                        .accept("application/json;version=2")
-                        .when()
-                        .post("/ratings")
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .body(testRatingJson)
+                    .accept("application/json;version=2")
+                    .when()
+                    .post("/ratings")
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(200, createReponse.statusCode());
                 // Cool, created it.
 
                 // Now lets get it
                 Response secondGetReponse = given()
-                        .baseUri(baseUri)
-                        .accept("application/json;version=2")
-                        .param("office",
-                        office)
-                        .when()
-                        .get("/ratings/" + testSpecId)
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .accept("application/json;version=2")
+                    .param("office", office)
+                    .when()
+                    .get("/ratings/" + testSpecId)
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(200, secondGetReponse.statusCode());
                 // Cool, got it.
             }
@@ -170,14 +169,14 @@ public class RatingsControllerTest {
             {
                 // Now lets delete it
                 Response deleteReponse = given()
-                        .baseUri(baseUri)
-                        .accept("application/json;version=2")
-                        .param("office", office)
-                        .when()
-                        .delete("/ratings/" + testSpecId)
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .accept("application/json;version=2")
+                    .param("office", office)
+                    .when()
+                    .delete("/ratings/" + testSpecId)
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(200, deleteReponse.statusCode());
                 // Cool its gone.
             }
@@ -214,40 +213,40 @@ public class RatingsControllerTest {
             {
                 // Make sure we can't find the new rating
                 Response missingReponse = given()
-                        .baseUri(baseUri)
-                        .accept("application/xml;version=2")
-                        .param("office",office)
-                        .when()
-                        .get("/ratings/" + testSpecId)
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .accept("application/xml;version=2")
+                    .param("office",office)
+                    .when()
+                    .get("/ratings/" + testSpecId)
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(404, missingReponse.statusCode());
                 // Cool, it's not there.
 
                 // Now lets create it from json.
                 Response createReponse = given()
-                        .baseUri(baseUri)
-                        .body(testRatingXml)
-                        .accept("application/xml;version=2")
-                        .when()
-                        .post("/ratings")
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .body(testRatingXml)
+                    .accept("application/xml;version=2")
+                    .when()
+                    .post("/ratings")
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(200, createReponse.statusCode());
                 // Cool, created it.
 
                 // Now lets get it
                 Response secondGetReponse = given()
-                        .baseUri(baseUri)
-                        .accept("application/xml;version=2")
-                        .param("office", office)
-                        .when()
-                        .get("/ratings/" + testSpecId)
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .accept("application/xml;version=2")
+                    .param("office", office)
+                    .when()
+                    .get("/ratings/" + testSpecId)
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(200, secondGetReponse.statusCode());
                 // Cool, got it.
             }
@@ -255,14 +254,14 @@ public class RatingsControllerTest {
             {
                 // Now lets delete it
                 Response deleteReponse = given()
-                        .baseUri(baseUri)
-                        .accept("application/xml;version=2")
-                        .param("office", office)
-                        .when()
-                        .delete("/ratings/" + testSpecId)
-                        .then()
-                        .extract()
-                        .response();
+                    .baseUri(baseUri)
+                    .accept("application/xml;version=2")
+                    .param("office", office)
+                    .when()
+                    .delete("/ratings/" + testSpecId)
+                    .then()
+                    .extract()
+                    .response();
                 Assertions.assertEquals(200, deleteReponse.statusCode());
                 // Cool its gone.
             }

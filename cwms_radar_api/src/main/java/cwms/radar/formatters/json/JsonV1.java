@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
@@ -28,7 +27,6 @@ import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OfficeFormatV1;
 import cwms.radar.formatters.OutputFormatter;
 import io.javalin.http.BadRequestResponse;
-
 import org.jetbrains.annotations.NotNull;
 import service.annotations.FormatService;
 
