@@ -9,19 +9,22 @@ import static com.codahale.metrics.MetricRegistry.name;
 
 public class Controllers
 {
-	private Controllers(){
+
+	private Controllers()
+	{
 
 	}
 
 	public static Timer.Context markAndTime(MetricRegistry registry, String className, String subject)
 	{
-		Meter meter = registry.meter(name(className,subject,"count"));
+		Meter meter = registry.meter(name(className, subject, "count"));
 		meter.mark();
-		Timer timer = registry.timer(name(className,subject,"time"));
+		Timer timer = registry.timer(name(className, subject, "time"));
 		return timer.time();
 	}
 
-	public static <T> T queryParamAsClass(io.javalin.http.Context ctx, String[] names, Class<T> clazz, T defaultValue){
+	public static <T> T queryParamAsClass(io.javalin.http.Context ctx, String[] names, Class<T> clazz, T defaultValue)
+	{
 		T retval = defaultValue;
 
 		Validator<T> validator = ctx.queryParamAsClass(names[0], clazz);
@@ -33,7 +36,7 @@ public class Controllers
 		{
 			for(int i = 1; i < names.length; i++)
 			{
-				validator = ctx.queryParamAsClass(names[0], clazz);
+				validator = ctx.queryParamAsClass(names[i], clazz);
 				if(validator.hasValue())
 				{
 					retval = validator.get();
@@ -48,31 +51,33 @@ public class Controllers
 
 
 	public static <T> T queryParamAsClass(io.javalin.http.Context ctx, String[] names, Class<T> clazz, T defaultValue,
-	                                      MetricRegistry metrics, String className ){
+	                                      MetricRegistry metrics, String className)
+	{
 		T retval = null;
 
 		Validator<T> validator = ctx.queryParamAsClass(names[0], clazz);
 		if(validator.hasValue())
 		{
 			retval = validator.get();
-			metrics.counter(name(className,"correct")).inc();
+			metrics.counter(name(className, "correct")).inc();
 		}
 		else
 		{
 			for(int i = 1; i < names.length; i++)
 			{
-				validator = ctx.queryParamAsClass(names[0], clazz);
+				validator = ctx.queryParamAsClass(names[i], clazz);
 				if(validator.hasValue())
 				{
 					retval = validator.get();
-					metrics.counter(name(className,"deprecated")).inc();
+					metrics.counter(name(className, "deprecated")).inc();
 					break;
 				}
 			}
 
-			if(retval == null){
+			if(retval == null)
+			{
 				retval = defaultValue;
-				metrics.counter(name(className,"default")).inc();
+				metrics.counter(name(className, "default")).inc();
 			}
 
 		}
