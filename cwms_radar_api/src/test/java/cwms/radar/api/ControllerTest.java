@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Scanner;
 
+import org.jetbrains.annotations.NotNull;
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,5 +56,18 @@ public class ControllerTest
                                 )
                     );
         assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
+    }
+
+    @NotNull
+    public static String buildParamStr(Map<String, String> urlParams) {
+        StringBuilder sb = new StringBuilder();
+        urlParams.entrySet()
+                .forEach(e->sb.append(e.getKey()).append("=").append(e.getValue()).append("&"));
+
+        if(sb.length() > 0) {
+            sb.setLength(sb.length()-1);
+        }
+
+        return sb.toString();
     }
 }

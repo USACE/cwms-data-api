@@ -215,18 +215,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         return ts;
     }
 
-    @NotNull
-    private String buildParamStr(Map<String, String> urlParams) {
-        StringBuilder sb = new StringBuilder();
-        urlParams.entrySet()
-                 .forEach(e->sb.append(e.getKey()).append("=").append(e.getValue()).append("&"));
 
-        if(sb.length() > 0) {
-            sb.setLength(sb.length()-1);
-        }
-
-        return sb.toString();
-    }
 
 
 }

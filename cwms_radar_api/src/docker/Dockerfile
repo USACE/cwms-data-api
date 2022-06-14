@@ -1,4 +1,4 @@
-FROM tomcat:9.0.54-jdk8
+FROM tomcat:9.0.58-jdk8
 
 COPY radar/ /usr/local/tomcat
 COPY context.xml /usr/local/tomcat/conf
