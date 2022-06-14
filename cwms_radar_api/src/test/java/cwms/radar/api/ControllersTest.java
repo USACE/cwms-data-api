@@ -16,83 +16,82 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class ControllersTest
-{
+class ControllersTest {
 
 
-	@Test
-	void testCorrectQueryParams(){
-		String nameToUse = "page-size";
+    @Test
+    void testCorrectQueryParams() {
+        String nameToUse = "page-size";
 
-		Context ctx = buildContext(nameToUse, 333);
+        Context ctx = buildContext(nameToUse, 333);
 
-		MetricRegistry metrics = new MetricRegistry();
+        MetricRegistry metrics = new MetricRegistry();
 
-		int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
-				Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
-		assertEquals(333, pageSize);
-	}
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
+        assertEquals(333, pageSize);
+    }
 
-	private Context buildContext(String nameToUse, int expected){
-		// build mock request and response
-		final HttpServletRequest request= mock(HttpServletRequest.class);
-		final HttpServletResponse response = mock(HttpServletResponse.class);
-		final Map<String, ?> map = new LinkedHashMap<>();
+    private Context buildContext(String nameToUse, int expected) {
+        // build mock request and response
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Map<String, ?> map = new LinkedHashMap<>();
 
-		when(request.getAttribute(nameToUse)).thenReturn(expected);
+        when(request.getAttribute(nameToUse)).thenReturn(expected);
 
-		when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
+        when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
 
-		Map<String, String> urlParams = new LinkedHashMap<>();
-		urlParams.put(nameToUse, Integer.toString(expected));
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(nameToUse, Integer.toString(expected));
 
-		String paramStr = ControllerTest.buildParamStr(urlParams);
+        String paramStr = ControllerTest.buildParamStr(urlParams);
 
-		when(request.getQueryString()).thenReturn(paramStr);
-		when(request.getRequestURL()).thenReturn(new StringBuffer( "http://127.0.0.1:7001/timeseries/"));
+        when(request.getQueryString()).thenReturn(paramStr);
+        when(request.getRequestURL()).thenReturn(new StringBuffer("http://127.0.0.1:7001/timeseries/"));
 
-		// build real context that uses the mock request/response
-		Context ctx = new Context(request, response, map);
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, map);
 
-		return ctx;
-	}
+        return ctx;
+    }
 
-	@Test
-	void testDeprecatedQueryParams(){
-		String nameToUse = "pageSize";
+    @Test
+    void testDeprecatedQueryParams() {
+        String nameToUse = "pageSize";
 
-		Context ctx = buildContext(nameToUse, 333);
+        Context ctx = buildContext(nameToUse, 333);
 
-		MetricRegistry metrics = new MetricRegistry();
+        MetricRegistry metrics = new MetricRegistry();
 
-		int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
-				Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
-		assertEquals(333, pageSize);
-	}
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
+        assertEquals(333, pageSize);
+    }
 
-	@Test
-	void testDeprecated3QueryParams(){
-		String nameToUse = "pagesize";
+    @Test
+    void testDeprecated3QueryParams() {
+        String nameToUse = "pagesize";
 
-		Context ctx = buildContext(nameToUse, 333);
+        Context ctx = buildContext(nameToUse, 333);
 
-		MetricRegistry metrics = new MetricRegistry();
+        MetricRegistry metrics = new MetricRegistry();
 
-		int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
-				Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
-		assertEquals(333, pageSize);
-	}
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
+        assertEquals(333, pageSize);
+    }
 
-	@Test
-	void testDefaultQueryParams(){
-		String nameToUse = "fake";
+    @Test
+    void testDefaultQueryParams() {
+        String nameToUse = "fake";
 
-		Context ctx = buildContext(nameToUse, 333);
+        Context ctx = buildContext(nameToUse, 333);
 
-		MetricRegistry metrics = new MetricRegistry();
+        MetricRegistry metrics = new MetricRegistry();
 
-		int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
-				Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
-		assertEquals(500, pageSize);
-	}
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+                Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
+        assertEquals(500, pageSize);
+    }
 }
