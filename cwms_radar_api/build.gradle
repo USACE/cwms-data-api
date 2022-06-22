@@ -9,11 +9,11 @@ configurations {
 
 
 dependencies {
-    implementation "javax.xml.bind:jaxb-api:$JAXB_API_VERSION"
-    implementation "com.sun.xml.bind:jaxb-impl:$JAXB_IMPL_VERSION"
-    implementation "com.sun.xml.bind:jaxb-core:$JAXB_IMPL_VERSION"
-    implementation "mil.army.usace.hec:cwms-db-dao:8.0.0-SNAPSHOT"
-    implementation( "mil.army.usace.hec:cwms-db-jooq:8.0.0-SNAPSHOT"){
+    implementation "javax.xml.bind:jaxb-api:2.3.1"
+    implementation "com.sun.xml.bind:jaxb-impl:3.0.2"
+    implementation "com.sun.xml.bind:jaxb-core:3.0.2"
+    implementation "mil.army.usace.hec:cwms-db-dao:9.0.2"
+    implementation( "mil.army.usace.hec:cwms-db-jooq:9.0.2"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -21,18 +21,20 @@ dependencies {
         exclude group: "org.slf4j", module: "slf4j-log4j12"
     }
 
-    implementation "org.slf4j:slf4j-jdk14:1.7.32"
+    implementation "mil.army.usace.hec:cwms-db-dao:9.0.4"
 
-    // For RatingSet
-    implementation 'mil.army.usace.hec:hec-cwms-ratings-intesting:0.0.1-20211021.222041-2'
-    implementation "mil.army.usace.hec:hec-data:6.0-SNAPSHOT" // Need RatingException and IRating
+    implementation 'org.slf4j:slf4j-jdk14:1.7.36'
 
-    implementation('org.jooq.pro:jooq:3.11.2'){
+    implementation "mil.army.usace.hec:hec-monolith:2.0.2"
+    implementation "mil.army.usace.hec:hec-nucleus-metadata:1.0.33"
+    implementation 'mil.army.usace.hec:hec-cwms-ratings-core:1.0.0'
+
+    implementation('org.jooq.pro:jooq:3.11.2') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "javax.xml.bind", module: "*"
     }
-    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:$OWASP_SANITIZER_VERSION"
+    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.2"
 
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
@@ -46,12 +48,11 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket"
         exclude group: "jakarta.xml.bind", module: "*"
     }
-    implementation( "io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION"){
+    implementation("io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION") {
         exclude group: "jakarta.xml.bind", module: "*"
     }
-    implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
 
-    compileOnly "javax:javaee-web-api:$JAVA_EE_WEB_VERSION"
+    compileOnly "javax:javaee-web-api:8.0.1"
 
 
     runtimeOnly 'jstl:jstl:1.2'
@@ -71,47 +72,46 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
-    //testImplementation "io.javalin:javalin:$JAVALIN_VERSION"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-    testImplementation "org.mockito:mockito-core:3.2.4"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation 'org.mockito:mockito-core:4.5.1'
     testRuntimeOnly 'com.sun.xml.bind:jaxb-impl:2.3.4'
 
     baseLibs 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
-    baseLibs 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
+
     testImplementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
     testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
     testRuntimeOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
     testImplementation "org.mockito:mockito-core:3.2.4"
-    testImplementation "io.rest-assured:rest-assured:4.4.0"
+    testImplementation 'io.rest-assured:rest-assured:5.0.1'
     testImplementation "org.hamcrest:hamcrest-all:1.3"
-
 
     testImplementation "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion"
     testImplementation "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
     testImplementation "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6"
-    testImplementation "org.apache.tomcat:tomcat-dbcp:$tomcatVersion"
-    testImplementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
     testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
 
-    testImplementation "org.testcontainers:testcontainers:1.16.0"
-    testImplementation "org.testcontainers:database-commons:1.16.0"
-    testImplementation "org.testcontainers:jdbc:1.16.0"
-    testImplementation "org.testcontainers:junit-jupiter:1.16.0"
+    testImplementation "org.testcontainers:testcontainers:1.17.1"
+    testImplementation 'org.testcontainers:database-commons:1.17.1'
+    testImplementation "org.testcontainers:jdbc:1.17.1"
+    testImplementation "org.testcontainers:junit-jupiter:1.17.1"
     testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.2'
 
-     webjars( 'org.webjars:swagger-ui:3.52.3' ){
+    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
+
+    webjars('org.webjars:swagger-ui:4.10.3') {
         transitive = false
     }
+
+    implementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
 
 }
 
 
-
-task extractWebJars( type: Copy ){
+task extractWebJars(type: Copy) {
     doFirst {
         project.mkdir("$buildDir/extra/swagger-ui")
     }
@@ -133,14 +133,14 @@ war {
     from "src/resources/"
 
     doLast {
-        println( war.archiveFileName.toString() )
-        println( "::set-output name=WARFILE::${project.name}-${project.version}.war")
+        println(war.archiveFileName.toString())
+        println("::set-output name=WARFILE::${project.name}-${project.version}.war")
     }
 }
 
 
 test {
-	useJUnitPlatform() {
+    useJUnitPlatform() {
         excludeTags "integration"
     }
 }
@@ -155,7 +155,7 @@ sourceSets {
 }
 
 
-task generateConfig( type: Copy ){
+task generateConfig(type: Copy) {
     doFirst {
         project.delete "$buildDir/tomcat/"
         project.mkdir "$buildDir/tomcat/logs"
@@ -165,7 +165,7 @@ task generateConfig( type: Copy ){
 
     //rename "context.xml", "context.xml.template"
 
-    inputs.dir  "src/test/resources"
+    inputs.dir "src/test/resources"
     outputs.dir "$buildDir/tomcat/conf"
 }
 
@@ -178,15 +178,16 @@ task run(type: JavaExec) {
     classpath += configurations.baseLibs
 
     mainClass = "fixtures.TomcatServer"
-    systemProperties += project.properties.findAll{ k,v -> k.startsWith("RADAR") }
-    args "$buildDir/tomcat","$buildDir/libs/${project.name}-${project.version}.war","/cwms-data"
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
+
+    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
 }
 
-task integrationTests( type: Test) {
+task integrationTests(type: Test) {
     dependsOn test
     dependsOn generateConfig
     dependsOn war
@@ -197,8 +198,8 @@ task integrationTests( type: Test) {
     shouldRunAfter test
     classpath += configurations.baseLibs
     // The before all extension will take care of these properties
-    systemProperties += project.properties.findAll{ k,v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC")}
-    systemProperties += project.properties.findAll{ k,v -> k.startsWith("testcontainers")}
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainers") }
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
@@ -207,9 +208,9 @@ task integrationTests( type: Test) {
 }
 
 
-task prepareDockerBuild(type:Copy, dependsOn: war){
-    doFirst{
-        project.mkdir( "$buildDir/docker")
+task prepareDockerBuild(type: Copy, dependsOn: war) {
+    doFirst {
+        project.mkdir("$buildDir/docker")
     }
     from "src/docker"
     into "$buildDir/docker"
@@ -220,7 +221,7 @@ task prepareDockerBuild(type:Copy, dependsOn: war){
         into "libs"
     }
 
-    from(sourceSets.test.resources){
+    from(sourceSets.test.resources) {
 
         include "**/conf/context.xml"
         eachFile {
@@ -229,10 +230,10 @@ task prepareDockerBuild(type:Copy, dependsOn: war){
         includeEmptyDirs = false
     }
 
-    from( war.outputs.files.singleFile ){
+    from(war.outputs.files.singleFile) {
         //include "${project.name}-${project.version}.jar"
         into "radar/webapps"
-        rename(".*\\.war","ROOT.war")
+        rename(".*\\.war", "ROOT.war")
     }
 }
 
@@ -241,5 +242,5 @@ task dockerBuild(type: Exec, dependsOn: prepareDockerBuild) {
 
     workingDir "$buildDir/docker"
     executable "docker"
-    args "build","--tag=cwms-rest-api:"+project.version, "."
+    args "build", "--tag=cwms-rest-api:" + project.version, "."
 }

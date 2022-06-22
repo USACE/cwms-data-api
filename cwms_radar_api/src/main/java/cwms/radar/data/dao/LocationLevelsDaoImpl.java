@@ -1,10 +1,13 @@
 package cwms.radar.data.dao;
 
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
+
 import cwms.radar.api.enums.Unit;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.data.dto.LocationLevel;
 import cwms.radar.data.dto.SeasonalValueBean;
 import org.jooq.DSLContext;
+import org.jooq.Record1;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
 import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
@@ -41,8 +44,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     @Override
-    public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId) throws IOException
+    public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId)
     {
+
         try
         {
             BigInteger months = locationLevel.getIntervalMonths() == null ? null : BigInteger.valueOf(locationLevel.getIntervalMonths());
@@ -53,7 +57,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             dsl.connection(c ->
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                levelJooq.storeLocationLevel(c, locationLevel.getLocationId(), locationLevel.getSiParameterUnitsConstantValue(), locationLevel.getLevelUnitsId(), locationLevel.getLevelComment(), date,
+                levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(), locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(), locationLevel.getLevelComment(), date,
                         TimeZone.getTimeZone(zoneId), locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(), locationLevel.getAttributeDurationId(),
                         locationLevel.getAttributeComment(), intervalOrigin, months,
                         minutes, Boolean.parseBoolean(locationLevel.getInterpolateString()), locationLevel.getSeasonalTimeSeriesId(),
@@ -62,8 +66,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to store Location Level", ex);
-            throw new IOException("Failed to store Location Level");
+            throw new RuntimeException("Failed to store Location Level", ex);
         }
     }
 
@@ -84,44 +87,56 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     @Override
-    public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime, String officeId, Boolean cascadeDelete) throws IOException
+    public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime, String officeId, Boolean cascadeDelete)
     {
         try
         {
-            Date date = Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant());
-            dsl.connection(c ->
-            {
-                CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                levelJooq.deleteLocationLevel(c, locationLevelName, date, null, null, null, cascadeDelete, officeId);
-            });
+            Date date = zonedDateTime != null ? Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant()) : null;
+            if (date != null) {
+                dsl.connection(c -> {
+                    CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
+                    levelJooq.deleteLocationLevel(c, locationLevelName, date, null, null, null, cascadeDelete, officeId);
+                });
+            } else {
+                Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
+
+                                                .from(AV_LOCATION_LEVEL)
+                                                .where(AV_LOCATION_LEVEL.LOCATION_LEVEL_ID.eq(locationLevelName))
+                                                .and(AV_LOCATION_LEVEL.OFFICE_ID.eq(officeId)
+                                                )
+                                                .fetchOne();
+                CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL__2(dsl.configuration(), BigInteger.valueOf(levelCode.value1()), cascadeDelete ? "T" : "F");
+            }
+
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to delete Location Level", ex);
-            throw new IOException("Failed to delete Location Level ");
+            //logger.log(Level.SEVERE, "Failed to delete Location Level", ex);
+            throw new RuntimeException("Failed to delete Location Level ",ex);
         }
     }
 
     @Override
-    public void renameLocationLevel(String oldLocationLevelName, LocationLevel renamedLocationLevel) throws IOException
+    public void renameLocationLevel(String oldLocationLevelName, LocationLevel renamedLocationLevel)
     {
+        // no need to validate the level here we are just using the name and office field
         try
         {
             dsl.connection(c ->
             {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                levelJooq.renameLocationLevel(c, oldLocationLevelName, renamedLocationLevel.getLocationId(), renamedLocationLevel.getOfficeId());
+                levelJooq.renameLocationLevel(c, oldLocationLevelName, renamedLocationLevel.getLocationLevelId(), renamedLocationLevel.getOfficeId());
             });
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to rename Location Level", ex);
-            throw new IOException("Failed to rename Location Level");
+            //logger.log(Level.SEVERE, "Failed to rename Location Level", ex);
+            throw new RuntimeException("Failed to rename Location Level", ex);
         }
     }
 
     @Override
-    public LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem, ZonedDateTime effectiveDate, String officeId) throws IOException
+    public LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem, ZonedDateTime effectiveDate, String officeId)
     {
         TimeZone timezone = TimeZone.getTimeZone(effectiveDate.getZone());
         Date date = Date.from(effectiveDate.toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
@@ -139,8 +154,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         catch(DataAccessException ex)
         {
-            logger.log(Level.SEVERE, "Failed to retrieve Location Level", ex);
-            throw new IOException("Failed to retrieve Location Level");
+            throw new RuntimeException("Failed to retrieve Location Level", ex);
         }
         return locationLevelRef.get();
     }
@@ -160,7 +174,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             .withAttributeComment(copyFromPojo.getAttributeComment())
             .withAttributeDurationId(copyFromPojo.getAttributeDurationId())
             .withAttributeParameterId(copyFromPojo.getAttributeParameterId())
-            .withLocationId(copyFromPojo.getLocationId())
+            .withLocationLevelId(copyFromPojo.getLocationId())
             .withAttributeValue(copyFromPojo.getAttributeValue())
             .withAttributeParameterTypeId(copyFromPojo.getAttributeParameterTypeId())
             .withAttributeUnitsId(copyFromPojo.getAttributeUnitsId())
@@ -176,7 +190,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             .withParameterTypeId(copyFromPojo.getParameterTypeId())
             .withSeasonalTimeSeriesId(copyFromPojo.getSeasonalTimeSeriesId())
             .withSeasonalValues(seasonalValues)
-            .withSiParameterUnitsConstantValue(copyFromPojo.getSiParameterUnitsConstantValue())
+            .withConstantValue(copyFromPojo.getSiParameterUnitsConstantValue())
             .withSpecifiedLevelId(copyFromPojo.getSpecifiedLevelId())
             .build();
     }

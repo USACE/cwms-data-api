@@ -7,6 +7,7 @@ import java.util.Base64.Encoder;
 
 import javax.xml.bind.annotation.*;
 
+import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
@@ -47,4 +48,8 @@ public class Catalog extends CwmsDTOPaginated {
         return entries;
     }
 
+    @Override
+    public void validate() throws FieldException{
+        // catalogs are never accepted as user input
+    }
 }

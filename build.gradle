@@ -7,15 +7,11 @@ allprojects {
 
 // versions for shared dependencies
 ext.dropwizard_version="4.1.2"
-ext.OWASP_SANITIZER_VERSION="20180219.1"
-ext.JAXB_API_VERSION="2.2.12"
-ext.JAXB_IMPL_VERSION="2.2.11"
-ext.JAVALIN_VERSION='4.1.1'
-ext.JACKSON_VERSION='2.12.3'
-ext.SWAGGER_CORE_VERSION='2.0.9'
-ext.JAVA_EE_WEB_VERSION='7.0'
-ext.CWMS_DB_VERSION='8.0.0-SNAPSHOT'
-ext.tomcatVersion='9.0.54'
+
+ext.JAVALIN_VERSION='4.6.1'
+ext.JACKSON_VERSION='2.13.3'
+ext.SWAGGER_CORE_VERSION='2.2.0'
+ext.tomcatVersion='9.0.58'
 
 subprojects {
     apply plugin: 'java'
@@ -31,17 +27,23 @@ subprojects {
 
     repositories {
         mavenLocal()
-	    mavenCentral()
-        maven {
-            url = uri('https://repo.maven.apache.org/maven2')
-        }
         maven {
             url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
         }
+
+        mavenCentral().content {
+            // The jai_core on maven central has the pom but not the jar.
+            excludeModule("javax.media", "jai_core")
+        }
+
+        maven {
+            url = uri('https://repo.maven.apache.org/maven2')
+        }
+
     }
 
     tasks.withType(JavaCompile) {
-        options.encoding = "UTF-8";
+        options.encoding = "UTF-8"
     }
 
     test {

@@ -1,14 +1,15 @@
 package cwms.radar.data.dao;
 
+import cwms.radar.data.dto.AssignedTimeSeries;
+import cwms.radar.data.dto.TimeSeriesCategory;
+import cwms.radar.data.dto.TimeSeriesGroup;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import cwms.radar.data.dto.AssignedTimeSeries;
-import cwms.radar.data.dto.TimeSeriesCategory;
-import cwms.radar.data.dto.TimeSeriesGroup;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
@@ -21,164 +22,149 @@ import org.jooq.SelectOrderByStep;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 
-public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup>
-{
-	public TimeSeriesGroupDao(DSLContext dsl)
-	{
-		super(dsl);
-	}
+public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
+    public TimeSeriesGroupDao(DSLContext dsl) {
+        super(dsl);
+    }
 
-	public List<TimeSeriesGroup> getTimeSeriesGroups()
-	{
-		return getTimeSeriesGroups(null);
-	}
+    public List<TimeSeriesGroup> getTimeSeriesGroups() {
+        return getTimeSeriesGroups(null);
+    }
 
-	public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId)
-	{
-		Condition whereCond = null;
-		if(officeId != null)
-		{
-			whereCond = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(officeId);
-		}
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId) {
+        Condition whereCond = null;
+        if (officeId != null) {
+            whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId);
+        }
 
-		return getTimeSeriesGroupsWhere(whereCond);
-	}
+        return getTimeSeriesGroupsWhere(whereCond);
+    }
 
-	@NotNull
-	private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(Condition whereCond)
-	{
-		List<TimeSeriesGroup> retval = new ArrayList<>();
-		AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
-		AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId,
+                                                     String groupId) {
+        return getTimeSeriesGroupsWhere(buildWhereCondition(officeId, categoryId, groupId));
+    }
 
-		final RecordMapper<Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper = queryRecord -> {
-			TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
-			AssignedTimeSeries loc = buildAssignedTimeSeries(queryRecord);
+    @NotNull
+    private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(Condition whereCond) {
+        List<TimeSeriesGroup> retval = new ArrayList<>();
+        AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
+        AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
-			return new Pair<>(group, loc);
-		};
+        final RecordMapper<Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper =
+            queryRecord -> {
+                TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
+                AssignedTimeSeries loc = buildAssignedTimeSeries(queryRecord);
 
-		SelectOnConditionStep<?> selectOn = dsl.select(
-				catGrp.CAT_DB_OFFICE_ID, catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
-				catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID, catGrp.SHARED_REF_TS_ID,
-				grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID, grpAssgn.GROUP_ID, grpAssgn.TS_ID,
-				grpAssgn.TS_CODE,grpAssgn.ATTRIBUTE,
-				grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID)
-				.from(catGrp)
-				.leftOuterJoin(grpAssgn)
-				.on(
-				catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
-						.and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID))
-						.and(catGrp.GRP_DB_OFFICE_ID.eq(grpAssgn.DB_OFFICE_ID)));
+                return new Pair<>(group, loc);
+            };
+
+        SelectOnConditionStep<?> selectOn = dsl.select(catGrp.CAT_DB_OFFICE_ID,
+                catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
+                catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID,
+                catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
+                grpAssgn.GROUP_ID, grpAssgn.TS_ID, grpAssgn.TS_CODE, grpAssgn.ATTRIBUTE,
+                grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID)
+                .from(catGrp).leftOuterJoin(grpAssgn)
+                .on(catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
+                        .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)));
 
 
-		SelectOrderByStep<?> select = selectOn;
-		if(whereCond != null)
-		{
-			select = selectOn.where(whereCond);
-		}
+        SelectOrderByStep<?> select = selectOn;
+        if (whereCond != null) {
+            select = selectOn.where(whereCond);
+        }
 
-		List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments = select
-				.orderBy(grpAssgn.ATTRIBUTE).fetch(mapper);
+        List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments =
+                select.orderBy(grpAssgn.ATTRIBUTE).fetch(mapper);
 
-		Map<TimeSeriesGroup, List<AssignedTimeSeries>> map = new LinkedHashMap<>();
-		for(Pair<TimeSeriesGroup, AssignedTimeSeries> pair : assignments){
-			List<AssignedTimeSeries> list = map.computeIfAbsent(pair.component1(), k -> new ArrayList<>());
-			AssignedTimeSeries assignedTimeSeries = pair.component2();
-			if(assignedTimeSeries != null)
-			{
-				list.add(assignedTimeSeries);
-			}
-		}
+        Map<TimeSeriesGroup, List<AssignedTimeSeries>> map = new LinkedHashMap<>();
+        for (Pair<TimeSeriesGroup, AssignedTimeSeries> pair : assignments) {
+            List<AssignedTimeSeries> list = map.computeIfAbsent(pair.component1(),
+                k -> new ArrayList<>());
+            AssignedTimeSeries assignedTimeSeries = pair.component2();
+            if (assignedTimeSeries != null) {
+                list.add(assignedTimeSeries);
+            }
+        }
 
-		for(final Map.Entry<TimeSeriesGroup, List<AssignedTimeSeries>> entry : map.entrySet())
-		{
-			List<AssignedTimeSeries> assigned = entry.getValue();
-			retval.add(new TimeSeriesGroup(entry.getKey(), assigned));
-		}
-		return retval;
-	}
+        for (final Map.Entry<TimeSeriesGroup, List<AssignedTimeSeries>> entry : map.entrySet()) {
+            List<AssignedTimeSeries> assigned = entry.getValue();
+            retval.add(new TimeSeriesGroup(entry.getKey(), assigned));
+        }
+        return retval;
+    }
 
-	private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord)
-	{
-		AssignedTimeSeries retval = null;
+    private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord) {
+        AssignedTimeSeries retval = null;
 
-		String timeseriesId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
-		BigDecimal tsCode = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
+        String timeseriesId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
+        BigDecimal tsCode = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
 
-		if(timeseriesId != null && tsCode != null){
-			String aliasId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ALIAS_ID);
-			String refTsId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.REF_TS_ID);
-			BigDecimal attrBD = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE);
+        if (timeseriesId != null && tsCode != null) {
+            String aliasId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ALIAS_ID);
+            String refTsId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.REF_TS_ID);
+            BigDecimal attrBD = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE);
 
-			Integer attr = null;
-			if(attrBD != null){
-				attr = attrBD.intValue();
-			}
-			retval = new AssignedTimeSeries(timeseriesId, tsCode, aliasId, refTsId, attr);
-		}
+            Integer attr = null;
+            if (attrBD != null) {
+                attr = attrBD.intValue();
+            }
+            retval = new AssignedTimeSeries(timeseriesId, tsCode, aliasId, refTsId, attr);
+        }
 
-		return retval;
-	}
+        return retval;
+    }
 
-	private TimeSeriesGroup buildTimeSeriesGroup(Record queryRecord)
-	{
-		TimeSeriesCategory cat = buildTimeSeriesCategory(queryRecord);
+    private TimeSeriesGroup buildTimeSeriesGroup(Record queryRecord) {
+        TimeSeriesCategory cat = buildTimeSeriesCategory(queryRecord);
 
-		String grpOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
-		String grpId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID);
-		String grpDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC);
-		String sharedAliasId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID);
-		String sharedRefTsId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID);
+        String grpOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
+        String grpId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID);
+        String grpDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC);
+        String sharedAliasId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID);
+        String sharedRefTsId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID);
 
-		return new TimeSeriesGroup(cat, grpOfficeId, grpId,	 grpDesc, sharedAliasId, sharedRefTsId);
-	}
+        return new TimeSeriesGroup(cat, grpOfficeId, grpId, grpDesc, sharedAliasId, sharedRefTsId);
+    }
 
-	@NotNull
-	private TimeSeriesCategory buildTimeSeriesCategory(Record queryRecord)
-	{
-		String catOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
-		String catId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
-		String catDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);
-		return new TimeSeriesCategory(catOfficeId, catId, catDesc);
-	}
+    @NotNull
+    private TimeSeriesCategory buildTimeSeriesCategory(Record queryRecord) {
+        String catOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
+        String catId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
+        String catDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);
+        return new TimeSeriesCategory(catOfficeId, catId, catDesc);
+    }
 
-	public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId, String groupId)
-	{
-		return getTimeSeriesGroupsWhere(buildWhereCondition(officeId, categoryId, groupId));
-	}
 
-	private Condition buildWhereCondition(String officeId, String categoryId, String groupId)
-	{
-		Condition whereCondition = null;
-		if ( officeId != null && !officeId.isEmpty())
-		{
-			whereCondition = and(whereCondition, AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId));
-		}
+    private Condition buildWhereCondition(String officeId, String categoryId, String groupId) {
+        Condition whereCondition = null;
+        if (officeId != null && !officeId.isEmpty()) {
+            whereCondition = and(whereCondition,
+                    AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId));
+        }
 
-		if ( categoryId != null && !categoryId.isEmpty())
-		{
-			whereCondition = and(whereCondition, AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID.eq(categoryId));
-		}
+        if (categoryId != null && !categoryId.isEmpty()) {
+            whereCondition = and(whereCondition,
+                    AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID.eq(categoryId));
+        }
 
-		if ( groupId != null && !groupId.isEmpty())
-		{
-			whereCondition = and(whereCondition, AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID.eq(groupId));
-		}
-		return whereCondition;
-	}
+        if (groupId != null && !groupId.isEmpty()) {
+            whereCondition = and(whereCondition,
+                    AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID.eq(groupId));
+        }
+        return whereCondition;
+    }
 
-	private Condition and(Condition whereCondition, Condition cond)
-	{
-		Condition retval;
-		if(whereCondition == null){
-			retval = cond;
-		} else {
-			retval = whereCondition.and(cond);
-		}
-		return retval;
-	}
-
+    private Condition and(Condition whereCondition, Condition cond) {
+        Condition retval;
+        if (whereCondition == null) {
+            retval = cond;
+        } else {
+            retval = whereCondition.and(cond);
+        }
+        return retval;
+    }
 
 
 }

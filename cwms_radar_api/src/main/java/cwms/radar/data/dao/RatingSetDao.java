@@ -3,12 +3,13 @@ package cwms.radar.data.dao;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
-import hec.data.cwmsRating.RatingSet;
 import hec.data.RatingException;
+import hec.data.cwmsRating.RatingSet;
 import usace.cwms.db.dao.ifc.rating.CwmsDbRating;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
@@ -25,8 +26,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 	{
 		try
 		{
-			dsl.connection(c ->
-			{
+			dsl.connection(c -> {
 				// can't exist if we are creating, if it exists use store
 				boolean overwriteExisting = false;
 				ratingSet.storeToDatabase(c, overwriteExisting);
@@ -35,8 +35,9 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		catch(DataAccessException ex)
 		{
 			Throwable cause = ex.getCause();
-			if(cause instanceof RatingException){
-				throw (RatingException)cause;
+			if(cause instanceof RatingException)
+			{
+				throw (RatingException) cause;
 			}
 			throw new IOException("Failed to create Rating", ex);
 		}
@@ -48,17 +49,20 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		final RatingSet[] retval = new RatingSet[1];
 		try
 		{
-			dsl.connection(c -> retval[0] = RatingSet.fromDatabase(RatingSet.DatabaseLoadMethod.EAGER, c, officeId, specificationId));
+			dsl.connection(c -> retval[0] = RatingSet.fromDatabase(RatingSet.DatabaseLoadMethod.EAGER, c, officeId,
+					specificationId));
 		}
 		catch(DataAccessException ex)
 		{
 			Throwable cause = ex.getCause();
-			if(cause instanceof RatingException){
-				if(cause.getMessage().contains("contains no rating templates")){
+			if(cause instanceof RatingException)
+			{
+				if(cause.getMessage().contains("contains no rating templates"))
+				{
 					return null;
 				}
 
-				throw (RatingException)cause;
+				throw (RatingException) cause;
 			}
 			throw new IOException("Failed to retrieve Rating", ex);
 		}
@@ -71,8 +75,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 	{
 		try
 		{
-			dsl.connection(c ->
-			{
+			dsl.connection(c -> {
 				boolean overwriteExisting = true;
 				ratingSet.storeToDatabase(c, overwriteExisting);
 			});
@@ -80,8 +83,9 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		catch(DataAccessException ex)
 		{
 			Throwable cause = ex.getCause();
-			if(cause instanceof RatingException){
-				throw (RatingException)cause;
+			if(cause instanceof RatingException)
+			{
+				throw (RatingException) cause;
 			}
 			throw new IOException("Failed to store Rating", ex);
 		}
@@ -92,17 +96,14 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 	{
 		try
 		{
-			dsl.connection(c ->
-			{
-//				deleteWithRatingSet(c, officeId, ratingSpecId);
-				delete(c, officeId, ratingSpecId);
-			});
+			dsl.connection(c -> delete(c, officeId, ratingSpecId));
 		}
 		catch(DataAccessException ex)
 		{
 			Throwable cause = ex.getCause();
-			if(cause instanceof RatingException){
-				throw (RatingException)cause;
+			if(cause instanceof RatingException)
+			{
+				throw (RatingException) cause;
 			}
 			throw new IOException("Failed to delete Rating", ex);
 		}
@@ -110,12 +111,11 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 	}
 
 	public void delete(Connection c, String officeId, String ratingSpecId) throws SQLException, RatingException
-    {
-	    delete(c, DeleteRule.DELETE_ALL, ratingSpecId, officeId);
-    }
+	{
+		delete(c, DeleteRule.DELETE_ALL, ratingSpecId, officeId);
+	}
 
-	public void delete(Connection c, DeleteRule deleteRule, String ratingSpecId, String officeId)
-			throws SQLException
+	public void delete(Connection c, DeleteRule deleteRule, String ratingSpecId, String officeId) throws SQLException
 	{
 		CwmsDbRating cwmsDbRating = CwmsDbServiceLookup.buildCwmsDb(CwmsDbRating.class, c);
 		cwmsDbRating.deleteSpecs(c, ratingSpecId, deleteRule.getRule(), officeId);
@@ -137,15 +137,15 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 		try
 		{
 			dsl.connection(c ->
-			{
-				deleteWithRatingSet(c, officeId, specificationId, effectiveDates); // This doesn't seem to work.
-			});
+				deleteWithRatingSet(c, officeId, specificationId, effectiveDates) // This doesn't seem to work.
+			);
 		}
 		catch(DataAccessException ex)
 		{
 			Throwable cause = ex.getCause();
-			if(cause instanceof RatingException){
-				throw (RatingException)cause;
+			if(cause instanceof RatingException)
+			{
+				throw (RatingException) cause;
 			}
 			throw new IOException("Failed to delete Rating", ex);
 		}
@@ -167,9 +167,11 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao
 
 
 	@Override
-	public String retrieveRatings(String format, String names, String unit, String datum, String office, String start, String end, String timezone)
+	public String retrieveRatings(String format, String names, String unit, String datum, String office, String start,
+	                              String end, String timezone)
 	{
-		return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(), names, format, unit, datum,
-				start, end, timezone, office);
+		return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(), names, format, unit, datum, start, end,
+				timezone, office);
 	}
+
 }

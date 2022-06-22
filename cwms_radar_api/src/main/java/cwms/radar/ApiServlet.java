@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
@@ -21,40 +23,56 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import cwms.radar.api.BasinController;
+import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
 import cwms.radar.api.LevelsController;
 import cwms.radar.api.LocationCategoryController;
 import cwms.radar.api.LocationController;
 import cwms.radar.api.LocationGroupController;
+import cwms.radar.api.NotFoundException;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
+import cwms.radar.api.RatingSpecController;
+import cwms.radar.api.RatingTemplateController;
+import cwms.radar.api.SpecifiedLevelController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.security.CwmsAccessManager;
+import cwms.radar.security.Role;
 import io.javalin.Javalin;
+import io.javalin.apibuilder.CrudFunction;
+import io.javalin.apibuilder.CrudHandler;
+import io.javalin.apibuilder.CrudHandlerKt;
+import io.javalin.core.security.AccessManager;
+import io.javalin.core.security.RouteRole;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.info.Info;
 import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
-import cwms.radar.api.*;
-
-import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.prefixPath;
+import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 
 
 /**
@@ -75,10 +93,15 @@ import static io.javalin.apibuilder.ApiBuilder.get;
                             "/basins/*",
                             "/blobs/*",
                             "/clobs/*",
-                            "/pools/*"
+                            "/pools/*",
+                            "/specified-levels/*"
 })
 public class ApiServlet extends HttpServlet {
     public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
+
+    // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
+    public static final String CWMS_USERS_ROLE = "CWMS Users";
+
     private MetricRegistry metrics;
     private Meter total_requests;
     /**
@@ -93,8 +116,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException{
-        //System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
-        //System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
+
         String context = this.getServletContext().getContextPath();
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
@@ -103,25 +125,27 @@ public class ApiServlet extends HttpServlet {
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());            // Needed in Java 8 to properly format java.time classes
 
+        AccessManager accessManager = buildAccessManager();
+
+
         javalin = Javalin.createStandalone(config -> {
             config.defaultContentType = "application/json";
             config.contextPath = context;
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
             config.enableDevLogging();
             config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
-            //config.addStaticFiles("/static",Location.CLASSPATH);
+            config.accessManager(accessManager);
         })
                 .attribute("PolicyFactory",sanitizer)
                 .attribute("ObjectMapper",om)
                 .before( ctx -> {
-                    /* authorization on connection setup will go here
-                    Connection conn = ctx.attribute("db");
-                    */
+
                     ctx.attribute("sanitizer",sanitizer);
                     ctx.header("X-Content-Type-Options","nosniff");
                     ctx.header("X-Frame-Options","SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
-                }).exception(FormattingException.class, (fe, ctx ) -> {
+                })
+                .exception(FormattingException.class, (fe, ctx ) -> {
                     final RadarError re = new RadarError("Formatting error");
 
                     if( fe.getCause() instanceof IOException ){
@@ -152,6 +176,14 @@ public class ApiServlet extends HttpServlet {
                     logger.log(Level.INFO, re.toString(), e );
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
+                .exception(FieldException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(JsonFieldsException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
                     logger.log(Level.WARNING,String.format("error on request[%s]: %s", errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
@@ -160,38 +192,95 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(errResponse);
                 })
 
-                .routes( () -> configureRoutes())
+                .routes(this::configureRoutes)
                 .javalinServlet();
     }
 
+    private AccessManager buildAccessManager()
+    {
+        return new CwmsAccessManager();
+    }
+
+
+
+
     protected void configureRoutes()
     {
+
+        RouteRole[] requiredRoles = {new Role(CWMS_USERS_ROLE)};
+
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API").contentType(Formats.PLAIN));
-        crud("/location/category/{category-id}", new LocationCategoryController(metrics));
-        crud("/location/group/{group-id}", new LocationGroupController(metrics));
-        crud("/locations/{location_code}", new LocationController(metrics));
-        crud("/offices/{office}", new OfficeController(metrics));
-        crud("/units/{unit_name}", new UnitsController(metrics));
-        crud("/parameters/{param_name}", new ParametersController(metrics));
-        crud("/timezones/{zone}", new TimeZoneController(metrics));
-        crud("/levels/{location}", new LevelsController(metrics));
+        radarCrud("/location/category/{category-id}", new LocationCategoryController(metrics), requiredRoles);
+        radarCrud("/location/group/{group-id}", new LocationGroupController(metrics), requiredRoles);
+        radarCrud("/locations/{location-id}", new LocationController(metrics), requiredRoles);
+        radarCrud("/offices/{office}", new OfficeController(metrics), requiredRoles);
+        radarCrud("/units/{unit-id}", new UnitsController(metrics), requiredRoles);
+        radarCrud("/parameters/{param-id}", new ParametersController(metrics), requiredRoles);
+        radarCrud("/timezones/{zone}", new TimeZoneController(metrics), requiredRoles);
+        radarCrud("/levels/{location}", new LevelsController(metrics), requiredRoles);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
-        crud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics));
-        crud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics));
-        crud("/timeseries/{timeseries}", tsController);
-        crud("/ratings/{rating}", new RatingController(metrics));
-        crud("/catalog/{dataSet}", new CatalogController(metrics));
-        crud("/basins/{basin-id}", new BasinController(metrics));
-        crud("/blobs/{blob-id}", new BlobController(metrics));
-        crud("/clobs/{clob-id}", new ClobController(metrics));
-        crud("/pools/{pool-id}", new PoolController(metrics));
+        radarCrud("/timeseries/category/{category-id}", new TimeSeriesCategoryController(metrics), requiredRoles);
+        radarCrud("/timeseries/group/{group-id}", new TimeSeriesGroupController(metrics), requiredRoles);
+        radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
+        radarCrud("/ratings/template/{template-id}", new RatingTemplateController(metrics), requiredRoles);
+        radarCrud("/ratings/spec/{rating-id}", new RatingSpecController(metrics), requiredRoles);
+        radarCrud("/ratings/{rating}", new RatingController(metrics), requiredRoles);
+        radarCrud("/catalog/{dataset}", new CatalogController(metrics), requiredRoles);
+        radarCrud("/basins/{basin-id}", new BasinController(metrics), requiredRoles);
+        radarCrud("/blobs/{blob-id}", new BlobController(metrics), requiredRoles);
+        radarCrud("/clobs/{clob-id}", new ClobController(metrics), requiredRoles);
+        radarCrud("/pools/{pool-id}", new PoolController(metrics), requiredRoles);
+        radarCrud("/specified-levels/{level-id}", new SpecifiedLevelController(metrics), requiredRoles);
+    }
+
+
+    /**
+     * This method is very similar to the ApiBuilder.crud method but the specified roles
+     * are only required for the post, patch and delete methods.    getOne and getAll are always allowed.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param roles the accessmanager will require these roles are present to access post, patch and delete methods
+     */
+    public static void radarCrud(@NotNull String path, @NotNull CrudHandler crudHandler, @NotNull RouteRole... roles) {
+        String fullPath = prefixPath(path);
+        String[] subPaths = Arrays.stream(fullPath.split("/")).filter(it -> !it.isEmpty()).toArray(String[]::new);
+        if (subPaths.length < 2) {
+            throw new IllegalArgumentException("CrudHandler requires a path like '/resource/{resource-id}'");
+        }
+        String resourceId = subPaths[subPaths.length - 1];
+        if (!(resourceId.startsWith("{") && resourceId.endsWith("}"))) {
+            throw new IllegalArgumentException("CrudHandler requires a path-parameter at the end of the provided path, e.g. '/users/{user-id}'");
+        }
+        String resourceBase = subPaths[subPaths.length - 2];
+        if (resourceBase.startsWith("{") || resourceBase.startsWith("<") || resourceBase.endsWith("}") || resourceBase.endsWith(">")) {
+            throw new IllegalArgumentException("CrudHandler requires a resource base at the beginning of the provided path, e.g. '/users/{user-id}'");
+        }
+
+        //noinspection KotlinInternalInJava
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
+
+        // getOne and getAll are assumed not to need authorization
+        staticInstance().get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
+        staticInstance().get(fullPath.replace(resourceId, ""), crudFunctions.get(CrudFunction.GET_ALL));
+
+        // create, update and delete need authorization.
+        staticInstance().post(fullPath.replace(resourceId, ""), crudFunctions.get(CrudFunction.CREATE), roles);
+        staticInstance().patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
+        staticInstance().delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0").description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                     .path("/swagger-docs")
+                    .defaultDocumentation(doc -> {
+                        doc.json("500", RadarError.class);
+                        doc.json("400", RadarError.class);
+                        doc.json("401", RadarError.class);
+                        doc.json("403", RadarError.class);
+                        doc.json("404", RadarError.class);
+                    })
                     .activateAnnotationScanningFor("cwms.radar.api");
     }
 
@@ -205,16 +294,14 @@ public class ApiServlet extends HttpServlet {
             javalin.service(req, resp);
         } catch (SQLException ex) {
             RadarError re = new RadarError("Major Database Issue");
-            logger.log(Level.SEVERE, ex, () -> { return re.toString() + " for url " + req.getRequestURI(); });
+            logger.log(Level.SEVERE, ex, () -> re + " for url " + req.getRequestURI());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.setContentType(ContentType.APPLICATION_JSON.toString());
             try (PrintWriter out = resp.getWriter()) {
                 ObjectMapper om = new ObjectMapper();
                 out.println(om.writeValueAsString(re));
             }
-
         }
-
     }
 
     @Override

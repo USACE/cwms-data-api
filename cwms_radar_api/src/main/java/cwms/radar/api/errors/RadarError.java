@@ -17,7 +17,7 @@ public class RadarError{
     private String message;
     @Schema(description = "A randomly generated number to help identify your request in the logs for analysis..")
     private String incidentIdentifier;
-    private Map<String,String> details;
+    private Map<String,? extends Object> details;
 
     public String getMessage() {
         return this.message;
@@ -27,7 +27,7 @@ public class RadarError{
         return incidentIdentifier;
     }
 
-    public Map<String, String> getDetails(){
+    public Map<String,? extends Object> getDetails(){
         return Collections.unmodifiableMap(details);
     }
 
@@ -38,11 +38,17 @@ public class RadarError{
         this.details = new HashMap<>();
     }
 
-    public RadarError(String message, Map<String, String> map){
+    public RadarError(String message, Map<String,? extends Object> map){
         Objects.requireNonNull(map);
         this.incidentIdentifier = Long.toString(Random.Default.nextLong());
         this.message = message;
         this.details = map;
+    }
+
+    public RadarError(String message, Map<String,? extends Object> details, boolean suppressIncidentId ){
+        this.incidentIdentifier = "user input error";
+        this.message = message;
+        this.details = details;
     }
 
     @Override
@@ -52,6 +58,9 @@ public class RadarError{
 
     public static RadarError notImplemented() {
         return new RadarError("Not Implemented");
+    }
+    public static RadarError notAuthorized() {
+        return new RadarError("Not Authorized");
     }
 
 }
