@@ -98,7 +98,7 @@ dependencies {
     testImplementation 'org.testcontainers:database-commons:1.17.1'
     testImplementation "org.testcontainers:jdbc:1.17.1"
     testImplementation "org.testcontainers:junit-jupiter:1.17.1"
-    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.2'
+    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.5'
 
     testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
