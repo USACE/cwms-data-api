@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 
 @Schema(
-    name = "dataSet",
-    description = "Set of data for which a larger catalog can be built."
+        name = "dataSet",
+        description = "Set of data for which a larger catalog can be built."
 )
 public enum CatalogableEndpoint {
     TIMESERIES("timeseries"),
@@ -17,11 +17,11 @@ public enum CatalogableEndpoint {
         this.dataSet = value;
     }
 
-    public String value(){
+    public String value() {
         return dataSet;
     }
 
-    public String getValue(){
+    public String getValue() {
         return dataSet;
     }
 
