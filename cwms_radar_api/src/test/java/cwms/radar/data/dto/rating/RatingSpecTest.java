@@ -65,7 +65,7 @@ public class RatingSpecTest
 		String depRndSpecs = "2222233332";
 		String desc = null;
 
-		String dateMethods = "LINEAR,NEAREST,NEAREST";
+		String dateMethods = "LINEAR,NEAREST,LOWER";
 
 		retval = new RatingSpec.Builder().withOfficeId(officeId).withRatingId(ratingId)
 				.withTemplateId(templateId).withLocationId(locId).withVersion(version).withSourceAgency(agency)
@@ -75,6 +75,10 @@ public class RatingSpecTest
 				.withDependentRoundingSpec(depRndSpecs).withDescription(desc)
 				.withDateMethods(dateMethods)
 				.build();
+
+		assertEquals("LINEAR", retval.getOutRangeLowMethod());
+		assertEquals("NEAREST", retval.getInRangeMethod());
+		assertEquals("LOWER", retval.getOutRangeHighMethod());
 
 		return retval;
 	}
