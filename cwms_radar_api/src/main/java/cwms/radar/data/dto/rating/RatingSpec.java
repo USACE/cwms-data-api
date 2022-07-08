@@ -250,7 +250,8 @@ public class RatingSpec implements CwmsDTO {
         result = 31 * result + (isAutoActivate() ? 1 : 0);
         result = 31 * result + (isAutoMigrateExtension() ? 1 : 0);
         result = 31 * result + Arrays.hashCode(getIndependentRoundingSpecs());
-        result = 31 * result + (getDependentRoundingSpec() != null ? getDependentRoundingSpec().hashCode() : 0);
+        result = 31 * result + (getDependentRoundingSpec() != null
+                ? getDependentRoundingSpec().hashCode() : 0);
         result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
         return result;
     }
