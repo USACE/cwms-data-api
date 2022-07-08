@@ -4,12 +4,12 @@ public class FormatResult {
     private String result;
     private String contentType;
 
-    public FormatResult(String result, String contentType){
+    public FormatResult(String result, String contentType) {
         this.result = result;
         this.contentType = contentType;
     }
 
-    public int length(){
+    public int length() {
         return result.length();
     }
 
@@ -20,7 +20,7 @@ public class FormatResult {
     public String toString() {
         return result;
     }
-    
+
 
     /**
      * @return String return the contentType

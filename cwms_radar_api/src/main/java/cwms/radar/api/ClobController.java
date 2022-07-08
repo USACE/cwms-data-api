@@ -1,14 +1,11 @@
 package cwms.radar.api;
 
-import java.util.Optional;
-import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
+import static com.codahale.metrics.MetricRegistry.name;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
@@ -25,10 +22,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
+import java.util.Optional;
+import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
-
-import static com.codahale.metrics.MetricRegistry.name;
 
 
 /**
@@ -44,98 +41,106 @@ public class ClobController implements CrudHandler {
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
 
-    public ClobController(MetricRegistry metrics){
-        this.metrics=metrics;
+    public ClobController(MetricRegistry metrics) {
+        this.metrics = metrics;
         String className = ClobController.class.getName();
-        getAllRequests = this.metrics.meter(name(className,"getAll","count"));
-        getAllRequestsTime = this.metrics.timer(name(className,"getAll","time"));
-        getOneRequest = this.metrics.meter(name(className,"getOne","count"));
-        getOneRequestTime = this.metrics.timer(name(className,"getOne","time"));
-        requestResultSize = this.metrics.histogram((name(className,"results","size")));
+        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
+        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
+        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
+        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
+        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
     }
 
-    protected DSLContext getDslContext(Context ctx)
-    {
+    protected DSLContext getDslContext(Context ctx) {
         return JooqDao.getDslContext(ctx);
     }
 
     @OpenApi(
             queryParams = {
-                @OpenApiParam(name="office",
-                            description="Specifies the owning office. If this field is not specified, matching information from all offices shall be returned."),
-                @OpenApiParam(name="page",
-                            description = "This end point can return a lot of data, this identifies where in the request you are. This is an opaque value, and can be obtained from the 'next-page' value in the response."
-                ),
-                    @OpenApiParam(name="cursor",
+                    @OpenApiParam(name = "office",
+                            description = "Specifies the owning office. If this field is not "
+                                    + "specified, matching information from all offices shall be "
+                                    + "returned."),
+                    @OpenApiParam(name = "page",
+                            description = "This end point can return a lot of data, this "
+                                    + "identifies where in the request you are. This is an opaque"
+                                    + " value, and can be obtained from the 'next-page' value in "
+                                    + "the response."
+                    ),
+                    @OpenApiParam(name = "cursor",
                             deprecated = true,
                             description = "Deprecated. Use 'page' instead."
                     ),
-                @OpenApiParam(name="page-size",
-                            type=Integer.class,
-                            description = "How many entries per page returned. Default " + defaultPageSize + "."
-                ),
-                @OpenApiParam(name="pageSize",
-                        deprecated = true,
-                        type=Integer.class,
-                        description = "Deprecated, use 'page-size' instead."
-                ),
-                @OpenApiParam(name="include-values",
-                        type = Boolean.class,
-                        description = "Do you want the value associated with this particular clob (default: false)"
-                ),
-                @OpenApiParam(name="includeValues",
-                                                deprecated = true,
-                    type = Boolean.class,
-                    description = "Deprecated, use 'include-values' instead."
-                ),
-                @OpenApiParam(name="like",
-                    required = false,
-                    type = String.class,
-                    description = "Posix regular expression matching against the id"
-                )
+                    @OpenApiParam(name = "page-size",
+                            type = Integer.class,
+                            description = "How many entries per page returned. Default "
+                                    + defaultPageSize + "."
+                    ),
+                    @OpenApiParam(name = "pageSize",
+                            deprecated = true,
+                            type = Integer.class,
+                            description = "Deprecated, use 'page-size' instead."
+                    ),
+                    @OpenApiParam(name = "include-values",
+                            type = Boolean.class,
+                            description = "Do you want the value associated with this particular "
+                                    + "clob (default: false)"
+                    ),
+                    @OpenApiParam(name = "includeValues",
+                            deprecated = true,
+                            type = Boolean.class,
+                            description = "Deprecated, use 'include-values' instead."
+                    ),
+                    @OpenApiParam(name = "like",
+                            required = false,
+                            type = String.class,
+                            description = "Posix regular expression matching against the id"
+                    )
             },
-        responses = { @OpenApiResponse(status="200",
-                                       description = "A list of clobs.",
-                                       content = {
-                                           @OpenApiContent( type = Formats.JSONV2, from = Clobs.class ),
-                                           @OpenApiContent( type = Formats.XMLV2, from = Clobs.class )
-                                       }
-                      )
-                    },
-        tags = {"Clob"}
+            responses = {@OpenApiResponse(status = "200",
+                    description = "A list of clobs.",
+                    content = {
+                            @OpenApiContent(type = Formats.JSONV2, from = Clobs.class),
+                            @OpenApiContent(type = Formats.XMLV2, from = Clobs.class)
+                    }
+            )
+            },
+            tags = {"Clob"}
     )
     @Override
     public void getAll(Context ctx) {
         getAllRequests.mark();
-        try(
+        try (
                 final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx)
         ) {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
-            String formatParm = ctx.queryParamAsClass("format",String.class).getOrDefault("");
+            String formatParm = ctx.queryParamAsClass("format", String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
             String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
                     String.class, "", metrics, name(ClobController.class.getName(), "getAll"));
 
-            if(!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
+            if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
-                    .status(HttpCode.BAD_REQUEST);
+                        .status(HttpCode.BAD_REQUEST);
                 return;
             }
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
-                    Integer.class, defaultPageSize, metrics, name(ClobController.class.getName(), "getAll"));
+            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
+                    "pagesize"}, Integer.class, defaultPageSize, metrics,
+                    name(ClobController.class.getName(), "getAll"));
 
-            boolean includeValues = Controllers.queryParamAsClass(ctx, new String[]{"include-values", "includeValues"}, Boolean.class,
+            boolean includeValues = Controllers.queryParamAsClass(ctx, new String[]{"include"
+                            + "-values", "includeValues"}, Boolean.class,
                     false, metrics, name(ClobController.class.getName(), "getAll"));
-            String like = ctx.queryParamAsClass("like",String.class).getOrDefault(".*");
+            String like = ctx.queryParamAsClass("like", String.class).getOrDefault(".*");
 
             ClobDao dao = new ClobDao(dsl);
             Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);
-            String result = Formats.format(contentType,clobs);
+            String result = Formats.format(contentType, clobs);
 
             ctx.result(result);
             ctx.contentType(contentType.toString());
@@ -145,32 +150,31 @@ public class ClobController implements CrudHandler {
     }
 
 
-
     @OpenApi(
             queryParams = {
-            @OpenApiParam(name = "office", description = "Specifies the owning office."),
-    },
-        responses = { @OpenApiResponse(status="200",
-                                       description = "Returns requested clob.",
-                                       content = {
-                                           @OpenApiContent(type = Formats.JSON, from = Clob.class ),
-                                       }
-                      )
-                    },
-        tags = {"Clob"}
+                    @OpenApiParam(name = "office", description = "Specifies the owning office."),
+            },
+            responses = {@OpenApiResponse(status = "200",
+                    description = "Returns requested clob.",
+                    content = {
+                            @OpenApiContent(type = Formats.JSON, from = Clob.class),
+                    }
+            )
+            },
+            tags = {"Clob"}
     )
     @Override
     public void getOne(Context ctx, String clobId) {
         getOneRequest.mark();
-        try(
+        try (
                 final Timer.Context timeContext = getOneRequestTime.time();
                 DSLContext dsl = getDslContext(ctx)
         ) {
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam("office"));
-            Optional<Clob> optAc = dao.getByUniqueName(clobId,  office);
+            Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
-            if( optAc.isPresent() ){
+            if (optAc.isPresent()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
@@ -181,15 +185,13 @@ public class ClobController implements CrudHandler {
 
                 requestResultSize.update(result.length());
             } else {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unable to find clob based on given parameters"));
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unable to find "
+                        + "clob based on given parameters"));
             }
-
 
 
         }
     }
-
-
 
 
     @OpenApi(ignore = true)
