@@ -1,7 +1,6 @@
 package cwms.radar.api.enums;
 
-public enum Nation
-{
+public enum Nation {
     US("UNITED STATES", "US"),
     CANADA("CANADA", "CA"),
     MEXICO("MEXICO", "MX");
@@ -9,29 +8,23 @@ public enum Nation
     private final String name;
     private final String code;
 
-    Nation(String name, String code)
-    {
+    Nation(String name, String code) {
         this.name = name;
         this.code = code;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public String getCode()
-    {
+    public String getCode() {
         return code;
     }
 
-    public static Nation NationForName(String nationName)
-    {
+    public static Nation nationForName(String nationName) {
         Nation retVal = null;
-        for(Nation nation : values())
-        {
-            if(nation.name.equalsIgnoreCase(nationName))
-            {
+        for (Nation nation : values()) {
+            if (nation.name.equalsIgnoreCase(nationName)) {
                 retVal = nation;
                 break;
             }
@@ -39,13 +32,10 @@ public enum Nation
         return retVal;
     }
 
-    public static Nation NationForCode(String code)
-    {
+    public static Nation nationForCode(String code) {
         Nation retVal = null;
-        for(Nation nation : values())
-        {
-            if(nation.code.equalsIgnoreCase(code))
-            {
+        for (Nation nation : values()) {
+            if (nation.code.equalsIgnoreCase(code)) {
                 retVal = nation;
                 break;
             }
