@@ -231,13 +231,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 					).from(validTs)
 				);
-			/*DSL.with(valid)
-			   .select()
-			   .from(valid);
-			*/
+						
 			Field<Timestamp> dateTimeCol 	  = DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME");
 			Field<Double> valueCol 		  = DSL.field("VALUE", Double.class).as("VALUE");
-			Field<Integer> qualityCol = DSL.field("QUALITY_CODE",Integer.class).as("QUALITY");
+			Field<Integer> qualityCol = DSL.field("QUALITY_CODE",Integer.class).as("QUALITY_CODE");
+			Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
 
 			// This code assumes the database timezone is in UTC (per Oracle recommendation)
 			// Wrap in table() so JOOQ can parse the result
@@ -247,8 +245,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				).from(DSL.sql( "table( " +
 						CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
 							valid.field("tsid",String.class),
-					valid.field("units",String.class),
-							
+							valid.field("units",String.class),							
 							CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
 							CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
 							DSL.inline("UTC", String.class),
@@ -328,17 +325,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 			if(pageSize != 0)
 			{
-				SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
-						DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME"),
-						DSL.field("VALUE", Double.class).as("VALUE"),
-					CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(DSL.field("QUALITY_CODE", Integer.class), DSL.inline(5))).as("QUALITY_CODE")
-			)
+				SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = 
+					dsl.select(
+						dateTimeCol,
+						valueCol,
+						qualityNormCol
+					)
 					.from(retrieveSelectData)
-					.where(DSL.field("DATE_TIME", Timestamp.class)
+					.where(dateTimeCol
 							.greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
 									DSL.nvl(DSL.val(tsCursor == null ? null : tsCursor.toInstant().toEpochMilli()),
 											DSL.val(beginTime.toInstant().toEpochMilli())))))
-					.and(DSL.field("DATE_TIME", Timestamp.class)
+					.and(dateTimeCol
 							.lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
 					);
 
@@ -348,9 +346,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				logger.info(() -> query.getSQL(ParamType.INLINED));
 
 				query.fetchInto(tsRecord -> timeseries.addValue(
-								tsRecord.getValue("DATE_TIME", Timestamp.class),
-								tsRecord.getValue("VALUE", Double.class),
-								tsRecord.getValue("QUALITY_CODE", Integer.class)
+								tsRecord.getValue(dateTimeCol),
+								tsRecord.getValue(valueCol),
+								tsRecord.getValue(qualityNormCol).intValue()
 						)
 				);
 
