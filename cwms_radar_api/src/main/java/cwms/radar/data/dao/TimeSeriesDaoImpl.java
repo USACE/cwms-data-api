@@ -307,7 +307,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 							.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
 				   		);
 
-			logger.info(() -> metadataQuery.getSQL(ParamType.INLINED));
+			logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
 			
 			TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
 				String vert = (String)tsMetadata.getValue("VERTICAL_DATUM");
@@ -343,7 +343,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				if(pageSize > 0)
 					query.limit(DSL.val(pageSize + 1));
 
-				logger.info(() -> query.getSQL(ParamType.INLINED));
+				logger.fine(() -> query.getSQL(ParamType.INLINED));
 
 				query.fetchInto(tsRecord -> timeseries.addValue(
 								tsRecord.getValue(dateTimeCol),
