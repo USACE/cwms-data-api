@@ -266,7 +266,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 					// All times are sent as UTC to the database, regardless of requested timezone.
 					null, null, null, null, null, null, null, 
 					officeId)
-				+")"
+				+") retrieveTs"
 			);
 
 						
@@ -331,7 +331,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 						valueCol,
 						qualityNormCol
 					)
-					.from(retrieveSelectData)
+					.from(retrieveSelectData) 
 					.where(dateTimeCol
 							.greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
 									DSL.nvl(DSL.val(tsCursor == null ? null : tsCursor.toInstant().toEpochMilli()),
@@ -343,7 +343,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 				if(pageSize > 0)
 					query.limit(DSL.val(pageSize + 1));
 
-				logger.fine(() -> query.getSQL(ParamType.INLINED));
+				logger.info(() -> query.getSQL(ParamType.INLINED));
 
 				query.fetchInto(tsRecord -> timeseries.addValue(
 								tsRecord.getValue(dateTimeCol),

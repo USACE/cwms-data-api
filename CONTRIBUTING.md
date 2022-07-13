@@ -88,9 +88,19 @@ Now you're ready to [clone the repository](https://help.github.com/articles/clon
 
 If you are editing an existing file please be consistent with the style in the file.
 
-Otherwise normal Java formatting should be used.
+Otherwise use the defined checkstyle format for new code.
 
-A defined styles and checks will be defined at a later date.
+#### SQL Coding
+
+1. Use the JOOQ wrapper. Generally the wrapper provides sufficiently reasonable query generation. 
+However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it generates something better.
+    a. If the query you're making has nested queries name the queries. Example        
+       ```sql
+       select a.* from (select col1,col2 from a_table) a;
+       ```
+       Otherwise JOOQ creates a new name each time the query is run which can starved the shared memory.
+
+2. Joins are your friend. They are a much better friend IF you let the database do them for you. Do not pull data into java just to do a join. Write the appropriate SQL.
 
 ## Submitting an Issue
 
