@@ -86,7 +86,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
     @Override
     public String toString(){
         StringBuilder builder = new StringBuilder();
-        builder.append(getOffice()).append("/").append(name).append(";units=").append(units);
+        builder.append(getOffice()).append("/").append(name);
         return builder.toString();
     }
 
