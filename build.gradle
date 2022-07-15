@@ -52,5 +52,7 @@ subprojects {
         }
     }
 
-
+    checkstyleMain {
+        enabled = gradle.startParameter.taskNames.contains('checkstyleMain')
+    }
 }

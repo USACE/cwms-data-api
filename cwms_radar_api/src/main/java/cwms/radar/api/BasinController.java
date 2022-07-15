@@ -1,4 +1,8 @@
 package cwms.radar.api;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -18,20 +22,15 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
-
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpServletResponse;
-public class BasinController implements CrudHandler
-{
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+public class BasinController implements CrudHandler {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
     public final String TAG = "Basins-Beta";
 
@@ -42,124 +41,137 @@ public class BasinController implements CrudHandler
     private final Timer getOneRequestTime;
     private final Histogram requestResultSize;
 
-    public BasinController(MetricRegistry metrics)
-    {
+    public BasinController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = metrics.meter(name(className,"getAll","count"));
+        getAllRequests = metrics.meter(name(className, "getAll", "count"));
         getAllRequestsTime = metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = metrics.meter(name(className,"getOne","count"));
+        getOneRequest = metrics.meter(name(className, "getOne", "count"));
         getOneRequestTime = metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = metrics.histogram((name(className,"results","size")));
+        requestResultSize = metrics.histogram((name(className, "results", "size")));
     }
+
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name="office", required=false, description="Specifies the owning office of the basin whose data is to be included in the response. If this field is not specified, matching basin information from all offices shall be returned."),
-                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters. (This is default if no value is entered)\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters."),
+                    @OpenApiParam(name = "office", required = false, description = "Specifies the"
+                            + " owning office of the basin whose data is to be included in the "
+                            + "response. If this field is not specified, matching basin "
+                            + "information from all offices shall be returned."),
+                    @OpenApiParam(name = "unit", required = false, description = "Specifies the "
+                            + "unit or unit system of the response. Valid values for the unit "
+                            + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
+                            + "values will be in the default English units for their parameters. "
+                            + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
+                            + " SI unit system. Basin values will be in the default SI units for "
+                            + "their parameters."),
             },
             responses = {
-                    @OpenApiResponse(status="200",
+                    @OpenApiResponse(status = "200",
                             content = {
                                     @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
                             }),
-                    @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a basin."),
-                    @OpenApiResponse(status="501", description = "Requested format is not implemented")
+                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                            + "parameters did not find a basin."),
+                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                            + "implemented")
             },
             description = "Returns CWMS Basin Data",
             tags = {TAG}
     )
     @Override
-    public void getAll(@NotNull Context ctx)
-    {
+    public void getAll(@NotNull Context ctx) {
         getAllRequests.mark();
-        try(final Timer.Context timeContext = getAllRequestsTime.time();
-            DSLContext dsl = getDslContext(ctx))
-        {
-            String units = ctx.queryParamAsClass("unit",String.class).getOrDefault(UnitSystem.EN.value());
+        try (final Timer.Context timeContext = getAllRequestsTime.time();
+             DSLContext dsl = getDslContext(ctx)) {
+            String units =
+                    ctx.queryParamAsClass("unit", String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam("office");
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.NAMED_PGJSON;
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
+                    Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
-            if(contentType.getType().equals(Formats.NAMED_PGJSON))
-            {
+            if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
                 String result = basinPgJsonFormatter.format(basins);
                 ctx.result(result);
             }
-        }
-        catch (SQLException ex)
-        {
+        } catch (SQLException ex) {
             LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
         }
     }
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name="office", required=false, description="Specifies the owning office of the basin whose data is to be included in the response. If this field is not specified, matching basin information from all offices shall be returned."),
-                    @OpenApiParam(name="unit", required=false, description="Specifies the unit or unit system of the response. Valid values for the unit field are:\r\n 1. EN.   Specifies English unit system. Basin values will be in the default English units for their parameters. (This is default if no value is entered)\r\n2. SI.   Specifies the SI unit system. Basin values will be in the default SI units for their parameters."),
+                    @OpenApiParam(name = "office", required = false, description = "Specifies the"
+                            + " owning office of the basin whose data is to be included in the "
+                            + "response. If this field is not specified, matching basin "
+                            + "information from all offices shall be returned."),
+                    @OpenApiParam(name = "unit", required = false, description = "Specifies the "
+                            + "unit or unit system of the response. Valid values for the unit "
+                            + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
+                            + "values will be in the default English units for their parameters. "
+                            + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
+                            + " SI unit system. Basin values will be in the default SI units for "
+                            + "their parameters."),
             },
             responses = {
-                    @OpenApiResponse(status="200",
+                    @OpenApiResponse(status = "200",
                             content = {
                                     @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
                             }),
-                    @OpenApiResponse(status="404", description = "The provided combination of parameters did not find a basin."),
-                    @OpenApiResponse(status="501", description = "Requested format is not implemented")
+                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                            + "parameters did not find a basin."),
+                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                            + "implemented")
             },
             description = "Returns CWMS Basin Data",
             tags = {TAG}
     )
     @Override
-    public void getOne(@NotNull Context ctx, @NotNull String basinId)
-    {
+    public void getOne(@NotNull Context ctx, @NotNull String basinId) {
         getOneRequest.mark();
-        try(final Timer.Context timeContext = getAllRequestsTime.time();
-            DSLContext dsl = getDslContext(ctx))
-        {
-            String units = ctx.queryParamAsClass("unit",String.class).getOrDefault( UnitSystem.EN.value());
+        try (final Timer.Context timeContext = getAllRequestsTime.time();
+             DSLContext dsl = getDslContext(ctx)) {
+            String units =
+                    ctx.queryParamAsClass("unit", String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam("office");
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.NAMED_PGJSON;
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
+                    Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);
-            if(contentType.getType().equals(Formats.NAMED_PGJSON))
-            {
+            if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
                 String result = basinPgJsonFormatter.format(basin);
                 ctx.result(result);
+            } else {
+                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unsupported "
+                        + "format for basins"));
             }
-            else
-            {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new RadarError("Unsupported format for basins"));
-            }
-        }
-        catch (SQLException ex)
-        {
+        } catch (SQLException ex) {
             String errorMsg = "Error retrieving " + basinId;
             LOGGER.log(Level.SEVERE, errorMsg, ex);
         }
     }
+
     @OpenApi(ignore = true)
     @Override
-    public void update(@NotNull Context ctx, @NotNull String s)
-    {
+    public void update(@NotNull Context ctx, @NotNull String s) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void create(@NotNull Context ctx)
-    {
+    public void create(@NotNull Context ctx) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String s)
-    {
+    public void delete(@NotNull Context ctx, @NotNull String s) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 }

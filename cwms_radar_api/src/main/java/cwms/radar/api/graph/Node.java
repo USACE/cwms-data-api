@@ -1,6 +1,5 @@
 package cwms.radar.api.graph;
 
-public interface Node
-{
+public interface Node {
     String getId();
 }
