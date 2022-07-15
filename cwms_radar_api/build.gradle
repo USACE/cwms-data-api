@@ -201,7 +201,7 @@ task integrationTests(type: Test) {
     classpath += configurations.baseLibs
     // The before all extension will take care of these properties
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainers") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
