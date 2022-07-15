@@ -34,6 +34,9 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
     private static TestRealm realm;
     private static TestAuthValve authValve;
 
+    private static String DB_VERSION = System.getProperty("oracle.version", CwmsDatabaseContainer.ORACLE_19C);
+    private static String CWMS_VERSION = System.getProperty("cwms.schema.version", "registry.hecdev.net/cwms/schema_installer:latest-dev");
+
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
 
@@ -52,11 +55,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
         System.out.println("Before all called");
         System.out.println(context.getDisplayName());
         if( radarInstance == null ){
-
-            cwmsDb = new CwmsDatabaseContainer(CwmsDatabaseContainer.ORACLE_18XE)
+            
+            cwmsDb = new CwmsDatabaseContainer(CwmsDatabaseContainer.ORACLE_19C)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
-                            .withSchemaVersion("18-SNAPSHOT");
+                            .withSchemaImage(CWMS_VERSION);                            
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);
