@@ -100,7 +100,7 @@ dependencies {
     testImplementation 'org.testcontainers:database-commons:1.17.2'
     testImplementation "org.testcontainers:jdbc:1.17.2"
     testImplementation "org.testcontainers:junit-jupiter:1.17.2"
-    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.2'
+    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.6'
 
 //    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
@@ -201,7 +201,7 @@ task integrationTests(type: Test) {
     classpath += configurations.baseLibs
     // The before all extension will take care of these properties
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainers") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
