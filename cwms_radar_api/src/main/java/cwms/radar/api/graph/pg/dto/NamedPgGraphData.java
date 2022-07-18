@@ -1,23 +1,19 @@
 package cwms.radar.api.graph.pg.dto;
 
-public class NamedPgGraphData
-{
+public class NamedPgGraphData {
     private final String name;
     private final PgGraphData graph;
 
-    public NamedPgGraphData(String name, PgGraphData graphData)
-    {
+    public NamedPgGraphData(String name, PgGraphData graphData) {
         this.name = name;
         this.graph = graphData;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public PgGraphData getGraph()
-    {
+    public PgGraphData getGraph() {
         return graph;
     }
 }

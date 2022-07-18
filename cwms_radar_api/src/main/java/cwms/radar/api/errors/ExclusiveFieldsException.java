@@ -7,20 +7,20 @@ import java.util.Map;
 
 public class ExclusiveFieldsException extends FieldException {
     private static final String DETAIL_KEY = "Use only one of";
-    private Map<String,List<String>> details = new HashMap<>();
+    private Map<String, List<String>> details = new HashMap<>();
 
-    private ExclusiveFieldsException(){
+    private ExclusiveFieldsException() {
         super("Mutually exclusive fields used.");
-        details.put(DETAIL_KEY,new ArrayList<String>());
+        details.put(DETAIL_KEY, new ArrayList<>());
     }
 
-    public ExclusiveFieldsException(List<String> fields){
+    public ExclusiveFieldsException(List<String> fields) {
         this();
         details.get(DETAIL_KEY).addAll(fields);
     }
 
     @Override
-    public Map<String,? extends List<String>> getDetails() {
+    public Map<String, ? extends List<String>> getDetails() {
         return details;
     }
 }

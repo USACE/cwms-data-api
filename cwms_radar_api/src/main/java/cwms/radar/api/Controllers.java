@@ -16,9 +16,10 @@ public class Controllers {
 
     /**
      * Marks a meter and starts a timer.
-     * @param registry Metric Registry
+     *
+     * @param registry  Metric Registry
      * @param className Added to the metric names
-     * @param subject Added to the metric names
+     * @param subject   Added to the metric names
      * @return Timer.Context of the started timer.
      */
     public static Timer.Context markAndTime(MetricRegistry registry, String className,
@@ -31,11 +32,13 @@ public class Controllers {
 
     /**
      * Returns the first matching query param or the provided default value if no match is found.
-     * @param ctx Request Context
-     * @param names An ordered list of allowed query parameter names.  Useful for supporting
-     *              deprecated or renamed parameters.  The correct name should be specified first
-     *              followed by any number of deprecated names.
-     * @param clazz Return value type.
+     *
+     * @param ctx          Request Context
+     * @param names        An ordered list of allowed query parameter names.  Useful for supporting
+     *                     deprecated or renamed parameters.  The correct name should be
+     *                     specified first
+     *                     followed by any number of deprecated names.
+     * @param clazz        Return value type.
      * @param defaultValue Value to return if no matching queryParam is found.
      * @return value
      */
@@ -64,14 +67,16 @@ public class Controllers {
      * Returns the first matching query param or the provided default value if no match is found.
      * Records in a metrics counter whether the match was for the first name, one of the deprecated
      * names or the default value.
-     * @param ctx Request Context
-     * @param names An ordered list of allowed query parameter names.  Useful for supporting
-     *              deprecated or renamed parameters.  The correct name should be specified first
-     *              followed by any number of deprecated names.
-     * @param clazz Return value type.
-     * @param defaultValue  Value to return if no matching queryParam is found.
-     * @param metrics Metrics registry
-     * @param className subject for the metrics
+     *
+     * @param ctx          Request Context
+     * @param names        An ordered list of allowed query parameter names.  Useful for supporting
+     *                     deprecated or renamed parameters.  The correct name should be
+     *                     specified first
+     *                     followed by any number of deprecated names.
+     * @param clazz        Return value type.
+     * @param defaultValue Value to return if no matching queryParam is found.
+     * @param metrics      Metrics registry
+     * @param className    subject for the metrics
      * @return value
      */
     public static <T> T queryParamAsClass(io.javalin.http.Context ctx, String[] names,

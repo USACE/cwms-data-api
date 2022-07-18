@@ -37,6 +37,9 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "radar_cwmsdb");
     private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms_schema_installer:21.1.1");
 
+    private static String DB_VERSION = System.getProperty("oracle.version", CwmsDatabaseContainer.ORACLE_19C);
+    private static String CWMS_VERSION = System.getProperty("cwms.schema.version", "registry.hecdev.net/cwms/schema_installer:latest-dev");
+
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
 
@@ -55,12 +58,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
         System.out.println("Before all called");
         System.out.println(context.getDisplayName());
         if( radarInstance == null ){
-
-            cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
+            
+            cwmsDb = new CwmsDatabaseContainer(CwmsDatabaseContainer.ORACLE_19C)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
-                            .withVolumeName(ORACLE_VOLUME)
-                            .withSchemaVersion("21.1.2");
+                            .withSchemaImage(CWMS_VERSION);                            
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);

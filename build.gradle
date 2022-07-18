@@ -2,7 +2,7 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.4.4'
+    version = '2.4.5'
 }
 
 // versions for shared dependencies
@@ -52,5 +52,7 @@ subprojects {
         }
     }
 
-
+    checkstyleMain {
+        enabled = gradle.startParameter.taskNames.contains('checkstyleMain')
+    }
 }

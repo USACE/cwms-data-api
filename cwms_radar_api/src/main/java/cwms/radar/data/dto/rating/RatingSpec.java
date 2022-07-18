@@ -447,27 +447,26 @@ public class RatingSpec implements CwmsDTO
 			return this;
 		}
 
-		public Builder withDateMethods(String dateMethods)
-		{
-			if(dateMethods != null && !dateMethods.isEmpty()) {
-				String[] parts = dateMethods.split(",");
-				if(parts.length > 0) {
-					withInRangeMethod(parts[0]);
-				}
+        public Builder withDateMethods(String dateMethods) {
+            if (dateMethods != null && !dateMethods.isEmpty()) {
+                String[] parts = dateMethods.split(",");
+                if (parts.length > 0) {
+                    withOutRangeLowMethod(parts[0]);
+                }
 
-				if(parts.length > 1) {
-					withOutRangeLowMethod(parts[1]);
-				}
+                if (parts.length > 1) {
+                    withInRangeMethod(parts[1]);
+                }
 
-				if(parts.length > 2) {
-					withOutRangeHighMethod(parts[2]);
-				}
-			} else {
-				withInRangeMethod(null);
-				withOutRangeLowMethod(null);
-				withOutRangeHighMethod(null);
-			}
-			return this;
-		}
+                if (parts.length > 2) {
+                    withOutRangeHighMethod(parts[2]);
+                }
+            } else {
+                withInRangeMethod(null);
+                withOutRangeLowMethod(null);
+                withOutRangeHighMethod(null);
+            }
+            return this;
+        }
 	}
 }
