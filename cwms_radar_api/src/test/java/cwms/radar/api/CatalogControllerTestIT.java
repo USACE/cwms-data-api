@@ -32,12 +32,13 @@ public class CatalogControllerTestIT {
     @Test
     public void test_no_aliased_results_returned(){
         given().accept(Formats.JSONV2)
-        .queryParam("office", "SPK")
+            .queryParam("office", "SPK")
+            .queryParam("like",".*-radar$")
         .get("/catalog/TIMESERIES").then().assertThat()
-        .statusCode(is(200))
-        .body("$",hasKey("total"))
-        .body("total",is(4))
-        .body("entries.size()",is(4));
+            .statusCode(is(200))
+            .body("$",hasKey("total"))
+            .body("total",is(4))
+            .body("entries.size()",is(4));
     }
 
 
@@ -45,7 +46,7 @@ public class CatalogControllerTestIT {
     public void test_queries_are_case_insensitive(){
         given().accept("application/json;version=2")
         .queryParam("office", "SPK")
-        .queryParam("like","ALDER.*")
+        .queryParam("like","alder spRINgs.*-RADAR$")
         .get("/catalog/TIMESERIES").then().assertThat()
         .statusCode(is(200))
         .body("$",hasKey("total"))
