@@ -1,5 +1,8 @@
 package cwms.radar.data.dto;
 
+import cwms.radar.formatters.ContentType;
+import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.json.JsonV1;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -21,6 +24,7 @@ import hec.data.VerticalDatumException;
 import static cwms.radar.data.dao.JsonRatingUtilsTest.readFully;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VerticalDatumInfoTest
@@ -82,6 +86,11 @@ class VerticalDatumInfoTest
 
 	private void assertOffsetsEquals(VerticalDatumInfo.Offset[] offsets, VerticalDatumInfo.Offset[] offsets1)
 	{
+		if(offsets== null)
+		{
+			assertNull(offsets1);
+			return;
+		}
 		assertEquals(offsets.length, offsets1.length);
         for (int i = 0; i < offsets.length; i++)
         {
@@ -128,6 +137,20 @@ class VerticalDatumInfoTest
 		marshaller.marshal(vdi,pw);
 		return sw.toString();
 	}
+
+	private VerticalDatumInfo parseJson(String body) throws JsonProcessingException {
+		ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+
+		return objectMapper.readValue(body, VerticalDatumInfo.class);
+	}
+
+	private String getJson(VerticalDatumInfo vdi) throws JsonProcessingException {
+
+		ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+
+		return objectMapper.writeValueAsString(vdi);
+	}
+
 
 	@Test
 	void test_json_roundtrip() throws JsonProcessingException
@@ -205,5 +228,107 @@ class VerticalDatumInfoTest
 		assertVDIEquals(vdi, actual);
 
 	}
+
+	@Test
+	void xml_serialize_no_offsets() throws JAXBException
+	{
+
+		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+				.withNativeDatum("NGVD-29").withElevation(230.7);
+
+		VerticalDatumInfo vdi = builder.build();
+
+		assertNotNull(vdi);
+
+		String body = getXml(vdi);
+		assertNotNull(body);
+
+		VerticalDatumInfo actual = parseXml(body);
+		assertVDIEquals(vdi, actual);
+	}
+
+	@Test
+	void xml_serialize_empty_offsets() throws JAXBException
+	{
+
+		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+				.withNativeDatum("NGVD-29").withElevation(230.7)
+				.withOffsets(new VerticalDatumInfo.Offset[]{});
+
+		VerticalDatumInfo vdi = builder.build();
+
+		assertNotNull(vdi);
+
+		String body = getXml(vdi);
+		assertNotNull(body);
+
+		VerticalDatumInfo actual = parseXml(body);
+		assertVDIEquals(vdi, actual);
+	}
+
+	@Test
+	void json_serialize_empty_offsets() throws JAXBException, JsonProcessingException {
+
+		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+				.withNativeDatum("NGVD-29").withElevation(230.7)
+				.withOffsets(new VerticalDatumInfo.Offset[]{});
+
+		VerticalDatumInfo vdi = builder.build();
+
+		assertNotNull(vdi);
+
+		String body = getJson(vdi);
+		assertNotNull(body);
+		assertTrue(body.contains("\"offsets\":[]"));
+
+		VerticalDatumInfo actual = parseJson(body);
+		assertVDIEquals(vdi, actual);
+	}
+
+	@Test
+	void json_serialize_not_set_offsets_is_empty() throws JAXBException, JsonProcessingException {
+
+		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+				.withNativeDatum("NGVD-29").withElevation(230.7)
+				;
+
+		VerticalDatumInfo vdi = builder.build();
+
+		assertNotNull(vdi);
+
+		String body = getJson(vdi);
+		assertNotNull(body);
+		assertTrue(body.contains("\"offsets\":[]"));
+
+		VerticalDatumInfo actual = parseJson(body);
+		assertVDIEquals(vdi, actual);
+	}
+
+	@Test
+	void json_serialize_null_means_null() throws JAXBException, JsonProcessingException {
+
+		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+				.withNativeDatum("NGVD-29").withElevation(230.7)
+				.withOffsets(null)
+				;
+
+		VerticalDatumInfo vdi = builder.build();
+
+		assertNotNull(vdi);
+
+		String body = getJson(vdi);
+		assertNotNull(body);
+		assertTrue(body.contains("\"offsets\":null"));
+
+		VerticalDatumInfo actual = parseJson(body);
+		assertVDIEquals(vdi, actual);
+	}
+
+
 
 }
