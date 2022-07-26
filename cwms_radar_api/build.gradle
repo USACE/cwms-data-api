@@ -102,6 +102,8 @@ dependencies {
     testImplementation "org.testcontainers:junit-jupiter:1.17.2"
     testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.6'
 
+    testImplementation "org.apache.commons:commons-csv:1.9.0"
+
 //    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
     webjars('org.webjars:swagger-ui:4.10.3') {
@@ -245,4 +247,20 @@ task dockerBuild(type: Exec, dependsOn: prepareDockerBuild) {
     workingDir "$buildDir/docker"
     executable "docker"
     args "build", "--tag=cwms-rest-api:" + project.version, "."
+}
+
+task generateTimeSeriesSamples(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+
+    mainClass = "helpers.TsRandomSampler"
+
+    def url = project.findProperty("dbUrl") ?: ""
+    def user = project.findProperty("dbUser") ?: ""
+    def password = project.findProperty("dbPassword") ?: ""
+
+    args url
+    args user
+    args password
 }

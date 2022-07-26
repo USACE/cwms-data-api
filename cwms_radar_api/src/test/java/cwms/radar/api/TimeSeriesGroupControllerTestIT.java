@@ -74,8 +74,8 @@ class TimeSeriesGroupControllerTestIT
         assertNotNull(tsIds);
         assertFalse(tsIds.isEmpty());
 
-        String[] lookFor = {"Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw",
-                "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw"};
+        String[] lookFor = {"Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-radar",
+                "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar"};
 
         for(final String tsId : lookFor)
         {

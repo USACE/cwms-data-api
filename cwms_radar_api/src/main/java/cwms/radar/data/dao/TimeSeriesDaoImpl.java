@@ -53,6 +53,7 @@ import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.Operator;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record10;
@@ -512,12 +513,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		if(tsGroupLike != null){
 			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.upper().likeRegex(tsGroupLike.toUpperCase()));
 		}
-
+				
 		if(curOffice != null ){
-			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().ge(curOffice));
+			Condition officeEqualCur = AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(curOffice.toUpperCase());
+			Condition curOfficeTsIdGreater = AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor);
+			Condition officeGreaterThanCur = AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().gt(curOffice.toUpperCase());			
+			primaryDataQuery.addConditions(Operator.AND,officeEqualCur.and(curOfficeTsIdGreater).or(officeGreaterThanCur));						
+		} else {
+			primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
 		}
 		
-		primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
+		
 
 
 		primaryDataQuery.addOrderBy(AV_CWMS_TS_ID2.DB_OFFICE_ID,AV_CWMS_TS_ID2.CWMS_TS_ID);
