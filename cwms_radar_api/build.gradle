@@ -25,9 +25,17 @@ dependencies {
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.36'
 
-    implementation "mil.army.usace.hec:hec-monolith:2.0.2"
+    implementation( "mil.army.usace.hec:hec-monolith:2.0.2" ) {
+        //exclude group: "org.python", module: "jython-standalone"
+        //exclude group: "mil.army.usace.hec.swingx"
+        exclude group: "*"
+    }
     implementation "mil.army.usace.hec:hec-nucleus-metadata:1.0.33"
-    implementation 'mil.army.usace.hec:hec-cwms-ratings-core:1.0.0'
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-core:1.0.0' ) {
+        //exclude group: "org.python", module: "jython-standalone"
+        //exclude group: "mil.army.usace.hec.swingx"
+        exclude group: "*"
+    }
 
     implementation('org.jooq.pro:jooq:3.11.2') {
         exclude group: "com.oracle", module: "*"
@@ -237,7 +245,7 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
     from(war.outputs.files.singleFile) {
         //include "${project.name}-${project.version}.jar"
         into "radar/webapps"
-        rename(".*\\.war", "ROOT.war")
+        rename(".*\\.war", "cwms-data.war")
     }
 }
 

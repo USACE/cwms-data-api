@@ -132,7 +132,7 @@ public class ApiServlet extends HttpServlet {
             config.defaultContentType = "application/json";
             config.contextPath = context;
             config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
-            config.enableDevLogging();
+            //config.enableDevLogging();
             config.requestLogger( (ctx,ms) -> logger.finest(ctx.toString()));
             config.accessManager(accessManager);
         })
