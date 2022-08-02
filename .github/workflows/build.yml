@@ -39,6 +39,7 @@ jobs:
 
   release:
     if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/cleanup')
+    name: Create and push releases
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -93,8 +94,8 @@ jobs:
         id: login-alt
         with:
           registry: ${{ secrets.ALT_REGISTRY }}
-          username: $${ secrets.ALT_REG_USER }}
-          password: $${ secrets.ALT_REG_PASSWORD }}
+          username: ${{ secrets.ALT_REG_USER }}
+          password: ${{ secrets.ALT_REG_PASSWORD }}
       - name: Build docker image
         run: |
           ./gradlew dockerBuild
@@ -124,14 +125,7 @@ jobs:
           java-package: jdk
       - name: get RADAR version
         id: get_version
-        run: .github/workflows/get_version.sh
-      - name: Login to Alt Registry
-        uses: docker/login-action@v2.0.0
-        id: login-alt
-        with:
-          registry: ${{ secrets.ALT_REGISTRY }}
-          username: $${ secrets.ALT_REG_USER }}
-          password: $${ secrets.ALT_REG_PASSWORD }}
+        run: .github/workflows/get_version.sh      
       - name: Configure AWS credentials
         if: ${{ always() }}
         uses: aws-actions/configure-aws-credentials@v1
@@ -142,7 +136,14 @@ jobs:
       - name: Login to Amazon ECR
         if: ${{ success() }}
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1      
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to Alt Registry
+        uses: docker/login-action@v2.0.0
+        id: login-alt
+        with:
+          registry: ${{ secrets.ALT_REGISTRY }}
+          username: ${{ secrets.ALT_REG_USER }}
+          password: ${{ secrets.ALT_REG_PASSWORD }} 
       - name: Build, tag, and push image to Amazon ECR (midas-api)
         if: ${{ success() }}
         env:
