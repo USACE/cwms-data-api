@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - 'release/**'
+      - 'cleanup'
   pull_request:
     branches:
       - develop
@@ -37,7 +38,7 @@ jobs:
         run: ./gradlew dockerBuild
 
   release:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/cleanup')
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -77,16 +78,16 @@ jobs:
         with:
           tag_name: ${{steps.get_version.outputs.VERSION}}
           release_name: Release ${{steps.get_version.outputs.VERSION}}
-      - name: Upload Tomcat War
-        id: upload-war
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: warfile/${{ needs.build.outputs.thewar}}
-          asset_name: ${{ steps.get_version.outputs.WAR_FILE_NAME}}
-          asset_content_type: application/x-webarchive
+      #- name: Upload Tomcat War
+      #  id: upload-war
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #  with:
+      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #    asset_path: warfile/${{ needs.build.outputs.thewar}}
+      #    asset_name: ${{ steps.get_version.outputs.WAR_FILE_NAME}}
+      #    asset_content_type: application/x-webarchive
       - name: Login to Alt Registry
         uses: docker/login-action@v2.0.0
         id: login-alt
@@ -107,7 +108,7 @@ jobs:
 
 
   publish:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/develop')
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/cleanup')
     name: API Container Image
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -124,6 +125,13 @@ jobs:
       - name: get RADAR version
         id: get_version
         run: .github/workflows/get_version.sh
+      - name: Login to Alt Registry
+        uses: docker/login-action@v2.0.0
+        id: login-alt
+        with:
+          registry: ${{ secrets.ALT_REGISTRY }}
+          username: $${ secrets.ALT_REG_USER }}
+          password: $${ secrets.ALT_REG_PASSWORD }}
       - name: Configure AWS credentials
         if: ${{ always() }}
         uses: aws-actions/configure-aws-credentials@v1
@@ -134,14 +142,7 @@ jobs:
       - name: Login to Amazon ECR
         if: ${{ success() }}
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      - name: Login to Alt Registry
-        uses: docker/login-action@v2.0.0
-        id: login-alt
-        with:
-          registry: ${{ secrets.ALT_REGISTRY }}
-          username: $${ secrets.ALT_REG_USER }}
-          password: $${ secrets.ALT_REG_PASSWORD }}
+        uses: aws-actions/amazon-ecr-login@v1      
       - name: Build, tag, and push image to Amazon ECR (midas-api)
         if: ${{ success() }}
         env:
