@@ -50,6 +50,9 @@ import org.jooq.DSLContext;
 
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
+    public static final String EFFECTIVE_DATE = "effective-date";
+    public static final String OFFICE = "office";
+    public static final String DATE = "date";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -71,7 +74,7 @@ public class LevelsController implements CrudHandler {
     @OpenApi(
             description = "Create new CWMS Location Level",
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "office in which Location Level will be created")
             },
             requestBody = @OpenApiRequestBody(
@@ -90,7 +93,7 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context timeContext = markAndTime("create"); DSLContext dsl =
                 getDslContext(ctx)) {
 
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -118,13 +121,17 @@ public class LevelsController implements CrudHandler {
             description = "Delete CWMS Location Level",
             queryParams = {
                     @OpenApiParam(name = "cascade-delete", type = Boolean.class),
-                    @OpenApiParam(name = "office", description = "Specifies the owning office of "
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                             + "the location level whose data is to be deleted. If this field is "
                             + "not specified, matching location level information will be deleted"
                             + " from all offices."),
-                    @OpenApiParam(name = "date", description = "Specifies the effective date of "
-                            + "the level to be deleted. If not provided will delete all "
-                            + "data and reference to the location level.")},
+
+                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
+                            + EFFECTIVE_DATE),
+                    @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
+                            + "effective date of the level to be deleted. If not provided will "
+                            + "delete all data and reference to the location level.")
+                    },
             method = HttpMethod.DELETE,
             path = "/levels",
             tags = {"Levels"})
@@ -133,8 +140,10 @@ public class LevelsController implements CrudHandler {
 
         try (final Timer.Context timeContext = markAndTime("delete"); DSLContext dsl =
                 getDslContext(ctx)) {
-            String office = ctx.queryParam("office");
-            String dateString = ctx.queryParam("date");
+            String office = ctx.queryParam(OFFICE);
+            String dateString = Controllers.queryParamAsClass(ctx,
+                    new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
+                    name(LevelsController.class.getName(), "delete"));
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam("cascade-delete"));
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = dateString != null ?
@@ -154,7 +163,7 @@ public class LevelsController implements CrudHandler {
                     @OpenApiParam(name = "name", description = "Specifies the name(s) of "
             + "the location level(s) whose data is to be included in the response. "
                             + "Uses * for all."),
-                    @OpenApiParam(name = "office", description = "Specifies the owning "
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning "
                             + "office of the location level(s) whose data is to be included in the"
                             + " response. If this field is not specified, matching location level "
                             + "information from all offices shall be returned."),
@@ -214,19 +223,21 @@ public class LevelsController implements CrudHandler {
             String version = contentType.getParameters().get("version");
 
             String names = ctx.queryParam("name");
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParam("unit");
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
 
-            String timezone = ctx.queryParamAsClass("timezone", String.class).getOrDefault("UTC");
+            String timezone = ctx.queryParamAsClass("timezone", String.class)
+                    .getOrDefault("UTC");
 
             if ("2".equals(version)) {
 
-                String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
-                int pageSize =
-                        ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(defaultPageSize);
+                String cursor = ctx.queryParamAsClass("page", String.class)
+                        .getOrDefault("");
+                int pageSize = ctx.queryParamAsClass("page-size", Integer.class)
+                        .getOrDefault(defaultPageSize);
 
                 /////////// I'm not sure about this SHORT_IDS usage.
                 // using it here b/c TimeSeriesController uses it.  TODO: figure out if this is
@@ -277,7 +288,8 @@ public class LevelsController implements CrudHandler {
                     case "png": // fall next
                     case "jpg": // fall next
                     default: {
-                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
+                                .json(RadarError.notImplemented());
                     }
                 }
 
@@ -297,10 +309,12 @@ public class LevelsController implements CrudHandler {
                             + " the requested location level."),
             },
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "office of the Location Level to be returned"),
-                    @OpenApiParam(name = "date", required = true, description = "Specifies the "
-                            + "effective date of Location Level top be returned")
+                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
+                            + EFFECTIVE_DATE),
+                    @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
+                            + "the effective date of Location Level to be returned")
             },
             responses = {
                     @OpenApiResponse(status = "200",content = {
@@ -312,8 +326,10 @@ public class LevelsController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, @NotNull String id) {
-        String office = ctx.queryParam("office");
-        String dateString = ctx.queryParam("date");
+        String office = ctx.queryParam(OFFICE);
+        String dateString = Controllers.queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
+                String.class, null, metrics, name(LevelsController.class.getName(),
+                        "getOne"));
 
         try (final Timer.Context timeContext = markAndTime("getOne"); DSLContext dsl =
                 getDslContext(ctx)) {
@@ -326,8 +342,8 @@ public class LevelsController implements CrudHandler {
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (Exception ex) {
-            RadarError re =
-                    new RadarError("Failed to retrieve Location Level request: " + ex.getLocalizedMessage());
+            RadarError re = new RadarError("Failed to retrieve Location Level request: "
+                    + ex.getLocalizedMessage());
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -335,10 +351,12 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "office in which Location Level will be updated"),
-                    @OpenApiParam(name = "date", required = true, description = "Specifies the "
-                            + "effective date of Location Level that will be updated")
+                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
+                            + EFFECTIVE_DATE),
+                    @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
+                            + "the effective date of Location Level that will be updated")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -357,8 +375,12 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context timeContext = markAndTime("update"); DSLContext dsl =
                 getDslContext(ctx)) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            String office = ctx.queryParam("office");
-            String dateString = ctx.queryParam("date");
+            String office = ctx.queryParam(OFFICE);
+
+            String dateString = Controllers.queryParamAsClass(ctx,
+                    new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
+                    name(LevelsController.class.getName(), "update"));
+
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
             ZoneId timezoneId = unmarshalledDateTime.getZone();
@@ -381,12 +403,14 @@ public class LevelsController implements CrudHandler {
             //only store (update) if level does exist
             LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel,
                     levelFromBody);
-            updatedLocationLevel =
-                    new LocationLevel.Builder(updatedLocationLevel).withLevelDate(unmarshalledDateTime).build();
-            if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(existingLevelLevel.getLocationLevelId())) {
+            updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
+                            .withLevelDate(unmarshalledDateTime).build();
+            if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(
+                    existingLevelLevel.getLocationLevelId())) {
                 //if name changed then delete location with old name
                 levelsDao.renameLocationLevel(id, updatedLocationLevel);
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location " + "Level");
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed "
+                        + "Location Level");
             } else {
                 levelsDao.storeLocationLevel(updatedLocationLevel, timezoneId);
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
@@ -448,7 +472,8 @@ public class LevelsController implements CrudHandler {
                 updatedLevel.getOfficeId());
         if (existingLevel.getIntervalMonths() != null && existingLevel.getIntervalMonths() > 0) {
             intervalMinutes = null;
-        } else if (existingLevel.getIntervalMinutes() != null && existingLevel.getIntervalMinutes() > 0) {
+        } else if (existingLevel.getIntervalMinutes() != null
+                && existingLevel.getIntervalMinutes() > 0) {
             intervalMonths = null;
         }
         if (existingLevel.getAttributeValue() == null) {
@@ -457,11 +482,32 @@ public class LevelsController implements CrudHandler {
         if (!existingLevel.getSeasonalValues().isEmpty()) {
             siParameterUnitsConstantValue = null;
             seasonalTimeSeriesId = null;
-        } else if (existingLevel.getSeasonalTimeSeriesId() != null && !existingLevel.getSeasonalTimeSeriesId().isEmpty()) {
+        } else if (existingLevel.getSeasonalTimeSeriesId() != null
+                && !existingLevel.getSeasonalTimeSeriesId().isEmpty()) {
             siParameterUnitsConstantValue = null;
             seasonalValues = null;
         }
-        return new LocationLevel.Builder(locationId, levelDate).withSeasonalValues(seasonalValues).withSeasonalTimeSeriesId(seasonalTimeSeriesId).withSpecifiedLevelId(specifiedLevelId).withParameterTypeId(parameterTypeId).withParameterId(parameterId).withConstantValue(siParameterUnitsConstantValue).withLevelUnitsId(levelUnitsId).withLevelComment(levelComment).withIntervalOrigin(intervalOrigin).withIntervalMinutes(intervalMinutes).withIntervalMonths(intervalMonths).withInterpolateString(interpolateString).withDurationId(durationId).withAttributeValue(attributeValue).withAttributeUnitsId(attributeUnitsId).withAttributeParameterTypeId(attributeParameterTypeId).withAttributeParameterId(attributeParameterId).withAttributeDurationId(attributeDurationId).withAttributeComment(attributeComment).withOfficeId(officeId).build();
+        return new LocationLevel.Builder(locationId, levelDate)
+                .withSeasonalValues(seasonalValues)
+                .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
+                .withSpecifiedLevelId(specifiedLevelId)
+                .withParameterTypeId(parameterTypeId)
+                .withParameterId(parameterId)
+                .withConstantValue(siParameterUnitsConstantValue)
+                .withLevelUnitsId(levelUnitsId)
+                .withLevelComment(levelComment)
+                .withIntervalOrigin(intervalOrigin)
+                .withIntervalMinutes(intervalMinutes)
+                .withIntervalMonths(intervalMonths)
+                .withInterpolateString(interpolateString)
+                .withDurationId(durationId)
+                .withAttributeValue(attributeValue)
+                .withAttributeUnitsId(attributeUnitsId)
+                .withAttributeParameterTypeId(attributeParameterTypeId)
+                .withAttributeParameterId(attributeParameterId)
+                .withAttributeDurationId(attributeDurationId)
+                .withAttributeComment(attributeComment)
+                .withOfficeId(officeId).build();
     }
 
     public static LocationLevelsDao getLevelsDao(DSLContext dsl) {
@@ -475,12 +521,12 @@ public class LevelsController implements CrudHandler {
 
         try {
             retVal =
-                    new LocationLevel.Builder(om.readValue(body, LocationLevel.class)).withOfficeId(office).build();
+                    new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
+                            .withOfficeId(office).build();
             return retVal;
         } catch (JsonProcessingException e) {
             throw new JsonFieldsException(e);
         }
-
 
     }
 
@@ -513,7 +559,8 @@ public class LevelsController implements CrudHandler {
                 JsonNode propertyValue = root.findValue(propertyName);
                 if (propertyValue != null && "".equals(propertyValue.textValue())) {
                     retVal =
-                            new LocationLevel.Builder(retVal).withProperty(propertyName, null).build();
+                            new LocationLevel.Builder(retVal)
+                                    .withProperty(propertyName, null).build();
                 }
             }
         } catch (NullPointerException e) {
