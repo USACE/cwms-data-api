@@ -1,6 +1,7 @@
 package cwms.radar.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -64,9 +65,11 @@ public final class LocationLevel implements CwmsDTO {
     @Schema(description = "Units thhe provided levels are in")
     private final String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes affect.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final ZonedDateTime levelDate;
     private final String levelComment;
     @Schema(description = "The start point of provided seasonal values")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final ZonedDateTime intervalOrigin;
     private final Integer intervalMonths;
     private final Integer intervalMinutes;
@@ -225,7 +228,7 @@ public final class LocationLevel implements CwmsDTO {
 
         @JsonCreator
         public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
-                       @JsonProperty(value = "level-date", required = true) ZonedDateTime effectiveDate) {
+                   @JsonProperty(value = "level-date", required = true) ZonedDateTime effectiveDate) {
             locationId = name;
             levelDate = effectiveDate;
             buildPropertyFunctions();
@@ -272,7 +275,8 @@ public final class LocationLevel implements CwmsDTO {
             withIntervalMonths(copyFrom.getIntervalMonths());
             Date intervalOriginDate = copyFrom.getIntervalOrigin();
             if (intervalOriginDate != null) {
-                withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(), ZoneId.of("UTC")));
+                withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
+                        ZoneId.of("UTC")));
             }
 
             withLevelComment(copyFrom.getLevelComment());
@@ -298,48 +302,50 @@ public final class LocationLevel implements CwmsDTO {
         private void buildPropertyFunctions() {
             propertyFunctionMap.clear();
             propertyFunctionMap.put("location-level-id",
-                    nameVal -> withLocationLevelId((String) nameVal));
+                nameVal -> withLocationLevelId((String) nameVal));
             propertyFunctionMap.put("seasonal-time-series-id",
-                    tsIdVal -> withSeasonalTimeSeriesId((String) tsIdVal));
+                tsIdVal -> withSeasonalTimeSeriesId((String) tsIdVal));
             propertyFunctionMap.put("seasonal-values",
-                    seasonalVals -> withSeasonalValues((List<SeasonalValueBean>) seasonalVals));
+                seasonalVals -> withSeasonalValues((List<SeasonalValueBean>) seasonalVals));
             propertyFunctionMap.put("office-id", officeIdVal -> withOfficeId((String) officeIdVal));
             propertyFunctionMap.put("specified-level-id",
-                    specifiedLevelIdVal -> withSpecifiedLevelId((String) specifiedLevelIdVal));
+                specifiedLevelIdVal -> withSpecifiedLevelId((String) specifiedLevelIdVal));
             propertyFunctionMap.put("parameter-type-id",
-                    parameterTypeIdVal -> withParameterTypeId((String) parameterTypeIdVal));
+                parameterTypeIdVal -> withParameterTypeId((String) parameterTypeIdVal));
             propertyFunctionMap.put("parameter-id",
-                    parameterIdVal -> withParameterId((String) parameterIdVal));
+                parameterIdVal -> withParameterId((String) parameterIdVal));
             propertyFunctionMap.put("si-parameter-units-constant-value",
-                    paramUnitsConstVal -> withConstantValue((Double) paramUnitsConstVal));
+                paramUnitsConstVal -> withConstantValue((Double) paramUnitsConstVal));
             propertyFunctionMap.put("level-units-id",
-                    levelUnitsIdVal -> withLevelUnitsId((String) levelUnitsIdVal));
+                levelUnitsIdVal -> withLevelUnitsId((String) levelUnitsIdVal));
             propertyFunctionMap.put("level-date",
-                    levelDateVal -> withLevelDate((ZonedDateTime) levelDateVal));
+                levelDateVal -> withLevelDate((ZonedDateTime) levelDateVal));
             propertyFunctionMap.put("level-comment",
-                    levelCommentVal -> withLevelComment((String) levelCommentVal));
+                levelCommentVal -> withLevelComment((String) levelCommentVal));
             propertyFunctionMap.put("interval-origin",
-                    intervalOriginVal -> withIntervalOrigin((ZonedDateTime) intervalOriginVal));
+                intervalOriginVal -> withIntervalOrigin((ZonedDateTime) intervalOriginVal));
             propertyFunctionMap.put("interval-months",
-                    months -> withIntervalMonths((Integer) months));
+                months -> withIntervalMonths((Integer) months));
             propertyFunctionMap.put("interval-minutes",
-                    mins -> withIntervalMinutes((Integer) mins));
+                mins -> withIntervalMinutes((Integer) mins));
             propertyFunctionMap.put("interpolate-string",
-                    interpolateStr -> withInterpolateString((String) interpolateStr));
+                interpolateStr -> withInterpolateString((String) interpolateStr));
             propertyFunctionMap.put("duration-id",
-                    durationIdVal -> withDurationId((String) durationIdVal));
+                durationIdVal -> withDurationId((String) durationIdVal));
             propertyFunctionMap.put("attribute-value",
-                    attributeVal -> withAttributeValue(BigDecimal.valueOf((Double) attributeVal)));
+                attributeVal -> withAttributeValue(BigDecimal.valueOf((Double) attributeVal)));
             propertyFunctionMap.put("attribute-units-id",
-                    attributeUnitsIdVal -> withAttributeUnitsId((String) attributeUnitsIdVal));
+                attributeUnitsIdVal -> withAttributeUnitsId((String) attributeUnitsIdVal));
             propertyFunctionMap.put("attribute-parameter-type-id",
-                    attributeParameterTypeIdVal -> withAttributeParameterTypeId((String) attributeParameterTypeIdVal));
+                attributeParameterTypeIdVal ->
+                        withAttributeParameterTypeId((String) attributeParameterTypeIdVal));
             propertyFunctionMap.put("attribute-parameter-id",
-                    attributeParameterIdVal -> withAttributeParameterId((String) attributeParameterIdVal));
+                attributeParameterIdVal ->
+                        withAttributeParameterId((String) attributeParameterIdVal));
             propertyFunctionMap.put("attribute-duration-id",
-                    attributeDurationIdVal -> withAttributeDurationId((String) attributeDurationIdVal));
+                attributeDurationIdVal -> withAttributeDurationId((String) attributeDurationIdVal));
             propertyFunctionMap.put("attribute-comment",
-                    attributeCommentVal -> withAttributeComment((String) attributeCommentVal));
+                attributeCommentVal -> withAttributeComment((String) attributeCommentVal));
         }
 
         @JsonIgnore
@@ -371,10 +377,11 @@ public final class LocationLevel implements CwmsDTO {
                     .withOffsetMonths(offset.getTotalMonths())
                     .build();
         }
+
         public static List<SeasonalValueBean> buildSeasonalValues(ISeasonalValues seasonalValues) {
             List<SeasonalValueBean> retval = null;
-            if(seasonalValues != null) {
-                retval= new ArrayList<>();
+            if (seasonalValues != null) {
+                retval = new ArrayList<>();
                 for (ISeasonalValue seasonalValue : seasonalValues.getSeasonalValues()) {
                     retval.add(buildSeasonalValueBean(seasonalValue));
                 }
