@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import rma.util.RMAConst;
 
 @JsonDeserialize(builder = LocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -228,9 +229,9 @@ public final class LocationLevel implements CwmsDTO {
 
         @JsonCreator
         public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
-                   @JsonProperty(value = "level-date", required = true) ZonedDateTime effectiveDate) {
+                   @JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
             locationId = name;
-            levelDate = effectiveDate;
+            levelDate = lvlDate;
             buildPropertyFunctions();
         }
 
@@ -290,8 +291,8 @@ public final class LocationLevel implements CwmsDTO {
             withParameterId(copyFrom.getParameterId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
-            ISeasonalValues iSeasonalValues = copyFrom.getSeasonalValues();
-            withSeasonalValues(buildSeasonalValues(iSeasonalValues));
+            ISeasonalValues values = copyFrom.getSeasonalValues();
+            withSeasonalValues(buildSeasonalValues(values));
             IParameterTypedValue constantLevel = copyFrom.getConstantLevel();
             withConstantValue(constantLevel.getSiParameterUnitsValue());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
@@ -404,8 +405,11 @@ public final class LocationLevel implements CwmsDTO {
             return this;
         }
 
-        public Builder withConstantValue(Double constantValue) {
-            this.constantValue = constantValue;
+        public Builder withConstantValue(Double value) {
+            if (value != null && RMAConst.isUndefinedValue(value)) {
+                value = null;
+            }
+            this.constantValue = value;
             return this;
         }
 
@@ -429,13 +433,19 @@ public final class LocationLevel implements CwmsDTO {
             return this;
         }
 
-        public Builder withIntervalMonths(Integer intervalMonths) {
-            this.intervalMonths = intervalMonths;
+        public Builder withIntervalMonths(Integer months) {
+            if (months != null && RMAConst.isUndefinedValue(months)) {
+                months = null;
+            }
+            this.intervalMonths = months;
             return this;
         }
 
-        public Builder withIntervalMinutes(Integer intervalMinutes) {
-            this.intervalMinutes = intervalMinutes;
+        public Builder withIntervalMinutes(Integer minutes) {
+            if (minutes != null && RMAConst.isUndefinedValue(minutes)) {
+                minutes = null;
+            }
+            this.intervalMinutes = minutes;
             return this;
         }
 
