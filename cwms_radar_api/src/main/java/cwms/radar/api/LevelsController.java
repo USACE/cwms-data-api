@@ -68,12 +68,22 @@ public class LevelsController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(queryParams = {@OpenApiParam(name = "office", required = true, description =
-            "Specifies the " + "office in which Location Level will be created")}, requestBody =
-    @OpenApiRequestBody(content = {@OpenApiContent(from = LocationLevel.class, type =
-            Formats.JSON), @OpenApiContent(from = LocationLevel.class, type = Formats.XML)},
-            required = true), description = "Create new CWMS Location Level", method =
-            HttpMethod.POST, path = "/levels", tags = {"Levels"})
+    @OpenApi(
+            description = "Create new CWMS Location Level",
+            queryParams = {
+                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                            + "office in which Location Level will be created")
+            },
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
+                    },
+                    required = true),
+            method = HttpMethod.POST,
+            path = "/levels",
+            tags = {"Levels"}
+    )
     @Override
     public void create(@NotNull Context ctx) {
 
@@ -104,9 +114,20 @@ public class LevelsController implements CrudHandler {
         }
     }
 
-    @OpenApi(queryParams = {@OpenApiParam(name = "cascade-delete", type = Boolean.class),
-            @OpenApiParam(name = "office", description = "Specifies the owning office of " + "the"
-                    + " location level whose data is to be deleted. If this field is " + "not " + "specified, matching location level information will be deleted" + " from " + "all offices."), @OpenApiParam(name = "date", description = "Specifies the " + "effective date of " + "the level to be deleted. If not provided will delete all " + "data and " + "reference to the location level.")}, description = "Delete CWMS " + "Location Level", method = HttpMethod.DELETE, path = "/levels", tags = {"Levels"})
+    @OpenApi(
+            description = "Delete CWMS Location Level",
+            queryParams = {
+                    @OpenApiParam(name = "cascade-delete", type = Boolean.class),
+                    @OpenApiParam(name = "office", description = "Specifies the owning office of "
+                            + "the location level whose data is to be deleted. If this field is "
+                            + "not specified, matching location level information will be deleted"
+                            + " from all offices."),
+                    @OpenApiParam(name = "date", description = "Specifies the effective date of "
+                            + "the level to be deleted. If not provided will delete all "
+                            + "data and reference to the location level.")},
+            method = HttpMethod.DELETE,
+            path = "/levels",
+            tags = {"Levels"})
     @Override
     public void delete(@NotNull Context ctx, String id) {
 
@@ -128,12 +149,58 @@ public class LevelsController implements CrudHandler {
         }
     }
 
-    @OpenApi(queryParams = {@OpenApiParam(name = "name", description = "Specifies the name(s) of "
-            + "the " + "location level(s) whose data is to be included in the response. " + "Uses"
-            + " * for all."), @OpenApiParam(name = "office", description = "Specifies the owning "
-            + "office of " + "the location level(s) whose data is to be included in the response" + ". If this field is not specified, matching location level " + "information from all offices shall be returned."), @OpenApiParam(name = "unit", description = "Specifies the unit or unit system" + " of the response. Valid values for the unit field are:\r\n 1. EN. " + "  Specifies English unit system.  Location level values will be in" + " the default English units for their parameters.\r\n2. SI.   " + "Specifies the SI unit system.  Location level values will be in " + "the default SI units for their parameters.\r\n3. Other. Any unit " + "returned in the response to the units URI request that is " + "appropriate for the requested parameters."), @OpenApiParam(name = "datum", description = "Specifies the elevation datum of" + " the response. This field affects only elevation location levels. " + "Valid values for this field are:\r\n1. NAVD88.  The elevation " + "values will in the specified or default units above the NAVD-88 " + "datum.\r\n2. NGVD29.  The elevation values will be in the " + "specified or default units above the NGVD-29 datum."), @OpenApiParam(name = "begin", description = "Specifies the start of the time " + "window for data to be included in the response. If this field is " + "not specified, any required time window begins 24 hours prior to " + "the specified or default end time."), @OpenApiParam(name = "end", description = "Specifies the end of the time " + "window for data to be included in the response. If this field is " + "not specified, any required time window ends at the current time"), @OpenApiParam(name = "timezone", description = "Specifies the time zone of " + "the values of the begin and end fields (unless otherwise " + "specified), as well as the time zone of any times in the response." + " If this field is not specified, the default time zone of UTC " + "shall be used."), @OpenApiParam(name = "format", description = "Specifies the encoding format " + "of the response. Valid values for the format field for this URI " + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if " + "name field is specified)\r\n5.    json (default)"), @OpenApiParam(name = "page", description = "This identifies where" + " in the request you are. This is an opaque value, and can " + "be " + "obtained from the 'next-page' value in the response."), @OpenApiParam(name = "page-size", type = Integer.class, description = "How many entries per page returned. Default " + defaultPageSize + "."),}, responses = {@OpenApiResponse(status = "200", content = {@OpenApiContent(type = Formats.JSON),  // this is raw pl/sql.
-            @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2),})}, tags = {
-            "Levels"})
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name = "name", description = "Specifies the name(s) of "
+            + "the location level(s) whose data is to be included in the response. "
+                            + "Uses * for all."),
+                    @OpenApiParam(name = "office", description = "Specifies the owning "
+                            + "office of the location level(s) whose data is to be included in the"
+                            + " response. If this field is not specified, matching location level "
+                            + "information from all offices shall be returned."),
+                    @OpenApiParam(name = "unit", description = "Specifies the unit or unit system"
+                            + " of the response. Valid values for the unit field are:\r\n 1. EN. "
+                            + "  Specifies English unit system.  Location level values will be in"
+                            + " the default English units for their parameters.\r\n2. SI.   "
+                            + "Specifies the SI unit system.  Location level values will be in "
+                            + "the default SI units for their parameters.\r\n3. Other. Any unit "
+                            + "returned in the response to the units URI request that is "
+                            + "appropriate for the requested parameters."),
+                    @OpenApiParam(name = "datum", description = "Specifies the elevation datum of"
+                            + " the response. This field affects only elevation location levels. "
+                            + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
+                            + "values will in the specified or default units above the NAVD-88 "
+                            + "datum.\r\n2. NGVD29.  The elevation values will be in the "
+                            + "specified or default units above the NGVD-29 datum."),
+                    @OpenApiParam(name = "begin", description = "Specifies the start of the time "
+                            + "window for data to be included in the response. If this field is "
+                            + "not specified, any required time window begins 24 hours prior to "
+                            + "the specified or default end time."),
+                    @OpenApiParam(name = "end", description = "Specifies the end of the time "
+                            + "window for data to be included in the response. If this field is "
+                            + "not specified, any required time window ends at the current time"),
+                    @OpenApiParam(name = "timezone", description = "Specifies the time zone of "
+                            + "the values of the begin and end fields (unless otherwise "
+                            + "specified), as well as the time zone of any times in the response."
+                            + " If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
+                    @OpenApiParam(name = "format", description = "Specifies the encoding format "
+                            + "of the response. Valid values for the format field for this URI "
+                            + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if "
+                            + "name field is specified)\r\n5.    json (default)"),
+                    @OpenApiParam(name = "page", description = "This identifies where in the "
+                            + "request you are. This is an opaque value, and can be obtained from "
+                            + "the 'next-page' value in the response."),
+                    @OpenApiParam(name = "page-size", type = Integer.class, description = "How "
+                            + "many entries per page returned. Default " + defaultPageSize + ".")},
+            responses = {
+                    @OpenApiResponse(status = "200", content = {
+                            @OpenApiContent(type = Formats.JSON),
+                            @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
+                        }
+                    )
+            },
+            tags = {"Levels"})
     @Override
     public void getAll(Context ctx) {
 
@@ -224,15 +291,25 @@ public class LevelsController implements CrudHandler {
     }
 
 
-    @OpenApi(pathParams = {@OpenApiParam(name = "id", required = true, description =
-            "Specifies" + " the requested location level."),}, queryParams = {@OpenApiParam(name
-            = "office", required = true, description = "Specifies the " + "office of the "
-            + "Location" + " Level to be returned"), @OpenApiParam(name = "date", required = true
-            ,
-            description = "Specifies the " + "effective date of Location Level top be returned")}
-            , responses = {@OpenApiResponse(status = "200", content = {@OpenApiContent(from =
-            LocationLevel.class, type = Formats.JSONV2),})}, description =
-            "Retrieves requested " + "Location Level", tags = {"Levels"})
+    @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = "id", required = true, description = "Specifies"
+                            + " the requested location level."),
+            },
+            queryParams = {
+                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                            + "office of the Location Level to be returned"),
+                    @OpenApiParam(name = "date", required = true, description = "Specifies the "
+                            + "effective date of Location Level top be returned")
+            },
+            responses = {
+                    @OpenApiResponse(status = "200",content = {
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSONV2),
+                    })
+            },
+            description = "Retrieves requested Location Level",
+            tags = {"Levels"}
+    )
     @Override
     public void getOne(Context ctx, @NotNull String id) {
         String office = ctx.queryParam("office");
@@ -256,14 +333,24 @@ public class LevelsController implements CrudHandler {
         }
     }
 
-    @OpenApi(queryParams = {@OpenApiParam(name = "office", required = true, description =
-            "Specifies the " + "office in which Location Level will be updated"),
-            @OpenApiParam(name = "date", required = true, description = "Specifies the " +
-                    "effective date of Location Level that will be updated")}, requestBody =
-    @OpenApiRequestBody(content = {@OpenApiContent(from = LocationLevel.class, type =
-            Formats.JSON), @OpenApiContent(from = LocationLevel.class, type = Formats.XML)},
-            required = true), description = "Update CWMS Location Level", method =
-            HttpMethod.PATCH, path = "/levels", tags = {"Levels"})
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                            + "office in which Location Level will be updated"),
+                    @OpenApiParam(name = "date", required = true, description = "Specifies the "
+                            + "effective date of Location Level that will be updated")
+            },
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
+                            @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
+                    },
+                    required = true),
+            description = "Update CWMS Location Level",
+            method = HttpMethod.PATCH,
+            path = "/levels",
+            tags = {"Levels"}
+    )
     @Override
     public void update(@NotNull Context ctx, String id) {
 
