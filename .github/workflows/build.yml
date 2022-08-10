@@ -37,7 +37,8 @@ jobs:
         run: ./gradlew dockerBuild
 
   release:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release')
+    name: Create and push releases
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -92,8 +93,8 @@ jobs:
         id: login-alt
         with:
           registry: ${{ secrets.ALT_REGISTRY }}
-          username: $${ secrets.ALT_REG_USER }}
-          password: $${ secrets.ALT_REG_PASSWORD }}
+          username: ${{ secrets.ALT_REG_USER }}
+          password: ${{ secrets.ALT_REG_PASSWORD }}
       - name: Build docker image
         run: |
           ./gradlew dockerBuild
@@ -123,7 +124,7 @@ jobs:
           java-package: jdk
       - name: get RADAR version
         id: get_version
-        run: .github/workflows/get_version.sh
+        run: .github/workflows/get_version.sh      
       - name: Configure AWS credentials
         if: ${{ always() }}
         uses: aws-actions/configure-aws-credentials@v1
@@ -140,8 +141,8 @@ jobs:
         id: login-alt
         with:
           registry: ${{ secrets.ALT_REGISTRY }}
-          username: $${ secrets.ALT_REG_USER }}
-          password: $${ secrets.ALT_REG_PASSWORD }}
+          username: ${{ secrets.ALT_REG_USER }}
+          password: ${{ secrets.ALT_REG_PASSWORD }} 
       - name: Build, tag, and push image to Amazon ECR (midas-api)
         if: ${{ success() }}
         env:
