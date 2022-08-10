@@ -239,9 +239,6 @@ public class LevelsController implements CrudHandler {
                 int pageSize = ctx.queryParamAsClass("page-size", Integer.class)
                         .getOrDefault(defaultPageSize);
 
-                /////////// I'm not sure about this SHORT_IDS usage.
-                // using it here b/c TimeSeriesController uses it.  TODO: figure out if this is
-                //  right.
                 ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
 
                 ZonedDateTime endZdt = end != null ? DateUtils.parseUserDate(end, timezone) :
