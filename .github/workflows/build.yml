@@ -150,7 +150,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: cwms-radar-api
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
-          ALT_REGISTRY: ${{ steps.login-alt.outputs.registry }}
+          ALT_REGISTRY: ${{ secrets.ALT_REGISTRY }}
         run: |
           ./gradlew :cwms_radar_api:build --init-script init.gradle
           ./gradlew dockerBuild --init-script init.gradle
