@@ -1,5 +1,6 @@
 package cwms.radar.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
@@ -25,13 +26,14 @@ import kotlin.jvm.functions.Function1;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public abstract class CwmsDTOPaginated implements CwmsDTO {
-    private static Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
+    private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
 
     @Schema(description = "The cursor to the current page of data")
     protected String page;
 
     @Schema(description = "The cursor to the next page of data; null if there is no more data")
     @XmlElement(name = "next-page")
+    @JsonProperty("next-page")
     protected String nextPage;
 
     @JsonInclude(value = Include.NON_NULL)
@@ -40,6 +42,7 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
 
     @Schema(description = "The number of records fetched per-page; this may be larger than the number of records actually retrieved")
     @XmlElement(name = "page-size")
+    @JsonProperty("page-size")
     protected int pageSize;
 
     static final Encoder encoder = Base64.getEncoder();
