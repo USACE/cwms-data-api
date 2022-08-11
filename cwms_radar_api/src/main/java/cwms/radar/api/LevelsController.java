@@ -165,7 +165,9 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "name", description = "Specifies the name(s) of "
+                    @OpenApiParam(name = "name", deprecated = true, description = "Deprecated, use"
+                            + "level-id-mask. "),
+                    @OpenApiParam(name = "level-id-mask", description = "Specifies the name(s) of "
                             + "the location level(s) whose data is to be included in the response. "
                             + "Uses * for all."),
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning "
@@ -229,7 +231,10 @@ public class LevelsController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format);
             String version = contentType.getParameters().get("version");
 
-            String names = ctx.queryParam("name");
+            String levelIdMask = Controllers.queryParamAsClass(ctx, new String[]{"level-id-mask",
+                            "name"}, String.class, "", metrics,
+                    name(LevelsController.class.getName(),"getAll"));
+
             String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParam("unit");
             String datum = ctx.queryParam("datum");
@@ -257,7 +262,7 @@ public class LevelsController implements CrudHandler {
                     beginZdt = endZdt.minusHours(24);
                 }
 
-                LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, names,
+                LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
                         office, unit, datum, beginZdt, endZdt);
                 String result = Formats.format(contentType, levels);
 
@@ -297,7 +302,7 @@ public class LevelsController implements CrudHandler {
                     }
                 }
 
-                String results = levelsDao.getLocationLevels(format, names, office, unit, datum,
+                String results = levelsDao.getLocationLevels(format, levelIdMask, office, unit, datum,
                         begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
