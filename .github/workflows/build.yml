@@ -155,6 +155,8 @@ jobs:
           ./gradlew :cwms_radar_api:build --init-script init.gradle
           ./gradlew dockerBuild --init-script init.gradle
           
+          docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
