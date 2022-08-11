@@ -53,6 +53,7 @@ public class LevelsController implements CrudHandler {
     public static final String EFFECTIVE_DATE = "effective-date";
     public static final String OFFICE = "office";
     public static final String DATE = "date";
+    public static final String LEVEL_ID = "level-id";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -119,6 +120,10 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             description = "Delete CWMS Location Level",
+            pathParams = {
+                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies the "
+                            + "location level id of the Location Level to be deleted"),
+            },
             queryParams = {
                     @OpenApiParam(name = "cascade-delete", type = Boolean.class),
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
@@ -136,7 +141,7 @@ public class LevelsController implements CrudHandler {
             path = "/levels",
             tags = {"Levels"})
     @Override
-    public void delete(@NotNull Context ctx, String id) {
+    public void delete(@NotNull Context ctx, @NotNull String levelId) {
 
         try (final Timer.Context timeContext = markAndTime("delete"); DSLContext dsl =
                 getDslContext(ctx)) {
@@ -146,11 +151,11 @@ public class LevelsController implements CrudHandler {
                     name(LevelsController.class.getName(), "delete"));
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam("cascade-delete"));
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = dateString != null ?
-                    zonedDateTimeAdapter.unmarshal(dateString) : null;
+            ZonedDateTime unmarshalledDateTime = dateString != null
+                    ? zonedDateTimeAdapter.unmarshal(dateString) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            levelsDao.deleteLocationLevel(id, unmarshalledDateTime, office, cascadeDelete);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json(id + " Deleted");
+            levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
+            ctx.status(HttpServletResponse.SC_ACCEPTED).json(levelId + " Deleted");
         } catch (Exception ex) {
             RadarError re = new RadarError("Failed to delete location level");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -161,7 +166,7 @@ public class LevelsController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = "name", description = "Specifies the name(s) of "
-            + "the location level(s) whose data is to be included in the response. "
+                            + "the location level(s) whose data is to be included in the response. "
                             + "Uses * for all."),
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning "
                             + "office of the location level(s) whose data is to be included in the"
@@ -196,7 +201,9 @@ public class LevelsController implements CrudHandler {
                     @OpenApiParam(name = "format", description = "Specifies the encoding format "
                             + "of the response. Valid values for the format field for this URI "
                             + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if "
-                            + "name field is specified)\r\n5.    json (default)"),
+                            + "name field is specified)\r\n5.    json (default)\r\n"
+                            + "For requests specifying the accept type:" + Formats.JSONV2
+                            + " the format parameter must not be specified."),
                     @OpenApiParam(name = "page", description = "This identifies where in the "
                             + "request you are. This is an opaque value, and can be obtained from "
                             + "the 'next-page' value in the response."),
@@ -302,7 +309,7 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "id", required = true, description = "Specifies"
+                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies"
                             + " the requested location level."),
             },
             queryParams = {
@@ -322,7 +329,7 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void getOne(Context ctx, @NotNull String id) {
+    public void getOne(Context ctx, @NotNull String levelId) {
         String office = ctx.queryParam(OFFICE);
         String dateString = Controllers.queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
@@ -334,7 +341,7 @@ public class LevelsController implements CrudHandler {
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            LocationLevel locationLevel = levelsDao.retrieveLocationLevel(id,
+            LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
                     UnitSystem.EN.getValue(), unmarshalledDateTime, office);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
@@ -347,6 +354,10 @@ public class LevelsController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies the "
+                            + "location level id of the Location Level to be updated"),
+            },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "office in which Location Level will be updated"),
@@ -367,7 +378,7 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void update(@NotNull Context ctx, String id) {
+    public void update(@NotNull Context ctx, @NotNull String levelId) {
 
         try (final Timer.Context timeContext = markAndTime("update"); DSLContext dsl =
                 getDslContext(ctx)) {
@@ -393,7 +404,7 @@ public class LevelsController implements CrudHandler {
             LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(),
                     contentType.getType(), office);
             //retrieveLocationLevel will throw an error if level does not exist
-            LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(id,
+            LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(levelId,
                     UnitSystem.EN.getValue(), unmarshalledDateTime, office);
             existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLevelLevel);
@@ -405,7 +416,7 @@ public class LevelsController implements CrudHandler {
             if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(
                     existingLevelLevel.getLocationLevelId())) {
                 //if name changed then delete location with old name
-                levelsDao.renameLocationLevel(id, updatedLocationLevel);
+                levelsDao.renameLocationLevel(levelId, updatedLocationLevel);
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed "
                         + "Location Level");
             } else {
@@ -422,51 +433,51 @@ public class LevelsController implements CrudHandler {
 
     private LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel,
                                                   LocationLevel updatedLevel) {
-        String seasonalTimeSeriesId = (updatedLevel.getSeasonalTimeSeriesId() == null ?
-                existingLevel.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
-        List<SeasonalValueBean> seasonalValues = (updatedLevel.getSeasonalValues() == null ?
-                existingLevel.getSeasonalValues() : updatedLevel.getSeasonalValues());
-        String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null ?
-                existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
-        String parameterTypeId = (updatedLevel.getParameterTypeId() == null ?
-                existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
-        String parameterId = (updatedLevel.getParameterId() == null ?
-                existingLevel.getParameterId() : updatedLevel.getParameterId());
-        Double siParameterUnitsConstantValue = (updatedLevel.getConstantValue() == null ?
-                existingLevel.getConstantValue() : updatedLevel.getConstantValue());
-        String levelUnitsId = (updatedLevel.getLevelUnitsId() == null ?
-                existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
-        ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null ?
-                existingLevel.getLevelDate() : updatedLevel.getLevelDate());
-        String levelComment = (updatedLevel.getLevelComment() == null ?
-                existingLevel.getLevelComment() : updatedLevel.getLevelComment());
-        ZonedDateTime intervalOrigin = (updatedLevel.getIntervalOrigin() == null ?
-                existingLevel.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
-        Integer intervalMinutes = (updatedLevel.getIntervalMinutes() == null ?
-                existingLevel.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
-        Integer intervalMonths = (updatedLevel.getIntervalMonths() == null ?
-                existingLevel.getIntervalMonths() : updatedLevel.getIntervalMonths());
-        String interpolateString = (updatedLevel.getInterpolateString() == null ?
-                existingLevel.getInterpolateString() : updatedLevel.getInterpolateString());
-        String durationId = (updatedLevel.getDurationId() == null ?
-                existingLevel.getDurationId() : updatedLevel.getDurationId());
-        BigDecimal attributeValue = (updatedLevel.getAttributeValue() == null ?
-                existingLevel.getAttributeValue() : updatedLevel.getAttributeValue());
-        String attributeUnitsId = (updatedLevel.getAttributeUnitsId() == null ?
-                existingLevel.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
-        String attributeParameterTypeId = (updatedLevel.getAttributeParameterTypeId() == null ?
-                existingLevel.getAttributeParameterTypeId() :
+        String seasonalTimeSeriesId = (updatedLevel.getSeasonalTimeSeriesId() == null
+                ? existingLevel.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
+        List<SeasonalValueBean> seasonalValues = (updatedLevel.getSeasonalValues() == null
+                ? existingLevel.getSeasonalValues() : updatedLevel.getSeasonalValues());
+        String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null
+                ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
+        String parameterTypeId = (updatedLevel.getParameterTypeId() == null
+                ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
+        String parameterId = (updatedLevel.getParameterId() == null
+                ? existingLevel.getParameterId() : updatedLevel.getParameterId());
+        Double siParameterUnitsConstantValue = (updatedLevel.getConstantValue() == null
+                ? existingLevel.getConstantValue() : updatedLevel.getConstantValue());
+        String levelUnitsId = (updatedLevel.getLevelUnitsId() == null
+                ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
+        ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null
+                ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
+        String levelComment = (updatedLevel.getLevelComment() == null
+                ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
+        ZonedDateTime intervalOrigin = (updatedLevel.getIntervalOrigin() == null
+                ? existingLevel.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
+        Integer intervalMinutes = (updatedLevel.getIntervalMinutes() == null
+                ? existingLevel.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
+        Integer intervalMonths = (updatedLevel.getIntervalMonths() == null
+                ? existingLevel.getIntervalMonths() : updatedLevel.getIntervalMonths());
+        String interpolateString = (updatedLevel.getInterpolateString() == null
+                ? existingLevel.getInterpolateString() : updatedLevel.getInterpolateString());
+        String durationId = (updatedLevel.getDurationId() == null
+                ? existingLevel.getDurationId() : updatedLevel.getDurationId());
+        BigDecimal attributeValue = (updatedLevel.getAttributeValue() == null
+                ? existingLevel.getAttributeValue() : updatedLevel.getAttributeValue());
+        String attributeUnitsId = (updatedLevel.getAttributeUnitsId() == null
+                ? existingLevel.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
+        String attributeParameterTypeId = (updatedLevel.getAttributeParameterTypeId() == null
+                ? existingLevel.getAttributeParameterTypeId() :
                 updatedLevel.getAttributeParameterTypeId());
-        String attributeParameterId = (updatedLevel.getAttributeParameterId() == null ?
-                existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
-        String attributeDurationId = (updatedLevel.getAttributeDurationId() == null ?
-                existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
-        String attributeComment = (updatedLevel.getAttributeComment() == null ?
-                existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
-        String locationId = (updatedLevel.getLocationLevelId() == null ?
-                existingLevel.getLocationLevelId() : updatedLevel.getLocationLevelId());
-        String officeId = (updatedLevel.getOfficeId() == null ? existingLevel.getOfficeId() :
-                updatedLevel.getOfficeId());
+        String attributeParameterId = (updatedLevel.getAttributeParameterId() == null
+                ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
+        String attributeDurationId = (updatedLevel.getAttributeDurationId() == null
+                ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
+        String attributeComment = (updatedLevel.getAttributeComment() == null
+                ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
+        String locationId = (updatedLevel.getLocationLevelId() == null
+                ? existingLevel.getLocationLevelId() : updatedLevel.getLocationLevelId());
+        String officeId = (updatedLevel.getOfficeId() == null
+                ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
         if (existingLevel.getIntervalMonths() != null && existingLevel.getIntervalMonths() > 0) {
             intervalMinutes = null;
         } else if (existingLevel.getIntervalMinutes() != null
@@ -517,8 +528,7 @@ public class LevelsController implements CrudHandler {
         LocationLevel retVal;
 
         try {
-            retVal =
-                    new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
+            retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
                             .withOfficeId(office).build();
             return retVal;
         } catch (JsonProcessingException e) {
@@ -555,8 +565,7 @@ public class LevelsController implements CrudHandler {
                 String propertyName = propertyDefinition.getName();
                 JsonNode propertyValue = root.findValue(propertyName);
                 if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                    retVal =
-                            new LocationLevel.Builder(retVal)
+                    retVal = new LocationLevel.Builder(retVal)
                                     .withProperty(propertyName, null).build();
                 }
             }
