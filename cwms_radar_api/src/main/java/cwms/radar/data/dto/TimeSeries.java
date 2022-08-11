@@ -70,7 +70,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     @XmlElement(name="record")
     // Use the array shape to optimize data transfer to client
     @JsonFormat(shape=JsonFormat.Shape.ARRAY)
-    @Schema(implementation = Record.class, description = "List of retrieved time-series values")
+    @Schema(description = "List of retrieved time-series values")
     List<Record> values;
 
     VerticalDatumInfo verticalDatumInfo;
