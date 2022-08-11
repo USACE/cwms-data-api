@@ -124,8 +124,7 @@ public class RatingSpecController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = "200",
                             content = {
-                                    @OpenApiContent(isArray = true, from = RatingSpec.class,
-                                            type = Formats.JSONV2),
+                                    @OpenApiContent(from = RatingSpec.class, type = Formats.JSONV2),
                             }
                     )
             },
