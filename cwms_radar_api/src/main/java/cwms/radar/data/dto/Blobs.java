@@ -19,12 +19,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class Blobs extends CwmsDTOPaginated {
     @XmlElementWrapper
     @XmlElement(name="blob")
-    // Use the array shape to optimize data transfer to client
-    //@JsonFormat(shape=JsonFormat.Shape.ARRAY)
-    @Schema(implementation = Blob.class, description = "List of retrieved blobs")
+
+    @Schema(description = "List of retrieved blobs")
     List<Blob> blobs;
-
-
 
     @SuppressWarnings("unused") // for JAXB to handle marshalling
     private Blobs(){}

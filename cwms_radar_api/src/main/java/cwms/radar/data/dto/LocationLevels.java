@@ -19,9 +19,8 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 public class LocationLevels extends CwmsDTOPaginated {
     @XmlElementWrapper
     @XmlElement(name = "location-level")
-
-    @Schema(implementation = LocationLevel.class, description = "List of retrieved location levels")
-    List<LocationLevel> levels;
+    @Schema(description = "List of retrieved location levels")
+    private List<LocationLevel> levels;
 
     @SuppressWarnings("unused") // for JAXB to handle marshalling
     private LocationLevels() {

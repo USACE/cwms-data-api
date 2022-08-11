@@ -12,8 +12,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.jetbrains.annotations.NotNull;
-
 import cwms.radar.api.errors.FieldException;
 
 @XmlRootElement(name="pools")
@@ -23,7 +21,7 @@ public class Pools extends CwmsDTOPaginated {
     @XmlElementWrapper
     @XmlElement(name="pool")
 
-    @Schema(implementation = Pool.class, description = "List of retrieved pools")
+    @Schema(description = "List of retrieved pools")
     List<Pool> pools;
 
     @SuppressWarnings("unused") // for JAXB to handle marshalling
