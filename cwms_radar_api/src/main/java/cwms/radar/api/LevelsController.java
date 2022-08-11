@@ -54,6 +54,8 @@ public class LevelsController implements CrudHandler {
     public static final String OFFICE = "office";
     public static final String DATE = "date";
     public static final String LEVEL_ID = "level-id";
+    public static final String LEVEL_ID_MASK = "level-id-mask";
+    public static final String NAME = "name";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -165,9 +167,9 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "name", deprecated = true, description = "Deprecated, use"
-                            + "level-id-mask. "),
-                    @OpenApiParam(name = "level-id-mask", description = "Specifies the name(s) of "
+                    @OpenApiParam(name = NAME, deprecated = true, description = "Deprecated, use "
+                            + LEVEL_ID_MASK + ". "),
+                    @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
                             + "the location level(s) whose data is to be included in the response. "
                             + "Uses * for all."),
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning "
@@ -201,11 +203,14 @@ public class LevelsController implements CrudHandler {
                             + " If this field is not specified, the default time zone of UTC "
                             + "shall be used."),
                     @OpenApiParam(name = "format", description = "Specifies the encoding format "
-                            + "of the response. Valid values for the format field for this URI "
-                            + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if "
-                            + "name field is specified)\r\n5.    json (default)\r\n"
-                            + "For requests specifying the accept type:" + Formats.JSONV2
-                            + " the format parameter must not be specified."),
+                            + "of the response. Requests specifying an Accept header:"
+                            + Formats.JSONV2 +" must not include this field. "
+                            + "Valid format field values for this URI are:\r\n"
+                            + "1.    tab\r\n"
+                            + "2.    csv\r\n"
+                            + "3.    xml\r\n"
+                            + "4.    wml2 (only if name field is specified)\r\n"
+                            + "5.    json (default)\r\n"),
                     @OpenApiParam(name = "page", description = "This identifies where in the "
                             + "request you are. This is an opaque value, and can be obtained from "
                             + "the 'next-page' value in the response."),
@@ -222,7 +227,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("getAll"); DSLContext dsl =
+        try (final Timer.Context timeContext = markAndTime("getAll");
+             DSLContext dsl =
                 getDslContext(ctx)) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
@@ -231,8 +237,8 @@ public class LevelsController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format);
             String version = contentType.getParameters().get("version");
 
-            String levelIdMask = Controllers.queryParamAsClass(ctx, new String[]{"level-id-mask",
-                            "name"}, String.class, "", metrics,
+            String levelIdMask = Controllers.queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK,
+                            NAME}, String.class, "", metrics,
                     name(LevelsController.class.getName(),"getAll"));
 
             String office = ctx.queryParam(OFFICE);
@@ -340,8 +346,8 @@ public class LevelsController implements CrudHandler {
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         "getOne"));
 
-        try (final Timer.Context timeContext = markAndTime("getOne"); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime("getOne");
+             DSLContext dsl = getDslContext(ctx)) {
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
 
@@ -385,8 +391,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime("update"); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime("update");
+             DSLContext dsl = getDslContext(ctx)) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
