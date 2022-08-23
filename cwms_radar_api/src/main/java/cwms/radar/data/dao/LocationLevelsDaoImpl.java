@@ -24,7 +24,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -155,8 +154,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                                     LocationLevel renamedLocationLevel) {
         // no need to validate the level here we are just using the name and office field
         try {
-            dsl.connection(c ->
-            {
+            dsl.connection(c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.renameLocationLevel(c, oldLocationLevelName,
                         renamedLocationLevel.getLocationLevelId(),
@@ -232,7 +230,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     @Override
     public LocationLevels getLocationLevels(String cursor, int pageSize,
-                                            String names, String office, String unit,
+                                            String levelIdMask, String office, String unit,
                                             String datum, ZonedDateTime beginZdt,
                                             ZonedDateTime endZdt) {
         Integer total = null;
@@ -258,16 +256,16 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
 
         Condition siAndTsIdNull = view.UNIT_SYSTEM.eq("SI").and(view.TSID.isNull());
-        Condition TsIdNotNull = view.TSID.isNotNull();
+        Condition tsIdNotNull = view.TSID.isNotNull();
 
-        Condition whereCondition = siAndTsIdNull.or(TsIdNotNull);
+        Condition whereCondition = siAndTsIdNull.or(tsIdNotNull);
 
-        if (office != null) {
+        if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and(view.OFFICE_ID.upper().eq(office.toUpperCase()));
         }
 
-        if (names != null) {
-            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.upper().likeRegex(names));
+        if (levelIdMask != null && !levelIdMask.isEmpty()) {
+            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.upper().likeRegex(levelIdMask));
         }
 
         Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();
@@ -432,8 +430,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         String _units;
     }
 
-    private StringValueUnits parseAttributeValue(Record rs, String attrId, Double oattrVal)
-             {
+    private StringValueUnits parseAttributeValue(Record rs, String attrId, Double oattrVal) {
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
         // query pulls SI parameter units
         String attrSiUnit = rs.get(view.ATTRIBUTE_UNIT);

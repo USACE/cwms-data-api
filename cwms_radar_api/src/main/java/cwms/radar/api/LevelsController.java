@@ -204,7 +204,7 @@ public class LevelsController implements CrudHandler {
                             + "shall be used."),
                     @OpenApiParam(name = "format", description = "Specifies the encoding format "
                             + "of the response. Requests specifying an Accept header:"
-                            + Formats.JSONV2 +" must not include this field. "
+                            + Formats.JSONV2 + " must not include this field. "
                             + "Valid format field values for this URI are:\r\n"
                             + "1.    tab\r\n"
                             + "2.    csv\r\n"
@@ -238,7 +238,7 @@ public class LevelsController implements CrudHandler {
             String version = contentType.getParameters().get("version");
 
             String levelIdMask = Controllers.queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK,
-                            NAME}, String.class, "", metrics,
+                            NAME}, String.class, null, metrics,
                     name(LevelsController.class.getName(),"getAll"));
 
             String office = ctx.queryParam(OFFICE);
