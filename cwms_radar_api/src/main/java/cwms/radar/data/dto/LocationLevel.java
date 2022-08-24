@@ -433,6 +433,16 @@ public final class LocationLevel implements CwmsDTO {
             return this;
         }
 
+        public Builder withIntervalOrigin(Date intervalOriginDate, ZonedDateTime effectiveDate) {
+            if (intervalOriginDate != null && effectiveDate != null) {
+                return withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
+                        effectiveDate.getZone()));
+            } else {
+                this.intervalOrigin = null;
+                return this;
+            }
+        }
+
         public Builder withIntervalMonths(Integer months) {
             if (months != null && RMAConst.isUndefinedValue(months)) {
                 months = null;
