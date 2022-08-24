@@ -182,12 +182,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 Unit.METER.getValue();
         AtomicReference<LocationLevel> locationLevelRef = new AtomicReference<>();
         try {
-            dsl.connection(c ->
-            {
+            dsl.connection(c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
-                        locationLevelName, unitIn, date, timezone, null, null, unitIn, false,
-                        officeId);
+                        locationLevelName, unitIn, date, timezone, null, null,
+                        unitIn, false, officeId);
                 LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
                 locationLevelRef.set(level);
             });
@@ -284,7 +283,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
-            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.upper().likeRegex(levelIdMask));
+            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.likeRegex(levelIdMask));
         }
 
         Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();
