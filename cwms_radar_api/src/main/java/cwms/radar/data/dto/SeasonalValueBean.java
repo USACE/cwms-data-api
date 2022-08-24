@@ -1,6 +1,7 @@
 package cwms.radar.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -69,11 +70,14 @@ public class SeasonalValueBean {
             return this;
         }
 
+        @JsonProperty(value = "offset-months")
         public Builder withOffsetMonths(Integer totalOffsetMonths) {
             offsetMonths = totalOffsetMonths;
             return this;
         }
 
+
+        @JsonIgnore
         public Builder withOffsetMonths(Byte totalOffsetMonths) {
             if (totalOffsetMonths != null) {
                 offsetMonths = totalOffsetMonths.intValue();
