@@ -287,6 +287,15 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     view.LOCATION_LEVEL_ID, levelIdMask));
         }
 
+        if (beginZdt != null) {
+            whereCondition = whereCondition.and(view.LEVEL_DATE.greaterOrEqual(
+                    Timestamp.from(beginZdt.toInstant())));
+        }
+        if (endZdt != null) {
+            whereCondition = whereCondition.and(view.LEVEL_DATE.lessThan(
+                    Timestamp.from(endZdt.toInstant())));
+        }
+
         Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();
 
         List<LocationLevel> levels = dsl.selectDistinct(asterisk())
@@ -424,6 +433,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             String calOffset = rs.get(view.CALENDAR_OFFSET);
             newSeasonalOffset.setYearMonthString(calOffset);
             String timeOffset = rs.get(view.TIME_OFFSET);
+            newSeasonalOffset.setDaysHoursMinutesString(timeOffset);
             newSeasonalOffset.setDaysHoursMinutesString(timeOffset);
             newSeasonalValue.setOffset(newSeasonalOffset);
             newSeasonalValue.setPrototypeParameterType(locationLevelImpl.getPrototypeLevel());
