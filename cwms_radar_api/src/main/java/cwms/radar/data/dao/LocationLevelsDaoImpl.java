@@ -283,7 +283,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
-            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.likeRegex(levelIdMask));
+            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.upper().likeRegex(levelIdMask.toUpperCase()));
         }
 
         Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();

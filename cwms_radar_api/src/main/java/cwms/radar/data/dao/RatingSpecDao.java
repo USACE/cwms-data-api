@@ -58,7 +58,8 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		}
 
 		if( specIdMask != null ){
-			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.likeRegex(specIdMask));
+			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.upper()
+					.likeRegex(specIdMask.toUpperCase()));
 		}
 
 		ResultQuery< ? extends Record> query = dsl.select(
@@ -157,7 +158,8 @@ public class RatingSpecDao extends JooqDao<RatingSpec>
 		}
 
 		if( specIdMask != null ){
-			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.likeRegex(specIdMask));
+			condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.upper()
+					.likeRegex(specIdMask.toUpperCase()));
 		}
 
 		Condition ratingAliasNullCond = AV_RATING.AV_RATING.ALIASED_ITEM.isNull().and(
