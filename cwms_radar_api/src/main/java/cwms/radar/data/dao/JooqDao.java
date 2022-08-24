@@ -58,7 +58,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
                 if (ctx.family() == ORACLE) {
-                    ctx.visit(DSL.condition("REGEXP_LIKE({0}, {1}, 'i')", field, DSL.val(regex)));
+                    ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
                 } else {
                     ctx.visit(field.upper().likeRegex(regex.toUpperCase()));
                 }
