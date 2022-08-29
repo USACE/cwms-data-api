@@ -266,7 +266,9 @@ public final class LocationLevel implements CwmsDTO {
             withAttributeDurationId(copyFrom.getAttributeDurationId());
             withAttributeParameterId(copyFrom.getAttributeParameterId());
             ILocationLevelRef locationLevelRef = copyFrom.getLocationLevelRef();
-            withLocationLevelId(locationLevelRef.getLocationLevelId());
+            if (locationLevelRef != null) {
+                withLocationLevelId(locationLevelRef.getLocationLevelId());
+            }
             withAttributeValue(copyFrom.getAttributeValue());
             withAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
             withAttributeUnitsId(copyFrom.getAttributeUnitsId());
@@ -292,9 +294,13 @@ public final class LocationLevel implements CwmsDTO {
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
             ISeasonalValues values = copyFrom.getSeasonalValues();
-            withSeasonalValues(buildSeasonalValues(values));
+            if (values != null) {
+                withSeasonalValues(buildSeasonalValues(values));
+            }
             IParameterTypedValue constantLevel = copyFrom.getConstantLevel();
-            withConstantValue(constantLevel.getSiParameterUnitsValue());
+            if (constantLevel != null) {
+                withConstantValue(constantLevel.getSiParameterUnitsValue());
+            }
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
             buildPropertyFunctions();
         }
@@ -431,6 +437,16 @@ public final class LocationLevel implements CwmsDTO {
         public Builder withIntervalOrigin(ZonedDateTime intervalOrigin) {
             this.intervalOrigin = intervalOrigin;
             return this;
+        }
+
+        public Builder withIntervalOrigin(Date intervalOriginDate, ZonedDateTime effectiveDate) {
+            if (intervalOriginDate != null && effectiveDate != null) {
+                return withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
+                        effectiveDate.getZone()));
+            } else {
+                this.intervalOrigin = null;
+                return this;
+            }
         }
 
         public Builder withIntervalMonths(Integer months) {

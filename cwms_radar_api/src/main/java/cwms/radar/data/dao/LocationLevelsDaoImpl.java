@@ -24,21 +24,23 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -86,8 +88,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     Date.from(locationLevel.getIntervalOrigin().toLocalDateTime().atZone(zoneId).toInstant());
             List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues =
                     getSeasonalValues(locationLevel);
-            dsl.connection(c ->
-            {
+            dsl.connection(c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(),
                         locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(),
@@ -124,13 +125,17 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
                                     String officeId, Boolean cascadeDelete) {
         try {
-            Date date = zonedDateTime != null ?
-                    Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant()) : null;
+            Date date;
+            if (zonedDateTime != null) {
+                date = Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant());
+            } else {
+                date = null;
+            }
             if (date != null) {
                 dsl.connection(c -> {
                     CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                    levelJooq.deleteLocationLevel(c, locationLevelName, date, null, null, null,
-                            cascadeDelete, officeId);
+                    levelJooq.deleteLocationLevel(c, locationLevelName, date, null,
+                            null, null, cascadeDelete, officeId);
                 });
             } else {
                 Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
@@ -155,8 +160,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                                     LocationLevel renamedLocationLevel) {
         // no need to validate the level here we are just using the name and office field
         try {
-            dsl.connection(c ->
-            {
+            dsl.connection(c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.renameLocationLevel(c, oldLocationLevelName,
                         renamedLocationLevel.getLocationLevelId(),
@@ -178,12 +182,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 Unit.METER.getValue();
         AtomicReference<LocationLevel> locationLevelRef = new AtomicReference<>();
         try {
-            dsl.connection(c ->
-            {
+            dsl.connection(c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
-                        locationLevelName, unitIn, date, timezone, null, null, unitIn, false,
-                        officeId);
+                        locationLevelName, unitIn, date, timezone, null, null,
+                        unitIn, false, officeId);
                 LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
                 locationLevelRef.set(level);
             });
@@ -195,15 +198,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private LocationLevel getLevelFromPojo(LocationLevelPojo copyFromPojo,
                                            ZonedDateTime effectiveDate) {
-        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> copyFromSeasonalValues =
-                copyFromPojo.getSeasonalValues();
-        List<SeasonalValueBean> seasonalValues = new ArrayList<>();
-        for (usace.cwms.db.dao.ifc.level.SeasonalValueBean copyFromBean : copyFromSeasonalValues) {
-            seasonalValues.add(new SeasonalValueBean.Builder(copyFromBean.getValue())
-                    .withOffsetMonths(copyFromBean.getOffsetMonths().intValue())
-                    .withOffsetMinutes(copyFromBean.getOffsetMinutes())
-                    .build());
-        }
+        List<SeasonalValueBean> seasonalValues = buildSeasonalValues(copyFromPojo);
         return new LocationLevel.Builder(copyFromPojo.getLocationId(), effectiveDate)
                 .withAttributeComment(copyFromPojo.getAttributeComment())
                 .withAttributeDurationId(copyFromPojo.getAttributeDurationId())
@@ -216,7 +211,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .withInterpolateString(copyFromPojo.getInterpolateString())
                 .withIntervalMinutes(copyFromPojo.getIntervalMinutes())
                 .withIntervalMonths(copyFromPojo.getIntervalMonths())
-                .withIntervalOrigin(ZonedDateTime.ofInstant(copyFromPojo.getIntervalOrigin().toInstant(), effectiveDate.getZone()))
+                .withIntervalOrigin(copyFromPojo.getIntervalOrigin(), effectiveDate)
                 .withLevelComment(copyFromPojo.getLevelComment())
                 .withLevelUnitsId(copyFromPojo.getLevelUnitsId())
                 .withOfficeId(copyFromPojo.getOfficeId())
@@ -229,10 +224,31 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .build();
     }
 
+    @NotNull
+    private List<SeasonalValueBean> buildSeasonalValues(LocationLevelPojo fromPojo) {
+        List<SeasonalValueBean> seasonalValues = Collections.emptyList();
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> fromValues
+                = fromPojo.getSeasonalValues();
+        if (fromValues != null) {
+            seasonalValues = fromValues.stream()
+                    .filter(Objects::nonNull)
+                    .map(this::buildSeasonalValue)
+                    .collect(toList());
+        }
+        return seasonalValues;
+    }
+
+    private SeasonalValueBean buildSeasonalValue(usace.cwms.db.dao.ifc.level.SeasonalValueBean fromBean) {
+        return new SeasonalValueBean.Builder(fromBean.getValue())
+                .withOffsetMonths(fromBean.getOffsetMonths())
+                .withOffsetMinutes(fromBean.getOffsetMinutes())
+                .build();
+    }
+
 
     @Override
     public LocationLevels getLocationLevels(String cursor, int pageSize,
-                                            String names, String office, String unit,
+                                            String levelIdMask, String office, String unit,
                                             String datum, ZonedDateTime beginZdt,
                                             ZonedDateTime endZdt) {
         Integer total = null;
@@ -258,16 +274,26 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
 
         Condition siAndTsIdNull = view.UNIT_SYSTEM.eq("SI").and(view.TSID.isNull());
-        Condition TsIdNotNull = view.TSID.isNotNull();
+        Condition tsIdNotNull = view.TSID.isNotNull();
 
-        Condition whereCondition = siAndTsIdNull.or(TsIdNotNull);
+        Condition whereCondition = siAndTsIdNull.or(tsIdNotNull);
 
-        if (office != null) {
+        if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and(view.OFFICE_ID.upper().eq(office.toUpperCase()));
         }
 
-        if (names != null) {
-            whereCondition = whereCondition.and(view.LOCATION_LEVEL_ID.upper().likeRegex(names));
+        if (levelIdMask != null && !levelIdMask.isEmpty()) {
+            whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
+                    view.LOCATION_LEVEL_ID, levelIdMask));
+        }
+
+        if (beginZdt != null) {
+            whereCondition = whereCondition.and(view.LEVEL_DATE.greaterOrEqual(
+                    Timestamp.from(beginZdt.toInstant())));
+        }
+        if (endZdt != null) {
+            whereCondition = whereCondition.and(view.LEVEL_DATE.lessThan(
+                    Timestamp.from(endZdt.toInstant())));
         }
 
         Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();
@@ -408,6 +434,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             newSeasonalOffset.setYearMonthString(calOffset);
             String timeOffset = rs.get(view.TIME_OFFSET);
             newSeasonalOffset.setDaysHoursMinutesString(timeOffset);
+            newSeasonalOffset.setDaysHoursMinutesString(timeOffset);
             newSeasonalValue.setOffset(newSeasonalOffset);
             newSeasonalValue.setPrototypeParameterType(locationLevelImpl.getPrototypeLevel());
 
@@ -432,8 +459,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         String _units;
     }
 
-    private StringValueUnits parseAttributeValue(Record rs, String attrId, Double oattrVal)
-             {
+    private StringValueUnits parseAttributeValue(Record rs, String attrId, Double oattrVal) {
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
         // query pulls SI parameter units
         String attrSiUnit = rs.get(view.ATTRIBUTE_UNIT);
