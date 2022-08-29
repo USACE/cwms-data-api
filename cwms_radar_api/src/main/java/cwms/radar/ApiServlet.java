@@ -42,6 +42,7 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.security.CwmsAccessManager;
 import cwms.radar.security.Role;
+import cwms.radar.spi.AccessManagers;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -61,6 +62,7 @@ import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.Map;
 import javax.annotation.Resource;
+import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -216,7 +218,14 @@ public class ApiServlet extends HttpServlet {
     }
 
     private AccessManager buildAccessManager() {
-        return new CwmsAccessManager();
+        try {
+            String provider = System.getProperty("radar.access.provider","CwmsAccessManager");
+            AccessManagers ams = new AccessManagers();        
+            return ams.get(provider);
+        } catch (ServiceNotFoundException err) {
+            throw new RuntimeException("Unable to initialize access manager",err);
+        }
+        
     }
 
 

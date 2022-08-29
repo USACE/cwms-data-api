@@ -1,0 +1,6 @@
+dependencies {    
+    compileOnly ("io.javalin:javalin:$JAVALIN_VERSION") {
+        exclude group: "org.eclipse.jetty"
+        exclude group: "org.eclipse.jetty.websocket"        
+    }
+}

@@ -77,6 +77,7 @@ dependencies {
 
     // Now using the FormatService annotation in runtime in JsonV1 too.
     implementation project(":annotations")
+    implementation project(":access-manager-api")
     annotationProcessor project(":annotations")
 
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
