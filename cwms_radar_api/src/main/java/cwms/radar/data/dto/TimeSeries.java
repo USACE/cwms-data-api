@@ -33,6 +33,7 @@ import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.DurationAdapter;
 import cwms.radar.formatters.xml.adapters.TimestampAdapter;
 import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 
@@ -52,38 +53,63 @@ public class TimeSeries extends CwmsDTOPaginated {
     @XmlElement(name = "office-id")
     String officeId;
 
-    @Schema(description = "The units of the time series data")
+    @Schema(description = "The units of the time series data",required = true)
     String units;
 
     @XmlJavaTypeAdapter(DurationAdapter.class)
     @JsonFormat(shape = Shape.STRING)
-    @Schema(description = "The interval of the time-series, in ISO-8601 duration format")
+    @Schema(
+        accessMode = AccessMode.READ_ONLY,
+        format = "Java Duration",
+        description = "The interval of the time-series, in ISO-8601 duration format"
+        )
     Duration interval;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
-    @Schema(description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')")
+    @Schema(
+        accessMode = AccessMode.READ_ONLY,
+        description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+    )
     ZonedDateTime begin;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
-    @Schema(description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')")
+    @Schema(
+        accessMode = AccessMode.READ_ONLY,
+        description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+    )
     ZonedDateTime end;
 
     @XmlElementWrapper
     @XmlElement(name="record")
     // Use the array shape to optimize data transfer to client
     @JsonFormat(shape=JsonFormat.Shape.ARRAY)
-    @Schema(description = "List of retrieved time-series values")
+    @ArraySchema(
+        schema = @Schema(
+            description = "List of retrieved time-series values",
+            implementation = Record.class
+        )
+    )
     List<Record> values;
 
+    @Schema(
+        accessMode = AccessMode.READ_ONLY,
+        description = "Information about where the measurement takes place in relation to a defined dataum."
+    )
     VerticalDatumInfo verticalDatumInfo;
 
-    @Schema(description="Offset from top of interval")
+    @Schema(
+        accessMode = AccessMode.READ_ONLY,
+        description="Offset from top of interval"
+    )
     @XmlElement(name="interval-offset")
     private Long intervalOffset;
 
-    @Schema( description = "Only on 21.1.1 Database. The timezone the Interval Offset is from.")
+    @Schema( 
+        accessMode = AccessMode.READ_ONLY,
+        description = "Only on 21.1.1 Database. The timezone the Interval Offset is from."
+    )
     @XmlElement(name="time-zone")
     private String timeZone;
 
@@ -223,7 +249,17 @@ public class TimeSeries extends CwmsDTOPaginated {
 
 
 
-    @Schema(name = "TimeSeries.Record", description = "A representation of a time-series record")
+    @ArraySchema(
+        schema = @Schema(
+            name = "TimeSeries.Record",
+            description = "A representation of a time-series record",
+            type="array"
+        ),
+        arraySchema = @Schema(
+            type="array",
+            example = "[123,54.3,0]"
+        )        
+    )
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlRootElement
     @XmlType(propOrder = {"dateTime", "value", "qualityCode"})
@@ -232,7 +268,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         @JsonProperty(value = "date-time", index = 0)
         @XmlJavaTypeAdapter(TimestampAdapter.class)
         @XmlElement(name = "date-time")
-        @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch)")
+        @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
         Timestamp dateTime;
 
         @JsonProperty(index = 1)

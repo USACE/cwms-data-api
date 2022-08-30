@@ -105,7 +105,7 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Create new TimeSeries",
+            description = "Create new TimeSeries, will store any data provided",
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -125,7 +125,7 @@ public class TimeSeriesController implements CrudHandler {
                 getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries);            
+            dao.create(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
@@ -356,7 +356,10 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Update a TimeSeries",
+            description = "Update a TimeSeries with provided values",
+            pathParams = {
+                @OpenApiParam(name="name",description = "Full CWMS Timeseries name")
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
