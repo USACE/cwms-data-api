@@ -850,6 +850,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			boolean activeFlag = true;
 			BigInteger tsCode = tsDao.createTsCodeBigInteger(connection, input.getOfficeId(), input.getName(),
 					utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
+			if (!input.getValues().isEmpty()) {
+				store(connection, input.getOfficeId(), input.getName(), input.getUnits(), TimeSeriesDao.NON_VERSIONED, input.getValues());
+			}
 		});
 	}
 
@@ -895,7 +898,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 		}
 
 		final boolean createAsLrts = false;
-		StoreRule storeRule = StoreRule.DELETE_INSERT;
+		StoreRule storeRule = StoreRule.REPLACE_ALL;
 
 		tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
 				storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);

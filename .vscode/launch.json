@@ -48,6 +48,7 @@
             "hostName": "localhost",
             "sourcePaths": [
                 "build/generated/sources/annotationProcessor/java/main",
+                
             ]
         }
     ]

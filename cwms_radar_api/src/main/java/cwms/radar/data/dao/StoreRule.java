@@ -9,13 +9,14 @@ public enum StoreRule
 	DO_NOT_REPLACE(CWMS_UTIL_PACKAGE.DO_NOT_REPLACE.toString()),
 	REPLACE_MISSING_VALUES_ONLY(CWMS_UTIL_PACKAGE.REPLACE_MISSING_VALUES_ONLY.toString()),
 	REPLACE_WITH_NON_MISSING(CWMS_UTIL_PACKAGE.REPLACE_WITH_NON_MISSING.toString()),
-	DELETE_INSERT(CWMS_UTIL_PACKAGE.DELETE_INSERT.toString());
-
+	DELETE_INSERT(CWMS_UTIL_PACKAGE.DELETE_INSERT.toString());	
 	private final String rule;
 
 	StoreRule(String rule)
 	{
-		this.rule = rule;
+		System.out.println(rule);
+		String parts[] = rule.split("\\.");
+		this.rule = parts[parts.length-1].replace("_"," ").replace("\"","");
 	}
 
 	public String getRule()
