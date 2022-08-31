@@ -391,7 +391,7 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {        
+    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
         return deserializeTimeSeries(ctx.body(), getUserDataContentType(ctx));
     }
 
@@ -440,7 +440,7 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @NotNull
-    private ContentType getContentType(Context ctx) {        
+    private ContentType getContentType(Context ctx) {
         String acceptHeader = ctx.req.getHeader("Accept");
         String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
         ContentType contentType = Formats.parseHeader(formatHeader);
