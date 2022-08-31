@@ -391,8 +391,7 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
-        
+    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {        
         return deserializeTimeSeries(ctx.body(), getUserDataContentType(ctx));
     }
 
