@@ -37,6 +37,14 @@ import org.jooq.DSLContext;
 
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
+    public static final String OFFICE = "office";
+    public static final String NAME = "name";
+    public static final String UNIT = "unit";
+    public static final String DATUM = "datum";
+    public static final String AT = "at";
+    public static final String END = "end";
+    public static final String TIMEZONE = "timezone";
+    public static final String FORMAT = "format";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -52,12 +60,16 @@ public class RatingController implements CrudHandler {
         return new RatingSetDao(dsl);
     }
 
-    @OpenApi(description = "Create new RatingSet", requestBody = @OpenApiRequestBody(content =
-            {@OpenApiContent(type = Formats.XMLV2), @OpenApiContent(type = Formats.JSONV2)},
-            required = true), method = HttpMethod.POST, path = "/ratings", tags = {"Ratings"})
-    public void create(Context ctx) {
+    @Override
+    @OpenApi(description = "Create new RatingSet",
+            requestBody = @OpenApiRequestBody(content = {
+                    @OpenApiContent(type = Formats.XMLV2),
+                    @OpenApiContent(type = Formats.JSONV2)},
+            required = true),
+            method = HttpMethod.POST, path = "/ratings", tags = {"Ratings"})
+    public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("create"); DSLContext dsl =
+        try (final Timer.Context ignored = markAndTime("create"); DSLContext dsl =
                 getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
             RatingSet ratingSet = deserializeRatingSet(ctx);
@@ -115,14 +127,14 @@ public class RatingController implements CrudHandler {
         return RatingSet.fromXml(body);
     }
 
-    @OpenApi(queryParams = {@OpenApiParam(name = "office", required = true, description =
-            "Specifies the " + "owning office of the rating to be deleted.")}, method =
-            HttpMethod.DELETE, tags = {"Ratings"})
+    @OpenApi(queryParams = {@OpenApiParam(name = OFFICE, required = true, description =
+            "Specifies the owning office of the rating to be deleted.")},
+            method = HttpMethod.DELETE, tags = {"Ratings"})
     @Override
-    public void delete(Context ctx, String ratingSpecId) {
-        String office = ctx.queryParam("office");
+    public void delete(Context ctx, @NotNull String ratingSpecId) {
+        String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context timeContext = markAndTime("delete");
+        try (final Timer.Context ignored = markAndTime("delete");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
             ratingDao.delete(office, ratingSpecId);
@@ -137,14 +149,14 @@ public class RatingController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "name", required = false, description = "Specifies the "
+            @OpenApiParam(name = NAME, description = "Specifies the "
                     + "name(s) of the rating whose data is to be included in the response."
                     + " A case insensitive comparison is used to match names."),
-            @OpenApiParam(name = "office", required = false, description = "Specifies the "
+            @OpenApiParam(name = OFFICE,  description = "Specifies the "
                     + "owning office of the Rating(s) whose data is to be included in "
                     + "the response. If this field is not specified, matching rating "
                     + "information from all offices shall be returned."),
-            @OpenApiParam(name = "unit", required = false, description = "Specifies the "
+            @OpenApiParam(name = UNIT,  description = "Specifies the "
                     + "unit or unit system of the response. Valid values for the unit "
                     + "field are:\r\n"
                     + "1. EN.   Specifies English unit system.  Rating "
@@ -154,31 +166,36 @@ public class RatingController implements CrudHandler {
                     + "will be in the default SI units for their parameters.\r\n"
                     + "3. Other. Any unit returned in the response to the units URI request "
                     + "that is appropriate for the requested parameters."),
-            @OpenApiParam(name = "datum", required = false, description = "Specifies the "
+            @OpenApiParam(name = DATUM,  description = "Specifies the "
                     + "elevation datum of the response. This field affects only elevation"
                     + " Ratings. Valid values for this field are:\r\n1. NAVD88.  The "
                     + "elevation values will in the specified or default units above the "
                     + "NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the "
                     + "specified or default units above the NGVD-29 datum."),
-            @OpenApiParam(name = "at", required = false, description = "Specifies the "
+            @OpenApiParam(name = AT,  description = "Specifies the "
                     + "start of the time window for data to be included in the response. "
                     + "If this field is not specified, any required time window begins 24"
                     + " hours prior to the specified or default end time."),
-            @OpenApiParam(name = "end", required = false, description = "Specifies the "
+            @OpenApiParam(name = END,  description = "Specifies the "
                     + "end of the time window for data to be included in the response. If"
                     + " this field is not specified, any required time window ends at the"
                     + " current time"),
-            @OpenApiParam(name = "timezone", required = false, description = "Specifies "
+            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                     + "the time zone of the values of the begin and end fields (unless "
                     + "otherwise specified), as well as the time zone of any times in the"
                     + " response. If this field is not specified, the default time zone "
                     + "of UTC shall be used."),
-            @OpenApiParam(name = "format", required = false, description = "Specifies the"
+            @OpenApiParam(name = FORMAT,  description = "Specifies the"
                     + " encoding format of the response. Valid values for the format "
                     + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
                     + "xml\r\n4.    json (default)")},
             responses = {
-                @OpenApiResponse(status = "200"),
+                @OpenApiResponse(status = "200", content = {
+                        @OpenApiContent(type = Formats.JSON),
+                        @OpenApiContent(type = Formats.XML),
+                        @OpenApiContent(type = Formats.TAB),
+                        @OpenApiContent(type = Formats.CSV)
+                }),
                 @OpenApiResponse(status = "404", description = "The provided combination of "
                             + "parameters did not find a rating table."),
                 @OpenApiResponse(status = "501", description = "Requested format is not "
@@ -187,18 +204,18 @@ public class RatingController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("getAll");
+        try (final Timer.Context ignored = markAndTime("getAll");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
 
-            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("json");
-            String names = ctx.queryParam("names");
-            String unit = ctx.queryParam("unit");
-            String datum = ctx.queryParam("datum");
-            String office = ctx.queryParam("office");
-            String start = ctx.queryParam("at");
-            String end = ctx.queryParam("end");
-            String timezone = ctx.queryParamAsClass("timezone", String.class).getOrDefault("UTC");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
+            String names = ctx.queryParam(NAME);
+            String unit = ctx.queryParam(UNIT);
+            String datum = ctx.queryParam(DATUM);
+            String office = ctx.queryParam(OFFICE);
+            String start = ctx.queryParam(AT);
+            String end = ctx.queryParam(END);
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
             switch (format) {
                 case "json": {
@@ -239,8 +256,8 @@ public class RatingController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "office", required = true, description =
-                    "Specifies the " + "owning office of the ratingset to be included in the "
+            @OpenApiParam(name = OFFICE, required = true, description =
+                    "Specifies the owning office of the ratingset to be included in the "
                             + "response."),
             },
             responses = {
@@ -251,10 +268,10 @@ public class RatingController implements CrudHandler {
             tags = {"Ratings"})
 
     @Override
-    public void getOne(Context ctx, String rating) {
+    public void getOne(@NotNull Context ctx, @NotNull String rating) {
 
-        try (final Timer.Context timeContext = markAndTime("getOne")) {
-            String officeId = ctx.queryParam("office");
+        try (final Timer.Context ignored = markAndTime("getOne")) {
+            String officeId = ctx.queryParam(OFFICE);
 
             // If we wanted to do async I think it would be like this
             //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
@@ -276,7 +293,7 @@ public class RatingController implements CrudHandler {
     private String getRatingSetString(Context ctx, String officeId, String rating) {
         String retval = null;
 
-        try (final Timer.Context timeContext = markAndTime("getRatingSetString")) {
+        try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
             String acceptHeader = ctx.header(Header.ACCEPT);
 
             if (Formats.JSONV2.equals(acceptHeader) || Formats.XMLV2.equals(acceptHeader)) {
@@ -319,7 +336,7 @@ public class RatingController implements CrudHandler {
     private RatingSet getRatingSet(Context ctx, String officeId, String rating)
             throws IOException, RatingException {
         RatingSet ratingSet;
-        try (final Timer.Context timeContext = markAndTime("getRatingSet");
+        try (final Timer.Context ignored = markAndTime("getRatingSet");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
             ratingSet = ratingDao.retrieve(officeId, rating);
@@ -328,13 +345,15 @@ public class RatingController implements CrudHandler {
         return ratingSet;
     }
 
-    @OpenApi(description = "Update a RatingSet", requestBody = @OpenApiRequestBody(content =
-            {@OpenApiContent(type = Formats.XMLV2), @OpenApiContent(type = Formats.JSONV2)
-
+    @Override
+    @OpenApi(description = "Update a RatingSet",
+            requestBody = @OpenApiRequestBody(content = {
+                    @OpenApiContent(type = Formats.XMLV2),
+                    @OpenApiContent(type = Formats.JSONV2)
             }, required = true), method = HttpMethod.PUT, path = "/ratings", tags = {"Ratings"})
-    public void update(Context ctx, String ratingId) {
+    public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
-        try (final Timer.Context timeContext = markAndTime("update");
+        try (final Timer.Context ignored = markAndTime("update");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
 
