@@ -54,8 +54,6 @@ import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.info.Info;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
@@ -100,6 +98,8 @@ public class ApiServlet extends HttpServlet {
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
+    public static final String OFFICE_ID = "office_id";
+    public static final String DATA_SOURCE = "data_source";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -123,7 +123,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init() {
-        
+
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -325,12 +325,13 @@ public class ApiServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         totalRequests.mark();
-        try (Connection db = cwms.getConnection()) {
+        try {
             String office = officeFromContext(req.getContextPath());
-            req.setAttribute("office_id", office);
-            req.setAttribute("database", db);
+            req.setAttribute(OFFICE_ID, office);
+
+            req.setAttribute(DATA_SOURCE, cwms);
             javalin.service(req, resp);
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             RadarError re = new RadarError("Major Database Issue");
             logger.log(Level.SEVERE, ex, () -> re + " for url " + req.getRequestURI());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
