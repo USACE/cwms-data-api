@@ -22,6 +22,7 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.json.JsonV1;
+import cwms.radar.formatters.json.JsonV2;
 import cwms.radar.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -104,11 +105,11 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Create new TimeSeries",
+            description = "Create new TimeSeries, will store any data provided",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML)
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2)
                     },
                     required = true
             ),
@@ -355,11 +356,14 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Update a TimeSeries",
+            description = "Update a TimeSeries with provided values",
+            pathParams = {
+                @OpenApiParam(name="name",description = "Full CWMS Timeseries name")
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML)
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2)
                     },
                     required = true
             ),
@@ -388,12 +392,12 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
-        return deserializeTimeSeries(ctx.body(), getContentType(ctx));
+        return deserializeTimeSeries(ctx.body(), getUserDataContentType(ctx));
     }
 
     private TimeSeries deserializeTimeSeries(String body, ContentType contentType)
             throws IOException {
-        return deserializeTimeSeries(body, contentType.getType());
+        return deserializeTimeSeries(body, contentType.toString());
     }
 
     public static TimeSeries deserializeTimeSeries(String body, String contentType)
@@ -408,7 +412,7 @@ public class TimeSeriesController implements CrudHandler {
             //  retval = om.readValue(body, TimeSeries.class);
             retval = deserializeJaxb(body);
         } else if ((Formats.JSONV2).equals(contentType)) {
-            ObjectMapper om = JsonV1.buildObjectMapper();
+            ObjectMapper om = JsonV2.buildObjectMapper();
             retval = om.readValue(body, TimeSeries.class);
         } else {
             throw new IOException("Unexpected format:" + contentType);
@@ -437,13 +441,18 @@ public class TimeSeriesController implements CrudHandler {
 
     @NotNull
     private ContentType getContentType(Context ctx) {
-        String acceptHeader = ctx.req.getContentType();
+        String acceptHeader = ctx.req.getHeader("Accept");
         String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
         ContentType contentType = Formats.parseHeader(formatHeader);
         if (contentType == null) {
             throw new FormattingException("Format header could not be parsed");
         }
         return contentType;
+    }
+
+    private ContentType getUserDataContentType(@NotNull Context ctx) {
+        String contentTypeHeader = ctx.req.getContentType();
+        return Formats.parseHeader(contentTypeHeader);
     }
 
     /**

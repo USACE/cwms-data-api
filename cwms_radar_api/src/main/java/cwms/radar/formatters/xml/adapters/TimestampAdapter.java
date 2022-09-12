@@ -8,14 +8,14 @@ import java.time.format.DateTimeFormatter;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-public class TimestampAdapter extends XmlAdapter<String, Timestamp> {
+public class TimestampAdapter extends XmlAdapter<Long, Timestamp> {
     @Override
-    public Timestamp unmarshal(String v) throws Exception {
-        return Timestamp.from(Instant.ofEpochMilli(Long.parseLong(v)));
+    public Timestamp unmarshal(Long v) throws Exception {
+        return Timestamp.from(Instant.ofEpochMilli(v));
     }
 
     @Override
-    public String marshal(Timestamp v) throws Exception {
-        return String.format("%d", v.getTime());
+    public Long marshal(Timestamp v) throws Exception {
+        return v.getTime();
     }
 }
