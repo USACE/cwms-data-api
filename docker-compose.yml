@@ -34,11 +34,33 @@ services:
       - INSTALLONCE=1
       - QUIET=1      
     restart: "no"
+  radar_perms:
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:latest-dev}
+    restart: "no"
+    environment:
+      - DB_HOST_PORT=db:1521
+      - DB_NAME=/CWMS
+      - CWMS_PASSWORD=simplecwmspasswD1
+      - SYS_PASSWORD=badSYSpassword
+      # set to HEC/q0 for any national system work
+      - OFFICE_ID=HEC
+      - OFFICE_EROC=q0
+      - INSTALLONCE=1
+      - QUIET=1  
+    command: "sqlplus CWMS_20/\\${CWMS_PASSWORD}@\\${DB_HOST_PORT}\\${DB_NAME} \"begin cwms_sec.add_user_to_group('\\${OFFICE_EROC}hectest_pu','CWMS Users', 'HQ'); end;\""
+    depends_on:
+      db:
+        condition: service_healthy
+      db_install:
+        condition: service_completed_successfully
+    
   radar:
     depends_on:
       db:
         condition: service_healthy
       db_install:
+        condition: service_completed_successfully
+      radar_perms:
         condition: service_completed_successfully
     image: ${RADAR_IMAGE:-cwms-rest-api:2.4-SNAPSHOT}
     restart: always
