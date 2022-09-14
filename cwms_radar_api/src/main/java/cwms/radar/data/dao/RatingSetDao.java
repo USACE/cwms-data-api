@@ -5,6 +5,7 @@ import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.rating.CwmsDbRating;
@@ -12,6 +13,8 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
+
+
     public RatingSetDao(DSLContext dsl) {
         super(dsl);
     }
@@ -34,13 +37,35 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public RatingSet retrieve(String officeId, String specificationId) throws IOException,
-            RatingException {
+    public RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId,
+                              String specificationId, ZonedDateTime startZdt, ZonedDateTime endZdt
+    ) throws IOException, RatingException {
+
         final RatingSet[] retval = new RatingSet[1];
         try {
+            final Long start;
+            if (startZdt != null) {
+                start = startZdt.toInstant().toEpochMilli();
+            } else {
+                start = null;
+            }
+
+            final Long end;
+            if (endZdt != null) {
+                end = endZdt.toInstant().toEpochMilli();
+            } else {
+                end = null;
+            }
+
+            if (method == null) {
+                method = RatingSet.DatabaseLoadMethod.EAGER;
+            }
+
+            RatingSet.DatabaseLoadMethod finalMethod = method;
             dsl.connection(c -> retval[0] =
-                    RatingSet.fromDatabase(RatingSet.DatabaseLoadMethod.EAGER, c, officeId,
-                            specificationId));
+                    RatingSet.fromDatabase(finalMethod, c, officeId,
+                            specificationId, start, end));
+
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
             if (cause instanceof RatingException) {
@@ -86,22 +111,14 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     }
 
-    public void delete(Connection c, String officeId, String ratingSpecId) throws SQLException,
-            RatingException {
+    public void delete(Connection c, String officeId, String ratingSpecId) throws SQLException {
         delete(c, DeleteRule.DELETE_ALL, ratingSpecId, officeId);
     }
 
-    public void delete(Connection c, DeleteRule deleteRule, String ratingSpecId, String officeId) throws SQLException {
+    public void delete(Connection c, DeleteRule deleteRule, String ratingSpecId, String officeId)
+            throws SQLException {
         CwmsDbRating cwmsDbRating = CwmsDbServiceLookup.buildCwmsDb(CwmsDbRating.class, c);
         cwmsDbRating.deleteSpecs(c, ratingSpecId, deleteRule.getRule(), officeId);
-    }
-
-    // This doesn't seem to work.
-    private void deleteWithRatingSet(Connection c, String officeId, String ratingSpecId) throws RatingException {
-        RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, ratingSpecId);
-        ratingSet.removeAllRatings();
-        final boolean overwriteExisting = true;
-        ratingSet.storeToDatabase(c, overwriteExisting);  // Does this actually delete?
     }
 
     public void delete(String officeId, String specificationId, long[] effectiveDates)
@@ -122,6 +139,15 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         }
     }
 
+    // This doesn't seem to work.
+    private void deleteWithRatingSet(Connection c, String officeId, String ratingSpecId)
+            throws RatingException {
+        RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, ratingSpecId);
+        ratingSet.removeAllRatings();
+        final boolean overwriteExisting = true;
+        ratingSet.storeToDatabase(c, overwriteExisting);  // Does this actually delete?
+    }
+
 
     private void deleteWithRatingSet(Connection c, String officeId, String specificationId,
                                      long[] effectiveDates)
@@ -140,7 +166,8 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     public String retrieveRatings(String format, String names, String unit, String datum,
                                   String office, String start,
                                   String end, String timezone) {
-        return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(), names, format, unit, datum, start, end,
+        return CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_F(dsl.configuration(), names, format,
+                unit, datum, start, end,
                 timezone, office);
     }
 

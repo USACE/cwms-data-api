@@ -13,10 +13,12 @@ import cwms.radar.data.dao.RatingSetDao;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -26,7 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
+import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -42,17 +44,32 @@ public class RatingController implements CrudHandler {
     public static final String UNIT = "unit";
     public static final String DATUM = "datum";
     public static final String AT = "at";
+    public static final String BEGIN = "begin";
     public static final String END = "end";
     public static final String TIMEZONE = "timezone";
     public static final String FORMAT = "format";
+    public static final String METHOD = "method";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
+
+    static {
+        JavalinValidation.register(RatingSet.DatabaseLoadMethod.class, RatingController::getDatabaseLoadMethod);
+    }
 
     public RatingController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
         requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+    }
+
+    private static RatingSet.DatabaseLoadMethod getDatabaseLoadMethod(String input) {
+        RatingSet.DatabaseLoadMethod retval = null;
+
+        if (input != null) {
+            retval = RatingSet.DatabaseLoadMethod.valueOf(input.toUpperCase());
+        }
+        return retval;
     }
 
     @NotNull
@@ -209,7 +226,7 @@ public class RatingController implements CrudHandler {
             RatingDao ratingDao = getRatingDao(dsl);
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
-            String names = ctx.queryParam(NAME);
+            String names = ctx.queryParamAsClass(NAME, String.class).getOrDefault("*");
             String unit = ctx.queryParam(UNIT);
             String datum = ctx.queryParam(DATUM);
             String office = ctx.queryParam(OFFICE);
@@ -259,6 +276,19 @@ public class RatingController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description =
                     "Specifies the owning office of the ratingset to be included in the "
                             + "response."),
+            @OpenApiParam(name = BEGIN,  description = "Specifies the "
+                    + "start of the time window for data to be included in the response. "
+                    + "If this field is not specified no start time will be used."),
+            @OpenApiParam(name = END,  description = "Specifies the "
+                    + "end of the time window for data to be included in the response. If"
+                    + " this field is not specified no end time will be used."),
+            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                    + "the time zone of the values of the begin and end fields (unless "
+                    + "otherwise specified), as well as the time zone of any times in the"
+                    + " response. If this field is not specified, the default time zone "
+                    + "of UTC shall be used."),
+            @OpenApiParam(name = METHOD,  description = "Specifies "
+                    + "the retrieval method used", type = RatingSet.DatabaseLoadMethod.class),
             },
             responses = {
                     @OpenApiResponse(status = "200", content = {
@@ -272,11 +302,26 @@ public class RatingController implements CrudHandler {
 
         try (final Timer.Context ignored = markAndTime("getOne")) {
             String officeId = ctx.queryParam(OFFICE);
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+
+            ZonedDateTime beginZdt = null;
+            String begin = ctx.queryParam(BEGIN);
+            if (begin != null) {
+                beginZdt = DateUtils.parseUserDate(begin, timezone);
+            }
+
+            ZonedDateTime endZdt = null;
+            String end = ctx.queryParam(END);
+            if (end != null) {
+                endZdt = DateUtils.parseUserDate(end, timezone);
+            }
+
+            RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD, RatingSet.DatabaseLoadMethod.class).getOrDefault(RatingSet.DatabaseLoadMethod.LAZY);
 
             // If we wanted to do async I think it would be like this
             //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
 
-            String body = getRatingSetString(ctx, officeId, rating);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginZdt, endZdt);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -284,13 +329,9 @@ public class RatingController implements CrudHandler {
         }
     }
 
-    public CompletableFuture<String> getRatingSetAsync(Context ctx, String officeId,
-                                                       String rating) {
-        return CompletableFuture.supplyAsync(() -> getRatingSetString(ctx, officeId, rating));
-    }
 
     @Nullable
-    private String getRatingSetString(Context ctx, String officeId, String rating) {
+    private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method, String officeId, String rating, ZonedDateTime beginZdt, ZonedDateTime endZdt) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -298,7 +339,7 @@ public class RatingController implements CrudHandler {
 
             if (Formats.JSONV2.equals(acceptHeader) || Formats.XMLV2.equals(acceptHeader)) {
                 try {
-                    RatingSet ratingSet = getRatingSet(ctx, officeId, rating);
+                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, beginZdt, endZdt);
                     if (ratingSet != null) {
                         if (Formats.JSONV2.equals(acceptHeader)) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -333,13 +374,14 @@ public class RatingController implements CrudHandler {
         return retval;
     }
 
-    private RatingSet getRatingSet(Context ctx, String officeId, String rating)
+    private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method, String officeId,
+                                   String rating, ZonedDateTime beginZdt, ZonedDateTime endZdt)
             throws IOException, RatingException {
         RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieve(officeId, rating);
+            ratingSet = ratingDao.retrieve(method, officeId, rating, beginZdt, endZdt);
         }
 
         return ratingSet;
@@ -357,9 +399,6 @@ public class RatingController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
 
-            // Retrieve the rating specified by ratingId and then somehow apply the update?
-            // RatingSet ratingSet = ratingDao.retrieve(officeId, ratingId);
-            // Or just store what they sent us?
             RatingSet ratingSet = deserializeRatingSet(ctx);
             ratingDao.store(ratingSet);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated RatingSet");
