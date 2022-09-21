@@ -23,6 +23,7 @@ import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.PoolController;
 import cwms.radar.api.RatingController;
+import cwms.radar.api.RatingMetadataController;
 import cwms.radar.api.RatingSpecController;
 import cwms.radar.api.RatingTemplateController;
 import cwms.radar.api.SpecifiedLevelController;
@@ -242,6 +243,8 @@ public class ApiServlet extends HttpServlet {
                 new RatingTemplateController(metrics), requiredRoles);
         radarCrud("/ratings/spec/{rating-id}",
                 new RatingSpecController(metrics), requiredRoles);
+        radarCrud("/ratings/metadata/{rating-id}",
+                new RatingMetadataController(metrics), requiredRoles);
         radarCrud("/ratings/{rating}",
                 new RatingController(metrics), requiredRoles);
         radarCrud("/catalog/{dataset}",
