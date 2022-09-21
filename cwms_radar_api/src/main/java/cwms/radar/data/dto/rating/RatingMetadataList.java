@@ -30,54 +30,63 @@ public class RatingMetadataList extends CwmsDTOPaginated {
     }
 
     public static class KeySet {
+        private static final String[] sortFields = new String[]{
+                "AV_RATING_SPEC.OFFICE_ID",
+                "AV_RATING_SPEC.TEMPLATE_ID",
+                "AV_RATING_SPEC.RATING_ID",
+                "AV_RATING.EFFECTIVE_DATE"
+        };
+
         String specOfficeId;
         String specTemplateId;
         String specRatingId;
-        String ratingOfficeId;
-        String ratingRatingId;
+
         ZonedDateTime ratingEffectiveDate;
 
         public KeySet(String specOfficeId, String specTemplateId, String specRatingId,
-                      String ratingOfficeId, String ratingRatingId,
                       ZonedDateTime ratingEffectiveDate) {
             this.specOfficeId = specOfficeId;
             this.specTemplateId = specTemplateId;
             this.specRatingId = specRatingId;
-            this.ratingOfficeId = ratingOfficeId;
-            this.ratingRatingId = ratingRatingId;
             this.ratingEffectiveDate = ratingEffectiveDate;
         }
 
         public static KeySet build(Object[] parts) {
             KeySet retval = null;
 
-            if (parts != null && parts.length >= 6) {
-                Object part = parts[5];
-                ZonedDateTime effective = asZonedDateTime(part);
+            if (parts != null && parts.length >= sortFields.length) {
+                Object last = parts[parts.length - 1];
+                ZonedDateTime effective = asZonedDateTime(last);
                 retval = new KeySet((String) parts[0], (String) parts[1], (String) parts[2],
-                        (String) parts[3], (String) parts[4], effective);
+                        effective);
             }
             return retval;
         }
 
 
+        // CwmsDTOPaginated puts the pageSize as the last element.
+        // We know we need NUM_FIELDS elements so only return the last element as
+        // pageSize if they gave us more than NUM_FIELDS elements.
         public static Integer parsePageSize(Object[] parts, int pageSize) {
             Integer retval = pageSize;
-            if (parts != null && parts.length >= 7) {
-                retval = Integer.parseInt((String) parts[6]);
+            if (parts != null && parts.length > sortFields.length) {
+                String lastPart = (String) parts[parts.length - 1];
+                retval = Integer.parseInt(lastPart);
             }
             return retval;
         }
 
         public Object[] getSeekValues() {
             if (specOfficeId == null && specTemplateId == null && specRatingId == null
-                    && ratingOfficeId == null && ratingRatingId == null && ratingEffectiveDate == null) {
+                    && ratingEffectiveDate == null) {
                 // Do we return null or empty?
                 return new Object[]{};
             }
-            return new Object[]{specOfficeId, specTemplateId, specRatingId,
-                    ratingOfficeId, ratingRatingId, ratingEffectiveDate
-            };
+            return new Object[]{specOfficeId, specTemplateId, specRatingId, ratingEffectiveDate};
+        }
+
+        public static String [] getSeekFieldNames(){
+            return sortFields;
         }
 
         @Nullable
@@ -134,9 +143,7 @@ public class RatingMetadataList extends CwmsDTOPaginated {
         }
 
         public RatingMetadataList build() {
-            RatingMetadataList retval = new RatingMetadataList(this);
-
-            return retval;
+            return new RatingMetadataList(this);
         }
 
         public KeySet buildNextKeySet() {
@@ -155,7 +162,7 @@ public class RatingMetadataList extends CwmsDTOPaginated {
 
                 RatingSpec spec = last.getRatingSpec();
                 retval = new KeySet(spec.getOfficeId(), spec.getTemplateId(), spec.getRatingId(),
-                        lastRating.getOfficeId(), lastRating.getRatingSpecId(), effectiveDate);
+                        effectiveDate);
             }
 
             return retval;

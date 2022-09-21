@@ -14,21 +14,21 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.OrderField;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.SelectSeekStepN;
-import org.jooq.conf.ParamType;
+import org.jooq.impl.TableImpl;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 public class RatingMetadataDao extends JooqDao<RatingSpec> {
-    private static final Logger logger = Logger.getLogger(RatingMetadataDao.class.getName());
 
     public RatingMetadataDao(DSLContext dsl) {
         super(dsl);
@@ -46,7 +46,8 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
         if (keySet != null) {
             seekValues = keySet.getSeekValues();
         }
-        List<RatingMetadata> ratingMetadata = getRatingMetadata(office, specIdMask, seekValues,
+        List<RatingMetadata> ratingMetadata = getRatingMetadata(office, specIdMask,
+                RatingMetadataList.KeySet.getSeekFieldNames(), seekValues,
                 pageSize);
 
         RatingMetadataList.Builder builder = new RatingMetadataList.Builder(pageSize);
@@ -56,81 +57,66 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
         return builder.build();
     }
 
+    /**
+     * Retrieve a list of RatingMetadata objects.
+     * @param office The office to search for ratings.
+     *               If null, all offices are searched.
+     * @param specIdMask    The spec id mask to search for ratings.
+     *                      If null, all spec ids are searched.
+     * @param seekFieldNames   The field names to use for keyset pagination.
+     * @param seekValues    The values to use for keyset pagination.
+     *                      Size and order must match seekFieldNames except for first page.
+     *                      On first page seekValues will be null.
+     * @param pageSize  The number of records to return.
+     * @return A list of RatingMetadata objects.
+     */
     @NotNull
-    public List<RatingMetadata> getRatingMetadata(String office, String specIdMask,
-                                                  Object[] seekValues, int pageSize) {
+    private List<RatingMetadata> getRatingMetadata(String office, String specIdMask,
+                                                  @NotNull String[] seekFieldNames,
+                                                  @Nullable Object[] seekValues,
+                                                  int pageSize) {
         List<RatingMetadata> retval;
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
 
-        Condition condition = specView.LOC_ALIAS_CATEGORY.isNull()
-                .and(ratView.LOC_ALIAS_CATEGORY.isNull());
+        // Does it matter for speed or other reasons if we check
+        // LOC_ALIAS_CATEGORY or LOC_ALIAS_GROUP too?
+        // I know that specView ALIASED_ITEM can be null without ratView ALIASED_ITEM being null
+        // but is ALIASED_ITEM ever null when the LOC_ALIAS_* fields aren't?
+        Condition condition = specView.ALIASED_ITEM.isNull()
+                .and(ratView.ALIASED_ITEM.isNull());
 
-        if (office != null) {
+        if (office != null && !office.isEmpty()) {
             condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
-        if (specIdMask != null) {
+        if (specIdMask != null && !specIdMask.isEmpty()) {
             condition = condition.and(JooqDao.caseInsensitiveLikeRegex(
                     specView.RATING_ID, specIdMask));
         }
 
+        Collection<OrderField<?>> seekFields = getOrderFields(seekFieldNames);
 
-        Collection<OrderField<?>> fields = new ArrayList<>();
-        fields.add(specView.OFFICE_ID);
-        fields.add(specView.TEMPLATE_ID);
-        fields.add(specView.RATING_ID);
-        fields.add(ratView.OFFICE_ID);
-        fields.add(ratView.RATING_ID);
-        fields.add(ratView.EFFECTIVE_DATE.desc());
-
-
-        SelectSeekStepN<Record> records = dsl.select(specView.RATING_SPEC_CODE,
-                        specView.RATING_ID,
-                        specView.TEMPLATE_CODE,
-                        specView.TEMPLATE_ID,
-                        specView.OFFICE_ID,
-                        specView.LOCATION_ID,
-                        specView.DESCRIPTION,
-                        specView.VERSION,
-                        specView.DEP_ROUNDING_SPEC,
-                        specView.IND_ROUNDING_SPECS,
-                        specView.DATE_METHODS,
-                        specView.AUTO_MIGRATE_EXT_FLAG,
-                        specView.AUTO_ACTIVATE_FLAG,
-                        specView.AUTO_UPDATE_FLAG,
-                        specView.ACTIVE_FLAG,
-                        specView.SOURCE_AGENCY,
-                        specView.LOC_ALIAS_GROUP,
-                        specView.LOC_ALIAS_CATEGORY,
-                        specView.ALIASED_ITEM,
-                        ratView.OFFICE_ID,
-                        ratView.RATING_CODE,
-                        ratView.RATING_ID,
-                        ratView.TEMPLATE_ID,
-                        ratView.OFFICE_ID,
-                        ratView.LOCATION_ID,
-                        ratView.RATING_SPEC_CODE,
-                        ratView.TEMPLATE_CODE,
-                        ratView.PARENT_RATING_CODE,
-                        ratView.EFFECTIVE_DATE,
-                        ratView.VERSION,
-                        ratView.DESCRIPTION,
-                        ratView.DATABASE_UNITS,
-                        ratView.FORMULA,
+        SelectSeekStepN<Record> records = dsl.select(specView.OFFICE_ID, specView.TEMPLATE_ID,
+                        specView.RATING_ID, specView.LOCATION_ID, specView.DESCRIPTION,
+                        specView.VERSION, specView.DEP_ROUNDING_SPEC, specView.IND_ROUNDING_SPECS,
+                        specView.DATE_METHODS, specView.AUTO_MIGRATE_EXT_FLAG,
+                        specView.AUTO_ACTIVATE_FLAG, specView.AUTO_UPDATE_FLAG,
+                        specView.ACTIVE_FLAG, specView.SOURCE_AGENCY, specView.ALIASED_ITEM,
+                        ratView.OFFICE_ID, ratView.RATING_ID, ratView.EFFECTIVE_DATE,
+                        ratView.CREATE_DATE, ratView.TRANSITION_DATE,
+                        ratView.VERSION, ratView.DESCRIPTION,
+                        ratView.DATABASE_UNITS, ratView.NATIVE_UNITS,
                         ratView.ACTIVE_FLAG,
-                        ratView.CREATE_DATE,
-                        ratView.TRANSITION_DATE,
-                        ratView.NATIVE_UNITS,
-                        ratView.ALIASED_ITEM,
-                        ratView.LOC_ALIAS_CATEGORY,
-                        ratView.LOC_ALIAS_GROUP)
+                        ratView.FORMULA, ratView.ALIASED_ITEM
+                )
                 .from(specView)
                 .leftJoin(ratView)
-                .on(specView.RATING_ID.eq(ratView.RATING_ID))
+                .on(specView.RATING_ID.eq(ratView.RATING_ID)
+                        .and(specView.OFFICE_ID.eq(ratView.OFFICE_ID)))
                 .where(condition)
-                .orderBy(fields);
+                .orderBy(seekFields);
 
         ResultQuery<Record> query;
 
@@ -141,7 +127,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             query = records.limit(pageSize);
         }
 
-        logger.info(() -> query.getSQL(ParamType.INLINED));
+        // logger.info(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<AbstractRatingMetadata>> metadata = new LinkedHashMap<>();
         query.fetchStream().forEach(rec -> {
@@ -164,17 +150,54 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
         return retval;
     }
 
+    @NotNull
+    private static Collection<OrderField<?>> getOrderFields(String[] fieldNames) {
+        Collection<OrderField<?>> seekFields = new ArrayList<>();
+        for (String fieldName : fieldNames) {
+            seekFields.add(fieldFromName(fieldName));
+        }
+
+        return seekFields;
+    }
+
+    private static Field<?> fieldFromName(String fieldName) {
+        Field<?> retval;
+
+        String[] parts = fieldName.split("\\.");
+
+        if (parts.length == 2) {
+            TableImpl<?> table = getTable(parts[0]);
+            String column = parts[1];
+            retval = table.field(column);
+        } else {
+            throw new IllegalArgumentException("Unknown field name: " + fieldName);
+        }
+        return retval;
+    }
+
+    @NotNull
+    private static TableImpl<?> getTable(String view) {
+        TableImpl<?> table;
+        if (AV_RATING_SPEC.AV_RATING_SPEC.getName().equals(view)) {
+            table = AV_RATING_SPEC.AV_RATING_SPEC;
+        } else if (AV_RATING.AV_RATING.getName().equals(view)) {
+            table = AV_RATING.AV_RATING;
+        } else {
+            throw new IllegalArgumentException("Unknown table: " + view);
+        }
+        return table;
+    }
+
     private AbstractRatingMetadata buildTableRatingMetadata(Record rec) {
         AbstractRatingMetadata retval = null;
 
         if (rec != null) {
-
             String officeId = rec.get(AV_RATING.AV_RATING.OFFICE_ID);
             String ratingId = rec.get(AV_RATING.AV_RATING.RATING_ID);
             String description = rec.get(AV_RATING.AV_RATING.DESCRIPTION);
 
             // which units to use?
-//            String databaseUnits = rec.get(AV_RATING.AV_RATING.DATABASE_UNITS);
+            // String databaseUnits = rec.get(AV_RATING.AV_RATING.DATABASE_UNITS);
             String nativeUnits = rec.get(AV_RATING.AV_RATING.NATIVE_UNITS);
             String active = rec.get(AV_RATING.AV_RATING.ACTIVE_FLAG);
             boolean activeFlag = active != null && active.equals("T");
