@@ -113,8 +113,9 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                 )
                 .from(specView)
                 .leftJoin(ratView)
-                .on(specView.RATING_ID.eq(ratView.RATING_ID)
-                        .and(specView.OFFICE_ID.eq(ratView.OFFICE_ID)))
+                .on(specView.OFFICE_ID.eq(ratView.OFFICE_ID)
+                        .and(specView.RATING_ID.eq(ratView.RATING_ID))
+                )
                 .where(condition)
                 .orderBy(seekFields);
 
