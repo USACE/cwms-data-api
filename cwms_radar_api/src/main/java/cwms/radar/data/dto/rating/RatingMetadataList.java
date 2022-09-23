@@ -1,5 +1,6 @@
 package cwms.radar.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
@@ -18,6 +19,17 @@ public class RatingMetadataList extends CwmsDTOPaginated {
 
     }
 
+
+    @JsonIgnore
+    public int getSize(){
+        int retval = 0;
+        if(metadata != null){
+            for (RatingMetadata ratingMetadata : metadata) {
+                retval += ratingMetadata.getSize();
+            }
+        }
+        return retval;
+    }
 
     private RatingMetadataList(RatingMetadataList.Builder builder) {
         super(builder.buildPage(), builder.pageSize);
@@ -142,6 +154,16 @@ public class RatingMetadataList extends CwmsDTOPaginated {
             return this;
         }
 
+        private int getSize(){
+            int retval = 0;
+            if(metadata != null){
+                for (RatingMetadata ratingMetadata : metadata) {
+                    retval += ratingMetadata.getSize();
+                }
+            }
+            return retval;
+        }
+
         public RatingMetadataList build() {
             return new RatingMetadataList(this);
         }
@@ -149,22 +171,26 @@ public class RatingMetadataList extends CwmsDTOPaginated {
         public KeySet buildNextKeySet() {
             KeySet retval = null;
 
-            RatingMetadata last = null;
-            if (metadata != null && !metadata.isEmpty()) {
-                last = metadata.get(metadata.size() - 1);
+            // If we asked for 20 per-page and have 20 there might be another page.
+            // If we asked for 20 and got 19 there isn't another page.
+            if (getSize() >= pageSize) {
+
+                RatingMetadata last = null;
+                if (metadata != null && !metadata.isEmpty()) {
+                    last = metadata.get(metadata.size() - 1);
+                }
+
+                if (last != null) {
+                    List<AbstractRatingMetadata> ratings = last.getRatings();
+                    AbstractRatingMetadata lastRating = ratings.get(ratings.size() - 1);
+
+                    ZonedDateTime effectiveDate = lastRating.getEffectiveDate();
+
+                    RatingSpec spec = last.getRatingSpec();
+                    retval = new KeySet(spec.getOfficeId(), spec.getTemplateId(), spec.getRatingId(),
+                            effectiveDate);
+                }
             }
-
-            if (last != null) {
-                List<AbstractRatingMetadata> ratings = last.getRatings();
-                AbstractRatingMetadata lastRating = ratings.get(ratings.size() - 1);
-
-                ZonedDateTime effectiveDate = lastRating.getEffectiveDate();
-
-                RatingSpec spec = last.getRatingSpec();
-                retval = new KeySet(spec.getOfficeId(), spec.getTemplateId(), spec.getRatingId(),
-                        effectiveDate);
-            }
-
             return retval;
         }
 

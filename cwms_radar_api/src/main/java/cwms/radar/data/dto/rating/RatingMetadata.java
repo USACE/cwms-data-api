@@ -1,5 +1,6 @@
 package cwms.radar.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -38,6 +39,14 @@ public class RatingMetadata implements CwmsDTO {
         return ratings;
     }
 
+    @JsonIgnore
+    public int getSize() {
+        int retval = 0;
+        if (ratings != null) {
+            retval = ratings.size();
+        }
+        return retval;
+    }
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
