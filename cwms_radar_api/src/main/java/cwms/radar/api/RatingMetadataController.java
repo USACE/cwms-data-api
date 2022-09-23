@@ -78,7 +78,6 @@ public class RatingMetadataController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        long start = System.nanoTime();
         String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
         int pageSize =
                 ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
@@ -89,18 +88,12 @@ public class RatingMetadataController implements CrudHandler {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-
         try (final Timer.Context timeContext = markAndTime("getAll");
              DSLContext dsl = getDslContext(ctx)) {
             RatingMetadataDao dao = getDao(dsl);
 
-            // I know data
             RatingMetadataList metadataList = dao.retrieve(cursor, pageSize, office,
                     ratingIdMask);
-
-            long end = System.nanoTime();
-            long ms = (end - start) / 1000000;
-            logger.log(Level.FINE, "Got RatingMetadataList in " + ms + "ms");
 
             String result = Formats.format(contentType, metadataList);
             ctx.result(result);
