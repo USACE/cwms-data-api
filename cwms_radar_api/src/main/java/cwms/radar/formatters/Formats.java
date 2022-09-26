@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -17,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class Formats {
@@ -39,9 +39,9 @@ public class Formats {
 
     static {
         contentTypeList.addAll(
-                Arrays.asList(JSON, XML, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON,
-                                NAMED_PGJSON)
-                        .stream().map(ct -> new ContentType(ct)).collect(Collectors.toList()));
+                Stream.of(JSON, XML, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
+                        .map(ContentType::new)
+                        .collect(Collectors.toList()));
     }
 
     private static Map<String, String> typeMap = new LinkedHashMap<>();
@@ -73,7 +73,7 @@ public class Formats {
             String[] typeFormatterClasses = line.split(":");
 
             ContentType type = new ContentType(typeFormatterClasses[0]);
-            logger.finest("Adding links for content-type: " + type.toString());
+            logger.finest("Adding links for content-type: " + type);
 
             try {
                 @SuppressWarnings("unchecked")
@@ -95,9 +95,11 @@ public class Formats {
                 formatters.put(type, tmp);
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
                      | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                throw new IOException("Failed to load format list, formatter for " + typeFormatterClasses[0] + " point to a class with an invalid constructor", e);
+                throw new IOException("Failed to load format list, formatter for "
+                        + typeFormatterClasses[0] + " point to a class with an invalid constructor", e);
             } catch (ClassNotFoundException e) {
-                throw new IOException("Failed to find class referenced for formatter " + typeFormatterClasses[0], e);
+                throw new IOException("Failed to find class referenced for formatter "
+                        + typeFormatterClasses[0], e);
             }
         }
 
@@ -115,7 +117,9 @@ public class Formats {
         if (outputFormatter != null) {
             return outputFormatter.format(toFormat);
         } else {
-            throw new FormattingException("No Format for this content-type and data-type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
+            String message = String.format("No Format for this content-type and data-type : (%s, %s)",
+                            type.toString(), toFormat.getClass().getName());
+            throw new FormattingException(message);
         }
 
     }
@@ -135,13 +139,14 @@ public class Formats {
             logger.finest(key.toString());
         }
 
-        Class<? extends CwmsDTO> klass = rootType; //dtos.get(0).getClass();
-        OutputFormatter outputFormatter = getOutputFormatter(type, klass);
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
 
         if (outputFormatter != null) {
             return outputFormatter.format(dtos);
         } else {
-            throw new FormattingException("No Format for this content-type and data type : (" + type.toString() + ", " + dtos.get(0).getClass().getName() + ")");
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                            type.toString(), dtos.get(0).getClass().getName());
+            throw new FormattingException(message);
         }
     }
 
