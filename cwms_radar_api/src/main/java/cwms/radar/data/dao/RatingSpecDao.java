@@ -40,44 +40,46 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
 
     public Collection<RatingSpec> retrieveRatingSpecs(String office, String specIdMask) {
-        Set<RatingSpec> retval;
 
-        Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-                .and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
-                .and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull())
-                .and(AV_RATING.AV_RATING.ALIASED_ITEM.isNull());
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+        AV_RATING ratView = AV_RATING.AV_RATING;
+
+        Condition condition =
+                specView.LOC_ALIAS_CATEGORY.isNull()
+                        .and(specView.LOC_ALIAS_GROUP.isNull())
+                        .and(specView.ALIASED_ITEM.isNull())
+                        .and(ratView.LOC_ALIAS_CATEGORY.isNull())
+                        .and(ratView.LOC_ALIAS_GROUP.isNull())
+                        .and(ratView.ALIASED_ITEM.isNull());
 
         if (office != null) {
-            condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
+            condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
         if (specIdMask != null) {
-            condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.upper()
-                    .likeRegex(specIdMask.toUpperCase()));
+            condition =
+                    condition.and(JooqDao.caseInsensitiveLikeRegex(
+                            specView.RATING_ID, specIdMask));
         }
 
-        ResultQuery<? extends Record> query = dsl.select(
-                        AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
-                        AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
-                        AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
-                        AV_RATING.AV_RATING.EFFECTIVE_DATE
-                )
-                .from(AV_RATING_SPEC.AV_RATING_SPEC)
-                .leftOuterJoin(AV_RATING.AV_RATING)
-                .on(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(AV_RATING.AV_RATING.RATING_ID))
+        ResultQuery<? extends Record> query = dsl.select(specView.OFFICE_ID,
+                specView.RATING_ID,
+                specView.TEMPLATE_ID,
+                specView.LOCATION_ID,
+                specView.VERSION,
+                specView.SOURCE_AGENCY,
+                specView.ACTIVE_FLAG,
+                specView.AUTO_UPDATE_FLAG,
+                specView.AUTO_ACTIVATE_FLAG,
+                specView.AUTO_MIGRATE_EXT_FLAG,
+                specView.IND_ROUNDING_SPECS,
+                specView.DEP_ROUNDING_SPEC,
+                specView.DATE_METHODS,
+                specView.DESCRIPTION,
+                ratView.EFFECTIVE_DATE)
+                .from(specView)
+                .leftOuterJoin(ratView)
+                .on(specView.RATING_ID.eq(ratView.RATING_ID))
                 .where(condition)
                 .fetchSize(1000);
 
@@ -87,7 +89,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         query.fetchStream().forEach(rec -> {
             RatingSpec template = buildRatingSpec(rec);
 
-            Timestamp effectiveDate = rec.get(AV_RATING.AV_RATING.EFFECTIVE_DATE);
+            Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
             ZonedDateTime effective = toZdt(effectiveDate);
 
             List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
@@ -96,19 +98,17 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             }
         });
 
-        retval = map.entrySet().stream()
+        return map.entrySet().stream()
                 .map(entry -> new RatingSpec.Builder()
                         .fromRatingSpec(entry.getKey())
                         .withEffectiveDates(entry.getValue())
                         .build())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        return retval;
     }
 
 
-    public RatingSpecs retrieveRatingSpecs(String cursor, int pageSize,
-                                           String office, String specIdMask) {
+    public RatingSpecs retrieveRatingSpecs(String cursor, int pageSize, String office,
+                                           String specIdMask) {
         Integer total = null;
         int offset = 0;
 
@@ -136,66 +136,71 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
     }
 
     @NotNull
-    private Set<RatingSpec> getRatingSpecs(String office, String specIdMask, int firstRow,
-                                           int lastRow) {
+    public Set<RatingSpec> getRatingSpecs(String office, String specIdMask, int firstRow,
+                                          int lastRow) {
         Set<RatingSpec> retval;
 
-        Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull());
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+        AV_RATING ratView = AV_RATING.AV_RATING;
+
+        Condition condition = specView.LOC_ALIAS_CATEGORY.isNull()
+                .and(specView.LOC_ALIAS_GROUP.isNull())
+                .and(specView.ALIASED_ITEM.isNull());
 
         if (office != null) {
-            condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
+            condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
         if (specIdMask != null) {
-            condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.upper()
-                    .likeRegex(specIdMask.toUpperCase()));
+            condition = condition.and(JooqDao.caseInsensitiveLikeRegex(
+                            specView.RATING_ID, specIdMask));
         }
 
-        Condition ratingAliasNullCond = AV_RATING.AV_RATING.ALIASED_ITEM.isNull().and(
-                AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull()).and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull());
+        Condition ratingAliasNullCond = ratView.ALIASED_ITEM.isNull()
+                .and(ratView.LOC_ALIAS_CATEGORY.isNull())
+                .and(ratView.LOC_ALIAS_GROUP.isNull());
 
         SelectLimitStep<? extends Record> innerSelect = dsl.select(
-                        OracleDSL.rownum().as("rnum"), AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
-                        AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
-                        AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
-                        AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM).from(
-                        AV_RATING_SPEC.AV_RATING_SPEC).where(condition)
-                .orderBy(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID);
+                        OracleDSL.rownum().as("rnum"), specView.OFFICE_ID,
+                        specView.RATING_ID,
+                        specView.DATE_METHODS,
+                        specView.TEMPLATE_ID,
+                        specView.LOCATION_ID,
+                        specView.VERSION,
+                        specView.SOURCE_AGENCY,
+                        specView.ACTIVE_FLAG,
+                        specView.AUTO_UPDATE_FLAG,
+                        specView.AUTO_ACTIVATE_FLAG,
+                        specView.AUTO_MIGRATE_EXT_FLAG,
+                        specView.IND_ROUNDING_SPECS,
+                        specView.DEP_ROUNDING_SPEC,
+                        specView.DESCRIPTION,
+                        specView.ALIASED_ITEM)
+                .from(specView)
+                .where(condition)
+                .orderBy(specView.TEMPLATE_ID);
 
         ResultQuery<? extends Record> query = dsl.select(
                         DSL.field(DSL.quotedName("rnum"), Integer.class),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.VERSION),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION),
-                        innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM),
-                        AV_RATING.AV_RATING.EFFECTIVE_DATE)
+                        innerSelect.field(specView.OFFICE_ID),
+                        innerSelect.field(specView.RATING_ID),
+                        innerSelect.field(specView.DATE_METHODS),
+                        innerSelect.field(specView.TEMPLATE_ID),
+                        innerSelect.field(specView.LOCATION_ID),
+                        innerSelect.field(specView.VERSION),
+                        innerSelect.field(specView.SOURCE_AGENCY),
+                        innerSelect.field(specView.ACTIVE_FLAG),
+                        innerSelect.field(specView.AUTO_UPDATE_FLAG),
+                        innerSelect.field(specView.AUTO_ACTIVATE_FLAG),
+                        innerSelect.field(specView.AUTO_MIGRATE_EXT_FLAG),
+                        innerSelect.field(specView.IND_ROUNDING_SPECS),
+                        innerSelect.field(specView.DEP_ROUNDING_SPEC),
+                        innerSelect.field(specView.DESCRIPTION),
+                        innerSelect.field(specView.ALIASED_ITEM),
+                        ratView.EFFECTIVE_DATE)
                 .from(innerSelect)
-                .leftOuterJoin(AV_RATING.AV_RATING)
-                .on(innerSelect.field(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID).eq(AV_RATING.AV_RATING.RATING_ID))
+                .leftOuterJoin(ratView)
+                .on(innerSelect.field(specView.RATING_ID).eq(ratView.RATING_ID))
                 .where(ratingAliasNullCond
                         // This is the limit condition - the whole reason for the weird query...
                         // .rnum starts at 1...
@@ -203,7 +208,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                         .and(DSL.field(DSL.quotedName("rnum")).lessOrEqual(lastRow))
                 )
                 .orderBy(DSL.field(DSL.quotedName("rnum")),
-                        AV_RATING.AV_RATING.EFFECTIVE_DATE.asc());
+                        ratView.EFFECTIVE_DATE.asc());
 
         logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -211,7 +216,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         query.fetchStream().forEach(rec -> {
             RatingSpec template = buildRatingSpec(rec);
 
-            Timestamp effectiveDate = rec.get(AV_RATING.AV_RATING.EFFECTIVE_DATE);
+            Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
             ZonedDateTime effective = toZdt(effectiveDate);
 
             List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
@@ -233,38 +238,41 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
     public Optional<RatingSpec> retrieveRatingSpec(String office, String specId) {
         Set<RatingSpec> retval;
 
-        Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-                .and(AV_RATING.AV_RATING.LOC_ALIAS_CATEGORY.isNull())
-                .and(AV_RATING.AV_RATING.LOC_ALIAS_GROUP.isNull())
-                .and(AV_RATING.AV_RATING.ALIASED_ITEM.isNull())
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(specId));
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+        AV_RATING ratView = AV_RATING.AV_RATING;
+
+        Condition condition = specView.LOC_ALIAS_CATEGORY.isNull()
+                .and(specView.LOC_ALIAS_GROUP.isNull())
+                .and(specView.ALIASED_ITEM.isNull())
+                .and(ratView.LOC_ALIAS_CATEGORY.isNull())
+                .and(ratView.LOC_ALIAS_GROUP.isNull())
+                .and(ratView.ALIASED_ITEM.isNull())
+                .and(specView.RATING_ID.eq(specId));
 
         if (office != null) {
-            condition = condition.and(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID.eq(office));
+            condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
         ResultQuery<? extends Record> query = dsl.select(
-                        AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.VERSION,
-                        AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY,
-                        AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG,
-                        AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION,
-                        AV_RATING.AV_RATING.EFFECTIVE_DATE
+                        specView.OFFICE_ID,
+                        specView.RATING_ID,
+                        specView.TEMPLATE_ID,
+                        specView.LOCATION_ID,
+                        specView.VERSION,
+                        specView.SOURCE_AGENCY,
+                        specView.ACTIVE_FLAG,
+                        specView.AUTO_UPDATE_FLAG,
+                        specView.AUTO_ACTIVATE_FLAG,
+                        specView.AUTO_MIGRATE_EXT_FLAG,
+                        specView.IND_ROUNDING_SPECS,
+                        specView.DEP_ROUNDING_SPEC,
+                        specView.DATE_METHODS,
+                        specView.DESCRIPTION,
+                        ratView.EFFECTIVE_DATE
                 )
-                .from(AV_RATING_SPEC.AV_RATING_SPEC)
-                .leftOuterJoin(AV_RATING.AV_RATING)
-                .on(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID.eq(AV_RATING.AV_RATING.RATING_ID))
+                .from(specView)
+                .leftOuterJoin(ratView)
+                .on(specView.RATING_ID.eq(ratView.RATING_ID))
                 .where(condition)
                 .fetchSize(1000);
 
@@ -274,7 +282,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         query.fetchStream().forEach(rec -> {
             RatingSpec template = buildRatingSpec(rec);
 
-            Timestamp effectiveDate = rec.get(AV_RATING.AV_RATING.EFFECTIVE_DATE);
+            Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
             ZonedDateTime effective = toZdt(effectiveDate);
 
             List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
@@ -298,7 +306,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         return retval.stream().findFirst();
     }
 
-    private static ZonedDateTime toZdt(final Timestamp time) {
+    public static ZonedDateTime toZdt(final Timestamp time) {
         if (time != null) {
             return ZonedDateTime.ofInstant(time.toInstant(), ZoneId.of("UTC"));
         } else {
@@ -306,30 +314,32 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         }
     }
 
-    private RatingSpec buildRatingSpec(Record rec) {
+    public static RatingSpec buildRatingSpec(Record rec) {
         RatingSpec retval = null;
 
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+
         if (rec != null) {
-            String officeId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.OFFICE_ID);
-            String ratingId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
-            String templateId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID);
-            String locId = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.LOCATION_ID);
-            String version = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.VERSION);
-            String agency = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.SOURCE_AGENCY);
-            String active = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.ACTIVE_FLAG);
+            String officeId = rec.get(specView.OFFICE_ID);
+            String ratingId = rec.get(specView.RATING_ID);
+            String templateId = rec.get(specView.TEMPLATE_ID);
+            String locId = rec.get(specView.LOCATION_ID);
+            String version = rec.get(specView.VERSION);
+            String agency = rec.get(specView.SOURCE_AGENCY);
+            String active = rec.get(specView.ACTIVE_FLAG);
             boolean activeFlag = active != null && active.equals("T");
-            String autoUp = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_UPDATE_FLAG);
+            String autoUp = rec.get(specView.AUTO_UPDATE_FLAG);
             boolean autoUpdateFlag = autoUp != null && autoUp.equals("T");
-            String autoAct = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_ACTIVATE_FLAG);
+            String autoAct = rec.get(specView.AUTO_ACTIVATE_FLAG);
             boolean autoActivateFlag = autoAct != null && autoAct.equals("T");
-            String autoMig = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.AUTO_MIGRATE_EXT_FLAG);
+            String autoMig = rec.get(specView.AUTO_MIGRATE_EXT_FLAG);
             boolean autoMigrateExtFlag = autoMig != null && autoMig.equals("T");
-            String indRndSpecs = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.IND_ROUNDING_SPECS);
+            String indRndSpecs = rec.get(specView.IND_ROUNDING_SPECS);
 
-            String depRndSpecs = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DEP_ROUNDING_SPEC);
-            String desc = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DESCRIPTION);
+            String depRndSpecs = rec.get(specView.DEP_ROUNDING_SPEC);
+            String desc = rec.get(specView.DESCRIPTION);
 
-            String dateMethods = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.DATE_METHODS);
+            String dateMethods = rec.get(specView.DATE_METHODS);
 
             retval = new RatingSpec.Builder()
                     .withOfficeId(officeId)
