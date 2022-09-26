@@ -1,5 +1,7 @@
 package cwms.radar.formatters;
 
+import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.helpers.ResourceHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,14 +18,11 @@ import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import cwms.radar.data.dto.CwmsDTO;
-import cwms.radar.helpers.ResourceHelper;
-
-
 
 public class Formats {
     public static final Logger logger = Logger.getLogger(Formats.class.getName());
-    public static final String PLAIN = "text/plain";    // Only used as a constant, not for any data mapping
+    public static final String PLAIN = "text/plain";    // Only used as a constant, not for any
+    // data mapping
     public static final String JSON = "application/json";
     public static final String XML = "application/xml";
     public static final String XMLV2 = "application/xml;version=2";
@@ -37,33 +36,38 @@ public class Formats {
 
 
     private static List<ContentType> contentTypeList = new ArrayList<>();
+
     static {
         contentTypeList.addAll(
-            Arrays.asList(JSON,XML, XMLV2, WML2,JSONV2,TAB,CSV, GEOJSON, PGJSON, NAMED_PGJSON)
-            .stream().map( ct -> new ContentType(ct)).collect(Collectors.toList()));
+                Arrays.asList(JSON, XML, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON,
+                                NAMED_PGJSON)
+                        .stream().map(ct -> new ContentType(ct)).collect(Collectors.toList()));
     }
-    private static Map<String,String> typeMap = new LinkedHashMap<>();
-    static{
-        typeMap.put("json",Formats.JSON);
-        typeMap.put("xml",Formats.XML);
-        typeMap.put("wml2",Formats.WML2);
-        typeMap.put("tab",Formats.TAB);
-        typeMap.put("csv",Formats.CSV);
-        typeMap.put("geojson",Formats.GEOJSON);
+
+    private static Map<String, String> typeMap = new LinkedHashMap<>();
+
+    static {
+        typeMap.put("json", Formats.JSON);
+        typeMap.put("xml", Formats.XML);
+        typeMap.put("wml2", Formats.WML2);
+        typeMap.put("tab", Formats.TAB);
+        typeMap.put("csv", Formats.CSV);
+        typeMap.put("geojson", Formats.GEOJSON);
         typeMap.put("pgjson", Formats.PGJSON);
         typeMap.put("named-pgjson", Formats.NAMED_PGJSON);
     }
 
 
-    private Map<ContentType, Map<Class<CwmsDTO>,OutputFormatter> > formatters = null;
+    private Map<ContentType, Map<Class<CwmsDTO>, OutputFormatter>> formatters = null;
 
     private static Formats formats = null;
 
-    private Formats() throws IOException{
+    private Formats() throws IOException {
         formatters = new LinkedHashMap<>();
-        InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list", this.getClass());
+        InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list",
+                this.getClass());
         BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
-        while( br.ready() ){
+        while (br.ready()) {
             String line = br.readLine();
             logger.finest(line);
             String[] typeFormatterClasses = line.split(":");
@@ -73,41 +77,42 @@ public class Formats {
 
             try {
                 @SuppressWarnings("unchecked")
-                Class<OutputFormatter> formatter = (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
+                Class<OutputFormatter> formatter =
+                        (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
                 OutputFormatter formatterInstance;
-                logger.finest("Formatter class: "+ typeFormatterClasses[1]);
-				formatterInstance = formatter.getDeclaredConstructor().newInstance();
-                Map<Class<CwmsDTO>,OutputFormatter> tmp = new HashMap<>();
+                logger.finest("Formatter class: " + typeFormatterClasses[1]);
+                formatterInstance = formatter.getDeclaredConstructor().newInstance();
+                Map<Class<CwmsDTO>, OutputFormatter> tmp = new HashMap<>();
 
-                for(String clazz: typeFormatterClasses[2].split(";") ){
+                for (String clazz : typeFormatterClasses[2].split(";")) {
                     logger.finest("\tFor Class: " + clazz);
 
                     @SuppressWarnings("unchecked")
-                    Class<CwmsDTO> formatForClass = (Class<CwmsDTO>)Class.forName(clazz);
-                    tmp.put( formatForClass, formatterInstance);
+                    Class<CwmsDTO> formatForClass = (Class<CwmsDTO>) Class.forName(clazz);
+                    tmp.put(formatForClass, formatterInstance);
                 }
 
-                formatters.put(type,tmp);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				throw new IOException("Failed to load format list, formatter for " + typeFormatterClasses[0] + " point to a class with an invalid constructor",e);
-			} catch (ClassNotFoundException e) {
-				throw new IOException("Failed to find class referenced for formatter " + typeFormatterClasses[0],e );
-			}
+                formatters.put(type, tmp);
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                     | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+                throw new IOException("Failed to load format list, formatter for " + typeFormatterClasses[0] + " point to a class with an invalid constructor", e);
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to find class referenced for formatter " + typeFormatterClasses[0], e);
+            }
         }
 
     }
 
 
-    private String getFormatted(ContentType type, CwmsDTO toFormat) throws FormattingException{
-        Objects.requireNonNull(toFormat,"Object to be formatted should not be null");
-        for(ContentType key: formatters.keySet()){
+    private String getFormatted(ContentType type, CwmsDTO toFormat) throws FormattingException {
+        Objects.requireNonNull(toFormat, "Object to be formatted should not be null");
+        for (ContentType key : formatters.keySet()) {
             logger.fine(key.toString());
         }
 
         OutputFormatter outputFormatter = getOutputFormatter(type, toFormat.getClass());
 
-        if(outputFormatter != null){
+        if (outputFormatter != null) {
             return outputFormatter.format(toFormat);
         } else {
             throw new FormattingException("No Format for this content-type and data-type : (" + type.toString() + ", " + toFormat.getClass().getName() + ")");
@@ -115,84 +120,87 @@ public class Formats {
 
     }
 
-    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTO> klass)
-    {
-        OutputFormatter outputFormatter =null;
+    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTO> klass) {
+        OutputFormatter outputFormatter = null;
         Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
-        if( contentFormatters != null )
-        {
+        if (contentFormatters != null) {
             outputFormatter = contentFormatters.get(klass);
         }
         return outputFormatter;
     }
 
-    private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos, Class<? extends CwmsDTO> rootType) throws FormattingException{
-        for(ContentType key: formatters.keySet()){
+    private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos, Class<?
+            extends CwmsDTO> rootType) throws FormattingException {
+        for (ContentType key : formatters.keySet()) {
             logger.finest(key.toString());
         }
 
         Class<? extends CwmsDTO> klass = rootType; //dtos.get(0).getClass();
         OutputFormatter outputFormatter = getOutputFormatter(type, klass);
 
-        if(outputFormatter != null){
+        if (outputFormatter != null) {
             return outputFormatter.format(dtos);
         } else {
             throw new FormattingException("No Format for this content-type and data type : (" + type.toString() + ", " + dtos.get(0).getClass().getName() + ")");
         }
     }
 
-    private static void init(){
-        if( formats == null ){
+    private static void init() {
+        if (formats == null) {
             logger.finest("creating instance");
             try {
                 formats = new Formats();
-            } catch( IOException err){
+            } catch (IOException err) {
                 throw new FormattingException("Failed to load format map", err);
             }
         }
     }
 
-    public static String format(ContentType type, CwmsDTO toFormat) throws FormattingException{
+    public static String format(ContentType type, CwmsDTO toFormat) throws FormattingException {
         logger.finest("formats");
         init();
-        return formats.getFormatted(type,toFormat);
+        return formats.getFormatted(type, toFormat);
     }
 
-    public static String format(ContentType type, List<? extends CwmsDTO> toFormat, Class<? extends CwmsDTO> rootType) throws FormattingException{
+    public static String format(ContentType type, List<? extends CwmsDTO> toFormat, Class<?
+            extends CwmsDTO> rootType) throws FormattingException {
         logger.finest("format list");
         init();
-        return formats.getFormatted(type,toFormat,rootType);
+        return formats.getFormatted(type, toFormat, rootType);
     }
 
 
     /**
      * Parses the supplied header param or queryParam to determine the content type.
      * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
-     * @param header Accept header value
+     *
+     * @param header     Accept header value
      * @param queryParam format query parameter value
      * @return an appropriate standard mimetype for lookup
      */
-    public static ContentType parseHeaderAndQueryParm(String header, String queryParam){
-        if( queryParam != null && !queryParam.isEmpty() ){
-            if(header != null && !header.isEmpty()){
-                // If the user supplies an accept header and also a format= parameter, which should we use?
-                // The older format= query parameters don't give us the option to supply a version the
+    public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
+        if (queryParam != null && !queryParam.isEmpty()) {
+            if (header != null && !header.isEmpty()) {
+                // If the user supplies an accept header and also a format= parameter, which
+                // should we use?
+                // The older format= query parameters don't give us the option to supply a
+                // version the
                 // way that the accept header does.
-                throw new FormattingException("Accept header and query parameter are both present, this is not supported.");
+                throw new FormattingException("Accept header and query parameter are both "
+                        + "present, this is not supported.");
             }
 
             ContentType ct = parseQueryParam(queryParam);
-            if(ct != null){
+            if (ct != null) {
                 return ct;
             } else {
                 throw new FormattingException("content-type " + queryParam + " is not implemented");
             }
-        } else if( header == null ){
+        } else if (header == null) {
             throw new FormattingException("no content type or format specified");
         } else {
             ContentType ct = parseHeader(header);
-            if(ct != null)
-            {
+            if (ct != null) {
                 return ct;
             }
         }
@@ -200,11 +208,11 @@ public class Formats {
     }
 
 
-    public static ContentType parseQueryParam(String queryParam){
+    public static ContentType parseQueryParam(String queryParam) {
         ContentType retval = null;
-        if( queryParam != null && !queryParam.isEmpty() ){
+        if (queryParam != null && !queryParam.isEmpty()) {
             String val = typeMap.get(queryParam);
-            if( val != null ){
+            if (val != null) {
                 retval = new ContentType(val);
             }
         }
@@ -213,30 +221,27 @@ public class Formats {
     }
 
 
-    public static ContentType parseHeader(String header)
-    {
+    public static ContentType parseHeader(String header) {
         ArrayList<ContentType> contentTypes = new ArrayList<>();
 
-        if( header != null && !header.isEmpty() )
-        {
+        if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
             logger.finest("Finding handlers " + all.length);
-            for(String ct : all)
-            {
+            for (String ct : all) {
                 logger.finest(ct);
                 contentTypes.add(new ContentType(ct));
             }
             Collections.sort(contentTypes);
         }
         logger.finest("have " + contentTypes.size());
-        for( ContentType ct: contentTypes ){
+        for (ContentType ct : contentTypes) {
             logger.finest("checking " + ct.toString());
-            if( contentTypeList.contains(ct)){
+            if (contentTypeList.contains(ct)) {
                 return ct;
             }
         }
-        for( ContentType ct: contentTypes ){
-            if( ct.getType().equals("*/*")){
+        for (ContentType ct : contentTypes) {
+            if (ct.getType().equals("*/*")) {
                 return new ContentType(Formats.JSON);
             }
         }
