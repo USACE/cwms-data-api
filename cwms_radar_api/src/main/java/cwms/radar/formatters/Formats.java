@@ -185,7 +185,7 @@ public class Formats {
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
         if (queryParam != null && !queryParam.isEmpty()) {
-            if (header != null && !header.isEmpty()) {
+            if (header != null && !header.isEmpty() && !"*/*".equals(header.trim())) {
                 // If the user supplies an accept header and also a format= parameter, which
                 // should we use?
                 // The older format= query parameters don't give us the option to supply a
