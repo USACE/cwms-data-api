@@ -1,5 +1,6 @@
 package cwms.radar.data;
 
+import cwms.radar.ApiServlet;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -21,10 +22,10 @@ public class CwmsDataManager implements AutoCloseable {
     private DSLContext dsl;
 
     public CwmsDataManager(Context ctx) throws SQLException{
-        this(ctx.attribute("database"), ctx.attribute("office_id"));
+        this(ctx.attribute(ApiServlet.DATABASE), ctx.attribute(ApiServlet.OFFICE_ID));
     }
 
-    public CwmsDataManager(Connection conn, String officeId) throws SQLException{
+    public CwmsDataManager(Connection conn, String officeId) {
         this.conn = conn;
         dsl = DSL.using(conn, SQLDialect.ORACLE11G);
 

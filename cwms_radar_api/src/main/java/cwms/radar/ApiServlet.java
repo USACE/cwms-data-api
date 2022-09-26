@@ -10,6 +10,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
@@ -55,12 +56,8 @@ import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.info.Info;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -80,27 +77,31 @@ import org.owasp.html.PolicyFactory;
  *
  */
 @WebServlet(urlPatterns = { "/catalog/*",
-                            "/swagger-docs",
-                            "/timeseries/*",
-                            "/offices/*",
-                            "/location/*",
-                            "/locations/*",
-                            "/parameters/*",
-                            "/timezones/*",
-                            "/units/*",
-                            "/ratings/*",
-                            "/levels/*",
-                            "/basins/*",
-                            "/blobs/*",
-                            "/clobs/*",
-                            "/pools/*",
-                            "/specified-levels/*"
+        "/swagger-docs",
+        "/timeseries/*",
+        "/offices/*",
+        "/location/*",
+        "/locations/*",
+        "/parameters/*",
+        "/timezones/*",
+        "/units/*",
+        "/ratings/*",
+        "/levels/*",
+        "/basins/*",
+        "/blobs/*",
+        "/clobs/*",
+        "/pools/*",
+        "/specified-levels/*"
 })
 public class ApiServlet extends HttpServlet {
-    public static final Logger logger = Logger.getLogger(ApiServlet.class.getName());
+
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
+    public static final String OFFICE_ID = "office_id";
+    public static final String DATA_SOURCE = "data_source";
+    public static final String DATABASE = "database";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -124,24 +125,24 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init() {
-        
+        logger.atInfo().log("Initializing API");
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
-        om.registerModule(new JavaTimeModule()); 
+        om.registerModule(new JavaTimeModule());
 
         AccessManager accessManager = buildAccessManager();
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         String context = this.getServletContext().getContextPath();
         javalin = Javalin.createStandalone(config -> {
-            config.defaultContentType = "application/json";
-            config.contextPath = context;
-            config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
-            //config.enableDevLogging();
-            config.requestLogger((ctx,ms) -> logger.finest(ctx.toString()));
-            config.accessManager(accessManager);
-        })
+                    config.defaultContentType = "application/json";
+                    config.contextPath = context;
+                    config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
+                    //config.enableDevLogging();
+                    config.requestLogger((ctx,ms) -> logger.atFinest().log(ctx.toString()));
+                    config.accessManager(accessManager);
+                })
                 .attribute("PolicyFactory",sanitizer)
                 .attribute("ObjectMapper",om)
                 .before(ctx -> {
@@ -159,27 +160,27 @@ public class ApiServlet extends HttpServlet {
                     } else {
                         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                     }
-                    logger.log(Level.SEVERE,fe, () -> re + "for request: " + ctx.fullUrl());
+                    logger.atSevere().withCause(fe).log( re + "for request: " + ctx.fullUrl());
                     ctx.json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
                     final RadarError re = RadarError.notImplemented();
-                    logger.log(Level.WARNING, e, () -> re + "for request: " + ctx.fullUrl());
+                    logger.atWarning().withCause(e).log( re + "for request: " + ctx.fullUrl());
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
                     RadarError re = new RadarError("Bad Request", e.getDetails());
-                    logger.log(Level.INFO, re.toString(), e);
+                    logger.atInfo().withCause(e).log( re.toString(), e);
                     ctx.status(e.getStatus()).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Bad Request");
-                    logger.log(Level.INFO, re.toString(), e);
+                    logger.atInfo().withCause(e).log( re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Not Found.");
-                    logger.log(Level.INFO, re.toString(), e);
+                    logger.atInfo().withCause(e).log( re.toString(), e);
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
                 .exception(FieldException.class, (e,ctx) -> {
@@ -192,7 +193,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
-                    logger.log(Level.WARNING,String.format("error on request[%s]: %s",
+                    logger.atWarning().log(String.format("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
                     ctx.status(500);
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
@@ -313,29 +314,30 @@ public class ApiServlet extends HttpServlet {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0")
                 .description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
-                    .path("/swagger-docs")
-                    .defaultDocumentation(doc -> {
-                        doc.json("500", RadarError.class);
-                        doc.json("400", RadarError.class);
-                        doc.json("401", RadarError.class);
-                        doc.json("403", RadarError.class);
-                        doc.json("404", RadarError.class);
-                    })
-                    .activateAnnotationScanningFor("cwms.radar.api");
+                .path("/swagger-docs")
+                .defaultDocumentation(doc -> {
+                    doc.json("500", RadarError.class);
+                    doc.json("400", RadarError.class);
+                    doc.json("401", RadarError.class);
+                    doc.json("403", RadarError.class);
+                    doc.json("404", RadarError.class);
+                })
+                .activateAnnotationScanningFor("cwms.radar.api");
     }
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         totalRequests.mark();
-        try (Connection db = cwms.getConnection()) {
+        try {
             String office = officeFromContext(req.getContextPath());
-            req.setAttribute("office_id", office);
-            req.setAttribute("database", db);
+            req.setAttribute(OFFICE_ID, office);
+
+            req.setAttribute(DATA_SOURCE, cwms);
             javalin.service(req, resp);
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             RadarError re = new RadarError("Major Database Issue");
-            logger.log(Level.SEVERE, ex, () -> re + " for url " + req.getRequestURI());
+            logger.atSevere().withCause(ex).log( re + " for url " + req.getRequestURI());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.setContentType(ContentType.APPLICATION_JSON.toString());
             try (PrintWriter out = resp.getWriter()) {

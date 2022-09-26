@@ -2,11 +2,16 @@ package cwms.radar.data.dao;
 
 import static org.jooq.SQLDialect.ORACLE;
 
+import cwms.radar.ApiServlet;
+import cwms.radar.datasource.ConnectionPreparer;
+import cwms.radar.datasource.ConnectionPreparingDataSource;
+import cwms.radar.datasource.SessionOfficePreparer;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
@@ -22,9 +27,18 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     public static DSLContext getDslContext(Context ctx) {
-        Connection database = (Connection) ctx.attribute("database");
-        String officeId = ctx.attribute("office_id");
-        return getDslContext(database, officeId);
+        final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
+        final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        if (dataSource != null) {
+            ConnectionPreparer officeSetter = new SessionOfficePreparer(officeId);
+            DataSource ds = new ConnectionPreparingDataSource(officeSetter, dataSource);
+
+            return DSL.using(ds, SQLDialect.ORACLE11G);
+        } else {
+            // Some tests still use this method
+            Connection database = (Connection) ctx.attribute(ApiServlet.DATABASE);
+            return getDslContext(database, officeId);
+        }
     }
 
     public static DSLContext getDslContext(Connection database, String officeId) {
