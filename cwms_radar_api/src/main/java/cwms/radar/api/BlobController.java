@@ -122,9 +122,8 @@ public class BlobController implements CrudHandler {
 
             String like = ctx.queryParamAsClass("like", String.class).getOrDefault(".*");
 
-            String formatParm = ctx.queryParamAsClass("format", String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
             BlobDao dao = new BlobDao(dsl);
             List<Blob> blobList = dao.getAll(officeOpt, like);
