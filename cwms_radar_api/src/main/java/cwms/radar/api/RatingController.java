@@ -54,7 +54,8 @@ public class RatingController implements CrudHandler {
     private final Histogram requestResultSize;
 
     static {
-        JavalinValidation.register(RatingSet.DatabaseLoadMethod.class, RatingController::getDatabaseLoadMethod);
+        JavalinValidation.register(RatingSet.DatabaseLoadMethod.class,
+                RatingController::getDatabaseLoadMethod);
     }
 
     public RatingController(MetricRegistry metrics) {
@@ -316,7 +317,9 @@ public class RatingController implements CrudHandler {
                 endZdt = DateUtils.parseUserDate(end, timezone);
             }
 
-            RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD, RatingSet.DatabaseLoadMethod.class).getOrDefault(RatingSet.DatabaseLoadMethod.LAZY);
+            RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
+                    RatingSet.DatabaseLoadMethod.class)
+                    .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
             // If we wanted to do async I think it would be like this
             //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
@@ -331,7 +334,9 @@ public class RatingController implements CrudHandler {
 
 
     @Nullable
-    private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method, String officeId, String rating, ZonedDateTime beginZdt, ZonedDateTime endZdt) {
+    private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
+                                      String officeId, String rating, ZonedDateTime beginZdt,
+                                      ZonedDateTime endZdt) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -374,9 +379,9 @@ public class RatingController implements CrudHandler {
         return retval;
     }
 
-    private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method, String officeId,
-                                   String rating, ZonedDateTime beginZdt, ZonedDateTime endZdt)
-            throws IOException, RatingException {
+    private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
+                                   String officeId, String rating, ZonedDateTime beginZdt,
+                                   ZonedDateTime endZdt) throws IOException, RatingException {
         RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet");
              DSLContext dsl = getDslContext(ctx)) {
