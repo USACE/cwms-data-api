@@ -24,7 +24,7 @@ import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.data.dto.rating.RatingSpecs;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import cwms.radar.data.dto.rating.RatingTemplates;
-import cwms.radar.data.dto.rating.TableRatingMetadata;
+import cwms.radar.data.dto.rating.SimpleRating;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
@@ -46,7 +46,7 @@ import service.annotations.FormatService;
         SpecifiedLevel.class,
         RatingTemplate.class, RatingTemplates.class,
         RatingMetadataList.class, RatingMetadata.class,
-        TableRatingMetadata.class,
+        SimpleRating.class,
         RatingSpec.class, RatingSpecs.class,
         LocationLevel.class, LocationLevels.class
 })

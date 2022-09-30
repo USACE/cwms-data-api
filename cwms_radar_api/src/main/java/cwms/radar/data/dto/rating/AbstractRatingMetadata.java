@@ -156,6 +156,20 @@ public abstract class AbstractRatingMetadata {
             return this;
         }
 
+        public Builder withFields(Builder builder) {
+            this.officeId = builder.officeId;
+            this.ratingSpecId = builder.ratingSpecId;
+            this.ratingType = builder.ratingType;
+            this.unitsId = builder.unitsId;
+            this.active = builder.active;
+            this.effectiveDate = builder.effectiveDate;
+            this.createDate = builder.createDate;
+            this.transitionDate = builder.transitionDate;
+            this.description = builder.description;
+            this.verticalDatumInfo = builder.verticalDatumInfo;
+            return this;
+        }
+
 
         public abstract AbstractRatingMetadata build();
     }

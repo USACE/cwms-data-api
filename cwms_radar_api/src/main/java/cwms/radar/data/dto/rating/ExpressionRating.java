@@ -6,11 +6,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
-@JsonDeserialize(builder = ExpressionRatingMetadata.Builder.class)
+@JsonDeserialize(builder = ExpressionRating.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class ExpressionRatingMetadata extends AbstractRatingMetadata {
-    public static final String RATING_TYPE = "EXPRESSION";
+public class ExpressionRating extends AbstractRatingMetadata {
+    public static final String RATING_TYPE = "expression-rating";
 
     public String getExpression() {
         return expression;
@@ -18,7 +18,7 @@ public class ExpressionRatingMetadata extends AbstractRatingMetadata {
 
     private final String expression;
 
-    protected ExpressionRatingMetadata(Builder builder) {
+    protected ExpressionRating(Builder builder) {
         super(builder);
         this.expression = builder.expression;
     }
@@ -37,8 +37,8 @@ public class ExpressionRatingMetadata extends AbstractRatingMetadata {
         }
 
 
-        public ExpressionRatingMetadata build() {
-            return new ExpressionRatingMetadata(this);
+        public ExpressionRating build() {
+            return new ExpressionRating(this);
         }
 
         public AbstractRatingMetadata.Builder withExpression(String formula) {
