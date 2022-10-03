@@ -8,10 +8,12 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
+import hec.data.cwmsRating.RatingConst;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 @JsonDeserialize(builder = RatingSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -270,10 +272,27 @@ public class RatingSpec implements CwmsDTO {
             return this;
         }
 
+        private void withInRangeMethod(RatingConst.RatingMethod inRangeMethod) {
+            if (inRangeMethod != null) {
+                withInRangeMethod(inRangeMethod.name());
+            }
+        }
+
+        private void withOutRangeLowMethod(RatingConst.RatingMethod outRangeLowMethod) {
+            if (outRangeLowMethod != null) {
+                withOutRangeLowMethod(outRangeLowMethod.name());
+            }
+        }
 
         public Builder withOutRangeLowMethod(String outRangeLowMethod) {
             this.outRangeLowMethod = outRangeLowMethod;
             return this;
+        }
+
+        private void withOutRangeHighMethod(RatingConst.RatingMethod outRangeHighMethod) {
+            if (outRangeHighMethod != null) {
+                withOutRangeHighMethod(outRangeHighMethod.name());
+            }
         }
 
         public Builder withOutRangeHighMethod(String outRangeHighMethod) {
@@ -311,13 +330,23 @@ public class RatingSpec implements CwmsDTO {
             IndependentRoundingSpec[] retval = null;
             if (indRoundingSpecsStr != null && !indRoundingSpecsStr.isEmpty()) {
                 String[] indRoundingSpecsStrArr = indRoundingSpecsStr.split("/");
-                retval = new IndependentRoundingSpec[indRoundingSpecsStrArr.length];
-                for (int i = 0; i < indRoundingSpecsStrArr.length; i++) {
-                    retval[i] = new IndependentRoundingSpec(indRoundingSpecsStrArr[i]);
-                }
+                retval = buildIndependentRoundingSpecs(indRoundingSpecsStrArr);
             }
             return retval;
         }
+
+        @NotNull
+        private static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
+                String[] indRoundingSpecsStrArr) {
+            IndependentRoundingSpec[] retval;
+            retval = new IndependentRoundingSpec[indRoundingSpecsStrArr.length];
+            for (int i = 0; i < indRoundingSpecsStrArr.length; i++) {
+                retval[i] = new IndependentRoundingSpec(indRoundingSpecsStrArr[i]);
+            }
+            return retval;
+        }
+
+
 
         public Builder withDependentRoundingSpec(String depRoundingSpec) {
             this.dependentRoundingSpec = depRoundingSpec;
@@ -365,6 +394,33 @@ public class RatingSpec implements CwmsDTO {
             return this;
         }
 
+        public Builder fromRatingSpec(hec.data.cwmsRating.RatingSpec spec) {
+            withOfficeId(spec.getOfficeId());
+            withRatingId(spec.getRatingSpecId());
+            withTemplateId(spec.getTemplateId());
+            withLocationId(spec.getLocationId());
+            withVersion(spec.getVersion());
+            withSourceAgency(spec.getSourceAgencyId());
+            withInRangeMethod(spec.getInRangeMethod());
+            withOutRangeLowMethod(spec.getOutRangeLowMethod());
+            withOutRangeHighMethod(spec.getOutRangeHighMethod());
+            withActive(spec.isActive());
+            withAutoUpdate(spec.isAutoUpdate());
+            withAutoActivate(spec.isAutoActivate());
+            withAutoMigrateExtension(spec.isAutoMigrateExtensions());
+
+            IndependentRoundingSpec[] specs =
+                    buildIndependentRoundingSpecs(spec.getIndRoundingSpecStrings());
+            withIndependentRoundingSpecs(specs);
+
+            withDependentRoundingSpec(spec.getDepRoundingSpecString());
+            withDescription(spec.getDescription());
+
+
+            return this;
+        }
+
+
         public Builder withDateMethods(String dateMethods) {
             if (dateMethods != null && !dateMethods.isEmpty()) {
                 String[] parts = dateMethods.split(",");
@@ -380,9 +436,9 @@ public class RatingSpec implements CwmsDTO {
                     withOutRangeHighMethod(parts[2]);
                 }
             } else {
-                withInRangeMethod(null);
-                withOutRangeLowMethod(null);
-                withOutRangeHighMethod(null);
+                withInRangeMethod((String) null);
+                withOutRangeLowMethod((String) null);
+                withOutRangeHighMethod((String) null);
             }
             return this;
         }

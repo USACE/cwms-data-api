@@ -1,14 +1,19 @@
 package cwms.radar.data.dao;
 
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import javax.sql.DataSource;
+import org.apache.tomcat.jdbc.pool.PoolConfiguration;
+import org.jooq.ConnectionProvider;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
+import org.jooq.impl.DefaultConnectionProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,5 +48,23 @@ public class DaoTest
 		CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 		return dsl;
 	}
+
+
+	public static DSLContext getDslContext(String officeId) throws SQLException {
+
+		PoolConfiguration poolProperties = new org.apache.tomcat.jdbc.pool.PoolProperties();
+		poolProperties.setUrl(System.getenv("RADAR_JDBC_URL"));
+		poolProperties.setUsername(System.getenv("RADAR_JDBC_USERNAME"));
+		poolProperties.setPassword(System.getenv("RADAR_JDBC_PASSWORD"));
+
+		Driver driver = DriverManager.getDriver(System.getenv("RADAR_JDBC_URL"));
+		poolProperties.setDriverClassName(driver.getClass().getName());
+		DataSource ds = new org.apache.tomcat.jdbc.pool.DataSource(poolProperties);
+
+		ConnectionProvider cp = new OfficeSettingConnectionProvider(ds, officeId);
+		DSLContext dsl =  DSL.using(cp, SQLDialect.ORACLE11G);
+		return dsl;
+	}
+
 
 }

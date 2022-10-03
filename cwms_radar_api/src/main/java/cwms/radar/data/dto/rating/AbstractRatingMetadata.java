@@ -2,10 +2,30 @@ package cwms.radar.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import cwms.radar.data.dto.VerticalDatumInfo;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.ZonedDateTime;
 
+@Schema(
+        description = "Rating Metadata",
+        oneOf = {
+                TableRating.class,
+                TransitionalRating.class,
+                VirtualRating.class,
+                ExpressionRating.class,
+                UsgsStreamRating.class
+        },
+        discriminatorProperty = "ratingType",
+        discriminatorMapping = {
+                @DiscriminatorMapping(value = TableRating.RATING_TYPE, schema = TableRating.class),
+                @DiscriminatorMapping(value = TransitionalRating.RATING_TYPE, schema = TransitionalRating.class),
+                @DiscriminatorMapping(value = VirtualRating.RATING_TYPE, schema = VirtualRating.class),
+                @DiscriminatorMapping(value = ExpressionRating.RATING_TYPE, schema = ExpressionRating.class),
+                @DiscriminatorMapping(value = UsgsStreamRating.RATING_TYPE, schema = UsgsStreamRating.class)}
+)
 public abstract class AbstractRatingMetadata {
     // This is the "discriminator" field to (hopefully) make swagger work
+
     private final String ratingType;
     private final String officeId;
 
@@ -153,6 +173,20 @@ public abstract class AbstractRatingMetadata {
 
         public Builder withVerticalDatumInfo(VerticalDatumInfo verticalDatumInfo) {
             this.verticalDatumInfo = verticalDatumInfo;
+            return this;
+        }
+
+        public Builder withFields(Builder builder) {
+            this.officeId = builder.officeId;
+            this.ratingSpecId = builder.ratingSpecId;
+            this.ratingType = builder.ratingType;
+            this.unitsId = builder.unitsId;
+            this.active = builder.active;
+            this.effectiveDate = builder.effectiveDate;
+            this.createDate = builder.createDate;
+            this.transitionDate = builder.transitionDate;
+            this.description = builder.description;
+            this.verticalDatumInfo = builder.verticalDatumInfo;
             return this;
         }
 

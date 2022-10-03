@@ -1,5 +1,6 @@
 package cwms.radar.data.dto;
 
+import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +29,7 @@ class RatingTemplateTest
 		assertNotNull(xmlRating);
 
 		// make sure we can parse it.
-		RatingSet ratingSet = RatingSet.fromXml(xmlRating);
+		RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
 		assertNotNull(ratingSet);
 
 		IRatingTemplate ratingTemplate = ratingSet.getRatingTemplate();

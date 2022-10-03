@@ -28,6 +28,8 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
 
 public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     private static final Logger logger = Logger.getLogger(RatingTemplateDao.class.getName());
+    public static final String RNUM = "rnum";
+
 
     public RatingTemplateDao(DSLContext dsl) {
         super(dsl);
@@ -233,7 +235,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         }
 
         SelectLimitStep<? extends Record> innerSelect = dsl.select(
-                        OracleDSL.rownum().as("rnum"),
+                        OracleDSL.rownum().as(RNUM),
                         AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS,
                         AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DEPENDENT_PARAMETER,
                         AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DESCRIPTION,
@@ -246,7 +248,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .orderBy(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID);
 
         ResultQuery<? extends Record> query = dsl.select(
-                        DSL.field(DSL.quotedName("rnum"), Integer.class),
+                        DSL.field(DSL.quotedName(RNUM), Integer.class),
                         innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS),
                         innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DEPENDENT_PARAMETER),
                         innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DESCRIPTION),
@@ -261,10 +263,10 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .where(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
                         .and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
                         .and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-                        .and(DSL.field(DSL.quotedName("rnum")).greaterThan(firstRow))
-                        .and(DSL.field(DSL.quotedName("rnum")).lessOrEqual(lastRow))
+                        .and(DSL.field(DSL.quotedName(RNUM)).greaterThan(firstRow))
+                        .and(DSL.field(DSL.quotedName(RNUM)).lessOrEqual(lastRow))
                 )
-                .orderBy(DSL.field(DSL.quotedName("rnum")));
+                .orderBy(DSL.field(DSL.quotedName(RNUM)));
 
 //				logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -288,6 +290,8 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         return retval;
     }
+
+
 
 
 }

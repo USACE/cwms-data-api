@@ -11,6 +11,7 @@ import cwms.radar.data.dao.RatingMetadataDao;
 import cwms.radar.data.dto.rating.RatingMetadataList;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -18,6 +19,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -26,9 +28,16 @@ import org.jooq.DSLContext;
 
 public class RatingMetadataController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingMetadataController.class.getName());
+    public static final String TIMEZONE = "timezone";
+    public static final String START = "start";
+    public static final String END = "end";
+    public static final String PAGE = "page";
+    public static final String PAGE_SIZE = "page-size";
+    public static final String OFFICE = "office";
+    public static final String RATING_ID_MASK = "rating-id-mask";
     private final MetricRegistry metrics;
 
-    private static final int DEFAULT_PAGE_SIZE = 100;
+    private static final int DEFAULT_PAGE_SIZE = 50;
 
     private final Histogram requestResultSize;
 
@@ -49,20 +58,30 @@ public class RatingMetadataController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", description = "Specifies the owning office of "
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                             + "the Rating Specs whose data is to be included in the response. If "
                             + "this field is not specified, matching rating information from all "
                             + "offices shall be returned."),
-                    @OpenApiParam(name = "rating-id-mask", description = "RegExp that specifies "
+                    @OpenApiParam(name = RATING_ID_MASK, description = "RegExp that specifies "
                             + "the rating IDs to be included in the response. If this field is "
                             + "not specified, all Rating Specs shall be returned."),
-                    @OpenApiParam(name = "page",
+                    @OpenApiParam(name = START,  description = "Specifies the "
+                            + "start of the time window of the effective dates to be included. "
+                            + "If this field is not specified no start time will be used."),
+                    @OpenApiParam(name = END,  description = "Specifies the "
+                            + "end of the time window for effective dates to be included. "
+                            + "If this field is not specified no end time will be used."),
+                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                            + "the time zone of the values of the begin and end fields (unless "
+                            + "otherwise specified). If this field is not specified, "
+                            + "the default time zone of UTC shall be used."),
+                    @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque"
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = "page-size", type = Integer.class,
+                    @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                             description = "How many entries per page returned. "
                                     + "Default " + DEFAULT_PAGE_SIZE + "."
                     ),
@@ -78,12 +97,26 @@ public class RatingMetadataController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
+        String cursor = ctx.queryParamAsClass(PAGE, String.class).getOrDefault("");
         int pageSize =
-                ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
+                ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
-        String office = ctx.queryParam("office");
-        String ratingIdMask = ctx.queryParam("rating-id-mask");
+        String office = ctx.queryParam(OFFICE);
+        String ratingIdMask = ctx.queryParam(RATING_ID_MASK);
+
+        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+
+        ZonedDateTime beginZdt = null;
+        String begin = ctx.queryParam(START);
+        if (begin != null) {
+            beginZdt = DateUtils.parseUserDate(begin, timezone);
+        }
+
+        ZonedDateTime endZdt = null;
+        String end = ctx.queryParam(END);
+        if (end != null) {
+            endZdt = DateUtils.parseUserDate(end, timezone);
+        }
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -93,7 +126,7 @@ public class RatingMetadataController implements CrudHandler {
             RatingMetadataDao dao = getDao(dsl);
 
             RatingMetadataList metadataList = dao.retrieve(cursor, pageSize, office,
-                    ratingIdMask);
+                    ratingIdMask, beginZdt, endZdt);
 
             String result = Formats.format(contentType, metadataList);
             ctx.result(result);
@@ -120,7 +153,7 @@ public class RatingMetadataController implements CrudHandler {
 
     @NotNull
     protected RatingMetadataDao getDao(DSLContext dsl) {
-        return new RatingMetadataDao(dsl);
+        return new RatingMetadataDao(dsl, metrics);
     }
 
 

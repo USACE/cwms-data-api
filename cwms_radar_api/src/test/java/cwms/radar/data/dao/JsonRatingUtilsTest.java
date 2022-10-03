@@ -1,11 +1,13 @@
 package cwms.radar.data.dao;
 
+import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +30,7 @@ public class JsonRatingUtilsTest
 		if(fileName != null)
 		{
 			InputStream stream = classLoader.getResourceAsStream(fileName);
-			if(fileName.endsWith(".gz"))
+			if(fileName.endsWith(".gz") && stream != null)
 			{
 				stream = new GZIPInputStream(stream);
 			}
@@ -96,14 +98,13 @@ public class JsonRatingUtilsTest
 		roundTripFilesThruJson(files);
 	}
 
-	private void roundTripFilesThruJson(String[] files) throws RatingException, IOException
-	{
+	private void roundTripFilesThruJson(String[] files) {
 		Arrays.stream(files).forEach(this::roundtripThruJson);
 	}
 
 	private void roundtripThruJson(String filename)
 	{
-		String xmlRating = null;
+		String xmlRating;
 		try
 		{
 			xmlRating = loadResourceAsString("cwms/radar/data/dao/" + filename);
@@ -111,7 +112,7 @@ public class JsonRatingUtilsTest
 			assertNotNull(xmlRating);
 
 			// make sure we can parse it.
-			RatingSet ratingSet = RatingSet.fromXml(xmlRating);
+			RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
 			assertNotNull(ratingSet);
 
 			// turn it into json
@@ -125,7 +126,8 @@ public class JsonRatingUtilsTest
 
 			assertEquals(ratingSet.getName(), ratingSet2.getName());
 
-			assertEquals(ratingSet.toXmlString(" "), ratingSet2.toXmlString(" "));
+			assertEquals(RatingXmlFactory.toXml(ratingSet, " "),
+					RatingXmlFactory.toXml(ratingSet2," "));
 		}
 		catch(IOException | RatingException e)
 		{
