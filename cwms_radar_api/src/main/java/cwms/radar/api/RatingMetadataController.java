@@ -28,7 +28,7 @@ public class RatingMetadataController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingMetadataController.class.getName());
     private final MetricRegistry metrics;
 
-    private static final int DEFAULT_PAGE_SIZE = 100;
+    private static final int DEFAULT_PAGE_SIZE = 50;
 
     private final Histogram requestResultSize;
 
