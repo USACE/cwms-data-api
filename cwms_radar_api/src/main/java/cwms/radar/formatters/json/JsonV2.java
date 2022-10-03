@@ -18,13 +18,17 @@ import cwms.radar.data.dto.Pool;
 import cwms.radar.data.dto.Pools;
 import cwms.radar.data.dto.SpecifiedLevel;
 import cwms.radar.data.dto.TimeSeries;
+import cwms.radar.data.dto.rating.ExpressionRating;
 import cwms.radar.data.dto.rating.RatingMetadata;
 import cwms.radar.data.dto.rating.RatingMetadataList;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.data.dto.rating.RatingSpecs;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import cwms.radar.data.dto.rating.RatingTemplates;
-import cwms.radar.data.dto.rating.SimpleRating;
+import cwms.radar.data.dto.rating.TableRating;
+import cwms.radar.data.dto.rating.TransitionalRating;
+import cwms.radar.data.dto.rating.UsgsStreamRating;
+import cwms.radar.data.dto.rating.VirtualRating;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.formatters.OutputFormatter;
@@ -46,7 +50,8 @@ import service.annotations.FormatService;
         SpecifiedLevel.class,
         RatingTemplate.class, RatingTemplates.class,
         RatingMetadataList.class, RatingMetadata.class,
-        SimpleRating.class,
+        TableRating.class, TransitionalRating.class, VirtualRating.class,
+        ExpressionRating.class, UsgsStreamRating.class,
         RatingSpec.class, RatingSpecs.class,
         LocationLevel.class, LocationLevels.class
 })

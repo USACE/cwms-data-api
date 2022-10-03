@@ -6,17 +6,17 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
-@JsonDeserialize(builder = SimpleRating.Builder.class)
+@JsonDeserialize(builder = TableRating.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class SimpleRating extends AbstractRatingMetadata {
-    public static final String RATING_TYPE = "simple";
+public class TableRating extends AbstractRatingMetadata {
+    public static final String RATING_TYPE = "table";
 
     private final String inRangeMethod;
     private final String outRangeLowMethod;
     private final String outRangeHighMethod;
 
-    protected SimpleRating(Builder builder) {
+    protected TableRating(Builder builder) {
         super(builder);
         this.inRangeMethod = builder.inRangeMethod;
         this.outRangeLowMethod = builder.outRangeLowMethod;
@@ -64,8 +64,8 @@ public class SimpleRating extends AbstractRatingMetadata {
             return this;
         }
 
-        public SimpleRating build() {
-            return new SimpleRating(this);
+        public TableRating build() {
+            return new TableRating(this);
         }
     }
 

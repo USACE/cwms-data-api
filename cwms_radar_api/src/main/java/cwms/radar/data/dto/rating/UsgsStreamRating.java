@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 @JsonDeserialize(builder = UsgsStreamRating.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class UsgsStreamRating extends SimpleRating {
-    public static final String RATING_TYPE = "USGS";
+public class UsgsStreamRating extends TableRating {
+    public static final String RATING_TYPE = "usgs";
 
 
     private final String usgsSite;
@@ -23,7 +23,7 @@ public class UsgsStreamRating extends SimpleRating {
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static class Builder extends SimpleRating.Builder {
+    public static class Builder extends TableRating.Builder {
 
 
         private String usgsSite;

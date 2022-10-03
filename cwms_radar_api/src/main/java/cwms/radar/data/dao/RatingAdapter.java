@@ -3,7 +3,7 @@ package cwms.radar.data.dao;
 import cwms.radar.data.dto.rating.AbstractRatingMetadata;
 import cwms.radar.data.dto.rating.ExpressionRating;
 import cwms.radar.data.dto.rating.RatingSpec;
-import cwms.radar.data.dto.rating.SimpleRating;
+import cwms.radar.data.dto.rating.TableRating;
 import cwms.radar.data.dto.rating.TransitionalRating;
 import cwms.radar.data.dto.rating.UsgsStreamRating;
 import cwms.radar.data.dto.rating.VirtualRating;
@@ -22,6 +22,8 @@ import java.util.Set;
 
 public class RatingAdapter {
 
+    private RatingAdapter() {
+    }
 
     public static Map<RatingSpec, Set<AbstractRatingMetadata>> toDTO(
             Map<hec.data.cwmsRating.RatingSpec, Set<AbstractRating>> map) {
@@ -29,9 +31,7 @@ public class RatingAdapter {
                 new LinkedHashMap<>();
 
         if (map != null) {
-            map.forEach((key, value) -> {
-                retval.put(toDTO(key), toDTO(value));
-            });
+            map.forEach((key, value) -> retval.put(toDTO(key), toDTO(value)));
         }
 
         return retval;
@@ -51,9 +51,7 @@ public class RatingAdapter {
     private static Set<AbstractRatingMetadata> toDTO(Set<AbstractRating> ratings) {
         Set<AbstractRatingMetadata> retval = new LinkedHashSet<>();
         if (ratings != null) {
-            ratings.forEach(rating -> {
-                retval.add(toDTO(rating));
-            });
+            ratings.forEach(rating -> retval.add(toDTO(rating)));
         }
         return retval;
     }
@@ -70,7 +68,7 @@ public class RatingAdapter {
         } else if (rating instanceof hec.data.cwmsRating.TransitionalRating) {
             retval = toTransitional((hec.data.cwmsRating.TransitionalRating) rating);
         } else if (rating instanceof hec.data.cwmsRating.TableRating) {
-            retval = toSimple((hec.data.cwmsRating.TableRating) rating);
+            retval = toTable((hec.data.cwmsRating.TableRating) rating);
         }
 
         return retval;
@@ -98,7 +96,8 @@ public class RatingAdapter {
             // Not sure exactly how to handle SourceRating at the moment.
 //            SourceRating[] sourceRatings = rating.getSourceRatings();
 //            for (SourceRating sourceRating : sourceRatings) {
-////                VirtualRating.SourceRating sr = new VirtualRating.SourceRating(sourceRating.getRatingId(),
+////                VirtualRating.SourceRating sr =
+//                      new VirtualRating.SourceRating(sourceRating.getRatingId(),
 ////                        sourceRating.getRatingType(), sourceRating.getRatingUnits());
 ////                builder.withSourceRating(sr);
 //            }
@@ -107,7 +106,8 @@ public class RatingAdapter {
         return retval;
     }
 
-    private static TransitionalRating toTransitional(hec.data.cwmsRating.TransitionalRating rating) {
+    private static TransitionalRating toTransitional(
+            hec.data.cwmsRating.TransitionalRating rating) {
         TransitionalRating retval = null;
         if (rating != null) {
             TransitionalRating.Builder builder = new TransitionalRating.Builder();
@@ -144,10 +144,10 @@ public class RatingAdapter {
         return retval;
     }
 
-    private static SimpleRating toSimple(hec.data.cwmsRating.TableRating rating) {
-        SimpleRating retval = null;
+    private static TableRating toTable(hec.data.cwmsRating.TableRating rating) {
+        TableRating retval = null;
         if (rating != null) {
-            SimpleRating.Builder builder = new SimpleRating.Builder();
+            TableRating.Builder builder = new TableRating.Builder();
             withAbstractFields(builder, rating);
 
             retval = builder.build();
@@ -156,7 +156,8 @@ public class RatingAdapter {
     }
 
 
-    public static AbstractRatingMetadata.Builder withAbstractFields(AbstractRatingMetadata.Builder builder, AbstractRating rating) {
+    public static AbstractRatingMetadata.Builder withAbstractFields(
+            AbstractRatingMetadata.Builder builder, AbstractRating rating) {
 
         ZonedDateTime effectiveZdt = null;
         long effectiveDate = rating.getEffectiveDate();
