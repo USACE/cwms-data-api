@@ -291,7 +291,8 @@ public class RatingController implements CrudHandler {
                     + " response. If this field is not specified, the default time zone "
                     + "of UTC shall be used."),
             @OpenApiParam(name = METHOD,  description = "Specifies "
-                    + "the retrieval method used", type = RatingSet.DatabaseLoadMethod.class),
+                    + "the retrieval method used.  If no method is provided EAGER will be used.",
+                    type = RatingSet.DatabaseLoadMethod.class),
             },
             responses = {
                     @OpenApiResponse(status = "200", content = {
