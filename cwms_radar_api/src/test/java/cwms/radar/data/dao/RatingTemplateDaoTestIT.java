@@ -10,6 +10,8 @@ import cwms.radar.data.dto.rating.RatingTemplate;
 import fixtures.RadarApiSetupCallback;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.data.cwmsRating.io.RatingJdbcCompatUtil;
+import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,7 +29,7 @@ class RatingTemplateDaoTestIT {
 
 
     @Test
-    void testRetrieveRatingTemplates() throws SQLException, JsonProcessingException {
+    void testRetrieveRatingTemplates() throws SQLException {
 
         CwmsDatabaseContainer databaseLink = RadarApiSetupCallback.getDatabaseLink();
         databaseLink.connection((Consumer<Connection>) c -> {//
@@ -99,10 +101,10 @@ class RatingTemplateDaoTestIT {
         assertNotNull(xmlRating);
 
         // make sure we can parse it.
-        RatingSet ratingSet = RatingSet.fromXml(xmlRating);
+        RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
         assertNotNull(ratingSet);
 
-        ratingSet.storeToDatabase(c, true) ;
+        RatingJdbcCompatUtil.getInstance().storeToDatabase(ratingSet,c, true, true);
     }
 
 
