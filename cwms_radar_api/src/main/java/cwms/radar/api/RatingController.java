@@ -16,6 +16,7 @@ import cwms.radar.formatters.FormattingException;
 import cwms.radar.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
@@ -32,6 +33,7 @@ import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -142,7 +144,7 @@ public class RatingController implements CrudHandler {
 
     @NotNull
     public RatingSet deserializeFromXml(String body) throws RatingException {
-        return RatingSet.fromXml(body);
+        return RatingXmlCompatUtil.getInstance().createRatingSet(body);
     }
 
     @OpenApi(queryParams = {@OpenApiParam(name = OFFICE, required = true, description =
@@ -349,7 +351,7 @@ public class RatingController implements CrudHandler {
                         if (Formats.JSONV2.equals(acceptHeader)) {
                             retval = JsonRatingUtils.toJson(ratingSet);
                         } else if (Formats.XMLV2.equals(acceptHeader)) {
-                            retval = ratingSet.toXmlString(" ");
+                            retval = RatingXmlFactory.toXml(ratingSet, " ");
                         }
                     } else {
                         ctx.status(HttpCode.NOT_FOUND);
