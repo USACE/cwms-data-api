@@ -2,10 +2,23 @@ package cwms.radar.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import cwms.radar.data.dto.VerticalDatumInfo;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.ZonedDateTime;
 
+@Schema(
+        description = "Rating Metadata",
+        oneOf = {
+                TableRating.class,
+                TransitionalRating.class,
+                VirtualRating.class,
+                ExpressionRating.class,
+                UsgsStreamRating.class
+        },
+        discriminatorProperty = "ratingType"
+)
 public abstract class AbstractRatingMetadata {
     // This is the "discriminator" field to (hopefully) make swagger work
+
     private final String ratingType;
     private final String officeId;
 
