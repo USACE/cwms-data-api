@@ -8,12 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
-import hec.data.Parameter;
-import hec.data.Version;
 import hec.data.cwmsRating.RatingConst;
-import hec.data.location.LocationTemplate;
-import hec.data.rating.IRatingSpecification;
-import hec.data.rating.IRatingTemplate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -277,10 +272,27 @@ public class RatingSpec implements CwmsDTO {
             return this;
         }
 
+        private void withInRangeMethod(RatingConst.RatingMethod inRangeMethod) {
+            if (inRangeMethod != null) {
+                withInRangeMethod(inRangeMethod.name());
+            }
+        }
+
+        private void withOutRangeLowMethod(RatingConst.RatingMethod outRangeLowMethod) {
+            if (outRangeLowMethod != null) {
+                withOutRangeLowMethod(outRangeLowMethod.name());
+            }
+        }
 
         public Builder withOutRangeLowMethod(String outRangeLowMethod) {
             this.outRangeLowMethod = outRangeLowMethod;
             return this;
+        }
+
+        private void withOutRangeHighMethod(RatingConst.RatingMethod outRangeHighMethod) {
+            if (outRangeHighMethod != null) {
+                withOutRangeHighMethod(outRangeHighMethod.name());
+            }
         }
 
         public Builder withOutRangeHighMethod(String outRangeHighMethod) {
@@ -324,7 +336,8 @@ public class RatingSpec implements CwmsDTO {
         }
 
         @NotNull
-        private static IndependentRoundingSpec[] buildIndependentRoundingSpecs(String[] indRoundingSpecsStrArr) {
+        private static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
+                String[] indRoundingSpecsStrArr) {
             IndependentRoundingSpec[] retval;
             retval = new IndependentRoundingSpec[indRoundingSpecsStrArr.length];
             for (int i = 0; i < indRoundingSpecsStrArr.length; i++) {
@@ -333,11 +346,7 @@ public class RatingSpec implements CwmsDTO {
             return retval;
         }
 
-        private void withIndependentRoundingSpecs(String[] indRoundingSpecStrings) {
-            IndependentRoundingSpec[] specs =
-                    buildIndependentRoundingSpecs(indRoundingSpecStrings);
-            withIndependentRoundingSpecs(specs);
-        }
+
 
         public Builder withDependentRoundingSpec(String depRoundingSpec) {
             this.dependentRoundingSpec = depRoundingSpec;
@@ -399,30 +408,16 @@ public class RatingSpec implements CwmsDTO {
             withAutoUpdate(spec.isAutoUpdate());
             withAutoActivate(spec.isAutoActivate());
             withAutoMigrateExtension(spec.isAutoMigrateExtensions());
-            withIndependentRoundingSpecs(spec.getIndRoundingSpecStrings());
+
+            IndependentRoundingSpec[] specs =
+                    buildIndependentRoundingSpecs(spec.getIndRoundingSpecStrings());
+            withIndependentRoundingSpecs(specs);
+
             withDependentRoundingSpec(spec.getDepRoundingSpecString());
             withDescription(spec.getDescription());
 
 
             return this;
-        }
-
-        private void withInRangeMethod(RatingConst.RatingMethod inRangeMethod) {
-            if(inRangeMethod != null) {
-                withInRangeMethod(inRangeMethod.name());
-            }
-        }
-
-        private void withOutRangeHighMethod(RatingConst.RatingMethod outRangeHighMethod) {
-            if (outRangeHighMethod != null) {
-                withOutRangeHighMethod(outRangeHighMethod.name());
-            }
-        }
-
-        private void withOutRangeLowMethod(RatingConst.RatingMethod outRangeLowMethod) {
-            if (outRangeLowMethod != null) {
-                withOutRangeLowMethod(outRangeLowMethod.name());
-            }
         }
 
 
