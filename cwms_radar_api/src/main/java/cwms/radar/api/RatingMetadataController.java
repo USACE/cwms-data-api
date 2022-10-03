@@ -93,7 +93,7 @@ public class RatingMetadataController implements CrudHandler {
             RatingMetadataDao dao = getDao(dsl);
 
             RatingMetadataList metadataList = dao.retrieve(cursor, pageSize, office,
-                    ratingIdMask);
+                    ratingIdMask, null, null);
 
             String result = Formats.format(contentType, metadataList);
             ctx.result(result);
@@ -120,7 +120,7 @@ public class RatingMetadataController implements CrudHandler {
 
     @NotNull
     protected RatingMetadataDao getDao(DSLContext dsl) {
-        return new RatingMetadataDao(dsl);
+        return new RatingMetadataDao(dsl, metrics);
     }
 
 
