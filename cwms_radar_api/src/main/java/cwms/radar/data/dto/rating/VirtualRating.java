@@ -16,6 +16,7 @@ import java.util.List;
 public class VirtualRating extends AbstractRatingMetadata {
     public static final String RATING_TYPE = "virtual";
 
+
     private final List<SourceRating> sourceRatings;
     private String connections;
 
@@ -29,6 +30,13 @@ public class VirtualRating extends AbstractRatingMetadata {
             this.sourceRatings = null;
         }
 
+    }
+    public List<SourceRating> getSourceRatings() {
+        return sourceRatings;
+    }
+
+    public String getConnections() {
+        return connections;
     }
 
     public static class SourceRating {
