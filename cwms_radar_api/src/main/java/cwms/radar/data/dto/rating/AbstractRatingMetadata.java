@@ -2,6 +2,7 @@ package cwms.radar.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.radar.data.dto.VerticalDatumInfo;
@@ -37,6 +38,7 @@ import java.time.ZonedDateTime;
 public abstract class AbstractRatingMetadata {
     // This is the "discriminator" field to (hopefully) make swagger work
 
+    @JsonProperty("rating-type")
     private final String ratingType;
     private final String officeId;
 
