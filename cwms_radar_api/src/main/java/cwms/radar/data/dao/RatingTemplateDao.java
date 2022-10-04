@@ -20,16 +20,12 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
-import org.jooq.SelectLimitStep;
-import org.jooq.impl.DSL;
-import org.jooq.util.oracle.OracleDSL;
+import org.jooq.SelectForUpdateStep;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
 
 public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     private static final Logger logger = Logger.getLogger(RatingTemplateDao.class.getName());
-    public static final String RNUM = "rnum";
-
 
     public RatingTemplateDao(DSLContext dsl) {
         super(dsl);
@@ -38,30 +34,30 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     public Set<RatingTemplate> retrieveRatingTemplates(String office, String templateIdMask) {
         Set<RatingTemplate> retval;
 
-        Condition condition = AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull();
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+        Condition condition = specView.LOC_ALIAS_CATEGORY.isNull();
+
+        AV_RATING_TEMPLATE tempView = AV_RATING_TEMPLATE.AV_RATING_TEMPLATE;
 
         if (office != null) {
-            condition = condition.and(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID.eq(office));
+            condition = condition.and(tempView.OFFICE_ID.eq(office));
         }
 
         if (templateIdMask != null) {
-            condition = condition.and(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID.upper()
-                    .likeRegex(templateIdMask.toUpperCase()));
+            condition = condition.and(
+                    JooqDao.caseInsensitiveLikeRegex(tempView.TEMPLATE_ID, templateIdMask));
         }
 
         ResultQuery<? extends Record> query = dsl.select(
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DEPENDENT_PARAMETER,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DESCRIPTION,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.VERSION,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.RATING_METHODS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID).from(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE)
-                .leftOuterJoin(
-                        AV_RATING_SPEC.AV_RATING_SPEC).on(
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID.eq(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID))
+                        tempView.OFFICE_ID, tempView.TEMPLATE_ID,
+                        tempView.INDEPENDENT_PARAMETERS, tempView.DEPENDENT_PARAMETER,
+                        tempView.DESCRIPTION, tempView.VERSION,
+                        tempView.RATING_METHODS, tempView.TEMPLATE_CODE,
+                        specView.TEMPLATE_CODE, specView.RATING_ID
+                        )
+                .from(tempView)
+                .leftOuterJoin(specView)
+                .on(specView.TEMPLATE_CODE.eq(tempView.TEMPLATE_CODE))
                 .where(condition)
                 .fetchSize(1000);
 
@@ -71,7 +67,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         query.fetchStream().forEach(rec -> {
             RatingTemplate template = buildRatingTemplate(rec);
-            String specID = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
+            String specID = rec.get(specView.RATING_ID);
 
             List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
             if (specID != null) {
@@ -92,26 +88,24 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     public Optional<RatingTemplate> retrieveRatingTemplate(String office, String templateId) {
         Set<RatingTemplate> retval;
 
-        Condition condition = AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID.eq(templateId)
-                .and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull());
+        AV_RATING_TEMPLATE tempView = AV_RATING_TEMPLATE.AV_RATING_TEMPLATE;
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+
+        Condition condition = tempView.TEMPLATE_ID.eq(templateId)
+                .and(specView.LOC_ALIAS_CATEGORY.isNull());
 
         if (office != null) {
-            condition = condition.and(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID.eq(office));
+            condition = condition.and(tempView.OFFICE_ID.eq(office));
         }
 
         ResultQuery<? extends Record> query = dsl.select(
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DEPENDENT_PARAMETER,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DESCRIPTION,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.VERSION,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.RATING_METHODS,
-                        AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID).from(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE)
-                .leftOuterJoin(
-                        AV_RATING_SPEC.AV_RATING_SPEC).on(
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID.eq(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID))
+                        tempView.TEMPLATE_CODE, tempView.OFFICE_ID, tempView.TEMPLATE_ID,
+                        tempView.INDEPENDENT_PARAMETERS, tempView.DEPENDENT_PARAMETER,
+                        tempView.DESCRIPTION, tempView.VERSION, tempView.RATING_METHODS,
+                        specView.TEMPLATE_CODE, specView.RATING_ID
+                        ).from(tempView)
+                .leftOuterJoin(specView).on(
+                        specView.TEMPLATE_CODE.eq(tempView.TEMPLATE_CODE))
                 .where(condition)
                 .fetchSize(1000);
 
@@ -121,7 +115,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         query.fetchStream().forEach(rec -> {
             RatingTemplate template = buildRatingTemplate(rec);
-            String specID = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
+            String specID = rec.get(specView.RATING_ID);
 
             List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
             if (specID != null) {
@@ -189,6 +183,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         return retval;
     }
 
+
     public RatingTemplates retrieveRatingTemplates(String cursor, int pageSize, String office,
                                                    String templateIdMask) {
         Integer total = null;
@@ -211,7 +206,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         }
 
         Collection<RatingTemplate> templates = getRatingTemplates(office, templateIdMask, offset,
-                offset + pageSize);
+                pageSize);
 
         RatingTemplates.Builder builder = new RatingTemplates.Builder(offset, pageSize, total);
         builder.templates(new ArrayList<>(templates));
@@ -220,53 +215,37 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
     @NotNull
     private Set<RatingTemplate> getRatingTemplates(String office, String templateIdMask,
-                                                   int firstRow, int lastRow) {
+                                                   int firstRow, int pageSize) {
         Set<RatingTemplate> retval;
 
-        Condition condition = DSL.trueCondition();
+        AV_RATING_SPEC ratView = AV_RATING_SPEC.AV_RATING_SPEC;
 
+        Condition condition = ratView.LOC_ALIAS_CATEGORY.isNull()
+                .and(ratView.LOC_ALIAS_GROUP.isNull())
+                .and(ratView.ALIASED_ITEM.isNull());
+
+        AV_RATING_TEMPLATE tempView = AV_RATING_TEMPLATE.AV_RATING_TEMPLATE;
         if (office != null) {
-            condition = condition.and(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID.eq(office));
+            condition = condition.and(tempView.OFFICE_ID.eq(office));
         }
 
         if (templateIdMask != null) {
-            condition = condition.and(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID.upper()
+            condition = condition.and(tempView.TEMPLATE_ID.upper()
                     .likeRegex(templateIdMask.toUpperCase()));
         }
 
-        SelectLimitStep<? extends Record> innerSelect = dsl.select(
-                        OracleDSL.rownum().as(RNUM),
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DEPENDENT_PARAMETER,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DESCRIPTION,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.VERSION,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID,
-                        AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.RATING_METHODS
-                ).from(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE)
+        SelectForUpdateStep<? extends Record> query = dsl.select(
+                        tempView.TEMPLATE_CODE, tempView.OFFICE_ID, tempView.TEMPLATE_ID,
+                        tempView.INDEPENDENT_PARAMETERS, tempView.DEPENDENT_PARAMETER,
+                        tempView.DESCRIPTION, tempView.VERSION, tempView.RATING_METHODS,
+                        ratView.TEMPLATE_CODE, ratView.RATING_ID, ratView.LOC_ALIAS_CATEGORY,
+                        ratView.LOC_ALIAS_GROUP, ratView.ALIASED_ITEM)
+                .from(tempView)
+                .leftOuterJoin(ratView).on(tempView.TEMPLATE_CODE.eq(ratView.TEMPLATE_CODE))
                 .where(condition)
-                .orderBy(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID);
-
-        ResultQuery<? extends Record> query = dsl.select(
-                        DSL.field(DSL.quotedName(RNUM), Integer.class),
-                        innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS),
-                        innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DEPENDENT_PARAMETER),
-                        innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.DESCRIPTION),
-                        innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.VERSION),
-                        innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.OFFICE_ID),
-                        innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.RATING_METHODS),
-                        AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID,
-                        AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID)
-                .from(innerSelect)
-                .leftOuterJoin(AV_RATING_SPEC.AV_RATING_SPEC)
-                .on(AV_RATING_SPEC.AV_RATING_SPEC.TEMPLATE_ID.eq(innerSelect.field(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.TEMPLATE_ID)))
-                .where(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_CATEGORY.isNull()
-                        .and(AV_RATING_SPEC.AV_RATING_SPEC.LOC_ALIAS_GROUP.isNull())
-                        .and(AV_RATING_SPEC.AV_RATING_SPEC.ALIASED_ITEM.isNull())
-                        .and(DSL.field(DSL.quotedName(RNUM)).greaterThan(firstRow))
-                        .and(DSL.field(DSL.quotedName(RNUM)).lessOrEqual(lastRow))
-                )
-                .orderBy(DSL.field(DSL.quotedName(RNUM)));
+                .orderBy(tempView.OFFICE_ID, tempView.TEMPLATE_ID, ratView.RATING_ID)
+                .limit(pageSize)
+                .offset(firstRow);
 
 //				logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -274,7 +253,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         query.fetchStream().forEach(rec -> {
             RatingTemplate template = buildRatingTemplate(rec);
-            String specID = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
+            String specID = rec.get(ratView.RATING_ID);
 
             List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
             if (specID != null) {
@@ -290,8 +269,5 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         return retval;
     }
-
-
-
 
 }
