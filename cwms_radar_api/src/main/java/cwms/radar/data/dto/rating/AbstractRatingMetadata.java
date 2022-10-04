@@ -21,7 +21,14 @@ import java.time.ZonedDateTime;
                 @DiscriminatorMapping(value = TransitionalRating.RATING_TYPE, schema = TransitionalRating.class),
                 @DiscriminatorMapping(value = VirtualRating.RATING_TYPE, schema = VirtualRating.class),
                 @DiscriminatorMapping(value = ExpressionRating.RATING_TYPE, schema = ExpressionRating.class),
-                @DiscriminatorMapping(value = UsgsStreamRating.RATING_TYPE, schema = UsgsStreamRating.class)}
+                @DiscriminatorMapping(value = UsgsStreamRating.RATING_TYPE, schema = UsgsStreamRating.class)},
+        subTypes = {
+                TableRating.class,
+                TransitionalRating.class,
+                VirtualRating.class,
+                ExpressionRating.class,
+                UsgsStreamRating.class
+        }
 )
 public abstract class AbstractRatingMetadata {
     // This is the "discriminator" field to (hopefully) make swagger work
