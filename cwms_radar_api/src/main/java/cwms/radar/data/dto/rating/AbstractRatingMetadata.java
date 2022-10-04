@@ -15,7 +15,7 @@ import java.time.ZonedDateTime;
                 ExpressionRating.class,
                 UsgsStreamRating.class
         },
-        discriminatorProperty = "ratingType",
+        discriminatorProperty = "rating-type",
         discriminatorMapping = {
                 @DiscriminatorMapping(value = TableRating.RATING_TYPE, schema = TableRating.class),
                 @DiscriminatorMapping(value = TransitionalRating.RATING_TYPE, schema = TransitionalRating.class),
