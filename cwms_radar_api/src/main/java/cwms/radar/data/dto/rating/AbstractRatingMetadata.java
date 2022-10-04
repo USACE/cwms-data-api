@@ -1,6 +1,9 @@
 package cwms.radar.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.radar.data.dto.VerticalDatumInfo;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,10 +29,11 @@ import java.time.ZonedDateTime;
                 TableRating.class,
                 TransitionalRating.class,
                 VirtualRating.class,
-                ExpressionRating.class,
-                UsgsStreamRating.class
+                ExpressionRating.class
         }
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public abstract class AbstractRatingMetadata {
     // This is the "discriminator" field to (hopefully) make swagger work
 
@@ -37,7 +41,6 @@ public abstract class AbstractRatingMetadata {
     private final String officeId;
 
     private final String ratingSpecId;
-
 
     private final String unitsId;
 
