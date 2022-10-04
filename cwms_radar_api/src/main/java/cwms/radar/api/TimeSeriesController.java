@@ -358,7 +358,7 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Update a TimeSeries with provided values",
             pathParams = {
-                @OpenApiParam(name="name",description = "Full CWMS Timeseries name")
+                @OpenApiParam(name="timeseries",description = "Full CWMS Timeseries name")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
