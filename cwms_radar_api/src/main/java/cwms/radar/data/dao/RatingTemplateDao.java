@@ -177,7 +177,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         for (int i = 0; i < indParams.length; i++) {
             String[] methods = methodsForParam[i].split(",");
-            retval.add(new ParameterSpec(indParams[i], methods[0], methods[1], methods[2]));
+            retval.add(new ParameterSpec(indParams[i], methods[1], methods[0], methods[2]));
         }
 
         return retval;
