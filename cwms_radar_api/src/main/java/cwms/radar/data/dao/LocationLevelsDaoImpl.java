@@ -418,8 +418,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 String calInterval = rs.get(view.CALENDAR_INTERVAL);
                 offset.setYearMonthString(calInterval);
                 DayToSecond dayToSecond = rs.get(view.TIME_INTERVAL);
-
-                offset.setDaysHoursMinutesString(dayToSecond.toString());
+                if(dayToSecond != null) {
+                    offset.setDaysHoursMinutesString(dayToSecond.toString());
+                }
                 seasonalValuesImpl.setOffset(offset);
                 locationLevelImpl.setSeasonalValuesObject(seasonalValuesImpl);
             }
