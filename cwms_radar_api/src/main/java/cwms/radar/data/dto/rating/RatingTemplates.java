@@ -1,11 +1,18 @@
 package cwms.radar.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@JsonDeserialize(builder = RatingTemplates.Builder.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class RatingTemplates extends CwmsDTOPaginated {
 
     private List<RatingTemplate> templates;

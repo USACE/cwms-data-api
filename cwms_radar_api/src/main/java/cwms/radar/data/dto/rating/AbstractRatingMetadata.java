@@ -1,6 +1,10 @@
 package cwms.radar.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.radar.data.dto.VerticalDatumInfo;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,22 +19,30 @@ import java.time.ZonedDateTime;
                 ExpressionRating.class,
                 UsgsStreamRating.class
         },
-        discriminatorProperty = "ratingType",
+        discriminatorProperty = "rating-type",
         discriminatorMapping = {
                 @DiscriminatorMapping(value = TableRating.RATING_TYPE, schema = TableRating.class),
                 @DiscriminatorMapping(value = TransitionalRating.RATING_TYPE, schema = TransitionalRating.class),
                 @DiscriminatorMapping(value = VirtualRating.RATING_TYPE, schema = VirtualRating.class),
                 @DiscriminatorMapping(value = ExpressionRating.RATING_TYPE, schema = ExpressionRating.class),
-                @DiscriminatorMapping(value = UsgsStreamRating.RATING_TYPE, schema = UsgsStreamRating.class)}
+                @DiscriminatorMapping(value = UsgsStreamRating.RATING_TYPE, schema = UsgsStreamRating.class)},
+        subTypes = {
+                TableRating.class,
+                TransitionalRating.class,
+                VirtualRating.class,
+                ExpressionRating.class
+        }
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public abstract class AbstractRatingMetadata {
     // This is the "discriminator" field to (hopefully) make swagger work
 
+    @JsonProperty("rating-type")
     private final String ratingType;
     private final String officeId;
 
     private final String ratingSpecId;
-
 
     private final String unitsId;
 

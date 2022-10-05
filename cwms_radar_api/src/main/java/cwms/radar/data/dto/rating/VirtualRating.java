@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
+@Schema
 @JsonDeserialize(builder = VirtualRating.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class VirtualRating extends AbstractRatingMetadata {
     public static final String RATING_TYPE = "virtual";
+
 
     private final List<SourceRating> sourceRatings;
     private String connections;
@@ -27,6 +30,13 @@ public class VirtualRating extends AbstractRatingMetadata {
             this.sourceRatings = null;
         }
 
+    }
+    public List<SourceRating> getSourceRatings() {
+        return sourceRatings;
+    }
+
+    public String getConnections() {
+        return connections;
     }
 
     public static class SourceRating {
