@@ -74,11 +74,15 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     private Location buildLocation(Record loc) {
+        String timeZoneName = loc.get(AV_LOC.TIME_ZONE_NAME); // may be null...
+        ZoneId zone = null;
+        if (timeZoneName != null) {
+            zone = ZoneId.of(timeZoneName);
+        }
         Location.Builder locationBuilder = new Location.Builder(
                 loc.get(AV_LOC.LOCATION_ID),
                 loc.get(AV_LOC.LOCATION_KIND_ID),
-
-                ZoneId.of(loc.get(AV_LOC.TIME_ZONE_NAME)),
+                zone,
                 loc.get(AV_LOC.LATITUDE).doubleValue(),
                 loc.get(AV_LOC.LONGITUDE).doubleValue(),
                 loc.get(AV_LOC.HORIZONTAL_DATUM),
