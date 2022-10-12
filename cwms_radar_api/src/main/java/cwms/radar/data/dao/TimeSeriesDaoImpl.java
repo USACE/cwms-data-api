@@ -153,8 +153,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 cursor = parts[0];
                 tsCursor = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(parts[0])));
 
-                if (parts.length > 2)
+                if (parts.length > 2) {
                     total = Integer.parseInt(parts[1]);
+                }
 
                 // Use the pageSize from the original cursor, for consistent paging
                 pageSize = Integer.parseInt(parts[parts.length - 1]);   // Last item is pageSize
@@ -165,33 +166,31 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final int recordPageSize = pageSize;
 
         try {
-            Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(office != null ?
-                    DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
+            Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(
+                    office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
             Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
             Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names),
                     officeId);
 
 
             Table<Record3<BigDecimal, String, String>> validTs =
-                    select(
-                            tsCode.as("tscode"),
+                    select( tsCode.as("tscode"),
                             tsId.as("tsid"),
                             officeId.as("office_id")
                     ).asTable("validts");
 
-            Field<String> loc = CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(validTs.field("tsid",
-                            String.class),
+            Field<String> loc = CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(
+                    validTs.field("tsid", String.class),
                     DSL.val(BigInteger.valueOf(1L)), DSL.val("."),
                     DSL.val(BigInteger.valueOf(6L)));
-            Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(validTs.field("tsid"
-                            , String.class),
+            Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(
+                    validTs.field("tsid", String.class),
                     DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
                     DSL.val(BigInteger.valueOf(6L))));
 
             Field<String> unit = units.compareToIgnoreCase("SI") == 0
                     ||
-                    units.compareToIgnoreCase(
-                            "EN") == 0
+                    units.compareToIgnoreCase("EN") == 0
                     ?
                     CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
                             CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode),
@@ -213,8 +212,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                             loc.as("loc_part"),
                                             unit.as("units"),
 
-                                            CWMS_TS_PACKAGE.call_GET_INTERVAL(validTs.field("tsid"
-                                                    , String.class)).as("interval"),
+                                            CWMS_TS_PACKAGE.call_GET_INTERVAL(
+                                                    validTs.field("tsid", String.class))
+                                                    .as("interval"),
                                             param.as("parm_part")
 
                                     ).from(validTs)
@@ -232,8 +232,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             @SuppressWarnings("deprecated")
             SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = DSL.select(
                     dateTimeCol, valueCol, qualityCol
-            ).from(DSL.sql("table( " +
-                    CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
+            ).from(DSL.sql("table( "
+                    + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
                             valid.field("tsid", String.class),
                             valid.field("units", String.class),
                             CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
@@ -340,8 +340,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                         .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
                                 );
 
-                if (pageSize > 0)
+                if (pageSize > 0) {
                     query.limit(DSL.val(pageSize + 1));
+                }
 
                 logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -421,7 +422,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office,
                                         String idLike, String locCategoryLike, String locGroupLike,
                                         String tsCategoryLike, String tsGroupLike) {
-        int total = 0;
+        int total;
         String tsCursor = "*";
         String searchOffice = office.orElse(null);
         String curOffice = null;
@@ -580,12 +581,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         });
 
         List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
-                //.sorted( (left,right) -> left.getKey().compareTo(right.getKey()) )
-                .map(e -> {
-
-                            return e.getValue().build();
-                        }
-                )
+                .map(e -> e.getValue().build())
                 .collect(Collectors.toList());
         return new Catalog(catPage != null ? catPage.toString() : null,
                 total, pageSize, entries, office.orElse(null),
@@ -698,19 +694,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     .and(tsvView.END_DATE.gt(pastdate)));
 
 
-            Field[] queryFields = new Field[]{
-                    tsView.CWMS_TS_ID,
-                    tsvView.OFFICE_ID,
-                    tsvView.TS_CODE,
-                    tsvView.UNIT_ID,
-                    tsvView.DATE_TIME,
-                    tsvView.VERSION_DATE,
-                    tsvView.DATA_ENTRY_DATE,
-                    tsvView.VALUE,
-                    tsvView.QUALITY_CODE,
-                    tsvView.START_DATE,
-                    tsvView.END_DATE,
-            };
+            Field[] queryFields = new Field[]{tsView.CWMS_TS_ID, tsvView.OFFICE_ID,
+                    tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
+                    tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
+                    tsvView.START_DATE, tsvView.END_DATE,};
 
             // look them back up by name b/c we are using them on results of innerselect.
             List<Field<Object>> fields = Arrays.stream(queryFields)
@@ -800,18 +787,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     .and(tsvView.START_DATE.le(futureLimit))
                                     .and(tsvView.END_DATE.gt(pastLimit)));
 
-            Field[] queryFields = new Field[]{
-                    tsvView.OFFICE_ID,
-                    tsvView.TS_CODE,
-                    tsvView.DATE_TIME,
-                    tsvView.VERSION_DATE,
-                    tsvView.DATA_ENTRY_DATE,
-                    tsvView.VALUE,
-                    tsvView.QUALITY_CODE,
-                    tsvView.START_DATE,
-                    tsvView.END_DATE,
-                    tsvView.UNIT_ID,
-                    tsView.TS_ID, tsView.ATTRIBUTE};
+            Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
+                    tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
+                    tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
+                    tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
 
             List<Field<Object>> fields = Arrays.stream(queryFields)
                     .map(Field::getName)
@@ -920,9 +899,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     protected BigDecimal retrieveTsCode(String tsId) {
 
-        return dsl.select(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_CODE).from(
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId))
-                .fetchOptional(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_CODE).orElse(null);
+        return dsl.select(AV_CWMS_TS_ID2.TS_CODE)
+                .from(AV_CWMS_TS_ID2)
+                .where(AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId))
+                .fetchOptional(AV_CWMS_TS_ID2.TS_CODE).orElse(null);
     }
 
     public boolean timeseriesExists(String tsId) {
