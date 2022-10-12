@@ -160,12 +160,14 @@ public class ApiServlet extends HttpServlet {
                     } else {
                         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                     }
-                    logger.atSevere().withCause(fe).log( re + "for request: " + ctx.fullUrl());
+                    logger.atSevere().withCause(fe)
+                            .log("%s for request: %s", re, ctx.fullUrl());
                     ctx.json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
                     final RadarError re = RadarError.notImplemented();
-                    logger.atWarning().withCause(e).log( re + "for request: " + ctx.fullUrl());
+                    logger.atWarning().withCause(e)
+                            .log("%s for request: %s", re, ctx.fullUrl());
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
@@ -193,8 +195,8 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(Exception.class, (e,ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
-                    logger.atWarning().log(String.format("error on request[%s]: %s",
-                            errResponse.getIncidentIdentifier(), ctx.req.getRequestURI()),e);
+                    logger.atWarning().withCause(e).log("error on request[%s]: %s",
+                            errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
