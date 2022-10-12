@@ -80,7 +80,8 @@ class TimeseriesCatalogEntryTest
 				.timeZone("US/Central")
 				.withExtent(new TimeSeriesExtents(null,
 				                                  ZonedDateTime.parse("2017-07-27T05:00:00Z"),
-				                                  ZonedDateTime.parse("2017-11-24T22:30:00Z")));
+				                                  ZonedDateTime.parse("2017-11-24T22:30:00Z"),
+						ZonedDateTime.parse("2017-11-24T22:30:00Z")));
 		return builder
 				.build();
 
