@@ -536,6 +536,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         overallQuery.addSelect(AV_TS_EXTENTS_UTC.VERSION_TIME);
         overallQuery.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
         overallQuery.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
+		overallQuery.addSelect(AV_TS_EXTENTS_UTC.LAST_UPDATE);
         overallQuery.addFrom(limitTable);
         overallQuery.addJoin(AV_TS_EXTENTS_UTC, org.jooq.JoinType.LEFT_OUTER_JOIN,
                 condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = " + field("\"limiter\""
@@ -568,11 +569,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null) {
                 //tsIdExtentMap.get(tsId)
-                TimeSeriesExtents extents =
+				TimeSeriesExtents extents =
 						new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
-                        row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
-                        row.get(AV_TS_EXTENTS_UTC.LATEST_TIME)
-                );
+								row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
+								row.get(AV_TS_EXTENTS_UTC.LATEST_TIME),
+								row.get(AV_TS_EXTENTS_UTC.LAST_UPDATE)
+						);
                 tsIdExtentMap.get(officeTsId).withExtent(extents);
             }
         });
