@@ -3,6 +3,8 @@ package cwms.radar.data.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.radar.data.dto.TimeSeries.Record;
 import cwms.radar.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,8 +26,8 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class TimeSeriesExtents {
-    //public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "TimeSeries version to which this extent information applies")
