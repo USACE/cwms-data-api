@@ -10,6 +10,9 @@ import io.javalin.http.Handler;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
+/**
+ * This is currently more a placeholder for example than actual implementation
+ */
 public class LoginDotGovAccessManager extends RadarAccessManager {
 
     private String sessionKey;
