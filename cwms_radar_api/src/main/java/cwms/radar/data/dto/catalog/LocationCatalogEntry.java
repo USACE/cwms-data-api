@@ -1,12 +1,10 @@
 package cwms.radar.data.dto.catalog;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
-import javax.xml.bind.annotation.*;
 
-public class LocationCatalogEntry extends CatalogEntry{
+public class LocationCatalogEntry extends CatalogEntry {
     private String name;
     private String nearestCity;
     private String publicName;
@@ -29,11 +27,13 @@ public class LocationCatalogEntry extends CatalogEntry{
     private String boundingOffice;
     private String mapLabel;
     private boolean active;
-    @XmlElementWrapper(name="aliases")
-    @XmlElement(name="alias")
+    @XmlElementWrapper(name = "aliases")
+    @XmlElement(name = "alias")
     private Collection<LocationAlias> aliases;
 
-    private LocationCatalogEntry(){ super(null);}
+    private LocationCatalogEntry() {
+        super(null);
+    }
 
     public LocationCatalogEntry(String office,
                                 String name,
@@ -60,7 +60,8 @@ public class LocationCatalogEntry extends CatalogEntry{
                                 boolean active,
                                 Collection<LocationAlias> aliases) {
         super(office);
-        Objects.requireNonNull(aliases, "aliases provided must be an actual list, empty list is okay");
+        Objects.requireNonNull(aliases, "aliases provided must be an actual list, empty list is "
+                + "okay");
         this.name = name;
         this.nearestCity = nearestCity;
         this.publicName = publicName;
@@ -175,19 +176,20 @@ public class LocationCatalogEntry extends CatalogEntry{
     }
 
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    public String getNearestCity(){
+    public String getNearestCity() {
         return nearestCity;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(getOffice()).append("/").append(name).append(";nearestCity=").append(nearestCity);
-        for( LocationAlias alias: aliases){
+        builder.append(getOffice()).append("/").append(name)
+                .append(";nearestCity=").append(nearestCity);
+        for (LocationAlias alias : aliases) {
             builder.append(";alias=").append(alias.toString());
         }
         return builder.toString();
