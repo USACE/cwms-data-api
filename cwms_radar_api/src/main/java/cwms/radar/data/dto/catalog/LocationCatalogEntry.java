@@ -1,5 +1,6 @@
 package cwms.radar.data.dto.catalog;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,7 +31,7 @@ public class LocationCatalogEntry extends CatalogEntry{
     private boolean active;
     @XmlElementWrapper(name="aliases")
     @XmlElement(name="alias")
-    private List<LocationAlias> aliases;
+    private Collection<LocationAlias> aliases;
 
     private LocationCatalogEntry(){ super(null);}
 
@@ -57,7 +58,7 @@ public class LocationCatalogEntry extends CatalogEntry{
                                 String boundingOffice,
                                 String mapLabel,
                                 boolean active,
-                                List<LocationAlias> aliases) {
+                                Collection<LocationAlias> aliases) {
         super(office);
         Objects.requireNonNull(aliases, "aliases provided must be an actual list, empty list is okay");
         this.name = name;
@@ -169,7 +170,7 @@ public class LocationCatalogEntry extends CatalogEntry{
         return this.active;
     }
 
-    public List<LocationAlias> getAliases() {
+    public Collection<LocationAlias> getAliases() {
         return this.aliases;
     }
 
