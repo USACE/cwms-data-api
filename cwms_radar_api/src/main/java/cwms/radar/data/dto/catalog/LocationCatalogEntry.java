@@ -2,6 +2,8 @@ package cwms.radar.data.dto.catalog;
 
 import java.util.Collection;
 import java.util.Objects;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 
 
 public class LocationCatalogEntry extends CatalogEntry {
