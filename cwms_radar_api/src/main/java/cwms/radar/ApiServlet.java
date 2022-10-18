@@ -102,6 +102,7 @@ public class ApiServlet extends HttpServlet {
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
+    public static final String VERSION = "3.0";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -313,7 +314,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private OpenApiOptions getOpenApiOptions() {
-        Info applicationInfo = new Info().title("CWMS Radar").version("2.0")
+        Info applicationInfo = new Info().title("CWMS Radar").version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                 .path("/swagger-docs")
