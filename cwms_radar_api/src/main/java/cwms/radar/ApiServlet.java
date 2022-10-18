@@ -53,6 +53,7 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.swagger.v3.oas.models.info.Info;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -315,7 +316,7 @@ public class ApiServlet extends HttpServlet {
     private OpenApiOptions getOpenApiOptions() {
         Info applicationInfo = new Info().title("CWMS Radar").version("2.0")
                 .description("CWMS REST API for Data Retrieval");
-        return new OpenApiOptions(applicationInfo)
+        OpenApiOptions openApiOptions = new OpenApiOptions(applicationInfo)
                 .path("/swagger-docs")
                 .defaultDocumentation(doc -> {
                     doc.json("500", RadarError.class);
@@ -325,6 +326,16 @@ public class ApiServlet extends HttpServlet {
                     doc.json("404", RadarError.class);
                 })
                 .activateAnnotationScanningFor("cwms.radar.api");
+
+        // This next section is to make Swagger use KEBAB-CASE by default for
+        // generating the schema from serialized objects that aren't annotated differently.
+        // The JSONv2 serializer, for example, already uses kebab-case to do the actual
+        // serialization but the schema generation uses camelCase by default.  Making the
+        ObjectMapper objectMapper = openApiOptions.getJacksonMapper().copy();
+        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
+        openApiOptions.modelConverterFactory(new JacksonModelConverterFactory(objectMapper));
+
+        return openApiOptions;
     }
 
     @Override
