@@ -2,7 +2,7 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.4-SNAPSHOT'
+    version = '2.4-SNAPSHOT'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }
 
 // versions for shared dependencies
