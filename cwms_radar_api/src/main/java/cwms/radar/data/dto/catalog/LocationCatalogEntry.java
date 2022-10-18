@@ -1,11 +1,12 @@
 package cwms.radar.data.dto.catalog;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 
-import javax.xml.bind.annotation.*;
 
-public class LocationCatalogEntry extends CatalogEntry{
+public class LocationCatalogEntry extends CatalogEntry {
     private String name;
     private String nearestCity;
     private String publicName;
@@ -28,11 +29,13 @@ public class LocationCatalogEntry extends CatalogEntry{
     private String boundingOffice;
     private String mapLabel;
     private boolean active;
-    @XmlElementWrapper(name="aliases")
-    @XmlElement(name="alias")
-    private List<LocationAlias> aliases;
+    @XmlElementWrapper(name = "aliases")
+    @XmlElement(name = "alias")
+    private Collection<LocationAlias> aliases;
 
-    private LocationCatalogEntry(){ super(null);}
+    private LocationCatalogEntry() {
+        super(null);
+    }
 
     public LocationCatalogEntry(String office,
                                 String name,
@@ -57,9 +60,10 @@ public class LocationCatalogEntry extends CatalogEntry{
                                 String boundingOffice,
                                 String mapLabel,
                                 boolean active,
-                                List<LocationAlias> aliases) {
+                                Collection<LocationAlias> aliases) {
         super(office);
-        Objects.requireNonNull(aliases, "aliases provided must be an actual list, empty list is okay");
+        Objects.requireNonNull(aliases, "aliases provided must be an actual list, empty list is "
+                + "okay");
         this.name = name;
         this.nearestCity = nearestCity;
         this.publicName = publicName;
@@ -169,24 +173,25 @@ public class LocationCatalogEntry extends CatalogEntry{
         return this.active;
     }
 
-    public List<LocationAlias> getAliases() {
+    public Collection<LocationAlias> getAliases() {
         return this.aliases;
     }
 
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
-    public String getNearestCity(){
+    public String getNearestCity() {
         return nearestCity;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(getOffice()).append("/").append(name).append(";nearestCity=").append(nearestCity);
-        for( LocationAlias alias: aliases){
+        builder.append(getOffice()).append("/").append(name)
+                .append(";nearestCity=").append(nearestCity);
+        for (LocationAlias alias : aliases) {
             builder.append(";alias=").append(alias.toString());
         }
         return builder.toString();
