@@ -103,6 +103,10 @@ public class ApiServlet extends HttpServlet {
     public static final String DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
 
+    // The VERSION should match the gradle version but not contain the patch version.
+    // For example 2.4 not 2.4.13
+    public static final String VERSION = "2.4";
+
     private MetricRegistry metrics;
     private Meter totalRequests;
     /**
@@ -313,7 +317,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private OpenApiOptions getOpenApiOptions() {
-        Info applicationInfo = new Info().title("CWMS Radar").version("2.0")
+        Info applicationInfo = new Info().title("CWMS Radar").version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
         return new OpenApiOptions(applicationInfo)
                 .path("/swagger-docs")
