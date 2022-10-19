@@ -1,5 +1,8 @@
 package cwms.radar.data.dao;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
@@ -201,7 +204,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         List<Feature> features = selectQuery.stream()
                 .map(LocationsDaoImpl::buildFeatureFromAvLocRecord)
-                .collect(Collectors.toList());
+                .collect(toList());
         FeatureCollection collection = new FeatureCollection();
         collection.setFeatures(features);
 
@@ -233,7 +236,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         Map<String, Object> recordMap = avLocRecord.intoMap();
         List<String> keysWithNullValue =
                 recordMap.entrySet().stream().filter(e -> e.getValue() == null)
-                        .map(Map.Entry::getKey).collect(Collectors.toList());
+                        .map(Map.Entry::getKey).collect(toList());
         keysWithNullValue.forEach(recordMap::remove);
         recordMap.remove(AV_LOC.LATITUDE.getName());
         recordMap.remove(AV_LOC.LONGITUDE.getName());
@@ -289,27 +292,24 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .where(condition)
             .and(AV_LOC2.AV_LOC2.LOCATION_CODE.in(forLimit))
             .orderBy(AV_LOC2.AV_LOC2.ALIASED_ITEM.desc(), AV_LOC2.AV_LOC2.LOCATION_ID);
-        Map<usace.cwms.db.jooq.codegen.tables.records.AV_LOC2, Set<LocationAlias>> theMap = new LinkedHashMap<>();
 
-
-        query.fetch().forEach(row -> {
-            usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 loc = row.into(AV_LOC2.AV_LOC2);
-            if(loc.getALIASED_ITEM() == null) {
-                theMap.put(loc, new LinkedHashSet<>());
-            } else {
-                theMap.entrySet()
-                    .stream()
-                    .filter(s -> s.getKey().getLOCATION_CODE().equals(loc.getLOCATION_CODE()))
-                    .findFirst()
-                    .ifPresent(l -> l.getValue().add(buildLocationAlias(loc)));
-            }
-        });
-
-        List<? extends CatalogEntry> entries = theMap.entrySet()
+        List<? extends CatalogEntry> entries = query.fetch()
             .stream()
-            .sorted(Comparator.comparing(l -> l.getKey().getLOCATION_ID()))
-            .map(e -> buildCatalogEntry(e.getKey(), e.getValue()))
-            .collect(Collectors.toList());
+            .map(r -> r.into(AV_LOC2.AV_LOC2))
+            .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
+            .values()
+            .stream()
+            .map(l ->
+            {
+                usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
+                    .filter(r -> r.getALIASED_ITEM() == null)
+                    .findFirst()
+                    .orElseThrow(() -> new DataAccessException("Could not find location for list of aliases: " + l));
+                Set<LocationAlias> aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
+                    .map(this::buildLocationAlias).collect(toSet());
+                return buildCatalogEntry(row, aliases);
+            })
+            .collect(toList());
         return new Catalog(locCursor, total, pageSize, entries);
     }
 
