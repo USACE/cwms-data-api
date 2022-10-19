@@ -1,5 +1,6 @@
 package cwms.radar.data.dao;
 
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -280,18 +281,18 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         condition = condition.and(AV_LOC2.AV_LOC2.LOCATION_ID.upper().greaterThan(locCursor));
 
-        SelectLimitPercentStep<Record1<Long>> forLimit = dsl.select(AV_LOC2.AV_LOC2.LOCATION_CODE)
+        String locCodeField = "LOCATION_CODE_COL";
+        SelectLimitPercentStep<Record1<Long>> forLimit = dsl.select(AV_LOC2.AV_LOC2.LOCATION_CODE.as(locCodeField))
             .from(AV_LOC2.AV_LOC2)
             .where(condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull()))
             .orderBy(AV_LOC2.AV_LOC2.LOCATION_ID)
             .limit(pageSize);
 
 
-        SelectSeekStep2<Record, String, String> query = dsl.select(AV_LOC2.AV_LOC2.asterisk())
+        SelectConditionStep<Record> query = dsl.select(AV_LOC2.AV_LOC2.asterisk())
             .from(AV_LOC2.AV_LOC2)
             .where(condition)
-            .and(AV_LOC2.AV_LOC2.LOCATION_CODE.in(forLimit))
-            .orderBy(AV_LOC2.AV_LOC2.ALIASED_ITEM.desc(), AV_LOC2.AV_LOC2.LOCATION_ID);
+            .and(AV_LOC2.AV_LOC2.LOCATION_CODE.in(forLimit));
 
         List<? extends CatalogEntry> entries = query.fetch()
             .stream()
@@ -309,6 +310,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     .map(this::buildLocationAlias).collect(toSet());
                 return buildCatalogEntry(row, aliases);
             })
+            .sorted(comparing(LocationCatalogEntry::getName))
             .collect(toList());
         return new Catalog(locCursor, total, pageSize, entries);
     }
