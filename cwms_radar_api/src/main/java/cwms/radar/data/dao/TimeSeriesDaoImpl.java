@@ -45,7 +45,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -414,17 +413,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @Override
-    public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office) {
+    public Catalog getTimeSeriesCatalog(String page, int pageSize, String office) {
         return getTimeSeriesCatalog(page, pageSize, office, ".*", null, null, null, null);
     }
 
     @Override
-    public Catalog getTimeSeriesCatalog(String page, int pageSize, Optional<String> office,
+    public Catalog getTimeSeriesCatalog(String page, int pageSize, String office,
                                         String idLike, String locCategoryLike, String locGroupLike,
                                         String tsCategoryLike, String tsGroupLike) {
         int total;
         String tsCursor = "*";
-        String searchOffice = office.orElse(null);
+        String searchOffice = office;
         String curOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
@@ -461,7 +460,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             logger.fine("getting non-default page");
             // Information provided by the page value overrides anything provided
             catPage = new Catalog.CatalogPage(page);
-            tsCursor = catPage.getTsCursor();
+            tsCursor = catPage.getCursorId();
             total = catPage.getTotal();
             pageSize = catPage.getPageSize();
             searchOffice = catPage.getSearchOffice();
@@ -491,7 +490,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().likeRegex(idLike.toUpperCase()));
 
         if (searchOffice != null) {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.get().toUpperCase()));
+            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.toUpperCase()));
         }
 
         if (locCategoryLike != null) {
@@ -584,7 +583,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .map(e -> e.getValue().build())
                 .collect(Collectors.toList());
         return new Catalog(catPage != null ? catPage.toString() : null,
-                total, pageSize, entries, office.orElse(null),
+                total, pageSize, entries, office,
                 idLike, locCategoryLike, locGroupLike,
                 tsCategoryLike, tsGroupLike);
     }

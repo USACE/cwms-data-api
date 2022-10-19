@@ -60,7 +60,7 @@ public abstract class CwmsDTOPaginated implements CwmsDTO {
 
     static final Encoder encoder = Base64.getEncoder();
     static final Decoder decoder = Base64.getDecoder();
-    static final String delimiter = "||";
+    public static final String delimiter = "||";
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     protected CwmsDTOPaginated() { }

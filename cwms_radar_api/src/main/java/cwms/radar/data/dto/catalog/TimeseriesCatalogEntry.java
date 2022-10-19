@@ -90,6 +90,11 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         return builder.toString();
     }
 
+    @Override
+    public String getCursor() {
+        return (getOffice() + "/" + name).toUpperCase();
+    }
+
     public static class Builder {
         private String office;
         private String tsName;
