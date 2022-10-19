@@ -254,6 +254,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     @Override
     public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office,
                                       String idLike, String categoryLike, String groupLike) {
+        //Now querying against AV_LOC2 as it gives us back the same information as querying against
+        //location group views. This makes the code clearer and improves performance.
+        //If there is a performance improvement by switching back to location groups and querying against
+        //location codes (previous implementation used location_id) for joins, feel free to implement.
         String locCursor = "*";
         Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike);
         int total;
