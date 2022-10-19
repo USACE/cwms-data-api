@@ -24,10 +24,7 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
-import org.jooq.SelectLimitStep;
 import org.jooq.conf.ParamType;
-import org.jooq.impl.DSL;
-import org.jooq.util.oracle.OracleDSL;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
@@ -44,42 +41,33 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
 
-        Condition condition =
-                specView.LOC_ALIAS_CATEGORY.isNull()
-                        .and(specView.LOC_ALIAS_GROUP.isNull())
-                        .and(specView.ALIASED_ITEM.isNull())
-                        .and(ratView.LOC_ALIAS_CATEGORY.isNull())
-                        .and(ratView.LOC_ALIAS_GROUP.isNull())
-                        .and(ratView.ALIASED_ITEM.isNull());
+        // We don't want to also check AV_RATING_SPEC.ALIASED_ITEM b/c we
+        // don't care whether the specs returned are an alias or not.
+        // We do want to exclude the aliased ratings b/c we only want one
+        // copy of each matching rating.
+
+        Condition condition = ratView.ALIASED_ITEM.isNull();
 
         if (office != null) {
             condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
         if (specIdMask != null) {
-            condition =
-                    condition.and(JooqDao.caseInsensitiveLikeRegex(
-                            specView.RATING_ID, specIdMask));
+            Condition likeRegex = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID, specIdMask);
+            condition = condition.and(likeRegex);
         }
 
-        ResultQuery<? extends Record> query = dsl.select(specView.OFFICE_ID,
-                specView.RATING_ID,
-                specView.TEMPLATE_ID,
-                specView.LOCATION_ID,
-                specView.VERSION,
-                specView.SOURCE_AGENCY,
-                specView.ACTIVE_FLAG,
-                specView.AUTO_UPDATE_FLAG,
-                specView.AUTO_ACTIVATE_FLAG,
-                specView.AUTO_MIGRATE_EXT_FLAG,
-                specView.IND_ROUNDING_SPECS,
-                specView.DEP_ROUNDING_SPEC,
-                specView.DATE_METHODS,
-                specView.DESCRIPTION,
-                ratView.EFFECTIVE_DATE)
+        ResultQuery<? extends Record> query = dsl.select(specView.RATING_SPEC_CODE,
+                        specView.OFFICE_ID, specView.RATING_ID, specView.TEMPLATE_ID,
+                        specView.LOCATION_ID, specView.VERSION, specView.SOURCE_AGENCY,
+                        specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
+                        specView.AUTO_ACTIVATE_FLAG,
+                        specView.AUTO_MIGRATE_EXT_FLAG, specView.IND_ROUNDING_SPECS,
+                        specView.DEP_ROUNDING_SPEC, specView.DATE_METHODS, specView.DESCRIPTION,
+                        ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE)
                 .from(specView)
                 .leftOuterJoin(ratView)
-                .on(specView.RATING_ID.eq(ratView.RATING_ID))
+                .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
                 .where(condition)
                 .fetchSize(1000);
 
@@ -128,7 +116,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             }
         }
 
-        Set<RatingSpec> retval = getRatingSpecs(office, specIdMask, offset, offset + pageSize);
+        Set<RatingSpec> retval = getRatingSpecs(office, specIdMask, offset, pageSize);
 
         RatingSpecs.Builder builder = new RatingSpecs.Builder(offset, pageSize, total);
         builder.specs(new ArrayList<>(retval));
@@ -137,78 +125,43 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
     @NotNull
     public Set<RatingSpec> getRatingSpecs(String office, String specIdMask, int firstRow,
-                                          int lastRow) {
+                                          int pageSize) {
         Set<RatingSpec> retval;
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
 
-        Condition condition = specView.LOC_ALIAS_CATEGORY.isNull()
-                .and(specView.LOC_ALIAS_GROUP.isNull())
-                .and(specView.ALIASED_ITEM.isNull());
+        // We don't want to also check AV_RATING_SPEC.ALIASED_ITEM b/c we
+        // don't care whether the specs returned are an alias or not.
+        // We do want to exclude the aliased ratings b/c we only want one
+        // copy of each matching rating.
+        Condition condition = ratView.ALIASED_ITEM.isNull();
 
         if (office != null) {
             condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
         if (specIdMask != null) {
-            condition = condition.and(JooqDao.caseInsensitiveLikeRegex(
-                            specView.RATING_ID, specIdMask));
+            Condition maskRegex = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID, specIdMask);
+            condition = condition.and(maskRegex);
         }
 
-        Condition ratingAliasNullCond = ratView.ALIASED_ITEM.isNull()
-                .and(ratView.LOC_ALIAS_CATEGORY.isNull())
-                .and(ratView.LOC_ALIAS_GROUP.isNull());
-
-        SelectLimitStep<? extends Record> innerSelect = dsl.select(
-                        OracleDSL.rownum().as("rnum"), specView.OFFICE_ID,
-                        specView.RATING_ID,
-                        specView.DATE_METHODS,
-                        specView.TEMPLATE_ID,
-                        specView.LOCATION_ID,
-                        specView.VERSION,
-                        specView.SOURCE_AGENCY,
-                        specView.ACTIVE_FLAG,
-                        specView.AUTO_UPDATE_FLAG,
-                        specView.AUTO_ACTIVATE_FLAG,
-                        specView.AUTO_MIGRATE_EXT_FLAG,
-                        specView.IND_ROUNDING_SPECS,
-                        specView.DEP_ROUNDING_SPEC,
-                        specView.DESCRIPTION,
-                        specView.ALIASED_ITEM)
+        ResultQuery<? extends Record> query = dsl.select(specView.RATING_SPEC_CODE,
+                        specView.OFFICE_ID, specView.RATING_ID, specView.DATE_METHODS,
+                        specView.TEMPLATE_ID, specView.LOCATION_ID, specView.VERSION,
+                        specView.SOURCE_AGENCY, specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
+                        specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
+                        specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
+                        specView.DESCRIPTION, specView.ALIASED_ITEM,
+                        ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE)
                 .from(specView)
-                .where(condition)
-                .orderBy(specView.TEMPLATE_ID);
-
-        ResultQuery<? extends Record> query = dsl.select(
-                        DSL.field(DSL.quotedName("rnum"), Integer.class),
-                        innerSelect.field(specView.OFFICE_ID),
-                        innerSelect.field(specView.RATING_ID),
-                        innerSelect.field(specView.DATE_METHODS),
-                        innerSelect.field(specView.TEMPLATE_ID),
-                        innerSelect.field(specView.LOCATION_ID),
-                        innerSelect.field(specView.VERSION),
-                        innerSelect.field(specView.SOURCE_AGENCY),
-                        innerSelect.field(specView.ACTIVE_FLAG),
-                        innerSelect.field(specView.AUTO_UPDATE_FLAG),
-                        innerSelect.field(specView.AUTO_ACTIVATE_FLAG),
-                        innerSelect.field(specView.AUTO_MIGRATE_EXT_FLAG),
-                        innerSelect.field(specView.IND_ROUNDING_SPECS),
-                        innerSelect.field(specView.DEP_ROUNDING_SPEC),
-                        innerSelect.field(specView.DESCRIPTION),
-                        innerSelect.field(specView.ALIASED_ITEM),
-                        ratView.EFFECTIVE_DATE)
-                .from(innerSelect)
                 .leftOuterJoin(ratView)
-                .on(innerSelect.field(specView.RATING_ID).eq(ratView.RATING_ID))
-                .where(ratingAliasNullCond
-                        // This is the limit condition - the whole reason for the weird query...
-                        // .rnum starts at 1...
-                        .and(DSL.field(DSL.quotedName("rnum")).greaterThan(firstRow))
-                        .and(DSL.field(DSL.quotedName("rnum")).lessOrEqual(lastRow))
-                )
-                .orderBy(DSL.field(DSL.quotedName("rnum")),
-                        ratView.EFFECTIVE_DATE.asc());
+                .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
+                .where(condition)
+                .orderBy(specView.OFFICE_ID, specView.TEMPLATE_ID, ratView.RATING_ID,
+                        ratView.EFFECTIVE_DATE)
+                .limit(pageSize)
+                .offset(firstRow);
 
         logger.info(() -> query.getSQL(ParamType.INLINED));
 
@@ -241,39 +194,31 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
 
-        Condition condition = specView.LOC_ALIAS_CATEGORY.isNull()
-                .and(specView.LOC_ALIAS_GROUP.isNull())
-                .and(specView.ALIASED_ITEM.isNull())
-                .and(ratView.LOC_ALIAS_CATEGORY.isNull())
-                .and(ratView.LOC_ALIAS_GROUP.isNull())
-                .and(ratView.ALIASED_ITEM.isNull())
-                .and(specView.RATING_ID.eq(specId));
+        Condition condition = ratView.ALIASED_ITEM.isNull();
+
+        if (specId != null) {
+            condition = condition.and(specView.RATING_ID.eq(specId));
+        }
 
         if (office != null) {
             condition = condition.and(specView.OFFICE_ID.eq(office));
         }
 
         ResultQuery<? extends Record> query = dsl.select(
-                        specView.OFFICE_ID,
-                        specView.RATING_ID,
-                        specView.TEMPLATE_ID,
-                        specView.LOCATION_ID,
-                        specView.VERSION,
-                        specView.SOURCE_AGENCY,
-                        specView.ACTIVE_FLAG,
-                        specView.AUTO_UPDATE_FLAG,
-                        specView.AUTO_ACTIVATE_FLAG,
-                        specView.AUTO_MIGRATE_EXT_FLAG,
-                        specView.IND_ROUNDING_SPECS,
-                        specView.DEP_ROUNDING_SPEC,
-                        specView.DATE_METHODS,
-                        specView.DESCRIPTION,
-                        ratView.EFFECTIVE_DATE
+                        specView.RATING_SPEC_CODE,
+                        specView.OFFICE_ID, specView.RATING_ID, specView.TEMPLATE_ID,
+                        specView.LOCATION_ID, specView.VERSION, specView.SOURCE_AGENCY,
+                        specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
+                        specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
+                        specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
+                        specView.DATE_METHODS, specView.DESCRIPTION,
+                        ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE
                 )
                 .from(specView)
                 .leftOuterJoin(ratView)
-                .on(specView.RATING_ID.eq(ratView.RATING_ID))
+                .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
                 .where(condition)
+                .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
                 .fetchSize(1000);
 
         //		logger.info(() -> query.getSQL(ParamType.INLINED));
@@ -299,7 +244,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // There should only be one key in the map
-        if (retval.size() != 1) {
+        if (retval.size() > 1) {
             throw new IllegalStateException("More than one rating spec found for id: " + specId);
         }
 
