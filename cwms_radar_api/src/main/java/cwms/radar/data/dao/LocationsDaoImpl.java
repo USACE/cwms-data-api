@@ -40,6 +40,7 @@ import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectLimitPercentStep;
 import org.jooq.SelectSeekStep2;
+import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -283,11 +284,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         String locCodeField = "LOCATION_CODE_COL";
         SelectLimitPercentStep<Record1<Long>> forLimit = dsl.select(AV_LOC2.AV_LOC2.LOCATION_CODE.as(locCodeField))
-            .from(AV_LOC2.AV_LOC2)
+            .from(AV_LOC2.AV_LOC2.as("LOCATION_CODES"))
             .where(condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull()))
             .orderBy(AV_LOC2.AV_LOC2.LOCATION_ID)
             .limit(pageSize);
-
 
         SelectConditionStep<Record> query = dsl.select(AV_LOC2.AV_LOC2.asterisk())
             .from(AV_LOC2.AV_LOC2)
