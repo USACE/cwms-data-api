@@ -1,8 +1,5 @@
 package cwms.radar.data.dto.rating;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -10,10 +7,12 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
-import org.jetbrains.annotations.NotNull;
-
 import hec.data.Version;
 import hec.data.rating.IRatingTemplate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 @JsonDeserialize(builder = RatingTemplate.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -229,14 +228,14 @@ public class RatingTemplate implements CwmsDTO
 			return retval;
 		}
 
-		public Builder withRatingIds(List<String> specs) {
-			if(specs != null) {
-				this.ratingIds = new ArrayList<>(specs);
-			} else {
-				this.ratingIds = null;
-			}
-			return this;
-		}
+        public Builder withRatingIds(Collection<String> specs) {
+            if (specs != null) {
+                this.ratingIds = new ArrayList<>(specs);
+            } else {
+                this.ratingIds = null;
+            }
+            return this;
+        }
 
 		public RatingTemplate build () {
 			return new RatingTemplate(this);
