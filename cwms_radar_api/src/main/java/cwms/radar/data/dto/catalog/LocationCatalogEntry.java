@@ -196,4 +196,9 @@ public class LocationCatalogEntry extends CatalogEntry {
         }
         return builder.toString();
     }
+
+    @Override
+    public String getCursor() {
+        return (getOffice() + "/" + name).toUpperCase();
+    }
 }

@@ -1,15 +1,17 @@
 package cwms.radar.data.dao;
 
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 
 import cwms.radar.api.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
 import cwms.radar.data.dto.Catalog;
-import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationAlias;
@@ -19,11 +21,11 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -36,12 +38,14 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
+import org.jooq.SelectLimitPercentStep;
+import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.records.AV_LOC;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
@@ -202,7 +206,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         List<Feature> features = selectQuery.stream()
                 .map(LocationsDaoImpl::buildFeatureFromAvLocRecord)
-                .collect(Collectors.toList());
+                .collect(toList());
         FeatureCollection collection = new FeatureCollection();
         collection.setFeatures(features);
 
@@ -234,7 +238,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         Map<String, Object> recordMap = avLocRecord.intoMap();
         List<String> keysWithNullValue =
                 recordMap.entrySet().stream().filter(e -> e.getValue() == null)
-                        .map(Map.Entry::getKey).collect(Collectors.toList());
+                        .map(Map.Entry::getKey).collect(toList());
         keysWithNullValue.forEach(recordMap::remove);
         recordMap.remove(AV_LOC.LATITUDE.getName());
         recordMap.remove(AV_LOC.LONGITUDE.getName());
@@ -248,186 +252,129 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem,
-                                      Optional<String> office) {
+    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office) {
         return getLocationCatalog(cursor, pageSize, unitSystem, office, null, null, null);
     }
 
     @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem,
-                                      Optional<String> office, String idLike, String categoryLike,
-            String groupLike) {
-        int total = 0;
+    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office,
+                                      String idLike, String categoryLike, String groupLike) {
+        //Now querying against AV_LOC2 as it gives us back the same information as querying against
+        //location group views. This makes the code clearer and improves performance.
+        //If there is a performance improvement by switching back to location groups and querying against
+        //location codes (previous implementation used location_id) for joins, feel free to implement.
         String locCursor = "*";
+        Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike);
+        int total;
         if (cursor == null || cursor.isEmpty()) {
-            Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike,
-                    groupLike);
 
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
-                    .from(AV_LOC)
-                    .innerJoin(AV_LOC_GRP_ASSGN).on(
-                            AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
-                    .where(condition);
+                .from(AV_LOC2.AV_LOC2)
+                .where(condition);
 
             total = count.fetchOne().value1();
         } else {
             // get totally from page
-            String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "|||");
-
-            if (parts.length > 1) {
-                locCursor = parts[0].split("/")[1];
-                total = Integer.parseInt(parts[1]);
-            }
+            Catalog.CatalogPage page = new Catalog.CatalogPage(cursor);
+            locCursor = page.getCursorId();
+            total = page.getTotal();
         }
 
-        Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike)
-                .and(AV_LOC.LOCATION_ID.upper().greaterThan(locCursor));
+        condition = condition.and(AV_LOC2.AV_LOC2.LOCATION_ID.upper().greaterThan(locCursor));
 
-        SelectConditionStep<Record1<String>> tmp = dsl.selectDistinct(AV_LOC.LOCATION_ID)
-                .from(AV_LOC).innerJoin(AV_LOC_GRP_ASSGN).on(
-                        AV_LOC.LOCATION_ID.eq(AV_LOC_GRP_ASSGN.LOCATION_ID))
-                .where(condition);
+        String locCodeField = "LOCATION_CODE_COL";
+        SelectLimitPercentStep<Record1<Long>> forLimit = dsl.select(AV_LOC2.AV_LOC2.LOCATION_CODE.as(locCodeField))
+            .from(AV_LOC2.AV_LOC2.as("LOCATION_CODES"))
+            .where(condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull()))
+            .orderBy(AV_LOC2.AV_LOC2.LOCATION_ID)
+            .limit(pageSize);
 
-        Table<?> forLimit = tmp.orderBy(AV_LOC.LOCATION_ID).limit(pageSize).asTable();
+        SelectConditionStep<Record> query = dsl.select(AV_LOC2.AV_LOC2.asterisk())
+            .from(AV_LOC2.AV_LOC2)
+            .where(condition)
+            .and(AV_LOC2.AV_LOC2.LOCATION_CODE.in(forLimit));
 
-        SelectConditionStep<Record> query = dsl.select(
-                        AV_LOC.asterisk(),
-                        AV_LOC_GRP_ASSGN.asterisk()
-                )
-                .from(AV_LOC)
-                .innerJoin(forLimit).on(forLimit.field(AV_LOC.LOCATION_ID).eq(AV_LOC.LOCATION_ID))
-                .leftJoin(AV_LOC_GRP_ASSGN).on(AV_LOC_GRP_ASSGN.LOCATION_ID.eq(AV_LOC.LOCATION_ID))
-                .where(condition);
-
-        query.orderBy(AV_LOC.LOCATION_ID);
-//        logger.info( () -> query.getSQL(ParamType.INLINED));
-
-        Map<usace.cwms.db.jooq.codegen.tables.records.AV_LOC,
-                Set<LocationAlias>> theMap = new LinkedHashMap<>();
-
-
-        query.fetch().forEach(row -> {
-            usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc = buildAvLoc(row);
-
-            Set<LocationAlias> locationAliases = theMap.computeIfAbsent(loc,
-                    k -> new LinkedHashSet<>());
-
-            locationAliases.add(buildLocationAlias(row));
-        });
-
-        List<? extends CatalogEntry> entries =
-                theMap.entrySet().stream()
-                        .sorted((left, right) -> (
-                                left.getKey().getLOCATION_ID()
-                                        .compareTo(right.getKey().getBASE_LOCATION_ID())
-                        ))
-                        .map(e -> buildCatalogEntry(e.getKey(), e.getValue())
-                        ).collect(Collectors.toList());
-
+        List<? extends CatalogEntry> entries = query.fetch()
+            .stream()
+            .map(r -> r.into(AV_LOC2.AV_LOC2))
+            .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
+            .values()
+            .stream()
+            .map(l ->
+            {
+                usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
+                    .filter(r -> r.getALIASED_ITEM() == null)
+                    .findFirst()
+                    .orElseThrow(() -> new DataAccessException("Could not find location for list of aliases: " + l));
+                Set<LocationAlias> aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
+                    .map(this::buildLocationAlias).collect(toSet());
+                return buildCatalogEntry(row, aliases);
+            })
+            .sorted(comparing(LocationCatalogEntry::getName))
+            .collect(toList());
         return new Catalog(locCursor, total, pageSize, entries);
     }
 
-    private LocationAlias buildLocationAlias(Record row) {
-       return new LocationAlias(row.getValue(AV_LOC_GRP_ASSGN.CATEGORY_ID)
-               + "-" + row.getValue(AV_LOC_GRP_ASSGN.GROUP_ID),
-                row.getValue(AV_LOC_GRP_ASSGN.ALIAS_ID));
+    private LocationAlias buildLocationAlias(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row) {
+        return new LocationAlias(row.getLOC_ALIAS_CATEGORY() + "-" + row.getLOC_ALIAS_GROUP(),
+            row.getLOCATION_ID());
     }
 
     @NotNull
-    private static LocationCatalogEntry buildCatalogEntry(usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc,
+    private static LocationCatalogEntry buildCatalogEntry(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 loc,
                                                           Set<LocationAlias> aliases) {
         return new LocationCatalogEntry(
-                loc.getDB_OFFICE_ID(),
-                loc.getLOCATION_ID(),
-                loc.getNEAREST_CITY(),
-                loc.getPUBLIC_NAME(),
-                loc.getLONG_NAME(),
-                loc.getDESCRIPTION(),
-                loc.getLOCATION_KIND_ID(),
-                loc.getLOCATION_TYPE(),
-                loc.getTIME_ZONE_NAME(),
-                loc.getLATITUDE() != null
-                        ? loc.getLATITUDE().doubleValue() : null,
-                loc.getLONGITUDE() != null
-                        ? loc.getLONGITUDE().doubleValue() : null,
-                loc.getPUBLISHED_LATITUDE() != null
-                        ? loc.getPUBLISHED_LATITUDE().doubleValue()
-                        : null,
-                loc.getPUBLISHED_LONGITUDE() != null
-                        ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null,
-                loc.getHORIZONTAL_DATUM(),
-                loc.getELEVATION(),
-                loc.getUNIT_ID(),
-                loc.getVERTICAL_DATUM(),
-                loc.getNATION_ID(),
-                loc.getSTATE_INITIAL(),
-                loc.getCOUNTY_NAME(),
-                loc.getBOUNDING_OFFICE_ID(),
-                loc.getMAP_LABEL(),
-                loc.getACTIVE_FLAG().equalsIgnoreCase("T"),
-                aliases
+            loc.getDB_OFFICE_ID(),
+            loc.getLOCATION_ID(),
+            loc.getNEAREST_CITY(),
+            loc.getPUBLIC_NAME(),
+            loc.getLONG_NAME(),
+            loc.getDESCRIPTION(),
+            loc.getLOCATION_KIND_ID(),
+            loc.getLOCATION_TYPE(),
+            loc.getTIME_ZONE_NAME(),
+            loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null,
+            loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null,
+            loc.getPUBLISHED_LATITUDE() != null ? loc.getPUBLISHED_LATITUDE().doubleValue() : null,
+            loc.getPUBLISHED_LONGITUDE() != null ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null,
+            loc.getHORIZONTAL_DATUM(),
+            loc.getELEVATION(),
+            loc.getUNIT_ID(),
+            loc.getVERTICAL_DATUM(),
+            loc.getNATION_ID(),
+            loc.getSTATE_INITIAL(),
+            loc.getCOUNTY_NAME(),
+            loc.getBOUNDING_OFFICE_ID(),
+            loc.getMAP_LABEL(),
+            loc.getACTIVE_FLAG().equalsIgnoreCase("T"),
+            aliases
         );
     }
 
-    private static usace.cwms.db.jooq.codegen.tables.records.AV_LOC buildAvLoc(Record row) {
-        usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc = new AV_LOC();
-
-        loc.setLOCATION_ID(row.getValue(AV_LOC.LOCATION_ID));
-        loc.setBASE_LOCATION_ID(row.getValue(AV_LOC.BASE_LOCATION_ID));
-        loc.setDB_OFFICE_ID(row.getValue(AV_LOC.DB_OFFICE_ID));
-        loc.setNEAREST_CITY(row.getValue(AV_LOC.NEAREST_CITY));
-        loc.setPUBLIC_NAME(row.getValue(AV_LOC.PUBLIC_NAME));
-        loc.setLONG_NAME(row.getValue(AV_LOC.LONG_NAME));
-        loc.setDESCRIPTION(row.getValue(AV_LOC.DESCRIPTION));
-        loc.setLOCATION_KIND_ID(row.getValue(AV_LOC.LOCATION_KIND_ID));
-        loc.setLOCATION_TYPE(row.getValue(AV_LOC.LOCATION_TYPE));
-        loc.setTIME_ZONE_NAME(row.getValue(AV_LOC.TIME_ZONE_NAME));
-        loc.setLATITUDE(row.getValue(AV_LOC.LATITUDE));
-        loc.setLONGITUDE(row.getValue(AV_LOC.LONGITUDE));
-        loc.setPUBLISHED_LATITUDE(row.getValue(AV_LOC.PUBLISHED_LATITUDE));
-        loc.setPUBLISHED_LONGITUDE(row.getValue(AV_LOC.PUBLISHED_LONGITUDE));
-        loc.setHORIZONTAL_DATUM(row.getValue(AV_LOC.HORIZONTAL_DATUM));
-        loc.setELEVATION(row.getValue(AV_LOC.ELEVATION));
-        loc.setUNIT_ID(row.getValue(AV_LOC.UNIT_ID));
-        loc.setVERTICAL_DATUM(row.getValue(AV_LOC.VERTICAL_DATUM));
-        loc.setNATION_ID(row.getValue(AV_LOC.NATION_ID));
-        loc.setSTATE_INITIAL(row.getValue(AV_LOC.STATE_INITIAL));
-        loc.setCOUNTY_NAME(row.getValue(AV_LOC.COUNTY_NAME));
-        loc.setBOUNDING_OFFICE_ID(row.getValue(AV_LOC.BOUNDING_OFFICE_ID));
-        loc.setMAP_LABEL(row.getValue(AV_LOC.MAP_LABEL));
-        loc.setACTIVE_FLAG(row.getValue(AV_LOC.ACTIVE_FLAG));
-
-
-        return row.into(AV_LOC);
-    }
-
-    private Condition buildCatalogWhere(String unitSystem, Optional<String> office, String idLike) {
-        Condition condition = AV_LOC.UNIT_SYSTEM.eq(unitSystem);
-
+    private Condition buildCatalogWhere(String unitSystem, String office, String idLike) {
+        Condition condition = AV_LOC2.AV_LOC2.UNIT_SYSTEM.eq(unitSystem);
         if (idLike != null) {
-            condition = condition.and(
-                    JooqDao.caseInsensitiveLikeRegex(AV_LOC.LOCATION_ID, idLike));
+            Condition idMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOCATION_ID, idLike);
+            condition = condition.and(idMatch);
         }
-
-        if (office.isPresent()) {
-            condition = condition.and(
-                    JooqDao.caseInsensitiveLikeRegex(AV_LOC.DB_OFFICE_ID,office.get()));
+        if (office!= null) {
+            Condition officeMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.DB_OFFICE_ID, office);
+            condition = condition.and(officeMatch);
         }
         return condition;
     }
 
-    private Condition buildCatalogWhere(String unitSystem, Optional<String> office,
+    private Condition buildCatalogWhere(String unitSystem, String office,
                                         String idLike, String categoryLike, String groupLike) {
         Condition condition = buildCatalogWhere(unitSystem, office, idLike);
-
         if (categoryLike != null) {
-            condition = condition.and(
-                    JooqDao.caseInsensitiveLikeRegex(AV_LOC_GRP_ASSGN.CATEGORY_ID, categoryLike));
+            Condition categoryMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike);
+            condition = condition.and(categoryMatch);
         }
 
         if (groupLike != null) {
-            condition = condition.and(
-                    JooqDao.caseInsensitiveLikeRegex(AV_LOC_GRP_ASSGN.GROUP_ID,groupLike));
+            Condition groupMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP, groupLike);
+            condition = condition.and(groupMatch);
         }
 
         return condition;
