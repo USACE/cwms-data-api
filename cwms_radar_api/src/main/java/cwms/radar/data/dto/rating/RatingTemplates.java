@@ -56,14 +56,17 @@ public class RatingTemplates extends CwmsDTOPaginated {
             return this;
         }
 
-        private int getRatingCount() {
+        private int getCount() {
             int count = 0;
 
-            if(templates != null) {
+            if (templates != null) {
                 for (RatingTemplate template : templates) {
                     List<String> ratingIds = template.getRatingIds();
-                    if (ratingIds != null) {
+                    if (ratingIds != null && !ratingIds.isEmpty()) {
                         count += ratingIds.size();
+                    } else {
+                        // for purposes of paging a null or empty list counts as a row
+                        count++;
                     }
                 }
             }
@@ -74,7 +77,7 @@ public class RatingTemplates extends CwmsDTOPaginated {
         public RatingTemplates build() {
             RatingTemplates retval = new RatingTemplates(offset, pageSize, total, templates);
 
-            int count = getRatingCount();
+            int count = getCount();
             if (count >= this.pageSize) {
                 String cursor = Integer.toString(retval.offset + count);
                 retval.nextPage = encodeCursor(cursor, retval.pageSize, retval.total);
