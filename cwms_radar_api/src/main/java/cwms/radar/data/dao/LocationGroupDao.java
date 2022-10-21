@@ -56,8 +56,9 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
                 alcg.CAT_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC,
                 alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
                 .from(alcg).join(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+                .on(alcg.GRP_DB_OFFICE_ID.eq(alga.DB_OFFICE_ID)
+                                .and(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID))
+                                .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
                 .where(alcg.LOC_CATEGORY_ID.eq(categoryId)
                         .and(alcg.LOC_GROUP_ID.eq(groupId))
                         .and(alcg.GRP_DB_OFFICE_ID.eq(officeId)))
@@ -151,7 +152,8 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
                 alcg.CAT_DB_OFFICE_ID, alcg.GRP_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID,
                 alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
                 .from(alcg).join(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                .on(alcg.GRP_DB_OFFICE_ID.eq(alga.DB_OFFICE_ID)
+                        .and(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID))
                         .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
         if (officeId != null) {
             connectBy = onStep.where(alcg.GRP_DB_OFFICE_ID.eq(officeId));
