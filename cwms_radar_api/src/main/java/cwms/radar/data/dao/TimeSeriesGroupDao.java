@@ -79,7 +79,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
         SelectSeekStep1<?, BigDecimal> query = select.orderBy(grpAssgn.ATTRIBUTE);
 
-        logger.info(() -> query.getSQL(ParamType.INLINED));
+        //logger.info(() -> query.getSQL(ParamType.INLINED));
 
         List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments =
                 query.fetch(mapper);
