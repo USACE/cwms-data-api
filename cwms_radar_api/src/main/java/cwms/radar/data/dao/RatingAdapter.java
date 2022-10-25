@@ -14,27 +14,14 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 
 public class RatingAdapter {
 
     private RatingAdapter() {
-    }
-
-    public static Map<RatingSpec, Set<AbstractRatingMetadata>> toDTO(
-            Map<hec.data.cwmsRating.RatingSpec, Set<AbstractRating>> map) {
-        Map<cwms.radar.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> retval =
-                new LinkedHashMap<>();
-
-        if (map != null) {
-            map.forEach((key, value) -> retval.put(toDTO(key), toDTO(value)));
-        }
-
-        return retval;
     }
 
     private static RatingSpec toDTO(hec.data.cwmsRating.RatingSpec spec) {
@@ -48,10 +35,14 @@ public class RatingAdapter {
         return retval;
     }
 
-    private static Set<AbstractRatingMetadata> toDTO(Set<AbstractRating> ratings) {
-        Set<AbstractRatingMetadata> retval = new LinkedHashSet<>();
+    @Nullable
+    public static Set<AbstractRatingMetadata> toDTO(Set<AbstractRating> ratings) {
+        Set<AbstractRatingMetadata> retval = null;
         if (ratings != null) {
-            ratings.forEach(rating -> retval.add(toDTO(rating)));
+            retval = new LinkedHashSet<>();
+            for (AbstractRating rating : ratings) {
+                retval.add(toDTO(rating));
+            }
         }
         return retval;
     }
