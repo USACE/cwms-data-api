@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +35,7 @@ public class JsonRatingUtils {
             throw new RatingException(e);
         }
 
-        return RatingXmlCompatUtil.getInstance().createRatingSet(xml);
+        return RatingXmlFactory.ratingSet(xml);
     }
 
     public static String toJson(RatingSet ratingSet) throws RatingException {

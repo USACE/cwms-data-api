@@ -16,7 +16,6 @@ import cwms.radar.formatters.FormattingException;
 import cwms.radar.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
@@ -144,7 +143,7 @@ public class RatingController implements CrudHandler {
 
     @NotNull
     public RatingSet deserializeFromXml(String body) throws RatingException {
-        return RatingXmlCompatUtil.getInstance().createRatingSet(body);
+        return RatingXmlFactory.ratingSet(body);
     }
 
     @OpenApi(queryParams = {@OpenApiParam(name = OFFICE, required = true, description =

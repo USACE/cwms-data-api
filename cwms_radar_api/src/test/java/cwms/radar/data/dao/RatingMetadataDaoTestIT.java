@@ -1,11 +1,12 @@
 package cwms.radar.data.dao;
 
 
-import static cwms.radar.data.dao.DaoTest.getConnection;
 import static cwms.radar.data.dao.DaoTest.getDslContext;
 import static cwms.radar.data.dao.JsonRatingUtilsTest.readFully;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.codahale.metrics.MetricRegistry;
@@ -18,7 +19,6 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
 import hec.data.cwmsRating.RatingSpec;
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import hec.data.rating.IRatingSpecification;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
@@ -42,7 +43,7 @@ class RatingMetadataDaoTestIT {
 // This is how it can be run from an integration test using docker etc.
 // It takes 8 minutes or so to run it this way.
     @Test
-    void testRetrieveMetadata() throws SQLException, JsonProcessingException {
+    void testRetrieveMetadata() throws SQLException {
 
         CwmsDatabaseContainer databaseLink = RadarApiSetupCallback.getDatabaseLink();
         databaseLink.connection((Consumer<Connection>) c -> {//
@@ -101,7 +102,7 @@ class RatingMetadataDaoTestIT {
             assertTrue(firstPage.getSize() >= 5 && firstPage.getSize() <= 50);
 
             String nextPage = firstPage.getNextPage();
-            assertTrue(nextPage != firstPage.getPage());
+            assertNotSame(nextPage, firstPage.getPage());
 
             firstPage = dao.retrieve(null, 25, officeId, "ALBT[.]Stage.*", null, null);
             assertNotNull(firstPage);
@@ -127,7 +128,7 @@ class RatingMetadataDaoTestIT {
 
             secondPage = dao.retrieve(nextPage, 5, officeId, mask, null, null);
             assertNotNull(secondPage);
-            assertFalse(secondPage.getSize() == 0);
+            assertNotEquals(0, secondPage.getSize());
 
             List<RatingMetadata> secondMetadata = secondPage.getRatingMetadata();
             assertNotNull(secondMetadata);
@@ -153,7 +154,7 @@ class RatingMetadataDaoTestIT {
         assertNotNull(xmlRating);
 
         // make sure we can parse it.
-        RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
+        RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlRating);
 
         assertNotNull(ratingSet);
 
@@ -172,7 +173,7 @@ class RatingMetadataDaoTestIT {
         String xmlText = readFully(stream);
         assertNotNull(xmlText);
 
-        RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlText);
+        RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlText);
         assertNotNull(ratingSet);
 
         AbstractRating[] ratings = ratingSet.getRatings();
