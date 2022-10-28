@@ -14,7 +14,6 @@ import cwms.radar.data.dto.rating.RatingSpec;
 import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
@@ -28,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
@@ -297,7 +297,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                 xmlText = xmlText.trim();
                 if (xmlText.length() >= 200 || !EMPTY.equals(xmlText)) {
                     try {
-                        retval = RatingXmlCompatUtil.getInstance().createRatingSet(xmlText);
+                        retval = RatingXmlFactory.ratingSet(xmlText);
                     } catch (RatingException e) {
                         logger.log(Level.WARNING, "Could not parse xml: " + xmlText, e);
                     }

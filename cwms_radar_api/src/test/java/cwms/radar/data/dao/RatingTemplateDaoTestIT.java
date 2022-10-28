@@ -5,18 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import fixtures.RadarApiSetupCallback;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.data.cwmsRating.io.RatingJdbcCompatUtil;
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.function.Consumer;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
@@ -101,7 +100,7 @@ class RatingTemplateDaoTestIT {
         assertNotNull(xmlRating);
 
         // make sure we can parse it.
-        RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
+        RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlRating);
         assertNotNull(ratingSet);
 
         RatingJdbcCompatUtil.getInstance().storeToDatabase(ratingSet,c, true, true);
