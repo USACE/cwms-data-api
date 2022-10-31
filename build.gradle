@@ -2,15 +2,16 @@
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '2.4.5'
+    version = '2.4-SNAPSHOT'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }
 
 // versions for shared dependencies
-ext.dropwizard_version="4.2.9"
+ext.dropwizard_version="4.2.12"
 
-ext.JAVALIN_VERSION='4.6.1'
+ext.JAVALIN_VERSION='4.6.4'
+
 ext.JACKSON_VERSION='2.13.3'
-ext.SWAGGER_CORE_VERSION='2.2.0'
+ext.SWAGGER_CORE_VERSION='2.2.2'
 ext.tomcatVersion='9.0.64'
 
 subprojects {

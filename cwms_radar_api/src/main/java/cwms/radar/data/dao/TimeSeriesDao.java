@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.RecentValue;
@@ -13,8 +12,8 @@ import cwms.radar.data.dto.TimeSeries;
 public interface TimeSeriesDao
 {
 	Timestamp NON_VERSIONED = null;
-	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office);
-	Catalog getTimeSeriesCatalog(String cursor, int pageSize, Optional<String> office, String idLike, String locCategoryLike, String locGroupLike, String tsCategoryLike, String tsGroupLike);
+	Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office);
+	Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office, String idLike, String locCategoryLike, String locGroupLike, String tsCategoryLike, String tsGroupLike);
 
 	void create(TimeSeries timeSeries);
 	void store(TimeSeries timeSeries, Timestamp versionDate);

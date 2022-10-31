@@ -6,3 +6,4 @@ build
 **/.settings
 **/bin
 gradle.properties
+.idea

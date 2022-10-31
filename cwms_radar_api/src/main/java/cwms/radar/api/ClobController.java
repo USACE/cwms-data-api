@@ -116,9 +116,9 @@ public class ClobController implements CrudHandler {
         ) {
             String office = ctx.queryParam("office");
             Optional<String> officeOpt = Optional.ofNullable(office);
-            String formatParm = ctx.queryParamAsClass("format", String.class).getOrDefault("");
+
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
             String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
                     String.class, "", metrics, name(ClobController.class.getName(), "getAll"));

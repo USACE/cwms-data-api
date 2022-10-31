@@ -1,3 +1,4 @@
+---
 name: Build CWMS RADAR
 on:
   push:
@@ -36,7 +37,8 @@ jobs:
         run: ./gradlew dockerBuild
 
   release:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release')
+    name: Create and push releases
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -86,17 +88,36 @@ jobs:
           asset_path: warfile/${{ needs.build.outputs.thewar}}
           asset_name: ${{ steps.get_version.outputs.WAR_FILE_NAME}}
           asset_content_type: application/x-webarchive
+      - name: Login to Alt Registry
+        uses: docker/login-action@v2.0.0
+        id: login-alt
+        with:
+          registry: ${{ secrets.ALT_REGISTRY }}
+          username: ${{ secrets.ALT_REG_USER }}
+          password: ${{ secrets.ALT_REG_PASSWORD }}
+      - name: Build docker image
+        run: |
+          ./gradlew dockerBuild
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:latest
+          docker push $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
+          docker push $ALT_REGISTRY/cwms/radar-api:latest
+      - name: Logout of ALT registry
+        if: ${{ always() }}
+        run: docker logout ${{ steps.login-alt.outputs.registry }}
+
 
   publish:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release/')
+    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/develop')
     name: API Container Image
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     needs: build
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: checkout code
+        uses: actions/checkout@v2
       - name: setup java
         uses: actions/setup-java@v1
         with:
@@ -104,7 +125,7 @@ jobs:
           java-package: jdk
       - name: get RADAR version
         id: get_version
-        run: .github/workflows/get_version.sh
+        run: .github/workflows/get_version.sh      
       - name: Configure AWS credentials
         if: ${{ always() }}
         uses: aws-actions/configure-aws-credentials@v1
@@ -116,19 +137,36 @@ jobs:
         if: ${{ success() }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to Alt Registry
+        uses: docker/login-action@v2.0.0
+        id: login-alt
+        with:
+          registry: ${{ secrets.ALT_REGISTRY }}
+          username: ${{ secrets.ALT_REG_USER }}
+          password: ${{ secrets.ALT_REG_PASSWORD }} 
       - name: Build, tag, and push image to Amazon ECR (midas-api)
         if: ${{ success() }}
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: cwms-radar-api
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
+          ALT_REGISTRY: ${{ secrets.ALT_REGISTRY }}
         run: |
           ./gradlew :cwms_radar_api:build --init-script init.gradle
-          ./gradlew prepareDocker --init-script init.gradle
-          cd cwms_radar_api/build/docker
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          ./gradlew dockerBuild --init-script init.gradle
+          
+          docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:latest-dev
+          docker push $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
+          docker push $ALT_REGISTRY/cwms/radar-api:latest-dev
       - name: Logout of Amazon ECR
         if: ${{ always() }}
         run: docker logout ${{ steps.login-ecr.outputs.registry }}
+      - name: Logout of ALT registry
+        if: ${{ always() }}
+        run: docker logout ${{ steps.login-alt.outputs.registry }}

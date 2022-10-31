@@ -1,13 +1,13 @@
 package cwms.radar.data.dto.rating;
 
+import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.radar.formatters.json.JsonV1;
 import cwms.radar.formatters.json.JsonV2;
 import org.junit.jupiter.api.Test;
-
-import static cwms.radar.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class RatingSpecTest
 {
@@ -47,7 +47,6 @@ public class RatingSpecTest
 	{
 		RatingSpec retval;
 
-
 		String templateId = "Elev;Stor.Linear";
 		String locId = "ARBU";
 		String version = "Production";
@@ -67,18 +66,32 @@ public class RatingSpecTest
 
 		String dateMethods = "LINEAR,NEAREST,LOWER";
 
-		retval = new RatingSpec.Builder().withOfficeId(officeId).withRatingId(ratingId)
-				.withTemplateId(templateId).withLocationId(locId).withVersion(version).withSourceAgency(agency)
-				.withActive(activeFlag).withAutoUpdate(autoUpdateFlag).withAutoActivate(autoActivateFlag)
+		RatingSpec.Builder builder = new RatingSpec.Builder();
+		builder = builder
+				.withOfficeId(officeId).withRatingId(ratingId)
+				.withTemplateId(templateId).withLocationId(locId)
+				.withVersion(version).withSourceAgency(agency)
+				.withActive(activeFlag).withAutoUpdate(autoUpdateFlag)
+				.withAutoActivate(autoActivateFlag)
 				.withAutoMigrateExtension(autoMigrateExtFlag)
 				.withIndependentRoundingSpecs(buildIndependentRoundingSpecs(indRndSpecs))
 				.withDependentRoundingSpec(depRndSpecs).withDescription(desc)
-				.withDateMethods(dateMethods)
-				.build();
+				.withDateMethods(dateMethods);
+		retval = builder.build();
 
 		assertEquals("LINEAR", retval.getOutRangeLowMethod());
 		assertEquals("NEAREST", retval.getInRangeMethod());
 		assertEquals("LOWER", retval.getOutRangeHighMethod());
+
+		RatingSpec testSpec = builder.withInRangeMethod("InRange")
+				.withOutRangeLowMethod("OutRangeLow")
+				.withOutRangeHighMethod("OutRangeHigh")
+				.build();
+
+		assertEquals("OutRangeLow", testSpec.getOutRangeLowMethod());
+		assertEquals("InRange", testSpec.getInRangeMethod());
+		assertEquals("OutRangeHigh", testSpec.getOutRangeHighMethod());
+
 
 		return retval;
 	}

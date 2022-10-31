@@ -16,7 +16,7 @@ public class XMLV2Test extends TimeSeriesTestBase {
 
     @Test
     @Override
-    public void SingleTimeseriesFormat() {
-        super.SingleTimeseriesFormat();
+    public void singleTimeseriesFormat() {
+        super.singleTimeseriesFormat();
     }
 }

@@ -1,9 +1,7 @@
 package cwms.radar.data.dto;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
-import java.util.Base64.Encoder;
 
 import javax.xml.bind.annotation.*;
 
@@ -43,7 +41,7 @@ public class Catalog extends CwmsDTOPaginated {
         this.entries = entries;
         if( entries.size() == pageSize){            
             nextPage = encodeCursor(new CatalogPage(
-                            entries.get(entries.size()-1).toString().toUpperCase(),
+                            entries.get(entries.size()-1).getCursor(),
                             office,
                             idLike,
                             locCategoryLike,
@@ -72,7 +70,7 @@ public class Catalog extends CwmsDTOPaginated {
 
     public static class CatalogPage {
         private String curOffice;
-        private String tsCursor;
+        private String cursorId;
         private String searchOffice;
         private int total;
         private int pageSize;
@@ -90,7 +88,7 @@ public class Catalog extends CwmsDTOPaginated {
 			}
             String idParts[] = parts[0].split("/");
             curOffice = idParts[0];
-            tsCursor = idParts[1];
+            cursorId = idParts[1];
             searchOffice = nullOrVal(parts[1]);
             idLike = nullOrVal(parts[2]);
             locCategoryLike = nullOrVal(parts[3]);
@@ -107,7 +105,7 @@ public class Catalog extends CwmsDTOPaginated {
                 
             String parts[] = curElement.split("/");
             this.curOffice = parts[0];
-            this.tsCursor = parts[1];
+            this.cursorId = parts[1];
             this.searchOffice = office;
             this.idLike = idLike;                
             this.locCategoryLike = locCategoryLike;
@@ -126,7 +124,7 @@ public class Catalog extends CwmsDTOPaginated {
         
         public String getSearchOffice(){ return searchOffice; }
         public String getCurOffice(){ return curOffice; }
-        public String getTsCursor() { return tsCursor; }
+        public String getCursorId() { return cursorId; }
         public int getPageSize() { return pageSize; }
         public int getTotal() { return total; }
         public String getIdLike() { return idLike; }
@@ -138,7 +136,7 @@ public class Catalog extends CwmsDTOPaginated {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(curOffice).append("/").append(tsCursor)
+            sb.append(curOffice).append("/").append(cursorId)
               .append(CwmsDTOPaginated.delimiter).append(searchOffice)
               .append(CwmsDTOPaginated.delimiter).append(idLike)
               .append(CwmsDTOPaginated.delimiter).append(locCategoryLike)

@@ -12,8 +12,8 @@ dependencies {
     implementation "javax.xml.bind:jaxb-api:2.3.1"
     implementation "com.sun.xml.bind:jaxb-impl:3.0.2"
     implementation "com.sun.xml.bind:jaxb-core:3.0.2"
-    implementation "mil.army.usace.hec:cwms-db-dao:9.0.2"
-    implementation( "mil.army.usace.hec:cwms-db-jooq:9.0.2"){
+    implementation "mil.army.usace.hec:cwms-db-dao:9.0.4"
+    implementation( "mil.army.usace.hec:cwms-db-jooq:9.0.4"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -25,16 +25,34 @@ dependencies {
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.36'
 
-    implementation "mil.army.usace.hec:hec-monolith:2.0.2"
+    implementation( "mil.army.usace.hec:hec-monolith:2.0.2" ) {
+        //exclude group: "org.python", module: "jython-standalone"
+        //exclude group: "mil.army.usace.hec.swingx"
+        exclude group: "*"
+    }
+
+    implementation('com.google.flogger:flogger:0.7.4')
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'com.google.errorprone:error_prone_annotations:2.15.0'
+    runtime 'com.google.flogger:flogger-system-backend:0.7.4'
+
+    implementation "mil.army.usace.hec:hec-nucleus-data:1.0.33"
     implementation "mil.army.usace.hec:hec-nucleus-metadata:1.0.33"
-    implementation 'mil.army.usace.hec:hec-cwms-ratings-core:1.0.0'
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-core:2.0.0-rc02' ) {
+        //exclude group: "org.python", module: "jython-standalone"
+        //exclude group: "mil.army.usace.hec.swingx"
+        exclude group: "*"
+    }
+
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-xml:2.0.0-rc02' )
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.0-rc02' )
 
     implementation('org.jooq.pro:jooq:3.11.2') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "javax.xml.bind", module: "*"
     }
-    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.2"
+    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1"
 
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation group: 'de.grundid.opendatalab', name: 'geojson-jackson', version: '1.14'
@@ -80,13 +98,15 @@ dependencies {
 
     baseLibs 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
 
+    testRuntimeOnly 'com.oracle.database.jdbc:ojdbc8:21.7.0.0'
+
     testImplementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
     testImplementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$JACKSON_VERSION"
     testRuntimeOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$JACKSON_VERSION"
 
     testImplementation "org.mockito:mockito-core:3.2.4"
-    testImplementation 'io.rest-assured:rest-assured:5.1.0'
+    testImplementation 'io.rest-assured:rest-assured:5.2.0'
     testImplementation "org.hamcrest:hamcrest-all:1.3"
 
     testImplementation "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion"
@@ -96,11 +116,13 @@ dependencies {
 
     implementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
 
-    testImplementation "org.testcontainers:testcontainers:1.17.2"
-    testImplementation 'org.testcontainers:database-commons:1.17.2'
-    testImplementation "org.testcontainers:jdbc:1.17.2"
-    testImplementation "org.testcontainers:junit-jupiter:1.17.2"
+    testImplementation "org.testcontainers:testcontainers:1.17.3"
+    testImplementation 'org.testcontainers:database-commons:1.17.3'
+    testImplementation "org.testcontainers:jdbc:1.17.3"
+    testImplementation "org.testcontainers:junit-jupiter:1.17.3"
     testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.6'
+
+    testImplementation "org.apache.commons:commons-csv:1.9.0"
 
 //    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
@@ -235,7 +257,7 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
     from(war.outputs.files.singleFile) {
         //include "${project.name}-${project.version}.jar"
         into "radar/webapps"
-        rename(".*\\.war", "ROOT.war")
+        rename(".*\\.war", "cwms-data.war")
     }
 }
 
@@ -245,4 +267,20 @@ task dockerBuild(type: Exec, dependsOn: prepareDockerBuild) {
     workingDir "$buildDir/docker"
     executable "docker"
     args "build", "--tag=cwms-rest-api:" + project.version, "."
+}
+
+task generateTimeSeriesSamples(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+
+    mainClass = "helpers.TsRandomSampler"
+
+    def url = project.findProperty("dbUrl") ?: ""
+    def user = project.findProperty("dbUser") ?: ""
+    def password = project.findProperty("dbPassword") ?: ""
+
+    args url
+    args user
+    args password
 }

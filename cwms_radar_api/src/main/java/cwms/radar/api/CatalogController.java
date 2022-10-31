@@ -24,7 +24,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Optional;
 import java.util.logging.Logger;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
@@ -174,11 +173,9 @@ public class CatalogController implements CrudHandler {
                     String.class, UnitSystem.SI.getValue(), metrics,
                     name(CatalogController.class.getName(), "getOne"));
 
-            Optional<String> office = Optional.ofNullable(
-                    ctx.queryParamAsClass("office", String.class).allowNullable()
+            String office = ctx.queryParamAsClass("office", String.class).allowNullable()
                             .check(Office::validOfficeCanNull, "Invalid office provided")
-                            .get()
-            );
+                            .get();
 
             String like = ctx.queryParamAsClass("like", String.class).getOrDefault(".*");
 

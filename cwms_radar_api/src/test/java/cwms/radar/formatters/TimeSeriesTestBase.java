@@ -18,7 +18,7 @@ public abstract class TimeSeriesTestBase {
         return ts;
     }
 
-    public void SingleTimeseriesFormat() {
+    public void singleTimeseriesFormat() {
         TimeSeries ts = getTimeSeries();
         OutputFormatter v2 = getOutputFormatter();
 		String result = v2.format(ts);

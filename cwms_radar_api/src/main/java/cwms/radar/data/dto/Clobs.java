@@ -11,8 +11,6 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import cwms.radar.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -24,7 +22,7 @@ public class Clobs extends CwmsDTOPaginated {
     @XmlElement(name="clob")
     // Use the array shape to optimize data transfer to client
     //@JsonFormat(shape=JsonFormat.Shape.ARRAY)
-    @Schema(implementation = Clob.class, description = "List of retrieved clobs")
+    @Schema(description = "List of retrieved clobs")
     List<Clob> clobs;
 
 

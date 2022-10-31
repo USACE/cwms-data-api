@@ -1,5 +1,6 @@
 package cwms.radar.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import kotlin.jvm.functions.Function1;
 
 /***
@@ -25,26 +27,40 @@ import kotlin.jvm.functions.Function1;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public abstract class CwmsDTOPaginated implements CwmsDTO {
-    private static Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
+    private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
 
-    @Schema(description = "The cursor to the current page of data")
+    @Schema(
+        description = "The cursor to the current page of data",
+        accessMode = AccessMode.READ_ONLY
+    )
     protected String page;
 
-    @Schema(description = "The cursor to the next page of data; null if there is no more data")
+    @Schema(
+        description = "The cursor to the next page of data; null if there is no more data",
+        accessMode = AccessMode.READ_ONLY
+    )
     @XmlElement(name = "next-page")
+    @JsonProperty("next-page")
     protected String nextPage;
 
     @JsonInclude(value = Include.NON_NULL)
-    @Schema(description = "The total number of records retrieved; null or not present if not supported or unknown")
+    @Schema(        
+        description = "The total number of records retrieved; null or not present if not supported or unknown",
+        accessMode = AccessMode.READ_ONLY
+    )
     protected Integer total;
 
-    @Schema(description = "The number of records fetched per-page; this may be larger than the number of records actually retrieved")
+    @Schema(
+        description = "The number of records fetched per-page; this may be larger than the number of records actually retrieved",
+        accessMode = AccessMode.READ_ONLY
+    )
     @XmlElement(name = "page-size")
+    @JsonProperty("page-size")
     protected int pageSize;
 
     static final Encoder encoder = Base64.getEncoder();
     static final Decoder decoder = Base64.getDecoder();
-    static final String delimiter = "||";
+    public static final String delimiter = "||";
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
     protected CwmsDTOPaginated() { }

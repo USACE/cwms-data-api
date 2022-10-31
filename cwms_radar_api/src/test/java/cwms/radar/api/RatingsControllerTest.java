@@ -1,5 +1,27 @@
 package cwms.radar.api;
 
+import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.codahale.metrics.MetricRegistry;
+import cwms.radar.data.dao.DaoTest;
+import cwms.radar.data.dao.JsonRatingUtils;
+import cwms.radar.data.dao.JsonRatingUtilsTest;
+import cwms.radar.formatters.Formats;
+import fixtures.TestServletInputStream;
+import hec.data.cwmsRating.RatingSet;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+import io.javalin.http.util.ContextUtil;
+import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.plugin.json.JsonMapperKt;
+import io.restassured.response.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -12,22 +34,7 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-
-import com.codahale.metrics.MetricRegistry;
-import cwms.radar.api.RatingController;
-import cwms.radar.data.dao.DaoTest;
-import cwms.radar.data.dao.JsonRatingUtils;
-import cwms.radar.data.dao.JsonRatingUtilsTest;
-import cwms.radar.formatters.Formats;
-import cwms.radar.helpers.ResourceHelper;
-import fixtures.TestServletInputStream;
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.http.HandlerType;
-import io.javalin.http.util.ContextUtil;
-import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.json.JsonMapperKt;
-import io.restassured.response.Response;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
@@ -35,16 +42,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import hec.data.cwmsRating.RatingSet;
-
-import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 
 class RatingsControllerTest {
@@ -81,7 +78,7 @@ class RatingsControllerTest {
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
         //Context context = new Context(request,response, attributes);
-        Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.POST,attributes);
+        Context context = ContextUtil.init(request,response,"*",new HashMap<>(), HandlerType.POST,attributes);
         context.attribute("database",this.conn);
 
         when(request.getContentLength()).thenReturn(testBody.length());
@@ -93,7 +90,11 @@ class RatingsControllerTest {
         when(request.getContentType()).thenReturn(Formats.XMLV2);
 
         logger.log(Level.INFO, "Test post_to_create_passed_to_deserializeXml may trigger a RatingException - this is fine.");
-        controller.create(context);
+        try {
+            controller.create(context);
+        } catch (IllegalArgumentException e){
+            logger.log(Level.INFO, "Test post_to_create_passed_to_deserializeXml caught an IllegalArgumentException - this is fine.");
+        }
         // For this test, it's ok that the server throws a RatingException
         // Only want to check that the controller accessed our mock dao in the expected way
         verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML);  // Curious that it is XML and not XMLv2
@@ -114,7 +115,7 @@ class RatingsControllerTest {
             String resourcePath = "cwms/radar/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
             String refRating = JsonRatingUtilsTest.loadResourceAsString(resourcePath);
             assertNotNull(refRating);
-            RatingSet refRatingSet = RatingSet.fromXml(refRating);
+            RatingSet refRatingSet = RatingXmlFactory.ratingSet(refRating);
             String office = "SWT";
 
             String refSpecId = refRatingSet.getName();
@@ -199,7 +200,7 @@ class RatingsControllerTest {
             String resourcePath = "cwms/radar/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
             String refRatingXml = JsonRatingUtilsTest.loadResourceAsString(resourcePath);
             assertNotNull(refRatingXml);
-            RatingSet refRatingSet = RatingSet.fromXml(refRatingXml);
+            RatingSet refRatingSet = RatingXmlFactory.ratingSet(refRatingXml);
             String office = "SWT";
 
             String refSpecId = refRatingSet.getName();

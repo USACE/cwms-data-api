@@ -1,0 +1,70 @@
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha256-2H3fkXt6FEmrReK448mDVGKb3WW2ZZw35gI7vqHOE4Y=" crossorigin="anonymous"/>
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400i,600,600i,700,700i|Roboto:400,700"/>
+                <link rel="stylesheet" href="./css/HEC.header.css"/>
+                <!-- Load CSS in html to prevent element flashing as page loads in -->
+                <div id="main-header">
+                    <div class="main-bar">
+                        <div class="header-float">
+                            <div class="container-fluid">
+                                <div class="site-logo">
+                                    <a href="/">
+                                        <img alt="USACE Logo" src="./images/usace-logo-color.svg" />
+                                    </a>
+                                    <div class="reg">®</div>
+                                </div>
+                                <div id="desktop-menu">
+                                    <ul class="top-level-menu">
+                                        <li><a href="./swagger-docs">Swagger Docs</a></li>
+                                        <li><a href="./swagger-ui.html">Swagger UI</a></li>
+                                    </ul>
+                                </div>
+                                <div id="mobile-menu">
+                                    <span class="burger-bar" id="burgerBtn" onclick="openNav()">&#9776;</span>
+                                </div>
+                            </div>
+                            <div id="mobileNav" class="overlay">
+                                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                                <div id="mobileNavContent" class="overlay-content">
+                                    <a class="home mobile-top-level-menu" href="./swagger-docs">Swagger Docs</a>
+                                    <a class="home mobile-top-level-menu" href="./swagger-ui.html">Swagger UI</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="site-title">
+                        <div class="header-float">
+                            <div class="container-fluid">
+                                <div class="sub-header">
+                                    <div class="site-name">US Army Corps of Engineers</div>
+                                    <div class="site-area">
+                                        CWMS Restful API for Data Retrieval
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Burger Bar Control -->
+                <script defer type="text/javascript" src="./js/header.js"></script>
+                <script type="text/javascript">
+                    // Setup the page's collapses
+                    let coll_legend = document.getElementsByClassName("collapsible-legend");
+                    for (var i = 0; i < coll_legend.length; i++) {
+                        coll_legend[i].addEventListener("click", function () {
+                            this.classList.toggle("active");
+                            let content = this.nextElementSibling;
+                            let arrow = document.getElementById("arrow");
+                            if (content.style.display === "block") {
+                                content.style.display = "none";
+                                arrow.className = "sub-arrow-down";
+                            } else {
+                                content.style.display = "block";
+                                arrow.className = "sub-arrow-up";
+                            }
+                        });
+                    }
+                </script>
+
+                <div id="header-pane"></div>
