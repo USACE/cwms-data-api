@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -75,15 +76,17 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         Map<RatingTemplate, List<String>> map = new LinkedHashMap<>();
 
-        query.fetchStream().forEach(rec -> {
-            RatingTemplate template = buildRatingTemplate(rec);
-            String specID = rec.get(idField);
+        try (Stream<? extends Record> stream = query.fetchStream()) {
+            stream.forEach(rec -> {
+                RatingTemplate template = buildRatingTemplate(rec);
+                String specID = rec.get(idField);
 
-            List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-            if (specID != null) {
-                list.add(specID);
-            }
-        });
+                List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
+                if (specID != null) {
+                    list.add(specID);
+                }
+            });
+        }
 
         return map.entrySet().stream()
                 .map(entry -> new RatingTemplate.Builder()
@@ -121,15 +124,17 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         Map<RatingTemplate, List<String>> map = new LinkedHashMap<>();
 
-        query.fetchStream().forEach(rec -> {
-            RatingTemplate template = buildRatingTemplate(rec);
-            String specID = rec.get(specView.RATING_ID);
+        try (Stream<? extends Record> stream = query.fetchStream()) {
+            stream.forEach(rec -> {
+                RatingTemplate template = buildRatingTemplate(rec);
+                String specID = rec.get(specView.RATING_ID);
 
-            List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-            if (specID != null) {
-                list.add(specID);
-            }
-        });
+                List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
+                if (specID != null) {
+                    list.add(specID);
+                }
+            });
+        }
 
         retval = map.entrySet().stream()
                 .map(entry -> new RatingTemplate.Builder()

@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -74,17 +75,19 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         //	logger.info(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
-        query.fetchStream().forEach(rec -> {
-            RatingSpec template = buildRatingSpec(rec);
+        try (Stream<? extends Record> stream = query.fetchStream()) {
+            stream.forEach(rec -> {
+                RatingSpec template = buildRatingSpec(rec);
 
-            Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
-            ZonedDateTime effective = toZdt(effectiveDate);
+                Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
+                ZonedDateTime effective = toZdt(effectiveDate);
 
-            List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-            if (effective != null) {
-                list.add(effective);
-            }
-        });
+                List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
+                if (effective != null) {
+                    list.add(effective);
+                }
+            });
+        }
 
         return map.entrySet().stream()
                 .map(entry -> new RatingSpec.Builder()
@@ -166,17 +169,19 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         logger.info(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
-        query.fetchStream().forEach(rec -> {
-            RatingSpec template = buildRatingSpec(rec);
+        try (Stream<? extends Record> stream = query.fetchStream()) {
+            stream.forEach(rec -> {
+                RatingSpec template = buildRatingSpec(rec);
 
-            Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
-            ZonedDateTime effective = toZdt(effectiveDate);
+                Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
+                ZonedDateTime effective = toZdt(effectiveDate);
 
-            List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-            if (effective != null) {
-                list.add(effective);
-            }
-        });
+                List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
+                if (effective != null) {
+                    list.add(effective);
+                }
+            });
+        }
 
         retval = map.entrySet().stream()
                 .map(entry -> new RatingSpec.Builder()
@@ -224,17 +229,19 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         //		logger.info(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
-        query.fetchStream().forEach(rec -> {
-            RatingSpec template = buildRatingSpec(rec);
+        try (Stream<? extends Record> stream = query.fetchStream()) {
+            stream.forEach(rec -> {
+                RatingSpec template = buildRatingSpec(rec);
 
-            Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
-            ZonedDateTime effective = toZdt(effectiveDate);
+                Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
+                ZonedDateTime effective = toZdt(effectiveDate);
 
-            List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-            if (effective != null) {
-                list.add(effective);
-            }
-        });
+                List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
+                if (effective != null) {
+                    list.add(effective);
+                }
+            });
+        }
 
         retval = map.entrySet().stream()
                 .map(entry -> new RatingSpec.Builder()
