@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import kotlin.Pair;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -26,12 +27,14 @@ import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectOrderByStep;
 import org.jooq.SelectSeekStep1;
 import org.jooq.TableField;
-
+import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 
 public class LocationGroupDao extends JooqDao<LocationGroup> {
+
+    public static final String CWMS = "CWMS";
 
     public LocationGroupDao(DSLContext dsl) {
         super(dsl);
@@ -50,18 +53,28 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
             return new Pair<>(group, loc);
         };
 
+        Condition assignmentOffice;
+        if (CWMS.equalsIgnoreCase(officeId)) {
+            assignmentOffice = DSL.trueCondition();
+        } else {
+            assignmentOffice = alga.DB_OFFICE_ID.eq(officeId);
+        }
+
         List<Pair<LocationGroup, AssignedLocation>> assignments = dsl.select(alga.CATEGORY_ID,
-                alga.GROUP_ID, alga.DB_OFFICE_ID, alga.LOCATION_ID, alga.ALIAS_ID, alga.ATTRIBUTE,
-                alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                alcg.CAT_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC,
-                alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
-                .from(alcg).join(alga)
-                .on(alcg.GRP_DB_OFFICE_ID.eq(alga.DB_OFFICE_ID)
-                                .and(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID))
-                                .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+                        alga.GROUP_ID, alga.DB_OFFICE_ID, alga.LOCATION_ID, alga.ALIAS_ID,
+                        alga.ATTRIBUTE, alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID,
+                        alga.SHARED_REF_LOCATION_ID,
+                        alcg.CAT_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID, alcg.LOC_CATEGORY_DESC,
+                        alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
+                .from(alcg).leftJoin(alga)
+                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
                 .where(alcg.LOC_CATEGORY_ID.eq(categoryId)
                         .and(alcg.LOC_GROUP_ID.eq(groupId))
-                        .and(alcg.GRP_DB_OFFICE_ID.eq(officeId)))
+                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+                        .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
+                        .and(assignmentOffice)
+                )
                 .orderBy(alga.ATTRIBUTE).fetchSize(1000).fetch(mapper);
 
         // Might want to verify that all the groups in the list are the same?
@@ -147,16 +160,23 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
 
         SelectConnectByStep<? extends Record> connectBy;
         SelectOnConditionStep<? extends Record> onStep = dsl.select(alga.CATEGORY_ID,
-                alga.GROUP_ID, alga.DB_OFFICE_ID, alga.LOCATION_ID, alga.ALIAS_ID, alga.ATTRIBUTE,
-                alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                alcg.CAT_DB_OFFICE_ID, alcg.GRP_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID,
-                alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
-                .from(alcg).join(alga)
-                .on(alcg.GRP_DB_OFFICE_ID.eq(alga.DB_OFFICE_ID)
-                        .and(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID))
+                        alga.GROUP_ID, alga.DB_OFFICE_ID, alga.LOCATION_ID, alga.ALIAS_ID,
+                        alga.ATTRIBUTE,
+                        alga.REF_LOCATION_ID, alga.SHARED_ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+                        alcg.CAT_DB_OFFICE_ID, alcg.GRP_DB_OFFICE_ID, alcg.LOC_CATEGORY_ID,
+                        alcg.LOC_CATEGORY_DESC, alcg.LOC_GROUP_DESC, alcg.LOC_GROUP_ATTRIBUTE)
+                .from(alcg).leftJoin(alga)
+                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
                         .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
         if (officeId != null) {
-            connectBy = onStep.where(alcg.GRP_DB_OFFICE_ID.eq(officeId));
+            if (CWMS.equalsIgnoreCase(officeId)) {
+                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
+                        .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS)));
+            } else {
+                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
+                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+                        .and(alga.DB_OFFICE_ID.eq(officeId)));
+            }
         } else {
             connectBy = onStep;
         }
@@ -166,7 +186,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
                 .stream().map(mapper::map).forEach(pair -> {
                     LocationGroup locationGroup = pair.component1();
                     List<AssignedLocation> list = map.computeIfAbsent(locationGroup,
-                        k -> new ArrayList<>());
+                            k -> new ArrayList<>());
                     list.add(pair.component2());
                 });
 
@@ -182,9 +202,9 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
         AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         TableField[] columns = new TableField[]{table.CAT_DB_OFFICE_ID, table.LOC_CATEGORY_ID,
-            table.LOC_CATEGORY_DESC, table.GRP_DB_OFFICE_ID, table.LOC_GROUP_ID,
-            table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID, table.SHARED_REF_LOCATION_ID,
-            table.LOC_GROUP_ATTRIBUTE};
+                table.LOC_CATEGORY_DESC, table.GRP_DB_OFFICE_ID, table.LOC_GROUP_ID,
+                table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID, table.SHARED_REF_LOCATION_ID,
+                table.LOC_GROUP_ATTRIBUTE};
 
         SelectJoinStep<Record> step = dsl.selectDistinct(columns).from(table);
 
@@ -206,7 +226,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
 
         List<Field<?>> fieldsInRecord = Arrays.asList(avLocRecord.fields());
 
-        Set<TableField<?,?>> grpAssgnFields = new LinkedHashSet<>();
+        Set<TableField<?, ?>> grpAssgnFields = new LinkedHashSet<>();
         grpAssgnFields.add(alga.CATEGORY_ID);
         grpAssgnFields.add(alga.GROUP_ID);
         grpAssgnFields.add(alga.ATTRIBUTE);
@@ -226,7 +246,6 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
         return feature;
     }
 
-
     public FeatureCollection buildFeatureCollectionForLocationGroup(String officeId,
                                                                     String categoryId,
                                                                     String groupId, String units) {
@@ -234,8 +253,8 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
         AV_LOC al = AV_LOC.AV_LOC;
 
         SelectSeekStep1<Record, BigDecimal> select = dsl.select(al.asterisk(), alga.CATEGORY_ID,
-                alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                alga.SHARED_ALIAS_ID)
+                        alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+                        alga.SHARED_ALIAS_ID)
                 .from(al).join(alga).on(al.LOCATION_ID.eq(alga.LOCATION_ID))
                 .where(alga.DB_OFFICE_ID.eq(officeId)
                         .and(alga.CATEGORY_ID.eq(categoryId)

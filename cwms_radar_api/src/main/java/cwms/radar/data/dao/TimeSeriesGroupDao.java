@@ -18,12 +18,13 @@ import org.jooq.RecordMapper;
 import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectOrderByStep;
 import org.jooq.SelectSeekStep1;
-import org.jooq.conf.ParamType;
+import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static final Logger logger = Logger.getLogger(TimeSeriesGroupDao.class.getName());
+    public static final String CWMS = "CWMS";
 
     public TimeSeriesGroupDao(DSLContext dsl) {
         super(dsl);
@@ -67,9 +68,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                         catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
                         grpAssgn.GROUP_ID, grpAssgn.TS_ID, grpAssgn.TS_CODE, grpAssgn.ATTRIBUTE,
                         grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID)
-                .from(catGrp).leftOuterJoin(grpAssgn)
-                .on(catGrp.GRP_DB_OFFICE_ID.eq(grpAssgn.DB_OFFICE_ID)
-                        .and(catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID))
+                .from(catGrp).leftJoin(grpAssgn)
+                .on(catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
                         .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)));
 
         SelectOrderByStep<?> select = selectOn;
@@ -144,32 +144,31 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
 
     private Condition buildWhereCondition(String officeId, String categoryId, String groupId) {
-        Condition whereCondition = null;
+        AV_TS_CAT_GRP atcg = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
+        Condition whereCondition = DSL.trueCondition();
+
         if (officeId != null && !officeId.isEmpty()) {
-            whereCondition = and(whereCondition,
-                    AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId));
+            if (CWMS.equalsIgnoreCase(officeId)) {
+                whereCondition = whereCondition
+                        .and(atcg.CAT_DB_OFFICE_ID.eq(CWMS))
+                        .and(atcg.GRP_DB_OFFICE_ID.eq(CWMS));
+                // If its CWMS then we show results for all offices.  Don't match on DB_OFFICE_ID
+            } else {
+                whereCondition = whereCondition
+                        .and(atcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
+                        .and(atcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+                        .and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(officeId));
+            }
         }
 
         if (categoryId != null && !categoryId.isEmpty()) {
-            whereCondition = and(whereCondition,
-                    AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID.eq(categoryId));
+            whereCondition = whereCondition.and(atcg.TS_CATEGORY_ID.eq(categoryId));
         }
 
         if (groupId != null && !groupId.isEmpty()) {
-            whereCondition = and(whereCondition,
-                    AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID.eq(groupId));
+            whereCondition = whereCondition.and(atcg.TS_GROUP_ID.eq(groupId));
         }
         return whereCondition;
-    }
-
-    private Condition and(Condition whereCondition, Condition cond) {
-        Condition retval;
-        if (whereCondition == null) {
-            retval = cond;
-        } else {
-            retval = whereCondition.and(cond);
-        }
-        return retval;
     }
 
 
