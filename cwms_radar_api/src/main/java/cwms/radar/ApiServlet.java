@@ -105,7 +105,7 @@ public class ApiServlet extends HttpServlet {
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
-    public static final String VERSION = "2.4";
+    public static final String VERSION = "2.5";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
