@@ -61,10 +61,14 @@ public class StreamDao extends JooqDao<Stream>
     private Set<Stream> getTributaries(String streamId, String unitSystem, String officeId)  throws SQLException
     {
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-        Connection c = dsl.configuration().connectionProvider().acquire();
-        String pStationUnit = UnitSystem.EN.value().equals(unitSystem) ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
-        ResultSet rs = streamJooq.catStreams(c, null, pStationUnit, null, streamId, null, null, null, null, null, null, null, null, null, null, null, null, officeId);
-        return buildStreamsFromResultSet(rs, streamId, unitSystem);
+
+        return dsl.connectionResult(c -> {
+            String pStationUnit = UnitSystem.EN.value().equals(unitSystem) ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
+            ResultSet rs;
+            rs = streamJooq.catStreams(c, null, pStationUnit, null, streamId, null, null, null, null, null, null, null, null, null, null, null, null, officeId);
+
+            return buildStreamsFromResultSet(rs, streamId, unitSystem);
+        });
     }
 
     private Set<Stream> buildStreamsFromResultSet(ResultSet result, String parentStreamId, String unitSystem) throws SQLException
