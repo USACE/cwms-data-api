@@ -171,7 +171,7 @@ public class LocationGroupDao extends JooqDao<LocationGroup> {
         if (officeId != null) {
             if (CWMS.equalsIgnoreCase(officeId)) {
                 connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
-                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS)));
+                        .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS)));
             } else {
                 connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
                         .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
