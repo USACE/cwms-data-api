@@ -114,7 +114,7 @@ dependencies {
     testImplementation "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6"
     testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
 
-    implementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
+    testImplementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
 
     testImplementation "org.testcontainers:testcontainers:1.17.3"
     testImplementation 'org.testcontainers:database-commons:1.17.3'
