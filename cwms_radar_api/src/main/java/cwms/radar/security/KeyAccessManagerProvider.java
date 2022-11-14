@@ -11,7 +11,7 @@ public class KeyAccessManagerProvider implements AccessManagerProvider {
     }
 
     @Override
-    public RadarAccessManager create() {        
+    public RadarAccessManager create() {   
         return new KeyAccessManager();
     }
     

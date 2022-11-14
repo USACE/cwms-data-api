@@ -9,11 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import org.apache.commons.io.IOUtils;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import cwms.radar.ApiServlet;
+import cwms.radar.security.KeyAccessManager;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 
@@ -82,6 +85,18 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             // ADD TestPrincipal with real session key here; generate the session key using
             // the cwmsDb.connection functions to call get_user_credentials as appropriate.
             // OR... forcibly add the fake session_key to the at_sec_session table. dealers choice.
+            cwmsDb.connection( (conn) -> {
+                String digest = KeyAccessManager.getDigest("TestKey".getBytes());
+                try(PreparedStatement insertApiKey = ((Connection)conn).prepareStatement("insert into apikeys(key,username) values (?,?)");){
+                    insertApiKey.setString(1,digest);
+                    insertApiKey.setString(2,"USER1");
+                    insertApiKey.execute();
+                }
+                catch(SQLException ex) {
+                    throw new RuntimeException("can't set fake user",ex);
+                }
+            },"CWMS_20");
+
             authValve.addUser("user1",
                               new TestCwmsUserPrincipal("user1",
                                                         "testingUser1SessionKey",
