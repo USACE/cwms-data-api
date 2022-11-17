@@ -14,7 +14,12 @@
               testOnConnect="true"
               testWhileIdle="true"
               timeBetweenEvictionRunsMillis="5000"
-              jdbcInterceptors="StatementFinalizer;StatementCache(callable=true);SlowQueryReport(threshold=5000)"
+              removeAbandonedOn="true"
+              logValidationErrors="true"
+              suspectTimeout="15"
+              jdbcInterceptors="StatementFinalizer;StatementCache(callable=true);SlowQueryReport(threshold=5000);ResetAbandonedTimer"
+              logAbandoned="true"
+              maxAge="3600000"
               factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
     />
 
