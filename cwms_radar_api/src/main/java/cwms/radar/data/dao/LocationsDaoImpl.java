@@ -419,20 +419,4 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         return condition;
     }
 
-    private Condition buildCatalogWhere(String unitSystem, String office,
-                                        String idLike, String categoryLike, String groupLike) {
-        Condition condition = buildCatalogWhere(unitSystem, office, idLike);
-        if (categoryLike != null) {
-            Condition categoryMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike);
-            condition = condition.and(categoryMatch);
-        }
-
-        if (groupLike != null) {
-            Condition groupMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP, groupLike);
-            condition = condition.and(groupMatch);
-        }
-
-        return condition;
-    }
-
 }
