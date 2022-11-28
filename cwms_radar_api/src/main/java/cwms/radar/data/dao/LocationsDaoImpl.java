@@ -366,7 +366,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     .map(this::buildLocationAlias).collect(toSet());
                 return buildCatalogEntry(row, aliases);
             })
-            .sorted(comparing(LocationCatalogEntry::getName))
             .collect(toList());
         return new Catalog(locCursor, total, pageSize, entries);
     }
