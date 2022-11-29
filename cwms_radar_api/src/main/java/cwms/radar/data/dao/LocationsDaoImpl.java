@@ -262,11 +262,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office) {
-        return getLocationCatalog(cursor, pageSize, unitSystem, office, null, null, null);
-    }
-
-    @Override
     public Catalog getLocationCatalog(String page, int pageSize, String unitSystem, String office,
                                       String idLike, String categoryLike, String groupLike) {
         //Now querying against AV_LOC2 as it gives us back the same information as querying against
