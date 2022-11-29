@@ -38,13 +38,8 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
     private static TestRealm realm;
     private static TestAuthValve authValve;
     private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_18XE);
-    private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "radar_cwmsdb");
+    private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
     private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms_schema_installer:21.1.1");
-
-    private static String DB_VERSION = System.getProperty("oracle.version", CwmsDatabaseContainer.ORACLE_19C);
-    private static String DB_VOLUME = System.getProperty("oracle.volume", "cwmsdb_radar_volume");
-    private static String CWMS_VERSION = System.getProperty("cwms.schema.version", "registry.hecdev.net/cwms/schema_installer:latest-dev");
-    
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -65,11 +60,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
         System.out.println(context.getDisplayName());
         if( radarInstance == null ){
             
-            cwmsDb = new CwmsDatabaseContainer(DB_VERSION)
+            cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
-                            .withVolumeName(DB_VOLUME)
-                            .withSchemaImage(CWMS_VERSION);                            
+                            .withVolumeName(ORACLE_VOLUME)
+                            .withSchemaImage(CWMS_DB_IMAGE);                            
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);
