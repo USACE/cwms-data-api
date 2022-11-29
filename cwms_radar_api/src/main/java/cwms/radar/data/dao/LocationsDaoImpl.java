@@ -324,7 +324,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             Condition officeGreaterThanCur = avLoc2.DB_OFFICE_ID.upper().gt(curOffice.toUpperCase());
             condition = condition.and(officeEqualCur).and(curOfficeLocationIdGreater).or(officeGreaterThanCur);
         } else {
-            condition.and(avLoc2.LOCATION_ID.upper().gt(locCursor));
+            condition = condition.and(avLoc2.LOCATION_ID.upper().gt(locCursor));
         }
         Field<String> dataId = avLoc2.LOCATION_ID.as("real_id");
         Field<Long> dataCode = avLoc2.LOCATION_CODE.as("real_code");
