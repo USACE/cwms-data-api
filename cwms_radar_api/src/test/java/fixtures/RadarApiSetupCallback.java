@@ -38,11 +38,19 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     private static TomcatServer radarInstance;
     private static CwmsDatabaseContainer cwmsDb;
+<<<<<<< HEAD
     private static TestRealm realm;
     private static TestAuthValve authValve;
     private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
     private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms_schema_installer:latest-dev");
+=======
+
+    private static String DB_VERSION = System.getProperty("oracle.version", CwmsDatabaseContainer.ORACLE_19C);
+    private static String DB_VOLUME = System.getProperty("oracle.volume", "cwmsdb_radar_volume");
+    private static String CWMS_VERSION = System.getProperty("cwms.schema.version", "registry.hecdev.net/cwms/schema_installer:latest-dev");
+    
+>>>>>>> e050d46 (General workflow works, database itself needs tweaks.)
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -78,10 +86,6 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
             System.out.println("warFile property:" + System.getProperty("warFile"));
 
-            realm = new TestRealm();
-            authValve = new TestAuthValve();
-
-
             // ADD TestPrincipal with real session key here; generate the session key using
             // the cwmsDb.connection functions to call get_user_credentials as appropriate.
             // OR... forcibly add the fake session_key to the at_sec_session table. dealers choice.
@@ -97,15 +101,12 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
                 }
             },"CWMS_20");
 
-            authValve.addUser("user1",
-                              new TestCwmsUserPrincipal("user1",
-                                                        "testingUser1SessionKey",
-                                                        Arrays.asList(ApiServlet.CWMS_USERS_ROLE)
-                                                        )
-                            );
-	        authValve.addUser("user2", new TestCwmsUserPrincipal("user2", "testingUser2SessionKey", Collections.emptyList()));
-
-            radarInstance = new TomcatServer("build/tomcat", System.getProperty("warFile"), 0, System.getProperty("warContext"), realm , authValve);
+            radarInstance = new TomcatServer("build/tomcat", 
+                                             System.getProperty("warFile"),
+                                             0,
+                                             System.getProperty("warContext"), 
+                                             null,
+                                             null);
             radarInstance.start();
             System.out.println("Tomcat Listing on " + radarInstance.getPort());
             RestAssured.baseURI=RadarApiSetupCallback.httpUrl();
@@ -169,10 +170,6 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     public static int httpPort() {
         return radarInstance.getPort();
-    }
-
-    public static TestRealm realm(){
-        return realm;
     }
 
     public static CwmsDatabaseContainer getDatabaseLink() {

@@ -14,8 +14,16 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
+
 import cwms.radar.ApiServlet;
 import cwms.radar.api.errors.RadarError;
+import cwms.radar.datasource.ApiKeyUserPreparer;
+import cwms.radar.datasource.ConnectionPreparer;
+import cwms.radar.datasource.ConnectionPreparingDataSource;
+import cwms.radar.datasource.DelegatingConnectionPreparer;
 import cwms.radar.spi.RadarAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
@@ -23,6 +31,8 @@ import io.javalin.http.Handler;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_SEC_PACKAGE;
 
 public class KeyAccessManager extends RadarAccessManager{
     private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
@@ -58,8 +68,20 @@ public class KeyAccessManager extends RadarAccessManager{
      * @param ctx
      * @param user
      */
-    private void prepareContextWithUser(Context ctx, String user) {
+    private void prepareContextWithUser(Context ctx, String user) throws SQLException {
         logger.info("Validated Api Key for user=" + user);
+        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+
+        ConnectionPreparer newPreparer = new ApiKeyUserPreparer(user);
+        if(dataSource instanceof ConnectionPreparingDataSource) {
+            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
+            ConnectionPreparer existingPreparer = cpDs.getPreparer();
+
+            // Have it do our extra step last.
+            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, newPreparer));
+        } else {            
+            ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(newPreparer, dataSource));
+        }
     }
 
     private String authorized(Context ctx, Set<RouteRole> routeRoles)
@@ -78,10 +100,9 @@ public class KeyAccessManager extends RadarAccessManager{
     private String checkKey(String key, Context ctx) {
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement("select user_id from cwms_20.apikeys where key = ?")) 
+            PreparedStatement stmt = conn.prepareStatement("select username from cwms_20.apikeys where key = ?")) 
         {
-            String digest = getDigest(key.getBytes());            
-            stmt.setString(1,digest);
+            stmt.setString(1,key);
             try(ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getString(1);

@@ -18,7 +18,7 @@
         <url-pattern>/status/prometheus</url-pattern>
     </servlet-mapping>
 
-
+<!--
     <login-config>
         <auth-method>BASIC</auth-method>
         <realm-name></realm-name>
@@ -39,6 +39,7 @@
 
     <security-role>
         <role-name>CWMS Users</role-name>
+<<<<<<< HEAD
     </security-role>
 
     <filter>
@@ -58,4 +59,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+=======
+    </security-role>-->
+>>>>>>> e050d46 (General workflow works, database itself needs tweaks.)
 </web-app>

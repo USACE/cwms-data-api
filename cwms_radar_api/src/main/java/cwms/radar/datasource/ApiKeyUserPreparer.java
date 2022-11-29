@@ -22,6 +22,8 @@ public class ApiKeyUserPreparer implements ConnectionPreparer {
             try (DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
                 PreparedStatement setUser = conn.prepareStatement("begin DBMS_SESSION.set_context('CWMS_ENV','CWMS_USER',?); end;")
                 ) {
+                CWMS_ENV_PACKAGE.call_CLEAR_SESSION_PRIVILEGES(dsl.configuration());
+                CWMS_ENV_PACKAGE.call_SET_SESSION_PRIVILEGES(dsl.configuration());
                 setUser.setString(1,user);
                 setUser.execute();
                 CWMS_ENV_PACKAGE.call_SET_SESSION_PRIVILEGES(dsl.configuration());

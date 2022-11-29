@@ -154,16 +154,7 @@ public class TomcatServer {
         int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","0").trim());
 
         try {
-            TestAuthValve authValve = new TestAuthValve();
-            authValve.addUser("user1",
-                              new TestCwmsUserPrincipal("user1",
-                                                        "testingUser1SessionKey",
-                                                        Arrays.asList(ApiServlet.CWMS_USERS_ROLE)
-                                                        )
-                            );
-	        authValve.addUser("user2", new TestCwmsUserPrincipal("user2", "testingUser2SessionKey", Collections.emptyList()));
-            TestRealm realm = new TestRealm();
-            TomcatServer tomcat = new TomcatServer(baseDir, radarWar, port, contextName, realm, authValve);
+            TomcatServer tomcat = new TomcatServer(baseDir, radarWar, port, contextName, null, null);
             tomcat.start();
             tomcat.await();
         } catch (Exception e) {

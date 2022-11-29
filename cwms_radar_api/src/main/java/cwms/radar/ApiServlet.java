@@ -161,7 +161,8 @@ public class ApiServlet extends HttpServlet {
         javalin = Javalin.createStandalone(config -> {
                     config.defaultContentType = "application/json";
                     config.contextPath = context;
-                    config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
+                    getOpenApiOptions(config);
+                    //config.registerPlugin(new OpenApiPlugin());
                     //config.enableDevLogging();
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
                 })
@@ -200,9 +201,6 @@ public class ApiServlet extends HttpServlet {
                     RadarError re = new RadarError("Bad Request");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
-                .exception(NotFoundException.class, (e, ctx) -> {
-                    RadarError re = new RadarError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
@@ -343,19 +341,45 @@ public class ApiServlet extends HttpServlet {
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
-    private OpenApiOptions getOpenApiOptions() {
+    private void getOpenApiOptions(JavalinConfig config) {
         Info applicationInfo = new Info().title("CWMS Radar").version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
-        return new OpenApiOptions(applicationInfo)
-                .path("/swagger-docs")
-                .defaultDocumentation(doc -> {
-                    doc.json("500", RadarError.class);
-                    doc.json("400", RadarError.class);
-                    doc.json("401", RadarError.class);
-                    doc.json("403", RadarError.class);
-                    doc.json("404", RadarError.class);
-                })
-                .activateAnnotationScanningFor("cwms.radar.api");
+        String provider = System.getProperty("radar.access.provider","CwmsAccessManager");
+        RadarAccessManager am = buildAccessManager(provider);
+        Components components = new Components();
+        components.addSecuritySchemes(provider,
+                am.getScheme()
+        );
+        config.accessManager(am);
+
+        OpenApiOptions ops =
+            new OpenApiOptions(
+                () -> new OpenAPI().components(components)
+                                   .info(applicationInfo)
+                                   .addSecurityItem(new SecurityRequirement().addList(provider))
+        );
+        ops.path("/swagger-docs")
+            .responseModifier((ctx,api) -> {                
+                api.getPaths().forEach((key,path) -> {
+                    /* clear the lock icon from the GET handlers to reduce user confusion */
+                    Operation op = path.getGet();
+                    if (op != null) {
+                        logger.atInfo().log("removing security constraint for GET on " + key);
+                        op.setSecurity(new ArrayList<>());
+                    }
+                });                    
+                return api;
+            })
+            .defaultDocumentation(doc -> {
+                doc.json("500", RadarError.class);
+                doc.json("400", RadarError.class);
+                doc.json("401", RadarError.class);
+                doc.json("403", RadarError.class);
+                doc.json("404", RadarError.class);                
+            })
+            .activateAnnotationScanningFor("cwms.radar.api");
+        config.registerPlugin(new OpenApiPlugin(ops));
+        
     }
 
     @Override
