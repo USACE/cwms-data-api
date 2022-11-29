@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,6 +58,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
+    private static final long DELETED_TS_MARKER = 0L;
 
     public LocationsDaoImpl(DSLContext dsl) {
         super(dsl);
@@ -271,6 +273,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         //location group views. This makes the code clearer and improves performance.
         //If there is a performance improvement by switching back to location groups and querying against
         //location codes (previous implementation used location_id) for joins, feel free to implement.
+        Objects.requireNonNull(idLike, "a value must be provided for the idLike field. Specifiy .* if you don't care.");
         final AV_LOC2 avLoc2 = AV_LOC2.AV_LOC2;
         String locCursor = "*";
         String searchOffice = office;
@@ -278,7 +281,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         Catalog.CatalogPage catPage = null;
         int total;
         Condition condition = avLoc2.LOCATION_ID.upper().likeRegex(idLike.toUpperCase())
-                              .and(avLoc2.LOCATION_CODE.notEqual(0L))
+                              .and(avLoc2.LOCATION_CODE.notEqual(DELETED_TS_MARKER))
                               .and(avLoc2.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
         if (page == null || page.isEmpty()) {
             
@@ -287,20 +290,25 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             }
             if (searchOffice != null) {
                 condition =
-                        condition.and(avLoc2.DB_OFFICE_ID.upper().eq(searchOffice.toUpperCase()));
+                        condition.and(avLoc2.DB_OFFICE_ID.upper()
+                                 .eq(searchOffice.toUpperCase()));
             }
 
             if (categoryLike != null) {
-                condition.and(avLoc2.LOC_ALIAS_CATEGORY.upper().likeRegex(categoryLike.toUpperCase()));
+                condition = 
+                        condition.and(avLoc2.LOC_ALIAS_CATEGORY.upper()
+                                 .likeRegex(categoryLike.toUpperCase()));
             }
 
             if (groupLike != null) {
-                condition.and(avLoc2.LOC_ALIAS_GROUP.upper().likeRegex(groupLike.toUpperCase()));
+                condition = 
+                    condition.and(avLoc2.LOC_ALIAS_GROUP.upper()
+                             .likeRegex(groupLike.toUpperCase()));
             }
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                 .from(avLoc2)
                 .where(condition);
-            logger.info(count.getSQL(ParamType.INLINED));
+            logger.finer(count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1();
         } else {
             // get total from page
@@ -349,7 +357,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .leftOuterJoin(avLoc2).on(avLoc2.LOCATION_CODE.eq(limitCode))
             .where(condition)            
             .orderBy(avLoc2.DB_OFFICE_ID.asc(),limitId.asc(),avLoc2.ALIASED_ITEM.asc());
-        logger.info(query.getSQL(ParamType.INLINED));
+        logger.finer(query.getSQL(ParamType.INLINED));
         List<? extends CatalogEntry> entries = query.fetch()
             .stream()
             .map(r -> r.into(AV_LOC2.AV_LOC2))
