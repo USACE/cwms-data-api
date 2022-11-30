@@ -6,6 +6,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.name;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 
 import cwms.radar.api.NotFoundException;
@@ -26,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -33,14 +37,19 @@ import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
 import org.jetbrains.annotations.NotNull;
+import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Operator;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectLimitPercentStep;
 import org.jooq.SelectSeekStep2;
+import org.jooq.SelectSeekStep3;
 import org.jooq.Table;
+import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -49,6 +58,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
+    private static final long DELETED_TS_MARKER = 0L;
 
     public LocationsDaoImpl(DSLContext dsl) {
         super(dsl);
@@ -252,48 +262,97 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office) {
-        return getLocationCatalog(cursor, pageSize, unitSystem, office, null, null, null);
-    }
-
-    @Override
-    public Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office,
+    public Catalog getLocationCatalog(String page, int pageSize, String unitSystem, String office,
                                       String idLike, String categoryLike, String groupLike) {
         //Now querying against AV_LOC2 as it gives us back the same information as querying against
         //location group views. This makes the code clearer and improves performance.
         //If there is a performance improvement by switching back to location groups and querying against
         //location codes (previous implementation used location_id) for joins, feel free to implement.
+        Objects.requireNonNull(idLike, "a value must be provided for the idLike field. Specifiy .* if you don't care.");
+        final AV_LOC2 avLoc2 = AV_LOC2.AV_LOC2;
         String locCursor = "*";
-        Condition condition = buildCatalogWhere(unitSystem, office, idLike, categoryLike, groupLike);
+        String searchOffice = office;
+        String curOffice = null;
+        Catalog.CatalogPage catPage = null;
         int total;
-        if (cursor == null || cursor.isEmpty()) {
+        Condition condition = avLoc2.LOCATION_ID.upper().likeRegex(idLike.toUpperCase())
+                              .and(avLoc2.LOCATION_CODE.notEqual(DELETED_TS_MARKER))
+                              .and(avLoc2.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
+        if (page == null || page.isEmpty()) {
+            
+            if( categoryLike == null && groupLike == null) {
+                condition = condition.and(avLoc2.ALIASED_ITEM.isNull());
+            }
+            if (searchOffice != null) {
+                condition =
+                        condition.and(avLoc2.DB_OFFICE_ID.upper()
+                                 .eq(searchOffice.toUpperCase()));
+            }
 
+            if (categoryLike != null) {
+                condition = 
+                        condition.and(avLoc2.LOC_ALIAS_CATEGORY.upper()
+                                 .likeRegex(categoryLike.toUpperCase()));
+            }
+
+            if (groupLike != null) {
+                condition = 
+                    condition.and(avLoc2.LOC_ALIAS_GROUP.upper()
+                             .likeRegex(groupLike.toUpperCase()));
+            }
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
-                .from(AV_LOC2.AV_LOC2)
+                .from(avLoc2)
                 .where(condition);
-
+            logger.finer(count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1();
         } else {
-            // get totally from page
-            Catalog.CatalogPage page = new Catalog.CatalogPage(cursor);
-            locCursor = page.getCursorId();
-            total = page.getTotal();
+            // get total from page
+            catPage = new Catalog.CatalogPage(page);
+            locCursor = catPage.getCursorId();
+            total = catPage.getTotal();
+            pageSize = catPage.getPageSize();
+            searchOffice = catPage.getSearchOffice();
+            curOffice = catPage.getCurOffice();
+            idLike = catPage.getIdLike();
+            categoryLike = catPage.getLocCategoryLike();
+            groupLike = catPage.getLocGroupLike();
         }
+        
+        if (curOffice != null) {
+            Condition officeEqualCur = avLoc2.DB_OFFICE_ID.upper().eq(curOffice.toUpperCase());
+            Condition curOfficeLocationIdGreater = avLoc2.LOCATION_ID.upper().gt(locCursor);
+            Condition officeGreaterThanCur = avLoc2.DB_OFFICE_ID.upper().gt(curOffice.toUpperCase());
+            condition = condition.and(officeEqualCur).and(curOfficeLocationIdGreater).or(officeGreaterThanCur);
+        } else {
+            condition = condition.and(avLoc2.LOCATION_ID.upper().gt(locCursor));
+        }
+        Field<String> dataId = avLoc2.LOCATION_ID.as("real_id");
+        Field<Long> dataCode = avLoc2.LOCATION_CODE.as("real_code");
+        // data/limiter/query
+        Table<?> data = dsl.select(dataId,dataCode)
+                           .from(avLoc2)
+                           .where(condition)
+                           .orderBy(avLoc2.DB_OFFICE_ID.asc(),avLoc2.LOCATION_ID.asc())
+                           .asTable("data");
+        CommonTableExpression<?> limiter = name("limiter")
+                                            .fields("real_id","location_code")
+                                            .as(
+                                                select(field("\"real_id\""),field("\"real_code\""))
+                                                .from(data)
+                                                .where(field("rownum").lessOrEqual(pageSize))
+                                                );
+        Field<String> limitId = limiter.field("real_id",String.class);
+        Field<Long> limitCode = limiter.field("location_code",Long.class);
 
-        condition = condition.and(AV_LOC2.AV_LOC2.LOCATION_ID.upper().greaterThan(locCursor));
-
-        String locCodeField = "LOCATION_CODE_COL";
-        SelectLimitPercentStep<Record1<Long>> forLimit = dsl.select(AV_LOC2.AV_LOC2.LOCATION_CODE.as(locCodeField))
-            .from(AV_LOC2.AV_LOC2.as("LOCATION_CODES"))
-            .where(condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull()))
-            .orderBy(AV_LOC2.AV_LOC2.LOCATION_ID)
-            .limit(pageSize);
-
-        SelectConditionStep<Record> query = dsl.select(AV_LOC2.AV_LOC2.asterisk())
-            .from(AV_LOC2.AV_LOC2)
-            .where(condition)
-            .and(AV_LOC2.AV_LOC2.LOCATION_CODE.in(forLimit));
-
+        SelectSeekStep3<Record, String, ?, String> query = dsl.with(limiter).select(
+                limitId,
+                avLoc2.LOCATION_ID.as("alias_id"),
+                avLoc2.asterisk())
+            .from(limiter)
+            .leftOuterJoin(avLoc2).on(avLoc2.LOCATION_CODE.eq(limitCode))
+            .where(condition)            
+            .orderBy(avLoc2.DB_OFFICE_ID.asc(),limitId.asc(),avLoc2.ALIASED_ITEM.asc());
+        logger.finer(query.getSQL(ParamType.INLINED));
         List<? extends CatalogEntry> entries = query.fetch()
             .stream()
             .map(r -> r.into(AV_LOC2.AV_LOC2))
@@ -310,7 +369,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     .map(this::buildLocationAlias).collect(toSet());
                 return buildCatalogEntry(row, aliases);
             })
-            .sorted(comparing(LocationCatalogEntry::getName))
             .collect(toList());
         return new Catalog(locCursor, total, pageSize, entries);
     }
@@ -361,22 +419,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             Condition officeMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.DB_OFFICE_ID, office);
             condition = condition.and(officeMatch);
         }
-        return condition;
-    }
-
-    private Condition buildCatalogWhere(String unitSystem, String office,
-                                        String idLike, String categoryLike, String groupLike) {
-        Condition condition = buildCatalogWhere(unitSystem, office, idLike);
-        if (categoryLike != null) {
-            Condition categoryMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike);
-            condition = condition.and(categoryMatch);
-        }
-
-        if (groupLike != null) {
-            Condition groupMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP, groupLike);
-            condition = condition.and(groupMatch);
-        }
-
         return condition;
     }
 

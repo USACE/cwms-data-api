@@ -15,6 +15,4 @@ ENV RADAR_POOL_MAX_ACTIVE "10"
 ENV RADAR_POOL_MAX_IDLE "5"
 ENV RADAR_POOL_MIN_IDLE "2"
 
-#EXPOSE 7000
-
-#CMD ["java","-jar","/radar/radar-standalone.jar"]
+EXPOSE 7000

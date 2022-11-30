@@ -3,11 +3,23 @@
     <Resource name="jdbc/CWMS3" auth="Container" type="javax.sql.DataSource"
               username="${RADAR_JDBC_USERNAME}" password="${RADAR_JDBC_PASSWORD}"
               url="${RADAR_JDBC_URL}"
-              driverClassName="oracle.jdbc.driver.OracleDriver"
+              driverClassName="oracle.jdbc.OracleDriver"
               initialSize="${RADAR_POOL_INIT_SIZE}" maxWait="5000"
               maxActive="${RADAR_POOL_MAX_ACTIVE}" maxIdle="${RADAR_POOL_MAX_IDLE}"
               minIdle="${RADAR_POOL_MIN_IDLE}"
               validationQuery="select 1 from dual"
+              validationQueryTimeout="1"              
+              removeAbandonedOnBorrow="true"              
+              testOnBorrow="true"
+              testOnConnect="true"
+              testWhileIdle="true"
+              timeBetweenEvictionRunsMillis="5000"
+              removeAbandonedOn="true"
+              logValidationErrors="true"
+              suspectTimeout="15"
+              jdbcInterceptors="StatementFinalizer;StatementCache(callable=true);SlowQueryReport(threshold=5000);ResetAbandonedTimer"
+              logAbandoned="true"
+              maxAge="3600000"
               factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
     />
 
@@ -16,6 +28,5 @@
         global="jdbc/CWMS3"
         type="javax.sql.DataSource"
     />
-    <JarScanner scanBootstrapClassPath="false" scanClassPath="false"/>
-    <!--<Valve className="fixtures.TestAuthValve"/>-->
+    <JarScanner scanBootstrapClassPath="false" scanClassPath="false"/>    
 </Context>
