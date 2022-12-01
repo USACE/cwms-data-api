@@ -96,6 +96,8 @@ jobs:
           username: ${{ secrets.ALT_REG_USER }}
           password: ${{ secrets.ALT_REG_PASSWORD }}
       - name: Build docker image
+        env:
+          IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
         run: |
           ./gradlew dockerBuild
           docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
