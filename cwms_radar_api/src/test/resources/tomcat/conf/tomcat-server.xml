@@ -38,22 +38,30 @@
 
     -->
     <Service name="Catalina">
-    <Engine name="Catalina" defaultHost="localhost">
+        <Connector address="127.0.0.1" connectionTimeout="20000"
+               port="7000" protocol="HTTP/1.1" secure="true" proxyPort="443"
+               scheme="https" server="cwms" xpoweredby="false"
+               relaxedQueryChars="[]"    
+        >
+            <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+        </Connector>
 
-        <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+        <Engine name="Catalina" defaultHost="localhost">
+            
+            <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+            <!--
+            SingleSignOn valve, share authentication between web applications
+                    Documentation at: /docs/config/valve.html
+            -->
+                <!--<Valve className="fixtures.TestAuthValve"/>-->
+                <Valve className="org.apache.catalina.authenticator.SingleSignOn"/>
         <!--
-        SingleSignOn valve, share authentication between web applications
-                 Documentation at: /docs/config/valve.html
+        Access log processes all example.
+                    Documentation at: /docs/config/valve.html
+                    Note: The pattern used is equivalent to using pattern="common"
         -->
-            <!--<Valve className="fixtures.TestAuthValve"/>-->
-            <Valve className="org.apache.catalina.authenticator.SingleSignOn"/>
-    <!--
-     Access log processes all example.
-                 Documentation at: /docs/config/valve.html
-                 Note: The pattern used is equivalent to using pattern="common"
-    -->
-            <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" prefix="localhost_access_log" suffix=".txt" pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
-        </Host>
-    </Engine>
+                <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" prefix="localhost_access_log" suffix=".txt" pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
+            </Host>
+        </Engine>
     </Service>
 </Server>
