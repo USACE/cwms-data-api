@@ -102,21 +102,14 @@ public class FormatsTest
 
 	@Test
 	public void testParseBoth(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
-			Formats.parseHeaderAndQueryParm("application/json", "json");
-		});
-
-
+		ContentType ct = Formats.parseHeaderAndQueryParm("application/json", "json");
+		assertEquals(Formats.JSON,ct.toString(),"Wrong format type was chosen.");
 	}
 
 	@Test
 	public void testParseBothv2(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
-			Formats.parseHeaderAndQueryParm("application/json;version=2", "json");
-		});
-
-
-
+		ContentType ct = Formats.parseHeaderAndQueryParm("application/json;version=2", "json");
+		assertEquals(Formats.JSON,ct.toString(),"Wrong format type was chosen.");
 	}
 
 	@Test

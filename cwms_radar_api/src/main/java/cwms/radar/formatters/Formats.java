@@ -177,24 +177,14 @@ public class Formats {
 
     /**
      * Parses the supplied header param or queryParam to determine the content type.
-     * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
+     * If both are supplied the queryParam takes priority
      *
      * @param header     Accept header value
      * @param queryParam format query parameter value
      * @return an appropriate standard mimetype for lookup
      */
-    public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
+    public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {        
         if (queryParam != null && !queryParam.isEmpty()) {
-            if (header != null && !header.isEmpty() && !"*/*".equals(header.trim())) {
-                // If the user supplies an accept header and also a format= parameter, which
-                // should we use?
-                // The older format= query parameters don't give us the option to supply a
-                // version the
-                // way that the accept header does.
-                throw new FormattingException("Accept header and query parameter are both "
-                        + "present, this is not supported.");
-            }
-
             ContentType ct = parseQueryParam(queryParam);
             if (ct != null) {
                 return ct;

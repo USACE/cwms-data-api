@@ -39,6 +39,7 @@ import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.helpers.CWMSHeaders;
 import cwms.radar.security.CwmsAccessManager;
 import cwms.radar.security.Role;
 import io.javalin.Javalin;
@@ -155,6 +156,17 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options","nosniff");
                     ctx.header("X-Frame-Options","SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+
+                    String ctHeader = ctx.header("accept");
+                    String ctParam = ctx.queryParam("format");
+                    if(     ctHeader != null && !ctHeader.isEmpty()
+                        &&  ctParam != null && !ctParam.isEmpty()
+                    ) {
+                        ctx.header(CWMSHeaders.DEPRECATED_USAGE,"Usage of \"Accept\" header alone is preferred" + 
+                                                                " over the \"format\" query parameter. The format query" +
+                                                                " parameter used by default. Check for both if you aren't" +
+                                                                " getting desired results.");
+                    }
                 })
                 .exception(FormattingException.class, (fe, ctx) -> {
                     final RadarError re = new RadarError("Formatting error");
