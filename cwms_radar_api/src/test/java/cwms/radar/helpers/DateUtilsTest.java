@@ -48,11 +48,12 @@ class DateUtilsTest {
         // format the date using the pattern
         // parse it using DateUtils.
         // make sure it matches original date.
-        ZonedDateTime now = ZonedDateTime.of(2022, 12, 8, 9, 27, 14, 0, ZoneId.of("America/Los_Angeles"));
+        ZoneId losAngeles = ZoneId.of("America/Los_Angeles");
+        ZonedDateTime now = ZonedDateTime.of(2022, 12, 8, 9, 27, 14, 0, losAngeles);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(TimeSeries.ZONED_DATE_TIME_FORMAT);  // FYI this pattern throws away milliseconds.
         String formatted = now.format(formatter);  // looks like: 2022-12-08T09:27:14-0800[America/Los_Angeles]
 
-        ZonedDateTime parsed = DateUtils.parseUserDate(formatted, ZoneId.systemDefault(), null);
+        ZonedDateTime parsed = DateUtils.parseUserDate(formatted, losAngeles, null);
         assertEquals(now, parsed, "Date parsed from TimeSeries format does not match original date");
     }
 
