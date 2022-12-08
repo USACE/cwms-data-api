@@ -233,8 +233,8 @@ public final class Location implements CwmsDTO {
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
         private String name;
-        private double latitude;
-        private double longitude;
+        private Double latitude;
+        private Double longitude;
         private String officeId;
         private boolean active = true;
         private String publicName;
@@ -261,9 +261,9 @@ public final class Location implements CwmsDTO {
         public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "location"
                 + "-kind") String locationKind,
                        @JsonProperty(value = "timezone-name") ZoneId timezoneName,
-                       @JsonProperty(value = "latitude") double latitude,
-                       @JsonProperty(value = "longitude") double longitude, @JsonProperty(value =
-                "horizontal-datum") String horizontalDatum,
+                       @JsonProperty(value = "latitude") Double latitude,
+                       @JsonProperty(value = "longitude") Double longitude,
+                       @JsonProperty(value = "horizontal-datum") String horizontalDatum,
                        @JsonProperty(value = "office-id") String officeId) {
             this.name = name;
             this.publicName = name;

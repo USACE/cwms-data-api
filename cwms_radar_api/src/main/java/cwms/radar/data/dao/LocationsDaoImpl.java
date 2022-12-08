@@ -1,14 +1,13 @@
 package cwms.radar.data.dao;
 
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 
 import cwms.radar.api.NotFoundException;
@@ -24,15 +23,12 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
@@ -41,12 +37,9 @@ import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.Operator;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectLimitPercentStep;
-import org.jooq.SelectSeekStep2;
 import org.jooq.SelectSeekStep3;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
@@ -94,12 +87,25 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         if (timeZoneName != null) {
             zone = ZoneId.of(timeZoneName);
         }
+
+        Double latDouble = null;
+        BigDecimal latBigDec = loc.get(AV_LOC.LATITUDE);
+        if (latBigDec != null) {
+            latDouble = latBigDec.doubleValue();
+        }
+
+        Double longDouble = null;
+        BigDecimal longBigDec = loc.get(AV_LOC.LONGITUDE);
+        if (longBigDec != null) {
+            longDouble = longBigDec.doubleValue();
+        }
+
         Location.Builder locationBuilder = new Location.Builder(
                 loc.get(AV_LOC.LOCATION_ID),
                 loc.get(AV_LOC.LOCATION_KIND_ID),
                 zone,
-                loc.get(AV_LOC.LATITUDE).doubleValue(),
-                loc.get(AV_LOC.LONGITUDE).doubleValue(),
+                latDouble,
+                longDouble,
                 loc.get(AV_LOC.HORIZONTAL_DATUM),
                 loc.get(AV_LOC.DB_OFFICE_ID)
         )
@@ -121,7 +127,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
         if (pubLatitude != null) {
             locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
-
         }
         if (pubLongitude != null) {
             locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
@@ -280,7 +285,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                               .and(avLoc2.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
         if (page == null || page.isEmpty()) {
             
-            if( categoryLike == null && groupLike == null) {
+            if (categoryLike == null && groupLike == null) {
                 condition = condition.and(avLoc2.ALIASED_ITEM.isNull());
             }
             if (searchOffice != null) {
@@ -407,19 +412,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             loc.getACTIVE_FLAG().equalsIgnoreCase("T"),
             aliases
         );
-    }
-
-    private Condition buildCatalogWhere(String unitSystem, String office, String idLike) {
-        Condition condition = AV_LOC2.AV_LOC2.UNIT_SYSTEM.eq(unitSystem);
-        if (idLike != null) {
-            Condition idMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOCATION_ID, idLike);
-            condition = condition.and(idMatch);
-        }
-        if (office!= null) {
-            Condition officeMatch = JooqDao.caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.DB_OFFICE_ID, office);
-            condition = condition.and(officeMatch);
-        }
-        return condition;
     }
 
 }
