@@ -75,6 +75,10 @@ class DateUtilsTest {
         // Test that we get a DateTimeParseException when we pass in a bogus date.
         Assertions.assertThrows(DateTimeException.class, () -> DateUtils.parseUserDate("bogus", "America/Los_Angeles"));
 
+        // What if it looks like it has a zone? this shouldn't parse
+        Assertions.assertThrows(DateTimeException.class, () -> DateUtils.parseUserDate("bogus-07:00", "America/Los_Angeles"));
+
+
         // Test that we get a DateTimeException when we pass in a zone.
         Assertions.assertThrows(DateTimeException.class, () -> DateUtils.parseUserDate("2021-01-01T00:00:00Z", "garbage"));
 
@@ -82,20 +86,16 @@ class DateUtilsTest {
 
     @Test
     void test_has_time_zone(){
-        String date = "2021-01-01T00:00:00Z";
-        assertTrue(DateUtils.hasZone(date), "Date with Z not matched");
-        date = "2021-01-01T00:00:00-07:00";
-        assertTrue(DateUtils.hasZone(date), "Date with offset not matched");
-        date = "2021-01-01T00:00:00[US/Pacific]";
-        assertTrue(DateUtils.hasZone(date), "Date with named timezone not matched");
-        date = "2021-01-01T00:00:00[UTC]";
-        assertTrue(DateUtils.hasZone(date), "Date with named timezone not matched");
-        date = "2021-01-01T00:00:00[PST8PDT]";
-        assertTrue(DateUtils.hasZone(date), "Date with named timezone not matched");
-        date = "2021-01-01T00:00:00";
-        assertFalse(DateUtils.hasZone(date), "Date without timezone matched");
-        date = "2021-01-01T00:00:00-0700";  // no colon in offset b/c someone likes that style
-        assertTrue(DateUtils.hasZone(date), "Date with offset not matched");
+        assertTrue(DateUtils.hasZone("2021-01-01T00:00:00Z"), "Date with Z not matched");
+        assertTrue(DateUtils.hasZone("2021-01-01T00:00:00-07:00"), "Date with offset not matched");
+        assertTrue(DateUtils.hasZone("2021-01-01T00:00:00[US/Pacific]"), "Date with named timezone not matched");
+        assertTrue(DateUtils.hasZone("2021-01-01T00:00:00[UTC]"), "Date with named timezone not matched");
+        assertTrue(DateUtils.hasZone("2021-01-01T00:00:00[PST8PDT]"), "Date with named timezone not matched");
+        assertTrue(DateUtils.hasZone("2021-01-01T00:00:00-0700"), "Date with offset not matched");
+        assertTrue(DateUtils.hasZone("dontcareaboutthispart-07:00"), "offset not matched");
+        assertTrue(DateUtils.hasZone("-07:00"), "offset not matched");
+        assertTrue(DateUtils.hasZone("Z"), "offset not matched");
+        assertFalse(DateUtils.hasZone("2021-01-01T00:00:00"), "Date without timezone matched");
     }
 
 }
