@@ -5,10 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cwms.radar.data.dto.TimeSeries;
+import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-
 import java.time.format.DateTimeFormatter;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -55,6 +56,20 @@ class DateUtilsTest {
 
         ZonedDateTime parsed = DateUtils.parseUserDate(formatted, losAngeles, null);
         assertEquals(now, parsed, "Date parsed from TimeSeries format does not match original date");
+    }
+
+    @Test
+    void testBogusInput(){
+        // Test that we get a DateTimeParseException when we pass in a bogus date.
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            DateUtils.parseUserDate("bogus", "America/Los_Angeles");
+        });
+
+        // Test that we get a DateTimeException when we pass in a zone.
+        Assertions.assertThrows(DateTimeException.class, () -> {
+            DateUtils.parseUserDate("2021-01-01T00:00:00Z", "garbage");
+        });
+
     }
 
     @Test

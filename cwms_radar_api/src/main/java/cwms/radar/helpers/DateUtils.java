@@ -39,17 +39,23 @@ public class DateUtils {
         // utility class
     }
 
-    public static ZonedDateTime parseUserDate(String date, String timezone) {
+    /**
+     * Parse a string into a ZonedDateTime.
+     * @param text The string to parse
+     * @param timezone The timezone to use if the string doesn't have one.
+     * @return The parsed ZonedDateTime
+     */
+    public static ZonedDateTime parseUserDate(String text, String timezone) {
         ZoneId tz = ZoneId.of(timezone);
-        return parseUserDate(date, tz, ZonedDateTime.now(tz));
+        return parseUserDate(text, tz, ZonedDateTime.now(tz));
     }
 
     public static ZonedDateTime parseUserDate(String date, ZoneId tz, ZonedDateTime now) {
 
         if (date.startsWith("PT")) {
-            return parseUserDuration(date, tz, now);
+            return parseUserDuration(date, now);
         } else if (date.startsWith("P")) {
-            return parserUserPeriod(date, tz, now);
+            return parserUserPeriod(date, now);
         } else {
             return parseFullDate(date, tz);
         }
@@ -58,8 +64,7 @@ public class DateUtils {
     private static ZonedDateTime parseFullDate(String text, ZoneId tz) {
 
         if (hasZone(text)) {
-            ZonedDateTime zdt = parseZonedDateTime(text);
-            return zdt.withZoneSameLocal(tz);
+            return parseZonedDateTime(text);
         } else {
             // no timezone info "2021-04-05T00:00:00" (notice there is no Z) assume local time
             // If it had an offset it would have gone into the other branch
@@ -81,6 +86,15 @@ public class DateUtils {
         }
     }
 
+    /**
+     * Determines if a string ends with any of three common ways to denote timezone information.
+     *  1. An offset like -07:00 or -0700   Matches "2021-04-05T00:00:00-07:00"
+     *  2. Z   Matches "2021-04-05T00:00:00Z"
+     *  3. A named timezone like [UTC] or [US/Pacific]  Matches "2021-04-05T00:00:00[UTC]"
+     *
+     * @param text The string to check
+     * @return true if the string ends with a timezone indicator
+     */
     public static boolean hasZone(String text) {
         return WITH_TZ_INFO.matcher(text).matches();
     }
@@ -146,14 +160,14 @@ public class DateUtils {
             .appendLiteral(']');
     }
 
-    private static ZonedDateTime parserUserPeriod(String date, ZoneId tz, ZonedDateTime now) {
+    private static ZonedDateTime parserUserPeriod(String date, ZonedDateTime now) {
         Period period = Period.parse(date);
         return now.plusYears(period.getYears())
                 .plusMonths(period.getMonths())
                 .plusDays(period.getDays());
     }
 
-    private static ZonedDateTime parseUserDuration(String date, ZoneId tz, ZonedDateTime now) {
+    private static ZonedDateTime parseUserDuration(String date, ZonedDateTime now) {
         Duration duration = Duration.parse(date);
         return now.plus(duration);
     }
