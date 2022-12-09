@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 
@@ -50,14 +51,14 @@ public class DateUtils {
         return parseUserDate(text, tz, ZonedDateTime.now(tz));
     }
 
-    public static ZonedDateTime parseUserDate(String date, ZoneId tz, ZonedDateTime now) {
+    public static ZonedDateTime parseUserDate(String text, ZoneId tz, ZonedDateTime now) {
 
-        if (date.startsWith("PT")) {
-            return parseUserDuration(date, now);
-        } else if (date.startsWith("P")) {
-            return parserUserPeriod(date, now);
+        if (text.startsWith("PT")) {
+            return parseUserDuration(text, now);
+        } else if (text.startsWith("P")) {
+            return parserUserPeriod(text, now);
         } else {
-            return parseFullDate(date, tz);
+            return parseFullDate(text, tz);
         }
     }
 
@@ -109,10 +110,10 @@ public class DateUtils {
             //  https://stackoverflow.com/questions/66812557/how-to-parse-a-date-with-timezone-with-and-without-colon/66812678#66812678
             // To match 2022-01-19T20:52:53+0000[UTC]
             String[] possibleDateFormats = { "yyyy-MM-dd'T'HH:mm:ssZ"};  // Can add formats as needed
-            zdt = firstMatch(text, possibleDateFormats);
-
-            if (zdt == null) {
-                // Still couldn't parse so might as well throw the original exception.
+            Optional<ZonedDateTime> parsed = firstMatch(text, possibleDateFormats);
+            if(parsed.isPresent()) {
+                zdt = parsed.get();
+            } else {
                 throw e;
             }
         }
@@ -120,23 +121,22 @@ public class DateUtils {
         return zdt;
     }
 
-    private static ZonedDateTime firstMatch(String text, String[] possibleDateFormats) {
-        ZonedDateTime retval = null;
+    private static Optional<ZonedDateTime> firstMatch(String text, String[] possibleDateFormats) {
+        Optional<ZonedDateTime> retval = Optional.empty();
 
         if (possibleDateFormats != null) {
             for (String format : possibleDateFormats) {
                 retval = parseWithPattern(text, format);
-                if (retval != null) {
+                if(retval.isPresent())
                     break;
                 }
-
             }
-        }
+
         return retval;
     }
 
-    public static ZonedDateTime parseWithPattern(String text, String pattern) {
-        ZonedDateTime retval = null;
+    public static Optional<ZonedDateTime> parseWithPattern(String text, String pattern) {
+        Optional<ZonedDateTime> retval = Optional.empty();
         try {
             DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
             builder = builder.appendPattern(pattern);
@@ -144,7 +144,7 @@ public class DateUtils {
             DateTimeFormatter formatter = builder.toFormatter();
 
             TemporalAccessor ta = formatter.parse(text);
-            retval = ZonedDateTime.from(ta);
+            retval = Optional.of(ZonedDateTime.from(ta));
         } catch (DateTimeParseException e2) {
             // mostly ignore
             logger.atFinest().withCause(e2).log("Unable to parse %s with format %s", text, pattern);
@@ -160,15 +160,15 @@ public class DateUtils {
             .appendLiteral(']');
     }
 
-    private static ZonedDateTime parserUserPeriod(String date, ZonedDateTime now) {
-        Period period = Period.parse(date);
+    private static ZonedDateTime parserUserPeriod(String text, ZonedDateTime now) {
+        Period period = Period.parse(text);
         return now.plusYears(period.getYears())
                 .plusMonths(period.getMonths())
                 .plusDays(period.getDays());
     }
 
-    private static ZonedDateTime parseUserDuration(String date, ZonedDateTime now) {
-        Duration duration = Duration.parse(date);
+    private static ZonedDateTime parseUserDuration(String text, ZonedDateTime now) {
+        Duration duration = Duration.parse(text);
         return now.plus(duration);
     }
 }
