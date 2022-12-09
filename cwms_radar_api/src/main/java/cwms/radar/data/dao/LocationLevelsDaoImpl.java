@@ -158,6 +158,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return storeBean;
     }
 
+    private static SeasonalValueBean buildSeasonalValue(usace.cwms.db.dao.ifc.level.SeasonalValueBean fromBean) {
+        return new SeasonalValueBean.Builder(fromBean.getValue())
+                .withOffsetMonths(fromBean.getOffsetMonths())
+                .withOffsetMinutes(fromBean.getOffsetMinutes())
+                .build();
+    }
+
     @Override
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
                                     String officeId, Boolean cascadeDelete) {
@@ -279,7 +286,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     try {
                         total = Integer.valueOf(parts[1]);
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse " + parts[1]);
+                        logger.log(Level.INFO, "Could not parse {0}", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
