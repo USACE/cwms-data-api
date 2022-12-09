@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
+
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
@@ -56,6 +57,7 @@ import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.info.Info;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.Map;
 import javax.annotation.Resource;
@@ -109,15 +111,15 @@ public class ApiServlet extends HttpServlet {
 
     private MetricRegistry metrics;
     private Meter totalRequests;
-    /**
-     *
-     */
+
     private static final long serialVersionUID = 1L;
 
     static JavalinServlet javalin = null;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
+
+
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -144,20 +146,19 @@ public class ApiServlet extends HttpServlet {
                     config.contextPath = context;
                     config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
                     //config.enableDevLogging();
-                    config.requestLogger((ctx,ms) -> logger.atFinest().log(ctx.toString()));
+                    config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
                     config.accessManager(accessManager);
                 })
-                .attribute("PolicyFactory",sanitizer)
-                .attribute("ObjectMapper",om)
+                .attribute("PolicyFactory", sanitizer)
+                .attribute("ObjectMapper", om)
                 .before(ctx -> {
-
-                    ctx.attribute("sanitizer",sanitizer);
-                    ctx.header("X-Content-Type-Options","nosniff");
-                    ctx.header("X-Frame-Options","SAMEORIGIN");
+                    ctx.attribute("sanitizer", sanitizer);
+                    ctx.header("X-Content-Type-Options", "nosniff");
+                    ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
                 .exception(FormattingException.class, (fe, ctx) -> {
-                    final RadarError re = new RadarError("Formatting error");
+                    final RadarError re = new RadarError("Formatting error:" + fe.getMessage());
 
                     if (fe.getCause() instanceof IOException) {
                         ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -176,28 +177,32 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
                     RadarError re = new RadarError("Bad Request", e.getDetails());
-                    logger.atInfo().withCause(e).log( re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(e.getStatus()).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Bad Request");
-                    logger.atInfo().withCause(e).log( re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Not Found.");
-                    logger.atInfo().withCause(e).log( re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
-                .exception(FieldException.class, (e,ctx) -> {
-                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                .exception(FieldException.class, (e, ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(), e.getDetails(), true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
-                .exception(JsonFieldsException.class, (e,ctx) -> {
-                    RadarError re = new RadarError(e.getMessage(),e.getDetails(),true);
+                .exception(DateTimeException.class, (e, ctx) -> {
+                    RadarError re = new RadarError(e.getMessage());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
-                .exception(Exception.class, (e,ctx) -> {
+                .exception(JsonFieldsException.class, (e, ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(), e.getDetails(), true);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(Exception.class, (e, ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
@@ -343,7 +348,7 @@ public class ApiServlet extends HttpServlet {
             javalin.service(req, resp);
         } catch (Exception ex) {
             RadarError re = new RadarError("Major Database Issue");
-            logger.atSevere().withCause(ex).log( re + " for url " + req.getRequestURI());
+            logger.atSevere().withCause(ex).log(re + " for url " + req.getRequestURI());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.setContentType(ContentType.APPLICATION_JSON.toString());
             try (PrintWriter out = resp.getWriter()) {
