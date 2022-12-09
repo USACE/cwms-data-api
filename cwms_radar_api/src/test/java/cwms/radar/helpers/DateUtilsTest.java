@@ -22,7 +22,19 @@ class DateUtilsTest {
     void test_iso_dates_from_user( String inputDate, ZoneId tz, ZonedDateTime expected){
         ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz,null); // now not used in this case force npe if
                                                                             // someone accidentally sets that up.
+        // isEqual returns true if the instant is the same.  They can have different zones.
         assertTrue(result.isEqual(expected), "Provided date input not correctly matched");
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(DateWithoutZoneArguments.class)
+    void test_iso_dates_without_zone_from_user( String inputDate, ZoneId tz, ZonedDateTime expected){
+        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz,null);
+        // This checks that the two times refer to the same instant on the time-line.
+        assertTrue(result.isEqual(expected), "Provided date input not correctly matched");
+        // All the args in this test don't have a timezone, so the result should be in the provided fallback zone.
+        ZoneId zone = result.getZone();
+        assertEquals(zone, tz, "When string does not contain a tz the provided tz should be used");
     }
 
 
@@ -42,7 +54,7 @@ class DateUtilsTest {
 
 
     @Test
-    void testTimeSeriesFormatAndParse(){
+    void test_time_series_format_and_parse(){
         // In order to test that the format used by TimeSeries can be parsed by DateUtils we will
         // create a date
         // create a formatter using the pattern from TimeSeries
@@ -59,21 +71,17 @@ class DateUtilsTest {
     }
 
     @Test
-    void testBogusInput(){
+    void test_bogus_input(){
         // Test that we get a DateTimeParseException when we pass in a bogus date.
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            DateUtils.parseUserDate("bogus", "America/Los_Angeles");
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> DateUtils.parseUserDate("bogus", "America/Los_Angeles"));
 
         // Test that we get a DateTimeException when we pass in a zone.
-        Assertions.assertThrows(DateTimeException.class, () -> {
-            DateUtils.parseUserDate("2021-01-01T00:00:00Z", "garbage");
-        });
+        Assertions.assertThrows(DateTimeException.class, () -> DateUtils.parseUserDate("2021-01-01T00:00:00Z", "garbage"));
 
     }
 
     @Test
-    void testHasTimeZone(){
+    void test_has_time_zone(){
         String date = "2021-01-01T00:00:00Z";
         assertTrue(DateUtils.hasZone(date), "Date with Z not matched");
         date = "2021-01-01T00:00:00-07:00";
