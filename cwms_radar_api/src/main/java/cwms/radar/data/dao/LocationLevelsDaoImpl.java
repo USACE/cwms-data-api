@@ -142,7 +142,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     @NotNull
-    private static usace.cwms.db.dao.ifc.level.SeasonalValueBean buildSeasonalValue(SeasonalValueBean bean) {
+    public static usace.cwms.db.dao.ifc.level.SeasonalValueBean buildSeasonalValue(SeasonalValueBean bean) {
         usace.cwms.db.dao.ifc.level.SeasonalValueBean storeBean =
                 new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
         storeBean.setValue(bean.getValue());
@@ -158,7 +158,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return storeBean;
     }
 
-    private static SeasonalValueBean buildSeasonalValue(usace.cwms.db.dao.ifc.level.SeasonalValueBean fromBean) {
+    public static SeasonalValueBean buildSeasonalValue(usace.cwms.db.dao.ifc.level.SeasonalValueBean fromBean) {
         return new SeasonalValueBean.Builder(fromBean.getValue())
                 .withOffsetMonths(fromBean.getOffsetMonths())
                 .withOffsetMinutes(fromBean.getOffsetMinutes())
