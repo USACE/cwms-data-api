@@ -36,7 +36,7 @@ public class LocationLevelsDaoTest extends DaoTest
     void testStore() throws Exception
     {
         LocationLevel levelToStore = null;
-        Location location = null;
+        Location location;
         try {
             levelToStore = buildExampleLevel("TEST_LOC");
             LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
@@ -110,7 +110,62 @@ public class LocationLevelsDaoTest extends DaoTest
         }
     }
 
-    private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
+
+    @Test
+    void testIfcToDto(){
+        usace.cwms.db.dao.ifc.level.SeasonalValueBean ifcBean =
+                new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
+        double value = 23.0;
+        ifcBean.setValue(value);
+
+        // just value
+        SeasonalValueBean dtoBean = LocationLevelsDaoImpl.buildSeasonalValue(ifcBean);
+        assertEquals(value, dtoBean.getValue());
+        assertNull(dtoBean.getOffsetMonths());
+        assertNull(dtoBean.getOffsetMinutes());
+
+        // just minutes
+        ifcBean.setOffsetMinutes(BigInteger.valueOf(22));
+        dtoBean = LocationLevelsDaoImpl.buildSeasonalValue(ifcBean);
+        assertNull(dtoBean.getOffsetMonths());
+        assertEquals(22, dtoBean.getOffsetMinutes().intValue());
+
+
+        // just months
+        ifcBean.setOffsetMinutes(null);
+        ifcBean.setOffsetMonths(Integer.valueOf(7).byteValue());
+        dtoBean = LocationLevelsDaoImpl.buildSeasonalValue(ifcBean);
+        assertNull(dtoBean.getOffsetMinutes());
+        assertEquals(7, dtoBean.getOffsetMonths());
+    }
+
+    @Test
+    void testDtoToIfc() {
+        // Now go the other way
+        SeasonalValueBean.Builder builder = new SeasonalValueBean.Builder(23.0);
+
+        // just value
+        usace.cwms.db.dao.ifc.level.SeasonalValueBean ifcBean = LocationLevelsDaoImpl.buildSeasonalValue(builder.build());
+        assertEquals(23.0, ifcBean.getValue());
+        assertNull(ifcBean.getOffsetMonths());
+        assertNull(ifcBean.getOffsetMinutes());
+
+        // just minutes
+        builder.withOffsetMinutes(BigInteger.valueOf(22));
+        ifcBean = LocationLevelsDaoImpl.buildSeasonalValue(builder.build());
+        assertEquals(23.0, ifcBean.getValue());
+        assertNull(ifcBean.getOffsetMonths());
+        assertEquals(22, ifcBean.getOffsetMinutes().intValue());
+
+        // just months
+        builder.withOffsetMinutes(null).withOffsetMonths(Integer.valueOf(7).byteValue());
+        ifcBean = LocationLevelsDaoImpl.buildSeasonalValue(builder.build());
+        assertEquals(23.0, ifcBean.getValue());
+        assertNull(ifcBean.getOffsetMinutes());
+        assertEquals(7, ifcBean.getOffsetMonths().intValue());
+    }
+
+        private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         LocationLevel retVal;

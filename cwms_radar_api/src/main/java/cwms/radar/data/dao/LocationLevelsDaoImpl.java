@@ -27,7 +27,6 @@ import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,10 +40,12 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.SelectLimitPercentAfterOffsetStep;
 import org.jooq.exception.DataAccessException;
 import org.jooq.types.DayToSecond;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
@@ -105,20 +106,63 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
     }
 
-    private List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> getSeasonalValues(LocationLevel locationLevel) {
+    private static List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> getSeasonalValues(LocationLevel locationLevel) {
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> retval = Collections.emptyList();
+
+        if (locationLevel != null) {
+            retval = buildSeasonalValues(locationLevel.getSeasonalValues());
+        }
+
+        return retval;
+    }
+
+    @Nullable
+    private static List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> buildSeasonalValues(List<SeasonalValueBean> levelSeasonalValues) {
         List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues = null;
-        if (locationLevel.getSeasonalValues() != null) {
-            seasonalValues = new ArrayList<>();
-            for (SeasonalValueBean bean : locationLevel.getSeasonalValues()) {
-                usace.cwms.db.dao.ifc.level.SeasonalValueBean storeBean =
-                        new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
-                storeBean.setValue(bean.getValue());
-                storeBean.setOffsetMonths(bean.getOffsetMonths().byteValue());
-                storeBean.setOffsetMinutes(bean.getOffsetMinutes());
-                seasonalValues.add(storeBean);
-            }
+        if (levelSeasonalValues != null) {
+            seasonalValues = levelSeasonalValues.stream()
+                    .map(LocationLevelsDaoImpl::buildSeasonalValue)
+                    .collect(toList());
         }
         return seasonalValues;
+    }
+
+    @NotNull
+    private List<SeasonalValueBean> buildSeasonalValues(LocationLevelPojo fromPojo) {
+        List<SeasonalValueBean> seasonalValues = Collections.emptyList();
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> fromValues
+                = fromPojo.getSeasonalValues();
+        if (fromValues != null) {
+            seasonalValues = fromValues.stream()
+                    .filter(Objects::nonNull)
+                    .map(LocationLevelsDaoImpl::buildSeasonalValue)
+                    .collect(toList());
+        }
+        return seasonalValues;
+    }
+
+    @NotNull
+    public static usace.cwms.db.dao.ifc.level.SeasonalValueBean buildSeasonalValue(SeasonalValueBean bean) {
+        usace.cwms.db.dao.ifc.level.SeasonalValueBean storeBean =
+                new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
+        storeBean.setValue(bean.getValue());
+        Integer offsetMonths = bean.getOffsetMonths();
+        if (offsetMonths != null) {
+            storeBean.setOffsetMonths(offsetMonths.byteValue());
+        }
+
+        BigInteger offsetMinutes = bean.getOffsetMinutes();
+        if (offsetMinutes != null) {
+            storeBean.setOffsetMinutes(offsetMinutes);
+        }
+        return storeBean;
+    }
+
+    public static SeasonalValueBean buildSeasonalValue(usace.cwms.db.dao.ifc.level.SeasonalValueBean fromBean) {
+        return new SeasonalValueBean.Builder(fromBean.getValue())
+                .withOffsetMonths(fromBean.getOffsetMonths())
+                .withOffsetMinutes(fromBean.getOffsetMinutes())
+                .build();
     }
 
     @Override
@@ -224,28 +268,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .build();
     }
 
-    @NotNull
-    private List<SeasonalValueBean> buildSeasonalValues(LocationLevelPojo fromPojo) {
-        List<SeasonalValueBean> seasonalValues = Collections.emptyList();
-        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> fromValues
-                = fromPojo.getSeasonalValues();
-        if (fromValues != null) {
-            seasonalValues = fromValues.stream()
-                    .filter(Objects::nonNull)
-                    .map(this::buildSeasonalValue)
-                    .collect(toList());
-        }
-        return seasonalValues;
-    }
-
-    private SeasonalValueBean buildSeasonalValue(usace.cwms.db.dao.ifc.level.SeasonalValueBean fromBean) {
-        return new SeasonalValueBean.Builder(fromBean.getValue())
-                .withOffsetMonths(fromBean.getOffsetMonths())
-                .withOffsetMinutes(fromBean.getOffsetMinutes())
-                .build();
-    }
-
-
     @Override
     public LocationLevels getLocationLevels(String cursor, int pageSize,
                                             String levelIdMask, String office, String unit,
@@ -264,7 +286,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     try {
                         total = Integer.valueOf(parts[1]);
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse " + parts[1]);
+                        logger.log(Level.INFO, "Could not parse {0}", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
