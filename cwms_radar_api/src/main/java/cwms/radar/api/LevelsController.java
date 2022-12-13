@@ -219,6 +219,7 @@ public class LevelsController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = "200", content = {
                             @OpenApiContent(type = Formats.JSON),
+                            @OpenApiContent(type = ""),
                             @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
                         }
                     )
@@ -228,8 +229,7 @@ public class LevelsController implements CrudHandler {
     public void getAll(Context ctx) {
 
         try (final Timer.Context timeContext = markAndTime("getAll");
-             DSLContext dsl =
-                getDslContext(ctx)) {
+             DSLContext dsl = getDslContext(ctx)) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
             String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
@@ -356,6 +356,8 @@ public class LevelsController implements CrudHandler {
                     UnitSystem.EN.getValue(), unmarshalledDateTime, office);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
+        } catch (NotFoundException e){
+            throw e;
         } catch (Exception ex) {
             RadarError re = new RadarError("Failed to retrieve Location Level request: "
                     + ex.getLocalizedMessage());
