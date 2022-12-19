@@ -64,7 +64,9 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             }
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
+
             connection(dsl, c -> retval[0] =
+
                     RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
                         specificationId, start, end, false));
 
