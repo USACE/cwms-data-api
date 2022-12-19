@@ -68,7 +68,8 @@ services:
         condition: service_completed_successfully
     #  db_perms:
     #    condition: service_completed_successfully
-    #image: ${RADAR_IMAGE:-registry.hecdev.net/radar-api:latest-dev}    
+    #image: ${RADAR_IMAGE:-registry.hecdev.net/radar-api:latest-dev}
+    image: cwms-data-api:latest
     build:
       target: api
       context: .

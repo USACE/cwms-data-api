@@ -7,23 +7,23 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
 
-public class ApiKeyUserPreparer implements ConnectionPreparer {
-    private final String apiKey;
+public class DirectUserPreparer implements ConnectionPreparer {
+    private final String user;
 
-    public ApiKeyUserPreparer(String apiKey) {
-        this.apiKey = apiKey;
+    public DirectUserPreparer(String user) {
+        this.user = user;
     }
 
     @Override
     public Connection prepare(Connection conn) {
-        if (apiKey != null) {
+        if (user != null) {
             try (DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
-                PreparedStatement setUser = conn.prepareStatement("begin CWMS_ENV.set_session_user_apikey(?); end;")
-                ) {
-                setUser.setString(1,apiKey);
-                setUser.execute();
+                PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
+                ) {                
+                setApiUser.setString(1,user);
+                setApiUser.execute();                
             } catch (Exception e) {
-                boolean keyNullOrEmpty = apiKey == null || apiKey.isEmpty();
+                boolean keyNullOrEmpty = user == null || user.isEmpty();
                 throw new DataAccessException("Unable to set user session.  "
                         + "user null or empty = " + keyNullOrEmpty, e);
             }

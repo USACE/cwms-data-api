@@ -25,6 +25,8 @@ import cwms.radar.datasource.ApiKeyUserPreparer;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
+import cwms.radar.datasource.DirectUserPreparer;
+import cwms.radar.datasource.SessionOfficePreparer;
 import cwms.radar.spi.RadarAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
@@ -47,7 +49,7 @@ public class KeyAccessManager extends RadarAccessManager{
                 {
                     throw new CwmsAuthException("Invalid Credentials.");
                 }
-                prepareContextWithUser(ctx, user);
+                prepareContextWithUser(ctx, user,getApiKey(ctx));
             }
             handler.handle(ctx);
         }
@@ -72,20 +74,25 @@ public class KeyAccessManager extends RadarAccessManager{
      * have easier workflow.
      * @param ctx
      * @param user
+     * @param key the key
      */
-    private void prepareContextWithUser(Context ctx, String user) throws SQLException {
+    private void prepareContextWithUser(Context ctx, String user,String key) throws SQLException {
         logger.info("Validated Api Key for user=" + user);
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
 
-        ConnectionPreparer newPreparer = new ApiKeyUserPreparer(user);
+        ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
+        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
+        ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
+        DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(resetPreparer,officePrepare,keyPreparer);
+
         if(dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
 
             // Have it do our extra step last.
-            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, newPreparer));
+            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, apiPreparer));
         } else {            
-            ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(newPreparer, dataSource));
+            ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(apiPreparer, dataSource));
         }
     }
 
