@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,8 +32,6 @@ import io.javalin.http.Handler;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_SEC_PACKAGE;
 
 public class KeyAccessManager extends RadarAccessManager{
     private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
@@ -42,20 +41,26 @@ public class KeyAccessManager extends RadarAccessManager{
 	public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         try
         {
-            String user = authorized(ctx,routeRoles);
-            if(user != null)
-            {
+            if (!routeRoles.isEmpty()) {
+                String user = authorized(ctx,routeRoles);
+                if(user == null)
+                {
+                    throw new CwmsAuthException("Invalid Credentials.");
+                }
                 prepareContextWithUser(ctx, user);
-                handler.handle(ctx);
             }
+            handler.handle(ctx);
         }
-        catch(Exception ex)
+        catch(CwmsAuthException ex)
         {
-            logger.log(Level.WARNING,"Unauthorized loggin attempt",ex);
+            logger.log(Level.WARNING,"Unauthorized login attempt",ex);
+	    	ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
+            HashMap<String,String> msg = new HashMap<>();
+            msg.put("message",ex.getMessage());
+            RadarError re = new RadarError("Unauthorized",msg,true);
+            ctx.status(401).json(re);
         }		
-        
-		ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
-        ctx.status(401).result("Unauthorized");
+
 	}
 
     /**
@@ -92,7 +97,7 @@ public class KeyAccessManager extends RadarAccessManager{
         }
         else
         {
-            String key = getAppKey(ctx);
+            String key = getApiKey(ctx);
             return checkKey(key,ctx);
         }
     }
@@ -100,13 +105,17 @@ public class KeyAccessManager extends RadarAccessManager{
     private String checkKey(String key, Context ctx) {
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement("select username from cwms_20.apikeys where key = ?")) 
+            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper('q0hectest_pu')); end;");
+            PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
         {
-            stmt.setString(1,key);
-            try(ResultSet rs = stmt.executeQuery()) {
+            setApiUser.execute();
+            checkForKey.setString(1,key);
+            try(ResultSet rs = checkForKey.executeQuery()) {
                 if (rs.next()) {
                     return rs.getString(1);
-                } 
+                } else {
+                    logger.info("No user for key");
+                }
             }
         }
         catch(SQLException ex) {
@@ -127,7 +136,7 @@ public class KeyAccessManager extends RadarAccessManager{
         }
     }
 
-    private String getAppKey(Context ctx) {
+    private String getApiKey(Context ctx) {
         String header = ctx.header(AUTH_HEADER);
         String parts[] = header.split("\\s+");
         if( parts.length < 0) {

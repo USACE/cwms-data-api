@@ -1,3 +1,7 @@
+FROM adoptopenjdk:8 as builder
+
+USER $USER
+
 FROM tomcat:9.0.64-jdk8
 
 COPY radar/ /usr/local/tomcat

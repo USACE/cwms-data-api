@@ -90,10 +90,10 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             // the cwmsDb.connection functions to call get_user_credentials as appropriate.
             // OR... forcibly add the fake session_key to the at_sec_session table. dealers choice.
             cwmsDb.connection( (conn) -> {
-                String digest = KeyAccessManager.getDigest("TestKey".getBytes());
-                try(PreparedStatement insertApiKey = ((Connection)conn).prepareStatement("insert into apikeys(key,username) values (?,?)");){
-                    insertApiKey.setString(1,digest);
-                    insertApiKey.setString(2,"USER1");
+                try(PreparedStatement insertApiKey = ((Connection)conn).prepareStatement("insert into at_api_keys(userid,key_name,apikey) values (?,?,?)");) {
+                    insertApiKey.setString(1,"USER");
+                    insertApiKey.setString(2,"TestKey");
+                    insertApiKey.setString(3,"TestKey");
                     insertApiKey.execute();
                 }
                 catch(SQLException ex) {

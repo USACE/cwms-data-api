@@ -36,43 +36,47 @@ services:
       - INSTALLONCE=1
       - QUIET=1      
     restart: "no"
-  radar_perms:
-    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:latest-dev}
-    restart: "no"
-    environment:
-      - DB_HOST_PORT=db:1521
-      - DB_NAME=/CWMS
-      - CWMS_PASSWORD=simplecwmspasswD1
-      - SYS_PASSWORD=badSYSpassword
-      # set to HEC/q0 for any national system work
-      - OFFICE_ID=HEC
-      - OFFICE_EROC=q0
-      - INSTALLONCE=1
-      - QUIET=1  
-    command: >
-      sh -xc "echo \"begin cwms_sec.add_user_to_group('$${OFFICE_EROC}hectest_pu','CWMS Users', 'HQ'); end;\" > /tmp/sql.sql &&
-                     echo "/" >> /tmp/sql.sql
-                     echo "quit" >> /tmp/sql.sql
-                    sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/tmp/sql"
-    depends_on:
-      db:
-        condition: service_healthy
-      db_install:
-        condition: service_completed_successfully
+  #api_perms:
+  #  image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:latest-dev}
+  # restart: "no"
+  # environment:
+  #   - DB_HOST_PORT=db:1521
+  #   - DB_NAME=/CWMS
+  #   - CWMS_PASSWORD=simplecwmspasswD1
+  #   - SYS_PASSWORD=badSYSpassword
+  #   # set to HQ/q0 for any national system work
+  #   - OFFICE_ID=HQ
+  #   - OFFICE_EROC=q0
+  #   - INSTALLONCE=1
+  #   - QUIET=1  
+  # command: >
+  #   sh -xc "echo \"begin cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS Users', 'HQ'); end;\" > /tmp/sql.sql &&
+  #                  echo "/" >> /tmp/sql.sql
+  #                  echo "quit" >> /tmp/sql.sql
+  #                 sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/tmp/sql"
+  # depends_on:
+  #   db:
+  #     condition: service_healthy
+  #   db_install:
+  #     condition: service_completed_successfully
     
-  radar:
+  api:
     depends_on:
       db:
         condition: service_healthy
       db_install:
         condition: service_completed_successfully
-      radar_perms:
-        condition: service_completed_successfully
-    image: ${RADAR_IMAGE:-registry.hecdev.net/radar-api:latest-dev}
+    #  db_perms:
+    #    condition: service_completed_successfully
+    #image: ${RADAR_IMAGE:-registry.hecdev.net/radar-api:latest-dev}    
+    build:
+      target: api
+      context: .
+      dockerfile: Dockerfile
     restart: always
     environment:
       - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
-      - RADAR_JDBC_USERNAME=q0hectest_pu
+      - RADAR_JDBC_USERNAME=q0webtest
       - RADAR_JDBC_PASSWORD=simplecwmspasswD1
     ports:
       - 7000:7000
