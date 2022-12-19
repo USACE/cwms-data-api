@@ -16,6 +16,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
+import org.jooq.ConnectionCallable;
 import org.jooq.ConnectionRunnable;
 import org.jooq.DSLContext;
 import org.jooq.ExecuteListener;
@@ -159,6 +160,14 @@ public abstract class JooqDao<T> extends Dao<T> {
     void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
+        } catch (RuntimeException e) {
+            throw wrapException(e);
+        }
+    }
+
+    <T> T connectionResult(DSLContext dslContext, ConnectionCallable<T> var1){
+        try {
+            return dslContext.connectionResult(var1);
         } catch (RuntimeException e) {
             throw wrapException(e);
         }
