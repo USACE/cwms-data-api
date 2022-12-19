@@ -22,7 +22,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     @Override
     public void create(RatingSet ratingSet) throws IOException, RatingException {
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 // can't exist if we are creating, if it exists use store
                 boolean overwriteExisting = false;
                 ratingSet.storeToDatabase(c, overwriteExisting);
@@ -62,7 +62,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             }
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
-            dsl.connection(c -> retval[0] =
+            connection(dsl, c -> retval[0] =
                     RatingSet.fromDatabase(finalMethod, c, officeId,
                             specificationId, start, end));
 
@@ -84,7 +84,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     @Override
     public void store(RatingSet ratingSet) throws IOException, RatingException {
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 boolean overwriteExisting = true;
                 ratingSet.storeToDatabase(c, overwriteExisting);
             });
@@ -100,7 +100,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     @Override
     public void delete(String officeId, String ratingSpecId) throws IOException, RatingException {
         try {
-            dsl.connection(c -> delete(c, officeId, ratingSpecId));
+            connection(dsl, c -> delete(c, officeId, ratingSpecId));
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
             if (cause instanceof RatingException) {
@@ -125,7 +125,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             throws IOException, RatingException {
 
         try {
-            dsl.connection(c ->
+            connection(dsl, c ->
                             deleteWithRatingSet(c, officeId, specificationId, effectiveDates) //
                     // This
                     // doesn't seem to work.

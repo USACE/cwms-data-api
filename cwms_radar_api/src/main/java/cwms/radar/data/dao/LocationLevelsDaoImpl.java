@@ -46,7 +46,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
-import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.types.DayToSecond;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
@@ -90,7 +89,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     Date.from(locationLevel.getIntervalOrigin().toLocalDateTime().atZone(zoneId).toInstant());
             List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues =
                     getSeasonalValues(locationLevel);
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(),
                         locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(),
@@ -177,7 +176,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 date = null;
             }
             if (date != null) {
-                dsl.connection(c -> {
+                connection(dsl, c -> {
                     CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                     levelJooq.deleteLocationLevel(c, locationLevelName, date, null,
                             null, null, cascadeDelete, officeId);
@@ -205,7 +204,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                                     LocationLevel renamedLocationLevel) {
         // no need to validate the level here we are just using the name and office field
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.renameLocationLevel(c, oldLocationLevelName,
                         renamedLocationLevel.getLocationLevelId(),
