@@ -18,14 +18,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.ConnectionRunnable;
 import org.jooq.DSLContext;
-import org.jooq.ExecuteContext;
 import org.jooq.ExecuteListener;
 import org.jooq.Field;
 import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
-import org.jooq.impl.DefaultExecuteListener;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
@@ -43,10 +41,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (dataSource != null) {
             ConnectionPreparer officeSetter = new SessionOfficePreparer(officeId);
             DataSource ds = new ConnectionPreparingDataSource(officeSetter, dataSource);
-            retval =  DSL.using(ds, SQLDialect.ORACLE11G);
+            retval = DSL.using(ds, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
-            Connection database = (Connection) ctx.attribute(ApiServlet.DATABASE);
+            Connection database = ctx.attribute(ApiServlet.DATABASE);
             retval = getDslContext(database, officeId);
         }
 
@@ -94,10 +92,11 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
-    // Not really wrapping or unwrapping
+
     public static RuntimeException wrapException(RuntimeException input) {
         RuntimeException retval = input;
 
+        // Can add specializations as needed.
         if (isNotFound(input)) {
             retval = buildNotFound(input);
         }
@@ -156,22 +155,8 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
 
-
-    private static class ExceptionWrappingListener extends DefaultExecuteListener {
-        @Override
-        public void exception(ExecuteContext ctx) {
-            super.exception(ctx);
-
-            RuntimeException exception = wrapException(ctx.exception());
-
-            ctx.exception(exception);
-        }
-
-
-    }
-
     // ExecuteListeners aren't called by DSL.connection blocks...
-    void connection(DSLContext dslContext, ConnectionRunnable cr){
+    void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
         } catch (RuntimeException e) {
