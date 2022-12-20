@@ -6,6 +6,8 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
+import cwms.radar.datasource.DirectUserPreparer;
+import cwms.radar.datasource.SessionOfficePreparer;
 import cwms.radar.datasource.SessionUserPreparer;
 import cwms.radar.spi.RadarAccessManager;
 import io.javalin.core.security.RouteRole;
@@ -40,8 +42,8 @@ public class CwmsAccessManager extends RadarAccessManager {
             throws Exception {
         boolean shouldProceed = isAuthorized(ctx, requiredRoles);
 
-        if (shouldProceed) {
-            setSessionKey(ctx);
+        if (shouldProceed) {            
+            buildDataSource(ctx);
 
             // Let the handler handle the request.
             handler.handle(ctx);
@@ -51,28 +53,17 @@ public class CwmsAccessManager extends RadarAccessManager {
             ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
             ctx.status(401).result("Unauthorized");
         }
-
     }
 
-    private void setSessionKey(@NotNull Context ctx) {
-        String sessionKey = getSessionKey(ctx);
-        if (sessionKey != null) {
-//            // Set the user's session key in the database.
-//            Connection conn = ctx.attribute(DATABASE);
-//            setSession(conn, sessionKey);
+    private void buildDataSource(@NotNull Context ctx) {
+        String user = ctx.req.getUserPrincipal().getName();
+        String office =ctx.attribute("office");        
 
-            DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-
-            DataSource sessionSettingDataSource = buildDataSource(dataSource, sessionKey);
-            ctx.attribute(ApiServlet.DATA_SOURCE, sessionSettingDataSource);
-        }
-    }
-
-    private DataSource buildDataSource(DataSource dataSource, String sessionKey) {
-        DataSource retval = null;
-
-        ConnectionPreparer newPreparer = new SessionUserPreparer(sessionKey);
-
+        ConnectionPreparer userPreparer = new DirectUserPreparer(user);
+        ConnectionPreparer officePrepare = new SessionOfficePreparer(office);
+        //ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
+        DelegatingConnectionPreparer newPreparer = new DelegatingConnectionPreparer(officePrepare,userPreparer);
+        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if(dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
@@ -80,10 +71,8 @@ public class CwmsAccessManager extends RadarAccessManager {
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, newPreparer));
         } else {
-            retval = new ConnectionPreparingDataSource(newPreparer, dataSource);
+            ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(newPreparer, dataSource));
         }
-
-        return retval;
     }
 
     @NotNull
@@ -158,14 +147,15 @@ public class CwmsAccessManager extends RadarAccessManager {
         Set<RouteRole> retval = new LinkedHashSet<>();
         if (principal != null) {
             List<String> roleNames;
-            try {
+            //try {
                 CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
                 roleNames = cup.getRoles();
-            } catch (ClassCastException e) {
+            //} 
+            /*catch (ClassCastException e) {
                 // The object is created by cwms_aaa with the cwms_aaa classloader.
                 // It's a CwmsUserPrincipal but it's not our CwmsUserPrincipal.
                 roleNames = callGetRolesReflectively(principal);
-            }
+            }*/
 
             if (roleNames != null) {
                 roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
@@ -174,7 +164,7 @@ public class CwmsAccessManager extends RadarAccessManager {
         }
         return retval;
     }
-
+/* 
     List<String> callGetRolesReflectively(Principal principal) {
         List<String> retval = new ArrayList<>();
 
@@ -189,25 +179,12 @@ public class CwmsAccessManager extends RadarAccessManager {
             logger.log(Level.WARNING, "Could not call getRoles() on principal.", e);
         }
         return retval;
-    }
+    }*/
 
 
     public static RouteRole buildRole(String roleName) {
         return new Role(roleName);
     }
-
-//    @NotNull
-//    private static Connection setSession(Connection conn, String sessionKey) {
-//        // Need to figure out a legit way to skip this if we are doing testing.
-//        if (sessionKey == null || !sessionKey.startsWith("testing")) {
-//            try (DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G)) {
-//                CWMS_ENV_PACKAGE.call_SET_SESSION_USER(dsl.configuration(), sessionKey);
-//            }
-//
-//        }
-//
-//        return conn;
-//    }
 
 	@Override
 	public SecurityScheme getScheme() {		
