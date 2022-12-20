@@ -42,9 +42,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if (dataSource != null) {
-            ConnectionPreparer officeSetter = new SessionOfficePreparer(officeId);
-            DataSource ds = new ConnectionPreparingDataSource(officeSetter, dataSource);
-            retval = DSL.using(ds, SQLDialect.ORACLE11G);
+            return DSL.using(dataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
             Connection database = ctx.attribute(ApiServlet.DATABASE);

@@ -82,8 +82,8 @@ public class KeyAccessManager extends RadarAccessManager{
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
-        ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
-        DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(resetPreparer,officePrepare,keyPreparer);
+        //ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
+        DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(officePrepare,keyPreparer);
 
         if(dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
