@@ -6,8 +6,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,22 +42,32 @@ public class KeyAccessManager extends RadarAccessManager{
     private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
     private static final String AUTH_HEADER = "Authorization";
 
+    private static final String RETRIEVE_GROUPS_OF_USER = "select "
+    + "privs.user_group_id"
+    + " from table("
+    + "cwms_sec.get_user_priv_groups_tab(?,?)"
+    + ") privs"
+    + " where is_member = 'T'";
+
+
+    private DataSource dataSource = null;
+
 	@Override
 	public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+        dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         try
         {
             if (!routeRoles.isEmpty()) {
-                String user = authorized(ctx,routeRoles);
-                if(user == null)
-                {
+                String key = getApiKey(ctx);
+                String user = authorized(ctx, key, routeRoles);
+                if (user == null) {
                     throw new CwmsAuthException("Invalid Credentials.");
                 }
-                prepareContextWithUser(ctx, user,getApiKey(ctx));
+                prepareContextWithUser(ctx, user,key);
             }
             handler.handle(ctx);
         }
-        catch(CwmsAuthException ex)
-        {
+        catch(CwmsAuthException ex) {
             logger.log(Level.WARNING,"Unauthorized login attempt",ex);
 	    	ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
             HashMap<String,String> msg = new HashMap<>();
@@ -78,14 +91,13 @@ public class KeyAccessManager extends RadarAccessManager{
      */
     private void prepareContextWithUser(Context ctx, String user,String key) throws SQLException {
         logger.info("Validated Api Key for user=" + user);
-        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
         //ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
         DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(officePrepare,keyPreparer);
 
-        if(dataSource instanceof ConnectionPreparingDataSource) {
+        if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
 
@@ -96,21 +108,40 @@ public class KeyAccessManager extends RadarAccessManager{
         }
     }
 
-    private String authorized(Context ctx, Set<RouteRole> routeRoles)
+    private String authorized(Context ctx, String key, Set<RouteRole> routeRoles)
     {
-        if (routeRoles.isEmpty())
-        {
-            return "guest";
+        String retval = null;
+        String user = checkKey(key,ctx);
+
+        if (routeRoles == null || routeRoles.isEmpty()) {
+            retval = user;
+        } else {
+            Set<RouteRole> specifiedRoles = getRoles(user,ctx.queryParam("office"));
+            retval = specifiedRoles.containsAll(routeRoles) == true ? user : null;
         }
-        else
-        {
-            String key = getApiKey(ctx);
-            return checkKey(key,ctx);
+
+        return retval;
+    }
+
+    private Set<RouteRole> getRoles(String user,String office) {
+        Set<RouteRole> roles = new HashSet<>();
+        try(Connection conn = dataSource.getConnection();
+            PreparedStatement getRoles = conn.prepareStatement(RETRIEVE_GROUPS_OF_USER);
+        ) {
+            getRoles.setString(1,user);
+            getRoles.setString(2,office);
+            try (ResultSet rs = getRoles.executeQuery()) {
+                while(rs.next()) {
+                    roles.add(new Role(rs.getString(1)));
+                }
+            }
+        } catch(SQLException ex) {
+            logger.log(Level.WARNING,"Failed to retrieve roles for user",ex);
         }
+        return roles;
     }
 
     private String checkKey(String key, Context ctx) {
-        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         try(Connection conn = dataSource.getConnection();
             PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper('q0hectest_pu')); end;");
             PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
