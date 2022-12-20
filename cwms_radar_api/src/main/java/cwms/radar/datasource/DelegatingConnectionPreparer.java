@@ -38,7 +38,7 @@ public class DelegatingConnectionPreparer implements ConnectionPreparer {
     public Connection prepare(Connection connection) throws SQLException {
         Connection retval = connection;
         for (ConnectionPreparer delegate : delegates) {
-            logger.info(delegate.getClass().getName());
+            logger.fine(delegate.getClass().getName());
             retval = delegate.prepare(retval);
         }
 
