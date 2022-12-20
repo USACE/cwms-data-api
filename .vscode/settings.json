@@ -10,5 +10,5 @@
         ],
         "clean": true
     },
-    "editor.fontSize": 14
+    "java.compile.nullAnalysis.mode": "automatic"
 }
