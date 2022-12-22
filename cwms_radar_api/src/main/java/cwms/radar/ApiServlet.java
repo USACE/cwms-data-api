@@ -20,7 +20,7 @@ import cwms.radar.api.LevelsController;
 import cwms.radar.api.LocationCategoryController;
 import cwms.radar.api.LocationController;
 import cwms.radar.api.LocationGroupController;
-import cwms.radar.api.NotFoundException;
+import cwms.radar.api.exception.NotFoundException;
 import cwms.radar.api.OfficeController;
 import cwms.radar.api.ParametersController;
 import cwms.radar.api.PoolController;

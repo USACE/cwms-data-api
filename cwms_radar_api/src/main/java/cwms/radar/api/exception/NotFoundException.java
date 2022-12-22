@@ -1,4 +1,4 @@
-package cwms.radar.api;
+package cwms.radar.api.exception;
 
 public class NotFoundException extends RuntimeException {
     public NotFoundException(String message) {

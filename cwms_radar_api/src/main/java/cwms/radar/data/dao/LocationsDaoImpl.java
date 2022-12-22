@@ -10,7 +10,7 @@ import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 
-import cwms.radar.api.NotFoundException;
+import cwms.radar.api.exception.NotFoundException;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
 import cwms.radar.data.dto.Catalog;

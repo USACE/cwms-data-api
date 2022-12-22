@@ -18,6 +18,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.RadarError;
+import cwms.radar.api.exception.NotFoundException;
 import cwms.radar.data.dao.LocationLevelsDao;
 import cwms.radar.data.dao.LocationLevelsDaoImpl;
 import cwms.radar.data.dto.LocationLevel;
