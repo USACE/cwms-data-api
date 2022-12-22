@@ -89,7 +89,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     Date.from(locationLevel.getIntervalOrigin().toLocalDateTime().atZone(zoneId).toInstant());
             List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues =
                     getSeasonalValues(locationLevel);
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(),
                         locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(),
@@ -176,7 +176,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 date = null;
             }
             if (date != null) {
-                dsl.connection(c -> {
+                connection(dsl, c -> {
                     CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                     levelJooq.deleteLocationLevel(c, locationLevelName, date, null,
                             null, null, cascadeDelete, officeId);
@@ -204,7 +204,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                                     LocationLevel renamedLocationLevel) {
         // no need to validate the level here we are just using the name and office field
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.renameLocationLevel(c, oldLocationLevelName,
                         renamedLocationLevel.getLocationLevelId(),
@@ -225,18 +225,16 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         String unitIn = UnitSystem.EN.value().equals(unitSystem) ? Unit.FEET.getValue() :
                 Unit.METER.getValue();
         AtomicReference<LocationLevel> locationLevelRef = new AtomicReference<>();
-        try {
-            dsl.connection(c -> {
-                CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
-                        locationLevelName, unitIn, date, timezone, null, null,
-                        unitIn, false, officeId);
-                LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
-                locationLevelRef.set(level);
-            });
-        } catch (DataAccessException ex) {
-            throw new RuntimeException("Failed to retrieve Location Level", ex);
-        }
+
+        connection(dsl, c -> {
+            CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
+            LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
+                    locationLevelName, unitIn, date, timezone, null, null,
+                    unitIn, false, officeId);
+            LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
+            locationLevelRef.set(level);
+        });
+
         return locationLevelRef.get();
     }
 
@@ -320,15 +318,21 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();
 
-        List<LocationLevel> levels = dsl.selectDistinct(asterisk())
+        SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(asterisk())
                 .from(view)
                 .where(whereCondition)
                 .orderBy(view.OFFICE_ID.upper(), view.LOCATION_LEVEL_ID.upper(),
                         view.LEVEL_DATE
                 )
                 .offset(offset)
-                .limit(pageSize)
-                .stream().map(r -> toLocationLevel(r, levelMap)).collect(toList());
+                .limit(pageSize);
+
+        //logger.log(Level.INFO, "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+
+        List<LocationLevel> levels = query
+                .stream()
+                .map(r -> toLocationLevel(r, levelMap))
+                .collect(toList());
 
         LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
         builder.addAll(levels);
@@ -440,7 +444,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 String calInterval = rs.get(view.CALENDAR_INTERVAL);
                 offset.setYearMonthString(calInterval);
                 DayToSecond dayToSecond = rs.get(view.TIME_INTERVAL);
-                if(dayToSecond != null) {
+                if (dayToSecond != null) {
                     offset.setDaysHoursMinutesString(dayToSecond.toString());
                 }
                 seasonalValuesImpl.setOffset(offset);

@@ -137,7 +137,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     @Override
     public void deleteLocation(String locationName, String officeId) throws IOException {
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 locJooq.delete(c, officeId, locationName);
             });
@@ -150,7 +150,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     public void storeLocation(Location location) throws IOException {
         location.validate();
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.store(c, location.getOfficeId(), location.getName(),
@@ -177,7 +177,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             throws IOException {
         renamedLocation.validate();
         try {
-            dsl.connection(c ->            {
+            connection(dsl, c ->            {
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,
@@ -364,8 +364,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
             .values()
             .stream()
-            .map(l ->
-            {
+            .map(l -> {
                 usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
                     .filter(r -> r.getALIASED_ITEM() == null)
                     .findFirst()
