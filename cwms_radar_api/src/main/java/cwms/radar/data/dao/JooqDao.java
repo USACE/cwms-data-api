@@ -3,8 +3,8 @@ package cwms.radar.data.dao;
 import static org.jooq.SQLDialect.ORACLE;
 
 import cwms.radar.ApiServlet;
-import cwms.radar.api.exception.AlreadyExists;
-import cwms.radar.api.exception.NotFoundException;
+import cwms.radar.api.errors.AlreadyExists;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.SessionOfficePreparer;
