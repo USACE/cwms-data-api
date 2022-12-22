@@ -1,22 +1,20 @@
 package cwms.radar.data.dao;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-
 import javax.sql.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.jooq.ConnectionProvider;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-
-import org.jooq.impl.DefaultConnectionProvider;
+import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DaoTest
 {
@@ -50,6 +48,9 @@ public class DaoTest
 	}
 
 
+	// This is probably the better method to call from tests
+	// b/c it uses a pool so it could potentially open multiple connections.
+	// most Dao will only use one connection...
 	public static DSLContext getDslContext(String officeId) throws SQLException {
 
 		PoolConfiguration poolProperties = new org.apache.tomcat.jdbc.pool.PoolProperties();
@@ -63,6 +64,7 @@ public class DaoTest
 
 		ConnectionProvider cp = new OfficeSettingConnectionProvider(ds, officeId);
 		DSLContext dsl =  DSL.using(cp, SQLDialect.ORACLE11G);
+		dsl.configuration().set(new DefaultExecuteListenerProvider(JooqDao.listener));
 		return dsl;
 	}
 
