@@ -32,7 +32,7 @@ class LocationControllerTest extends ControllerTest
     {
         String xml = loadResourceAsString("cwms/radar/api/location_create.xml");
         assertNotNull(xml);
-        Location location = LocationController.deserializeLocation(xml, Formats.XML, OFFICE_ID);
+        Location location = LocationController.deserializeLocation(xml, Formats.XML);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
         assertEquals("LRL", location.getOfficeId());
@@ -46,7 +46,7 @@ class LocationControllerTest extends ControllerTest
     {
         String json = loadResourceAsString("cwms/radar/api/location_create.json");
         assertNotNull(json);
-        Location location = LocationController.deserializeLocation(json, Formats.JSON, OFFICE_ID);
+        Location location = LocationController.deserializeLocation(json, Formats.JSON);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
         assertEquals("LRL", location.getOfficeId());
