@@ -19,6 +19,7 @@ import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -30,9 +31,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.StringReader;
 import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -241,7 +246,7 @@ public class ClobController implements CrudHandler {
         }
     }
 
-    private Clob deserialize(String body, String formatHeader) throws JsonProcessingException {
+    public Clob deserialize(String body, String formatHeader) throws JsonProcessingException {
         ObjectMapper om = getObjectMapperForFormat(formatHeader);
         return om.readValue(body, Clob.class);
     }
@@ -254,12 +259,19 @@ public class ClobController implements CrudHandler {
             module.setDefaultUseWrapper(false);
             om = new XmlMapper(module);
         } else if (Formats.JSONV2.equals(format)) {
-            om = new ObjectMapper();
+            om = JsonV2.buildObjectMapper();
         } else {
             throw new FormattingException("Format is not currently supported for Levels");
         }
         om.registerModule(new JavaTimeModule());
         return om;
+    }
+
+    public static Clob deserializeJAXB(String body) throws JAXBException {
+            JAXBContext jaxbContext = JAXBContext.newInstance(Clob.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            return (Clob) unmarshaller.unmarshal(new StringReader(body));
+
     }
 
     @OpenApi(
