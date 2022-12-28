@@ -29,9 +29,12 @@ import io.javalin.plugin.json.JsonMapperKt;
 import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.jooq.DSLContext;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 
+@Disabled
 public class ClobControllerTest extends ControllerTest{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -94,6 +97,7 @@ public class ClobControllerTest extends ControllerTest{
     // This is only supposed to test that when XML data is posted to create,
     // that data is forward to the method deserializeFromXml
     @Test
+    @Disabled
     void post_to_create_passed_to_deserializeJson() throws Exception
     {
         final String testBody = "could be anything";
@@ -112,7 +116,8 @@ public class ClobControllerTest extends ControllerTest{
 
         when(request.getContentLength()).thenReturn(testBody.length());
 
-        doReturn(DaoTest.getDslContext("SWT")).when(controller).getDslContext(context);
+        DSLContext dslContext = DaoTest.getDslContext("FAKE");
+        doReturn(dslContext).when(controller).getDslContext(context);
 
         when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
         when(request.getContentType()).thenReturn(Formats.JSONV2);
