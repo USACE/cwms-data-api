@@ -45,6 +45,8 @@ import org.jooq.DSLContext;
 public class ClobController implements CrudHandler {
 
     private static final int defaultPageSize = 20;
+    public static final String CLOB_ID = "clob-id";
+    public static final String TAG = "Clob";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -66,7 +68,7 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office",
+                    @OpenApiParam(name = OFFICE,
                             description = "Specifies the owning office. If this field is not "
                                     + "specified, matching information from all offices shall be "
                                     + "returned."),
@@ -112,7 +114,7 @@ public class ClobController implements CrudHandler {
                     }
             )
             },
-            tags = {"Clob"}
+            tags = {TAG}
     )
     @Override
     public void getAll(Context ctx) {
@@ -159,7 +161,7 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", description = "Specifies the owning office."),
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
             responses = {@OpenApiResponse(status = "200",
                     description = "Returns requested clob.",
@@ -168,7 +170,7 @@ public class ClobController implements CrudHandler {
                     }
             )
             },
-            tags = {"Clob"}
+            tags = {TAG}
     )
     @Override
     public void getOne(Context ctx, @NotNull String clobId) {
@@ -210,7 +212,7 @@ public class ClobController implements CrudHandler {
                     },
                     required = true),
             method = HttpMethod.POST,
-            tags = {"Clob"}
+            tags = {TAG}
     )
     @Override
     public void create(Context ctx) {
@@ -276,12 +278,12 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "clob-id", required = true, description = "Specifies the "
-                            + "id of the clob to be updated"),
+                    @OpenApiParam(name = CLOB_ID, required = true,
+                            description = "Specifies the id of the clob to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "office of the clob.")
+                    @OpenApiParam(name = OFFICE, required = true,
+                            description = "Specifies the office of the clob.")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -291,7 +293,7 @@ public class ClobController implements CrudHandler {
                     required = true),
             description = "Update clob",
             method = HttpMethod.PATCH,
-            tags = {"Clob"}
+            tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String clobId) {
@@ -359,16 +361,16 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "clob-id", required = true, description = "Specifies the "
-                            + "id of the clob to be deleted"),
+                    @OpenApiParam(name = CLOB_ID, required = true,
+                            description = "Specifies the id of the clob to be deleted"),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "office of the clob.")
+                    @OpenApiParam(name = OFFICE, required = true,
+                            description = "Specifies the office of the clob.")
             },
             description = "Delete clob",
             method = HttpMethod.DELETE,
-            tags = {"Clob"}
+            tags = {TAG}
     )
     @Override
     public void delete(Context ctx, @NotNull String clobId) {
