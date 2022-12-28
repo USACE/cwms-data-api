@@ -211,6 +211,10 @@ public class ClobController implements CrudHandler {
                             @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
                     },
                     required = true),
+            queryParams = {
+                    @OpenApiParam(name = "fail-if-exists", type = Boolean.class,
+                            description = "Create will fail if provided ID already exists. Default: true")
+            },
             method = HttpMethod.POST,
             tags = {TAG}
     )
@@ -221,11 +225,12 @@ public class ClobController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
+            boolean failIfExists = ctx.queryParamAsClass("fail-if-exists", Boolean.class).getOrDefault(true);
+
             try {
                 Clob clob = deserialize(ctx.body(), formatHeader);
 
                 if (clob.getOffice() == null) {
-                    // The pl/sql might use the user's office, but I don't want to rely on that.
                     throw new FormattingException("An officeId is required when creating a clob");
                 }
 
@@ -239,12 +244,11 @@ public class ClobController implements CrudHandler {
                 }
 
                 ClobDao dao = new ClobDao(dsl);
-                dao.create(clob, true);
+                dao.create(clob, failIfExists);
 
             } catch (JsonProcessingException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
             }
-
         }
     }
 
@@ -270,10 +274,9 @@ public class ClobController implements CrudHandler {
     }
 
     public static Clob deserializeJAXB(String body) throws JAXBException {
-            JAXBContext jaxbContext = JAXBContext.newInstance(Clob.class);
-            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            return (Clob) unmarshaller.unmarshal(new StringReader(body));
-
+        JAXBContext jaxbContext = JAXBContext.newInstance(Clob.class);
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        return (Clob) unmarshaller.unmarshal(new StringReader(body));
     }
 
     @OpenApi(
@@ -282,8 +285,10 @@ public class ClobController implements CrudHandler {
                             description = "Specifies the id of the clob to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true,
-                            description = "Specifies the office of the clob.")
+                    @OpenApiParam(name = "ignore-nulls",
+                            description = "If true, null and empty fields in the provided clob "
+                                    + "will be ignored and the existing value of those fields "
+                                    + "left in place. Default: true")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -298,7 +303,7 @@ public class ClobController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String clobId) {
 
-        String office = ctx.queryParam(OFFICE);
+        boolean ignoreNulls = ctx.queryParamAsClass("ignore-nulls", Boolean.class).getOrDefault(true);
 
         try (final Timer.Context ignored = markAndTime("update");
              DSLContext dsl = getDslContext(ctx)) {
@@ -310,24 +315,23 @@ public class ClobController implements CrudHandler {
             try {
                 Clob clob = deserialize(ctx.body(), formatHeader);
 
-                clob = fillOutClob(clob, clobId, office);
+                if (clob.getOffice() == null) {
+                    throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                    "An office is required in the request body when updating a clob");
+                }
+
+                clob = fillOutClob(clob, clobId);
 
                 if (!Objects.equals(clob.getId(), clobId)) {
                     throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
                             "Clob id in body does not match id in path");
                 }
 
-                if (!Objects.equals(clob.getOffice(), office)) {
-                    throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
-                            "Clob office in body does not match office in query param");
-                }
-
-                dao.update(clob, true);
+                dao.update(clob, ignoreNulls);
             } catch (JsonProcessingException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),
                         "Unable to parse request body");
             }
-
 
         }
     }
@@ -336,10 +340,9 @@ public class ClobController implements CrudHandler {
      * Fills out the clob with the id and office if they are not already set.
      * @param clob The clob to fill out
      * @param reqId The id to set if the clob id is null
-     * @param reqOffice The office to set if the clob office is null
      * @return The clob with the id and office set
      */
-    private Clob fillOutClob(Clob clob, String reqId, String reqOffice) {
+    private Clob fillOutClob(Clob clob, String reqId) {
         Clob retval = clob;
 
         if (clob != null && (clob.getId() == null || clob.getOffice() == null)) {
@@ -348,12 +351,7 @@ public class ClobController implements CrudHandler {
                 id = reqId;
             }
 
-            String office = clob.getOffice();
-            if (office == null) {
-                office = reqOffice;
-            }
-
-            retval = new Clob(id, office, clob.getDescription(), clob.getValue());
+            retval = new Clob(id, clob.getOffice(), clob.getDescription(), clob.getValue());
         }
 
         return retval;

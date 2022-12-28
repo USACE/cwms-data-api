@@ -115,7 +115,8 @@ public class LocationController implements CrudHandler {
                                     @OpenApiContent(type = Formats.CSV),
                                     @OpenApiContent(type = Formats.XML),
                                     @OpenApiContent(type = Formats.WML2),
-                                    @OpenApiContent(type = Formats.GEOJSON)
+                                    @OpenApiContent(type = Formats.GEOJSON),
+                                    @OpenApiContent(type = "")
                             })
             },
             description = "Returns CWMS Location Data",
@@ -233,10 +234,6 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
-                            + "office in which Location will be created")
-            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = Location.class, type = Formats.JSON),
@@ -256,15 +253,14 @@ public class LocationController implements CrudHandler {
         try (final Timer.Context timeContext = createRequestTime.time();
              DSLContext dsl = getDslContext(ctx)) {
             LocationsDao locationsDao = getLocationsDao(dsl);
-            String office = ctx.queryParam("office");
+
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if (contentType == null) {
                 throw new FormattingException("Format header could not be parsed");
             }
-            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType(),
-                    office);
+            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
             locationsDao.storeLocation(locationFromBody);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location");
         } catch (IOException ex) {
@@ -275,10 +271,6 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
-                            + "office in which Location will be updated")
-            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = Location.class, type = Formats.JSON),
@@ -297,18 +289,17 @@ public class LocationController implements CrudHandler {
         try (final Timer.Context timeContext = updateRequestTime.time();
              DSLContext dsl = getDslContext(ctx)) {
             LocationsDao locationsDao = getLocationsDao(dsl);
-            String office = ctx.queryParam("office");
+
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if (contentType == null) {
                 throw new FormattingException("Format header could not be parsed");
             }
-            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType(),
-                    office);
+            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,
-                    UnitSystem.EN.getValue(), office);
+                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
             existingLocation = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLocation);
             //only store (update) if location does exist
@@ -390,14 +381,12 @@ public class LocationController implements CrudHandler {
         return retVal;
     }
 
-    public static Location deserializeLocation(String body, String format, String office)
+    public static Location deserializeLocation(String body, String format)
             throws IOException {
         ObjectMapper om = getObjectMapperForFormat(format);
         Location retVal;
         try {
-            retVal = new Location.Builder(om.readValue(body, Location.class))
-                    .withOfficeId(office)
-                    .build();
+            retVal = new Location.Builder(om.readValue(body, Location.class)).build();
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to deserialize location", e);
             throw new IOException("Failed to deserialize location");
