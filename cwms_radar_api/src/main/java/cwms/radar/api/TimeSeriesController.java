@@ -125,7 +125,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = "office", required = true, description = "Specifies the "
                             + "owning office of the timeseries to be deleted."),
                     @OpenApiParam(name = "method",  description = "Specifies the delete method used."
-                            + "Default: Delete All",
+                            + "Default: DELETE_ALL",
                             type = TimeSeriesDao.DeleteMethod.class)
             },
             method = HttpMethod.DELETE,
