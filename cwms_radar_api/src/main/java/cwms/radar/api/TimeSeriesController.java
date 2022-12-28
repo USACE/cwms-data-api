@@ -3,7 +3,6 @@ package cwms.radar.api;
 import static com.codahale.metrics.MetricRegistry.name;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -21,7 +20,6 @@ import cwms.radar.data.dto.Tsv;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
-import cwms.radar.formatters.json.JsonV1;
 import cwms.radar.formatters.json.JsonV2;
 import cwms.radar.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
@@ -69,18 +67,6 @@ public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
 
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
-    private final Meter getRecentRequests;
-    private final Timer getRecentRequestsTime;
-    private final Meter createRequests;
-    private final Timer createRequestsTime;
-    private final Meter updateRequests;
-    private final Timer updateRequestsTime;
-    private final Meter deleteRequests;
-    private final Timer deleteRequestsTime;
 
     private final Histogram requestResultSize;
     private final int defaultPageSize = 500;
@@ -89,19 +75,11 @@ public class TimeSeriesController implements CrudHandler {
     public TimeSeriesController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
         requestResultSize = this.metrics.histogram((name(className, "results", "size")));
-        getRecentRequests = this.metrics.meter(name(className, "getRecent", "count"));
-        getRecentRequestsTime = this.metrics.timer(name(className, "getRecent", "time"));
-        createRequests = this.metrics.meter(name(className, "create", "count"));
-        createRequestsTime = this.metrics.timer(name(className, "create", "time"));
-        updateRequests = this.metrics.meter(name(className, "update", "count"));
-        updateRequestsTime = this.metrics.timer(name(className, "update", "time"));
-        deleteRequests = this.metrics.meter(name(className, "delete", "count"));
-        deleteRequestsTime = this.metrics.timer(name(className, "delete", "time"));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(
@@ -119,10 +97,9 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        createRequests.mark();
 
-        try (final Timer.Context timeContext = createRequestsTime.time(); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime("create");
+             DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries);
@@ -146,7 +123,10 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = "office", required = true, description = "Specifies the "
-                            + "owning office of the timeseries to be deleted.")
+                            + "owning office of the timeseries to be deleted."),
+                    @OpenApiParam(name = "method",  description = "Specifies the delete method used."
+                            + "Default: Delete All",
+                            type = TimeSeriesDao.DeleteMethod.class)
             },
             method = HttpMethod.DELETE,
             path = "/timeseries",
@@ -154,24 +134,36 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, String tsId) {
-        deleteRequests.mark();
-
+        TimeSeriesDao.DeleteMethod method = ctx.queryParamAsClass("method",
+                TimeSeriesDao.DeleteMethod.class)
+                .getOrDefault(TimeSeriesDao.DeleteMethod.DELETE_ALL);
 
         String office = ctx.queryParam("office");
 
-        try (
-                final Timer.Context timeContext = deleteRequestsTime.time();
+        try (final Timer.Context ignored = markAndTime("delete");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            dao.delete(office, tsId);
+
+            switch (method) {
+                case DELETE_KEY:
+                    dao.deleteKey(office, tsId);
+                    break;
+                case DELETE_DATA:
+                    dao.deleteData(office, tsId);
+                    break;
+                case DELETE_ALL:
+                    dao.deleteAll(office, tsId);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown delete method: " + method);
+            }
+            ctx.status(HttpServletResponse.SC_OK);
+
         } catch (DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
-        ctx.status(HttpServletResponse.SC_OK);
-
     }
 
     @OpenApi(
@@ -263,9 +255,8 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
-        try (
-                final Timer.Context timeContext = getAllRequestsTime.time();
+
+        try (final Timer.Context ignored = markAndTime("getAll");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
@@ -348,8 +339,9 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        getOneRequest.mark();
-        try (final Timer.Context timeContext = getOneRequestTime.time()) {
+
+        try (final Timer.Context ignored = markAndTime("getOne");
+                DSLContext dsl = getDslContext(ctx)) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -374,10 +366,7 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void update(Context ctx, String id) {
 
-        updateRequests.mark();
-
-        try (
-                final Timer.Context timeContext = updateRequestsTime.time();
+        try (                final Timer.Context ignored = markAndTime("update");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
@@ -514,8 +503,8 @@ public class TimeSeriesController implements CrudHandler {
             method = HttpMethod.GET
     )
     public void getRecent(Context ctx) {
-        getRecentRequests.mark();
-        try (final Timer.Context timeContext = getRecentRequestsTime.time();
+
+        try (final Timer.Context ignored = markAndTime("getRecent");
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
