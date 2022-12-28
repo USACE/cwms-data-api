@@ -44,7 +44,6 @@ class ClobTest {
         String output = xml.format(clob);
 
         assertNotNull(output);
-        System.out.println(output);
 
         Clob clob2 = ClobController.deserializeJAXB(output);
 
