@@ -3,6 +3,7 @@ package cwms.radar.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -13,7 +14,6 @@ import static org.mockito.Mockito.when;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.flogger.FluentLogger;
-import cwms.radar.data.dao.DaoTest;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -25,13 +25,18 @@ import io.javalin.http.HttpResponseException;
 import io.javalin.http.util.ContextUtil;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
+import java.sql.SQLException;
 import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
+import org.jooq.tools.jdbc.MockConnection;
+import org.jooq.tools.jdbc.MockDataProvider;
+import org.jooq.tools.jdbc.MockExecuteContext;
+import org.jooq.tools.jdbc.MockResult;
 import org.junit.jupiter.api.Test;
-
-
 
 public class ClobControllerTest extends ControllerTest{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -113,7 +118,16 @@ public class ClobControllerTest extends ControllerTest{
 
         when(request.getContentLength()).thenReturn(testBody.length());
 
-        DSLContext dslContext = DaoTest.getDslContext("FAKE");
+        MockDataProvider provider = new MockDataProvider() {
+            @Override
+            public MockResult[] execute(MockExecuteContext mockExecuteContext) throws SQLException {
+                fail();  // This test shouldn't call the database.  It just needs a DSLContext for the try/finally.
+                return null;
+            }
+        };
+        MockConnection connection = new MockConnection(provider);
+        DSLContext dslContext = DSL.using(connection, SQLDialect.ORACLE);
+
         doReturn(dslContext).when(controller).getDslContext(context);
 
         when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
