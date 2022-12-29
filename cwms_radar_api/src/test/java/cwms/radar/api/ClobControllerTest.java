@@ -11,7 +11,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dao.DaoTest;
@@ -30,11 +29,10 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 
-@Disabled
+
 public class ClobControllerTest extends ControllerTest{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -95,9 +93,8 @@ public class ClobControllerTest extends ControllerTest{
     */
 
     // This is only supposed to test that when XML data is posted to create,
-    // that data is forward to the method deserializeFromXml
+    // that data is forward to the method deserialize
     @Test
-    @Disabled
     void post_to_create_passed_to_deserializeJson() throws Exception
     {
         final String testBody = "could be anything";
