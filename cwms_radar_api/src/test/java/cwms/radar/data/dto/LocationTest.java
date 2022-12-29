@@ -42,7 +42,6 @@ class LocationTest
 		ObjectMapper om = JsonV1.buildObjectMapper();
 		String serializedLocation = om.writeValueAsString(location);
 		assertNotNull(serializedLocation);
-		System.out.println(serializedLocation);
 
 		Location location2 = om.readValue(serializedLocation, Location.class);
 		assertNotNull(location2);

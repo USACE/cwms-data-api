@@ -17,7 +17,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/radar/api/levels_seasonal_create.xml");
         assertNotNull(xml);
-        LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML, OFFICE_ID);
+        LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -32,7 +32,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/radar/api/levels_seasonal_create.json");
         assertNotNull(json);
-        LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON, OFFICE_ID);
+        LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -47,7 +47,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/radar/api/levels_constant_create.xml");
         assertNotNull(xml);
-        LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML, OFFICE_ID);
+        LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -62,7 +62,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/radar/api/levels_constant_create.json");
         assertNotNull(json);
-        LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON, OFFICE_ID);
+        LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -77,7 +77,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/radar/api/levels_timeseries_create.xml");
         assertNotNull(xml);
-        LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML, OFFICE_ID);
+        LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -92,7 +92,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/radar/api/levels_timeseries_create.json");
         assertNotNull(json);
-        LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON, OFFICE_ID);
+        LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());

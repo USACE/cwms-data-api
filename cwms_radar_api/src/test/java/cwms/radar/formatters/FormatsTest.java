@@ -154,6 +154,22 @@ public class FormatsTest
 
 	}
 
+	@Test
+	public void testParseHeaderAndQueryParmJSONv2WithCharset() {
+		ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2; charset=utf-8", null);
+
+		assertNotNull(contentType);
+		assertEquals("application/json", contentType.getType());
+	}
+
+	@Test
+	public void testParseHeaderJSONv2WithCharset() {
+		ContentType contentType = Formats.parseHeader("application/json;version=2; charset=utf-8");
+
+		assertNotNull(contentType);
+		assertEquals("application/json", contentType.getType());
+	}
+
 
 
 
