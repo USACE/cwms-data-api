@@ -857,11 +857,24 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
     }
 
-    public void delete(String officeId, String tsId) {
+    public void deleteAll(String officeId, String tsId) {
         connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-
             tsDao.deleteAll(connection, officeId, tsId);
+        });
+    }
+
+    public void deleteData(String officeId, String tsId) {
+        connection(dsl, connection -> {
+            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
+            tsDao.deleteData(connection, officeId, tsId);
+        });
+    }
+
+    public void deleteKey(String officeId, String tsId) {
+        connection(dsl, connection -> {
+            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
+            tsDao.deleteKey(connection, officeId, tsId);
         });
     }
 
