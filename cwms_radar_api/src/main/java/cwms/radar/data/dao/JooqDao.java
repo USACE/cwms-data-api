@@ -3,7 +3,8 @@ package cwms.radar.data.dao;
 import static org.jooq.SQLDialect.ORACLE;
 
 import cwms.radar.ApiServlet;
-import cwms.radar.api.NotFoundException;
+import cwms.radar.api.errors.AlreadyExists;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.SessionOfficePreparer;
@@ -11,6 +12,7 @@ import io.javalin.http.Context;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -97,38 +99,57 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static RuntimeException wrapException(RuntimeException input) {
         RuntimeException retval = input;
 
-        // Can add specializations as needed.
+        // Add specializations as needed.
         if (isNotFound(input)) {
             retval = buildNotFound(input);
+        } else if (isAlreadyExists(input)) {
+            retval = buildAlreadyExists(input);
+        } else if (isNullArgument(input)) {
+            retval = buildNullArgument(input);
         }
 
         return retval;
     }
 
-    public static boolean isNotFound(RuntimeException input) {
-        boolean retval = false;
-
+    public static Optional<SQLException> getSqlException(RuntimeException input) {
         Throwable cause = input;
+
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
             cause = dae.getCause();
         }
 
         if (cause instanceof SQLException) {
-            SQLException sqlException = (SQLException) cause;
-            final String localizedMessage = cause.getLocalizedMessage();
+            return Optional.of((SQLException) cause);
+        } else {
+            return Optional.empty();
+        }
+    }
 
-            // See link for a more complete list of CWMS Error codes:
-            // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
+    private static boolean matches(SQLException sqlException,
+                                   List<Integer> codes, List<String> segments) {
+        final String localizedMessage = sqlException.getLocalizedMessage();
 
-            int errorCode = sqlException.getErrorCode();
-            if (errorCode == 20001 || errorCode == 20025 || errorCode == 20034
-                    || localizedMessage.contains("_DOES_NOT_EXIST")
-                    || localizedMessage.contains("_NOT_FOUND")
-                    || localizedMessage.contains(" does not exist.")
-            ) {
-                retval = true;
-            }
+        return codes.contains(sqlException.getErrorCode())
+                || segments.stream().anyMatch(localizedMessage::contains);
+    }
+
+
+    // See link for a more complete list of CWMS Error codes:
+    // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
+
+    public static boolean isNotFound(RuntimeException input) {
+        boolean retval = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034);
+            List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
+                    " does not exist.");
+
+            retval = matches(sqlException, codes, segments);
         }
         return retval;
     }
@@ -155,6 +176,77 @@ public abstract class JooqDao<T> extends Dao<T> {
         return exception;
     }
 
+    public static boolean isAlreadyExists(RuntimeException input) {
+        boolean retval = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            List<Integer> codes = Arrays.asList(20003, 20020, 20026);
+            List<String> segments = Arrays.asList("ALREADY_EXISTS", " already exists.");
+
+            retval = matches(sqlException, codes, segments);
+
+        }
+        return retval;
+    }
+
+
+    private static RuntimeException buildAlreadyExists(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        AlreadyExists exception = new AlreadyExists(cause);
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                exception = new AlreadyExists(parts[0]);
+            }
+        }
+        return exception;
+    }
+
+    private static boolean isNullArgument(RuntimeException input) {
+        boolean retval = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            List<Integer> codes = Arrays.asList(20244);
+            List<String> segments = Arrays.asList("NULL_ARGUMENT", " already exists.");
+
+            retval = matches(sqlException, codes, segments);
+
+        }
+        return retval;
+    }
+
+    private static RuntimeException buildNullArgument(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        RuntimeException exception = new IllegalArgumentException(cause);
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                exception = new IllegalArgumentException(parts[0]);
+            }
+        }
+        return exception;
+    }
+
+
+
 
     // ExecuteListeners aren't called by DSL.connection blocks...
     void connection(DSLContext dslContext, ConnectionRunnable cr) {
@@ -165,7 +257,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
-    <T> T connectionResult(DSLContext dslContext, ConnectionCallable<T> var1){
+    <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
             return dslContext.connectionResult(var1);
         } catch (RuntimeException e) {

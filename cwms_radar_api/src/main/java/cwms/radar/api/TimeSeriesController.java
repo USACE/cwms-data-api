@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.TimeSeriesDao;
@@ -65,6 +66,9 @@ import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
+    public static final String FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
+
+    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
 
     private final MetricRegistry metrics;
 
@@ -195,14 +199,14 @@ public class TimeSeriesController implements CrudHandler {
                             + "If this field is not specified, any required time window begins 24"
                             + " hours prior to the specified or default end time. The format for "
                             + "this field is ISO 8601 extended, with optional offset and "
-                            + "timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., "
-                            + "'2021-06-10T13:00:00-0700[PST8PDT]'."),
+                            + "timezone, i.e., '"
+                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = "end", required = false, description = "Specifies the "
                             + "end of the time window for data to be included in the response. If"
                             + " this field is not specified, any required time window ends at the"
                             + " current time. The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', "
-                            + "e.g., '2021-06-10T13:00:00-0700[PST8PDT]'."),
+                            + "with optional timezone, i.e., '"
+                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = "timezone", required = false, description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
                             + "otherwise specified), as well as the time zone of any times in the"
@@ -240,7 +244,10 @@ public class TimeSeriesController implements CrudHandler {
                     description = "A list of elements of the data set you've selected.",
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML)
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                            @OpenApiContent(from = TimeSeries.class, type = ""),
                     }
             ),
                     @OpenApiResponse(status = "400", description = "Invalid parameter combination"),
@@ -372,6 +379,7 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
             dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
+
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");

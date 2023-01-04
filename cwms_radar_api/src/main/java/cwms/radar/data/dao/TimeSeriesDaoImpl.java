@@ -11,7 +11,6 @@ import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
-import cwms.radar.api.NotFoundException;
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.RecentValue;
@@ -164,202 +163,197 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final String recordCursor = cursor;
         final int recordPageSize = pageSize;
 
-        try {
-            Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(
-                    office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
-            Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
-            Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names),
-                    officeId);
+
+        Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(
+                office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
+        Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
+        Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names),
+                officeId);
 
 
-            Table<Record3<BigDecimal, String, String>> validTs =
-                    select( tsCode.as("tscode"),
-                            tsId.as("tsid"),
-                            officeId.as("office_id")
-                    ).asTable("validts");
+        Table<Record3<BigDecimal, String, String>> validTs =
+                select(tsCode.as("tscode"),
+                        tsId.as("tsid"),
+                        officeId.as("office_id")
+                ).asTable("validts");
 
-            Field<String> loc = CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(
-                    validTs.field("tsid", String.class),
-                    DSL.val(BigInteger.valueOf(1L)), DSL.val("."),
-                    DSL.val(BigInteger.valueOf(6L)));
-            Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(
-                    validTs.field("tsid", String.class),
-                    DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
-                    DSL.val(BigInteger.valueOf(6L))));
+        Field<String> loc = CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(
+                validTs.field("tsid", String.class),
+                DSL.val(BigInteger.valueOf(1L)), DSL.val("."),
+                DSL.val(BigInteger.valueOf(6L)));
+        Field<String> param = DSL.upper(CWMS_UTIL_PACKAGE.call_SPLIT_TEXT(
+                validTs.field("tsid", String.class),
+                DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
+                DSL.val(BigInteger.valueOf(6L))));
 
-            Field<String> unit = units.compareToIgnoreCase("SI") == 0
-                    ||
-                    units.compareToIgnoreCase("EN") == 0
-                    ?
-                    CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                            CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode),
-                            DSL.val(units, String.class)
-                    )
-                    :
-                    DSL.val(units, String.class);
+        Field<String> unit = units.compareToIgnoreCase("SI") == 0
+                ||
+                units.compareToIgnoreCase("EN") == 0
+                ?
+                CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode),
+                        DSL.val(units, String.class)
+                )
+                :
+                DSL.val(units, String.class);
 
-            CommonTableExpression<Record7<BigDecimal, String, String, String, String, BigDecimal,
-                    String>> valid =
-                    name("valid").fields("tscode", "tsid", "office_id", "loc_part", "units",
-                                    "interval", "parm_part")
-                            .as(
-                                    select(
-                                            validTs.field("tscode", BigDecimal.class).as("tscode"),
-                                            validTs.field("tsid", String.class).as("tsid"),
-                                            validTs.field("office_id", String.class).as(
-                                                    "office_id"),
-                                            loc.as("loc_part"),
-                                            unit.as("units"),
+        CommonTableExpression<Record7<BigDecimal, String, String, String, String, BigDecimal,
+                String>> valid =
+                name("valid").fields("tscode", "tsid", "office_id", "loc_part", "units",
+                                "interval", "parm_part")
+                        .as(
+                                select(
+                                        validTs.field("tscode", BigDecimal.class).as("tscode"),
+                                        validTs.field("tsid", String.class).as("tsid"),
+                                        validTs.field("office_id", String.class).as(
+                                                "office_id"),
+                                        loc.as("loc_part"),
+                                        unit.as("units"),
 
-                                            CWMS_TS_PACKAGE.call_GET_INTERVAL(
-                                                    validTs.field("tsid", String.class))
-                                                    .as("interval"),
-                                            param.as("parm_part")
+                                        CWMS_TS_PACKAGE.call_GET_INTERVAL(
+                                                        validTs.field("tsid", String.class))
+                                                .as("interval"),
+                                        param.as("parm_part")
 
-                                    ).from(validTs)
+                                ).from(validTs)
+                        );
+
+        Field<Timestamp> dateTimeCol = DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME");
+        Field<Double> valueCol = DSL.field("VALUE", Double.class).as("VALUE");
+        Field<Integer> qualityCol = DSL.field("QUALITY_CODE", Integer.class).as("QUALITY_CODE");
+        Field<BigDecimal> qualityNormCol =
+                CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(qualityCol, DSL.inline(5))).as(
+                        "QUALITY_NORM");
+
+        // This code assumes the database timezone is in UTC (per Oracle recommendation)
+        // Wrap in table() so JOOQ can parse the result
+        @SuppressWarnings("deprecated")
+        SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = DSL.select(
+                dateTimeCol, valueCol, qualityCol
+        ).from(DSL.sql("table( "
+                + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
+                valid.field("tsid", String.class),
+                valid.field("units", String.class),
+                CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
+                CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
+                DSL.inline("UTC", String.class),
+                // All times are sent as UTC to the database, regardless of requested
+                // timezone.
+                null, null, null, null, null, null, null,
+                valid.field("office_id", String.class))
+                + ")"
+        ));
+
+        SQL retrieveSelectData = DSL.sql("table(" +
+                CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
+                        tsId,
+                        unit,
+                        CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
+                        CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
+                        DSL.inline("UTC", String.class),
+                        // All times are sent as UTC to the database, regardless of requested
+                        // timezone.
+                        null, null, null, null, null, null, null,
+                        officeId)
+                + ") retrieveTs"
+        );
+
+
+        Field<String> tzName = this.getDbVersion() >= Dao.CWMS_21_1_1 ?
+                AV_CWMS_TS_ID2.TIME_ZONE_ID
+                :
+                DSL.inline(null, SQLDataType.VARCHAR);
+
+        SelectJoinStep<?> metadataQuery =
+                dsl.with(valid)
+                        .select(
+                                valid.field("tsid", String.class).as("NAME"),
+                                valid.field("office_id", String.class).as("office_id"),
+                                valid.field("units", String.class).as("units"),
+                                valid.field("interval", BigDecimal.class).as("interval"),
+                                valid.field("loc_part", String.class).as("loc_part"),
+                                valid.field("parm_part", String.class).as("parm_part"),
+                                DSL.choose(valid.field("parm_part", String.class))
+                                        .when(
+                                                "ELEV",
+                                                CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(
+                                                        valid.field("loc_part", String.class),
+                                                        valid.field("units", String.class),
+                                                        valid.field("office_id", String.class)))
+                                        .otherwise("")
+                                        .as("VERTICAL_DATUM"),
+                                // If we don't know the total, fetch it from the database
+                                // (only for first fetch).
+                                // Total is only an estimate, as it can change if fetching
+                                // current data, or the timeseries otherwise changes between
+                                // queries.
+                                total != null ? DSL.val(total).as("TOTAL") :
+                                        DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL"),
+                                AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                                AV_CWMS_TS_ID2.TIME_ZONE_ID
+                        )
+                        .from(valid)
+                        .leftOuterJoin(AV_CWMS_TS_ID2)
+                        .on(
+                                AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(valid.field("office_id",
+                                                String.class))
+                                        .and(AV_CWMS_TS_ID2.TS_CODE.eq(valid.field("tscode",
+                                                BigDecimal.class)))
+                                        .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
+                        );
+
+        logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
+
+        TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
+            String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
+            VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
+
+            return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
+                    Integer.class),
+                    tsMetadata.getValue("NAME", String.class), tsMetadata.getValue("office_id"
+                    , String.class),
+                    beginTime, endTime, tsMetadata.getValue("units", String.class),
+                    Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
+                            tsMetadata.getValue("interval", Long.class)),
+                    verticalDatumInfo,
+                    tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
+                    tsMetadata.getValue(tzName)
+            );
+        });
+
+        if (pageSize != 0) {
+            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query =
+                    dsl.select(
+                                    dateTimeCol,
+                                    valueCol,
+                                    qualityNormCol
+                            )
+                            .from(retrieveSelectData)
+                            .where(dateTimeCol
+                                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.nvl(DSL.val(tsCursor == null ? null :
+                                                            tsCursor.toInstant().toEpochMilli()),
+                                                    DSL.val(beginTime.toInstant().toEpochMilli())))))
+                            .and(dateTimeCol
+                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
                             );
 
-            Field<Timestamp> dateTimeCol = DSL.field("DATE_TIME", Timestamp.class).as("DATE_TIME");
-            Field<Double> valueCol = DSL.field("VALUE", Double.class).as("VALUE");
-            Field<Integer> qualityCol = DSL.field("QUALITY_CODE", Integer.class).as("QUALITY_CODE");
-            Field<BigDecimal> qualityNormCol =
-                    CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(DSL.nvl(qualityCol, DSL.inline(5))).as(
-                            "QUALITY_NORM");
+            if (pageSize > 0) {
+                query.limit(DSL.val(pageSize + 1));
+            }
 
-            // This code assumes the database timezone is in UTC (per Oracle recommendation)
-            // Wrap in table() so JOOQ can parse the result
-            @SuppressWarnings("deprecated")
-            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = DSL.select(
-                    dateTimeCol, valueCol, qualityCol
-            ).from(DSL.sql("table( "
-                    + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
-                            valid.field("tsid", String.class),
-                            valid.field("units", String.class),
-                            CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
-                            CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
-                            DSL.inline("UTC", String.class),
-                            // All times are sent as UTC to the database, regardless of requested
-                            // timezone.
-                            null, null, null, null, null, null, null,
-                            valid.field("office_id", String.class))
-                    + ")"
-            ));
+            logger.info(() -> query.getSQL(ParamType.INLINED));
 
-            SQL retrieveSelectData = DSL.sql("table(" +
-                    CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
-                            tsId,
-                            unit,
-                            CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
-                            CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
-                            DSL.inline("UTC", String.class),
-                            // All times are sent as UTC to the database, regardless of requested
-                            // timezone.
-                            null, null, null, null, null, null, null,
-                            officeId)
-                    + ") retrieveTs"
+            query.fetchInto(tsRecord -> timeseries.addValue(
+                            tsRecord.getValue(dateTimeCol),
+                            tsRecord.getValue(valueCol),
+                            tsRecord.getValue(qualityNormCol).intValue()
+                    )
             );
 
-
-            Field<String> tzName = this.getDbVersion() >= Dao.CWMS_21_1_1 ?
-                    AV_CWMS_TS_ID2.TIME_ZONE_ID
-                    :
-                    DSL.inline(null, SQLDataType.VARCHAR);
-
-            SelectJoinStep<?> metadataQuery =
-                    dsl.with(valid)
-                            .select(
-                                    valid.field("tsid", String.class).as("NAME"),
-                                    valid.field("office_id", String.class).as("office_id"),
-                                    valid.field("units", String.class).as("units"),
-                                    valid.field("interval", BigDecimal.class).as("interval"),
-                                    valid.field("loc_part", String.class).as("loc_part"),
-                                    valid.field("parm_part", String.class).as("parm_part"),
-                                    DSL.choose(valid.field("parm_part", String.class))
-                                            .when(
-                                                    "ELEV",
-                                                    CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(
-                                                            valid.field("loc_part", String.class),
-                                                            valid.field("units", String.class),
-                                                            valid.field("office_id", String.class)))
-                                            .otherwise("")
-                                            .as("VERTICAL_DATUM"),
-                                    // If we don't know the total, fetch it from the database
-                                    // (only for first fetch).
-                                    // Total is only an estimate, as it can change if fetching
-                                    // current data, or the timeseries otherwise changes between
-                                    // queries.
-                                    total != null ? DSL.val(total).as("TOTAL") :
-                                            DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL"),
-                                    AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
-                                    AV_CWMS_TS_ID2.TIME_ZONE_ID
-                            )
-                            .from(valid)
-                            .leftOuterJoin(AV_CWMS_TS_ID2)
-                            .on(
-                                    AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(valid.field("office_id",
-                                                    String.class))
-                                            .and(AV_CWMS_TS_ID2.TS_CODE.eq(valid.field("tscode",
-                                                    BigDecimal.class)))
-                                            .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
-                            );
-
-            logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
-
-            TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
-                String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
-                VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
-
-                return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
-                        Integer.class),
-                        tsMetadata.getValue("NAME", String.class), tsMetadata.getValue("office_id"
-                        , String.class),
-                        beginTime, endTime, tsMetadata.getValue("units", String.class),
-                        Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
-                                tsMetadata.getValue("interval", Long.class)),
-                        verticalDatumInfo,
-                        tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
-                        tsMetadata.getValue(tzName)
-                );
-            });
-
-            if (pageSize != 0) {
-                SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query =
-                        dsl.select(
-                                        dateTimeCol,
-                                        valueCol,
-                                        qualityNormCol
-                                )
-                                .from(retrieveSelectData)
-                                .where(dateTimeCol
-                                        .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                                                DSL.nvl(DSL.val(tsCursor == null ? null :
-                                                                tsCursor.toInstant().toEpochMilli()),
-                                                        DSL.val(beginTime.toInstant().toEpochMilli())))))
-                                .and(dateTimeCol
-                                        .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
-                                );
-
-                if (pageSize > 0) {
-                    query.limit(DSL.val(pageSize + 1));
-                }
-
-                logger.info(() -> query.getSQL(ParamType.INLINED));
-
-                query.fetchInto(tsRecord -> timeseries.addValue(
-                                tsRecord.getValue(dateTimeCol),
-                                tsRecord.getValue(valueCol),
-                                tsRecord.getValue(qualityNormCol).intValue()
-                        )
-                );
-
-                retval = timeseries;
-            }
-        } catch (org.jooq.exception.DataAccessException e) {
-            if (isNotFound(e.getCause())) {
-                throw new NotFoundException(e.getCause());
-            }
-            throw e;
+            retval = timeseries;
         }
+
         return retval;
     }
 
@@ -383,31 +377,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             } catch (JAXBException e) {
                 logger.log(Level.WARNING, "Failed to parse:" + body, e);
             }
-        }
-        return retval;
-    }
-
-
-    private boolean isNotFound(Throwable cause) {
-        boolean retval = false;
-        if (cause instanceof SQLException) {
-            SQLException sqlException = (SQLException) cause;
-
-            // When we type in a garbage tsId the cause is a SQLException.  Its cause is an
-            // OracleDatabaseException.
-            // Note: The message I saw looked like this:
-            //ORA-20001: TS_ID_NOT_FOUND: The timeseries identifier "%1" was not found for office
-            // "%2"
-            //ORA-06512: at "CWMS_20.CWMS_ERR", line 59
-            //ORA-06512: at "CWMS_20.CWMS_TS", line 48
-            //ORA-01403: no data found
-            //ORA-06512: at "CWMS_20.CWMS_TS", line 41
-            //ORA-06512: at "CWMS_20.CWMS_TS", line 26
-            int errorCode = sqlException.getErrorCode();
-
-            // 20001 happens when the ts id doesn't exist
-            // 20025 happens when the location doesn't exist
-            retval = (20001 == errorCode || 20025 == errorCode);
         }
         return retval;
     }
@@ -823,7 +792,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     public void create(TimeSeries input) {
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
             int utcOffsetMinutes = 0;
@@ -842,7 +811,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     public void store(TimeSeries input, Timestamp versionDate) {
-        dsl.connection(connection ->
+        connection(dsl, connection ->
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
                         versionDate, input.getValues())
         );
@@ -854,7 +823,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
                     + "first.");
         }
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             store(connection, input.getOfficeId(), name, input.getUnits(), NON_VERSIONED,
                     input.getValues());
         });
