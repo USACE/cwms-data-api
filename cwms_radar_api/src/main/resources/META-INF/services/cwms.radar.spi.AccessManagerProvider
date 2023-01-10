@@ -1,1 +1,2 @@
 cwms.radar.security.CwmsAccessManagerProvider
+cwms.radar.security.LoginDotGovAccessManagerProvider

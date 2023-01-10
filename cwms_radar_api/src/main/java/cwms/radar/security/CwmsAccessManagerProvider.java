@@ -1,7 +1,7 @@
 package cwms.radar.security;
 
 import cwms.radar.spi.AccessManagerProvider;
-import io.javalin.core.security.AccessManager;
+import cwms.radar.spi.RadarAccessManager;
 
 public class CwmsAccessManagerProvider implements AccessManagerProvider {
 
@@ -11,7 +11,7 @@ public class CwmsAccessManagerProvider implements AccessManagerProvider {
     }
 
     @Override
-    public AccessManager create() {        
+    public RadarAccessManager create() {        
         return new CwmsAccessManager();
     }
     

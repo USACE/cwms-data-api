@@ -7,10 +7,14 @@ import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
 import cwms.radar.datasource.SessionUserPreparer;
-import io.javalin.core.security.AccessManager;
+import cwms.radar.spi.RadarAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Principal;
@@ -22,10 +26,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CwmsAccessManager implements AccessManager {
+public class CwmsAccessManager extends RadarAccessManager {
     public static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
     public static final String DATABASE = "database";
 
@@ -203,5 +208,13 @@ public class CwmsAccessManager implements AccessManager {
 //
 //        return conn;
 //    }
+
+	@Override
+	public SecurityScheme getScheme() {		
+		return new SecurityScheme()
+					.type(Type.APIKEY)
+					.in(In.COOKIE)					
+					.name("JSESSIONIDSSO");
+	}
 
 }

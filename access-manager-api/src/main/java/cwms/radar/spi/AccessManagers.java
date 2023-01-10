@@ -7,8 +7,6 @@ import javax.management.ServiceNotFoundException;
 
 import org.jetbrains.annotations.NotNull;
 
-import io.javalin.core.security.AccessManager;
-
 public class AccessManagers {
     
     ServiceLoader<AccessManagerProvider> loader = ServiceLoader.load(AccessManagerProvider.class);
@@ -20,8 +18,8 @@ public class AccessManagers {
         return loader.iterator();
     }
 
-    public AccessManager get(@NotNull String name) throws ServiceNotFoundException {
-        AccessManager am[] = new AccessManager[1];
+    public RadarAccessManager get(@NotNull String name) throws ServiceNotFoundException {
+        RadarAccessManager am[] = new RadarAccessManager[1];
         this.loader.forEach((amp)-> {
             if (name.equalsIgnoreCase(amp.getName())) {
                 am[0] = amp.create();                

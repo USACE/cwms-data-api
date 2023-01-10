@@ -40,14 +40,14 @@ import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
-import cwms.radar.security.CwmsAccessManager;
 import cwms.radar.security.Role;
 import cwms.radar.spi.AccessManagers;
+import cwms.radar.spi.RadarAccessManager;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
-import io.javalin.core.security.AccessManager;
+import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
@@ -55,11 +55,20 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.javalin.plugin.openapi.ui.SwaggerOptions;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.DateTimeException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.management.ServiceNotFoundException;
@@ -116,12 +125,17 @@ public class ApiServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    static JavalinServlet javalin = null;
+    JavalinServlet javalin = null;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
 
 
+
+    @Override
+    public void destroy() {
+        javalin.destroy();
+    }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -131,6 +145,7 @@ public class ApiServlet extends HttpServlet {
         super.init(config);
     }
 
+    @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
     public void init() {
         logger.atInfo().log("Initializing API");
@@ -139,7 +154,7 @@ public class ApiServlet extends HttpServlet {
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
 
-        AccessManager accessManager = buildAccessManager();
+        //AccessManager accessManager = buildAccessManager();
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         String context = this.getServletContext().getContextPath();
@@ -214,13 +229,12 @@ public class ApiServlet extends HttpServlet {
                 })
 
                 .routes(this::configureRoutes)
-                .javalinServlet();
+                .javalinServlet();        
     }
 
-    private AccessManager buildAccessManager() {
-        try {
-            String provider = System.getProperty("radar.access.provider","CwmsAccessManager");
-            AccessManagers ams = new AccessManagers();        
+    private RadarAccessManager buildAccessManager(String provider) {
+        try {            
+            AccessManagers ams = new AccessManagers();       
             return ams.get(provider);
         } catch (ServiceNotFoundException err) {
             throw new RuntimeException("Unable to initialize access manager",err);

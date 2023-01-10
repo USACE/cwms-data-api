@@ -3,4 +3,7 @@ dependencies {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"        
     }
+    compileOnly("io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION") {
+        exclude group: "jakarta.xml.bind", module: "*"
+    }
 }
