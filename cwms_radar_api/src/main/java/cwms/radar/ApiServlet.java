@@ -164,7 +164,6 @@ public class ApiServlet extends HttpServlet {
                     config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
                     //config.enableDevLogging();
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-                    config.accessManager(accessManager);
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
