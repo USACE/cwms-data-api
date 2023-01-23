@@ -38,19 +38,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     private static TomcatServer radarInstance;
     private static CwmsDatabaseContainer cwmsDb;
-<<<<<<< HEAD
-    private static TestRealm realm;
-    private static TestAuthValve authValve;
+
     private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
-    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms_schema_installer:latest-dev");
-=======
+    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:latest-dev");
 
-    private static String DB_VERSION = System.getProperty("oracle.version", CwmsDatabaseContainer.ORACLE_19C);
-    private static String DB_VOLUME = System.getProperty("oracle.volume", "cwmsdb_radar_volume");
-    private static String CWMS_VERSION = System.getProperty("cwms.schema.version", "registry.hecdev.net/cwms/schema_installer:latest-dev");
-    
->>>>>>> e050d46 (General workflow works, database itself needs tweaks.)
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -100,7 +92,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
                     throw new RuntimeException("can't set fake user",ex);
                 }
             },"CWMS_20");
-
+            
             radarInstance = new TomcatServer("build/tomcat", 
                                              System.getProperty("warFile"),
                                              0,

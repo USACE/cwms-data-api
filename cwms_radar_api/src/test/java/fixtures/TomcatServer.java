@@ -19,6 +19,7 @@ import org.apache.catalina.Realm;
 import org.apache.catalina.Server;
 import org.apache.catalina.authenticator.AuthenticatorBase;
 import org.apache.catalina.connector.Connector;
+import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
@@ -65,8 +66,6 @@ public class TomcatServer {
         Connector connector = tomcatInstance.getConnector();
         connector.setSecure(true);
         connector.setScheme("https");
-
-
         tomcatInstance.setSilent(false);
         tomcatInstance.enableNaming();
         Engine engine = tomcatInstance.getEngine();
@@ -77,24 +76,23 @@ public class TomcatServer {
 
         Context blankToNull = tomcatInstance.addContext("", null);
 
-
         File radar = new File(radarWar);
         try{
             File existingRadar = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
-            Files.walk(existingRadar.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-            existingRadar.delete();
-            new File(existingRadar.getAbsolutePath()+".war").delete();
+            ExpandWar.delete(existingRadar);
+            ExpandWar.delete(new File(existingRadar.getAbsolutePath()+".war"));
+            ExpandWar.copy(radar, new File(tomcatInstance.getHost().getAppBaseFile(),"cwms-data.war"));
         } catch( Exception err) {
             System.out.println(err.getLocalizedMessage());
         }
 
-        Context context = tomcatInstance.addWebapp(contextName, radar.toURI().toURL());
+        //Context context = tomcatInstance.addWebapp(contextName, radar.toURI().toURL());
 
         if(authValve != null && realm != null)
         {
             logger.info("Setting Realm and Valve");
             engine.setRealm(realm);
-            context.getPipeline().addValve(authValve);
+            //context.getPipeline().addValve(authValve);
         }
 
     }
@@ -121,6 +119,11 @@ public class TomcatServer {
      */
     public void start() throws LifecycleException {
         tomcatInstance.start();
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         System.out.println("Tomcat listening at http://localhost:" + tomcatInstance.getConnector().getPort());
     }
 

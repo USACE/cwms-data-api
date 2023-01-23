@@ -32,11 +32,12 @@ public class ClobControllerTestIT {
         String urlencoded = java.net.URLEncoder.encode(clobId);
 
         Response response = given()
+                .log().everything(true)
                 .accept(Formats.JSONV2)
                 .queryParam(ClobController.OFFICE, SPK)
-                .get("/clob/" + urlencoded);
+                .get("/clobs/" + urlencoded);
 
-        response.then().assertThat()
+        response.then().log().everything(true).assertThat()
                 .statusCode(is(404))
         ;
 
@@ -52,32 +53,37 @@ public class ClobControllerTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         String serializedClob = om.writeValueAsString(clob);
 
-        ValidatableResponse response = given().log().everything(true)
+        given()
+                .log().everything(true)
                 .accept(Formats.JSONV2)
-                .body(serializedClob.getBytes())
-                .header("Authorization","apikey testkeyuser1")
+                .body(serializedClob)
+                .header("Authorization","apikey l2testkey")
+                //.param("office",SPK)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .post("/clob")
-                .then();                
-        System.out.println(response.toString());
-        response.log().body().log().everything(true);
-                response.assertThat()
+                .post("/clobs/")
+                .then()        
+                .log().body().log().everything(true)
+                .assertThat()
                 .statusCode(is(200));
 
         String urlencoded = java.net.URLEncoder.encode(clobId,"UTF-8");
         given()
                 .accept(Formats.JSONV2)
+                .log().everything(true)
                 .queryParam(ClobController.OFFICE, SPK)
                 .when()
-                .get("/clob/" + urlencoded)
-                .then().assertThat()
+                .get("/clobs/" + urlencoded)
+                .then()
+                .log().body().log().everything(true)
+                .assertThat()
                 .statusCode(is(200))
                 .body("office", is(SPK))
                 .body("id", is(clobId))
                 .body("description", is(origDesc))
                 .body("value", is(origValue))
+                
         ;
 
     }
