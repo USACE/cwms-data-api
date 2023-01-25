@@ -94,7 +94,6 @@ public class KeyAccessManager extends RadarAccessManager{
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
-        //ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
         DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(officePrepare,keyPreparer);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
@@ -126,8 +125,11 @@ public class KeyAccessManager extends RadarAccessManager{
     private Set<RouteRole> getRoles(String user,String office) {
         Set<RouteRole> roles = new HashSet<>();
         try(Connection conn = dataSource.getConnection();
+            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
             PreparedStatement getRoles = conn.prepareStatement(RETRIEVE_GROUPS_OF_USER);
         ) {
+            setApiUser.setString(1,conn.getMetaData().getUserName());
+            setApiUser.execute();
             getRoles.setString(1,user);
             getRoles.setString(2,office);
             try (ResultSet rs = getRoles.executeQuery()) {
@@ -143,9 +145,10 @@ public class KeyAccessManager extends RadarAccessManager{
 
     private String checkKey(String key, Context ctx) {
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper('q0hectest_pu')); end;");
+            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
             PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
         {
+            setApiUser.setString(1,conn.getMetaData().getUserName());
             setApiUser.execute();
             checkForKey.setString(1,key);
             try(ResultSet rs = checkForKey.executeQuery()) {

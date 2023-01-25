@@ -48,6 +48,12 @@
             "hostName": "localhost",
             "sourcePaths": [
                 "build/generated/sources/annotationProcessor/java/main",
+                "/home/mike/projects/hec-cwms-data-access/cwms-db-dao/java/main",
+                "/home/mike/projects/hec-cwms-data-access/cwms-db-jdbc/java/main",
+                "/home/mike/projects/hec-cwms-data-access/hec-db-jdbc/java/main",
+                "/home/mike/projects/hec-cwms-data-access/cwms-db-jooq/java/main",
+                "/home/mike/projects/hec-cwms-data-access/hec-db-core/java/main",
+                "/home/mike/projects/hec-cwms-data-access/cwms-db-aspects/java/main"
             ]
         }
     ]

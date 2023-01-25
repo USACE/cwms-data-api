@@ -11,6 +11,7 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,25 +74,13 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             this.loadDefaultData(cwmsDb);
             this.loadTimeSeriesData(cwmsDb);
             System.setProperty("RADAR_JDBC_URL", cwmsDb.getJdbcUrl());
-            System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser());
+            System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser()
+                                                               .replace("hectest_pu",
+                                                                                "webtest")
+                                                            );
             System.setProperty("RADAR_JDBC_PASSWORD", cwmsDb.getPassword());
             //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
-            System.out.println("warFile property:" + System.getProperty("warFile"));
-
-            // ADD TestPrincipal with real session key here; generate the session key using
-            // the cwmsDb.connection functions to call get_user_credentials as appropriate.
-            // OR... forcibly add the fake session_key to the at_sec_session table. dealers choice.
-            cwmsDb.connection( (conn) -> {
-                try(PreparedStatement insertApiKey = ((Connection)conn).prepareStatement("insert into at_api_keys(userid,key_name,apikey) values (?,?,?)");) {
-                    insertApiKey.setString(1,"USER");
-                    insertApiKey.setString(2,"TestKey");
-                    insertApiKey.setString(3,"TestKey");
-                    insertApiKey.execute();
-                }
-                catch(SQLException ex) {
-                    throw new RuntimeException("can't set fake user",ex);
-                }
-            },"CWMS_20");
+            System.out.println("warFile property:" + System.getProperty("warFile"));            
             
             radarInstance = new TomcatServer("build/tomcat", 
                                              System.getProperty("warFile"),

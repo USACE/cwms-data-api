@@ -344,7 +344,7 @@ public class ApiServlet extends HttpServlet {
     private void getOpenApiOptions(JavalinConfig config) {
         Info applicationInfo = new Info().title("CWMS Radar").version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
-        String provider = System.getProperty("radar.access.provider","KeyAccessManager");
+        String provider = System.getProperty("radar.access.provider","CwmsAccessManager");
         RadarAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         components.addSecuritySchemes(provider,

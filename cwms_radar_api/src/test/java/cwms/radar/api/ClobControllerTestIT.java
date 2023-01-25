@@ -12,6 +12,7 @@ import cwms.radar.data.dto.Clob;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
 import fixtures.RadarApiSetupCallback;
+import fixtures.TestAccounts;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 
@@ -52,13 +53,14 @@ public class ClobControllerTestIT {
         Clob clob = new Clob(SPK, clobId, origDesc, origValue);
         ObjectMapper om = JsonV2.buildObjectMapper();
         String serializedClob = om.writeValueAsString(clob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
                 .log().everything(true)
                 .accept(Formats.JSONV2)
                 .body(serializedClob)
-                .header("Authorization","apikey l2testkey")
-                //.param("office",SPK)
+                .header("Authorization",user.toHeaderValue())
+                .queryParam("office",SPK)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
