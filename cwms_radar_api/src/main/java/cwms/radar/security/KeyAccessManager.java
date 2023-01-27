@@ -45,7 +45,7 @@ public class KeyAccessManager extends RadarAccessManager{
     private static final String RETRIEVE_GROUPS_OF_USER = "select "
     + "privs.user_group_id"
     + " from table("
-    + "cwms_sec.get_user_priv_groups_tab(?,?)"
+    + "cwms_sec.get_assigned_priv_groups_tab(?)"
     + ") privs"
     + " where is_member = 'T'";
 
@@ -125,13 +125,13 @@ public class KeyAccessManager extends RadarAccessManager{
     private Set<RouteRole> getRoles(String user,String office) {
         Set<RouteRole> roles = new HashSet<>();
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
+            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); cwms_env.set_session_office_id(?);end;");
             PreparedStatement getRoles = conn.prepareStatement(RETRIEVE_GROUPS_OF_USER);
-        ) {
-            setApiUser.setString(1,conn.getMetaData().getUserName());
+        ) {            
+            setApiUser.setString(1,user);
+            setApiUser.setString(2,office);
             setApiUser.execute();
-            getRoles.setString(1,user);
-            getRoles.setString(2,office);
+            getRoles.setString(1,office);
             try (ResultSet rs = getRoles.executeQuery()) {
                 while(rs.next()) {
                     roles.add(new Role(rs.getString(1)));
@@ -145,7 +145,7 @@ public class KeyAccessManager extends RadarAccessManager{
 
     private String checkKey(String key, Context ctx) {
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
+            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_office_id('HQ'); cwms_env.set_session_user_direct(upper(?)); end;");
             PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
         {
             setApiUser.setString(1,conn.getMetaData().getUserName());

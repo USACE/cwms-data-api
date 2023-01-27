@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
+
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
@@ -43,7 +45,7 @@ import org.jooq.DSLContext;
 
 
 public class ClobController implements CrudHandler {
-
+    private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 20;
     public static final String CLOB_ID = "clob-id";
     public static final String TAG = "Clob";
@@ -260,6 +262,7 @@ public class ClobController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
+        log.atInfo().log("Getting objectmapper for format '%s'",format);
         if ((Formats.XMLV2).equals(format)) {
             JacksonXmlModule module = new JacksonXmlModule();
             module.setDefaultUseWrapper(false);
@@ -267,7 +270,9 @@ public class ClobController implements CrudHandler {
         } else if (Formats.JSONV2.equals(format)) {
             om = JsonV2.buildObjectMapper();
         } else {
-            throw new FormattingException("Format is not currently supported for Levels");
+            FormattingException fe = new FormattingException("Format is not currently supported for Levels");
+            log.atFine().withCause(fe).log("Format %s not supported",format);
+            throw fe;
         }
         om.registerModule(new JavaTimeModule());
         return om;

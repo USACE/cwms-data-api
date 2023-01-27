@@ -58,6 +58,7 @@ public class ClobControllerTestIT {
         given()
                 .log().everything(true)
                 .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
                 .body(serializedClob)
                 .header("Authorization",user.toHeaderValue())
                 .queryParam("office",SPK)
