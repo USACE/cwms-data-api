@@ -263,11 +263,11 @@ public class ClobController implements CrudHandler {
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
         log.atInfo().log("Getting objectmapper for format '%s'",format);
-        if ((Formats.XMLV2).equals(format)) {
+        if (ContentType.equivalent(Formats.XMLV2,format)) {
             JacksonXmlModule module = new JacksonXmlModule();
             module.setDefaultUseWrapper(false);
             om = new XmlMapper(module);
-        } else if (Formats.JSONV2.equals(format)) {
+        } else if (ContentType.equivalent(Formats.JSONV2,format)) {
             om = JsonV2.buildObjectMapper();
         } else {
             FormattingException fe = new FormattingException("Format is not currently supported for Levels");
