@@ -145,7 +145,7 @@ public class KeyAccessManager extends RadarAccessManager{
 
     private String checkKey(String key, Context ctx) {
         try(Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_office_id('HQ'); cwms_env.set_session_user_direct(upper(?)); end;");
+            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_office_id('SPK'); cwms_env.set_session_user_direct(upper(?)); end;");
             PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
         {
             setApiUser.setString(1,conn.getMetaData().getUserName());

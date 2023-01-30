@@ -313,9 +313,13 @@ public class ApiServlet extends HttpServlet {
                     + "'/resource/{resource-id}'");
         }
         String resourceId = subPaths[subPaths.length - 1];
-        if (!(resourceId.startsWith("{") && resourceId.endsWith("}"))) {
+        if (!(
+                (resourceId.startsWith("{") && resourceId.endsWith("}"))
+                ||
+                (resourceId.startsWith("<") && resourceId.endsWith(">"))
+            )) {
             throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
-                    + "end of the provided path, e.g. '/users/{user-id}'");
+                    + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>'");
         }
         String resourceBase = subPaths[subPaths.length - 2];
         if (resourceBase.startsWith("{") || resourceBase.startsWith("<")

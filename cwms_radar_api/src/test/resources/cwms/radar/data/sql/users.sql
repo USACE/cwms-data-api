@@ -1,5 +1,5 @@
 begin
-  cwms_sec.add_user_to_group('&user.','CWMS Users', 'HQ');
+  --cwms_sec.add_user_to_group('&user.','CWMS Users', 'HQ');
   cwms_sec.add_user_to_group('s0webtest','CWMS Users', 'HQ');
   cwms_sec.add_user_to_group('s0webtest','CWMS PD Users', 'HQ');
   cwms_sec.add_user_to_group('s0webtest','CWMS DBA Users', 'HQ');

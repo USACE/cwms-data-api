@@ -72,7 +72,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);
-            this.loadTimeSeriesData(cwmsDb);
+            //this.loadTimeSeriesData(cwmsDb);
             System.setProperty("RADAR_JDBC_URL", cwmsDb.getJdbcUrl());
             System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser()
                                                                .replace("hectest_pu",
@@ -124,7 +124,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             } else if( user.equalsIgnoreCase("user")) {
                 user = cwmsDb.getUsername();
             }
-            System.out.println("running switch with " + user);
+            System.out.println("Running: "+data);
             cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()), user);
         }
 

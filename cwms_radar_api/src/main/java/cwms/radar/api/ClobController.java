@@ -247,7 +247,7 @@ public class ClobController implements CrudHandler {
 
                 ClobDao dao = new ClobDao(dsl);
                 dao.create(clob, failIfExists);
-
+                ctx.status(HttpCode.CREATED);
             } catch (JsonProcessingException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
             }
