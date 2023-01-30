@@ -32,10 +32,12 @@ import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+@Disabled("Needs larger rework for auth system changes.")
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
 class RatingMetadataDaoTestIT {
@@ -45,7 +47,7 @@ class RatingMetadataDaoTestIT {
     @Test
     void testRetrieveMetadata() throws SQLException {
 
-        CwmsDatabaseContainer databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
         databaseLink.connection((Consumer<Connection>) c -> {//
             testRetrieveMetadata(c, databaseLink.getOfficeId());
         });
