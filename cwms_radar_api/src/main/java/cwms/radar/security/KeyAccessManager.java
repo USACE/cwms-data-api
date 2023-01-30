@@ -60,20 +60,16 @@ public class KeyAccessManager extends RadarAccessManager{
             if (!routeRoles.isEmpty()) {
                 String key = getApiKey(ctx);
                 String user = authorized(ctx, key, routeRoles);
-                if (user == null) {
-                    throw new CwmsAuthException("Invalid Credentials.");
-                }
                 prepareContextWithUser(ctx, user,key);
             }
             handler.handle(ctx);
         }
         catch(CwmsAuthException ex) {
             logger.log(Level.WARNING,"Unauthorized login attempt",ex);
-	    	ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
             HashMap<String,String> msg = new HashMap<>();
             msg.put("message",ex.getMessage());
             RadarError re = new RadarError("Unauthorized",msg,true);
-            ctx.status(401).json(re);
+            ctx.status(ex.getAuthFailCode()).json(re);
         }		
 
 	}
@@ -94,7 +90,7 @@ public class KeyAccessManager extends RadarAccessManager{
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
-        DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(officePrepare,keyPreparer);
+        DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(keyPreparer,officePrepare);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
@@ -116,7 +112,11 @@ public class KeyAccessManager extends RadarAccessManager{
             retval = user;
         } else {
             Set<RouteRole> specifiedRoles = getRoles(user,ctx.queryParam("office"));
-            retval = specifiedRoles.containsAll(routeRoles) == true ? user : null;
+            if (specifiedRoles.containsAll(routeRoles) ) {
+                retval = user;
+            } else {
+                throw new CwmsAuthException("Operation not authorized for user",403);
+            }
         }
 
         return retval;
@@ -143,7 +143,7 @@ public class KeyAccessManager extends RadarAccessManager{
         return roles;
     }
 
-    private String checkKey(String key, Context ctx) {
+    private String checkKey(String key, Context ctx) throws CwmsAuthException {
         try(Connection conn = dataSource.getConnection();
             PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_office_id('SPK'); cwms_env.set_session_user_direct(upper(?)); end;");
             PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
@@ -156,13 +156,14 @@ public class KeyAccessManager extends RadarAccessManager{
                     return rs.getString(1);
                 } else {
                     logger.info("No user for key");
+                    throw new CwmsAuthException("User not authorized.");
                 }
             }
         }
         catch(SQLException ex) {
             logger.log(Level.WARNING,"Failed API key check",ex);
+            throw new CwmsAuthException("Authorized failed");
         }
-        return null;
     }
 
     public static String getDigest(byte[] bytes) {
@@ -179,6 +180,10 @@ public class KeyAccessManager extends RadarAccessManager{
 
     private String getApiKey(Context ctx) {
         String header = ctx.header(AUTH_HEADER);
+        if (header == null) {
+            return null;
+        }
+
         String parts[] = header.split("\\s+");
         if( parts.length < 0) {
             return null;

@@ -4,7 +4,8 @@ public class TestAccounts {
     
 
     public enum KeyUser {
-        SPK_NORMAL("l2hectest","l2userkey");
+        SPK_NORMAL("l2hectest","l2userkey"),
+        SPK_NO_ROLES("user2","User2key");
 
         public final String name;
         public final String key;

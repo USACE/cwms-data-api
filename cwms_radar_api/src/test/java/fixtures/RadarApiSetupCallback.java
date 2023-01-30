@@ -72,7 +72,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);
-            //this.loadTimeSeriesData(cwmsDb);
+            this.loadTimeSeriesData(cwmsDb);
             System.setProperty("RADAR_JDBC_URL", cwmsDb.getJdbcUrl());
             System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser()
                                                                .replace("hectest_pu",
