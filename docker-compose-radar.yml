@@ -1,0 +1,21 @@
+networks:
+  default:
+    name: cwms_database_default
+
+services:
+  radar:
+    build:
+      context: ./cwms_radar_api/build/docker
+    restart: always
+    container_name: cwms-dev-radar
+    environment:
+      - RADAR_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
+      - RADAR_JDBC_URL=jdbc:oracle:thin:@cwms-dev-db/CWMSDEV
+      - RADAR_JDBC_USERNAME=s0hectest
+      - RADAR_JDBC_PASSWORD=password
+      - RADAR_POOL_INIT_SIZE=5
+      - RADAR_POOL_MAX_ACTIVE=10
+      - RADAR_POOL_MAX_IDLE=5
+      - RADAR_POOL_MIN_IDLE=2
+    ports:
+      - "7000:7000"

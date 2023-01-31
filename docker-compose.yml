@@ -1,21 +1,89 @@
-networks:
-  default:
-    name: cwms_database_default
-
+volumes:
+  oracle_data:
 services:
-  radar:
-    build:
-      context: ./cwms_radar_api/build/docker
-    restart: always
-    container_name: cwms-dev-radar
+  db:    
+    # if using gvenzl/oracle-xe you'll need to adjust the environment below
+    image: ${ORACLE_DOCKER_IMAGE}
+    volumes:
+      - oracle_data:/opt/oracle/oradata
     environment:
-      - RADAR_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
-      - RADAR_JDBC_URL=jdbc:oracle:thin:@cwms-dev-db/CWMSDEV
-      - RADAR_JDBC_USERNAME=s0hectest
-      - RADAR_JDBC_PASSWORD=password
-      - RADAR_POOL_INIT_SIZE=5
-      - RADAR_POOL_MAX_ACTIVE=10
-      - RADAR_POOL_MAX_IDLE=5
-      - RADAR_POOL_MIN_IDLE=2
+      - ORACLE_PDB=CWMS
+      - ORACLE_PWD=badSYSpassword
+      - ORACLE_EDITION=enterprise
     ports:
-      - "7000:7000"
+      - 1521    
+    healthcheck:
+      test: ["CMD","tnsping", "CWMS"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 40m
+  db_install:
+    depends_on:
+      db:
+        condition: service_healthy
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:latest-dev}
+    pull_policy: always
+    tty: true
+    environment:
+      - DB_HOST_PORT=db:1521
+      - DB_NAME=/CWMS
+      - CWMS_PASSWORD=simplecwmspasswD1
+      - SYS_PASSWORD=badSYSpassword
+      # set to HEC/q0 for any national system work
+      - OFFICE_ID=HEC
+      - OFFICE_EROC=q0
+      - INSTALLONCE=1
+      - QUIET=1      
+    restart: "no"
+  #api_perms:
+  #  image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:latest-dev}
+  # restart: "no"
+  # environment:
+  #   - DB_HOST_PORT=db:1521
+  #   - DB_NAME=/CWMS
+  #   - CWMS_PASSWORD=simplecwmspasswD1
+  #   - SYS_PASSWORD=badSYSpassword
+  #   # set to HQ/q0 for any national system work
+  #   - OFFICE_ID=HQ
+  #   - OFFICE_EROC=q0
+  #   - INSTALLONCE=1
+  #   - QUIET=1  
+  # command: >
+  #   sh -xc "echo \"begin cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS Users', 'HQ'); end;\" > /tmp/sql.sql &&
+  #                  echo "/" >> /tmp/sql.sql
+  #                  echo "quit" >> /tmp/sql.sql
+  #                 sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/tmp/sql"
+  # depends_on:
+  #   db:
+  #     condition: service_healthy
+  #   db_install:
+  #     condition: service_completed_successfully
+    
+  api:
+    depends_on:
+      db:
+        condition: service_healthy
+      db_install:
+        condition: service_completed_successfully
+    #  db_perms:
+    #    condition: service_completed_successfully
+    #image: ${RADAR_IMAGE:-registry.hecdev.net/radar-api:latest-dev}
+    image: cwms-data-api:latest
+    build:
+      target: api
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
+      - RADAR_JDBC_USERNAME=q0webtest
+      - RADAR_JDBC_PASSWORD=simplecwmspasswD1
+    ports:
+      - 7000:7000
+    healthcheck:
+      test: ["CMD","executable", "curl", "-I","localhost:7000/cwms-data/offices/HEC"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
