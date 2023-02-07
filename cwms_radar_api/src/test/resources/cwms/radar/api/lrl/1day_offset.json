@@ -1,0 +1,12 @@
+{
+    "name": "Buckhorn.Temp-Water.Inst.1Day.0.radar-test",
+    "office-id": "SPK",
+    "units": "F",
+    "values": [
+        [
+            1675317600000,
+            35,
+            0
+        ]
+    ]
+}

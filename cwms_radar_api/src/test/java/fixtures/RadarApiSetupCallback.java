@@ -32,6 +32,8 @@ import cwms.radar.ApiServlet;
 import cwms.radar.security.KeyAccessManager;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
+import io.restassured.config.JsonConfig;
+import io.restassured.path.json.config.JsonPathConfig;
 
 
 @SuppressWarnings("rawtypes")
@@ -94,8 +96,13 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             RestAssured.port = RadarApiSetupCallback.httpPort();
             RestAssured.basePath = "/cwms-data";
             RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+            // we only use doubles
+            RestAssured.config()
+                       .jsonConfig(
+                            JsonConfig.jsonConfig()
+                                      .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
         }
-    }
+    }    
 
     private void loadTimeSeriesData(CwmsDatabaseContainer cwmsDb2) {
         String csv = this.loadResourceAsString("/cwms/radar/data/timeseries.csv");
@@ -124,7 +131,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             } else if( user.equalsIgnoreCase("user")) {
                 user = cwmsDb.getUsername();
             }
-            System.out.println("Running: "+data);
+            System.out.println(String.format("Running %s as %s %s",data,user,cwmsDb.getPassword()));
             cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()), user);
         }
 
