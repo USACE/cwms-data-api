@@ -796,14 +796,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
-            int utcOffsetMinutes = 0;
+           /* int utcOffsetMinutes = 0;
             int intervalForward = 0;
             int intervalBackward = 0;
             boolean versionedFlag = false;
             boolean activeFlag = true;
             BigInteger tsCode = tsDao.createTsCodeBigInteger(connection, input.getOfficeId(),
                     input.getName(),
-                    utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
+                    utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);*/
             if (!input.getValues().isEmpty()) {
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
                         TimeSeriesDao.NON_VERSIONED, input.getValues());
