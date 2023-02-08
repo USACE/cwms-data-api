@@ -104,7 +104,9 @@ public class ContentType implements Comparable<ContentType> {
     }
 
     /**
-     * Used for quick comparisons where we don't further need the content type.
+     * Used for quick comparisons where we don't further need the content type
+     * so we can streamline the code a little.
+     *      
      * @param a
      * @param b
      * @return whether they are equivalent
