@@ -119,11 +119,6 @@ public class TomcatServer {
      */
     public void start() throws LifecycleException {
         tomcatInstance.start();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         System.out.println("Tomcat listening at http://localhost:" + tomcatInstance.getConnector().getPort());
     }
 
