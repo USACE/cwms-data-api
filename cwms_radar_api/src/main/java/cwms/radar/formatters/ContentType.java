@@ -3,6 +3,7 @@ package cwms.radar.formatters;
 import com.google.common.flogger.FluentLogger;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ContentType implements Comparable<ContentType> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -46,6 +47,15 @@ public class ContentType implements Comparable<ContentType> {
         return charset;
     }
 
+    /**
+     * For the purposes of cwms-data-api content-type equals we only care about the following
+     * fields matching:
+     * 
+     *  - the mimetype itself
+     *  - the version parameter
+     * 
+     * For us everything else is informational or used indirectly
+     */
     @Override
     public boolean equals(Object other) {
         logger.atFinest().log("Checking %s vs %s", this, other);
@@ -53,10 +63,14 @@ public class ContentType implements Comparable<ContentType> {
         ContentType o = (ContentType) other;
         if (!(mediaType.equals(o.mediaType))) return false;
 
+        /** We loop through instead of using contains key. 
+         *  Content-type parameter names are not case sensitive.
+         */
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             String key = entry.getKey();
-            if (key.equals("q")) continue; // we don't care about q for equals
-            if (!entry.getValue().equals(o.parameters.get(key))) return false;
+            if( "version".equalsIgnoreCase(key) ) {
+                return entry.getValue().equals(o.parameters.get(key));
+            }
         }
 
         return true;
@@ -87,5 +101,21 @@ public class ContentType implements Comparable<ContentType> {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Used for quick comparisons where we don't further need the content type
+     * so we can streamline the code a little.
+     *      
+     * @param a
+     * @param b
+     * @return whether they are equivalent
+     */
+    final public static boolean equivalent(String a, String b) {
+        Objects.requireNonNull(a, "Cannot determine equivalency of null content-types");
+        Objects.requireNonNull(b, "Cannot determine equivalency of null content-types");
+        ContentType ctA = new ContentType(a);
+        ContentType ctB = new ContentType(b);
+        return ctA.equals(ctB);
     }
 }

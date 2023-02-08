@@ -1,0 +1,21 @@
+{
+  "name": "LOC_TEST",
+  "latitude": 10.0,
+  "longitude": 50.0,
+  "public-name": "LOC_TEST",
+  "long-name": "LOCATION_TEST",
+  "description": "For Testing",
+  "timezone-name": "UTC",
+  "location-kind": "SITE",
+  "nation": "US",
+  "state-initial": "CA",
+  "county-name": "Sacramento",
+  "nearest-city": "Sacramento",
+  "horizontal-datum": "NGVD-29",
+  "published-longitude": 10.0,
+  "published-latitude": 50.0,
+  "elevation": 0.0,
+  "map-label": "label",
+  "bounding-office-id": "SPK",
+  "office-id": "SPK"
+}

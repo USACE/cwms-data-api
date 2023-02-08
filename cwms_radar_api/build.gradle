@@ -7,13 +7,21 @@ configurations {
     baseLibs
 }
 
-
+configurations.implementation {
+    exclude group: 'com.oracle.database.jdbc'
+}
 dependencies {
     implementation "javax.xml.bind:jaxb-api:2.3.1"
     implementation "com.sun.xml.bind:jaxb-impl:3.0.2"
     implementation "com.sun.xml.bind:jaxb-core:3.0.2"
-    implementation "mil.army.usace.hec:cwms-db-dao:9.0.4"
-    implementation( "mil.army.usace.hec:cwms-db-jooq:9.0.4"){
+    implementation( "mil.army.usace.hec:cwms-db-dao:9.3.5") {
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+    }
+    implementation( "mil.army.usace.hec:cwms-db-jooq:9.3.5"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -21,7 +29,13 @@ dependencies {
         exclude group: "org.slf4j", module: "slf4j-log4j12"
     }
 
-    implementation "mil.army.usace.hec:cwms-db-dao:9.0.4"
+    implementation( "mil.army.usace.hec:cwms-db-dao:9.3.5") {
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+    }
 
     implementation 'org.slf4j:slf4j-jdk14:1.7.36'
 
@@ -71,12 +85,14 @@ dependencies {
     }
 
     compileOnly "javax:javaee-web-api:8.0.1"
+    compileOnly 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
 
 
     runtimeOnly 'jstl:jstl:1.2'
 
     // Now using the FormatService annotation in runtime in JsonV1 too.
     implementation project(":annotations")
+    implementation project(":access-manager-api")
     annotationProcessor project(":annotations")
 
     implementation "io.dropwizard.metrics:metrics-core:$dropwizard_version"
@@ -98,6 +114,7 @@ dependencies {
 
     baseLibs 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
 
+    compileOnly 'com.oracle.database.jdbc:ojdbc8:21.7.0.0'
     testRuntimeOnly 'com.oracle.database.jdbc:ojdbc8:21.7.0.0'
 
     testImplementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
@@ -123,6 +140,7 @@ dependencies {
     testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.6'
 
     testImplementation "org.apache.commons:commons-csv:1.9.0"
+    testImplementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
 
 //    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
@@ -130,7 +148,7 @@ dependencies {
         transitive = false
     }
 
-    implementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
+    
 
 }
 
@@ -212,6 +230,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dradar.access.provider=KeyAccessManager"
 }
 
 task integrationTests(type: Test) {
@@ -232,6 +251,7 @@ task integrationTests(type: Test) {
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dradar.access.provider=KeyAccessManager"
 }
 
 

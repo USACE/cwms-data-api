@@ -40,13 +40,14 @@ import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
-import cwms.radar.security.CwmsAccessManager;
 import cwms.radar.security.Role;
+import cwms.radar.spi.AccessManagers;
+import cwms.radar.spi.RadarAccessManager;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
-import io.javalin.core.security.AccessManager;
+import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
@@ -54,13 +55,23 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.javalin.plugin.openapi.ui.SwaggerOptions;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.DateTimeException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
+import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -114,12 +125,17 @@ public class ApiServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    static JavalinServlet javalin = null;
+    JavalinServlet javalin = null;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
 
 
+
+    @Override
+    public void destroy() {
+        javalin.destroy();
+    }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -129,6 +145,7 @@ public class ApiServlet extends HttpServlet {
         super.init(config);
     }
 
+    @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
     public void init() {
         logger.atInfo().log("Initializing API");
@@ -137,17 +154,17 @@ public class ApiServlet extends HttpServlet {
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
 
-        AccessManager accessManager = buildAccessManager();
+        //AccessManager accessManager = buildAccessManager();
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         String context = this.getServletContext().getContextPath();
         javalin = Javalin.createStandalone(config -> {
                     config.defaultContentType = "application/json";
                     config.contextPath = context;
-                    config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
+                    getOpenApiOptions(config);
+                    //config.registerPlugin(new OpenApiPlugin());
                     //config.enableDevLogging();
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-                    config.accessManager(accessManager);
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
@@ -184,9 +201,6 @@ public class ApiServlet extends HttpServlet {
                     RadarError re = new RadarError("Bad Request");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
-                .exception(NotFoundException.class, (e, ctx) -> {
-                    RadarError re = new RadarError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
@@ -212,11 +226,17 @@ public class ApiServlet extends HttpServlet {
                 })
 
                 .routes(this::configureRoutes)
-                .javalinServlet();
+                .javalinServlet();        
     }
 
-    private AccessManager buildAccessManager() {
-        return new CwmsAccessManager();
+    private RadarAccessManager buildAccessManager(String provider) {
+        try {            
+            AccessManagers ams = new AccessManagers();       
+            return ams.get(provider);
+        } catch (ServiceNotFoundException err) {
+            throw new RuntimeException("Unable to initialize access manager",err);
+        }
+        
     }
 
 
@@ -293,9 +313,13 @@ public class ApiServlet extends HttpServlet {
                     + "'/resource/{resource-id}'");
         }
         String resourceId = subPaths[subPaths.length - 1];
-        if (!(resourceId.startsWith("{") && resourceId.endsWith("}"))) {
+        if (!(
+                (resourceId.startsWith("{") && resourceId.endsWith("}"))
+                ||
+                (resourceId.startsWith("<") && resourceId.endsWith(">"))
+            )) {
             throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
-                    + "end of the provided path, e.g. '/users/{user-id}'");
+                    + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>'");
         }
         String resourceBase = subPaths[subPaths.length - 2];
         if (resourceBase.startsWith("{") || resourceBase.startsWith("<")
@@ -321,19 +345,45 @@ public class ApiServlet extends HttpServlet {
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
-    private OpenApiOptions getOpenApiOptions() {
+    private void getOpenApiOptions(JavalinConfig config) {
         Info applicationInfo = new Info().title("CWMS Radar").version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
-        return new OpenApiOptions(applicationInfo)
-                .path("/swagger-docs")
-                .defaultDocumentation(doc -> {
-                    doc.json("500", RadarError.class);
-                    doc.json("400", RadarError.class);
-                    doc.json("401", RadarError.class);
-                    doc.json("403", RadarError.class);
-                    doc.json("404", RadarError.class);
-                })
-                .activateAnnotationScanningFor("cwms.radar.api");
+        String provider = System.getProperty("radar.access.provider","CwmsAccessManager");
+        RadarAccessManager am = buildAccessManager(provider);
+        Components components = new Components();
+        components.addSecuritySchemes(provider,
+                am.getScheme()
+        );
+        config.accessManager(am);
+
+        OpenApiOptions ops =
+            new OpenApiOptions(
+                () -> new OpenAPI().components(components)
+                                   .info(applicationInfo)
+                                   .addSecurityItem(new SecurityRequirement().addList(provider))
+        );
+        ops.path("/swagger-docs")
+            .responseModifier((ctx,api) -> {                
+                api.getPaths().forEach((key,path) -> {
+                    /* clear the lock icon from the GET handlers to reduce user confusion */
+                    Operation op = path.getGet();
+                    if (op != null) {
+                        logger.atInfo().log("removing security constraint for GET on " + key);
+                        op.setSecurity(new ArrayList<>());
+                    }
+                });                    
+                return api;
+            })
+            .defaultDocumentation(doc -> {
+                doc.json("500", RadarError.class);
+                doc.json("400", RadarError.class);
+                doc.json("401", RadarError.class);
+                doc.json("403", RadarError.class);
+                doc.json("404", RadarError.class);                
+            })
+            .activateAnnotationScanningFor("cwms.radar.api");
+        config.registerPlugin(new OpenApiPlugin(ops));
+        
     }
 
     @Override

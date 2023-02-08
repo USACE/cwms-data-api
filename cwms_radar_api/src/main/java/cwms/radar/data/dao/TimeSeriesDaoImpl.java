@@ -23,6 +23,7 @@ import cwms.radar.data.dto.TsvId;
 import cwms.radar.data.dto.VerticalDatumInfo;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
+
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -852,7 +853,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         final boolean createAsLrts = false;
         StoreRule storeRule = StoreRule.REPLACE_ALL;
-
         tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
                 storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
     }

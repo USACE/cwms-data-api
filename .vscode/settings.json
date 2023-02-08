@@ -9,5 +9,6 @@
 
         ],
         "clean": true
-    }
+    },
+    "java.compile.nullAnalysis.mode": "automatic"
 }

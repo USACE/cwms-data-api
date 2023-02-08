@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
+
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
@@ -43,7 +45,7 @@ import org.jooq.DSLContext;
 
 
 public class ClobController implements CrudHandler {
-
+    private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 20;
     public static final String CLOB_ID = "clob-id";
     public static final String TAG = "Clob";
@@ -245,7 +247,7 @@ public class ClobController implements CrudHandler {
 
                 ClobDao dao = new ClobDao(dsl);
                 dao.create(clob, failIfExists);
-
+                ctx.status(HttpCode.CREATED);
             } catch (JsonProcessingException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
             }
@@ -260,14 +262,17 @@ public class ClobController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
-        if ((Formats.XMLV2).equals(format)) {
+        log.atInfo().log("Getting objectmapper for format '%s'",format);
+        if (ContentType.equivalent(Formats.XMLV2,format)) {
             JacksonXmlModule module = new JacksonXmlModule();
             module.setDefaultUseWrapper(false);
             om = new XmlMapper(module);
-        } else if (Formats.JSONV2.equals(format)) {
+        } else if (ContentType.equivalent(Formats.JSONV2,format)) {
             om = JsonV2.buildObjectMapper();
         } else {
-            throw new FormattingException("Format is not currently supported for Levels");
+            FormattingException fe = new FormattingException("Format specified is not currently supported for Clob");
+            log.atFine().withCause(fe).log("Format %s not supported",format);
+            throw fe;
         }
         om.registerModule(new JavaTimeModule());
         return om;

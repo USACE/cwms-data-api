@@ -1,6 +1,7 @@
 # list of resources to load by default for testing RADAR
 # still sorting the user/group concept out.
 cwms_20:/cwms/radar/data/sql/users.sql
+cwms_20:/cwms/radar/data/sql/load_testusers.sql
 cwms_20:/cwms/radar/data/sql/system.sql
 user:/cwms/radar/data/sql/locations_and_timeseries.sql
 user:/cwms/radar/data/sql/mixed_ts_group.sql

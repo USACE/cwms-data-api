@@ -9,11 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import org.apache.commons.io.IOUtils;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import cwms.radar.ApiServlet;
+import cwms.radar.security.KeyAccessManager;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 
@@ -35,11 +39,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     private static TomcatServer radarInstance;
     private static CwmsDatabaseContainer cwmsDb;
-    private static TestRealm realm;
-    private static TestAuthValve authValve;
-    private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_18XE);
+
+    private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
-    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms_schema_installer:21.1.1");
+    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:latest-dev");
+
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -70,32 +74,26 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             this.loadDefaultData(cwmsDb);
             this.loadTimeSeriesData(cwmsDb);
             System.setProperty("RADAR_JDBC_URL", cwmsDb.getJdbcUrl());
-            System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser());
+            System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser()
+                                                               .replace("hectest_pu",
+                                                                                "webtest")
+                                                            );
             System.setProperty("RADAR_JDBC_PASSWORD", cwmsDb.getPassword());
             //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
-            System.out.println("warFile property:" + System.getProperty("warFile"));
-
-            realm = new TestRealm();
-            authValve = new TestAuthValve();
-
-
-            // ADD TestPrincipal with real session key here; generate the session key using
-            // the cwmsDb.connection functions to call get_user_credentials as appropriate.
-            // OR... forcibly add the fake session_key to the at_sec_session table. dealers choice.
-            authValve.addUser("user1",
-                              new TestCwmsUserPrincipal("user1",
-                                                        "testingUser1SessionKey",
-                                                        Arrays.asList(ApiServlet.CWMS_USERS_ROLE)
-                                                        )
-                            );
-	        authValve.addUser("user2", new TestCwmsUserPrincipal("user2", "testingUser2SessionKey", Collections.emptyList()));
-
-            radarInstance = new TomcatServer("build/tomcat", System.getProperty("warFile"), 0, System.getProperty("warContext"), realm , authValve);
+            System.out.println("warFile property:" + System.getProperty("warFile"));            
+            
+            radarInstance = new TomcatServer("build/tomcat", 
+                                             System.getProperty("warFile"),
+                                             0,
+                                             System.getProperty("warContext"), 
+                                             null,
+                                             null);
             radarInstance.start();
             System.out.println("Tomcat Listing on " + radarInstance.getPort());
             RestAssured.baseURI=RadarApiSetupCallback.httpUrl();
             RestAssured.port = RadarApiSetupCallback.httpPort();
             RestAssured.basePath = "/cwms-data";
+            RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         }
     }
 
@@ -126,7 +124,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             } else if( user.equalsIgnoreCase("user")) {
                 user = cwmsDb.getUsername();
             }
-            System.out.println("running switch with " + user);
+            System.out.println("Running: "+data);
             cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()), user);
         }
 
@@ -153,10 +151,6 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     public static int httpPort() {
         return radarInstance.getPort();
-    }
-
-    public static TestRealm realm(){
-        return realm;
     }
 
     public static CwmsDatabaseContainer getDatabaseLink() {

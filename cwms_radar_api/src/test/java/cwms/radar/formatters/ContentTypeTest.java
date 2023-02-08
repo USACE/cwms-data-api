@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class ContentTypeTest {
 
@@ -59,5 +61,16 @@ class ContentTypeTest {
     }
 
 
+    @ParameterizedTest
+    @CsvSource(value = {
+        "application/json;charset=utf-8|application/json;",
+        "application/json;version=2,charset=utf-8|application/json;version=2"
+    },delimiter='|')
+    void test_equals_and_equivalent(String a, String b) {
+        ContentType aCt = new ContentType(a);
+        ContentType bCt = new ContentType(b);
 
+        assertTrue(ContentType.equivalent(a, b));
+        assertTrue(aCt.equals(bCt));
+    }
 }
