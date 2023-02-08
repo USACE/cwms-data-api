@@ -270,7 +270,7 @@ public class ClobController implements CrudHandler {
         } else if (ContentType.equivalent(Formats.JSONV2,format)) {
             om = JsonV2.buildObjectMapper();
         } else {
-            FormattingException fe = new FormattingException("Format is not currently supported for Levels");
+            FormattingException fe = new FormattingException("Format specified is not currently supported for Clob");
             log.atFine().withCause(fe).log("Format %s not supported",format);
             throw fe;
         }
