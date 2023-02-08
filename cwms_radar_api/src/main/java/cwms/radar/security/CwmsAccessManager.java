@@ -164,23 +164,6 @@ public class CwmsAccessManager extends RadarAccessManager {
         }
         return retval;
     }
-/* 
-    List<String> callGetRolesReflectively(Principal principal) {
-        List<String> retval = new ArrayList<>();
-
-        Method getRolesMethod;
-        try {
-            getRolesMethod = principal.getClass().getMethod("getRoles", new Class[]{});
-            Object retvalObj = getRolesMethod.invoke(principal, new Object[]{});
-            if (retvalObj instanceof List) {
-                retval = (List<String>) retvalObj;
-            }
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            logger.log(Level.WARNING, "Could not call getRoles() on principal.", e);
-        }
-        return retval;
-    }*/
-
 
     public static RouteRole buildRole(String roleName) {
         return new Role(roleName);
