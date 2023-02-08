@@ -17,13 +17,10 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,7 +46,7 @@ public class KeyAccessManager extends RadarAccessManager {
         + ";end;";
 
     private static final String SET_API_USER_DIRECT_WITH_OFFICE = "begin "
-        + "cwms_env.set_session_office_id('SPK');"
+        + "cwms_env.set_session_office_id(upper(?));"
         + "cwms_env.set_session_user_direct(upper(?)); end;";
 
     private static final String CHECK_API_KEY =
