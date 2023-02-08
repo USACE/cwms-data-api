@@ -147,22 +147,19 @@ public class CwmsAccessManager extends RadarAccessManager {
         Set<RouteRole> retval = new LinkedHashSet<>();
         if (principal != null) {
             List<String> roleNames;
-            //try {
+            try {
                 CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
                 roleNames = cup.getRoles();
-            //} 
-            /*catch (ClassCastException e) {
-                // The object is created by cwms_aaa with the cwms_aaa classloader.
-                // It's a CwmsUserPrincipal but it's not our CwmsUserPrincipal.
-                roleNames = callGetRolesReflectively(principal);
-            }*/
-
-            if (roleNames != null) {
-                roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+                if (roleNames != null) {
+                    roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+                }
+                logger.fine("Principal had roles: " + retval);
+            } 
+            catch (ClassCastException e) {
+               logger.severe("cwmsaaa api and implementation jars should only be in the system classpath, not the war file. Verify and restart applciation");
             }
-            logger.info("Principal had roles: " + retval);
         }
-        return retval;
+        return retval;            
     }
 
     public static RouteRole buildRole(String roleName) {
