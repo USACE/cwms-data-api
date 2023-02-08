@@ -1,118 +1,119 @@
 package cwms.radar.security;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-
 import cwms.radar.ApiServlet;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.datasource.ApiKeyUserPreparer;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
-import cwms.radar.datasource.DirectUserPreparer;
 import cwms.radar.datasource.SessionOfficePreparer;
 import cwms.radar.spi.RadarAccessManager;
+
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
-public class KeyAccessManager extends RadarAccessManager{
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.sql.DataSource;
+
+
+public class KeyAccessManager extends RadarAccessManager {
     private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
     private static final String AUTH_HEADER = "Authorization";
 
     private static final String RETRIEVE_GROUPS_OF_USER = "select "
-    + "privs.user_group_id"
-    + " from table("
-    + "cwms_sec.get_assigned_priv_groups_tab(?)"
-    + ") privs"
-    + " where is_member = 'T'";
+        + "privs.user_group_id"
+        + " from table("
+        + "cwms_sec.get_assigned_priv_groups_tab(?)"
+        + ") privs"
+        + " where is_member = 'T'";
 
+    private static final String SET_API_USER_DIRECT = "begin " 
+        + "cwms_env.set_session_user_direct(upper(?)); cwms_env.set_session_office_id(?)"
+        + ";end;";
+
+    private static final String SET_API_USER_DIRECT_WITH_OFFICE = "begin "
+        + "cwms_env.set_session_office_id('SPK');"
+        + "cwms_env.set_session_user_direct(upper(?)); end;";
+
+    private static final String CHECK_API_KEY =
+        "select userid from cwms_20.at_api_keys where apikey = ?";
 
     private DataSource dataSource = null;
 
-	@Override
-	public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+    @Override
+    public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        try
-        {
+        try {
             if (!routeRoles.isEmpty()) {
                 String key = getApiKey(ctx);
                 String user = authorized(ctx, key, routeRoles);
                 prepareContextWithUser(ctx, user,key);
             }
             handler.handle(ctx);
-        }
-        catch(CwmsAuthException ex) {
+        } catch (CwmsAuthException ex) {
             logger.log(Level.WARNING,"Unauthorized login attempt",ex);
             HashMap<String,String> msg = new HashMap<>();
             msg.put("message",ex.getMessage());
             RadarError re = new RadarError("Unauthorized",msg,true);
             ctx.status(ex.getAuthFailCode()).json(re);
-        }		
-
-	}
+        }
+    }
 
     /**
-     * This isn't currently used from Tomcat so we don't have any issues with the 
-     * session; just use the connection itself.
+     * Allows connection to be correctly setup, key is used to assert user, then the office 
+     * is set to the user specified office for further checks within the database.
      * 
-     * NOTE: we will need to expand a bit in the future, but I think another JAPSIC or valve
-     * handler that sets up the principal for the CWMS Access Manager will likely
-     * have easier workflow.
-     * @param ctx
-     * @param user
-     * @param key the key
+     * @param ctx javalin context if additional parameters are required.
+     * @param user username, which is ignored except a log message
+     * @param key the API key that was presented for this connection
      */
     private void prepareContextWithUser(Context ctx, String user,String key) throws SQLException {
         logger.info("Validated Api Key for user=" + user);
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
-        DelegatingConnectionPreparer apiPreparer = new DelegatingConnectionPreparer(keyPreparer,officePrepare);
+        DelegatingConnectionPreparer apiPreparer = 
+            new DelegatingConnectionPreparer(keyPreparer,officePrepare);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
-            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
+            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
 
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, apiPreparer));
-        } else {            
-            ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(apiPreparer, dataSource));
+        } else {
+            ctx.attribute(ApiServlet.DATA_SOURCE, 
+                          new ConnectionPreparingDataSource(apiPreparer, dataSource));
         }
     }
 
-    private String authorized(Context ctx, String key, Set<RouteRole> routeRoles)
-    {
+    private String authorized(Context ctx, String key, Set<RouteRole> routeRoles) {
         String retval = null;
-        String user = checkKey(key,ctx);
+        String office = ctx.queryParam("office");
+        String user = checkKey(key,ctx,office);
 
         if (routeRoles == null || routeRoles.isEmpty()) {
             retval = user;
         } else {
-            Set<RouteRole> specifiedRoles = getRoles(user,ctx.queryParam("office"));
-            if (specifiedRoles.containsAll(routeRoles) ) {
+            Set<RouteRole> specifiedRoles = getRoles(user,office);
+            if (specifiedRoles.containsAll(routeRoles)) {
                 retval = user;
             } else {
                 throw new CwmsAuthException("Operation not authorized for user",403);
@@ -124,34 +125,34 @@ public class KeyAccessManager extends RadarAccessManager{
 
     private Set<RouteRole> getRoles(String user,String office) {
         Set<RouteRole> roles = new HashSet<>();
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); cwms_env.set_session_office_id(?);end;");
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT);
             PreparedStatement getRoles = conn.prepareStatement(RETRIEVE_GROUPS_OF_USER);
-        ) {            
+        ) {
             setApiUser.setString(1,user);
             setApiUser.setString(2,office);
             setApiUser.execute();
             getRoles.setString(1,office);
             try (ResultSet rs = getRoles.executeQuery()) {
-                while(rs.next()) {
+                while (rs.next()) {
                     roles.add(new Role(rs.getString(1)));
                 }
             }
-        } catch(SQLException ex) {
+        } catch (SQLException ex) {
             logger.log(Level.WARNING,"Failed to retrieve roles for user",ex);
         }
         return roles;
     }
 
-    private String checkKey(String key, Context ctx) throws CwmsAuthException {
-        try(Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_office_id('SPK'); cwms_env.set_session_user_direct(upper(?)); end;");
-            PreparedStatement checkForKey = conn.prepareStatement("select userid from cwms_20.at_api_keys where apikey = ?")) 
-        {
-            setApiUser.setString(1,conn.getMetaData().getUserName());
+    private String checkKey(String key, Context ctx, String office) throws CwmsAuthException {
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);
+            PreparedStatement checkForKey = conn.prepareStatement(CHECK_API_KEY);) {
+            setApiUser.setString(1,office);
+            setApiUser.setString(2,conn.getMetaData().getUserName());
             setApiUser.execute();
             checkForKey.setString(1,key);
-            try(ResultSet rs = checkForKey.executeQuery()) {
+            try (ResultSet rs = checkForKey.executeQuery()) {
                 if (rs.next()) {
                     return rs.getString(1);
                 } else {
@@ -159,22 +160,9 @@ public class KeyAccessManager extends RadarAccessManager{
                     throw new CwmsAuthException("User not authorized.");
                 }
             }
-        }
-        catch(SQLException ex) {
+        } catch (SQLException ex) {
             logger.log(Level.WARNING,"Failed API key check",ex);
             throw new CwmsAuthException("Authorized failed");
-        }
-    }
-
-    public static String getDigest(byte[] bytes) {
-        try {
-            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-            sha256.reset();
-            sha256.update(bytes);
-            byte[] digest = sha256.digest();
-            return Base64.getEncoder().encodeToString(digest);
-        } catch( NoSuchAlgorithmException ex) {
-            throw new RuntimeException("Unable to process authentication informaiton.",ex);
         }
     }
 
@@ -184,20 +172,20 @@ public class KeyAccessManager extends RadarAccessManager{
             return null;
         }
 
-        String parts[] = header.split("\\s+");
-        if( parts.length < 0) {
+        String []parts = header.split("\\s+");
+        if (parts.length < 0) {
             return null;
         } else {
             return parts[1];
         }
     }
 
-	@Override
-	public SecurityScheme getScheme() {
-		return new SecurityScheme()
-					.type(Type.APIKEY)
-					.in(In.HEADER)
-					.name("Authorization");
-	}
-    
+    @Override
+    public SecurityScheme getScheme() {
+        return new SecurityScheme()
+                    .type(Type.APIKEY)
+                    .in(In.HEADER)
+                    .name("Authorization");
+    }
+
 }
