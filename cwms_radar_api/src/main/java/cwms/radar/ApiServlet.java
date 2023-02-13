@@ -119,6 +119,8 @@ public class ApiServlet extends HttpServlet {
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
     public static final String VERSION = "2.5";
+    public static final String PROVIDER_KEY = "radar.access.provider";
+    public static final String DEFAULT_PROVIDER = "CwmsAccessManager";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -153,8 +155,6 @@ public class ApiServlet extends HttpServlet {
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
-
-        //AccessManager accessManager = buildAccessManager();
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         String context = this.getServletContext().getContextPath();
@@ -348,7 +348,9 @@ public class ApiServlet extends HttpServlet {
     private void getOpenApiOptions(JavalinConfig config) {
         Info applicationInfo = new Info().title("CWMS Radar").version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
-        String provider = System.getProperty("radar.access.provider","CwmsAccessManager");
+
+        String provider = getAccessManagerName();
+
         RadarAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         components.addSecuritySchemes(provider,
@@ -384,6 +386,24 @@ public class ApiServlet extends HttpServlet {
             .activateAnnotationScanningFor("cwms.radar.api");
         config.registerPlugin(new OpenApiPlugin(ops));
         
+    }
+
+    private static String getAccessManagerName() {
+        // Default to CwmsAccessManager
+        String defProvider = DEFAULT_PROVIDER;
+
+        // If something is set in the environment, make that the new default.
+        // This is useful because Docker makes it easy to set environment variables.
+        String envProvider = System.getenv(PROVIDER_KEY);
+        if (envProvider != null) {
+            logger.atInfo().log("Found in env " + PROVIDER_KEY + "=" + envProvider);
+            defProvider = envProvider;
+        }
+
+        // Return the value from properties or the default
+        String provider = System.getProperty(PROVIDER_KEY, defProvider);
+        logger.atInfo().log("Using access provider:" + provider);
+        return provider;
     }
 
     @Override
