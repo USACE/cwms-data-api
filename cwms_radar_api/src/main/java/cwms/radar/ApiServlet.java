@@ -350,6 +350,7 @@ public class ApiServlet extends HttpServlet {
                 .description("CWMS REST API for Data Retrieval");
 
         String provider = getAccessManagerName();
+        logger.atInfo().log("Using access provider:" + provider);
 
         RadarAccessManager am = buildAccessManager(provider);
         Components components = new Components();
@@ -396,14 +397,11 @@ public class ApiServlet extends HttpServlet {
         // This is useful because Docker makes it easy to set environment variables.
         String envProvider = System.getenv(PROVIDER_KEY);
         if (envProvider != null) {
-            logger.atInfo().log("Found in env " + PROVIDER_KEY + "=" + envProvider);
             defProvider = envProvider;
         }
 
         // Return the value from properties or the default
-        String provider = System.getProperty(PROVIDER_KEY, defProvider);
-        logger.atInfo().log("Using access provider:" + provider);
-        return provider;
+        return System.getProperty(PROVIDER_KEY, defProvider);
     }
 
     @Override
