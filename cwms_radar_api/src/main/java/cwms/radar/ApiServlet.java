@@ -31,12 +31,12 @@ import cwms.radar.api.SpecifiedLevelController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
+import cwms.radar.api.TimeSeriesIdentifierController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.api.errors.JsonFieldsException;
-import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -55,7 +55,6 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
-import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -64,11 +63,8 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.DateTimeException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.management.ServiceNotFoundException;
@@ -268,6 +264,8 @@ public class ApiServlet extends HttpServlet {
         get("/timeseries/recent/{group-id}", tsController::getRecent);
         radarCrud("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles);
+        radarCrud("/timeseries/identifier/{timeseries-id}",
+                new TimeSeriesIdentifierController(metrics), requiredRoles);
         radarCrud("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles);
         radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
