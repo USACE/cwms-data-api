@@ -1,8 +1,8 @@
 swagger: '2.0'
 info:
   version: '1.0.0'
-  title: CWMS RADAR-WS
-  description: CWMS RESTful API Data Retrieval Web Service (RADAR-WS) is a generalized web service API that allows clients to retrieve data from Corps Water Management System (CWMS) databases.
+  title: CWMS Data API
+  description: CWMS Data API is a generalized web service API that allows clients to retrieve data from Corps Water Management System (CWMS) databases.
   termsOfService: http://10.10.10.180/terms/
   contact:
     name: Support
@@ -23,7 +23,7 @@ produces:
 paths:
   /locations:
     get:
-      description: Returns Cwms location data
+      description: Returns CWMS location data
       operationId: findLocations
       produces:
         - application/json
@@ -441,7 +441,7 @@ paths:
   #       default:
   #         description: unexpected error
   #         schema:
-            $ref: '#/definitions/errorModel'
+  #          $ref: '#/definitions/errorModel'
   /timezones:
     get:
       description: The timezones URI allows access to CWMS time zone data.
