@@ -30,31 +30,13 @@ import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
-public class CatalogControllerTestIT {
+public class CatalogControllerTestIT extends DataApiTestIT {
 
-    public static ArrayList<Location> locationsCreated = new ArrayList<>();
-
-    public static String createLocationQuery = null;
-    public static String deleteLocationQuery = null;
-    public static String createTimeseriesQuery = null;
+    
 
     @BeforeAll
     public static void setup_data() throws Exception {
-        createLocationQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/create_location.sql"),"UTF-8"
-                            );
-        createTimeseriesQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/create_timeseries.sql"),"UTF-8"
-                            );
-        deleteLocationQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/delete_location.sql"),"UTF-8"
-                            );
+        
         createLocation("Alder Springs",true,"SPK");
         createLocation("Wet Meadows",true,"SPK");
         createLocation("Pine Flat-Outflow",true,"SPK");
@@ -72,65 +54,9 @@ public class CatalogControllerTestIT {
 
     }
 
-    @AfterAll
-    public static void remove_data() {
-        locationsCreated.forEach(location -> {
-            try {
-                CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-                db.connection((c)-> {            
-                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
-                        stmt.setString(1,location.getName());                
-                        stmt.setString(2,location.getOfficeId());
-                        stmt.execute();
-                    } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to delete location",ex);
-                    }
-                });    
-            } catch(SQLException ex) {
-                throw new RuntimeException("Unable to delete location",ex);
-            }
-        
-        });
-    }
+    
 
-    private static void createLocation(String location, boolean active, String office) throws SQLException {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-        Location loc = new Location.Builder(location,
-                                            null,
-                                            null,
-                                            null,
-                                            null,
-                                            null,
-                                            office)
-                                    .withActive(active)
-                                    .build();
-        locationsCreated.add(loc);
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery);) {
-                stmt.setString(1,location);
-                stmt.setString(2,active ? "T" : "F");
-                stmt.setString(3,office);
-                stmt.execute();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unable to create location",ex);
-            }
-        },db.getPdUser());
-        
-    }
-
-    private static void createTimeseries(String office, String timeseries) throws SQLException {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery);) {
-                stmt.setString(1,office);
-                stmt.setString(2,timeseries);
-                stmt.execute();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unable to create location",ex);
-            }
-        },db.getPdUser());
-        
-    }
+    
 
     @Test
     public void test_no_aliased_results_returned(){

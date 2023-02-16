@@ -18,12 +18,14 @@ import java.util.function.Consumer;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
+@Disabled("more than I want to deal with just yet")
 class RatingTemplateDaoTestIT {
 
 

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import cwms.radar.data.dto.Location;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
@@ -30,80 +31,23 @@ import io.restassured.path.json.config.JsonPathConfig;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
-public class TimeseriesControllerTestIT {
-    
-    public ArrayList<String> locationsCreated = new ArrayList<>();
-
-    public static String createLocationQuery = null;
-    public static String deleteLocationQuery = null;
-
-    @BeforeAll
-    public static void queries() throws Exception {
-        createLocationQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/create_location.sql"),"UTF-8"
-                            );
-        deleteLocationQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/delete_location.sql"),"UTF-8"
-                            );
-    }
-
-    @AfterEach
-    public void delete_timeseries() throws SQLException {
-        locationsCreated.forEach(location -> {
-            try {
-                CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-                db.connection((c)-> {            
-                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
-                        stmt.setString(1,location);                
-                        stmt.setString(2,"SPK");
-                        stmt.execute();
-                    } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to delete location",ex);
-                    }
-                });    
-            } catch(SQLException ex) {
-                throw new RuntimeException("Unable to delete location",ex);
-            }
-        
-        });
-    }
-
-    private void createLocation(String location, boolean active, String office) throws SQLException {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-        System.out.println(db.getPdUser());
-        System.out.println(db.getPassword());
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery);) {
-                stmt.setString(1,location);
-                stmt.setString(2,active ? "T" : "F");
-                stmt.setString(3,office);
-                stmt.execute();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unable to create location",ex);
-            }
-        },db.getPdUser());
-        
-    }
-    
+public class TimeseriesControllerTestIT extends DataApiTestIT {
 
     @Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/radar/api/lrl/pseudo_reg_1hour.json"),"UTF-8");
+        String tsData = IOUtils.toString(
+            this.getClass()
+                .getResourceAsStream("/cwms/radar/api/lrl/pseudo_reg_1hour.json"),"UTF-8"
+            );
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
-        locationsCreated.add(location);
+        String officeId = ts.get("office-id").asText();
 
-        String officeID = "SPK";
         try {
-            createLocation(location,true,officeID);
+            createLocation(location,true,officeId);
 
             KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -114,7 +58,7 @@ public class TimeseriesControllerTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeID)
+                .queryParam("office",officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -131,7 +75,7 @@ public class TimeseriesControllerTestIT {
                 .accept(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeID)
+                .queryParam("office",officeId)
                 .queryParam("units","cfs")
                 .queryParam("name",ts.get("name").asText())
                 .queryParam("begin","2023-01-11T12:00:00-00:00")
@@ -161,11 +105,10 @@ public class TimeseriesControllerTestIT {
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
-        locationsCreated.add(location);
-
-        String officeID = "SPK";
+        String officeId = ts.get("office-id").asText();
+        
         try {
-            createLocation(location,true,officeID);
+            createLocation(location,true,officeId);
 
             KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -176,7 +119,7 @@ public class TimeseriesControllerTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeID)
+                .queryParam("office",officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -193,7 +136,7 @@ public class TimeseriesControllerTestIT {
                 .accept(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeID)
+                .queryParam("office",officeId)
                 .queryParam("units","F")
                 .queryParam("name",ts.get("name").asText())
                 .queryParam("begin","2023-02-02T06:00:00-05:00")

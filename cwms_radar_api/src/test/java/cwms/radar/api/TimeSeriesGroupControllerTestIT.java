@@ -18,9 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
-class TimeSeriesGroupControllerTestIT
-{
+@Tag("Start_here_Thursday")
+class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     public static final String CWMS_OFFICE = "CWMS";
 
