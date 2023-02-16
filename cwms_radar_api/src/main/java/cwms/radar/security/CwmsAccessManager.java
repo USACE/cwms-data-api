@@ -57,7 +57,7 @@ public class CwmsAccessManager extends RadarAccessManager {
 
     private void buildDataSource(@NotNull Context ctx) {
         String user = ctx.req.getUserPrincipal().getName();
-        String office =ctx.attribute("office");        
+        String office = ctx.attribute(ApiServlet.OFFICE_ID);        
 
         ConnectionPreparer userPreparer = new DirectUserPreparer(user);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(office);
