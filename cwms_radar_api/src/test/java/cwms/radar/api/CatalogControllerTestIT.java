@@ -1,30 +1,20 @@
 package cwms.radar.api;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.isNotNull;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.Duration;
-import java.util.ArrayList;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import cwms.radar.data.dto.Location;
+
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 
 import static io.restassured.RestAssured.*;
-import io.restassured.matcher.RestAssuredMatchers.*;
 import io.restassured.response.Response;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 import static org.hamcrest.Matchers.*;
 

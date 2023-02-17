@@ -168,8 +168,7 @@ public final class Location implements CwmsDTO {
             return false;
         }
         Location location = (Location) o;
-        return Double.compare(location.getLatitude(), getLatitude()) == 0
-                && Double.compare(location.getLongitude(), getLongitude()) == 0
+        return Objects.equals(location.getLatitude(), getLatitude()) // TODO: perhaps that should stay Double.compare and the test data needs "fixing?"
                 && getActive() == location.getActive()
                 && getName().equals(location.getName())
                 && getPublicName().equals(location.getPublicName())

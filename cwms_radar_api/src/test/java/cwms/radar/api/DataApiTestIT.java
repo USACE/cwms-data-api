@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
+import fixtures.TestAccounts;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 @Tag("integration")
@@ -22,6 +23,8 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
+    protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey,expires) values(UPPER(?),?,?,null)";
+    protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
     @BeforeAll
     public static void load_queries() throws Exception {
@@ -42,6 +45,27 @@ public class DataApiTestIT {
                             );
     }
 
+    @BeforeAll
+    public static void register_users() throws Exception {
+        try {
+            CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+            for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
+                db.connection((c)-> {            
+                    try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
+                        stmt.setString(1,user.getName());                
+                        stmt.setString(2,user.getName()+"TestKey");
+                        stmt.setString(3,user.getKey());
+                        stmt.execute();
+                    } catch (SQLException ex) {
+                        throw new RuntimeException("Unable to register user",ex);
+                    }
+                },"cwms_20");
+            }
+        } catch(Exception ex) {
+            throw ex;
+        }
+    }
+
     @AfterAll
     public static void remove_data() {
         locationsCreated.forEach(location -> {
@@ -53,14 +77,33 @@ public class DataApiTestIT {
                         stmt.setString(2,location.getOfficeId());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to delete location",ex);
+                        throw new RuntimeException("Unable to register api key",ex);
                     }
                 });    
             } catch(SQLException ex) {
-                throw new RuntimeException("Unable to delete location",ex);
+                throw new RuntimeException(ex);
             }
-        
         });
+    }
+
+    @AfterAll
+    public static void deregister_users() throws Exception {
+        try {
+            CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+            for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
+                db.connection((c)-> {            
+                    try(PreparedStatement stmt = c.prepareStatement(removeApiKey);) {
+                        stmt.setString(1,user.getName());                
+                        stmt.setString(2,user.getName()+"TestKey");
+                        stmt.execute();
+                    } catch (SQLException ex) {
+                        throw new RuntimeException("Unable to delete api key",ex);
+                    }
+                },"cwms_20");
+            }
+        } catch(Exception ex) {
+            throw ex;
+        }
     }
 
     /**
