@@ -26,6 +26,26 @@ public class DataApiTestIT {
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey,expires) values(UPPER(?),?,?,null)";
     protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
+    /**
+     * Reads in SQL data and runs it as CWMS_20. Assumes single statement.
+     * @param resource
+     * @throws Exception
+     */
+    protected static void loadSqlDataFromResource(String resource) throws Exception {
+        String sql = IOUtils.toString(
+                    DataApiTestIT.class
+                    .getClassLoader()
+                    .getResourceAsStream(resource),"UTF-8");
+        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        db.connection((c)-> {
+            try(PreparedStatement stmt = c.prepareStatement(sql);) {
+                stmt.execute();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to process SQL",ex);
+            }
+        }, "cwms_20");
+    }
+
     @BeforeAll
     public static void load_queries() throws Exception {
         createLocationQuery = IOUtils.toString(

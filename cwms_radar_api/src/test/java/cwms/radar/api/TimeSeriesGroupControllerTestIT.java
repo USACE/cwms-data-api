@@ -5,6 +5,7 @@ import java.util.List;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     public static final String CWMS_OFFICE = "CWMS";
+
+    @BeforeAll
+    public static void load_data() throws Exception {
+        createLocation("Alder Springs",true,"SPK");
+        createLocation("Wet Meadows",true,"SPK");
+        createLocation("Pine Flat-Outflow",true,"SPK");
+        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
+        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-radar");
+        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar");
+        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-radar");
+        createLocation("Clear Creek",true,"LRL");
+        createTimeseries("LRL","Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-radar");            
+        loadSqlDataFromResource("cwms/radar/data/sql/mixed_ts_group.sql");
+        loadSqlDataFromResource("cwms/radar/data/sql/spk_aliases_and_groups.sql");
+    }
 
     @Test
     void test_group_SPK(){
