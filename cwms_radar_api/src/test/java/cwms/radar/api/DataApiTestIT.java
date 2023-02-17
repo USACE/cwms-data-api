@@ -97,9 +97,11 @@ public class DataApiTestIT {
                         stmt.setString(2,location.getOfficeId());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to register api key",ex);
+                        if (ex.getErrorCode() != 20025 /*does not exist*/) {
+                            throw new RuntimeException("Unable to remove location",ex);
+                        }
                     }
-                });    
+                },"cwms_20");
             } catch(SQLException ex) {
                 throw new RuntimeException(ex);
             }
