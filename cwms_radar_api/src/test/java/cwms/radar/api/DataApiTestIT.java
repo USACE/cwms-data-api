@@ -179,4 +179,33 @@ public class DataApiTestIT {
             }
         }, db.getPdUser());
     }
+
+
+    protected static void addUserToGroup(String user, String group, String office) throws Exception {
+        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        db.connection( (c) -> {
+            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;");) {
+                stmt.setString(1,user);
+                stmt.setString(2,group);
+                stmt.setString(3,office);
+                stmt.execute();
+            } catch( SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        },"cwms_20");
+    }
+
+    protected static void removeUserFromGroup(String user, String group, String office) throws Exception {
+        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        db.connection( (c) -> {
+            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;");) {
+                stmt.setString(1,user);
+                stmt.setString(2,group);
+                stmt.setString(3,office);
+                stmt.execute();
+            } catch( SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        },"cwms_20");
+    }
 }

@@ -1,6 +1,5 @@
 package cwms.radar.data.dao;
 
-
 import static cwms.radar.data.dao.DaoTest.getDslContext;
 import static cwms.radar.data.dao.JsonRatingUtilsTest.readFully;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,11 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
+import cwms.radar.api.DataApiTestIT;
 import cwms.radar.data.dto.rating.AbstractRatingMetadata;
 import cwms.radar.data.dto.rating.RatingMetadata;
 import cwms.radar.data.dto.rating.RatingMetadataList;
 import fixtures.RadarApiSetupCallback;
+import fixtures.TestAccounts;
 import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
@@ -32,24 +33,36 @@ import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@Disabled("Needs larger rework for auth system changes.")
+//@Disabled("Needs larger rework for auth system changes.")
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
-class RatingMetadataDaoTestIT {
+class RatingMetadataDaoTestIT extends DataApiTestIT {
 
 // This is how it can be run from an integration test using docker etc.
 // It takes 8 minutes or so to run it this way.
+    @BeforeAll
+    public static void swt_permissions() throws Exception {
+        addUserToGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "CWMS Users", "SWT");
+        addUserToGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "TS ID Creator", "SWT");
+    }
+
+    @AfterAll
+    public static void remove_swt_permissiosn() throws Exception {
+        removeUserFromGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "CWMS Users", "SWT");
+        removeUserFromGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "TS ID Creator", "SWT");
+    }
+
     @Test
     void testRetrieveMetadata() throws SQLException {
 
         CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
         databaseLink.connection((Consumer<Connection>) c -> {//
-            testRetrieveMetadata(c, databaseLink.getOfficeId());
+            testRetrieveMetadata(c, "SWT");
         });
     }
 
@@ -165,6 +178,7 @@ class RatingMetadataDaoTestIT {
     }
 
     @Test
+    @Disabled("data file not available")
     void testParse() throws IOException, RatingException {
         String resourcePath = "cwms/radar/data/dao/swt_ratings.xml";
 
@@ -193,27 +207,30 @@ class RatingMetadataDaoTestIT {
     @Test
     void testRetrieveRatings() throws SQLException  {
         String swt = "SWT";
-        try (DSLContext lrl = getDslContext( swt)) {
-            long start = System.nanoTime();
-            RatingMetadataDao dao = new RatingMetadataDao(lrl, new MetricRegistry());
+        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {//
+            try (DSLContext lrl = getDslContext(c, swt)) {
+                long start = System.nanoTime();
+                RatingMetadataDao dao = new RatingMetadataDao(lrl, new MetricRegistry());
 
-            String mask = "*";
+                String mask = "*";
 
-            String office = "SWT";
-            Set<String> ratingIds = dao.getRatingIds(office, mask, 0, 100);
+                String office = "SWT";
+                Set<String> ratingIds = dao.getRatingIds(office, mask, 0, 100);
 
-            Map<cwms.radar.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> got
-                    = dao.getRatingsForIds(office, ratingIds, null, null);
+                Map<cwms.radar.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> got
+                        = dao.getRatingsForIds(office, ratingIds, null, null);
 
-            assertNotNull(got);
+                assertNotNull(got);
 
-            // count how many ratings we got
-            int count = got.values().stream().mapToInt(Set::size).sum();
+                // count how many ratings we got
+                int count = got.values().stream().mapToInt(Set::size).sum();
 
-            long end = System.nanoTime();
-            long ms = (end - start) / 1000000;
-            System.out.println("Got:" + got.size() + " count:" + count + " ratings in " + ms + "ms");
-        }
+                long end = System.nanoTime();
+                long ms = (end - start) / 1000000;
+                System.out.println("Got:" + got.size() + " count:" + count + " ratings in " + ms + "ms");
+            }
+        });
     }
 
 

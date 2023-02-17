@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cwms.radar.api.DataApiTestIT;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import fixtures.RadarApiSetupCallback;
+import fixtures.TestAccounts;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.data.cwmsRating.io.RatingJdbcCompatUtil;
@@ -18,23 +20,33 @@ import java.util.function.Consumer;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
-@Disabled("more than I want to deal with just yet")
-class RatingTemplateDaoTestIT {
+class RatingTemplateDaoTestIT extends DataApiTestIT {
 
+    @BeforeAll
+    public static void swt_permissions() throws Exception {
+        addUserToGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "CWMS Users", "SWT");
+        addUserToGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "TS ID Creator", "SWT");
+    }
+
+    @AfterAll
+    public static void remove_swt_permissiosn() throws Exception {
+        removeUserFromGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "CWMS Users", "SWT");
+        removeUserFromGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "TS ID Creator", "SWT");
+    }
 
     @Test
     void testRetrieveRatingTemplates() throws SQLException {
 
-        CwmsDatabaseContainer databaseLink = RadarApiSetupCallback.getDatabaseLink();
-        databaseLink.connection((Consumer<Connection>) c -> {//
-            testRetrieveRatingTemplate(c, databaseLink.getOfficeId());
+        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {//
+            testRetrieveRatingTemplate(c, "SWT");
         });
     }
 
