@@ -31,7 +31,7 @@ import cwms.radar.api.SpecifiedLevelController;
 import cwms.radar.api.TimeSeriesCategoryController;
 import cwms.radar.api.TimeSeriesController;
 import cwms.radar.api.TimeSeriesGroupController;
-import cwms.radar.api.TimeSeriesIdentifierController;
+import cwms.radar.api.TimeSeriesIdentifierDescriptorController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
@@ -264,8 +264,8 @@ public class ApiServlet extends HttpServlet {
         get("/timeseries/recent/{group-id}", tsController::getRecent);
         radarCrud("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles);
-        radarCrud("/timeseries/identifier/{timeseries-id}",
-                new TimeSeriesIdentifierController(metrics), requiredRoles);
+        radarCrud("/timeseries/identifier-descriptor/{timeseries-id}",
+                new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles);
         radarCrud("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles);
         radarCrud("/timeseries/{timeseries}", tsController, requiredRoles);
