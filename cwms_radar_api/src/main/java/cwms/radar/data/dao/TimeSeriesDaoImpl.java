@@ -796,12 +796,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public void create(TimeSeries input){
-        create(input,0, 0, 0, false, true, null,
+
+        create(input,0, null, null, false, true, null,
                 true, StoreRule.REPLACE_ALL, true);
     }
 
     @Override
-    public void create(TimeSeries input, int utcOffsetMinutes, int intervalForward, int intervalBackward,
+    public void create(TimeSeries input, int utcOffsetMinutes, Number intervalForward, Number intervalBackward,
                        boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
                        boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection){
         connection(dsl, connection -> {

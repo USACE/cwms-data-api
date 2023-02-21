@@ -146,8 +146,8 @@ public class TimeSeriesController implements CrudHandler {
     public void create(Context ctx) {
 
         int utcOffsetMinutes = ctx.queryParamAsClass(UTC_OFFSET_MINUTES, Integer.class).getOrDefault(0);
-        int intervalForward = ctx.queryParamAsClass(INTERVAL_FORWARD, Integer.class).getOrDefault(0);
-        int intervalBackward = ctx.queryParamAsClass(INTERVAL_BACKWARD, Integer.class).getOrDefault(0);
+        Number intervalForward = ctx.queryParamAsClass(INTERVAL_FORWARD, Double.class).getOrDefault(null);
+        Number intervalBackward = ctx.queryParamAsClass(INTERVAL_BACKWARD, Double.class).getOrDefault(null);
         boolean versionedFlag = ctx.queryParamAsClass(VERSIONED, Boolean.class).getOrDefault(false);
         boolean activeFlag = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
 
