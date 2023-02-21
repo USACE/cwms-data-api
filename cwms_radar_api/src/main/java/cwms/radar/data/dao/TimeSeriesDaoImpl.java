@@ -819,6 +819,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         });
     }
 
+    @Override
+    public void store(TimeSeries timeSeries, Timestamp versionDate){
+        store(timeSeries, TimeSeriesDao.NON_VERSIONED, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+    }
+
     public void store(TimeSeries input, Timestamp versionDate, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection) {
         connection(dsl, connection ->
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),

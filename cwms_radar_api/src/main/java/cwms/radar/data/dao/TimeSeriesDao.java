@@ -27,6 +27,7 @@ public interface TimeSeriesDao {
                 boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
+    void store(TimeSeries timeSeries, Timestamp versionDate);
     void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
                StoreRule replaceAll, boolean overrideProtection);
 
