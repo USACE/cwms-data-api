@@ -799,32 +799,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @Override
     public void create(TimeSeries input){
 
-        create(input, null, null, false, true, null,
-                true, StoreRule.REPLACE_ALL, true);
+        create(input, TimeSeriesDao.NON_VERSIONED,
+                false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
     }
 
-    @Override
-    public void create(TimeSeries input, Number intervalForward, Number intervalBackward,
-                       boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
+
+    public void create(TimeSeries input,
+                       Timestamp versionDate,
                        boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection){
         connection(dsl, connection -> {
-            String pVersioned = OracleTypeMap.formatBool(versionedFlag);
-            String pActiveFlag = OracleTypeMap.formatBool(activeFlag);
-            String pFailIfExists = OracleTypeMap.formatBool(false);
 
-            BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(
-                    AbstractCwmsDbDao.buildConfiguration(connection), input.getName(),
-                    input.getIntervalOffset(), intervalForward, intervalBackward,
-                    pVersioned, pActiveFlag, pFailIfExists,
-                    input.getOfficeId());
-
-            if (!input.getValues().isEmpty()) {
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
                         versionDate, input.getValues(), createAsLrts, replaceAll,
                         overrideProtection);
-            }
-            logger.log(Level.FINE, "Created TimeSeries for office:{0} id:{1} at:{2}",
-                    new Object[]{input.getOfficeId(), input.getName(), tsCode});
         });
     }
 

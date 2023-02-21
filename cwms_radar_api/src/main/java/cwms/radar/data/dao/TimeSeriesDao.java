@@ -23,8 +23,8 @@ public interface TimeSeriesDao {
 
     void create(TimeSeries input);
 
-    void create(TimeSeries input, Number intervalForward, Number intervalBackward,
-                boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
+    void create(TimeSeries input,
+                Timestamp versionDate,
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);

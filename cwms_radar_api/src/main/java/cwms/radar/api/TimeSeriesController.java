@@ -70,11 +70,6 @@ public class TimeSeriesController implements CrudHandler {
     public static final String FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
 
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
-    public static final String UTC_OFFSET_MINUTES = "utc-offset-minutes";
-    public static final String INTERVAL_FORWARD = "interval-forward";
-    public static final String INTERVAL_BACKWARD = "interval-backward";
-    public static final String VERSIONED = "versioned";
-    public static final String ACTIVE = "active";
     public static final String VERSION_DATE = "version-date";
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
@@ -108,16 +103,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = INTERVAL_FORWARD,  description = "intervalForward is "
-                            + "positive\n"
-                            + "{@code intervalForward <= timeseriesId's interval}\n"
-                            + "{@code intervalFoward + intervalBackward < timeseriesId's interval}"),
-                    @OpenApiParam(name = INTERVAL_BACKWARD,  description = "intervalBackward is "
-                            + "positive\n"
-                            + "{@code intervalBackward <= timeseriesId's interval}\n"
-                            + "{@code intervalFoward + intervalBackward < timeseriesId's interval}"),
-                    @OpenApiParam(name = VERSIONED,  description = "'True' or 'False'"),
-                    @OpenApiParam(name = ACTIVE,  description = "'True' or 'False'"),
                     @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
                             + "the timeseries to create. If this field is not specified, a null "
                             + "version date will be used.  "
@@ -144,11 +129,6 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void create(Context ctx) {
 
-        Number intervalForward = ctx.queryParamAsClass(INTERVAL_FORWARD, Double.class).getOrDefault(null);
-        Number intervalBackward = ctx.queryParamAsClass(INTERVAL_BACKWARD, Double.class).getOrDefault(null);
-        boolean versionedFlag = ctx.queryParamAsClass(VERSIONED, Boolean.class).getOrDefault(false);
-        boolean activeFlag = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
-
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
         String version = ctx.queryParam(VERSION_DATE);
         Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
@@ -165,8 +145,7 @@ public class TimeSeriesController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries, intervalForward, intervalBackward, versionedFlag, activeFlag, versionDate, createAsLrts,
-                    storeRule, overrideProtection);
+            dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
