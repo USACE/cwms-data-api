@@ -21,9 +21,14 @@ public interface TimeSeriesDao {
                                  String locCategoryLike, String locGroupLike,
                                  String tsCategoryLike, String tsGroupLike);
 
-    void create(TimeSeries timeSeries);
+    void create(TimeSeries input);
 
-    void store(TimeSeries timeSeries, Timestamp versionDate);
+    void create(TimeSeries input, int utcOffsetMinutes, int intervalForward, int intervalBackward,
+                boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
+                boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
+
+    void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
+               StoreRule replaceAll, boolean overrideProtection);
 
     void deleteAll(String office, String tsId);
 

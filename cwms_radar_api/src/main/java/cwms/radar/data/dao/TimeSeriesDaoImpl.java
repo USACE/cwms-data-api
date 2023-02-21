@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -359,15 +360,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     // datumInfo comes back like:
-    //						<vertical-datum-info office="LRL" unit="m">
-    //						  <location>Buckhorn</location>
-    //						  <native-datum>NGVD-29</native-datum>
-    //						  <elevation>230.7</elevation>
-    //						  <offset estimate="true">
-    //						    <to-datum>NAVD-88</to-datum>
-    //						    <value>-.1666</value>
-    //						  </offset>
-    //						</vertical-datum-info>
+    //    <vertical-datum-info office="LRL" unit="m">
+    //      <location>Buckhorn</location>
+    //      <native-datum>NGVD-29</native-datum>
+    //      <elevation>230.7</elevation>
+    //      <offset estimate="true">
+    //        <to-datum>NAVD-88</to-datum>
+    //        <value>-.1666</value>
+    //      </offset>
+    //    </vertical-datum-info>
     public static VerticalDatumInfo parseVerticalDatumInfo(String body) {
         VerticalDatumInfo retval = null;
         if (body != null && !body.isEmpty()) {
@@ -624,7 +625,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
                     .where(
                             tsView.CWMS_TS_ID.in(tsIds).and(tsvView.DATE_TIME.ge(start)).and(tsvView.DATE_TIME.lt(end)).and(
-                                    tsvView.START_DATE.le(end)).and(tsvView.END_DATE.gt(start))).orderBy(tsvView.DATE_TIME).fetch(
+                                    tsvView.START_DATE.le(end)).and(tsvView.END_DATE.gt(start))).orderBy(tsvView.DATE_TIME)
+                    .fetch(
                             jrecord -> buildTsvFromViewRow(jrecord.into(tsvView)));
         }
         return retval;
@@ -792,47 +794,42 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class));
     }
 
-    public void create(TimeSeries input) {
+    @Override
+    public void create(TimeSeries input){
+        create(input,0, 0, 0, false, true, null,
+                true, StoreRule.REPLACE_ALL, true);
+    }
+
+    @Override
+    public void create(TimeSeries input, int utcOffsetMinutes, int intervalForward, int intervalBackward,
+                       boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
+                       boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection){
         connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
-            int utcOffsetMinutes = 0;
-            int intervalForward = 0;
-            int intervalBackward = 0;
-            boolean versionedFlag = false;
-            boolean activeFlag = true;
             BigInteger tsCode = tsDao.createTsCodeBigInteger(connection, input.getOfficeId(),
-                    input.getName(),
-                    utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
+                    input.getName(), utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
             if (!input.getValues().isEmpty()) {
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        TimeSeriesDao.NON_VERSIONED, input.getValues());
+                        versionDate, input.getValues(), createAsLrts, replaceAll,
+                        overrideProtection);
             }
+            logger.log(Level.FINE, "Created TimeSeries for office:{0} id:{1} at:{2}",
+                    new Object[]{input.getOfficeId(), input.getName(), tsCode});
         });
     }
 
-    public void store(TimeSeries input, Timestamp versionDate) {
+    public void store(TimeSeries input, Timestamp versionDate, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection) {
         connection(dsl, connection ->
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        versionDate, input.getValues())
+                        versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection)
         );
     }
 
-    public void update(TimeSeries input) throws SQLException {
-        String name = input.getName();
-        if (!timeseriesExists(name)) {
-            throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
-                    + "first.");
-        }
-        connection(dsl, connection -> {
-            store(connection, input.getOfficeId(), name, input.getUnits(), NON_VERSIONED,
-                    input.getValues());
-        });
-    }
 
     public void store(Connection connection, String officeId, String tsId, String units,
-                      Timestamp versionDate,
-                      List<TimeSeries.Record> values) throws SQLException {
+                      Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
+                      StoreRule storeRule, boolean overrideProtection) throws SQLException {
         CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
         final int count = values == null ? 0 : values.size();
@@ -851,10 +848,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
 
-        final boolean createAsLrts = false;
-        StoreRule storeRule = StoreRule.REPLACE_ALL;
         tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
-                storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
+                storeRule.getRule(), overrideProtection, versionDate, createAsLrts);
+    }
+
+    public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
+                       Timestamp versionDate, boolean overrideProtection) throws SQLException {
+        String name = input.getName();
+        if (!timeseriesExists(name)) {
+            throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
+                    + "first.");
+        }
+        connection(dsl, connection -> store(connection, input.getOfficeId(), name, input.getUnits(), versionDate,
+                input.getValues(), createAsLrts, storeRule, overrideProtection));
     }
 
     public void deleteAll(String officeId, String tsId) {
