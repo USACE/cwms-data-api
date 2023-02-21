@@ -47,14 +47,16 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
 // It takes 8 minutes or so to run it this way.
     @BeforeAll
     public static void swt_permissions() throws Exception {
-        addUserToGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "CWMS Users", "SWT");
-        addUserToGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "TS ID Creator", "SWT");
+        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        addUserToGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
+        addUserToGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
 
     @AfterAll
     public static void remove_swt_permissiosn() throws Exception {
-        removeUserFromGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "CWMS Users", "SWT");
-        removeUserFromGroup(TestAccounts.KeyUser.SPK_NORMAL.getName(), "TS ID Creator", "SWT");
+        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        removeUserFromGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
+        removeUserFromGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
 
     @Test

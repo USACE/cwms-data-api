@@ -40,7 +40,7 @@ import io.restassured.path.json.config.JsonPathConfig;
 public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback{
 
     private static TomcatServer radarInstance;
-    private static CwmsDatabaseContainer cwmsDb;
+    private static CwmsDatabaseContainer<?> cwmsDb;
 
     private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");

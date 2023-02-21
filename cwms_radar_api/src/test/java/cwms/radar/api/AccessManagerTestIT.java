@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
-public class AccessManagerTestIT
+public class AccessManagerTestIT extends DataApiTestIT
 {
 	private static KeyUser SPK_NORMAL_USER = KeyUser.SPK_NORMAL;
 	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;

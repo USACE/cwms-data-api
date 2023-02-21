@@ -26,7 +26,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
     @BeforeAll
     public static void setup_data() throws Exception {
-        
         createLocation("Alder Springs",true,"SPK");
         createLocation("Wet Meadows",true,"SPK");
         createLocation("Pine Flat-Outflow",true,"SPK");
@@ -34,19 +33,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-radar");
         createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar");
         createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-radar");
-/**
-
-    -- add a timeseries alias
-    cwms_ts.store_ts_category('Test Category', 'For Testing', 'F', 'T', 'SPK');
-    cwms_ts.store_ts_group('Test Category','Test Group','For testing','F','T',NULL,NULL,'SPK');
-    cwms_ts.assign_ts_group(p_ts_category_id=>'Test Category',  p_ts_group_id=>'Test Group', p_ts_id=>'Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar', p_ts_attribute=>0,p_ts_alias_id=>'Alder Springs 15 Minute Rain Alias-radar',p_ref_ts_id=>NULL,p_db_office_id=>'SPK');
- */
-
     }
-
-    
-
-    
 
     @Test
     public void test_no_aliased_results_returned(){

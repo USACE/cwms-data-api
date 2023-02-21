@@ -2,7 +2,9 @@ package cwms.radar.api;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -23,7 +25,7 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
-    protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey,expires) values(UPPER(?),?,?,null)";
+    protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
     protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
     /**
@@ -88,8 +90,10 @@ public class DataApiTestIT {
 
     @AfterAll
     public static void remove_data() {
-        locationsCreated.forEach(location -> {
+        Iterator<Location> it = locationsCreated.iterator();
+        while(it.hasNext()) {
             try {
+                Location location = it.next();
                 CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
                 db.connection((c)-> {            
                     try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
@@ -102,10 +106,11 @@ public class DataApiTestIT {
                         }
                     }
                 },"cwms_20");
+                it.remove();
             } catch(SQLException ex) {
                 throw new RuntimeException(ex);
             }
-        });
+        }
     }
 
     @AfterAll
@@ -129,20 +134,23 @@ public class DataApiTestIT {
     }
 
     /**
-     * Creates a location saving the data for later deletion.
-     * @param location CWMS Location Name.
-     * @param active should this location be flagged active or not.
-     * @param office owning office
-     * @throws SQLException Any error saving the data
+     * Creates location with all minimum required data.
+     * @param location
+     * @param active
+     * @param office
+     * @param latitude
+     * @param longitude
+     * @param horizontalDatum
+     * @param kind
      */
-    protected static void createLocation(String location, boolean active, String office) throws SQLException {
+    protected static void createLocation(String location, boolean active, String office, Double latitude, Double longitude, String horizontalDatum, String timeZone, String kind) throws SQLException {
         CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
-                                            null,
-                                            null,
-                                            null,
-                                            null,
-                                            null,
+                                            kind,
+                                            ZoneId.of(timeZone),
+                                            latitude,
+                                            longitude,
+                                            horizontalDatum,
                                             office)
                                     .withActive(active)
                                     .build();
@@ -155,12 +163,30 @@ public class DataApiTestIT {
                 stmt.setString(1,location);
                 stmt.setString(2,active ? "T" : "F");
                 stmt.setString(3,office);
+                stmt.setString(4,timeZone);
+                stmt.setDouble(5,latitude);
+                stmt.setDouble(6,longitude);
+                stmt.setString(7,horizontalDatum);
+                stmt.setString(8,kind);
                 stmt.execute();
                 locationsCreated.add(loc);
             } catch (SQLException ex) {
                 throw new RuntimeException("Unable to create location",ex);
             }
         }, db.getPdUser());
+    }
+
+    /**
+     * Creates a location saving the data for later deletion.
+     * @param location CWMS Location Name.
+     * @param active should this location be flagged active or not.
+     * @param office owning office
+     * @throws SQLException Any error saving the data
+     */
+    protected static void createLocation(String location, boolean active, String office) throws SQLException {
+        createLocation(location,active,office,
+                       0.0,0.0,"WGS84",
+                       "UTC","STREAM");
     }
 
     /**
@@ -177,7 +203,7 @@ public class DataApiTestIT {
                 stmt.setString(2,timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
-                throw new RuntimeException("Unable to create location",ex);
+                throw new RuntimeException("Unable to create timeseries",ex);
             }
         }, db.getPdUser());
     }
