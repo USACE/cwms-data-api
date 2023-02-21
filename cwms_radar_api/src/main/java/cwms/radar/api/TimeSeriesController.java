@@ -108,7 +108,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = UTC_OFFSET_MINUTES,  description = "The interval utc offset for the time series in minutes"),
                     @OpenApiParam(name = INTERVAL_FORWARD,  description = "intervalForward is "
                             + "positive\n"
                             + "{@code intervalForward <= timeseriesId's interval}\n"
@@ -145,7 +144,6 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void create(Context ctx) {
 
-        int utcOffsetMinutes = ctx.queryParamAsClass(UTC_OFFSET_MINUTES, Integer.class).getOrDefault(0);
         Number intervalForward = ctx.queryParamAsClass(INTERVAL_FORWARD, Double.class).getOrDefault(null);
         Number intervalBackward = ctx.queryParamAsClass(INTERVAL_BACKWARD, Double.class).getOrDefault(null);
         boolean versionedFlag = ctx.queryParamAsClass(VERSIONED, Boolean.class).getOrDefault(false);
@@ -167,7 +165,7 @@ public class TimeSeriesController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries, utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag, versionDate, createAsLrts,
+            dao.create(timeSeries, intervalForward, intervalBackward, versionedFlag, activeFlag, versionDate, createAsLrts,
                     storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
@@ -434,7 +432,7 @@ public class TimeSeriesController implements CrudHandler {
                             + " this field is not specified, a null version date will be used.  The format for this field is ISO 8601 extended, "
                             + "with optional timezone, i.e., '"
                             + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = "timezone", description = "Specifies "
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the version-date field (unless "
                             + "otherwise specified). If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if version-date was specified with "

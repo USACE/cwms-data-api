@@ -73,7 +73,9 @@ import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.AbstractCwmsDbDao;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
@@ -797,19 +799,25 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @Override
     public void create(TimeSeries input){
 
-        create(input,0, null, null, false, true, null,
+        create(input, null, null, false, true, null,
                 true, StoreRule.REPLACE_ALL, true);
     }
 
     @Override
-    public void create(TimeSeries input, int utcOffsetMinutes, Number intervalForward, Number intervalBackward,
+    public void create(TimeSeries input, Number intervalForward, Number intervalBackward,
                        boolean versionedFlag, boolean activeFlag, Timestamp versionDate,
                        boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection){
         connection(dsl, connection -> {
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
+            String pVersioned = OracleTypeMap.formatBool(versionedFlag);
+            String pActiveFlag = OracleTypeMap.formatBool(activeFlag);
+            String pFailIfExists = OracleTypeMap.formatBool(false);
 
-            BigInteger tsCode = tsDao.createTsCodeBigInteger(connection, input.getOfficeId(),
-                    input.getName(), utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
+            BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(
+                    AbstractCwmsDbDao.buildConfiguration(connection), input.getName(),
+                    input.getIntervalOffset(), intervalForward, intervalBackward,
+                    pVersioned, pActiveFlag, pFailIfExists,
+                    input.getOfficeId());
+
             if (!input.getValues().isEmpty()) {
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
                         versionDate, input.getValues(), createAsLrts, replaceAll,
