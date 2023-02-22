@@ -15,6 +15,8 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dao.TimeSeriesDaoImpl;
+import cwms.radar.data.dao.TimeSeriesDeleteOptions;
+import cwms.radar.data.dao.TimeSeriesIdentifierDescriptorDao;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.Tsv;
@@ -32,8 +34,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -44,9 +44,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -63,14 +66,37 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
-    public static final String FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
+    public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
 
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
+
+    public static final String OFFICE = "office";
+    public static final String START_TIME = "start-time";
+    public static final String END_TIME = "end-time";
+    public static final String VERSION_DATE = "version-date";
+    public static final String START_TIME_INCLUSIVE = "start-time-inclusive";
+    public static final String END_TIME_INCLUSIVE = "end-time-inclusive";
+    public static final String MAX_VERSION = "max-version";
+    public static final String OVERRIDE_PROTECTION = "override-protection";
+    public static final String TS_ITEM_MASK = "ts_item_mask";
+
+    public static final String NAME = "name";
+    public static final String UNIT = "unit";
+    public static final String DATUM = "datum";
+    public static final String BEGIN = "begin";
+    public static final String END = "end";
+    public static final String TIMEZONE = "timezone";
+    public static final String FORMAT = "format";
+    public static final String PAGE = "page";
+    public static final String CURSOR = "cursor";
+    public static final String PAGE_SIZE = "page-size";
+    public static final String TIMESERIES = "timeseries";
 
     private final MetricRegistry metrics;
 
@@ -102,7 +128,7 @@ public class TimeSeriesController implements CrudHandler {
             tags = {"TimeSeries"}
     )
     @Override
-    public void create(Context ctx) {
+    public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("create");
              DSLContext dsl = getDslContext(ctx)) {
@@ -127,61 +153,101 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = "timeseries", required = true, description = "The timeseries-id of the timeseries to be deleted. "
+                            + "If '" + OFFICE + "' is the only additional query parameter specified a non-windowed deleteAll will be performed."),
+            },
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
-                            + "owning office of the timeseries to be deleted."),
-                    @OpenApiParam(name = "method",  description = "Specifies the delete method used."
-                            + "Default: DELETE_ALL",
-                            type = TimeSeriesDao.DeleteMethod.class)
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the timeseries to be deleted."),
+                    @OpenApiParam(name = START_TIME, description = "The start of the time window in the specified or default time zone"),
+                    @OpenApiParam(name = END_TIME, description = "The end of the time window in the specified or default time zone"),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of the values of the begin and end fields "
+                            + "(unless otherwise specified), If this field is not specified, the default time zone of UTC shall be used."),
+                    @OpenApiParam(name = VERSION_DATE, description = "The version date/time of the time series in the specified or default time zone. If NULL, the earliest or latest version date will be used depending on p_max_version."),
+                    @OpenApiParam(name = START_TIME_INCLUSIVE, description = "A flag specifying whether any data at the start time should be deleted ('True') or only data <b><em>after</em></b> the start time ('False')", type = Boolean.class),
+                    @OpenApiParam(name = END_TIME_INCLUSIVE, description = "A flag ('True'/'False') specifying whether any data at the end time should be deleted ('True') or only data <b><em>before</em></b> the end time ('False')", type = Boolean.class),
+                    @OpenApiParam(name = MAX_VERSION, description = "A flag ('True'/'False') specifying whether to use the earliest ('False') or latest ('True') version date for each time if p_version_date is NULL.", type = Boolean.class),
+                    @OpenApiParam(name = TS_ITEM_MASK, description = "A cookie specifying what time series items to purge.", type = Integer.class),
+                    @OpenApiParam(name = OVERRIDE_PROTECTION, description = "A flag ('True'/'False'/'E') specifying whether to delete protected data, Set to 'E' to raise an exception if protected values are encountered."),
             },
             method = HttpMethod.DELETE,
             path = "/timeseries",
             tags = {"TimeSeries"}
     )
     @Override
-    public void delete(Context ctx, String tsId) {
-        TimeSeriesDao.DeleteMethod method = ctx.queryParamAsClass("method",
-                TimeSeriesDao.DeleteMethod.class)
-                .getOrDefault(TimeSeriesDao.DeleteMethod.DELETE_ALL);
-
-        String office = ctx.queryParam("office");
-
+    public void delete(Context ctx, @NotNull String timeseriesId) {
+        
         try (final Timer.Context ignored = markAndTime("delete");
-                DSLContext dsl = getDslContext(ctx)) {
+             DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            switch (method) {
-                case DELETE_KEY:
-                    dao.deleteKey(office, tsId);
-                    break;
-                case DELETE_DATA:
-                    dao.deleteData(office, tsId);
-                    break;
-                case DELETE_ALL:
-                    dao.deleteAll(office, tsId);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown delete method: " + method);
-            }
-            ctx.status(HttpServletResponse.SC_OK);
+            String office = ctx.queryParam(OFFICE);
 
-        } catch (DataAccessException ex) {
-            RadarError re = new RadarError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            List<String> expandedDeleteKeys = Arrays.asList(START_TIME,
+                    END_TIME, VERSION_DATE, START_TIME_INCLUSIVE, END_TIME_INCLUSIVE, MAX_VERSION,
+                    TS_ITEM_MASK, OVERRIDE_PROTECTION);
+
+            Map<String, String> paramMap = ctx.pathParamMap();
+
+            boolean useExpanded = expandedDeleteKeys.stream().anyMatch(paramMap::containsKey);
+
+            if (useExpanded) {
+                String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+
+                Date startTimeDate = getDate(timezone, ctx.queryParam(START_TIME));
+                Date endTimeDate = getDate(timezone, ctx.queryParam(END_TIME));
+                Date versionDate = getDate(timezone, ctx.queryParam(VERSION_DATE));
+
+                // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
+                boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).get();
+                boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).get();
+
+                Boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).get();
+                Integer tsItemMask = ctx.queryParamAsClass(TS_ITEM_MASK, Integer.class).get();
+                TimeSeriesDaoImpl.OverrideProtection op =
+                        ctx.queryParamAsClass(OVERRIDE_PROTECTION,
+                                TimeSeriesDaoImpl.OverrideProtection.class).get();
+
+                TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder()
+                        .withStartTime(startTimeDate)
+                        .withEndTime(endTimeDate)
+                        .withVersionDate(versionDate)
+                        .withStartTimeInclusive(startTimeInclusive)
+                        .withEndTimeInclusive(endTimeInclusive)
+                        .withMaxVersion(maxVersion)
+                        .withTsItemMask(tsItemMask)
+                        .withOverrideProtection(op.toString())
+                        .build();
+
+                dao.delete(office, timeseriesId, options);
+            } else {
+                TimeSeriesIdentifierDescriptorDao idDao = new TimeSeriesIdentifierDescriptorDao(dsl);
+                idDao.deleteAll(office, timeseriesId);
+            }
+
         }
+    }
+
+    @Nullable
+    private static Date getDate(String timezone, String startTimeStr) {
+        Date startTimeDate = null;
+        if (startTimeStr != null && startTimeStr.isEmpty()) {
+            ZonedDateTime startTimeZdt = DateUtils.parseUserDate(startTimeStr, timezone);
+            startTimeDate = Date.from(startTimeZdt.toInstant());
+        }
+        return startTimeDate;
     }
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "name", required = true, description = "Specifies the "
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the "
                             + "name(s) of the time series whose data is to be included in the "
                             + "response. A case insensitive comparison is used to match names."),
-                    @OpenApiParam(name = "office", required = false, description = "Specifies the"
+                    @OpenApiParam(name = OFFICE,  description = "Specifies the"
                             + " owning office of the time series(s) whose data is to be included "
                             + "in the response. If this field is not specified, matching location"
                             + " level information from all offices shall be returned."),
-                    @OpenApiParam(name = "unit", required = false, description = "Specifies the "
+                    @OpenApiParam(name = UNIT,  description = "Specifies the "
                             + "unit or unit system of the response. Valid values for the unit "
                             + "field are:\r\n 1. EN.   (default) Specifies English unit system.  "
                             + "Location level values will be in the default English units for "
@@ -190,47 +256,47 @@ public class TimeSeriesController implements CrudHandler {
                             + "parameters.\r\n3. Other. Any unit returned in the response to the "
                             + "units URI request that is appropriate for the requested parameters"
                             + "."),
-                    @OpenApiParam(name = "datum", required = false, description = "Specifies the "
+                    @OpenApiParam(name = DATUM,  description = "Specifies the "
                             + "elevation datum of the response. This field affects only elevation"
                             + " location levels. Valid values for this field are:\r\n1. NAVD88.  "
                             + "The elevation values will in the specified or default units above "
                             + "the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in "
                             + "the specified or default units above the NGVD-29 datum."),
-                    @OpenApiParam(name = "begin", required = false, description = "Specifies the "
+                    @OpenApiParam(name = BEGIN,  description = "Specifies the "
                             + "start of the time window for data to be included in the response. "
                             + "If this field is not specified, any required time window begins 24"
                             + " hours prior to the specified or default end time. The format for "
                             + "this field is ISO 8601 extended, with optional offset and "
                             + "timezone, i.e., '"
-                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = "end", required = false, description = "Specifies the "
+                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = END,  description = "Specifies the "
                             + "end of the time window for data to be included in the response. If"
                             + " this field is not specified, any required time window ends at the"
                             + " current time. The format for this field is ISO 8601 extended, "
                             + "with optional timezone, i.e., '"
-                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = "timezone", required = false, description = "Specifies "
+                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
                             + "otherwise specified), as well as the time zone of any times in the"
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = "format", required = false, description = "Specifies the"
+                    @OpenApiParam(name = FORMAT,  description = "Specifies the"
                             + " encoding format of the response. Valid values for the format "
                             + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
                             + "xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json "
                             + "(default)"),
-                    @OpenApiParam(name = "page",
+                    @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque"
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = "cursor",
+                    @OpenApiParam(name = CURSOR,
                             deprecated = true,
                             description = "Deprecated. Use 'page' instead."
                     ),
-                    @OpenApiParam(name = "page-size",
+                    @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description =
                                     "How many entries per page returned. "
@@ -268,21 +334,21 @@ public class TimeSeriesController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime("getAll");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
-            String names = ctx.queryParam("name");
-            String office = ctx.queryParam("office");
-            String unit = ctx.queryParamAsClass("unit", String.class)
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String names = ctx.queryParam(NAME);
+            String office = ctx.queryParam(OFFICE);
+            String unit = ctx.queryParamAsClass(UNIT, String.class)
                     .getOrDefault(UnitSystem.EN.getValue());
-            String datum = ctx.queryParam("datum");
-            String begin = ctx.queryParam("begin");
-            String end = ctx.queryParam("end");
-            String timezone = ctx.queryParamAsClass("timezone", String.class).getOrDefault("UTC");
+            String datum = ctx.queryParam(DATUM);
+            String begin = ctx.queryParam(BEGIN);
+            String end = ctx.queryParam(END);
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
+            String cursor = Controllers.queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
                             "getAll"));
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
+            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{PAGE_SIZE, "pageSize",
                     "pagesize"}, Integer.class, defaultPageSize, metrics,
                     name(TimeSeriesController.class.getName(), "getAll"));
 
@@ -347,10 +413,9 @@ public class TimeSeriesController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String id) {
+    public void getOne(@NotNull Context ctx, @NotNull String id) {
 
-        try (final Timer.Context ignored = markAndTime("getOne");
-                DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime("getOne")) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -359,7 +424,7 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Update a TimeSeries with provided values",
             pathParams = {
-                @OpenApiParam(name="timeseries",description = "Full CWMS Timeseries name")
+                    @OpenApiParam(name = TIMESERIES, description = "Full CWMS Timeseries name")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -373,9 +438,9 @@ public class TimeSeriesController implements CrudHandler {
             tags = {"TimeSeries"}
     )
     @Override
-    public void update(Context ctx, String id) {
+    public void update(@NotNull Context ctx, @NotNull String id) {
 
-        try (                final Timer.Context ignored = markAndTime("update");
+        try (final Timer.Context ignored = markAndTime("update");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
@@ -477,7 +542,7 @@ public class TimeSeriesController implements CrudHandler {
                     URLEncoder.encode(ts.getEnd().format(DateTimeFormatter.ISO_ZONED_DATE_TIME),
                             StandardCharsets.UTF_8.toString())));
 
-            String format = ctx.queryParam("format");
+            String format = ctx.queryParam(FORMAT);
             if (format != null && !format.isEmpty()) {
                 result.append(String.format("&format=%s", format));
             }
@@ -494,7 +559,7 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "office", description = "Specifies the owning office of the "
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                     + "timeseries group(s) whose data is to be included in the response. If this "
                     + "field is not specified, matching timeseries groups information from all "
                     + "offices shall be returned."),},
@@ -518,7 +583,7 @@ public class TimeSeriesController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
             String categoryId =
                     ctx.queryParamAsClass("category-id", String.class).allowNullable().get();
             String groupId = ctx.pathParamAsClass("group-id", String.class).allowNullable().get();
@@ -545,7 +610,7 @@ public class TimeSeriesController implements CrudHandler {
                 // has both = this is an error
                 RadarError re = new RadarError("Invalid arguments supplied, group has both "
                         + "Timeseries Group info and Timeseries IDs.");
-                logger.log(Level.SEVERE, re + " for url " + ctx.fullUrl());
+                logger.log(Level.SEVERE, "{0} for request {1}", new Object[]{ re, ctx.fullUrl()});
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;
@@ -553,7 +618,7 @@ public class TimeSeriesController implements CrudHandler {
                 // doesn't have either?  Just return empty results?
                 RadarError re = new RadarError("Invalid arguments supplied, group has neither "
                         + "Timeseries Group info nor Timeseries IDs");
-                logger.log(Level.SEVERE, re + " for request " + ctx.fullUrl());
+                logger.log(Level.SEVERE, "{0} for request {1}", new Object[]{ re, ctx.fullUrl()});
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;

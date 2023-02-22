@@ -23,7 +23,6 @@ import cwms.radar.data.dto.TsvId;
 import cwms.radar.data.dto.VerticalDatumInfo;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.TimeseriesCatalogEntry;
-
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -310,9 +309,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
 
             return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
-                    Integer.class),
-                    tsMetadata.getValue("NAME", String.class), tsMetadata.getValue("office_id"
-                    , String.class),
+                    Integer.class), tsMetadata.getValue("NAME", String.class),
+                    tsMetadata.getValue("office_id", String.class),
                     beginTime, endTime, tsMetadata.getValue("units", String.class),
                     Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
                             tsMetadata.getValue("interval", Long.class)),
@@ -818,18 +816,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         );
     }
 
-    public void update(TimeSeries input) throws SQLException {
-        String name = input.getName();
-        if (!timeseriesExists(name)) {
-            throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
-                    + "first.");
-        }
-        connection(dsl, connection -> {
-            store(connection, input.getOfficeId(), name, input.getUnits(), NON_VERSIONED,
-                    input.getValues());
-        });
-    }
-
     public void store(Connection connection, String officeId, String tsId, String units,
                       Timestamp versionDate,
                       List<TimeSeries.Record> values) throws SQLException {
@@ -857,26 +843,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 storeRule.getRule(), OVERRIDE_PROTECTION, versionDate, createAsLrts);
     }
 
-    public void deleteAll(String officeId, String tsId) {
-        connection(dsl, connection -> {
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-            tsDao.deleteAll(connection, officeId, tsId);
-        });
+    public void update(TimeSeries input) throws SQLException {
+        String name = input.getName();
+        if (!timeseriesExists(name)) {
+            throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
+                    + "first.");
+        }
+        connection(dsl, connection -> store(connection, input.getOfficeId(), name,
+                input.getUnits(), NON_VERSIONED, input.getValues()));
     }
 
-    public void deleteData(String officeId, String tsId) {
-        connection(dsl, connection -> {
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-            tsDao.deleteData(connection, officeId, tsId);
-        });
-    }
-
-    public void deleteKey(String officeId, String tsId) {
-        connection(dsl, connection -> {
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-            tsDao.deleteKey(connection, officeId, tsId);
-        });
-    }
 
     protected BigDecimal retrieveTsCode(String tsId) {
 
@@ -890,4 +866,157 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retrieveTsCode(tsId) != null;
     }
 
+
+    public void delete(String officeId, String tsId, TimeSeriesDeleteOptions options){
+        connection(dsl, connection -> {
+            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
+            tsDao.deleteTs(connection, officeId, tsId, options.getStartTime(), options.getEndTime(),
+                    options.isStartTimeInclusive(), options.isEndTimeInclusive(),
+                    options.getVersionDate(), null, options.getMaxVersion(),
+                    options.getTsItemMask(), options.getOverrideProtection());
+        });
+    }
+
+
+    public enum OverrideProtection {
+        /**
+         * If set to True, all specified values are quietly deleted
+         */
+        True,
+        /**
+         * If set to False, only non-protected values are quietly
+         * deleted.
+         */
+        False,
+        /**
+         * If set to E, all specified values are deleted only if
+         * all values are non-protected values. If protected values are present,
+         * then no values are deleted and the following error is raised:
+         * cwms_err.raise('ERROR', 'One or more values are protected').
+         */
+        E;
+
+        @Override
+        public String toString() {
+            return name().substring(0, 1);
+        }
+    }
+
+    public static class DeleteOptions implements TimeSeriesDeleteOptions {
+        private final Date startTime;
+        private final Date endTime;
+        private final boolean startTimeInclusive;
+        private final boolean endTimeInclusive;
+        private final Date versionDate;
+        private final Boolean maxVersion;
+        private final Integer tsItemMask;
+        private final String overrideProtection;
+
+        public DeleteOptions(Builder builder) {
+            this.startTime = builder.startTime;
+            this.endTime = builder.endTime;
+            this.startTimeInclusive = builder.startTimeInclusive;
+            this.endTimeInclusive = builder.endTimeInclusive;
+            this.versionDate = builder.versionDate;
+            this.maxVersion = builder.maxVersion;
+            this.tsItemMask = builder.tsItemMask;
+            this.overrideProtection = builder.overrideProtection;
+        }
+
+        @Override
+        public Date getStartTime() {
+            return startTime;
+        }
+
+        @Override
+        public Date getEndTime() {
+            return endTime;
+        }
+
+        @Override
+        public boolean isStartTimeInclusive() {
+            return startTimeInclusive;
+        }
+
+        @Override
+        public boolean isEndTimeInclusive() {
+            return endTimeInclusive;
+        }
+
+        @Override
+        public Date getVersionDate() {
+            return versionDate;
+        }
+
+        @Override
+        public Boolean getMaxVersion() {
+            return maxVersion;
+        }
+
+        @Override
+        public Integer getTsItemMask() {
+            return tsItemMask;
+        }
+
+        @Override
+        public String getOverrideProtection() {
+            return overrideProtection;
+        }
+
+        public static class Builder {
+            private Date startTime;
+            private Date endTime;
+            private boolean startTimeInclusive = true;
+            private boolean endTimeInclusive = true;
+            private Date versionDate;
+            private Boolean maxVersion = null;
+            private Integer tsItemMask = null;
+            private String overrideProtection;
+
+            public Builder withStartTime(Date startTime) {
+                this.startTime = startTime;
+                return this;
+            }
+
+            public Builder withEndTime(Date endTime) {
+                this.endTime = endTime;
+                return this;
+            }
+
+            public Builder withStartTimeInclusive(boolean startTimeInclusive) {
+                this.startTimeInclusive = startTimeInclusive;
+                return this;
+            }
+
+            public Builder withEndTimeInclusive(boolean endTimeInclusive) {
+                this.endTimeInclusive = endTimeInclusive;
+                return this;
+            }
+
+            public Builder withVersionDate(Date versionDate) {
+                this.versionDate = versionDate;
+                return this;
+            }
+
+
+            public Builder withMaxVersion(Boolean maxVersion) {
+                this.maxVersion = maxVersion;
+                return this;
+            }
+
+            public Builder withTsItemMask(Integer tsItemMask) {
+                this.tsItemMask = tsItemMask;
+                return this;
+            }
+
+            public Builder withOverrideProtection(String overrideProtection) {
+                this.overrideProtection = overrideProtection;
+                return this;
+            }
+
+            public DeleteOptions build() {
+                return new DeleteOptions(this);
+            }
+        }
+    }
 }
