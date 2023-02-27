@@ -17,7 +17,7 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
     private final String officeId;
     private final String timeSeriesId;
     private final ZoneId zoneId;
-    private final long intervalOffsetMinutes;
+    private final Long intervalOffsetMinutes;
     private final boolean active;
 
     private TimeSeriesIdentifierDescriptor(Builder builder) {
@@ -40,7 +40,7 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
         return zoneId;
     }
 
-    public long getIntervalOffsetMinutes() {
+    public Long getIntervalOffsetMinutes() {
         return intervalOffsetMinutes;
     }
 
@@ -50,7 +50,7 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
-
+        // Nothing to validate
     }
 
     @JsonPOJOBuilder
@@ -59,7 +59,7 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
         private String officeId;
         private String timeSeriesId;
         private ZoneId zoneId;
-        private long intervalOffsetMinutes;
+        private Long intervalOffsetMinutes;
         private boolean active;
 
         public Builder withOfficeId(String officeId) {
@@ -77,13 +77,22 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
             return this;
         }
 
-        public Builder withIntervalOffsetMinutes(long intervalOffsetMinutes) {
+        public Builder withIntervalOffsetMinutes(Long intervalOffsetMinutes) {
             this.intervalOffsetMinutes = intervalOffsetMinutes;
             return this;
         }
 
         public Builder withActive(boolean active) {
             this.active = active;
+            return this;
+        }
+
+        public Builder withTimeSeriesIdentifierDescriptor(TimeSeriesIdentifierDescriptor tsid) {
+            this.officeId = tsid.getOfficeId();
+            this.timeSeriesId = tsid.getTimeSeriesId();
+            this.zoneId = tsid.getZoneId();
+            this.intervalOffsetMinutes = tsid.getIntervalOffsetMinutes();
+            this.active = tsid.isActive();
             return this;
         }
 

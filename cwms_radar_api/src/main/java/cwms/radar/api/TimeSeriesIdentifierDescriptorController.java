@@ -5,21 +5,25 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
-import cwms.radar.data.dao.TimeSeriesDao;
-import cwms.radar.data.dao.TimeSeriesDaoImpl;
 import cwms.radar.data.dao.TimeSeriesIdentifierDescriptorDao;
-import cwms.radar.data.dto.TimeSeriesIdentifier;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
 import java.util.List;
@@ -66,10 +70,6 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         return JooqDao.getDslContext(ctx);
     }
 
-    @NotNull
-    protected TimeSeriesDao getTimeSeriesDao(DSLContext dsl) {
-        return new TimeSeriesDaoImpl(dsl);
-    }
 
     @OpenApi(queryParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
@@ -81,13 +81,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     + "not specified the results will not be constrained by timeseries-id."),
             },
             responses = {@OpenApiResponse(status = "200",
-                    content = {@OpenApiContent(isArray = true, from = TimeSeriesIdentifier.class,
-                            type = Formats.JSON)
+                    content = {@OpenApiContent(isArray = true, from = TimeSeriesIdentifierDescriptor.class,
+                            type = Formats.JSONV2)
                     }),
                     @OpenApiResponse(status = "404", description = "Based on the combination of "
-                            + "inputs provided the categories were not found."),
+                            + "inputs provided the time series identifier descriptors were not found."),
                     @OpenApiResponse(status = "501", description = "request format is not "
-                            + "implemented")}, description = "Returns CWMS timeseries identifier "
+                            + "implemented")}, description = "Returns CWMS timeseries identifier descriptor"
             + "Data", tags = {TAG})
     @Override
     public void getAll(Context ctx) {
@@ -104,7 +104,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
-            String result = null;  ///TODO implement this: Formats.format(contentType, ids, TimeSeriesIdentifier.class);
+            String result = Formats.format(contentType, ids, TimeSeriesIdentifierDescriptor.class);
 
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
@@ -127,8 +127,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = "200",
                             content = {
-                                    @OpenApiContent(from = TimeSeriesIdentifier.class, type =
-                                            Formats.JSON)
+                                    @OpenApiContent(from = TimeSeriesIdentifierDescriptor.class, type =
+                                            Formats.JSONV2)
                             }
                     ),
                     @OpenApiResponse(status = "404", description = "Based on the combination of "
@@ -149,7 +149,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             Optional<TimeSeriesIdentifierDescriptor> grp = dao.getTimeSeriesIdentifier(office, timeseriesId);
             if (grp.isPresent()) {
-                String result = null;  /// TODO implement this: Formats.format(contentType, grp.get());
+
+                String result = Formats.format(contentType, grp.get());
 
                 ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
@@ -164,10 +165,65 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            description = "Create new TimeSeriesIdentifierDescriptor",
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = TimeSeriesIdentifierDescriptor.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeriesIdentifierDescriptor.class, type = Formats.XMLV2)
+                    },
+                    required = true),
+            queryParams = {
+                    @OpenApiParam(name = "fail-if-exists", type = Boolean.class,
+                            description = "Create will fail if provided ID already exists. Default: true")
+            },
+            method = HttpMethod.POST,
+            tags = {TAG}
+    )
     @Override
     public void create(@NotNull Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        try (final Timer.Context ignored = markAndTime("create");
+             DSLContext dsl = getDslContext(ctx)) {
+
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String body = ctx.body();
+
+            TimeSeriesIdentifierDescriptor tsid = deserialize(body, formatHeader);
+
+            TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
+
+            // these could be made optional queryParams
+            boolean versioned = false;
+            Number numForwards = null;
+            Number numBackwards = null;
+            boolean failIfExists = false;
+
+            dao.create(tsid, versioned, numForwards, numBackwards, failIfExists);
+
+            ctx.status(HttpServletResponse.SC_CREATED);
+        } catch (JsonProcessingException ex) {
+            RadarError re = new RadarError("Failed to process create request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
+    }
+
+    public static TimeSeriesIdentifierDescriptor deserialize(String body, String format) throws JsonProcessingException {
+        TimeSeriesIdentifierDescriptor retval = null;
+        if (ContentType.equivalent(Formats.JSONV2, format)) {
+            ObjectMapper om = JsonV2.buildObjectMapper();
+            retval = om.readValue(body, TimeSeriesIdentifierDescriptor.class);
+        } else if (ContentType.equivalent(Formats.XMLV2,format)) {
+            JacksonXmlModule module = new JacksonXmlModule();
+            module.setDefaultUseWrapper(false);
+            ObjectMapper om = new XmlMapper(module);
+            retval = om.readValue(body, TimeSeriesIdentifierDescriptor.class);
+        } else {
+            throw new IllegalArgumentException("Unsupported format: " + format);
+        }
+
+        return retval;
     }
 
     @OpenApi(
@@ -238,9 +294,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "Default: DELETE_ALL",
                             type = TimeSeriesIdentifierDescriptorDao.DeleteMethod.class)
             },
-            description = "Deletes requested timeseries identifier"
+            description = "Deletes requested timeseries identifier",
+            method = HttpMethod.DELETE
            )
-
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 

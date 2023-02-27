@@ -3,6 +3,7 @@ package cwms.radar.data.dao;
 import static usace.cwms.db.dao.util.OracleTypeMap.parseBool;
 import static usace.cwms.db.dao.util.OracleTypeMap.toZoneId;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,11 +13,14 @@ import java.util.stream.Collectors;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 
 public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentifierDescriptor> {
+
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public enum DeleteMethod {
         DELETE_ALL, DELETE_KEY, DELETE_DATA
@@ -28,14 +32,24 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     }
 
 
+    public void create(TimeSeriesIdentifierDescriptor tsid, boolean versionedFlag,
+                       Number intervalForward, Number intervalBackward, boolean failIfExists
+    ) {
+        BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(dsl.configuration(),
+                tsid.getTimeSeriesId(),
+                tsid.getIntervalOffsetMinutes(), intervalForward, intervalBackward,
+                OracleTypeMap.formatBool(versionedFlag),
+                OracleTypeMap.formatBool(tsid.isActive()),
+                OracleTypeMap.formatBool(failIfExists), tsid.getOfficeId());
+        logger.atFine().log("Created tsCode: %s for %s", tsCode, tsid.getTimeSeriesId());
+    }
+
     public List<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifiers(String office, String idRegex) {
 
-        Condition whereCondition;
-        if (idRegex == null || idRegex.isEmpty()) {
-            whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office);
-        } else {
-            whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office)
-                    .and(JooqDao.caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID, idRegex));
+        Condition whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office);
+        if (idRegex != null && !idRegex.isEmpty()) {
+            whereCondition = whereCondition.and(
+                    JooqDao.caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID, idRegex));
         }
 
         return dsl
@@ -61,7 +75,6 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
         String locationId = tsId.substring(0, tsId.indexOf('.'));
 
-
         return new TimeSeriesIdentifierDescriptor.Builder()
                 .withOfficeId(officeId)
                 .withTimeSeriesId(tsId)
@@ -75,19 +88,15 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     public Optional<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifier(String office, String timeseriesId) {
         return connectionResult(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-            Optional<usace.cwms.db.dao.ifc.ts.TimeSeriesIdentifierDescriptor> tsIdDesc = tsDao.retrieveTSIdentifierWithAliasSupport(connection, office, timeseriesId);
+            Optional<usace.cwms.db.dao.ifc.ts.TimeSeriesIdentifierDescriptor> tsIdDesc = tsDao.retrieveTSIdentifierWithAliasSupport(connection, timeseriesId, office);
 
-            return toDto(tsIdDesc);
+            Optional<TimeSeriesIdentifierDescriptor> retval = Optional.empty();
+            if (tsIdDesc.isPresent()) {
+                retval = Optional.of(toDto(tsIdDesc.get()));
+            }
+
+            return retval;
         });
-    }
-
-    public static Optional<TimeSeriesIdentifierDescriptor> toDto(Optional<usace.cwms.db.dao.ifc.ts.TimeSeriesIdentifierDescriptor> tsIdDesc) {
-        Optional<TimeSeriesIdentifierDescriptor> retval = Optional.empty();
-        if (tsIdDesc.isPresent()) {
-            retval = Optional.of(toDto(tsIdDesc.get()));
-        }
-
-        return retval;
     }
 
     public static TimeSeriesIdentifierDescriptor toDto(usace.cwms.db.dao.ifc.ts.TimeSeriesIdentifierDescriptor tsId) {
@@ -95,14 +104,13 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                 .withOfficeId(tsId.getOfficeId())
                 .withTimeSeriesId(tsId.getTimeSeriesId())
                 .withZoneId(tsId.getZoneId())
-                .withIntervalOffsetMinutes(tsId.getIntervalOffsetMinutes())
+                .withIntervalOffsetMinutes((long) tsId.getIntervalOffsetMinutes())
                 .withActive(tsId.isActive())
                 .build();
     }
 
     public void update(String office, String timeseriesId, Number utcOffsetMinutes, Number intervalForward,
                        Number intervalBackward, boolean activeFlag) {
-
         connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.updateTsId(connection, office, timeseriesId, utcOffsetMinutes, intervalForward, intervalBackward, activeFlag);
@@ -146,10 +154,6 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.deleteAll(connection, officeId, tsId);
-
-            // If we decide to call the proc directory I think the choices are:
-            // cwms_util.delete_key, cwms_util.delete_data, cwms_util.delete_all,
-            // cwms_util.delete_ts_id, cwms_util.delete_ts_data, cwms_util.delete_ts_cascade
         });
     }
 

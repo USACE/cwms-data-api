@@ -357,15 +357,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     // datumInfo comes back like:
-    //						<vertical-datum-info office="LRL" unit="m">
-    //						  <location>Buckhorn</location>
-    //						  <native-datum>NGVD-29</native-datum>
-    //						  <elevation>230.7</elevation>
-    //						  <offset estimate="true">
-    //						    <to-datum>NAVD-88</to-datum>
-    //						    <value>-.1666</value>
-    //						  </offset>
-    //						</vertical-datum-info>
+    //        <vertical-datum-info office="LRL" unit="m">
+    //          <location>Buckhorn</location>
+    //          <native-datum>NGVD-29</native-datum>
+    //          <elevation>230.7</elevation>
+    //          <offset estimate="true">
+    //            <to-datum>NAVD-88</to-datum>
+    //            <value>-.1666</value>
+    //          </offset>
+    //        </vertical-datum-info>
     public static VerticalDatumInfo parseVerticalDatumInfo(String body) {
         VerticalDatumInfo retval = null;
         if (body != null && !body.isEmpty()) {
@@ -755,9 +755,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     .and(tsvView.END_DATE.gt(pastLimit)));
 
             Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
-                    tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
-                    tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
-                    tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
+                tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
+                tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
+                tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
 
             List<Field<Object>> fields = Arrays.stream(queryFields)
                     .map(Field::getName)
@@ -794,7 +794,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         connection(dsl, connection -> {
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
-            int utcOffsetMinutes = 0;
+            int utcOffsetMinutes = Math.toIntExact(input.getIntervalOffset());
             int intervalForward = 0;
             int intervalBackward = 0;
             boolean versionedFlag = false;
