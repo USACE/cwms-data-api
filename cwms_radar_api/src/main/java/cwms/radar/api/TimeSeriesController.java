@@ -82,15 +82,11 @@ public class TimeSeriesController implements CrudHandler {
     public static final String OVERRIDE_PROTECTION = "override-protection";
     public static final String TIMEZONE = "timezone";
     public static final String OFFICE = "office";
-
-    public static final String OFFICE = "office";
     public static final String START_TIME = "start-time";
     public static final String END_TIME = "end-time";
-    public static final String VERSION_DATE = "version-date";
     public static final String START_TIME_INCLUSIVE = "start-time-inclusive";
     public static final String END_TIME_INCLUSIVE = "end-time-inclusive";
     public static final String MAX_VERSION = "max-version";
-    public static final String OVERRIDE_PROTECTION = "override-protection";
     public static final String TS_ITEM_MASK = "ts_item_mask";
 
     public static final String NAME = "name";
@@ -98,7 +94,6 @@ public class TimeSeriesController implements CrudHandler {
     public static final String DATUM = "datum";
     public static final String BEGIN = "begin";
     public static final String END = "end";
-    public static final String TIMEZONE = "timezone";
     public static final String FORMAT = "format";
     public static final String PAGE = "page";
     public static final String CURSOR = "cursor";
@@ -214,18 +209,13 @@ public class TimeSeriesController implements CrudHandler {
             tags = {"TimeSeries"}
     )
     @Override
-    public void delete(Context ctx, String tsId) {
-        TimeSeriesDao.DeleteMethod method = ctx.queryParamAsClass("method",
-                TimeSeriesDao.DeleteMethod.class)
-                .getOrDefault(TimeSeriesDao.DeleteMethod.DELETE_ALL);
+    public void delete(Context ctx, @NotNull String timeseries) {
 
         String office = ctx.queryParam(OFFICE);
 
         try (final Timer.Context ignored = markAndTime("delete");
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
-            String office = ctx.queryParam(OFFICE);
 
             List<String> expandedDeleteKeys = Arrays.asList(START_TIME,
                     END_TIME, VERSION_DATE, START_TIME_INCLUSIVE, END_TIME_INCLUSIVE, MAX_VERSION,
@@ -263,10 +253,10 @@ public class TimeSeriesController implements CrudHandler {
                         .withOverrideProtection(op.toString())
                         .build();
 
-                dao.delete(office, timeseriesId, options);
+                dao.delete(office, timeseries, options);
             } else {
                 TimeSeriesIdentifierDescriptorDao idDao = new TimeSeriesIdentifierDescriptorDao(dsl);
-                idDao.deleteAll(office, timeseriesId);
+                idDao.deleteAll(office, timeseries);
             }
 
         }
@@ -478,7 +468,7 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = VERSION_DATE, required = false, description = "Specifies the "
+                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the "
                             + "version date for the timeseries to create. If"
                             + " this field is not specified, a null version date will be used.  The format for this field is ISO 8601 extended, "
                             + "with optional timezone, i.e., '"
