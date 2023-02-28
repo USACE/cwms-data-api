@@ -5,18 +5,15 @@ import cwms.radar.data.dto.Location;
 import org.geojson.FeatureCollection;
 
 import java.io.IOException;
-import java.util.Optional;
 
-public interface LocationsDao
-{
+public interface LocationsDao {
     String getLocations(String names,String format, String units, String datum, String officeId);
-    Location getLocation(String locationName, String unitSystem, String officeId) throws IOException;
+    Location getLocation(String locationName, String unitSystem,
+                         String officeId) throws IOException;
     void deleteLocation(String locationName, String officeId) throws IOException;
     void storeLocation(Location location) throws IOException;
     void renameLocation(String oldLocationName, Location renamedLocation) throws IOException;
     FeatureCollection buildFeatureCollection(String names, String units, String officeId);
-    Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office);
-    Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, Optional<String> office, String idLike, String categoryLike, String groupLike);
-
-
+    Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office, 
+                               String idLike, String categoryLike, String groupLike);
 }

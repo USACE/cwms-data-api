@@ -1,19 +1,17 @@
 package cwms.radar.data.dto;
 
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
-import java.io.IOException;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.data.dao.JsonRatingUtilsTest;
 import cwms.radar.data.dto.rating.RatingTemplate;
 import cwms.radar.formatters.json.JsonV1;
-import org.junit.jupiter.api.Test;
-
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.data.rating.IRatingTemplate;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.io.IOException;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
+import org.junit.jupiter.api.Test;
 
 
 class RatingTemplateTest
@@ -29,7 +27,7 @@ class RatingTemplateTest
 		assertNotNull(xmlRating);
 
 		// make sure we can parse it.
-		RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
+		RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlRating);
 		assertNotNull(ratingSet);
 
 		IRatingTemplate ratingTemplate = ratingSet.getRatingTemplate();

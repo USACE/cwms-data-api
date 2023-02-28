@@ -6,11 +6,17 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
+import cwms.radar.datasource.DirectUserPreparer;
+import cwms.radar.datasource.SessionOfficePreparer;
 import cwms.radar.datasource.SessionUserPreparer;
-import io.javalin.core.security.AccessManager;
+import cwms.radar.spi.RadarAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Principal;
@@ -22,10 +28,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CwmsAccessManager implements AccessManager {
+public class CwmsAccessManager extends RadarAccessManager {
     public static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
     public static final String DATABASE = "database";
 
@@ -35,8 +42,8 @@ public class CwmsAccessManager implements AccessManager {
             throws Exception {
         boolean shouldProceed = isAuthorized(ctx, requiredRoles);
 
-        if (shouldProceed) {
-            setSessionKey(ctx);
+        if (shouldProceed) {            
+            buildDataSource(ctx);
 
             // Let the handler handle the request.
             handler.handle(ctx);
@@ -46,28 +53,17 @@ public class CwmsAccessManager implements AccessManager {
             ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
             ctx.status(401).result("Unauthorized");
         }
-
     }
 
-    private void setSessionKey(@NotNull Context ctx) {
-        String sessionKey = getSessionKey(ctx);
-        if (sessionKey != null) {
-//            // Set the user's session key in the database.
-//            Connection conn = ctx.attribute(DATABASE);
-//            setSession(conn, sessionKey);
+    private void buildDataSource(@NotNull Context ctx) {
+        String user = ctx.req.getUserPrincipal().getName();
+        String office =ctx.attribute("office");        
 
-            DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-
-            DataSource sessionSettingDataSource = buildDataSource(dataSource, sessionKey);
-            ctx.attribute(ApiServlet.DATA_SOURCE, sessionSettingDataSource);
-        }
-    }
-
-    private DataSource buildDataSource(DataSource dataSource, String sessionKey) {
-        DataSource retval = null;
-
-        ConnectionPreparer newPreparer = new SessionUserPreparer(sessionKey);
-
+        ConnectionPreparer userPreparer = new DirectUserPreparer(user);
+        ConnectionPreparer officePrepare = new SessionOfficePreparer(office);
+        //ConnectionPreparer resetPreparer = new DirectUserPreparer("q0webtest");
+        DelegatingConnectionPreparer newPreparer = new DelegatingConnectionPreparer(officePrepare,userPreparer);
+        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if(dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)    dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
@@ -75,10 +71,8 @@ public class CwmsAccessManager implements AccessManager {
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, newPreparer));
         } else {
-            retval = new ConnectionPreparingDataSource(newPreparer, dataSource);
+            ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(newPreparer, dataSource));
         }
-
-        return retval;
     }
 
     @NotNull
@@ -156,52 +150,28 @@ public class CwmsAccessManager implements AccessManager {
             try {
                 CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
                 roleNames = cup.getRoles();
-            } catch (ClassCastException e) {
-                // The object is created by cwms_aaa with the cwms_aaa classloader.
-                // It's a CwmsUserPrincipal but it's not our CwmsUserPrincipal.
-                roleNames = callGetRolesReflectively(principal);
+                if (roleNames != null) {
+                    roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+                }
+                logger.fine("Principal had roles: " + retval);
+            } 
+            catch (ClassCastException e) {
+               logger.severe("cwmsaaa api and implementation jars should only be in the system classpath, not the war file. Verify and restart applciation");
             }
-
-            if (roleNames != null) {
-                roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
-            }
-            logger.info("Principal had roles: " + retval);
         }
-        return retval;
+        return retval;            
     }
-
-    List<String> callGetRolesReflectively(Principal principal) {
-        List<String> retval = new ArrayList<>();
-
-        Method getRolesMethod;
-        try {
-            getRolesMethod = principal.getClass().getMethod("getRoles", new Class[]{});
-            Object retvalObj = getRolesMethod.invoke(principal, new Object[]{});
-            if (retvalObj instanceof List) {
-                retval = (List<String>) retvalObj;
-            }
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            logger.log(Level.WARNING, "Could not call getRoles() on principal.", e);
-        }
-        return retval;
-    }
-
 
     public static RouteRole buildRole(String roleName) {
         return new Role(roleName);
     }
 
-//    @NotNull
-//    private static Connection setSession(Connection conn, String sessionKey) {
-//        // Need to figure out a legit way to skip this if we are doing testing.
-//        if (sessionKey == null || !sessionKey.startsWith("testing")) {
-//            try (DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G)) {
-//                CWMS_ENV_PACKAGE.call_SET_SESSION_USER(dsl.configuration(), sessionKey);
-//            }
-//
-//        }
-//
-//        return conn;
-//    }
+	@Override
+	public SecurityScheme getScheme() {		
+		return new SecurityScheme()
+					.type(Type.APIKEY)
+					.in(In.COOKIE)					
+					.name("JSESSIONIDSSO");
+	}
 
 }

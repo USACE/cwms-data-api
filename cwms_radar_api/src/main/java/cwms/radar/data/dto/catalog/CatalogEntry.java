@@ -20,5 +20,5 @@ public abstract class CatalogEntry {
         return office;
     }
 
-
+    public abstract String getCursor();
 }

@@ -3,7 +3,11 @@ package cwms.radar.api;
 import java.io.IOException;
 import java.util.logging.Logger;
 
+import javax.servlet.http.HttpServletResponse;
+
 import fixtures.RadarApiSetupCallback;
+import fixtures.TestAccounts;
+import fixtures.TestAccounts.KeyUser;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -18,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @ExtendWith(RadarApiSetupCallback.class)
 public class AccessManagerTestIT
 {
+	private static KeyUser SPK_NORMAL_USER = KeyUser.SPK_NORMAL;
+	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;
 
 	@Test
 	public void can_getOne_without_user(){
@@ -39,7 +45,7 @@ public class AccessManagerTestIT
 				.queryParam("office", "SPK")
 				.queryParam("names", "AR*")
 				.queryParam("unit", "EN")
-				.header("Authorization","name user1")
+				.header("Authorization",SPK_NORMAL_USER.toHeaderValue())
 				.get(  "/locations");
 
 		response.then().assertThat()
@@ -65,19 +71,19 @@ public class AccessManagerTestIT
 	@Test
 	public void can_create_with_user() throws IOException
 	{
-		String json = loadResourceAsString("cwms/radar/api/location_create.json");
+		String json = loadResourceAsString("cwms/radar/api/location_create_spk.json");
 		assertNotNull(json);
 
 
 		given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
-				.header("Authorization","name user1")
+				.header("Authorization",SPK_NORMAL_USER.toHeaderValue())
 				.body(json)
 				.when()
 				.post(  "/locations")
 				.then()
-				.assertThat().statusCode(202);
+				.assertThat().statusCode(HttpServletResponse.SC_ACCEPTED);
 	}
 
 	@Test
@@ -90,7 +96,7 @@ public class AccessManagerTestIT
 		given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
-				.header("Authorization","name user2")
+				.header("Authorization",SPK_NO_ROLES_USER.toHeaderValue())
 				.body(json)
 				.when()
 				.post(  "/locations")

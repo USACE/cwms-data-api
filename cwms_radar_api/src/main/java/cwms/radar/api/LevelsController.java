@@ -17,6 +17,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.JsonFieldsException;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationLevelsDao;
 import cwms.radar.data.dao.LocationLevelsDaoImpl;
@@ -31,6 +32,8 @@ import cwms.radar.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -76,10 +79,6 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             description = "Create new CWMS Location Level",
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "office in which Location Level will be created")
-            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
@@ -93,17 +92,20 @@ public class LevelsController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("create"); DSLContext dsl =
-                getDslContext(ctx)) {
-
-            String office = ctx.queryParam(OFFICE);
+        try (final Timer.Context timeContext = markAndTime("create");
+             DSLContext dsl = getDslContext(ctx)) {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             if (contentType == null) {
                 throw new FormattingException("Format header could not be parsed");
             }
-            LocationLevel level = deserializeLocationLevel(ctx.body(), formatHeader, office);
+            LocationLevel level = deserializeLocationLevel(ctx.body(), formatHeader);
+
+            if (level.getOfficeId() == null) {
+                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                        "The request body must specify the office.");
+            }
 
             ZonedDateTime unmarshalledDateTime = level.getLevelDate(); //getUnmarshalledDateTime
 
@@ -219,6 +221,7 @@ public class LevelsController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = "200", content = {
                             @OpenApiContent(type = Formats.JSON),
+                            @OpenApiContent(type = ""),
                             @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
                         }
                     )
@@ -228,8 +231,7 @@ public class LevelsController implements CrudHandler {
     public void getAll(Context ctx) {
 
         try (final Timer.Context timeContext = markAndTime("getAll");
-             DSLContext dsl =
-                getDslContext(ctx)) {
+             DSLContext dsl = getDslContext(ctx)) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
             String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
@@ -238,7 +240,7 @@ public class LevelsController implements CrudHandler {
             String version = contentType.getParameters().get("version");
 
             String levelIdMask = Controllers.queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK,
-                            NAME}, String.class, null, metrics,
+                    NAME}, String.class, null, metrics,
                     name(LevelsController.class.getName(),"getAll"));
 
             String office = ctx.queryParam(OFFICE);
@@ -356,6 +358,8 @@ public class LevelsController implements CrudHandler {
                     UnitSystem.EN.getValue(), unmarshalledDateTime, office);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
+        } catch (NotFoundException e) {
+            throw e;
         } catch (Exception ex) {
             RadarError re = new RadarError("Failed to retrieve Location Level request: "
                     + ex.getLocalizedMessage());
@@ -370,8 +374,6 @@ public class LevelsController implements CrudHandler {
                             + "location level id of the Location Level to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "office in which Location Level will be updated"),
                     @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
                             + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
@@ -391,10 +393,7 @@ public class LevelsController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime("update");
-             DSLContext dsl = getDslContext(ctx)) {
-            LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+        try (final Timer.Context timeContext = markAndTime("update")) {
 
             String dateString = Controllers.queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
@@ -413,26 +412,35 @@ public class LevelsController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(),
-                    contentType.getType(), office);
-            //retrieveLocationLevel will throw an error if level does not exist
-            LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(levelId,
-                    UnitSystem.EN.getValue(), unmarshalledDateTime, office);
-            existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(),
-                    existingLevelLevel);
-            //only store (update) if level does exist
-            LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel,
-                    levelFromBody);
-            updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
-                            .withLevelDate(unmarshalledDateTime).build();
-            if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(
-                    existingLevelLevel.getLocationLevelId())) {
-                //if name changed then delete location with old name
-                levelsDao.renameLocationLevel(levelId, updatedLocationLevel);
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed "
-                        + "Location Level");
-            } else {
-                levelsDao.storeLocationLevel(updatedLocationLevel, timezoneId);
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
+                    contentType.getType());
+
+            if (levelFromBody.getOfficeId() == null) {
+                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                        "The request body must specify the office.");
+            }
+
+            try (DSLContext dsl = getDslContext(ctx)) {
+                LocationLevelsDao levelsDao = getLevelsDao(dsl);
+                //retrieveLocationLevel will throw an error if level does not exist
+                LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(levelId,
+                        UnitSystem.EN.getValue(), unmarshalledDateTime, levelFromBody.getOfficeId());
+                existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(),
+                        existingLevelLevel);
+                //only store (update) if level does exist
+                LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel,
+                        levelFromBody);
+                updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
+                        .withLevelDate(unmarshalledDateTime).build();
+                if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(
+                        existingLevelLevel.getLocationLevelId())) {
+                    //if name changed then delete location with old name
+                    levelsDao.renameLocationLevel(levelId, updatedLocationLevel);
+                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed "
+                            + "Location Level");
+                } else {
+                    levelsDao.storeLocationLevel(updatedLocationLevel, timezoneId);
+                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
+                }
             }
         } catch (Exception ex) {
             RadarError re =
@@ -533,14 +541,13 @@ public class LevelsController implements CrudHandler {
         return new LocationLevelsDaoImpl(dsl);
     }
 
-    public static LocationLevel deserializeLocationLevel(String body, String format,
-                                                         String office) {
+    public static LocationLevel deserializeLocationLevel(String body, String format) {
         ObjectMapper om = getObjectMapperForFormat(format);
         LocationLevel retVal;
 
         try {
             retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
-                            .withOfficeId(office).build();
+                            .build();
             return retVal;
         } catch (JsonProcessingException e) {
             throw new JsonFieldsException(e);

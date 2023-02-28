@@ -3,7 +3,6 @@ package cwms.radar.api;
 import static com.codahale.metrics.MetricRegistry.name;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -11,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.TimeSeriesDao;
@@ -21,7 +21,6 @@ import cwms.radar.data.dto.Tsv;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
-import cwms.radar.formatters.json.JsonV1;
 import cwms.radar.formatters.json.JsonV2;
 import cwms.radar.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
@@ -33,6 +32,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -67,20 +68,11 @@ import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
+    public static final String FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
+
+    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
 
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
-    private final Meter getRecentRequests;
-    private final Timer getRecentRequestsTime;
-    private final Meter createRequests;
-    private final Timer createRequestsTime;
-    private final Meter updateRequests;
-    private final Timer updateRequestsTime;
-    private final Meter deleteRequests;
-    private final Timer deleteRequestsTime;
 
     private final Histogram requestResultSize;
     private final int defaultPageSize = 500;
@@ -89,19 +81,11 @@ public class TimeSeriesController implements CrudHandler {
     public TimeSeriesController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
         requestResultSize = this.metrics.histogram((name(className, "results", "size")));
-        getRecentRequests = this.metrics.meter(name(className, "getRecent", "count"));
-        getRecentRequestsTime = this.metrics.timer(name(className, "getRecent", "time"));
-        createRequests = this.metrics.meter(name(className, "create", "count"));
-        createRequestsTime = this.metrics.timer(name(className, "create", "time"));
-        updateRequests = this.metrics.meter(name(className, "update", "count"));
-        updateRequestsTime = this.metrics.timer(name(className, "update", "time"));
-        deleteRequests = this.metrics.meter(name(className, "delete", "count"));
-        deleteRequestsTime = this.metrics.timer(name(className, "delete", "time"));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(
@@ -119,10 +103,9 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        createRequests.mark();
 
-        try (final Timer.Context timeContext = createRequestsTime.time(); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime("create");
+             DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries);
@@ -146,7 +129,10 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = "office", required = true, description = "Specifies the "
-                            + "owning office of the timeseries to be deleted.")
+                            + "owning office of the timeseries to be deleted."),
+                    @OpenApiParam(name = "method",  description = "Specifies the delete method used."
+                            + "Default: DELETE_ALL",
+                            type = TimeSeriesDao.DeleteMethod.class)
             },
             method = HttpMethod.DELETE,
             path = "/timeseries",
@@ -154,24 +140,36 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, String tsId) {
-        deleteRequests.mark();
-
+        TimeSeriesDao.DeleteMethod method = ctx.queryParamAsClass("method",
+                TimeSeriesDao.DeleteMethod.class)
+                .getOrDefault(TimeSeriesDao.DeleteMethod.DELETE_ALL);
 
         String office = ctx.queryParam("office");
 
-        try (
-                final Timer.Context timeContext = deleteRequestsTime.time();
+        try (final Timer.Context ignored = markAndTime("delete");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            dao.delete(office, tsId);
+
+            switch (method) {
+                case DELETE_KEY:
+                    dao.deleteKey(office, tsId);
+                    break;
+                case DELETE_DATA:
+                    dao.deleteData(office, tsId);
+                    break;
+                case DELETE_ALL:
+                    dao.deleteAll(office, tsId);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown delete method: " + method);
+            }
+            ctx.status(HttpServletResponse.SC_OK);
+
         } catch (DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
-        ctx.status(HttpServletResponse.SC_OK);
-
     }
 
     @OpenApi(
@@ -203,14 +201,14 @@ public class TimeSeriesController implements CrudHandler {
                             + "If this field is not specified, any required time window begins 24"
                             + " hours prior to the specified or default end time. The format for "
                             + "this field is ISO 8601 extended, with optional offset and "
-                            + "timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., "
-                            + "'2021-06-10T13:00:00-0700[PST8PDT]'."),
+                            + "timezone, i.e., '"
+                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = "end", required = false, description = "Specifies the "
                             + "end of the time window for data to be included in the response. If"
                             + " this field is not specified, any required time window ends at the"
                             + " current time. The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', "
-                            + "e.g., '2021-06-10T13:00:00-0700[PST8PDT]'."),
+                            + "with optional timezone, i.e., '"
+                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = "timezone", required = false, description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
                             + "otherwise specified), as well as the time zone of any times in the"
@@ -248,7 +246,10 @@ public class TimeSeriesController implements CrudHandler {
                     description = "A list of elements of the data set you've selected.",
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML)
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                            @OpenApiContent(from = TimeSeries.class, type = ""),
                     }
             ),
                     @OpenApiResponse(status = "400", description = "Invalid parameter combination"),
@@ -263,9 +264,8 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
-        try (
-                final Timer.Context timeContext = getAllRequestsTime.time();
+
+        try (final Timer.Context ignored = markAndTime("getAll");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
@@ -348,8 +348,9 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        getOneRequest.mark();
-        try (final Timer.Context timeContext = getOneRequestTime.time()) {
+
+        try (final Timer.Context ignored = markAndTime("getOne");
+                DSLContext dsl = getDslContext(ctx)) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -374,15 +375,13 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void update(Context ctx, String id) {
 
-        updateRequests.mark();
-
-        try (
-                final Timer.Context timeContext = updateRequestsTime.time();
+        try (                final Timer.Context ignored = markAndTime("update");
                 DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
             dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
+
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
@@ -514,8 +513,8 @@ public class TimeSeriesController implements CrudHandler {
             method = HttpMethod.GET
     )
     public void getRecent(Context ctx) {
-        getRecentRequests.mark();
-        try (final Timer.Context timeContext = getRecentRequestsTime.time();
+
+        try (final Timer.Context ignored = markAndTime("getRecent");
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 

@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
+import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
+import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.rating.CwmsDbRating;
@@ -22,10 +24,10 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     @Override
     public void create(RatingSet ratingSet) throws IOException, RatingException {
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 // can't exist if we are creating, if it exists use store
                 boolean overwriteExisting = false;
-                ratingSet.storeToDatabase(c, overwriteExisting);
+                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, true);
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
@@ -62,9 +64,10 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             }
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
-            dsl.connection(c -> retval[0] =
-                    RatingSet.fromDatabase(finalMethod, c, officeId,
-                            specificationId, start, end));
+
+            connection(dsl, c -> retval[0] =
+                    RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
+                        specificationId, start, end, false));
 
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
@@ -84,9 +87,9 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     @Override
     public void store(RatingSet ratingSet) throws IOException, RatingException {
         try {
-            dsl.connection(c -> {
+            connection(dsl, c -> {
                 boolean overwriteExisting = true;
-                ratingSet.storeToDatabase(c, overwriteExisting);
+                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, true);
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
@@ -100,7 +103,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     @Override
     public void delete(String officeId, String ratingSpecId) throws IOException, RatingException {
         try {
-            dsl.connection(c -> delete(c, officeId, ratingSpecId));
+            connection(dsl, c -> delete(c, officeId, ratingSpecId));
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
             if (cause instanceof RatingException) {
@@ -125,7 +128,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             throws IOException, RatingException {
 
         try {
-            dsl.connection(c ->
+            connection(dsl, c ->
                             deleteWithRatingSet(c, officeId, specificationId, effectiveDates) //
                     // This
                     // doesn't seem to work.
@@ -139,26 +142,18 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         }
     }
 
-    // This doesn't seem to work.
-    private void deleteWithRatingSet(Connection c, String officeId, String ratingSpecId)
-            throws RatingException {
-        RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, ratingSpecId);
-        ratingSet.removeAllRatings();
-        final boolean overwriteExisting = true;
-        ratingSet.storeToDatabase(c, overwriteExisting);  // Does this actually delete?
-    }
-
 
     private void deleteWithRatingSet(Connection c, String officeId, String specificationId,
                                      long[] effectiveDates)
             throws RatingException {
-        RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, specificationId);
+        RatingSet ratingSet = RatingJdbcFactory.ratingSet(new RatingConnectionProvider(c), officeId, specificationId,
+            null, null, false);
         for (final long effectiveDate : effectiveDates) {
             ratingSet.removeRating(effectiveDate);
         }
 
         final boolean overwriteExisting = true;
-        ratingSet.storeToDatabase(c, overwriteExisting);
+        RatingJdbcFactory.store(ratingSet, c, overwriteExisting, true);
     }
 
 
@@ -171,4 +166,21 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 timezone, office);
     }
 
+    private static final class RatingConnectionProvider implements ConnectionProvider {
+        private final Connection c;
+
+        private RatingConnectionProvider(Connection c) {
+            this.c = c;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return c;
+        }
+
+        @Override
+        public void closeConnection(Connection connection) {
+            //No-op - we will handle our connection state
+        }
+    }
 }

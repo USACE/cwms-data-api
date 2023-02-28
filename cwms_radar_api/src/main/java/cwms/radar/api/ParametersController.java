@@ -1,23 +1,24 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
-import cwms.radar.data.CwmsDataManager;
+import cwms.radar.data.dao.ParameterDao;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.jooq.DSLContext;
 
 public class ParametersController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(ParametersController.class.getName());
@@ -68,10 +69,10 @@ public class ParametersController implements CrudHandler {
         getAllRequests.mark();
         try (
                 final Timer.Context timeContext = getAllRequestsTime.time();
-                CwmsDataManager cdm = new CwmsDataManager(ctx)
+                DSLContext dsl = getDslContext(ctx)
         ) {
+            ParameterDao dao = new ParameterDao(dsl);
             String format = ctx.queryParamAsClass("format", String.class).getOrDefault("json");
-
 
             switch (format) {
                 case "json": {
@@ -100,11 +101,11 @@ public class ParametersController implements CrudHandler {
                     return;
             }
 
-            String results = cdm.getParameters(format);
+            String results = dao.getParameters(format);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
             requestResultSize.update(results.length());
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             RadarError re = new RadarError("Failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);

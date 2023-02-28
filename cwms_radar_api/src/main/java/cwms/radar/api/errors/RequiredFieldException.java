@@ -1,26 +1,28 @@
 package cwms.radar.api.errors;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class RequiredFieldException extends FieldException {
-    private Map<String, List<String>> details = new HashMap<>();
+    public static final String MISSING_FIELDS = "missing fields";
+    public static final String MESSAGE = "required fields not present";
+    private final Map<String, List<String>> details = new LinkedHashMap<>();
 
     private RequiredFieldException() {
-        super("required fields not present");
-        details.put("missing fields", new ArrayList<>());
+        super(MESSAGE);
+        details.put(MISSING_FIELDS, new ArrayList<>());
     }
 
     public RequiredFieldException(String field) {
         this();
-        details.get("missing fields").add(field);
+        details.get(MISSING_FIELDS).add(field);
     }
 
     public RequiredFieldException(List<String> fields) {
         this();
-        details.get("missing fields").addAll(fields);
+        details.get(MISSING_FIELDS).addAll(fields);
     }
 
     @Override

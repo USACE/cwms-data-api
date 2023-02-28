@@ -1,23 +1,20 @@
 package cwms.radar.data.dao;
 
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import hec.data.RatingException;
+import hec.data.cwmsRating.RatingSet;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
-
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import hec.data.RatingException;
-import hec.data.cwmsRating.RatingSet;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class JsonRatingUtilsTest
 {
@@ -53,7 +50,7 @@ public class JsonRatingUtilsTest
 	}
 
 	@Test
-	void test_xml_to_json_to_rating_set() throws RatingException, IOException
+	void test_xml_to_json_to_rating_set()
 	{
 		String[] files = {			"rating.xml.gz" };
 		roundTripFilesThruJson(files);
@@ -61,7 +58,7 @@ public class JsonRatingUtilsTest
 
 	@Disabled("Very slow")
 	@Test
-	void test_xml_to_json_to_rating_set_assorted() throws RatingException, IOException
+	void test_xml_to_json_to_rating_set_assorted()
 	{
 		String[] files = {
 				"ARBU.Elev_Stor.Linear.Production.xml.gz",
@@ -74,7 +71,7 @@ public class JsonRatingUtilsTest
 
 	@Disabled("Very slow")
 	@Test
-	void test_xml_to_json_to_rating_set_SPK() throws RatingException, IOException
+	void test_xml_to_json_to_rating_set_SPK()
 	{
 		String[] files = {
 				"Black_Butte-Pool_Elev_Area_Standard_Production.xml.gz",
@@ -87,7 +84,7 @@ public class JsonRatingUtilsTest
 
 	@Disabled("Very slow")
 	@Test
-	void test_xml_to_json_to_rating_set_NWO() throws RatingException, IOException
+	void test_xml_to_json_to_rating_set_NWO()
 	{
 		String[] files = {
 				"BOHA-GateMidLevel_Opening_Elev_Flow_Linear_Step.xml",
@@ -112,7 +109,7 @@ public class JsonRatingUtilsTest
 			assertNotNull(xmlRating);
 
 			// make sure we can parse it.
-			RatingSet ratingSet = RatingXmlCompatUtil.getInstance().createRatingSet(xmlRating);
+			RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlRating);
 			assertNotNull(ratingSet);
 
 			// turn it into json

@@ -15,7 +15,6 @@ import cwms.radar.data.dao.JsonRatingUtilsTest;
 import cwms.radar.formatters.Formats;
 import fixtures.TestServletInputStream;
 import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.io.RatingXmlCompatUtil;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
@@ -35,6 +34,7 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
@@ -115,7 +115,7 @@ class RatingsControllerTest {
             String resourcePath = "cwms/radar/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
             String refRating = JsonRatingUtilsTest.loadResourceAsString(resourcePath);
             assertNotNull(refRating);
-            RatingSet refRatingSet = RatingXmlCompatUtil.getInstance().createRatingSet(refRating);
+            RatingSet refRatingSet = RatingXmlFactory.ratingSet(refRating);
             String office = "SWT";
 
             String refSpecId = refRatingSet.getName();
@@ -200,7 +200,7 @@ class RatingsControllerTest {
             String resourcePath = "cwms/radar/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
             String refRatingXml = JsonRatingUtilsTest.loadResourceAsString(resourcePath);
             assertNotNull(refRatingXml);
-            RatingSet refRatingSet = RatingXmlCompatUtil.getInstance().createRatingSet(refRatingXml);
+            RatingSet refRatingSet = RatingXmlFactory.ratingSet(refRatingXml);
             String office = "SWT";
 
             String refSpecId = refRatingSet.getName();
