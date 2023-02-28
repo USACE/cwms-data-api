@@ -1,21 +1,24 @@
 package cwms.radar.api;
 
-import java.math.BigDecimal;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static com.codahale.metrics.MetricRegistry.name;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import cwms.radar.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ControllersTest {
 
@@ -28,7 +31,8 @@ class ControllersTest {
 
         MetricRegistry metrics = new MetricRegistry();
 
-        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
+                        "pagesize"},
                 Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
         assertEquals(333, pageSize);
     }
@@ -106,10 +110,23 @@ class ControllersTest {
 
         Context ctx = buildContext(nameToUse, null);
 
-        Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).getOrDefault(false);
+        // If its a Boolean flag and the user doesn't specify anything then javalin is going to throw an exception.
+        try {
+            Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).get();
+            fail("Expected a ValidationException to be thrown");
+        }catch (io.javalin.core.validation.ValidationException ve){
+            // This is expected
+            return;
+        }
+
+        // allowNullable() will skip the exception but return null;
+        Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).allowNullable().get();
+        assertNull(flag);
+
+        // another option is to specify the default.
+        flag = ctx.queryParamAsClass(nameToUse, Boolean.class).getOrDefault(false);
         assertFalse(flag);
     }
-
 
 
     private Context buildContext(String nameToUse, int expected) {
@@ -128,7 +145,8 @@ class ControllersTest {
         String paramStr = ControllerTest.buildParamStr(urlParams);
 
         when(request.getQueryString()).thenReturn(paramStr);
-        when(request.getRequestURL()).thenReturn(new StringBuffer("http://127.0.0.1:7001/timeseries/"));
+        when(request.getRequestURL()).thenReturn(new StringBuffer("http://127.0.0"
+                + ".1:7001/timeseries/"));
 
         // build real context that uses the mock request/response
         Context ctx = new Context(request, response, map);
@@ -147,13 +165,14 @@ class ControllersTest {
         when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
 
         Map<String, String> urlParams = new LinkedHashMap<>();
-        if(expected != null) {
+        if (expected != null) {
             urlParams.put(nameToUse, expected);
         }
         String paramStr = ControllerTest.buildParamStr(urlParams);
 
         when(request.getQueryString()).thenReturn(paramStr);
-        when(request.getRequestURL()).thenReturn(new StringBuffer("http://127.0.0.1:7001/timeseries/"));
+        when(request.getRequestURL()).thenReturn(new StringBuffer("http://127.0.0"
+                + ".1:7001/timeseries/"));
 
         // build real context that uses the mock request/response
         Context ctx = new Context(request, response, map);
@@ -169,7 +188,8 @@ class ControllersTest {
 
         MetricRegistry metrics = new MetricRegistry();
 
-        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
+                        "pagesize"},
                 Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
         assertEquals(333, pageSize);
     }
@@ -182,7 +202,8 @@ class ControllersTest {
 
         MetricRegistry metrics = new MetricRegistry();
 
-        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
+                        "pagesize"},
                 Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
         assertEquals(333, pageSize);
     }
@@ -195,7 +216,8 @@ class ControllersTest {
 
         MetricRegistry metrics = new MetricRegistry();
 
-        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize", "pagesize"},
+        int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
+                        "pagesize"},
                 Integer.class, 500, metrics, name(TimeSeriesController.class.getName(), "getAll"));
         assertEquals(500, pageSize);
     }
