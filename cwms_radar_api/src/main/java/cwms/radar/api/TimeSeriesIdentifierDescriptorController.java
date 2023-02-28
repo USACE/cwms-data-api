@@ -18,6 +18,7 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -52,14 +53,27 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
     private final MetricRegistry metrics;
 
-
     private final Histogram requestResultSize;
+
+    static {
+        JavalinValidation.register(TimeSeriesIdentifierDescriptorDao.DeleteMethod.class,
+                TimeSeriesIdentifierDescriptorController::getDeleteMethod);
+    }
 
     public TimeSeriesIdentifierDescriptorController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
 
         requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+    }
+
+    private static TimeSeriesIdentifierDescriptorDao.DeleteMethod getDeleteMethod(String input) {
+        TimeSeriesIdentifierDescriptorDao.DeleteMethod retval = null;
+
+        if (input != null) {
+            retval = TimeSeriesIdentifierDescriptorDao.DeleteMethod.valueOf(input.toUpperCase());
+        }
+        return retval;
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -210,7 +224,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     }
 
     public static TimeSeriesIdentifierDescriptor deserialize(String body, String format) throws JsonProcessingException {
-        TimeSeriesIdentifierDescriptor retval = null;
+        TimeSeriesIdentifierDescriptor retval;
         if (ContentType.equivalent(Formats.JSONV2, format)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
             retval = om.readValue(body, TimeSeriesIdentifierDescriptor.class);
@@ -307,6 +321,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         try (final Timer.Context ignored = markAndTime("delete");
              DSLContext dsl = getDslContext(ctx)) {
+            logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             dao.delete(office, timeseriesId, method);
 
