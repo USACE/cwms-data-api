@@ -32,9 +32,8 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT {
     @Test
     public void test_create_delete() throws JsonProcessingException {
 
-        int random = (int) (Math.random() * 1000);
-//  Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar
-        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.TEST"+ random + "_.*";
+
+        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.TEST_.*";
 
         // Check that we don't have any ts like this in the catalog.
         List<String> names = getIdsLike(OFFICE, likePattern);
@@ -46,7 +45,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT {
         // Create a bunch of ts and store them.
         int count = 8;
         for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.TEST%d_%d", random, i);
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.TEST_%d", i);
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
@@ -74,7 +73,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT {
 
         // Now lets delete them
         for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.TEST%d_%d", random, i);
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.TEST_%d", i);
 
             // String urlencoded = java.net.URLEncoder.encode(tsId); // This isn't the right thing
             // to call here b/c it encodes a space into +
