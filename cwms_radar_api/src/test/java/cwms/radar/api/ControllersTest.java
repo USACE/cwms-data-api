@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -109,7 +110,21 @@ class ControllersTest {
 
         Context ctx = buildContext(nameToUse, null);
 
-        Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).get();
+        // If its a Boolean flag and the user doesn't specify anything then javalin is going to throw an exception.
+        try {
+            Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).get();
+            fail("Expected a ValidationException to be thrown");
+        }catch (io.javalin.core.validation.ValidationException ve){
+            // This is expected
+            return;
+        }
+
+        // allowNullable() will skip the exception but return null;
+        Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).allowNullable().get();
+        assertNull(flag);
+
+        // another option is to specify the default.
+        flag = ctx.queryParamAsClass(nameToUse, Boolean.class).getOrDefault(false);
         assertFalse(flag);
     }
 
