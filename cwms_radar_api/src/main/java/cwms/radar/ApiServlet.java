@@ -114,7 +114,7 @@ public class ApiServlet extends HttpServlet {
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
-    public static final String VERSION = "2.5";
+    public static final String VERSION = "2.6";
     public static final String PROVIDER_KEY = "radar.access.provider";
     public static final String DEFAULT_PROVIDER = "CwmsAccessManager";
 

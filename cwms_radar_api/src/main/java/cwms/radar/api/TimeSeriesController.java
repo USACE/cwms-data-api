@@ -13,6 +13,7 @@ import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
+import cwms.radar.data.dao.StoreRule;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dao.TimeSeriesDaoImpl;
 import cwms.radar.data.dao.TimeSeriesDeleteOptions;
@@ -75,6 +76,12 @@ public class TimeSeriesController implements CrudHandler {
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
 
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
+    public static final String VERSION_DATE = "version-date";
+    public static final String CREATE_AS_LRTS = "create-as-lrts";
+    public static final String STORE_RULE = "store-rule";
+    public static final String OVERRIDE_PROTECTION = "override-protection";
+    public static final String TIMEZONE = "timezone";
+    public static final String OFFICE = "office";
 
     public static final String OFFICE = "office";
     public static final String START_TIME = "start-time";
@@ -123,6 +130,26 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true
             ),
+            queryParams = {
+                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
+                            + "the timeseries to create. If this field is not specified, a null "
+                            + "version date will be used.  "
+                            + "The format for this field is ISO 8601 extended, with optional timezone, "
+                            + "i.e., '" + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                            + "the time zone of the version-date field (unless "
+                            + "otherwise specified). If this field is not specified, the default time zone "
+                            + "of UTC shall be used.\r\nIgnored if version-date was specified with "
+                            + "offset and timezone."),
+                    @OpenApiParam(name = CREATE_AS_LRTS,  description = "Flag indicating if "
+                            + "timeseries should be created as Local Regular Time Series. "
+                            + "'True' or 'False', default is 'False'"),
+                    @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
+                            + "when merging the incoming with existing data"),
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
+                            "A flag to ignore the protected data quality when storing data. "
+                                    + "'True' or 'False'")
+            },
             method = HttpMethod.POST,
             path = "/timeseries",
             tags = {"TimeSeries"}
@@ -130,11 +157,23 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
+        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+        String version = ctx.queryParam(VERSION_DATE);
+        Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
+        if (version != null) {
+            ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
+            versionDate = Timestamp.from(beginZdt.toInstant());
+        }
+
+        boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
+        StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
+        boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+
         try (final Timer.Context ignored = markAndTime("create");
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries);
+            dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
@@ -175,8 +214,13 @@ public class TimeSeriesController implements CrudHandler {
             tags = {"TimeSeries"}
     )
     @Override
-    public void delete(Context ctx, @NotNull String timeseriesId) {
-        
+    public void delete(Context ctx, String tsId) {
+        TimeSeriesDao.DeleteMethod method = ctx.queryParamAsClass("method",
+                TimeSeriesDao.DeleteMethod.class)
+                .getOrDefault(TimeSeriesDao.DeleteMethod.DELETE_ALL);
+
+        String office = ctx.queryParam(OFFICE);
+
         try (final Timer.Context ignored = markAndTime("delete");
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
@@ -433,6 +477,23 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true
             ),
+            queryParams = {
+                    @OpenApiParam(name = VERSION_DATE, required = false, description = "Specifies the "
+                            + "version date for the timeseries to create. If"
+                            + " this field is not specified, a null version date will be used.  The format for this field is ISO 8601 extended, "
+                            + "with optional timezone, i.e., '"
+                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                            + "the time zone of the version-date field (unless "
+                            + "otherwise specified). If this field is not specified, the default time zone "
+                            + "of UTC shall be used.\r\nIgnored if version-date was specified with "
+                            + "offset and timezone."),
+                    @OpenApiParam(name = CREATE_AS_LRTS,  description = ""),
+                    @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
+                            + "when merging the incoming with existing data"),
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
+                            "A flag to ignore the protected data quality when storing data.  \"'True' or 'False'\"")
+            },
             method = HttpMethod.PATCH,
             path = "/timeseries",
             tags = {"TimeSeries"}
@@ -445,7 +506,19 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
-            dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            String version = ctx.queryParam(VERSION_DATE);
+            Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
+            if (version != null) {
+                ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
+                versionDate = Timestamp.from(beginZdt.toInstant());
+            }
+
+            boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
+            StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
+            boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+
+            dao.store(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {

@@ -4,19 +4,24 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CWMS Restful API for Data Retrieval</title>
-        <meta name="Description" content="CWMS Restful API for Data Retrieval" />
+        <title>CDA - CWMS Data API</title>
+        <meta name="Description" content="CDA CWMS Data API" />
         <link rel="stylesheet" href="./css/body.css" />
         <link rel="stylesheet" href="./css/HEC.sidebar.css"/>
-        <link rel="stylesheet" href="./css/radar.css"/>
+        <link rel="stylesheet" href="./css/cda.css"/>
         <script type="text/javascript" src="./js/util.js"></script>
+        <script defer type="text/javascript">
+            // Load the page templates into the DOM
+            window.addEventListener("load", function () {
+                load('header', './templates/HEC.header.html')
+                load('footer', './templates/HEC.footer.html')
+            })
+        </script>
     </head>
-
     <body>
         <div id="page-container">
             <header id="header" style="display: none;">
             </header>
-            <script type="text/javascript">load('header', './templates/HEC.header.html');</script>
             <div class="page-wrap">
                 <div class="container-fluid">
                     <div class="page-content">
@@ -60,6 +65,5 @@
             </div>
         </div>
         <footer id="footer" style="display: none;"></footer>
-        <script type="text/javascript">load('footer', './templates/HEC.footer.html');</script>
     </body>
 </html>

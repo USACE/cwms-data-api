@@ -18,9 +18,15 @@ public interface TimeSeriesDao {
                                  String locCategoryLike, String locGroupLike,
                                  String tsCategoryLike, String tsGroupLike);
 
-    void create(TimeSeries timeSeries);
+    void create(TimeSeries input);
+
+    void create(TimeSeries input,
+                Timestamp versionDate,
+                boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
+    void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
+               StoreRule replaceAll, boolean overrideProtection);
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 
