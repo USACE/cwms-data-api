@@ -13,6 +13,7 @@ import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
+import cwms.radar.data.dao.StoreRule;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dao.TimeSeriesDaoImpl;
 import cwms.radar.data.dto.RecentValue;
@@ -32,8 +33,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -71,6 +70,12 @@ public class TimeSeriesController implements CrudHandler {
     public static final String FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
 
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
+    public static final String VERSION_DATE = "version-date";
+    public static final String CREATE_AS_LRTS = "create-as-lrts";
+    public static final String STORE_RULE = "store-rule";
+    public static final String OVERRIDE_PROTECTION = "override-protection";
+    public static final String TIMEZONE = "timezone";
+    public static final String OFFICE = "office";
 
     private final MetricRegistry metrics;
 
@@ -97,6 +102,26 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true
             ),
+            queryParams = {
+                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
+                            + "the timeseries to create. If this field is not specified, a null "
+                            + "version date will be used.  "
+                            + "The format for this field is ISO 8601 extended, with optional timezone, "
+                            + "i.e., '" + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                            + "the time zone of the version-date field (unless "
+                            + "otherwise specified). If this field is not specified, the default time zone "
+                            + "of UTC shall be used.\r\nIgnored if version-date was specified with "
+                            + "offset and timezone."),
+                    @OpenApiParam(name = CREATE_AS_LRTS,  description = "Flag indicating if "
+                            + "timeseries should be created as Local Regular Time Series. "
+                            + "'True' or 'False', default is 'False'"),
+                    @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
+                            + "when merging the incoming with existing data"),
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
+                            "A flag to ignore the protected data quality when storing data. "
+                                    + "'True' or 'False'")
+            },
             method = HttpMethod.POST,
             path = "/timeseries",
             tags = {"TimeSeries"}
@@ -104,11 +129,23 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void create(Context ctx) {
 
+        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+        String version = ctx.queryParam(VERSION_DATE);
+        Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
+        if (version != null) {
+            ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
+            versionDate = Timestamp.from(beginZdt.toInstant());
+        }
+
+        boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
+        StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
+        boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+
         try (final Timer.Context ignored = markAndTime("create");
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries);
+            dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             RadarError re = new RadarError("Internal Error");
@@ -128,7 +165,7 @@ public class TimeSeriesController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the timeseries to be deleted."),
                     @OpenApiParam(name = "method",  description = "Specifies the delete method used."
                             + "Default: DELETE_ALL",
@@ -144,7 +181,7 @@ public class TimeSeriesController implements CrudHandler {
                 TimeSeriesDao.DeleteMethod.class)
                 .getOrDefault(TimeSeriesDao.DeleteMethod.DELETE_ALL);
 
-        String office = ctx.queryParam("office");
+        String office = ctx.queryParam(OFFICE);
 
         try (final Timer.Context ignored = markAndTime("delete");
                 DSLContext dsl = getDslContext(ctx)) {
@@ -177,7 +214,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = "name", required = true, description = "Specifies the "
                             + "name(s) of the time series whose data is to be included in the "
                             + "response. A case insensitive comparison is used to match names."),
-                    @OpenApiParam(name = "office", required = false, description = "Specifies the"
+                    @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
                             + " owning office of the time series(s) whose data is to be included "
                             + "in the response. If this field is not specified, matching location"
                             + " level information from all offices shall be returned."),
@@ -209,7 +246,7 @@ public class TimeSeriesController implements CrudHandler {
                             + " current time. The format for this field is ISO 8601 extended, "
                             + "with optional timezone, i.e., '"
                             + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = "timezone", required = false, description = "Specifies "
+                    @OpenApiParam(name = TIMEZONE, required = false, description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
                             + "otherwise specified), as well as the time zone of any times in the"
                             + " response. If this field is not specified, the default time zone "
@@ -270,13 +307,13 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
             String names = ctx.queryParam("name");
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParamAsClass("unit", String.class)
                     .getOrDefault(UnitSystem.EN.getValue());
             String datum = ctx.queryParam("datum");
             String begin = ctx.queryParam("begin");
             String end = ctx.queryParam("end");
-            String timezone = ctx.queryParamAsClass("timezone", String.class).getOrDefault("UTC");
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
@@ -368,6 +405,23 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true
             ),
+            queryParams = {
+                    @OpenApiParam(name = VERSION_DATE, required = false, description = "Specifies the "
+                            + "version date for the timeseries to create. If"
+                            + " this field is not specified, a null version date will be used.  The format for this field is ISO 8601 extended, "
+                            + "with optional timezone, i.e., '"
+                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                            + "the time zone of the version-date field (unless "
+                            + "otherwise specified). If this field is not specified, the default time zone "
+                            + "of UTC shall be used.\r\nIgnored if version-date was specified with "
+                            + "offset and timezone."),
+                    @OpenApiParam(name = CREATE_AS_LRTS,  description = ""),
+                    @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
+                            + "when merging the incoming with existing data"),
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
+                            "A flag to ignore the protected data quality when storing data.  \"'True' or 'False'\"")
+            },
             method = HttpMethod.PATCH,
             path = "/timeseries",
             tags = {"TimeSeries"}
@@ -380,7 +434,19 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
-            dao.store(timeSeries, TimeSeriesDao.NON_VERSIONED);
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            String version = ctx.queryParam(VERSION_DATE);
+            Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
+            if (version != null) {
+                ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
+                versionDate = Timestamp.from(beginZdt.toInstant());
+            }
+
+            boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
+            StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
+            boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+
+            dao.store(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
@@ -494,7 +560,7 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "office", description = "Specifies the owning office of the "
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                     + "timeseries group(s) whose data is to be included in the response. If this "
                     + "field is not specified, matching timeseries groups information from all "
                     + "offices shall be returned."),},
@@ -518,7 +584,7 @@ public class TimeSeriesController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
             String categoryId =
                     ctx.queryParamAsClass("category-id", String.class).allowNullable().get();
             String groupId = ctx.pathParamAsClass("group-id", String.class).allowNullable().get();
