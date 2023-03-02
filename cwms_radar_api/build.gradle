@@ -5,6 +5,7 @@ configurations {
     webjars
     docker
     baseLibs
+    tomcatLibs
 }
 
 configurations.implementation {
@@ -126,12 +127,13 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured:5.2.0'
     testImplementation "org.hamcrest:hamcrest-all:1.3"
 
-    testImplementation "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion"
-    testImplementation "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
-    testImplementation "org.apache.tomcat.embed:tomcat-embed-logging-juli:9.0.0.M6"
+    tomcatLibs "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion"
+    tomcatLibs "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
+    tomcatLibs "org.apache.tomcat:tomcat-juli:$tomcatVersion"
+    tomcatLibs "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
+
     testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
 
-    testImplementation "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
 
     testImplementation "org.testcontainers:testcontainers:1.17.3"
     testImplementation 'org.testcontainers:database-commons:1.17.3'
@@ -183,11 +185,13 @@ war {
     }
 }
 
+compileTestJava.classpath += configurations.tomcatLibs
 
 test {
     useJUnitPlatform() {
         excludeTags "integration"
     }
+    classpath += configurations.tomcatLibs
 }
 
 
@@ -209,6 +213,7 @@ task generateConfig(type: Copy) {
     into "$buildDir/tomcat"
 
     //rename "context.xml", "context.xml.template"
+    rename "tomcat-server.xml", "server.xml"
 
     inputs.dir "src/test/resources"
     outputs.dir "$buildDir/tomcat/conf"
@@ -218,9 +223,9 @@ task run(type: JavaExec) {
     dependsOn generateConfig
     dependsOn war
 
-    classpath = sourceSets.main.runtimeClasspath
-    classpath += sourceSets.test.runtimeClasspath
     classpath += configurations.baseLibs
+    classpath += configurations.tomcatLibs
+    classpath += sourceSets.test.output // to get the fixture
 
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
@@ -231,6 +236,7 @@ task run(type: JavaExec) {
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dradar.access.provider=KeyAccessManager"
+    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
 task integrationTests(type: Test) {
@@ -243,6 +249,7 @@ task integrationTests(type: Test) {
     }
     shouldRunAfter test
     classpath += configurations.baseLibs
+    classpath += configurations.tomcatLibs
     // The before all extension will take care of these properties
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }

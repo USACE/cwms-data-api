@@ -5,22 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.tomcat.jni.File;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
@@ -28,8 +17,6 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import cwms.radar.ApiServlet;
-import cwms.radar.security.KeyAccessManager;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 
@@ -38,7 +25,7 @@ import io.restassured.RestAssured;
 public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback{
 
     private static TomcatServer radarInstance;
-    private static CwmsDatabaseContainer cwmsDb;
+    private static CwmsDatabaseContainer<?> cwmsDb;
 
     private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
@@ -85,9 +72,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
             radarInstance = new TomcatServer("build/tomcat", 
                                              System.getProperty("warFile"),
                                              0,
-                                             System.getProperty("warContext"), 
-                                             null,
-                                             null);
+                                             System.getProperty("warContext"));
             radarInstance.start();
             System.out.println("Tomcat Listing on " + radarInstance.getPort());
             RestAssured.baseURI=RadarApiSetupCallback.httpUrl();
@@ -97,13 +82,13 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
         }
     }
 
-    private void loadTimeSeriesData(CwmsDatabaseContainer cwmsDb2) {
+    private void loadTimeSeriesData(CwmsDatabaseContainer<?> cwmsDb2) {
         String csv = this.loadResourceAsString("/cwms/radar/data/timeseries.csv");
         StringReader reader = new StringReader(csv);        
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
             cwmsDb2.connection( (c) -> {
-                TsRandomSampler.save_to_db(samples,(Connection) c);
+                TsRandomSampler.save_to_db(samples, c);
             },"cwms_20");
         } catch (IOException e) {
             throw new RuntimeException("Failed to load timeseries list",e);
