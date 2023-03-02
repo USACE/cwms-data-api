@@ -85,7 +85,7 @@ public class TimeSeriesController implements CrudHandler {
     public static final String START_TIME_INCLUSIVE = "start-time-inclusive";
     public static final String END_TIME_INCLUSIVE = "end-time-inclusive";
     public static final String MAX_VERSION = "max-version";
-    public static final String TS_ITEM_MASK = "ts_item_mask";
+    public static final String TS_ITEM_MASK = "ts-item-mask";
 
     public static final String NAME = "name";
     public static final String UNIT = "unit";
@@ -134,12 +134,12 @@ public class TimeSeriesController implements CrudHandler {
                             + "otherwise specified). If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if version-date was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = CREATE_AS_LRTS,  description = "Flag indicating if "
+                    @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                             + "timeseries should be created as Local Regular Time Series. "
                             + "'True' or 'False', default is 'False'"),
                     @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
                             + "when merging the incoming with existing data"),
-                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
                             "A flag to ignore the protected data quality when storing data. "
                                     + "'True' or 'False'")
             },
@@ -235,9 +235,8 @@ public class TimeSeriesController implements CrudHandler {
                 boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).get();
 
                 Boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).get();
-                Integer tsItemMask = ctx.queryParamAsClass(TS_ITEM_MASK, Integer.class).get();
-                TimeSeriesDaoImpl.OverrideProtection op =
-                        ctx.queryParamAsClass(OVERRIDE_PROTECTION,
+                Integer tsItemMask = ctx.queryParamAsClass(TS_ITEM_MASK, Integer.class).allowNullable().get();
+                TimeSeriesDaoImpl.OverrideProtection op = ctx.queryParamAsClass(OVERRIDE_PROTECTION,
                                 TimeSeriesDaoImpl.OverrideProtection.class).get();
 
                 TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder()
