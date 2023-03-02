@@ -39,7 +39,6 @@
 
     <security-role>
         <role-name>CWMS Users</role-name>
-<<<<<<< HEAD
     </security-role>
 
     <filter>
@@ -58,8 +57,6 @@
         <filter-name>CorsFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
+    -->
 
-=======
-    </security-role>-->
->>>>>>> e050d46 (General workflow works, database itself needs tweaks.)
 </web-app>
