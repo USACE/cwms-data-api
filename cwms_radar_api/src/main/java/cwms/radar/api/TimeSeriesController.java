@@ -82,12 +82,9 @@ public class TimeSeriesController implements CrudHandler {
     public static final String OVERRIDE_PROTECTION = "override-protection";
     public static final String TIMEZONE = "timezone";
     public static final String OFFICE = "office";
-    public static final String START_TIME = "start-time";
-    public static final String END_TIME = "end-time";
     public static final String START_TIME_INCLUSIVE = "start-time-inclusive";
     public static final String END_TIME_INCLUSIVE = "end-time-inclusive";
     public static final String MAX_VERSION = "max-version";
-    public static final String TS_ITEM_MASK = "ts_item_mask";
 
     public static final String NAME = "name";
     public static final String UNIT = "unit";
@@ -136,12 +133,12 @@ public class TimeSeriesController implements CrudHandler {
                             + "otherwise specified). If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if version-date was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = CREATE_AS_LRTS,  description = "Flag indicating if "
+                    @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                             + "timeseries should be created as Local Regular Time Series. "
                             + "'True' or 'False', default is 'False'"),
                     @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
                             + "when merging the incoming with existing data"),
-                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
                             "A flag to ignore the protected data quality when storing data. "
                                     + "'True' or 'False'")
             },
@@ -193,16 +190,20 @@ public class TimeSeriesController implements CrudHandler {
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the timeseries to be deleted."),
-                    @OpenApiParam(name = START_TIME, description = "The start of the time window in the specified or default time zone"),
-                    @OpenApiParam(name = END_TIME, description = "The end of the time window in the specified or default time zone"),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of the values of the begin and end fields "
-                            + "(unless otherwise specified), If this field is not specified, the default time zone of UTC shall be used."),
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
+                            "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = END, description = "The end of the time window to delete."
+                    + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
+                            + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include offset or time zone information. "
+                            + "Defaults to UTC."),
                     @OpenApiParam(name = VERSION_DATE, description = "The version date/time of the time series in the specified or default time zone. If NULL, the earliest or latest version date will be used depending on p_max_version."),
-                    @OpenApiParam(name = START_TIME_INCLUSIVE, description = "A flag specifying whether any data at the start time should be deleted ('True') or only data <b><em>after</em></b> the start time ('False')", type = Boolean.class),
-                    @OpenApiParam(name = END_TIME_INCLUSIVE, description = "A flag ('True'/'False') specifying whether any data at the end time should be deleted ('True') or only data <b><em>before</em></b> the end time ('False')", type = Boolean.class),
-                    @OpenApiParam(name = MAX_VERSION, description = "A flag ('True'/'False') specifying whether to use the earliest ('False') or latest ('True') version date for each time if p_version_date is NULL.", type = Boolean.class),
-                    @OpenApiParam(name = TS_ITEM_MASK, description = "A cookie specifying what time series items to purge.", type = Integer.class),
-                    @OpenApiParam(name = OVERRIDE_PROTECTION, description = "A flag ('True'/'False'/'E') specifying whether to delete protected data, Set to 'E' to raise an exception if protected values are encountered."),
+                    @OpenApiParam(name = START_TIME_INCLUSIVE, description = "A flag specifying whether any data at the start time should be deleted ('True') or only data <b><em>after</em></b> the start time ('False').  Default value is True", type = Boolean.class),
+                    @OpenApiParam(name = END_TIME_INCLUSIVE, description = "A flag ('True'/'False') specifying whether any data at the end time should be deleted ('True') or only data <b><em>before</em></b> the end time ('False'). Default value is False", type = Boolean.class),
+                    @OpenApiParam(name = MAX_VERSION, description = "A flag ('True'/'False') specifying whether to use the earliest ('False') or latest ('True') version date for each time if p_version_date is NULL.  Default is 'True'", type = Boolean.class),
+                    @OpenApiParam(name = OVERRIDE_PROTECTION, description = "A flag ('True'/'False') specifying whether to delete protected data. Default is False", type = Boolean.class)
             },
             method = HttpMethod.DELETE,
             path = "/timeseries",
@@ -217,9 +218,9 @@ public class TimeSeriesController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            List<String> expandedDeleteKeys = Arrays.asList(START_TIME,
-                    END_TIME, VERSION_DATE, START_TIME_INCLUSIVE, END_TIME_INCLUSIVE, MAX_VERSION,
-                    TS_ITEM_MASK, OVERRIDE_PROTECTION);
+            List<String> expandedDeleteKeys = Arrays.asList(BEGIN,
+                    END, VERSION_DATE, START_TIME_INCLUSIVE, END_TIME_INCLUSIVE, MAX_VERSION,
+                     OVERRIDE_PROTECTION);
 
             Map<String, String> paramMap = ctx.pathParamMap();
 
@@ -228,19 +229,22 @@ public class TimeSeriesController implements CrudHandler {
             if (useExpanded) {
                 String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-                Date startTimeDate = getDate(timezone, ctx.queryParam(START_TIME));
-                Date endTimeDate = getDate(timezone, ctx.queryParam(END_TIME));
+                Date startTimeDate = getDate(timezone, ctx.queryParam(BEGIN));
+                Date endTimeDate = getDate(timezone, ctx.queryParam(END));
                 Date versionDate = getDate(timezone, ctx.queryParam(VERSION_DATE));
 
                 // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
-                boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).get();
-                boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).get();
+                boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
+                boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(false);
+                boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(true);
+                boolean opArg = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
 
-                Boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).get();
-                Integer tsItemMask = ctx.queryParamAsClass(TS_ITEM_MASK, Integer.class).get();
-                TimeSeriesDaoImpl.OverrideProtection op =
-                        ctx.queryParamAsClass(OVERRIDE_PROTECTION,
-                                TimeSeriesDaoImpl.OverrideProtection.class).get();
+                TimeSeriesDaoImpl.OverrideProtection op;
+                if(opArg){
+                    op = TimeSeriesDaoImpl.OverrideProtection.True;
+                } else {
+                    op = TimeSeriesDaoImpl.OverrideProtection.False;
+                }
 
                 TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder()
                         .withStartTime(startTimeDate)
@@ -249,7 +253,6 @@ public class TimeSeriesController implements CrudHandler {
                         .withStartTimeInclusive(startTimeInclusive)
                         .withEndTimeInclusive(endTimeInclusive)
                         .withMaxVersion(maxVersion)
-                        .withTsItemMask(tsItemMask)
                         .withOverrideProtection(op.toString())
                         .build();
 
@@ -533,7 +536,7 @@ public class TimeSeriesController implements CrudHandler {
 
         if ((Formats.XMLV2).equals(contentType)) {
             // This is how it would be done if we could use jackson to parse the xml
-            // it currently doesn't work because some of the jackson annotations
+            // it currently doesn't work because some jackson annotations
             // use certain naming conventions (e.g. "value-columns" vs "valueColumns")
             //  ObjectMapper om = buildXmlObjectMapper();
             //  retval = om.readValue(body, TimeSeries.class);
