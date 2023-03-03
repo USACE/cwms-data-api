@@ -206,7 +206,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = OVERRIDE_PROTECTION, description = "A flag ('True'/'False') specifying whether to delete protected data. Default is False", type = Boolean.class)
             },
             method = HttpMethod.DELETE,
-            path = "/timeseries",
+            path = "/timeseries/{timeseries}",
             tags = {"TimeSeries"}
     )
     @Override
@@ -488,7 +488,7 @@ public class TimeSeriesController implements CrudHandler {
                             "A flag to ignore the protected data quality when storing data.  \"'True' or 'False'\"")
             },
             method = HttpMethod.PATCH,
-            path = "/timeseries",
+            path = "/timeseries/{timeseries}",
             tags = {"TimeSeries"}
     )
     @Override
