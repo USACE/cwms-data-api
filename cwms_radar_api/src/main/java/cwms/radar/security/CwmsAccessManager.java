@@ -16,7 +16,6 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,18 +52,19 @@ public class CwmsAccessManager extends RadarAccessManager {
     private void buildDataSource(@NotNull Context ctx) {
         ConnectionPreparer userPreparer = null;
         Optional<String> user = getUser(ctx);
-        if(user.isPresent()) {
+        if (user.isPresent()) {
             userPreparer = new DirectUserPreparer(user.get());
         }
 
         ConnectionPreparer officePrepare = null;
         Optional<String> office = getOffice(ctx);
-        if(office.isPresent()) {
+        if (office.isPresent()) {
             officePrepare = new SessionOfficePreparer(office.get());
         }
 
-        if(user.isPresent() || office.isPresent()) {
-            DelegatingConnectionPreparer newPreparer = new DelegatingConnectionPreparer(officePrepare, userPreparer);
+        if (user.isPresent() || office.isPresent()) {
+            DelegatingConnectionPreparer newPreparer =
+                    new DelegatingConnectionPreparer(officePrepare, userPreparer);
             DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
             if (dataSource instanceof ConnectionPreparingDataSource) {
                 ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource) dataSource;
@@ -73,7 +73,8 @@ public class CwmsAccessManager extends RadarAccessManager {
                 // Have it do our extra step last.
                 cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, newPreparer));
             } else {
-                ctx.attribute(ApiServlet.DATA_SOURCE, new ConnectionPreparingDataSource(newPreparer, dataSource));
+                ctx.attribute(ApiServlet.DATA_SOURCE,
+                        new ConnectionPreparingDataSource(newPreparer, dataSource));
             }
         } else {
             logger.log(Level.FINE, "No user or office found in request, not adding a DataSource Preparer.");
@@ -81,21 +82,31 @@ public class CwmsAccessManager extends RadarAccessManager {
     }
 
     private static Optional<String> getOffice(Context ctx) {
-        Optional<String> retval = Optional.empty();
-        Map<String, Object> attributeMap = Collections.emptyMap();
-        if (ctx != null) {
-            attributeMap = ctx.attributeMap();
+        Optional<String> retval = getStringAttribute("office", ctx);
+        if (!retval.isPresent()) {
+            // ApiServet guesses the office from the context and puts it in office_id.
+            retval = getStringAttribute(ApiServlet.OFFICE_ID, ctx);
         }
+        return retval;
+    }
 
-        if(attributeMap.containsKey("office")) {
-            String attr = String.valueOf(attributeMap.get("office"));
-            if(attr != null && !attr.isEmpty()) {
-                retval = Optional.of(attr);
+    private static Optional<String> getStringAttribute(String attrName, Context ctx) {
+        Optional<String> retval = Optional.empty();
+        if (ctx != null && attrName != null && !attrName.isEmpty()) {
+            Map<String, Object> attributeMap = ctx.attributeMap();
+
+            if (attributeMap.containsKey(attrName)) {
+                String attr = ctx.attribute(attrName);
+
+                if (attr != null && !attr.isEmpty()) {
+                    retval = Optional.of(attr);
+                } else {
+                    logger.log(Level.FINE, "{0} attribute value was null or empty",
+                            new Object[]{attrName});
+                }
             } else {
-                logger.log(Level.FINE, "office attribute value was null or empty");
+                logger.log(Level.FINE, "No {0} attribute", new Object[]{attrName});
             }
-        } else {
-            logger.log(Level.FINE, "No office attribute");
         }
 
         return retval;
@@ -111,7 +122,8 @@ public class CwmsAccessManager extends RadarAccessManager {
         return retval;
     }
 
-    public static String getFailMessage(@NotNull Context ctx, @NotNull Set<RouteRole> requiredRoles) {
+    public static String getFailMessage(@NotNull Context ctx,
+                                        @NotNull Set<RouteRole> requiredRoles) {
         Set<RouteRole> specifiedRoles = getRoles(ctx);
         Set<RouteRole> missing = new LinkedHashSet<>(requiredRoles);
         missing.removeAll(specifiedRoles);
