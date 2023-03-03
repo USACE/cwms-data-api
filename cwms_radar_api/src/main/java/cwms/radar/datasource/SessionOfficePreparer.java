@@ -20,12 +20,18 @@ public class SessionOfficePreparer implements ConnectionPreparer {
 
     @Override
     public Connection prepare(Connection conn) {
-        try {
-            logger.fine("Setting office to: " + office);
-            DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
-            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
-        } catch (Exception e) {
-            throw new DataAccessException("Unable to set session office id to " + office, e);
+
+        if(office != null && !office.isEmpty()) {
+            try {
+                logger.fine("Setting office to: " + office);
+                DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
+                CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
+            } catch (Exception e) {
+                throw new DataAccessException("Unable to set session office id to " + office, e);
+            }
+        } else {
+            logger.fine("Office is null or empty.");
+            // Should we call clear_session_privileges ?
         }
         return conn;
     }
