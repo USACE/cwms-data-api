@@ -105,8 +105,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             @OpenApiParam(name = "page-size", type = Integer.class,
                     description = "How many entries per page returned. "
                             + "Default " + DEFAULT_PAGE_SIZE + "."
-            ),
-    },
+            )},
             responses = {@OpenApiResponse(status = "200",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = TimeSeriesIdentifierDescriptors.class)
@@ -132,6 +131,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     dao.getTimeSeriesIdentifiers(cursor, pageSize, office, idRegex);
 
             String formatHeader = ctx.header(Header.ACCEPT);
+            if ("*/*".equals(formatHeader)) {
+                // parseHeaderAndQueryParm normally defaults to JSONV1 when the input is */*
+                formatHeader = Formats.JSONV2;
+            }
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
             String result = Formats.format(contentType, descriptors);
@@ -175,11 +178,15 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
+            if ("*/*".equals(formatHeader)) {
+                // parseHeaderAndQueryParm normally defaults to JSONV1 when the input is */*
+                formatHeader = Formats.JSONV2;
+            }
+
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
             Optional<TimeSeriesIdentifierDescriptor> grp = dao.getTimeSeriesIdentifier(office, timeseriesId);
             if (grp.isPresent()) {
-
                 String result = Formats.format(contentType, grp.get());
 
                 ctx.result(result).contentType(contentType.toString());
