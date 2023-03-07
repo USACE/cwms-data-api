@@ -16,14 +16,14 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
 
     private final String officeId;
     private final String timeSeriesId;
-    private final ZoneId zoneId;
+    private final String timezoneName;
     private final Long intervalOffsetMinutes;
     private final boolean active;
 
     private TimeSeriesIdentifierDescriptor(Builder builder) {
         this.officeId = builder.officeId;
         this.timeSeriesId = builder.timeSeriesId;
-        this.zoneId = builder.zoneId;
+        this.timezoneName = builder.timezoneName;
         this.intervalOffsetMinutes = builder.intervalOffsetMinutes;
         this.active = builder.active;
     }
@@ -36,8 +36,8 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
         return timeSeriesId;
     }
 
-    public ZoneId getZoneId() {
-        return zoneId;
+    public String getTimezoneName() {
+        return timezoneName;
     }
 
     public Long getIntervalOffsetMinutes() {
@@ -58,7 +58,7 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
     public static class Builder {
         private String officeId;
         private String timeSeriesId;
-        private ZoneId zoneId;
+        private String timezoneName;
         private Long intervalOffsetMinutes;
         private boolean active;
 
@@ -73,7 +73,16 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
         }
 
         public Builder withZoneId(ZoneId zoneId) {
-            this.zoneId = zoneId;
+            String tzName = null;
+
+            if (zoneId != null) {
+                tzName = zoneId.getId();
+            }
+            return withTimezoneName(tzName);
+        }
+
+        public Builder withTimezoneName(String timezoneName) {
+            this.timezoneName = timezoneName;
             return this;
         }
 
@@ -90,7 +99,7 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
         public Builder withTimeSeriesIdentifierDescriptor(TimeSeriesIdentifierDescriptor tsid) {
             this.officeId = tsid.getOfficeId();
             this.timeSeriesId = tsid.getTimeSeriesId();
-            this.zoneId = tsid.getZoneId();
+            this.timezoneName = tsid.getTimezoneName();
             this.intervalOffsetMinutes = tsid.getIntervalOffsetMinutes();
             this.active = tsid.isActive();
             return this;
@@ -100,6 +109,5 @@ public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
             return new TimeSeriesIdentifierDescriptor(this);
         }
     }
-
 
 }

@@ -96,6 +96,7 @@ public class TimeSeriesController implements CrudHandler {
     public static final String CURSOR = "cursor";
     public static final String PAGE_SIZE = "page-size";
     public static final String TIMESERIES = "timeseries";
+    public static final String TAG = "TimeSeries";
 
     private final MetricRegistry metrics;
 
@@ -144,7 +145,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             method = HttpMethod.POST,
             path = "/timeseries",
-            tags = {"TimeSeries"}
+            tags = {TAG}
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -207,7 +208,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             method = HttpMethod.DELETE,
             path = "/timeseries/{timeseries}",
-            tags = {"TimeSeries"}
+            tags = {TAG}
     )
     @Override
     public void delete(Context ctx, @NotNull String timeseries) {
@@ -240,7 +241,7 @@ public class TimeSeriesController implements CrudHandler {
                 boolean opArg = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
 
                 TimeSeriesDaoImpl.OverrideProtection op;
-                if(opArg){
+                if (opArg) {
                     op = TimeSeriesDaoImpl.OverrideProtection.True;
                 } else {
                     op = TimeSeriesDaoImpl.OverrideProtection.False;
@@ -363,7 +364,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             method = HttpMethod.GET,
             path = "/timeseries",
-            tags = {"TimeSeries"}
+            tags = {TAG}
     )
     @Override
     public void getAll(Context ctx) {
@@ -489,7 +490,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             method = HttpMethod.PATCH,
             path = "/timeseries/{timeseries}",
-            tags = {"TimeSeries"}
+            tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
@@ -640,7 +641,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             path = "/timeseries/recent",
             description = "Returns CWMS Timeseries Groups Data",
-            tags = {"TimeSeries-Beta"},
+            tags = {TAG},
             method = HttpMethod.GET
     )
     public void getRecent(Context ctx) {

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import cwms.radar.formatters.ContentType;
+import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
 import java.time.ZoneId;
 import org.junit.jupiter.api.Test;
@@ -78,9 +80,24 @@ class TimeSeriesIdentifierDescriptorTest {
 
         assertEquals(tsID.getTimeSeriesId(), tsID2.getTimeSeriesId());
         assertEquals(tsID.getOfficeId(), tsID2.getOfficeId());
-        assertEquals(tsID.getZoneId(), tsID2.getZoneId());
+        assertEquals(tsID.getTimezoneName(), tsID2.getTimezoneName());
         assertEquals(tsID.getIntervalOffsetMinutes(), tsID2.getIntervalOffsetMinutes());
         assertEquals(tsID.isActive(), tsID2.isActive());
+    }
+
+
+    @Test
+    void test_serialization_with_formats()
+    {
+        // This test verifies that the TimeSeriesIdentifierDescriptor can be serialized by the Formats class.
+        // It will fail like:
+        //  No Format for this content-type and data-type : (application/json;version=2, cwms.radar.data.dto.TimeSeriesIdentifierDescriptor)
+        // If JsonV2 does not contain TimeSeriesIdentifierDescriptor in its list of classes
+        TimeSeriesIdentifierDescriptor tsID = buildTsId();
+
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        String jsonStr = Formats.format(contentType, tsID);
+        assertNotNull(jsonStr);
     }
 
 }
