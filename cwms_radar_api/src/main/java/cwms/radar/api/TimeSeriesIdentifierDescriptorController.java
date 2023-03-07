@@ -256,7 +256,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = SNAP_FORWARD, description = "The new snap forward tolerance in minutes. This specifies how many minutes before the expected data time that data will be considered to be on time."),
                     @OpenApiParam(name = SNAP_BACKWARD, description = "The new snap backward tolerance in minutes. This specifies how many minutes after the expected data time that data will be considered to be on time."),
                     @OpenApiParam(name = ACTIVE, description = "'True' or 'true' if the time series is active")
-            }
+            }, tags = {TAG}
     )
     @Override
     public void update(Context ctx, @NotNull String timeseriesId) {
@@ -309,7 +309,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             type = TimeSeriesIdentifierDescriptorDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
-            method = HttpMethod.DELETE
+            method = HttpMethod.DELETE, tags = {TAG}
            )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
