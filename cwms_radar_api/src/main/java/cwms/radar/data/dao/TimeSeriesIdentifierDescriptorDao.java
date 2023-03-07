@@ -4,11 +4,15 @@ import static usace.cwms.db.dao.util.OracleTypeMap.parseBool;
 import static usace.cwms.db.dao.util.OracleTypeMap.toZoneId;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
+
+import cwms.radar.data.dto.TimeSeriesIdentifierDescriptors;
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -44,7 +48,37 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         logger.atFine().log("Created tsCode: %s for %s", tsCode, tsid.getTimeSeriesId());
     }
 
-    public List<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifiers(String office, String idRegex) {
+    public TimeSeriesIdentifierDescriptors getTimeSeriesIdentifiers(String cursor, int pageSize, String office,
+                                                                    String idRegex) {
+        Integer total = null;
+        int offset = 0;
+
+        if (cursor != null && !cursor.isEmpty()) {
+            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+
+            if (parts.length > 2) {
+                offset = Integer.parseInt(parts[0]);
+                if (!"null".equals(parts[1])) {
+                    try {
+                        total = Integer.valueOf(parts[1]);
+                    } catch (NumberFormatException e) {
+                        logger.at(Level.INFO).log("Could not parse %s", parts[1]);
+                    }
+                }
+                pageSize = Integer.parseInt(parts[2]);
+            }
+        }
+
+        Collection<TimeSeriesIdentifierDescriptor> retval = getTimeSeriesIdentifiers(office, idRegex, offset, pageSize);
+
+        TimeSeriesIdentifierDescriptors.Builder builder = new TimeSeriesIdentifierDescriptors.Builder(offset, pageSize, total);
+        builder.withDescriptors(retval);
+        return builder.build();
+    }
+
+
+    public Collection<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifiers(String office, String idRegex, int firstRow,
+                                                                               int pageSize) {
 
         Condition whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office);
         if (idRegex != null && !idRegex.isEmpty()) {
@@ -53,13 +87,19 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         }
 
         return dsl
-                .select(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
+                .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
                 .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
                 .where(whereCondition)
+                .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
+                .limit(pageSize)
+                .offset(firstRow)
                 .stream()
                 .map(this::toDescriptor)
                 .filter(Objects::nonNull)
@@ -73,7 +113,10 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         String activeFlag = r.get(r.field4());
         String zoneId = r.get(r.field5());
 
-        String locationId = tsId.substring(0, tsId.indexOf('.'));
+        String locationId = null;
+        if( tsId != null && tsId.contains(".")){
+            locationId = tsId.substring(0, tsId.indexOf('.'));
+        }
 
         return new TimeSeriesIdentifierDescriptor.Builder()
                 .withOfficeId(officeId)

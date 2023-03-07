@@ -19,6 +19,7 @@ import cwms.radar.data.dto.Pools;
 import cwms.radar.data.dto.SpecifiedLevel;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
+import cwms.radar.data.dto.TimeSeriesIdentifierDescriptors;
 import cwms.radar.data.dto.rating.ExpressionRating;
 import cwms.radar.data.dto.rating.RatingMetadata;
 import cwms.radar.data.dto.rating.RatingMetadataList;
@@ -55,7 +56,7 @@ import service.annotations.FormatService;
         ExpressionRating.class, UsgsStreamRating.class,
         RatingSpec.class, RatingSpecs.class,
         LocationLevel.class, LocationLevels.class,
-        TimeSeriesIdentifierDescriptor.class
+        TimeSeriesIdentifierDescriptor.class, TimeSeriesIdentifierDescriptors.class
 })
 /**
  * Formatter for RADAR generated JSON.

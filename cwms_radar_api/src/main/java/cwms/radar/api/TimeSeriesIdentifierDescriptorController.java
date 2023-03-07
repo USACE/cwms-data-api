@@ -13,6 +13,7 @@ import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.TimeSeriesIdentifierDescriptorDao;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
+import cwms.radar.data.dto.TimeSeriesIdentifierDescriptors;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
@@ -50,6 +51,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     public static final String ACTIVE = "active";
     public static final String UTC_OFFSET = "utc-offset";
     public static final String METHOD = "method";
+    private static final int DEFAULT_PAGE_SIZE = 500;
 
     private final MetricRegistry metrics;
 
@@ -93,10 +95,21 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             @OpenApiParam(name = TIMESERIES_ID_REGEX, description = "A case insensitive RegExp "
                     + "that will be applied to the timeseries-id field. If this field is "
                     + "not specified the results will not be constrained by timeseries-id."),
-            },
+
+            @OpenApiParam(name = "page",
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response."
+            ),
+            @OpenApiParam(name = "page-size", type = Integer.class,
+                    description = "How many entries per page returned. "
+                            + "Default " + DEFAULT_PAGE_SIZE + "."
+            ),
+    },
             responses = {@OpenApiResponse(status = "200",
-                    content = {@OpenApiContent(isArray = true, from = TimeSeriesIdentifierDescriptor.class,
-                            type = Formats.JSONV2)
+                    content = {
+                            @OpenApiContent(type = Formats.JSONV2, from = TimeSeriesIdentifierDescriptors.class)
                     }),
                     @OpenApiResponse(status = "404", description = "Based on the combination of "
                             + "inputs provided the time series identifier descriptors were not found."),
@@ -105,6 +118,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             + "Data", tags = {TAG})
     @Override
     public void getAll(Context ctx) {
+        String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
+        int pageSize =
+                ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         try (final Timer.Context ignored = markAndTime("getAll");
              DSLContext dsl = getDslContext(ctx)) {
@@ -112,13 +128,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String idRegex = ctx.queryParam(TIMESERIES_ID_REGEX);
 
-            List<TimeSeriesIdentifierDescriptor> ids =
-                    dao.getTimeSeriesIdentifiers(office,  idRegex);
+            TimeSeriesIdentifierDescriptors descriptors =
+                    dao.getTimeSeriesIdentifiers(cursor, pageSize, office, idRegex);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
 
-            String result = Formats.format(contentType, ids, TimeSeriesIdentifierDescriptor.class);
+            String result = Formats.format(contentType, descriptors);
 
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
@@ -146,10 +162,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             }
                     ),
                     @OpenApiResponse(status = "404", description = "Based on the combination of "
-                            + "inputs provided the timeseries identifier was not found."),
+                            + "inputs provided the timeseries identifier descriptor was not found."),
                     @OpenApiResponse(status = "501", description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested timeseries identifier", tags = {TAG})
+            description = "Retrieves requested timeseries identifier descriptor", tags = {TAG})
     @Override
     public void getOne(Context ctx, @NotNull String timeseriesId) {
 
