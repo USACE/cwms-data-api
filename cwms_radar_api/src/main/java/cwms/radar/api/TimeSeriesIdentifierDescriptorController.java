@@ -49,7 +49,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     public static final String SNAP_FORWARD = "snap-forward";
     public static final String SNAP_BACKWARD = "snap-backward";
     public static final String ACTIVE = "active";
-    public static final String UTC_OFFSET = "utc-offset";
+    public static final String INTERVAL_OFFSET = "interval-offset";
     public static final String METHOD = "method";
     private static final int DEFAULT_PAGE_SIZE = 500;
 
@@ -273,12 +273,12 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = TIMESERIES_ID, description = "A new timeseries-id.  "
                             + "If specified a rename operation will be performed and "
                             + SNAP_FORWARD + ", " + SNAP_BACKWARD + ", and " + ACTIVE + " must not be provided"),
-                    @OpenApiParam(name = UTC_OFFSET, description = "The offset into the utc data interval in minutes.  "
+                    @OpenApiParam(name = INTERVAL_OFFSET, type = Long.class, description = "The offset into the data interval in minutes.  "
                             + "If specified and a new timeseries-id is also specified both will be passed to a "
                             + "rename operation.  May also be passed to update operation."),
-                    @OpenApiParam(name = SNAP_FORWARD, description = "The new snap forward tolerance in minutes. This specifies how many minutes before the expected data time that data will be considered to be on time."),
-                    @OpenApiParam(name = SNAP_BACKWARD, description = "The new snap backward tolerance in minutes. This specifies how many minutes after the expected data time that data will be considered to be on time."),
-                    @OpenApiParam(name = ACTIVE, description = "'True' or 'true' if the time series is active")
+                    @OpenApiParam(name = SNAP_FORWARD, type = Long.class, description = "The new snap forward tolerance in minutes. This specifies how many minutes before the expected data time that data will be considered to be on time."),
+                    @OpenApiParam(name = SNAP_BACKWARD, type = Long.class, description = "The new snap backward tolerance in minutes. This specifies how many minutes after the expected data time that data will be considered to be on time."),
+                    @OpenApiParam(name = ACTIVE, type = Boolean.class, description = "'True' or 'true' if the time series is active")
             }, tags = {TAG}
     )
     @Override
@@ -286,7 +286,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
-        Long utcOffset = ctx.queryParamAsClass(UTC_OFFSET, Long.class).getOrDefault(null);
+        Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrDefault(null);
 
         List<String> updateKeys = Arrays.asList(SNAP_FORWARD, SNAP_BACKWARD, ACTIVE);
 
@@ -307,13 +307,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             if (foundUpdateKeys.isEmpty()) {
                 // basic rename.
-                dao.rename(office, timeseriesId, newTimeseriesId, utcOffset);
+                dao.rename(office, timeseriesId, newTimeseriesId, intervalOffset);
             } else {
                 Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrDefault(null);
                 Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrDefault(null);
                 boolean active = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
 
-                dao.update(office, timeseriesId, utcOffset, forward, backward, active);
+                dao.update(office, timeseriesId, intervalOffset, forward, backward, active);
             }
 
         }
