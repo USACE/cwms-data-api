@@ -290,7 +290,7 @@ public class ClobController implements CrudHandler {
                             description = "Specifies the id of the clob to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = "ignore-nulls",
+                    @OpenApiParam(name = "ignore-nulls", type = Boolean.class,
                             description = "If true, null and empty fields in the provided clob "
                                     + "will be ignored and the existing value of those fields "
                                     + "left in place. Default: true")

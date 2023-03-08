@@ -28,6 +28,7 @@ import cwms.radar.formatters.json.JsonV2;
 import cwms.radar.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -110,6 +111,10 @@ public class TimeSeriesController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className, "results", "size")));
     }
 
+    static {
+        JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
+    }
+
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
@@ -138,7 +143,7 @@ public class TimeSeriesController implements CrudHandler {
                             + "timeseries should be created as Local Regular Time Series. "
                             + "'True' or 'False', default is 'False'"),
                     @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
-                            + "when merging the incoming with existing data"),
+                            + "when merging the incoming with existing data", type = StoreRule.class),
                     @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
                             "A flag to ignore the protected data quality when storing data. "
                                     + "'True' or 'False'")
@@ -191,8 +196,8 @@ public class TimeSeriesController implements CrudHandler {
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the timeseries to be deleted."),
-                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
-                            "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. "
+                            + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = END, description = "The end of the time window to delete."
                     + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
@@ -482,9 +487,9 @@ public class TimeSeriesController implements CrudHandler {
                             + "otherwise specified). If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if version-date was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = CREATE_AS_LRTS,  description = ""),
+                    @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                     @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
-                            + "when merging the incoming with existing data"),
+                            + "when merging the incoming with existing data", type = StoreRule.class),
                     @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
                             "A flag to ignore the protected data quality when storing data.  \"'True' or 'False'\"")
             },
