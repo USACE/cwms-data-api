@@ -59,8 +59,8 @@ public class OfficeDao extends JooqDao<Office> {
     }
 
     /**
-     * Returns a specific office from CDA given an office ID (3-4 capital letters).
-     * * @param officeId 3-4 letter ID of a district
+     * Returns a specific office from CDA given an office ID (3-4 capital letters). 
+     * * @param officeId Case insensitive (3-4 letter) ID of a district
      * 
      * @return a single office and its metadata
      * 
@@ -74,7 +74,7 @@ public class OfficeDao extends JooqDao<Office> {
                 view.OFFICE_TYPE.as("type"),
                 view.REPORT_TO_OFFICE_ID.as("reportsTo"))
             .from(view)
-            .where(view.OFFICE_ID.eq(officeId))
+            .where(view.OFFICE_ID.eq(officeId.toUpperCase()))
             .fetchOne();
         return fetchOne != null 
             ? Optional.of(fetchOne.into(Office.class)) : Optional.empty();
