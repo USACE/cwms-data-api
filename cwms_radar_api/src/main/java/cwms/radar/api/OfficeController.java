@@ -110,27 +110,27 @@ public class OfficeController implements CrudHandler {
     }
 
     @OpenApi(pathParams = @OpenApiParam(name = "office", 
-                    description = "The 3 letter office ID you want more information for"), 
-                queryParams = @OpenApiParam(name = "format", 
-                    deprecated = true, 
-                    description = "(Deprecated in favor of Accept header)"
-                        + " Specifies the encoding "
-                        + "format of the response. Valid value for the format field for this "
-                        + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"), 
-                    responses = {
-                        @OpenApiResponse(status = "200", 
-                            description = "A list of offices.", 
-                            content = {
-                                @OpenApiContent(from = OfficeFormatV1.class, type = ""),
-                                @OpenApiContent(from = Office.class, 
-                                    isArray = true, 
-                                    type = Formats.JSONV2),
-                                @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
-                                @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
-                                @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
-                                @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
-                            })
-                    }, tags = { "Offices" })
+                description = "The 3 letter office ID you want more information for"), 
+            queryParams = @OpenApiParam(name = "format", 
+                deprecated = true, 
+                description = "(Deprecated in favor of Accept header)"
+                    + " Specifies the encoding "
+                    + "format of the response. Valid value for the format field for this "
+                    + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"), 
+            responses = {
+                @OpenApiResponse(status = "200", 
+                    description = "A list of offices.", 
+                    content = {
+                        @OpenApiContent(from = OfficeFormatV1.class, type = ""),
+                        @OpenApiContent(from = Office.class, 
+                            isArray = true, 
+                            type = Formats.JSONV2),
+                        @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
+                        @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
+                        @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
+                        @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
+                    })
+            }, tags = { "Offices" })
     @Override
     public void getOne(Context ctx, String officeId) {
         getOneRequest.mark();

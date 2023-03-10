@@ -1,5 +1,7 @@
 package cwms.radar.data.dao;
 
+import static org.jooq.impl.DSL.upper;
+
 import cwms.radar.data.dto.Office;
 import java.util.List;
 import java.util.Optional;
@@ -74,7 +76,7 @@ public class OfficeDao extends JooqDao<Office> {
                 view.OFFICE_TYPE.as("type"),
                 view.REPORT_TO_OFFICE_ID.as("reportsTo"))
             .from(view)
-            .where(view.OFFICE_ID.eq(officeId.toUpperCase()))
+            .where(view.OFFICE_ID.eq(upper(officeId)))
             .fetchOne();
         return fetchOne != null 
             ? Optional.of(fetchOne.into(Office.class)) : Optional.empty();
