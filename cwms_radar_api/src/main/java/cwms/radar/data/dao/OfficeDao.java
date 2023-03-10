@@ -76,7 +76,7 @@ public class OfficeDao extends JooqDao<Office> {
                 view.OFFICE_TYPE.as("type"),
                 view.REPORT_TO_OFFICE_ID.as("reportsTo"))
             .from(view)
-            .where(view.OFFICE_ID.eq(upper(officeId)))
+            .where(view.OFFICE_ID.upper().eq(upper(officeId)))
             .fetchOne();
         return fetchOne != null 
             ? Optional.of(fetchOne.into(Office.class)) : Optional.empty();
