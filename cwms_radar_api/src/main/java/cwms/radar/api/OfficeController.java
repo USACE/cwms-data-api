@@ -53,29 +53,23 @@ public class OfficeController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className, "results", "size")));
     }
 
-
-    @OpenApi(
-            queryParams = @OpenApiParam(name = "format",
-                    deprecated = true,
-                    description = "(Deprecated in favor of Accept header) Specifies the encoding "
-                            + "format of the response. Valid value for the format field for this "
-                            + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
-            ),
-            responses = {@OpenApiResponse(status = "200",
-                    description = "A list of offices.",
-                    content = {
-                            @OpenApiContent(from = OfficeFormatV1.class, type = ""),
-                            @OpenApiContent(from = Office.class, isArray = true, type =
-                                    Formats.JSONV2),
-                            @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
-                            @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
-                            @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
-                            @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
-                    }
-            ),
-            },
-            tags = {"Offices"}
-    )
+    @OpenApi(queryParams = {
+            @OpenApiParam(name = "format", deprecated = true, description = "(Deprecated in favor of Accept header) Specifies the encoding "
+                    + "format of the response. Valid value for the format field for this "
+                    + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),
+            @OpenApiParam(name = "has-data", description = "A flag ('True'/'False') "
+                    + "When set to true this returns offices that have operational data. "
+                    + "Default value is <b>False</b>,. <a href=\"https://github.com/USACE/cwms-radar-api/issues/321\" target=\"_blank\">Feature #321</a>", type = Boolean.class)
+    }, responses = {
+            @OpenApiResponse(status = "200", description = "A list of offices.", content = {
+                    @OpenApiContent(from = OfficeFormatV1.class, type = ""),
+                    @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
+                    @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
+                    @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
+                    @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
+                    @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
+            }),
+    }, tags = { "Offices" })
     @Override
     public void getAll(Context ctx) {
         getAllRequests.mark();
@@ -84,8 +78,10 @@ public class OfficeController implements CrudHandler {
                 final Timer.Context timeContext = getAllRequestsTime.time();
                 DSLContext dsl = getDslContext(ctx)) {
             OfficeDao dao = new OfficeDao(dsl);
-            List<Office> offices = dao.getOffices();
             String formatParm = ctx.queryParamAsClass("format", String.class).getOrDefault("");
+            Boolean hasDataParm = ctx.queryParamAsClass("has-data", Boolean.class).getOrDefault(false);
+            List<Office> offices = dao.getOffices(hasDataParm);
+
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
@@ -97,30 +93,19 @@ public class OfficeController implements CrudHandler {
         }
     }
 
-    @OpenApi(
-            pathParams = @OpenApiParam(name = "office", description = "The 3 letter office ID you"
-                    + " want more information for"),
-            queryParams = @OpenApiParam(name = "format",
-                    deprecated = true,
-                    description = "(Deprecated in favor of Accept header) Specifies the encoding "
-                            + "format of the response. Valid value for the format field for this "
-                            + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
-            ),
-            responses = {@OpenApiResponse(status = "200",
-                    description = "A list of offices.",
-                    content = {
-                            @OpenApiContent(from = OfficeFormatV1.class, type = ""),
-                            @OpenApiContent(from = Office.class, isArray = true, type =
-                                    Formats.JSONV2),
-                            @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
-                            @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
-                            @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
-                            @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
-                    }
-            )
-            },
-            tags = {"Offices"}
-    )
+    @OpenApi(pathParams = @OpenApiParam(name = "office", description = "The 3 letter office ID you"
+            + " want more information for"), queryParams = @OpenApiParam(name = "format", deprecated = true, description = "(Deprecated in favor of Accept header) Specifies the encoding "
+                    + "format of the response. Valid value for the format field for this "
+                    + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"), responses = {
+                            @OpenApiResponse(status = "200", description = "A list of offices.", content = {
+                                    @OpenApiContent(from = OfficeFormatV1.class, type = ""),
+                                    @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
+                                    @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
+                                    @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
+                                    @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
+                                    @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
+                            })
+                    }, tags = { "Offices" })
     @Override
     public void getOne(Context ctx, String officeId) {
         getOneRequest.mark();
