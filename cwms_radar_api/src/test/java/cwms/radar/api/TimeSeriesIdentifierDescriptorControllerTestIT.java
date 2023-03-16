@@ -13,6 +13,8 @@ import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,14 +27,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
-public class TimeSeriesIdentifierDescriptorControllerTestIT {
+public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
     @Test
-    public void test_create_delete() throws JsonProcessingException {
+    public void test_create_delete() throws JsonProcessingException, SQLException {
 
-
+        createLocation("Alder Springs",true,"SPK");
         String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.TEST_.*";
 
         // Check that we don't have any ts like this in the catalog.
