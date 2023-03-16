@@ -397,27 +397,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
 
-            Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.upper().likeRegex(idLike.toUpperCase())
+            Condition condition = caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.CWMS_TS_ID, idLike)
                     .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
             if (searchOffice != null) {
-                condition =
-                        condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(searchOffice.toUpperCase()));
+                condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(searchOffice.toUpperCase()));
             }
 
             if (locCategoryLike != null) {
-                condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.upper().likeRegex(locCategoryLike.toUpperCase()));
+                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY, locCategoryLike));
             }
 
             if (locGroupLike != null) {
-                condition.and(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.upper().likeRegex(locGroupLike.toUpperCase()));
+                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP, locGroupLike));
             }
 
             if (tsCategoryLike != null) {
-                condition.and(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.upper().likeRegex(tsCategoryLike.toUpperCase()));
+                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY, tsCategoryLike));
             }
 
             if (tsGroupLike != null) {
-                condition.and(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.upper().likeRegex(tsGroupLike.toUpperCase()));
+                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_GROUP, tsGroupLike));
             }
 
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
@@ -456,46 +455,43 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         primaryDataQuery.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 
         // add the regexp_like clause. reg fd
-        primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().likeRegex(idLike.toUpperCase()));
+        primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.CWMS_TS_ID, idLike));
 
         if (searchOffice != null) {
             primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.toUpperCase()));
         }
 
         if (locCategoryLike != null) {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY.upper().likeRegex(locCategoryLike.toUpperCase()));
+            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY, locCategoryLike));
         }
 
         if (locGroupLike != null) {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP.upper().likeRegex(locGroupLike.toUpperCase()));
+            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP, locGroupLike));
         }
 
         if (tsCategoryLike != null) {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY.upper().likeRegex(tsCategoryLike.toUpperCase()));
+            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY, tsCategoryLike));
         }
 
         if (tsGroupLike != null) {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.TS_ALIAS_GROUP.upper().likeRegex(tsGroupLike.toUpperCase()));
+            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_GROUP, tsGroupLike));
         }
 
         if (curOffice != null) {
-            Condition officeEqualCur =
-                    AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(curOffice.toUpperCase());
+            Condition officeEqualCur = AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(curOffice.toUpperCase());
             Condition curOfficeTsIdGreater = AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor);
-            Condition officeGreaterThanCur =
-                    AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().gt(curOffice.toUpperCase());
+            Condition officeGreaterThanCur = AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().gt(curOffice.toUpperCase());
             primaryDataQuery.addConditions(Operator.AND,
                     officeEqualCur.and(curOfficeTsIdGreater).or(officeGreaterThanCur));
         } else {
             primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
         }
 
-
-        primaryDataQuery.addOrderBy(AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.CWMS_TS_ID);
+        primaryDataQuery.addOrderBy(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper(), AV_CWMS_TS_ID2.CWMS_TS_ID.upper());
         Table<?> dataTable = primaryDataQuery.asTable("data");
         SelectQuery<?> limitQuery = dsl.selectQuery();
         limitQuery.addSelect(dataTable.fields());
-        limitQuery.addFrom(dataTable);//.limit(pageSize);
+        limitQuery.addFrom(dataTable);
         limitQuery.addConditions(field("rownum").lessOrEqual(pageSize));
 
         Table<?> limitTable = limitQuery.asTable("limiter");
@@ -510,6 +506,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         overallQuery.addJoin(AV_TS_EXTENTS_UTC, org.jooq.JoinType.LEFT_OUTER_JOIN,
                 condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = " + field("\"limiter\""
                         + ".\"TS_CODE\"")));
+
+        overallQuery.addOrderBy(limitTable.field("DB_OFFICE_ID").upper(), limitTable.field("CWMS_TS_ID").upper());
 
         logger.info(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
@@ -920,12 +918,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public enum OverrideProtection {
         /**
-         * If set to True, all specified values are quietly deleted
+         * If set to True, all specified values are quietly deleted.
          */
         True,
         /**
-         * If set to False, only non-protected values are quietly
-         * deleted.
+         * If set to False, only non-protected values are quietly deleted.
          */
         False,
         /**
