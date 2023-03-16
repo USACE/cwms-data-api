@@ -9,9 +9,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface TimeSeriesDao {
-    enum DeleteMethod {
-        DELETE_ALL, DELETE_KEY, DELETE_DATA
-    }
 
     Timestamp NON_VERSIONED = null;
 
@@ -21,15 +18,17 @@ public interface TimeSeriesDao {
                                  String locCategoryLike, String locGroupLike,
                                  String tsCategoryLike, String tsGroupLike);
 
-    void create(TimeSeries timeSeries);
+    void create(TimeSeries input);
+
+    void create(TimeSeries input,
+                Timestamp versionDate,
+                boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
+    void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
+               StoreRule replaceAll, boolean overrideProtection);
 
-    void deleteAll(String office, String tsId);
-
-    void deleteData(String office, String tsId);
-
-    void deleteKey(String office, String tsId);
+    void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
                              String unit, String datum, ZonedDateTime begin, ZonedDateTime end,

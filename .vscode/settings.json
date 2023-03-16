@@ -4,6 +4,6 @@
         "clobs"
     ],
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.import.gradle.java.home": "/usr/lib/jvm/java-8-openjdk-amd64",
-    
+    "liveServer.settings.multiRootWorkspaceName": "cwms-radar-api",
+    "liveServer.settings.root": "/cwms_radar_api/src/main/webapp"
 }

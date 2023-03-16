@@ -4,8 +4,6 @@ window.addEventListener("load", function() {
     coll_mob[col_m_idx].addEventListener("click", function (e) {
       this.classList.toggle("active");
       var content = this.nextElementSibling;
-      
-      console.log(content);
       if (content.style.display == "none") {
         content.style.display = "block";
       } else {
@@ -27,7 +25,6 @@ function openNav() {
 }
 
 function closeNav() {
-  var myNav = document.getElementById("mobileNav");
   mobileNav.classList.remove("open");
   var open = document.getElementById("burgerBtn");
   open.style.display = null;
