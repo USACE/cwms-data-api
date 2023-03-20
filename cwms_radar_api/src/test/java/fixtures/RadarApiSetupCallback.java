@@ -31,7 +31,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
     private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
-    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:latest-dev");
+    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16");
 
 
     @Override
