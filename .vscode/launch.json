@@ -37,7 +37,7 @@
             "port": 5005,
             "hostName": "localhost",
             "sourcePaths": [
-                "build/generated/sources/annotationProcessor/java/main",
+                "build/generated/sources/annotationProcessor/java/main",               
             ]
         },
         {

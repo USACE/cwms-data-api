@@ -4,7 +4,7 @@
               username="${RADAR_JDBC_USERNAME}" password="${RADAR_JDBC_PASSWORD}"
               url="${RADAR_JDBC_URL}"
               driverClassName="oracle.jdbc.OracleDriver"
-              initialSize="${RADAR_POOL_INIT_SIZE}" maxWait="5000"
+              initialSize="${RADAR_POOL_INIT_SIZE}" maxWait="10000"
               maxActive="${RADAR_POOL_MAX_ACTIVE}" maxIdle="${RADAR_POOL_MAX_IDLE}"
               minIdle="${RADAR_POOL_MIN_IDLE}"
               validationQuery="select 1 from dual"

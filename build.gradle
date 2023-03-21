@@ -1,3 +1,11 @@
+apply plugin: 'eclipse'
+
+eclipse {
+    classpath {
+       downloadSources=true
+       downloadJavadoc = true
+    }
+}
 
 
 allprojects {

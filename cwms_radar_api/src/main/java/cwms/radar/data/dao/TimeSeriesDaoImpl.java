@@ -71,6 +71,7 @@ import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -795,24 +796,48 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
     }
 
-
+    /**
+     * Create and save, or update existing Timeseries.
+     *
+     * Required attributes of {@link cwms.radar.data.dto.TimeSeries Timeseries} are
+     *
+     * <ul>
+     *  <li>{@link cwms.radar.data.dto.Timeseries#name Timeseries Id}</li>
+     *  <li>{@link cwms.radar.data.dto.Timeseries#officeId Office ID}</li>
+     *  <li>{@link cwms.radar.data.dto.TimeSeries#units Units}</li>
+     *  <li>{@link cwms.radar.data.dto.TimeSeries#values values}
+     * </ul>
+     *
+     * Other parameters may be passed in, but will either be ignored or used to validate existing
+     * database entries.
+     *
+     * @param input Actual timeseries data
+     * @param versionDate "version" this data set is associated with. Null for non-versioned data.
+     * @param createAsLrts Is this an irregular but well defined interval time series (e.g.
+     *                     daily data in a local time zone.)
+     *
+     * @param storeRule How to update the database if data exists. {@see cwms.radar.data.dao.StoreRule for more detail}
+     * @param overrideProtection honor override protection
+     *
+     */
+    @SuppressWarnings("unused")
     public void create(TimeSeries input,
                        Timestamp versionDate,
-                       boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection){
+                       boolean createAsLrts, StoreRule storeRule, boolean overrideProtection){
         connection(dsl, connection -> {
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-
-            int utcOffsetMinutes = Math.toIntExact(input.getIntervalOffset());
             int intervalForward = 0;
             int intervalBackward = 0;
             boolean versionedFlag = false;
             boolean activeFlag = true;
-            BigInteger tsCode = tsDao.createTsCodeBigInteger(connection, input.getOfficeId(),
-                    input.getName(),
-                    utcOffsetMinutes, intervalForward, intervalBackward, versionedFlag, activeFlag);
+            BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(dsl.configuration(),
+                input.getName(),
+                input.getIntervalOffset(), intervalForward, intervalBackward,
+                OracleTypeMap.formatBool(versionedFlag),
+                OracleTypeMap.formatBool(activeFlag),
+                OracleTypeMap.formatBool(false), input.getOfficeId());
             if (!input.getValues().isEmpty()) {
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        versionDate, input.getValues(), createAsLrts, replaceAll,
+                        versionDate, input.getValues(), createAsLrts, storeRule,
                         overrideProtection);
             }
         });

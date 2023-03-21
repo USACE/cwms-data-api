@@ -169,7 +169,6 @@ public final class Location implements CwmsDTO {
         }
         Location location = (Location) o;
         return Double.compare(location.getLatitude(), getLatitude()) == 0
-                && Double.compare(location.getLongitude(), getLongitude()) == 0
                 && getActive() == location.getActive()
                 && getName().equals(location.getName())
                 && getPublicName().equals(location.getPublicName())

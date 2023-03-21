@@ -17,15 +17,12 @@ import cwms.radar.formatters.json.JsonV2;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.response.Response;
-import io.restassured.response.ValidatableResponse;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
-public class ClobControllerTestIT {
+public class ClobControllerTestIT extends DataApiTestIT {
 
 
     public static final String SPK = "SPK";

@@ -1,7 +1,6 @@
 package cwms.radar.api;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.isNotNull;
 
 import java.time.Duration;
 
@@ -10,25 +9,30 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 
 import static io.restassured.RestAssured.*;
-import io.restassured.matcher.RestAssuredMatchers.*;
 import io.restassured.response.Response;
 
 import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
-public class CatalogControllerTestIT {
+public class CatalogControllerTestIT extends DataApiTestIT {
 
+    
 
     @BeforeAll
-    public static void before_all(){
-
+    public static void setup_data() throws Exception {
+        createLocation("Alder Springs",true,"SPK");
+        createLocation("Wet Meadows",true,"SPK");
+        createLocation("Pine Flat-Outflow",true,"SPK");
+        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
+        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-radar");
+        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar");
+        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-radar");
     }
 
     @Test

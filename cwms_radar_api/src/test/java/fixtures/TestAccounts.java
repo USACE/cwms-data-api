@@ -7,8 +7,8 @@ public class TestAccounts {
         SPK_NORMAL("l2hectest","l2userkey"),
         SPK_NO_ROLES("user2","User2key");
 
-        public final String name;
-        public final String key;
+        private final String name;
+        private final String key;
 
         private KeyUser(String name, String key) {
             this.name = name;
@@ -17,6 +17,14 @@ public class TestAccounts {
 
         public String toHeaderValue() {
             return String.format("apikey %s",key);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getKey() {
+            return key;
         }
     }
 }
