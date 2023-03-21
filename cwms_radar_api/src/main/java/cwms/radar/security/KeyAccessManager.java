@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -184,5 +185,12 @@ public class KeyAccessManager extends RadarAccessManager {
                     .in(In.HEADER)
                     .name("Authorization");
     }
+
+    @Override
+    public String getName() {
+        return "ApiKey";    
+    }
+
+    
 
 }

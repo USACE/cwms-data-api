@@ -352,9 +352,10 @@ public class ApiServlet extends HttpServlet {
 
         RadarAccessManager am = buildAccessManager(provider);
         Components components = new Components();
-        components.addSecuritySchemes(provider,
-                am.getScheme()
-        );
+        am.getContainedManagers().forEach((manager)->{
+            components.addSecuritySchemes(manager.getName(),manager.getScheme());
+        });
+        
         config.accessManager(am);
 
         OpenApiOptions ops =

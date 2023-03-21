@@ -3,7 +3,6 @@ package cwms.radar.security;
 import java.util.Set;
 
 import cwms.radar.spi.RadarAccessManager;
-import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -29,8 +28,12 @@ public class LoginDotGovAccessManager extends RadarAccessManager {
 
     @Override
     public SecurityScheme getScheme() {
-        //TODO retrieve URL;
         return new SecurityScheme().type(Type.OPENIDCONNECT);
+    }
+
+    @Override
+    public String getName() {
+        return "LoginDotGov";
     }
 
 }

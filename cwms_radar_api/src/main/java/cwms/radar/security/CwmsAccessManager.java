@@ -188,4 +188,9 @@ public class CwmsAccessManager extends RadarAccessManager {
                 .name("JSESSIONIDSSO");
     }
 
+    @Override
+    public String getName() {
+        return "CwmsAAACacAuth";
+    }
+
 }
