@@ -490,8 +490,8 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                     @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
                             + "when merging the incoming with existing data", type = StoreRule.class),
-                    @OpenApiParam(name = OVERRIDE_PROTECTION,  description =
-                            "A flag to ignore the protected data quality when storing data.  \"'True' or 'False'\"")
+                    @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
+                            "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\"")
             },
             method = HttpMethod.PATCH,
             path = "/timeseries/{timeseries}",
