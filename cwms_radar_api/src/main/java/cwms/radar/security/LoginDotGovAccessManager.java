@@ -36,4 +36,9 @@ public class LoginDotGovAccessManager extends RadarAccessManager {
         return "LoginDotGov";
     }
 
+    @Override
+    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+        return false; // still implementing details;
+    }
+
 }

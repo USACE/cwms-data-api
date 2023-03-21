@@ -3,13 +3,16 @@ package cwms.radar.spi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import io.javalin.core.security.AccessManager;
-
+import io.javalin.core.security.RouteRole;
+import io.javalin.http.Context;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
 public abstract class RadarAccessManager implements AccessManager {
 
+    public abstract boolean canAuth(Context ctx, Set<RouteRole> roles);
     /**
      * Key used in OpenAPI definition to distinguish Auth types
      * @return

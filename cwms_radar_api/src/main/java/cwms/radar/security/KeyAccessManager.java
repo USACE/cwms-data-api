@@ -191,6 +191,15 @@ public class KeyAccessManager extends RadarAccessManager {
         return "ApiKey";    
     }
 
+    @Override
+    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+        String header = ctx.header("Authorization");
+        if (header == null) {
+            return false;
+        }
+        return header.trim().startsWith("apikey");
+    }
+
     
 
 }

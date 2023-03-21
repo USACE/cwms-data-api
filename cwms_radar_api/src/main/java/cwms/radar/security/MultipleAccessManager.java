@@ -23,14 +23,25 @@ public class MultipleAccessManager extends RadarAccessManager {
         managers.addAll(managerList);
     }   
 
+    private RadarAccessManager getManagerFor(Context ctx, Set<RouteRole> roles) {
+        managers.add(new GuestAccessManager());
+        for (RadarAccessManager am: managers) {            
+            if (am.canAuth(ctx, roles)) {
+                return am;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        if (managers.isEmpty()) {
-            log.severe("No access managers are configured.");
-            ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
-        }
-        for (RadarAccessManager am: managers) {            
+        RadarAccessManager am = getManagerFor(ctx, routeRoles);
+        
+        if (am != null) {
             am.manage(handler, ctx, routeRoles);
+        } else {
+            log.warning("No valid credentials on request.");
+            ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
         }
     }
 
@@ -47,6 +58,11 @@ public class MultipleAccessManager extends RadarAccessManager {
     @Override
     public List<RadarAccessManager> getContainedManagers() {
         return new ArrayList<>(managers);
+    }
+
+    @Override
+    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+        return true; // at the very least, it can try.
     }
 
 

@@ -193,4 +193,9 @@ public class CwmsAccessManager extends RadarAccessManager {
         return "CwmsAAACacAuth";
     }
 
+    @Override
+    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+        return ctx.cookie("JSESSIONIDSSO") != null;
+    }
+
 }
