@@ -10,9 +10,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.ZonedDateTime;
+import java.util.Base64;
 import java.util.Set;
-
-import org.bouncycastle.util.encoders.Base64;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -119,7 +118,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
                         ObjectMapper mapper = new ObjectMapper();
                         JsonNode node = mapper.readTree(http.getInputStream());
                         String publicKeyText = node.get("public_key").asText();
-                        byte[] publicKey = Base64.decode(publicKeyText);
+                        byte[] publicKey = Base64.getDecoder().decode(publicKeyText);
                         this.realmPublicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
                     } else {
                         log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
