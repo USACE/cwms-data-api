@@ -258,7 +258,8 @@ task integrationTests(type: Test) {
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-    jvmArgs += "-Dradar.access.provider=KeyAccessManager"
+    jvmArgs += "-Dradar.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dradar.access.providers=KeyAccessManager,CwmsAccessManager"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
