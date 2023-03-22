@@ -288,7 +288,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
         Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrDefault(null);
 
-        List<String> updateKeys = Arrays.asList(SNAP_FORWARD, SNAP_BACKWARD, ACTIVE);
+        List<String> updateKeys = Arrays.asList(SNAP_FORWARD, SNAP_BACKWARD, ACTIVE, INTERVAL_OFFSET);
 
         Map<String, List<String>> paramMap = ctx.queryParamMap();
         List<String> foundUpdateKeys = updateKeys.stream()
