@@ -827,7 +827,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         connection(dsl, connection -> {
             int intervalForward = 0;
             int intervalBackward = 0;
-            boolean versionedFlag = false;
+            boolean versionedFlag = versionDate != null;
             boolean activeFlag = true;
             BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(dsl.configuration(),
                 input.getName(),
