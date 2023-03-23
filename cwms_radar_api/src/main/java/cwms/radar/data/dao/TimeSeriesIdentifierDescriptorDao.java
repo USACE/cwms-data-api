@@ -172,10 +172,6 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     }
 
     public void delete(String office, String timeseriesId, DeleteMethod method) {
-        if (method == null) {
-            method = DeleteMethod.DELETE_ALL;
-        }
-
         switch (method) {
             case DELETE_KEY:
                 deleteKey(office, timeseriesId);
@@ -189,7 +185,6 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
             default:
                 throw new IllegalArgumentException("Unknown delete method: " + method);
         }
-
     }
 
 

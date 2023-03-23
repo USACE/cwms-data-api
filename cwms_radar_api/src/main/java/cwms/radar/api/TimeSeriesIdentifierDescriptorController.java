@@ -327,8 +327,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the timeseries to be deleted."),
-                    @OpenApiParam(name = METHOD,  description = "Specifies the delete method used."
-                            + "Default: DELETE_ALL",
+                    @OpenApiParam(name = METHOD,  required = true, description = "Specifies the delete method used.",
                             type = TimeSeriesIdentifierDescriptorDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
@@ -338,7 +337,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
         TimeSeriesIdentifierDescriptorDao.DeleteMethod method = ctx.queryParamAsClass(METHOD,
-                        TimeSeriesIdentifierDescriptorDao.DeleteMethod.class).allowNullable().get();
+                        TimeSeriesIdentifierDescriptorDao.DeleteMethod.class).get();
 
         String office = ctx.queryParam(OFFICE);
 
