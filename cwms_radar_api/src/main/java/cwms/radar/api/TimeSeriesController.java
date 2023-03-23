@@ -191,15 +191,14 @@ public class TimeSeriesController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "timeseries", required = true, description = "The timeseries-id of the timeseries to be deleted. "
-                            + "If '" + OFFICE + "' is the only additional query parameter specified a non-windowed deleteAll will be performed."),
+                    @OpenApiParam(name = "timeseries", required = true, description = "The timeseries-id of the timeseries values to be deleted. "),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the timeseries to be deleted."),
-                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. "
+                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window to delete. "
                             + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = END, description = "The end of the time window to delete."
+                    @OpenApiParam(name = END, required = true, description = "The end of the time window to delete."
                     + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
@@ -224,50 +223,35 @@ public class TimeSeriesController implements CrudHandler {
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            List<String> expandedDeleteKeys = Arrays.asList(BEGIN,
-                    END, VERSION_DATE, START_TIME_INCLUSIVE, END_TIME_INCLUSIVE, MAX_VERSION,
-                     OVERRIDE_PROTECTION);
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-            Map<String, String> paramMap = ctx.pathParamMap();
+            Date startTimeDate = getDate(timezone, ctx.queryParam(BEGIN));
+            Date endTimeDate = getDate(timezone, ctx.queryParam(END));
+            Date versionDate = getDate(timezone, ctx.queryParam(VERSION_DATE));
 
-            boolean useExpanded = expandedDeleteKeys.stream().anyMatch(paramMap::containsKey);
+            // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
+            boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
+            boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(false);
+            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(true);
+            boolean opArg = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
 
-            if (useExpanded) {
-                String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-
-                Date startTimeDate = getDate(timezone, ctx.queryParam(BEGIN));
-                Date endTimeDate = getDate(timezone, ctx.queryParam(END));
-                Date versionDate = getDate(timezone, ctx.queryParam(VERSION_DATE));
-
-                // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
-                boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
-                boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(false);
-                boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(true);
-                boolean opArg = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
-
-                TimeSeriesDaoImpl.OverrideProtection op;
-                if (opArg) {
-                    op = TimeSeriesDaoImpl.OverrideProtection.True;
-                } else {
-                    op = TimeSeriesDaoImpl.OverrideProtection.False;
-                }
-
-                TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder()
-                        .withStartTime(startTimeDate)
-                        .withEndTime(endTimeDate)
-                        .withVersionDate(versionDate)
-                        .withStartTimeInclusive(startTimeInclusive)
-                        .withEndTimeInclusive(endTimeInclusive)
-                        .withMaxVersion(maxVersion)
-                        .withOverrideProtection(op.toString())
-                        .build();
-
-                dao.delete(office, timeseries, options);
+            TimeSeriesDaoImpl.OverrideProtection op;
+            if (opArg) {
+                op = TimeSeriesDaoImpl.OverrideProtection.True;
             } else {
-                TimeSeriesIdentifierDescriptorDao idDao = new TimeSeriesIdentifierDescriptorDao(dsl);
-                idDao.deleteAll(office, timeseries);
+                op = TimeSeriesDaoImpl.OverrideProtection.False;
             }
 
+            TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder()
+                    .withStartTime(startTimeDate)
+                    .withEndTime(endTimeDate)
+                    .withVersionDate(versionDate)
+                    .withStartTimeInclusive(startTimeInclusive)
+                    .withEndTimeInclusive(endTimeInclusive)
+                    .withMaxVersion(maxVersion)
+                    .withOverrideProtection(op.toString())
+                    .build();
+            dao.delete(office, timeseries, options);
         }
     }
 
