@@ -29,8 +29,7 @@ dependencies {
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
     }
-
-    implementation( "mil.army.usace.hec:cwms-db-dao:9.8.0") {
+    implementation('mil.army.usace.hec:cwms-db-jooq-codegen:7.0.0-SNAPSHOT') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
