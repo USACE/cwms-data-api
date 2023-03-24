@@ -1,7 +1,7 @@
 volumes:
   oracle_data:
 services:
-  db:    
+  db:
     # if using gvenzl/oracle-xe you'll need to adjust the environment below
     image: ${ORACLE_DOCKER_IMAGE}
     volumes:
@@ -11,7 +11,7 @@ services:
       - ORACLE_PWD=badSYSpassword
       - ORACLE_EDITION=enterprise
     ports:
-      - 1521    
+      - 1521
     healthcheck:
       test: ["CMD","tnsping", "CWMS"]
       interval: 1m30s
@@ -34,30 +34,54 @@ services:
       - OFFICE_ID=HEC
       - OFFICE_EROC=q0
       - INSTALLONCE=1
-      - QUIET=1      
+      - QUIET=1
     restart: "no"
-    
-  api:
+
+  cwms-data-api:
     depends_on:
       db:
         condition: service_healthy
       db_install:
         condition: service_completed_successfully
-    image: cwms-data-api:latest
+    image: cwms-rest-api:2.6-SNAPSHOT
     build:
-      target: api
+      target: apiLoginDotGov
       context: .
       dockerfile: Dockerfile
-    restart: always
+    restart: unless-stopped
     environment:
       - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
       - RADAR_JDBC_USERNAME=q0webtest
       - RADAR_JDBC_PASSWORD=simplecwmspasswD1
-    ports:
-      - 7000:7000
+    expose:
+      - 7000
     healthcheck:
       test: ["CMD","executable", "curl", "-I","localhost:7000/cwms-data/offices/HEC"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cwms-data-api.rule=Host(`cwms-data.localhost`)"
+      - "traefik.http.routers.cwms-data-api.entryPoints=web"
+      - "traefik.http.services.cwms-data-api.loadbalancer.server.port=7000"
+
+  #auth:
+  #  image: authelia/authelia:4.37.5
+  #  restart: unless-stopped
+  # Proxy for HTTPS for OpenID
+  traefik:
+    image: "traefik:v2.9"
+    container_name: "traefik"
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:81"
+    ports:
+      - "81:81"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
