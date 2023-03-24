@@ -225,9 +225,14 @@ public class TimeSeriesController implements CrudHandler {
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-            Date startTimeDate = getDate(timezone, ctx.queryParam(BEGIN));
-            Date endTimeDate = getDate(timezone, ctx.queryParam(END));
-            Date versionDate = getDate(timezone, ctx.queryParam(VERSION_DATE));
+            Timestamp startTimeDate = Timestamp.from(DateUtils.parseUserDate(ctx.queryParam(BEGIN), timezone).toInstant());
+            Timestamp endTimeDate = Timestamp.from(DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant());
+            String versionDateParam = ctx.queryParam(VERSION_DATE);
+            Timestamp versionDate = null;
+            if(versionDateParam != null)
+            {
+                versionDate = Timestamp.from(DateUtils.parseUserDate(versionDateParam, timezone).toInstant());
+            }
 
             // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
             boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
@@ -253,16 +258,6 @@ public class TimeSeriesController implements CrudHandler {
                     .build();
             dao.delete(office, timeseries, options);
         }
-    }
-
-    @Nullable
-    private static Date getDate(String timezone, String startTimeStr) {
-        Date startTimeDate = null;
-        if (startTimeStr != null && startTimeStr.isEmpty()) {
-            ZonedDateTime startTimeZdt = DateUtils.parseUserDate(startTimeStr, timezone);
-            startTimeDate = Date.from(startTimeZdt.toInstant());
-        }
-        return startTimeDate;
     }
 
     @OpenApi(
