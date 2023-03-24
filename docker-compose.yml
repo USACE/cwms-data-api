@@ -1,3 +1,4 @@
+#name: cwms
 volumes:
   oracle_data:
 services:
@@ -37,15 +38,44 @@ services:
       - QUIET=1
     restart: "no"
 
-  cwms-data-api:
+  db_webuser_permissions:
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:23.03.16}
+    restart: "no"
+    environment:
+      - DB_HOST_PORT=db:1521
+      - DB_NAME=/CWMS
+      - CWMS_PASSWORD=simplecwmspasswD1
+      - SYS_PASSWORD=badSYSpassword
+      # set to HQ/q0 for any national system work
+      - OFFICE_ID=HQ
+      - OFFICE_EROC=q0
+      - INSTALLONCE=1
+      - QUIET=1
+    command: >
+      sh -xc "echo \"begin cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS Users', 'HQ'); cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS User Admins', 'HQ'); end;\" > /tmp/sql.sql &&
+                     echo "/" >> /tmp/sql.sql
+                     echo "quit" >> /tmp/sql.sql
+                    sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/tmp/sql"
     depends_on:
       db:
         condition: service_healthy
       db_install:
         condition: service_completed_successfully
-    image: cwms-rest-api:2.6-SNAPSHOT
+
+
+  data-api:
+    depends_on:
+      db:
+        condition: service_healthy
+      db_install:
+        condition: service_completed_successfully
+      db_webuser_permissions:
+        condition: service_completed_successfully
+      traefik:
+        condition: service_healthy
+    image: cwms-rest-api:2.6-compose
     build:
-      target: apiLoginDotGov
+      target: api
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
@@ -56,16 +86,15 @@ services:
     expose:
       - 7000
     healthcheck:
-      test: ["CMD","executable", "curl", "-I","localhost:7000/cwms-data/offices/HEC"]
+      test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
       interval: 1m30s
-      timeout: 30s
+      timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.cwms-data-api.rule=Host(`cwms-data.localhost`)"
-      - "traefik.http.routers.cwms-data-api.entryPoints=web"
-      - "traefik.http.services.cwms-data-api.loadbalancer.server.port=7000"
+      - "traefik.http.routers.data-api.rule=Host(`cwms-data.localhost`)"
+      - "traefik.http.routers.data-api.entryPoints=web"
 
   #auth:
   #  image: authelia/authelia:4.37.5
@@ -75,13 +104,18 @@ services:
     image: "traefik:v2.9"
     container_name: "traefik"
     command:
-      - "--log.level=INFO"
+      - "--log.level=DEBUG"
+      #- "--accesslog=true"
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:81"
+      - "--ping"
     ports:
       - "81:81"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    healthcheck:
+      test: traefik healthcheck --ping
