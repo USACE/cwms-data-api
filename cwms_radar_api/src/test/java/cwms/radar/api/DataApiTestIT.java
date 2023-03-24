@@ -17,9 +17,16 @@ import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
+/**
+ * Helper class to manage cycling tests multiple times against a database.
+ * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
+ */
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
 public class DataApiTestIT {
+    /**
+     * List of locations that will need to be deleted when tests are done.
+     */
     private static ArrayList<Location> locationsCreated = new ArrayList<>();
 
     protected static String createLocationQuery = null;
@@ -29,7 +36,8 @@ public class DataApiTestIT {
     protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
     /**
-     * Reads in SQL data and runs it as CWMS_20. Assumes single statement.
+     * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
+     * can be an anonymous function if more detail is required.
      * @param resource
      * @throws Exception
      */
@@ -67,6 +75,10 @@ public class DataApiTestIT {
                             );
     }
 
+    /**
+     * Register all known users credentials in the database as appropriate.
+     * @throws Exception
+     */
     @BeforeAll
     public static void register_users() throws Exception {
         try {
@@ -88,6 +100,11 @@ public class DataApiTestIT {
         }
     }
 
+    /**
+     * Runs cascade delete on each locations. Location not existing is not an error.
+     * All other errors will throw a runtime exception and may require manual database
+     * cleanup.
+     */
     @AfterAll
     public static void remove_data() {
         Iterator<Location> it = locationsCreated.iterator();
@@ -113,6 +130,12 @@ public class DataApiTestIT {
         }
     }
 
+    /**
+     * Removes all registered users' API keys from the database.
+     * 
+     * Future work will have this deleting all users/user credentials.
+     * @throws Exception
+     */
     @AfterAll
     public static void deregister_users() throws Exception {
         try {
@@ -135,13 +158,15 @@ public class DataApiTestIT {
 
     /**
      * Creates location with all minimum required data.
-     * @param location
-     * @param active
-     * @param office
-     * @param latitude
-     * @param longitude
-     * @param horizontalDatum
-     * @param kind
+     * Additional calls to this function with the same location name are noop. 
+     * 
+     * @param location Location name
+     * @param active Is this location active (allows writing timeseries)
+     * @param office Office ID
+     * @param latitude 
+     * @param longitude 
+     * @param horizontalDatum horizontal reference for this location, such as WGS84
+     * @param kind Arbitrary string define purpose of location
      */
     protected static void createLocation(String location, boolean active, String office, Double latitude, Double longitude, String horizontalDatum, String timeZone, String kind) throws SQLException {
         CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
@@ -177,7 +202,17 @@ public class DataApiTestIT {
     }
 
     /**
-     * Creates a location saving the data for later deletion.
+     * Creates a location saving the data for later deletion. With the following defaults:
+     * 
+     * <table>
+     * <th><td>Parameter</td><td>Value</td></th>
+     * <tr><td>latitude</td><td>0.0</td></tr>
+     * <tr><td>longitude</td><td>0.0</td></tr>
+     * <tr><td>horizontalDatum</td><td>WGS84</td></tr>
+     * <tr><td>timeZone</td><td>UTC</td></tr>
+     * <tr><td>kind</td><td>STREAM</td></tr>
+     * </table>
+     * 
      * @param location CWMS Location Name.
      * @param active should this location be flagged active or not.
      * @param office owning office
@@ -191,6 +226,8 @@ public class DataApiTestIT {
 
     /**
      * Create a timeseries (location must already exist), no data or other meta data will be set.
+     * This only creates the timeseries name. Not data or other parameters are set.
+     * 
      * @param office owning office
      * @param timeseries timeseries name
      * @throws SQLException
@@ -208,7 +245,14 @@ public class DataApiTestIT {
         }, db.getPdUser());
     }
 
-
+    /**
+     * If necessary for a specific test add the TEST user to the appropriate office CWMS Group.
+     * 
+     * @param user CWMS User Name
+     * @param group CWMS Group Name
+     * @param office CWMS Office ID
+     * @throws Exception Any errors running the sql command
+     */
     protected static void addUserToGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
@@ -223,6 +267,14 @@ public class DataApiTestIT {
         },"cwms_20");
     }
 
+    /**
+     * If necessary for a specific test remove a user from a CWMS Group.
+     * 
+     * @param user CWMS User Name
+     * @param group CWMS Group Name
+     * @param office CWMS Office ID
+     * @throws Exception Any errors running the sql command
+     */
     protected static void removeUserFromGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {

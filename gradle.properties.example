@@ -3,7 +3,24 @@
 # These are presented for example
 RADAR_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
 RADAR_JDBC_URL=jdbc:oracle:thin:@localhost/CWMSDB
-# Or this format: RADAR_JDBC_URL=jdbc:oracle:thin:@192.168.8.33:1523:v19clrl181d
+# Or this format: RADAR_JDBC_URL=jdbc:oracle:thin:@<hostname or ip>:<sid>
 RADAR_JDBC_USERNAME=username
 RADAR_JDBC_PASSWORD=password
 RADAR_LISTEN_PORT=7000
+
+# If you have an existing oracle instance the integration tests can skip the 
+# database setup and schema install process saving time.
+# NOTE: the integration tests ASSUME, and MUST be able to ASSUME, that it has
+# full control of that database. 
+# Do not
+#  - point test at production databases
+#  - point tests at any database you can't easily recover
+#  - point test at any database you generally care about
+
+#testcontainer.cwms.bypass.url=jdbc:oracle:thin:@localhost:1521/FEATURES?oracle.net.disableOob=true
+#testcontainer.cwms.bypass.sys.pass=vmwaresys
+#testcontainer.cwms.bypass.cwms.pass=test
+#testcontainer.cwms.bypass.office.id=HQ
+## eroc must be lower case.
+#testcontainer.cwms.bypass.office.eroc=l2
+#testcontainer.cwms.bypass.network=database_net
