@@ -1007,7 +1007,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             private boolean endTimeInclusive = true;
             private Date versionDate;
             private Boolean maxVersion = null;
-            private Integer tsItemMask = null;
+            private Integer tsItemMask = -1;
             private String overrideProtection;
 
             public Builder withStartTime(Date startTime) {
