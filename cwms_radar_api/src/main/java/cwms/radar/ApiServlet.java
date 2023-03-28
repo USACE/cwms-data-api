@@ -37,6 +37,7 @@ import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.api.errors.JsonFieldsException;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -197,6 +198,9 @@ public class ApiServlet extends HttpServlet {
                     RadarError re = new RadarError("Bad Request");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(NotFoundException.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
