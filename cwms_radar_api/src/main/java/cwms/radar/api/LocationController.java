@@ -16,6 +16,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
 import cwms.radar.data.dao.LocationsDaoImpl;
@@ -203,7 +204,9 @@ public class LocationController implements CrudHandler {
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from = Location.class),
                                     @OpenApiContent(type = Formats.XMLV2, from = Location.class)
-                            })
+                            }),
+                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                            + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
             tags = {"Locations"}
@@ -225,6 +228,11 @@ public class LocationController implements CrudHandler {
             ObjectMapper om = getObjectMapperForFormat(contentType.getType());
             String serializedLocation = om.writeValueAsString(location);
             ctx.result(serializedLocation);
+        } catch (NotFoundException e) {
+            RadarError re = new RadarError("Not found.");
+            logger.log(Level.WARNING, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_NOT_FOUND);
+            ctx.json(re);
         } catch (IOException ex) {
             String errorMsg = "Error retrieving " + name;
             RadarError re = new RadarError(errorMsg);
@@ -280,7 +288,11 @@ public class LocationController implements CrudHandler {
             description = "Update CWMS Location",
             method = HttpMethod.PATCH,
             path = "/locations",
-            tags = {"Locations"}
+            tags = {"Locations"},
+            responses = {
+                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                            + "inputs provided the location was not found.")
+            }
     )
     @Override
     public void update(Context ctx, @NotNull String locationId) {
@@ -312,6 +324,11 @@ public class LocationController implements CrudHandler {
                 locationsDao.storeLocation(updatedLocation);
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location");
             }
+        } catch (NotFoundException e) {
+            RadarError re = new RadarError("Not found.");
+            logger.log(Level.WARNING, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_NOT_FOUND);
+            ctx.json(re);
         } catch (IOException ex) {
             RadarError re =
                     new RadarError("Failed to process request: " + ex.getLocalizedMessage());
@@ -331,7 +348,11 @@ public class LocationController implements CrudHandler {
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
             path = "/locations",
-            tags = {"Locations"}
+            tags = {"Locations"},
+            responses = {
+                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                            + "inputs provided the location was not found.")
+            }
     )
     @Override
     public void delete(Context ctx, @NotNull String locationId) {
@@ -344,6 +365,11 @@ public class LocationController implements CrudHandler {
             LocationsDao locationsDao = getLocationsDao(dsl);
             locationsDao.deleteLocation(locationId, office);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
+        } catch (NotFoundException e) {
+            RadarError re = new RadarError("Not found.");
+            logger.log(Level.WARNING, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_NOT_FOUND);
+            ctx.json(re);
         } catch (IOException ex) {
             RadarError re = new RadarError("Failed to delete location");
             logger.log(Level.SEVERE, re.toString(), ex);
