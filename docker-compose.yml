@@ -1,6 +1,7 @@
 #name: cwms
 volumes:
   oracle_data:
+  auth_data:
 services:
   db:
     # if using gvenzl/oracle-xe you'll need to adjust the environment below
@@ -96,9 +97,19 @@ services:
       - "traefik.http.routers.data-api.rule=Host(`cwms-data.localhost`)"
       - "traefik.http.routers.data-api.entryPoints=web"
 
-  #auth:
-  #  image: authelia/authelia:4.37.5
-  #  restart: unless-stopped
+  auth:
+    image: authelia/authelia:4.37.5
+    restart: unless-stopped
+    volumes:
+      - ./config/test-compose/authelia:/config:ro
+      - auth_data:/data
+    command:
+      - "authelia"
+      - "--config=/config/config.yaml"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.localhost`)"
+      - "traefik.http.routers.auth.entryPoints=web"
   # Proxy for HTTPS for OpenID
   traefik:
     image: "traefik:v2.9"
