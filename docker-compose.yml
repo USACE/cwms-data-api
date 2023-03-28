@@ -84,6 +84,8 @@ services:
       - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
       - RADAR_JDBC_USERNAME=q0webtest
       - RADAR_JDBC_PASSWORD=simplecwmspasswD1
+      - radar.access.provider=MultipleAccessManager
+      - radar.access.providers=KeyAccessManager,CwmsAccessManager
     expose:
       - 7000
     healthcheck:
