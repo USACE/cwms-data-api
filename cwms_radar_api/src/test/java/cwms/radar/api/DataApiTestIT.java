@@ -6,15 +6,18 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
+import fixtures.tomcat.TestSessionManager;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 @Tag("integration")
@@ -70,18 +73,22 @@ public class DataApiTestIT {
     @BeforeAll
     public static void register_users() throws Exception {
         try {
+            final TestSessionManager tsm = RadarApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 db.connection((c)-> {            
                     try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
                         stmt.setString(1,user.getName());                
                         stmt.setString(2,user.getName()+"TestKey");
-                        stmt.setString(3,user.getKey());
+                        stmt.setString(3,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
+                StandardSession session = new StandardSession(tsm);
+                session.setAuthType("CLIENT-CERT");
+                session.setPrincipal(null);
             }
         } catch(Exception ex) {
             throw ex;

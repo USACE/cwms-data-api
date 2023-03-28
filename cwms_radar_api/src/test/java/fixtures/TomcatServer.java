@@ -6,10 +6,14 @@ import java.util.logging.Logger;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Manager;
 import org.apache.catalina.connector.Connector;
+import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
+
+import fixtures.tomcat.TestSessionManager;
 
 
 
@@ -22,6 +26,7 @@ import org.apache.catalina.startup.Tomcat;
 public class TomcatServer {
     private static final Logger logger = Logger.getLogger(TomcatServer.class.getName());
     private Tomcat tomcatInstance = null;
+    private TestSessionManager sessionManager = new TestSessionManager();
     /**
      * Setups the baseline for tomcat to run.
      * @param baseDir set to the CATALINA_BASE directory the build has setup
@@ -54,9 +59,12 @@ public class TomcatServer {
         logger.info("Got engine " + engine.getDefaultHost());
 
         host.addLifecycleListener(new HostConfig());
+        StandardContext ctx = new StandardContext();
+        ctx.setManager(sessionManager);
+        host.addChild(ctx);
         
         tomcatInstance.addContext("", null);
-
+        
         File radar = new File(radarWar);
         try {
             File existingRadar = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
@@ -71,6 +79,10 @@ public class TomcatServer {
 
     public int getPort() {
         return tomcatInstance.getConnector().getLocalPort();
+    }
+
+    public TestSessionManager getTestSessionManager() {
+        return this.sessionManager;
     }
 
     /**

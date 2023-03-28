@@ -4,27 +4,33 @@ public class TestAccounts {
     
 
     public enum KeyUser {
-        SPK_NORMAL("l2hectest","l2userkey"),
-        SPK_NO_ROLES("user2","User2key");
+        SPK_NORMAL("l2hectest","l2userkey","notimplementedyet"),
+        SPK_NO_ROLES("user2","User2key","notimplementedyet");
 
         private final String name;
-        private final String key;
+        private final String apikey;
+        private final String jSessionId;
 
-        private KeyUser(String name, String key) {
+        private KeyUser(String name, String key, String jSessionId) {
             this.name = name;
-            this.key = key;
+            this.apikey = key;
+            this.jSessionId = jSessionId;
         }
 
         public String toHeaderValue() {
-            return String.format("apikey %s",key);
+            return String.format("apikey %s",apikey);
+        }
+
+        public String getJSessionId() {
+            return jSessionId;
         }
 
         public String getName() {
             return name;
         }
 
-        public String getKey() {
-            return key;
+        public String getApikey() {
+            return apikey;
         }
     }
 }

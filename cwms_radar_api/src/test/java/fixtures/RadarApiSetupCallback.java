@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import fixtures.tomcat.TestSessionManager;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.JsonConfig;
@@ -158,6 +159,10 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
         } catch (IOException e) {            
            throw new RuntimeException("Unable to load resource: " + fileName,e);
         }        
+    }
+
+    public static TestSessionManager getTestSessionManager() {
+        return radarInstance.getTestSessionManager();
     }
 
 }
