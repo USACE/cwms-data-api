@@ -54,7 +54,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         String user = getUserFromToken(ctx);
-        // prepare user
+        // TODO: prepare user
         handler.handle(ctx);
     }
 
@@ -105,6 +105,10 @@ public class OpenIDAccessManager extends RadarAccessManager {
             keyFactory = KeyFactory.getInstance("RSA");
         }
 
+        /**
+         * TODO: This needs more, some configurations may be more complex (like the
+         * authelia test environment) than others.
+         */
         private void updateKey() {
             if (realmPublicKey == null || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
                 log.atInfo().log("Checking for new key at %s",realmUrl);

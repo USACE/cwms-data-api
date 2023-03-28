@@ -23,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,11 +58,9 @@ public class KeyAccessManager extends RadarAccessManager {
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         try {
-            if (!routeRoles.isEmpty()) {
-                String key = getApiKey(ctx);
-                String user = authorized(ctx, key, routeRoles);
-                prepareContextWithUser(ctx, user,key);
-            }
+            String key = getApiKey(ctx);
+            String user = authorized(ctx, key, routeRoles);
+            prepareContextWithUser(ctx, user,key);
             handler.handle(ctx);
         } catch (CwmsAuthException ex) {
             logger.log(Level.WARNING,"Unauthorized login attempt",ex);

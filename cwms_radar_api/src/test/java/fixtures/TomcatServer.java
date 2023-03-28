@@ -54,7 +54,7 @@ public class TomcatServer {
         logger.info("Got engine " + engine.getDefaultHost());
 
         host.addLifecycleListener(new HostConfig());
-
+        
         tomcatInstance.addContext("", null);
 
         File radar = new File(radarWar);
