@@ -76,6 +76,9 @@ public class DataApiTestIT {
             final TestSessionManager tsm = RadarApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
+                if(user.getApikey() == null) {
+                    continue;
+                }
                 db.connection((c)-> {            
                     try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
                         stmt.setString(1,user.getName());                

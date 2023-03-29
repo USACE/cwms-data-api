@@ -59,9 +59,9 @@ public class TomcatServer {
         logger.info("Got engine " + engine.getDefaultHost());
 
         host.addLifecycleListener(new HostConfig());
-        StandardContext ctx = new StandardContext();
+        /*StandardContext ctx = new StandardContext();
         ctx.setManager(sessionManager);
-        host.addChild(ctx);
+        host.addChild(ctx);*/
         
         tomcatInstance.addContext("", null);
         

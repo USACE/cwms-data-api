@@ -9,9 +9,13 @@ import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static cwms.radar.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
@@ -24,7 +28,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 {
 	private static KeyUser SPK_NORMAL_USER = KeyUser.SPK_NORMAL;
 	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;
-
+	/* // will delete after feedback, covered by test below.
 	@Test
 	public void can_getOne_without_user(){
 		Response response = given()
@@ -36,16 +40,17 @@ public class AccessManagerTestIT extends DataApiTestIT
 
 		response.then().assertThat()
 				.statusCode(is(200));
-	}
+	}*/
 
-	@Test
-	public void can_getOne_with_user(){
+	@ParameterizedTest
+	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivsWithGuest")
+	public void can_getOne_with_user(TestAccounts.KeyUser user, RequestSpecification authSpec){
 		Response response = given()
+				.spec(authSpec)
 				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.queryParam("names", "AR*")
 				.queryParam("unit", "EN")
-				.header("Authorization",SPK_NORMAL_USER.toHeaderValue())
 				.get(  "/locations");
 
 		response.then().assertThat()

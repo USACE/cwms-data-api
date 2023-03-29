@@ -1,20 +1,25 @@
 package fixtures;
 
+import java.util.Arrays;
+
 public class TestAccounts {
     
 
     public enum KeyUser {
-        SPK_NORMAL("l2hectest","l2userkey","notimplementedyet"),
+        GUEST("guest",null,null), // USED as marker label for tests
+        SPK_NORMAL("l2hectest","l2userkey","notimplementedyet","CWMS User", "cac_user"),
         SPK_NO_ROLES("user2","User2key","notimplementedyet");
 
         private final String name;
         private final String apikey;
         private final String jSessionId;
+        private final String[] roles;
 
-        private KeyUser(String name, String key, String jSessionId) {
+        private KeyUser(String name, String key, String jSessionId, String... roles) {
             this.name = name;
             this.apikey = key;
             this.jSessionId = jSessionId;
+            this.roles = roles;
         }
 
         public String toHeaderValue() {
@@ -31,6 +36,10 @@ public class TestAccounts {
 
         public String getApikey() {
             return apikey;
+        }
+
+        public String[] getRoles() {
+            return Arrays.copyOf(roles,roles.length);
         }
     }
 }
