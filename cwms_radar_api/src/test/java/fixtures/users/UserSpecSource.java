@@ -45,6 +45,11 @@ public class UserSpecSource {
     }
 
     private static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
+        /**
+         * For whatever reason our integration test tomcat system didn't
+         * want to deal with JSESSIONIDSSO. For the purpose of these tests that 
+         * doesn't matter.
+         */ 
         Cookie cookie = new Cookie.Builder("JSESSIONID",user.getJSessionId())
                                   .setHttpOnly(true)
                                   .setDomain("localhost")

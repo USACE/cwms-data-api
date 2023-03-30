@@ -18,7 +18,6 @@ import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
-import fixtures.tomcat.TestSessionManager;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 

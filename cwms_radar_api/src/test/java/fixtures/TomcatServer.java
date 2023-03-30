@@ -14,9 +14,6 @@ import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
 
-import fixtures.tomcat.TestSessionManager;
-
-
 
 /**
  * Tomcat server for ./gradle run and
@@ -61,8 +58,6 @@ public class TomcatServer {
 
         host.addLifecycleListener(new HostConfig());
         tomcatInstance.addContext("", null);
-        //sessionManager.setContext();
-        //((StandardContext)).setManager(sessionManager);;
         
         File radar = new File(radarWar);
         try {

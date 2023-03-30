@@ -1,7 +1,6 @@
 package cwms.radar.api;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 
