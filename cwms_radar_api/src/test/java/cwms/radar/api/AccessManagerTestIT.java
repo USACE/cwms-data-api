@@ -44,13 +44,15 @@ public class AccessManagerTestIT extends DataApiTestIT
 				.statusCode(is(200));
 	}
 
-	@Test
-	public void cant_create_without_user() throws IOException
+	@ParameterizedTest
+	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivs")
+	public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");
 		assertNotNull(json);
 
 		given()
+				.spec(authSpec)
 				.contentType("application/json")
 				.queryParam("office", "SPK")
 				.body(json)
