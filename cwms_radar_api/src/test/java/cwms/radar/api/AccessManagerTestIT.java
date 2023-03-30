@@ -27,20 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class AccessManagerTestIT extends DataApiTestIT
 {
 	private static KeyUser SPK_NORMAL_USER = KeyUser.SPK_NORMAL;
-	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;
-	/* // will delete after feedback, covered by test below.
-	@Test
-	public void can_getOne_without_user(){
-		Response response = given()
-				.contentType("application/json")
-				.queryParam("office", "SPK")
-				.queryParam("names", "AR*")
-				.queryParam("unit", "EN")
-				.get(  "/locations");
-
-		response.then().assertThat()
-				.statusCode(is(200));
-	}*/
+	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;	
 
 	@ParameterizedTest
 	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivsWithGuest")
