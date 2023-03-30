@@ -166,6 +166,8 @@ public class CwmsAccessManager extends RadarAccessManager {
                 logger.severe("cwmsaaa api and implementation jars should only be in the system "
                         + "classpath, not the war file. Verify and restart application");
             }
+        } else {
+            throw new CwmsAuthException("Provided User credentials are not valid.");
         }
         return retval;
     }

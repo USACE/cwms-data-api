@@ -58,12 +58,9 @@ public class TomcatServer {
         Engine engine = tomcatInstance.getEngine();
         logger.info("Got engine " + engine.getDefaultHost());
 
-        host.addLifecycleListener(new HostConfig());
-        /*StandardContext ctx = new StandardContext();
-        ctx.setManager(sessionManager);
-        host.addChild(ctx);*/
-        
-        tomcatInstance.addContext("", null);
+        host.addLifecycleListener(new HostConfig());        
+        sessionManager.setContext(tomcatInstance.addContext("", null));
+        //((StandardContext)).setManager(sessionManager);;
         
         File radar = new File(radarWar);
         try {

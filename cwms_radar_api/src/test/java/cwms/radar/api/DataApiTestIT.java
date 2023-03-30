@@ -18,6 +18,7 @@ import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.tomcat.TestSessionManager;
+import fixtures.users.MockCwmsUserPrincipalImpl;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 @Tag("integration")
@@ -89,9 +90,16 @@ public class DataApiTestIT {
                         throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
-                StandardSession session = new StandardSession(tsm);
+                
+                StandardSession session = (StandardSession)tsm.createSession(user.getJSessionId());
+                if(session == null) {
+                    throw new RuntimeException("Test Session Manager is unusable.");
+                }
+                MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
                 session.setAuthType("CLIENT-CERT");
-                session.setPrincipal(null);
+                session.setPrincipal(mcup);
+                session.setId(user.getJSessionId());
+                session.activate();
             }
         } catch(Exception ex) {
             throw ex;

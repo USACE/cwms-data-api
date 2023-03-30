@@ -21,6 +21,7 @@ public class UserSpecSource {
               .filter(u -> u.getRoles().length > 0)
               .forEach(u -> {
                 list.add(apiKeyUser(u));
+                list.add(cwmsAaaUser(u));
               });
         return list.stream();
     }
@@ -31,6 +32,7 @@ public class UserSpecSource {
               .filter(u -> u.getRoles().length > 0)
               .forEach(u -> {
                 list.add(apiKeyUser(u));
+                list.add(cwmsAaaUser(u));
               });
         return list.stream();
     }
@@ -38,5 +40,9 @@ public class UserSpecSource {
     private static Arguments apiKeyUser(TestAccounts.KeyUser user) {
         return Arguments.of(user,new RequestSpecBuilder().addHeader("Authorization",
                                        TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue()).build());
+    }
+
+    private static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
+        return Arguments.of(user,new RequestSpecBuilder().addCookie("JSESSIONIDSSO",user.getJSessionId()).build());        
     }
 }

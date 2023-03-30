@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class AccessManagerTestIT extends DataApiTestIT
 {
 	private static KeyUser SPK_NORMAL_USER = KeyUser.SPK_NORMAL;
-	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;	
+	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;
 
 	@ParameterizedTest
 	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivsWithGuest")
