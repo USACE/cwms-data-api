@@ -31,7 +31,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 
 	@ParameterizedTest
 	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivsWithGuest")
-	public void can_getOne_with_user(TestAccounts.KeyUser user, RequestSpecification authSpec){
+	public void can_getOne_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec){
 		Response response = given()
 				.spec(authSpec)
 				.contentType("application/json")

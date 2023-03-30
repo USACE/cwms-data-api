@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.catalina.Manager;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -74,7 +75,7 @@ public class DataApiTestIT {
     @BeforeAll
     public static void register_users() throws Exception {
         try {
-            final TestSessionManager tsm = RadarApiSetupCallback.getTestSessionManager();
+            final Manager tsm = RadarApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 if(user.getApikey() == null) {
@@ -98,7 +99,6 @@ public class DataApiTestIT {
                 MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
                 session.setAuthType("CLIENT-CERT");
                 session.setPrincipal(mcup);
-                session.setId(user.getJSessionId());
                 session.activate();
             }
         } catch(Exception ex) {

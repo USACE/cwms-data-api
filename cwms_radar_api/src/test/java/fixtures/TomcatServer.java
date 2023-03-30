@@ -3,6 +3,7 @@ package fixtures;
 import java.io.File;
 import java.util.logging.Logger;
 
+import org.apache.catalina.Container;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
@@ -26,7 +27,7 @@ import fixtures.tomcat.TestSessionManager;
 public class TomcatServer {
     private static final Logger logger = Logger.getLogger(TomcatServer.class.getName());
     private Tomcat tomcatInstance = null;
-    private TestSessionManager sessionManager = new TestSessionManager();
+    private Manager sessionManager = null;
     /**
      * Setups the baseline for tomcat to run.
      * @param baseDir set to the CATALINA_BASE directory the build has setup
@@ -58,8 +59,9 @@ public class TomcatServer {
         Engine engine = tomcatInstance.getEngine();
         logger.info("Got engine " + engine.getDefaultHost());
 
-        host.addLifecycleListener(new HostConfig());        
-        sessionManager.setContext(tomcatInstance.addContext("", null));
+        host.addLifecycleListener(new HostConfig());
+        tomcatInstance.addContext("", null);
+        //sessionManager.setContext();
         //((StandardContext)).setManager(sessionManager);;
         
         File radar = new File(radarWar);
@@ -78,7 +80,7 @@ public class TomcatServer {
         return tomcatInstance.getConnector().getLocalPort();
     }
 
-    public TestSessionManager getTestSessionManager() {
+    public Manager getTestSessionManager() {        
         return this.sessionManager;
     }
 
@@ -88,6 +90,15 @@ public class TomcatServer {
      */
     public void start() throws LifecycleException {
         tomcatInstance.start();
+        StandardContext ctx = (StandardContext)tomcatInstance.getHost().findChild("");
+        this.sessionManager = ctx.getManager();
+        for (Container c: tomcatInstance.getHost().findChildren() ) {
+            System.out.println("Container: " + c.getName()+"/"+c.getClass().getName());
+            
+            for (Container c2: c.findChildren()) {
+                System.out.println("--> Container: " + c2.getName());
+            }
+        }
         System.out.println("Tomcat listening at http://localhost:" + tomcatInstance.getConnector().getPort());
     }
 
