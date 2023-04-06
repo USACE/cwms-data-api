@@ -1,5 +1,6 @@
 package cwms.radar.api;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -7,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.commons.io.IOUtils;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -16,6 +20,8 @@ import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 /**
  * Helper class to manage cycling tests multiple times against a database.
@@ -287,5 +293,11 @@ public class DataApiTestIT {
                 throw new RuntimeException(ex);
             }
         },"cwms_20");
+    }
+
+    protected static DSLContext dslContext(Connection connection, String officeId) {
+        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE11G);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+        return dsl;
     }
 }
