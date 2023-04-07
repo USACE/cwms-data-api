@@ -336,7 +336,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         // data/limiter/query
         Table<?> data = dsl.select(dataId,dataCode)
                            .from(avLoc2)
-                           .where(condition)
+                           .where(condition.and(avLoc2.ALIASED_ITEM.isNull()))
                            .orderBy(avLoc2.DB_OFFICE_ID.asc(),avLoc2.LOCATION_ID.asc())
                            .asTable("data");
         CommonTableExpression<?> limiter = name("limiter")
@@ -355,7 +355,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 avLoc2.asterisk())
             .from(limiter)
             .leftOuterJoin(avLoc2).on(avLoc2.LOCATION_CODE.eq(limitCode))
-            .where(condition)            
             .orderBy(avLoc2.DB_OFFICE_ID.asc(),limitId.asc(),avLoc2.ALIASED_ITEM.asc());
         logger.finer(query.getSQL(ParamType.INLINED));
         List<? extends CatalogEntry> entries = query.fetch()
