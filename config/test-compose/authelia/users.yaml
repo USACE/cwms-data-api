@@ -1,0 +1,16 @@
+---
+users:
+  l2hectest:
+    disabled: false
+    displayname: "SPK Normal Test User"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$jXTPbYVcOk1EgGFsM8xwkQ$fBj8guwSke9q6SVnwqGjn1ATHRECwGZbO+x+rkHQ86Q"
+    email: l2hectest@email.localhost
+    groups:
+      - cwms-user
+  user2:
+    disabled: false
+    displayname: "SPK User with no Database Roles"
+    email: user2@email.localhost
+    password: $argon2id$v=19$m=65536,t=3,p=4$Kj6jk9LvNszmYb5JkvlzVg$7vhYc6VRbHn5RpGj9FbQd6Li65Bw8Itf6H/48EN5nQ4
+    groups:
+      - cwms-user

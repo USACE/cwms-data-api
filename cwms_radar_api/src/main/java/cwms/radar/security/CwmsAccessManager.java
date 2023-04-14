@@ -19,6 +19,7 @@ import java.security.Principal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -133,29 +134,22 @@ public class CwmsAccessManager extends RadarAccessManager {
 
 
     public boolean isAuthorized(Context ctx, Set<RouteRole> requiredRoles) {
-        boolean retval;
-        if (requiredRoles == null || requiredRoles.isEmpty()) {
-            retval = true;
-        } else {
-            Set<RouteRole> specifiedRoles = getRoles(ctx);
-            retval = specifiedRoles.containsAll(requiredRoles);
-        }
-        return retval;
+        Set<RouteRole> specifiedRoles = getRoles(ctx);
+        return specifiedRoles.containsAll(requiredRoles);
     }
 
-    public static Set<RouteRole> getRoles(Context ctx) {
+    public static Set<RouteRole> getRoles(@NotNull Context ctx) {
+        Objects.requireNonNull(ctx,"Configuration is horribly wrong. This system is not usable.");
         Set<RouteRole> retval = new LinkedHashSet<>();
-        if (ctx != null) {
-            Principal principal = ctx.req.getUserPrincipal();
+        Principal principal = ctx.req.getUserPrincipal();
 
-            Set<RouteRole> specifiedRoles = getRoles(principal);
-            if (!specifiedRoles.isEmpty()) {
-                retval.addAll(specifiedRoles);
-            }
+        Set<RouteRole> specifiedRoles = getRoles(principal);
+        if (!specifiedRoles.isEmpty()) {
+            retval.addAll(specifiedRoles);
         }
+
         return retval;
     }
-
 
     private static Set<RouteRole> getRoles(Principal principal) {
         Set<RouteRole> retval = new LinkedHashSet<>();
@@ -172,6 +166,8 @@ public class CwmsAccessManager extends RadarAccessManager {
                 logger.severe("cwmsaaa api and implementation jars should only be in the system "
                         + "classpath, not the war file. Verify and restart application");
             }
+        } else {
+            throw new CwmsAuthException("Provided User credentials are not valid.");
         }
         return retval;
     }
@@ -185,7 +181,18 @@ public class CwmsAccessManager extends RadarAccessManager {
         return new SecurityScheme()
                 .type(Type.APIKEY)
                 .in(In.COOKIE)
-                .name("JSESSIONIDSSO");
+                .name("JSESSIONIDSSO")
+                .description("Auth handler running on same tomcat instance as the data api.");
+    }
+
+    @Override
+    public String getName() {
+        return "CwmsAAACacAuth";
+    }
+
+    @Override
+    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+        return ctx.cookie("JSESSIONIDSSO") != null;
     }
 
 }

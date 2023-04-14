@@ -7,6 +7,8 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.catalina.Manager;
+import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -16,9 +18,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
+import fixtures.users.MockCwmsUserPrincipalImpl;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
@@ -88,18 +92,31 @@ public class DataApiTestIT {
     @BeforeAll
     public static void register_users() throws Exception {
         try {
+            final Manager tsm = RadarApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
+                if(user.getApikey() == null) {
+                    continue;
+                }
                 db.connection((c)-> {            
                     try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
                         stmt.setString(1,user.getName());                
                         stmt.setString(2,user.getName()+"TestKey");
-                        stmt.setString(3,user.getKey());
+                        stmt.setString(3,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
+                
+                StandardSession session = (StandardSession)tsm.createSession(user.getJSessionId());
+                if(session == null) {
+                    throw new RuntimeException("Test Session Manager is unusable.");
+                }
+                MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
+                session.setAuthType("CLIENT-CERT");
+                session.setPrincipal(mcup);
+                session.activate();
             }
         } catch(Exception ex) {
             throw ex;

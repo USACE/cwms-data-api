@@ -58,11 +58,9 @@ public class KeyAccessManager extends RadarAccessManager {
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         try {
-            if (!routeRoles.isEmpty()) {
-                String key = getApiKey(ctx);
-                String user = authorized(ctx, key, routeRoles);
-                prepareContextWithUser(ctx, user,key);
-            }
+            String key = getApiKey(ctx);
+            String user = authorized(ctx, key, routeRoles);
+            prepareContextWithUser(ctx, user,key);
             handler.handle(ctx);
         } catch (CwmsAuthException ex) {
             logger.log(Level.WARNING,"Unauthorized login attempt",ex);
@@ -184,5 +182,21 @@ public class KeyAccessManager extends RadarAccessManager {
                     .in(In.HEADER)
                     .name("Authorization");
     }
+
+    @Override
+    public String getName() {
+        return "ApiKey";    
+    }
+
+    @Override
+    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+        String header = ctx.header("Authorization");
+        if (header == null) {
+            return false;
+        }
+        return header.trim().startsWith("apikey");
+    }
+
+    
 
 }

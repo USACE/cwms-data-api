@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -158,6 +159,10 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
         } catch (IOException e) {            
            throw new RuntimeException("Unable to load resource: " + fileName,e);
         }        
+    }
+
+    public static Manager getTestSessionManager() {
+        return radarInstance.getTestSessionManager();
     }
 
 }
