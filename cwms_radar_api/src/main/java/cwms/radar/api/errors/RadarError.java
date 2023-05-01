@@ -23,21 +23,38 @@ public class RadarError {
         return this.message;
     }
 
+    /**
+     * randomly generated number used for lookups in logs.
+     * @return
+     */
     public String getIncidentIdentifier() {
         return incidentIdentifier;
     }
 
+    /**
+     * Key value pairs of additional detail. Such as Object properties that are incorrectly specified.
+     * @return
+     */
     public Map<String, ? extends Object> getDetails() {
         return Collections.unmodifiableMap(details);
     }
 
 
+    /**
+     * Simple Constructor with just a message.
+     * @param message
+     */
     public RadarError(String message) {
         this.incidentIdentifier = Long.toString(Random.Default.nextLong());
         this.message = message;
         this.details = new HashMap<>();
     }
 
+    /**
+     * Constructor with message and detail map.
+     * @param message
+     * @param map
+     */
     public RadarError(String message, Map<String, ? extends Object> map) {
         Objects.requireNonNull(map);
         this.incidentIdentifier = Long.toString(Random.Default.nextLong());
@@ -50,6 +67,15 @@ public class RadarError {
         this.incidentIdentifier = "user input error";
         this.message = message;
         this.details = details;
+    }
+
+    /**
+     * Simple Error that doesn't require an incident ID.
+     * @param message
+     * @param suppressIncidentId
+     */
+    public RadarError(String message, boolean suppressIncidentId) {
+        this(message,new HashMap<>(),suppressIncidentId);
     }
 
     @Override
