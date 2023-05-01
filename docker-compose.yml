@@ -100,18 +100,28 @@ services:
       - "traefik.http.routers.data-api.entryPoints=web"
 
   auth:
-    image: authelia/authelia:4.37.5
-    restart: unless-stopped
+    image: quay.io/keycloak/keycloak:19.0.1
+    command: ["start", "--features-disabled=admin2"]  
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_FEATURES=admin-fine-grained-authz
+      - KC_HOSTNAME=auth.localhost:8444
+      - KC_PROXY=edge
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KC_HTTPS_KEY_STORE_FILE=/conf/server.keystore
+      - KC_HTTPS_KEY_STORE_PASSWORD=testme
+      - KC_HTTP_ENABLED=true
+      - KC_HOSTNAME_SCRIPT_HTTPS=false
+      - PROXY_ADDRESS_FORWARDING=true
+    ports:
+      - 8081:8080
+      - 8444:8443
     volumes:
-      - ./config/test-compose/authelia:/config:ro
-      - auth_data:/data
-    command:
-      - "authelia"
-      - "--config=/config/config.yaml"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`auth.localhost`)"
-      - "traefik.http.routers.auth.entryPoints=web"
+      - ./keycloak/server.keystore:/conf/server.keystore:ro
+      - ./kdata:/opt/keycloak/data:rw
+
+
   # Proxy for HTTPS for OpenID
   traefik:
     image: "traefik:v2.9"
