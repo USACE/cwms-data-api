@@ -280,7 +280,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     /**
-     * Like DSL.connection the DSL.connedtionResult method does not cause thrown
+     * Like DSL.connection the DSL.connectionResult method does not cause thrown
      * exceptions to be wrapped.  This method delegates to DSL.connectionResult
      * but will wrap exceptions into more specific exception types were possible.
      * @param dslContext the DSLContext to use
