@@ -41,6 +41,7 @@ import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.security.CwmsAuthException;
 import cwms.radar.security.Role;
 import cwms.radar.spi.AccessManagers;
 import cwms.radar.spi.RadarAccessManager;
@@ -117,7 +118,7 @@ public class ApiServlet extends HttpServlet {
     // For example 2.4 not 2.4.13
     public static final String VERSION = "3.0";
     public static final String PROVIDER_KEY = "radar.access.provider";
-    public static final String DEFAULT_PROVIDER = "CwmsAccessManager";
+    public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -215,6 +216,10 @@ public class ApiServlet extends HttpServlet {
                 .exception(JsonFieldsException.class, (e, ctx) -> {
                     RadarError re = new RadarError(e.getMessage(), e.getDetails(), true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(CwmsAuthException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),true);
+                    ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
                     RadarError errResponse = new RadarError("System Error");

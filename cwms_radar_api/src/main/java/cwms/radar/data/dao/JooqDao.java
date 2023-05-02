@@ -5,9 +5,6 @@ import static org.jooq.SQLDialect.ORACLE;
 import cwms.radar.ApiServlet;
 import cwms.radar.api.errors.AlreadyExists;
 import cwms.radar.api.errors.NotFoundException;
-import cwms.radar.datasource.ConnectionPreparer;
-import cwms.radar.datasource.ConnectionPreparingDataSource;
-import cwms.radar.datasource.SessionOfficePreparer;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -37,12 +34,24 @@ public abstract class JooqDao<T> extends Dao<T> {
         super(dsl);
     }
 
+    /**
+     * This method is used by the ApiServlet to get a jOOQ DSLContext given
+     * the current request context.  ApiServlet places certain attributes into
+     * the context and this method uses those attributes to create a DSLContext.
+     * An ExecuteListener is also added to the DSLContext to wrap certain
+     * recognized SQLExceptions in more specific CDA exception types.  This
+     * enables ApiServlet to handle the exception specialization in a more
+     * generic way.
+     *
+     * @param ctx The current request context.
+     * @return A DSLContext for the current request.
+     */
     public static DSLContext getDslContext(Context ctx) {
         DSLContext retval;
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if (dataSource != null) {
-            return DSL.using(dataSource, SQLDialect.ORACLE11G);
+            retval = DSL.using(dataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
             Connection database = ctx.attribute(ApiServlet.DATABASE);
@@ -80,6 +89,11 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retval;
     }
 
+    /**
+     * Oracle supports case insensitive regexp search but the syntax for calling it is a
+     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
+     * an easy to read manner without having to worry about the syntax.
+     */
     public static Condition caseInsensitiveLikeRegex(Field<String> field, String regex) {
         return new CustomCondition() {
             @Override
@@ -93,7 +107,14 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
-
+    /**
+     * This method tries to determine if the given RuntimeException
+     * is one of several types of exception (e.q NotFound,
+     * AlreadyExists, NullArg) that can be specially handled by ApiServlet
+     * by returning specific HTTP codes or error messages.
+     * @param input
+     * @return
+     */
     public static RuntimeException wrapException(RuntimeException input) {
         RuntimeException retval = input;
 
@@ -244,9 +265,12 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
 
-
-
-    // ExecuteListeners aren't called by DSL.connection blocks...
+    /**
+     * JooqDao provides its own connection method because the DSL.connection
+     * method does not cause thrown exception to be wrapped.
+     * @param dslContext the DSLContext to use
+     * @param cr the ConnectionRunnable to run with the connection
+     */
     void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
@@ -255,6 +279,13 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
+    /**
+     * Like DSL.connection the DSL.connectionResult method does not cause thrown
+     * exceptions to be wrapped.  This method delegates to DSL.connectionResult
+     * but will wrap exceptions into more specific exception types were possible.
+     * @param dslContext the DSLContext to use
+     * @param var1 the ConnectionCallable to run with the connection
+     */
     <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
             return dslContext.connectionResult(var1);

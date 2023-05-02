@@ -1,6 +1,7 @@
 package cwms.radar.security;
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import javax.management.ServiceNotFoundException;
 
@@ -10,6 +11,7 @@ import cwms.radar.spi.RadarAccessManager;
 
 public class MultipleAccessManagerProvider implements AccessManagerProvider {
     private static final String PROVIDERS_LIST_KEY = "radar.access.providers";
+    private static final Logger log = Logger.getLogger(MultipleAccessManager.class.getName());
 
     @Override
     public String getName() {
@@ -19,19 +21,24 @@ public class MultipleAccessManagerProvider implements AccessManagerProvider {
     @Override
     public RadarAccessManager create() {        
         ArrayList<RadarAccessManager> managers = new ArrayList<>();
+        managers.add(new GuestAccessManager());
         String managersString = System.getProperty(PROVIDERS_LIST_KEY,System.getenv(PROVIDERS_LIST_KEY));
         if (managersString == null) {
-            throw new RuntimeException("radar.access.providers property MUST be set to use the MultipleAccessProvider");
-        }
-        AccessManagers am = new AccessManagers();
-        for(String provider: managersString.split(",")) {
-            try {
-                managers.add(am.get(provider));
-            } catch (ServiceNotFoundException e) {
-                throw new RuntimeException("Unable to initialize provider '" + provider + "'",e);
+            log.info("No additional access managers provided. Defaulting to readonly.");
+            log.info(() -> "Set environment property '" + PROVIDERS_LIST_KEY
+                         + "' to comma seperated list of desired Managers if this is incorrect.");
+        } else {
+            AccessManagers am = new AccessManagers();
+            for(String provider: managersString.split(",")) {
+                try {
+                    managers.add(am.get(provider));
+                } catch (ServiceNotFoundException e) {
+                    throw new RuntimeException("Unable to initialize provider '" + provider + "'",e);
+                }
             }
         }
-
+        // Always add this to the end of the list to cover edge cases.
+        managers.add(new NoAccessManager());
         return new MultipleAccessManager(managers);
     }
     
