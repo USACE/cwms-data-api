@@ -85,7 +85,9 @@ services:
       - RADAR_JDBC_USERNAME=q0webtest
       - RADAR_JDBC_PASSWORD=simplecwmspasswD1
       - radar.access.provider=MultipleAccessManager
-      - radar.access.providers=KeyAccessManager,CwmsAccessManager
+      - radar.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
+      - cwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration
+      - cwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms
     expose:
       - 7000
     healthcheck:

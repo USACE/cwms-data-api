@@ -1,6 +1,7 @@
 package cwms.radar.security;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -8,10 +9,14 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Set;
+import java.util.Base64.Decoder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,12 +41,14 @@ import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 public class OpenIDAccessManager extends RadarAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private JwtParser jwtParser = null;
+    private String wellKnownUrl = null;
 
-    public OpenIDAccessManager(String realmUrl, String issuer, int realmKeyTimeout) {
+    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {
+        this.wellKnownUrl = wellKnownUrl;
         try {
             jwtParser = Jwts.parserBuilder()
                         .requireIssuer(issuer)
-                        .setSigningKeyResolver(new UrlResolver(realmUrl,realmKeyTimeout))
+                        .setSigningKeyResolver(new UrlResolver(wellKnownUrl,realmKeyTimeout))
                         .build();
         } catch (MalformedURLException ex) {
             log.atSevere().log("Unable to initialize realm.",ex);
@@ -71,7 +78,8 @@ public class OpenIDAccessManager extends RadarAccessManager {
 
     @Override
     public SecurityScheme getScheme() {
-        return new SecurityScheme().type(Type.OPENIDCONNECT);
+        return new SecurityScheme().type(Type.OPENIDCONNECT)
+                                   .openIdConnectUrl(wellKnownUrl);
     }
 
     @Override
@@ -91,8 +99,9 @@ public class OpenIDAccessManager extends RadarAccessManager {
 
     private static class UrlResolver extends SigningKeyResolverAdapter {
         private URL realmUrl;
+        private URL jwksUrl;
         private ZonedDateTime lastCheck;
-        private Key realmPublicKey = null;
+        private HashMap<String,Key> realmPublicKeys = new HashMap<>();
         private int realmPublicKeyTimeoutMinutes;
         private KeyFactory keyFactory = null; 
 
@@ -110,33 +119,72 @@ public class OpenIDAccessManager extends RadarAccessManager {
          * authelia test environment) than others.
          */
         private void updateKey() {
-            if (realmPublicKey == null || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
+            if (realmPublicKeys.isEmpty() || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
                 log.atInfo().log("Checking for new key at %s",realmUrl);
-                HttpURLConnection http = null;
                 try {
-                    http = (HttpURLConnection)realmUrl.openConnection();
-                    http.setRequestMethod("GET");
-                    http.setInstanceFollowRedirects(true);
-                    int status = http.getResponseCode();
-                    if (status == 200) {
-                        ObjectMapper mapper = new ObjectMapper();
-                        JsonNode node = mapper.readTree(http.getInputStream());
-                        String publicKeyText = node.get("public_key").asText();
-                        byte[] publicKey = Base64.getDecoder().decode(publicKeyText);
-                        this.realmPublicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
-                    } else {
-                        log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
-                    }
+                    realmPublicKeys.clear();
+                    updateJwksUrl();
+                    updateSigningKey();
                 } catch (IOException ex) {
                     log.atSevere().log("Unable to update key. Will continue to use previous key.",ex);
                 } catch (InvalidKeySpecException ex) {
                     log.atSevere().log("New Public Key was not valid. Will continue to use previous key.",ex);
-                } finally {
-                    if (http != null) {
-                        http.disconnect();
-                    }
                 }
                 lastCheck = ZonedDateTime.now();
+            }
+        }
+
+        private void updateJwksUrl() throws IOException {
+            HttpURLConnection http = null;
+            try
+            {
+                http = (HttpURLConnection)realmUrl.openConnection();
+                http.setRequestMethod("GET");
+                http.setInstanceFollowRedirects(true);
+                int status = http.getResponseCode();
+                if (status == 200) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode node = mapper.readTree(http.getInputStream());
+                    jwksUrl = new URL(node.get("jwks_uri").asText());
+                } else {
+                    log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
+                }
+            } finally {
+                if (http != null) {
+                    http.disconnect();
+                }
+            }
+        }
+
+        private void updateSigningKey() throws IOException, InvalidKeySpecException {
+            HttpURLConnection http = null;
+            try
+            {
+                http = (HttpURLConnection)jwksUrl.openConnection();
+                http.setRequestMethod("GET");
+                http.setInstanceFollowRedirects(true);
+                int status = http.getResponseCode();
+                if (status == 200) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
+                    for(JsonNode key: keys) {
+                        String kid = key.get("kid").asText();
+                        Decoder b64 = Base64.getDecoder();
+                        BigInteger n = new BigInteger(b64.decode(key.get("n").asText()));
+                        BigInteger e = new BigInteger(b64.decode(key.get("e").asText()));
+                        Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));    
+                        realmPublicKeys.put(kid,pubKey);
+                    }
+                    
+
+                    
+                } else {
+                    log.atSevere().log("Unable to retrieve actual keys. Response code %d",status);
+                }
+            } finally {
+                if (http != null) {
+                    http.disconnect();
+                }
             }
         }
 
@@ -146,7 +194,8 @@ public class OpenIDAccessManager extends RadarAccessManager {
                 return null; // we only deal with RSA keys right now.
             }
             updateKey();
-            return realmPublicKey;
+            Key key = realmPublicKeys.get(header.getKeyId());
+            return key;
         }
     }
 }

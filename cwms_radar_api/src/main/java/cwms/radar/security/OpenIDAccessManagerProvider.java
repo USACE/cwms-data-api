@@ -7,15 +7,15 @@ public class OpenIDAccessManagerProvider implements AccessManagerProvider {
 
     @Override
     public String getName() {
-        return "LoginDotGov";
+        return "OpenID";
     }
 
     @Override
     public RadarAccessManager create() {
-        String realmUrl = System.getProperty("cwms.dataapi.access.openid.realm");
+        String wellKnownUrl = System.getProperty("cwms.dataapi.access.openid.wellKnownUrl");
         String issuer = System.getProperty("cwms.dataapi.access.openid.issuer");
         int timeout = Integer.parseInt(System.getProperty("cwms.dataapi.access.openid.timeout","3600"));
-        return new OpenIDAccessManager(realmUrl,issuer,timeout);
+        return new OpenIDAccessManager(wellKnownUrl,issuer,timeout);
     }
 
 }
