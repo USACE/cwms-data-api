@@ -4,6 +4,7 @@ import static org.jooq.SQLDialect.ORACLE;
 
 import cwms.radar.ApiServlet;
 import cwms.radar.api.errors.AlreadyExists;
+import cwms.radar.api.errors.InvalidItemException;
 import cwms.radar.api.errors.NotFoundException;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
@@ -125,6 +126,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retval = buildAlreadyExists(input);
         } else if (isNullArgument(input)) {
             retval = buildNullArgument(input);
+        } else if (isInvalidItem(input)) {
+            retval = buildInvalidItem(input);
         }
 
         return retval;
@@ -167,6 +170,21 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<Integer> codes = Arrays.asList(20001, 20025, 20034);
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
+
+            retval = matches(sqlException, codes, segments);
+        }
+        return retval;
+    }
+
+    public static boolean isInvalidItem(RuntimeException input) {
+        boolean retval = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+
+            List<Integer> codes = Arrays.asList(20019);
+            List<String> segments = Arrays.asList("INVALID_ITEM");
 
             retval = matches(sqlException, codes, segments);
         }
@@ -259,6 +277,27 @@ public abstract class JooqDao<T> extends Dao<T> {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
                 exception = new IllegalArgumentException(parts[0]);
+            }
+        }
+        return exception;
+    }
+
+    private static InvalidItemException buildInvalidItem(RuntimeException input) {
+        // The cause can be kinda long and include all the line numbers from the pl/sql.
+
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        InvalidItemException exception = new InvalidItemException(cause);
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                exception = new InvalidItemException(parts[0]);
             }
         }
         return exception;
