@@ -53,10 +53,9 @@ services:
       - INSTALLONCE=1
       - QUIET=1
     command: >
-      sh -xc "echo \"begin cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS Users', 'HQ'); cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS User Admins', 'HQ'); end;\" > /tmp/sql.sql &&
-                     echo "/" >> /tmp/sql.sql
-                     echo "quit" >> /tmp/sql.sql
-                    sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/tmp/sql"
+      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC"
+    volumes:
+      - ./compose_files/sql:/setup_sql:ro
     depends_on:
       db:
         condition: service_healthy
@@ -82,7 +81,7 @@ services:
     command: bash -c "keytool -trustcacerts -importcert -alias cda_lab_root -keystore /opt/java/openjdk/jre/lib/security/cacerts -storepass changeit -file /conf/rootca.pem -noprompt && catalina.sh run"
     restart: unless-stopped
     volumes:
-      - ./pki/certs:/conf/
+      - ./compose_files/pki/certs:/conf/
     environment:
       - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
       - RADAR_JDBC_USERNAME=q0webtest
@@ -121,7 +120,7 @@ services:
       - KC_HTTPS_KEY_STORE_FILE=/conf/server.keystore
       - KC_HTTPS_KEY_STORE_PASSWORD=badpassword
     volumes:
-      - ./pki/certs/main.ks:/conf/server.keystore:ro
+      - ./compose_files/pki/certs/main.ks:/conf/server.keystore:ro
       - ./kdata:/opt/keycloak/data:rw
     labels:
       - "traefik.enable=true"
@@ -146,9 +145,9 @@ services:
     expose:
       - "8080"
     volumes:
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yaml:ro
+      - ./compose_files/traefik/traefik.yml:/etc/traefik/traefik.yaml:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - ./pki/certs:/certs:ro
+      - ./compose_files/pki/certs:/certs:ro
     healthcheck:
       test: traefik healthcheck --ping
     labels:
