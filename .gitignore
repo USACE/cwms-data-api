@@ -8,3 +8,4 @@ build
 gradle.properties
 .idea
 kdata
+pki/certs

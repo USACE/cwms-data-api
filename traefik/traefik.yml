@@ -1,0 +1,31 @@
+---
+global:
+  checkNewVersion: true
+
+log:
+  level: WARN
+
+  
+api:
+  insecure: false
+  dashboard: true
+
+ping: {}
+providers:
+  docker:
+    exposedByDefault: false
+    watch: true
+  file:
+    fileName: /etc/traefik/traefik.yaml
+    watch: true
+    
+entrypoints:
+      web-secure: 
+        address: :8443  
+
+tls:  
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/main.crt
+        keyFile: /certs/main.key

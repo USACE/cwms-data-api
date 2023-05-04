@@ -9,9 +9,7 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.HashMap;
@@ -32,6 +30,9 @@ import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SigningKeyResolverAdapter;
+import io.swagger.v3.oas.models.security.OAuthFlow;
+import io.swagger.v3.oas.models.security.OAuthFlows;
+import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
@@ -42,19 +43,18 @@ public class OpenIDAccessManager extends RadarAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private JwtParser jwtParser = null;
     private String wellKnownUrl = null;
+    private OpenIDConfig config = null;
 
     public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {
         this.wellKnownUrl = wellKnownUrl;
         try {
+            config = new OpenIDConfig(new URL(wellKnownUrl));
             jwtParser = Jwts.parserBuilder()
                         .requireIssuer(issuer)
-                        .setSigningKeyResolver(new UrlResolver(wellKnownUrl,realmKeyTimeout))
+                        .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),realmKeyTimeout))
                         .build();
-        } catch (MalformedURLException ex) {
-            log.atSevere().log("Unable to initialize realm.",ex);
-            throw new RuntimeException("Unable to initialized required realm.",ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("This platform does not support RSA encryption. Unable to setup OpenID Manager",ex);
+        } catch (IOException ex) {
+            log.atSevere().withCause(ex).log("Unable to initialize realm.");
         }
     }
 
@@ -76,10 +76,12 @@ public class OpenIDAccessManager extends RadarAccessManager {
         return header.split("\\s+")[1];
     }
 
+    /**
+     * TODO: build from the wellknown information.
+     */
     @Override
     public SecurityScheme getScheme() {
-        return new SecurityScheme().type(Type.OPENIDCONNECT)
-                                   .openIdConnectUrl(wellKnownUrl);
+        return config.getScheme();
     }
 
     @Override
@@ -98,20 +100,16 @@ public class OpenIDAccessManager extends RadarAccessManager {
 
 
     private static class UrlResolver extends SigningKeyResolverAdapter {
-        private URL realmUrl;
         private URL jwksUrl;
         private ZonedDateTime lastCheck;
         private HashMap<String,Key> realmPublicKeys = new HashMap<>();
         private int realmPublicKeyTimeoutMinutes;
         private KeyFactory keyFactory = null; 
 
-        public UrlResolver(String realmUrl, int keyTimeoutMinutes) 
-                throws MalformedURLException, NoSuchAlgorithmException {
-            this.realmUrl = new URL(realmUrl);
+        public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
+            this.jwksUrl = jwksUrl;
             this.realmPublicKeyTimeoutMinutes = keyTimeoutMinutes;
-            updateKey();
-            lastCheck = ZonedDateTime.now();
-            keyFactory = KeyFactory.getInstance("RSA");
+            
         }
 
         /**
@@ -120,41 +118,18 @@ public class OpenIDAccessManager extends RadarAccessManager {
          */
         private void updateKey() {
             if (realmPublicKeys.isEmpty() || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
-                log.atInfo().log("Checking for new key at %s",realmUrl);
+                log.atInfo().log("Checking for new key at %s",jwksUrl);
                 try {
                     realmPublicKeys.clear();
-                    updateJwksUrl();
                     updateSigningKey();
                 } catch (IOException ex) {
-                    log.atSevere().log("Unable to update key. Will continue to use previous key.",ex);
+                    log.atSevere().withCause(ex).log("Unable to update key. Will continue to use previous key.");
                 } catch (InvalidKeySpecException ex) {
-                    log.atSevere().log("New Public Key was not valid. Will continue to use previous key.",ex);
+                    log.atSevere().withCause(ex).log("New Public Key was not valid. Will continue to use previous key.");
                 }
                 lastCheck = ZonedDateTime.now();
             }
-        }
-
-        private void updateJwksUrl() throws IOException {
-            HttpURLConnection http = null;
-            try
-            {
-                http = (HttpURLConnection)realmUrl.openConnection();
-                http.setRequestMethod("GET");
-                http.setInstanceFollowRedirects(true);
-                int status = http.getResponseCode();
-                if (status == 200) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    JsonNode node = mapper.readTree(http.getInputStream());
-                    jwksUrl = new URL(node.get("jwks_uri").asText());
-                } else {
-                    log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
-                }
-            } finally {
-                if (http != null) {
-                    http.disconnect();
-                }
-            }
-        }
+        }        
 
         private void updateSigningKey() throws IOException, InvalidKeySpecException {
             HttpURLConnection http = null;
@@ -175,9 +150,6 @@ public class OpenIDAccessManager extends RadarAccessManager {
                         Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));    
                         realmPublicKeys.put(kid,pubKey);
                     }
-                    
-
-                    
                 } else {
                     log.atSevere().log("Unable to retrieve actual keys. Response code %d",status);
                 }
