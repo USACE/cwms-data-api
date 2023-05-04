@@ -109,7 +109,11 @@ public class OpenIDAccessManager extends RadarAccessManager {
         public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
             this.jwksUrl = jwksUrl;
             this.realmPublicKeyTimeoutMinutes = keyTimeoutMinutes;
-            
+            try {
+                keyFactory = KeyFactory.getInstance("RSA");
+            } catch (NoSuchAlgorithmException ex) {
+                log.atSevere().withCause(ex).log("Unable to initialize key factory.");
+            }
         }
 
         /**
@@ -143,11 +147,14 @@ public class OpenIDAccessManager extends RadarAccessManager {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
                     for(JsonNode key: keys) {
-                        String kid = key.get("kid").asText();
-                        Decoder b64 = Base64.getDecoder();
-                        BigInteger n = new BigInteger(b64.decode(key.get("n").asText()));
-                        BigInteger e = new BigInteger(b64.decode(key.get("e").asText()));
-                        Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));    
+                        String kid = key.get("kid").textValue();
+                        Decoder b64 = Base64.getUrlDecoder(); // https://datatracker.ietf.org/doc/id/draft-jones-json-web-key-01.html#RFC4648
+                        String nStr = key.get("n").textValue();
+                        String eStr = key.get("e").textValue();
+                        log.atInfo().log("Loading Key %s with parameters (n,e) -> (%s,%s)",kid,nStr,eStr);
+                        BigInteger n = new BigInteger(1,b64.decode(nStr));
+                        BigInteger e = new BigInteger(1,b64.decode(eStr));
+                        Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));
                         realmPublicKeys.put(kid,pubKey);
                     }
                 } else {
@@ -163,10 +170,14 @@ public class OpenIDAccessManager extends RadarAccessManager {
         @Override
         public Key resolveSigningKey(JwsHeader header, Claims claims) {
             if (!header.getAlgorithm().toLowerCase().startsWith("rs")) {
+                log.atWarning().log("Request with invalid algorithm '%s'",header.getAlgorithm());
                 return null; // we only deal with RSA keys right now.
             }
             updateKey();
             Key key = realmPublicKeys.get(header.getKeyId());
+            if (key == null) {
+                log.atSevere().log("Key not found for id '%s'",header.getKeyId());
+            }
             return key;
         }
     }

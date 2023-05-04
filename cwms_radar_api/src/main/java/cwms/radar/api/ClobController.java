@@ -33,6 +33,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.io.StringReader;
 import java.util.Objects;
 import java.util.Optional;
@@ -218,7 +220,11 @@ public class ClobController implements CrudHandler {
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
-            tags = {TAG}
+            tags = {TAG},
+            security = {
+                @OpenApiSecurity(name = "OpenIDConnect"),
+                @OpenApiSecurity(name = "ApiKey")
+            } 
     )
     @Override
     public void create(Context ctx) {
