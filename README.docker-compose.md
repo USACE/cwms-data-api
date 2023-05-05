@@ -10,10 +10,11 @@ Due to the nature of the needs of this system it is not possible to just up and 
 
 ## Starting the system
 
-run `docker-compose --env-file <env file> up -d`
+run `docker-compose --env-file <env file> up -d --force-recreate`
 
 The first time this is run it will take ~40 minutes while Oracle Initializes and the schema is installed. Subsequent runs will be faster.
-
+The force recreate is required as we are dumping our local rootca into the java keystore of the data-api image so the query to keycloak 
+can be verified correctly.
 
 ## What is provided.
 

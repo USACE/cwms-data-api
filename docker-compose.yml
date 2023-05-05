@@ -95,9 +95,9 @@ services:
     healthcheck:
       test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
       interval: 1m30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
+      timeout: 1s
+      retries: 10
+      start_period: 2s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.data-api.rule=Host(`cwms-data.localhost`)"

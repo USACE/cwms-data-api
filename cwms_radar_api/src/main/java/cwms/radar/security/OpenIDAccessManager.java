@@ -10,16 +10,26 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
+import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Base64.Decoder;
 
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
+import cwms.radar.ApiServlet;
+import cwms.radar.datasource.ConnectionPreparer;
+import cwms.radar.datasource.ConnectionPreparingDataSource;
+import cwms.radar.datasource.DelegatingConnectionPreparer;
+import cwms.radar.datasource.DirectUserPreparer;
+import cwms.radar.datasource.SessionOfficePreparer;
 import cwms.radar.spi.RadarAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
@@ -27,14 +37,11 @@ import io.javalin.http.Handler;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwsHeader;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SigningKeyResolverAdapter;
-import io.swagger.v3.oas.models.security.OAuthFlow;
-import io.swagger.v3.oas.models.security.OAuthFlows;
-import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 /**
  * This is currently more a placeholder for example than actual implementation
@@ -42,11 +49,11 @@ import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 public class OpenIDAccessManager extends RadarAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private JwtParser jwtParser = null;
-    private String wellKnownUrl = null;
     private OpenIDConfig config = null;
+    private DataSource dataSource = null;
 
-    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {
-        this.wellKnownUrl = wellKnownUrl;
+
+    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {        
         try {
             config = new OpenIDConfig(new URL(wellKnownUrl));
             jwtParser = Jwts.parserBuilder()
@@ -60,15 +67,49 @@ public class OpenIDAccessManager extends RadarAccessManager {
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+        dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         String user = getUserFromToken(ctx);
-        // TODO: prepare user
+        prepareContextWithUser(ctx, user);
         handler.handle(ctx);
     }
 
+
+    /**
+     * Allows connection to be correctly setup. User name already verified 
+     * by signed JWT. Just assert to system.
+     * 
+     * @param ctx javalin context if additional parameters are required.
+     * @param user username, which is ignored except a log message
+     */
+    private void prepareContextWithUser(Context ctx, String user) throws SQLException {
+        
+
+        ConnectionPreparer userPreparer = new DirectUserPreparer(user);
+        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
+        DelegatingConnectionPreparer apiPreparer = 
+            new DelegatingConnectionPreparer(officePrepare,userPreparer);
+
+        if (dataSource instanceof ConnectionPreparingDataSource) {
+            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
+            ConnectionPreparer existingPreparer = cpDs.getPreparer();
+
+            // Have it do our extra step last.
+            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, apiPreparer));
+        } else {
+            ctx.attribute(ApiServlet.DATA_SOURCE, 
+                          new ConnectionPreparingDataSource(apiPreparer, dataSource));
+        }
+    }
+
     private String getUserFromToken(Context ctx) {
-        Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
-        String edipi = token.getBody().get("edipi",String.class);
-        return edipi;
+        try {
+            Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
+            String username = token.getBody().get("preferred_username",String.class);
+            return username;
+        } catch (JwtException ex) {
+            throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
+
+        }
     }
 
     private String getToken(Context ctx) {
