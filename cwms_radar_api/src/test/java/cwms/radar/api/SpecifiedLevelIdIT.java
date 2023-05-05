@@ -52,12 +52,12 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestCRD" + Instant.now().getEpochSecond(), OFFICE, "CDA Integration Test");
-        String serializedTs = om.writeValueAsString(specifiedLevel);
+        String serializedLevel = om.writeValueAsString(specifiedLevel);
         //Create
         given()
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .body(serializedTs)
+            .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
             .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
             .when()
@@ -127,13 +127,13 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         long epochSeconds = Instant.now().getEpochSecond();
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestUpdate" + epochSeconds, OFFICE, "CDA Integration Test");
-        String serializedTs = om.writeValueAsString(specifiedLevel);
+        String serializedLevel = om.writeValueAsString(specifiedLevel);
         String newId = "Test" + (epochSeconds + 1);
         //Create
         given()
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .body(serializedTs)
+            .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
             .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
             .when()
