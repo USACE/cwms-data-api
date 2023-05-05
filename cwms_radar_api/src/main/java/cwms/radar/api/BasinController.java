@@ -1,10 +1,11 @@
 package cwms.radar.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.UNIT;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.enums.UnitSystem;
@@ -32,32 +33,26 @@ import org.jooq.DSLContext;
 
 public class BasinController implements CrudHandler {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
-    public final String TAG = "Basins-Beta";
+    public static final String TAG = "Basins-Beta";
 
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
-    private final Histogram requestResultSize;
+
 
     public BasinController(MetricRegistry metrics) {
         this.metrics = metrics;
-        String className = this.getClass().getName();
-        getAllRequests = metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = metrics.histogram((name(className, "results", "size")));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", required = false, description = "Specifies the"
+                    @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
                             + " owning office of the basin whose data is to be included in the "
                             + "response. If this field is not specified, matching basin "
                             + "information from all offices shall be returned."),
-                    @OpenApiParam(name = "unit", required = false, description = "Specifies the "
+                    @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
                             + "unit or unit system of the response. Valid values for the unit "
                             + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
                             + "values will be in the default English units for their parameters. "
@@ -80,12 +75,12 @@ public class BasinController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        getAllRequests.mark();
-        try (final Timer.Context timeContext = getAllRequestsTime.time();
+
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             String units =
-                    ctx.queryParamAsClass("unit", String.class).getOrDefault(UnitSystem.EN.value());
-            String office = ctx.queryParam("office");
+                    ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
+            String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -104,11 +99,11 @@ public class BasinController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", required = false, description = "Specifies the"
+                    @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
                             + " owning office of the basin whose data is to be included in the "
                             + "response. If this field is not specified, matching basin "
                             + "information from all offices shall be returned."),
-                    @OpenApiParam(name = "unit", required = false, description = "Specifies the "
+                    @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
                             + "unit or unit system of the response. Valid values for the unit "
                             + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
                             + "values will be in the default English units for their parameters. "
@@ -131,12 +126,12 @@ public class BasinController implements CrudHandler {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String basinId) {
-        getOneRequest.mark();
-        try (final Timer.Context timeContext = getAllRequestsTime.time();
+
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             String units =
-                    ctx.queryParamAsClass("unit", String.class).getOrDefault(UnitSystem.EN.value());
-            String office = ctx.queryParam("office");
+                    ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
+            String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);

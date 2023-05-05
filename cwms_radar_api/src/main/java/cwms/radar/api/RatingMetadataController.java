@@ -2,6 +2,18 @@ package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+import static cwms.radar.api.Controllers.END;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RATING_ID_MASK;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.START;
+import static cwms.radar.api.Controllers.TIMEZONE;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -28,13 +40,7 @@ import org.jooq.DSLContext;
 
 public class RatingMetadataController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingMetadataController.class.getName());
-    public static final String TIMEZONE = "timezone";
-    public static final String START = "start";
-    public static final String END = "end";
-    public static final String PAGE = "page";
-    public static final String PAGE_SIZE = "page-size";
-    public static final String OFFICE = "office";
-    public static final String RATING_ID_MASK = "rating-id-mask";
+
     private final MetricRegistry metrics;
 
     private static final int DEFAULT_PAGE_SIZE = 50;
@@ -44,7 +50,7 @@ public class RatingMetadataController implements CrudHandler {
     public RatingMetadataController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -121,7 +127,7 @@ public class RatingMetadataController implements CrudHandler {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-        try (final Timer.Context timeContext = markAndTime("getAll");
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             RatingMetadataDao dao = getDao(dsl);
 
@@ -147,7 +153,7 @@ public class RatingMetadataController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String ratingId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
         // generated methods, choose Tools | Specs.
     }
 
@@ -160,21 +166,21 @@ public class RatingMetadataController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
         // generated methods, choose Tools | Specs.
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
         // generated methods, choose Tools | Specs.
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
         // generated methods, choose Tools | Specs.
     }
 

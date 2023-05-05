@@ -48,7 +48,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
     public static final String OFFICE = "SPK";
 
     @Test
-    public void test_create_read_delete() throws JsonProcessingException {
+    void test_create_read_delete() throws JsonProcessingException {
         ObjectMapper om = JsonV2.buildObjectMapper();
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestCRD" + Instant.now().getEpochSecond(), OFFICE, "CDA Integration Test");
@@ -59,7 +59,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -74,7 +74,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
-            .queryParam(SpecifiedLevelController.TEMPLATE_ID_MASK, specifiedLevel.getId())
+            .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -92,7 +92,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
-            .queryParam(SpecifiedLevelController.TEMPLATE_ID_MASK, specifiedLevel.getId())
+            .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -108,7 +108,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
-            .queryParam(SpecifiedLevelController.TEMPLATE_ID_MASK, specifiedLevel.getId())
+            .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -122,7 +122,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
 
 
     @Test
-    public void test_update() throws JsonProcessingException {
+    void test_update() throws JsonProcessingException {
         ObjectMapper om = JsonV2.buildObjectMapper();
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         long epochSeconds = Instant.now().getEpochSecond();
@@ -135,7 +135,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -148,8 +148,8 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
-            .queryParam(SpecifiedLevelController.SPECIFIED_LEVEL_ID, newId)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.SPECIFIED_LEVEL_ID, newId)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -163,8 +163,8 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .queryParam("office", OFFICE)
-            .queryParam(SpecifiedLevelController.TEMPLATE_ID_MASK, newId)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.TEMPLATE_ID_MASK, newId)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -178,7 +178,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
 
 
     @Test
-    public void test_update_does_not_exist() throws JsonProcessingException {
+    void test_update_does_not_exist() throws JsonProcessingException {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         long epochSeconds = Instant.now().getEpochSecond();
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("BadUpdate" + epochSeconds, OFFICE, "CDA Integration Test");
@@ -187,8 +187,8 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
-            .queryParam(SpecifiedLevelController.SPECIFIED_LEVEL_ID, specifiedLevel.getId())
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.SPECIFIED_LEVEL_ID, specifiedLevel.getId())
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -200,7 +200,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
 
 
     @Test
-    public void test_delete_does_not_exist() throws JsonProcessingException {
+    void test_delete_does_not_exist() throws JsonProcessingException {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         long epochSeconds = Instant.now().getEpochSecond();
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestBadDelete" + epochSeconds, OFFICE, "CDA Integration Test");
@@ -209,7 +209,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(SpecifiedLevelController.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE)
             .when()
             .redirects().follow(true)
             .redirects().max(3)

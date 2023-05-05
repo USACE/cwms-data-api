@@ -1,6 +1,25 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.CLOB_ID;
+import static cwms.radar.api.Controllers.CURSOR;
+import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.IGNORE_NULLS;
+import static cwms.radar.api.Controllers.INCLUDE_VALUES;
+import static cwms.radar.api.Controllers.INCLUDE_VALUES2;
+import static cwms.radar.api.Controllers.LIKE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGESIZE2;
+import static cwms.radar.api.Controllers.PAGESIZE3;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.UPDATE;
+import static cwms.radar.api.Controllers.queryParamAsClass;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -11,7 +30,6 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.ClobDao;
 import cwms.radar.data.dao.JooqDao;
@@ -47,17 +65,16 @@ import org.jooq.DSLContext;
 public class ClobController implements CrudHandler {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 20;
-    public static final String CLOB_ID = "clob-id";
     public static final String TAG = "Clob";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
-    public static final String OFFICE = "office";
+
 
     public ClobController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = ClobController.class.getName();
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -74,37 +91,37 @@ public class ClobController implements CrudHandler {
                             description = "Specifies the owning office. If this field is not "
                                     + "specified, matching information from all offices shall be "
                                     + "returned."),
-                    @OpenApiParam(name = "page",
+                    @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque"
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = "cursor",
+                    @OpenApiParam(name = CURSOR,
                             deprecated = true,
                             description = "Deprecated. Use 'page' instead."
                     ),
-                    @OpenApiParam(name = "page-size",
+                    @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. Default "
                                     + defaultPageSize + "."
                     ),
-                    @OpenApiParam(name = "pageSize",
+                    @OpenApiParam(name = PAGESIZE3,
                             deprecated = true,
                             type = Integer.class,
                             description = "Deprecated, use 'page-size' instead."
                     ),
-                    @OpenApiParam(name = "include-values",
+                    @OpenApiParam(name = INCLUDE_VALUES,
                             type = Boolean.class,
                             description = "Do you want the value associated with this particular "
                                     + "clob (default: false)"
                     ),
-                    @OpenApiParam(name = "includeValues",
+                    @OpenApiParam(name = INCLUDE_VALUES2,
                             deprecated = true,
                             type = Boolean.class,
                             description = "Deprecated, use 'include-values' instead."
                     ),
-                    @OpenApiParam(name = "like",
+                    @OpenApiParam(name = LIKE,
                             description = "Posix regular expression matching against the id"
                     )
             },
@@ -122,7 +139,7 @@ public class ClobController implements CrudHandler {
     public void getAll(Context ctx) {
 
         try (
-                final Timer.Context ignored = markAndTime("getAll");
+                final Timer.Context ignored = markAndTime(GET_ALL);
                 DSLContext dsl = getDslContext(ctx)
         ) {
             String office = ctx.queryParam(OFFICE);
@@ -131,8 +148,8 @@ public class ClobController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
-                    String.class, "", metrics, name(ClobController.class.getName(), "getAll"));
+            String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
+                    String.class, "", metrics, name(ClobController.class.getName(), GET_ALL));
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
@@ -140,14 +157,14 @@ public class ClobController implements CrudHandler {
                 return;
             }
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
-                            "pagesize"}, Integer.class, defaultPageSize, metrics,
-                    name(ClobController.class.getName(), "getAll"));
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
+                            PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+                    name(ClobController.class.getName(), GET_ALL));
 
-            boolean includeValues = Controllers.queryParamAsClass(ctx, new String[]{"include-values",
-                            "includeValues"}, Boolean.class, false, metrics,
-                    name(ClobController.class.getName(), "getAll"));
-            String like = ctx.queryParamAsClass("like", String.class).getOrDefault(".*");
+            boolean includeValues = queryParamAsClass(ctx, new String[]{INCLUDE_VALUES,
+                            INCLUDE_VALUES2}, Boolean.class, false, metrics,
+                    name(ClobController.class.getName(), GET_ALL));
+            String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             ClobDao dao = new ClobDao(dsl);
             Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);
@@ -178,7 +195,7 @@ public class ClobController implements CrudHandler {
     public void getOne(Context ctx, @NotNull String clobId) {
 
         try (
-                final Timer.Context ignored = markAndTime("getOne");
+                final Timer.Context ignored = markAndTime(GET_ONE);
                 DSLContext dsl = getDslContext(ctx)
         ) {
             ClobDao dao = new ClobDao(dsl);
@@ -214,7 +231,7 @@ public class ClobController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = "fail-if-exists", type = Boolean.class,
+                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
@@ -227,7 +244,7 @@ public class ClobController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
-            boolean failIfExists = ctx.queryParamAsClass("fail-if-exists", Boolean.class).getOrDefault(true);
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
             try {
                 Clob clob = deserialize(ctx.body(), formatHeader);
@@ -290,7 +307,7 @@ public class ClobController implements CrudHandler {
                             description = "Specifies the id of the clob to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = "ignore-nulls", type = Boolean.class,
+                    @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
                             description = "If true, null and empty fields in the provided clob "
                                     + "will be ignored and the existing value of those fields "
                                     + "left in place. Default: true")
@@ -308,9 +325,9 @@ public class ClobController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String clobId) {
 
-        boolean ignoreNulls = ctx.queryParamAsClass("ignore-nulls", Boolean.class).getOrDefault(true);
+        boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
 
-        try (final Timer.Context ignored = markAndTime("update");
+        try (final Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
 
             String reqContentType = ctx.req.getContentType();
@@ -379,7 +396,7 @@ public class ClobController implements CrudHandler {
     public void delete(Context ctx, @NotNull String clobId) {
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime("delete");
+        try (final Timer.Context ignored = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
             ClobDao dao = new ClobDao(dsl);
             dao.delete(office, clobId);
