@@ -60,6 +60,7 @@ import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.io.IOException;
@@ -67,6 +68,7 @@ import java.io.PrintWriter;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.management.ServiceNotFoundException;
@@ -362,8 +364,16 @@ public class ApiServlet extends HttpServlet {
 
         RadarAccessManager am = buildAccessManager(provider);
         Components components = new Components();
+        final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
         am.getContainedManagers().forEach((manager)->{
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
+            SecurityRequirement req = new SecurityRequirement();
+            if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
+                
+                req.addList(manager.getName());
+                secReqs.add(req);
+            }
+            
         });
         
         config.accessManager(am);
@@ -377,13 +387,8 @@ public class ApiServlet extends HttpServlet {
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {                
                 api.getPaths().forEach((key,path) -> {
-                    /* clear the lock icon from the GET handlers to reduce user confusion */
-                    Operation op = path.getGet();
-                    if (op != null) {
-                        logger.atInfo().log("removing security constraint for GET on " + key);
-                        op.setSecurity(new ArrayList<>());
-                    }
-                });                    
+                    setSecurityRequirements(key,path,secReqs);
+                });
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -396,6 +401,23 @@ public class ApiServlet extends HttpServlet {
             .activateAnnotationScanningFor("cwms.radar.api");
         config.registerPlugin(new OpenApiPlugin(ops));
         
+    }
+
+    private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
+        /* clear the lock icon from the GET handlers to reduce user confusion */
+        Operation op = path.getGet();
+        logger.atFinest().log("setting security constraints for " + key);
+        setSecurity(path.getGet(), new ArrayList<>());
+        setSecurity(path.getDelete(),secReqs);
+        setSecurity(path.getPost(), secReqs);
+        setSecurity(path.getPut(), secReqs);
+        setSecurity(path.getPatch(),secReqs);
+    }
+
+    private static void setSecurity(Operation op,List<SecurityRequirement> reqs) {
+        if (op != null) {
+            op.setSecurity(reqs);
+        }
     }
 
     private static String getAccessManagerName() {
