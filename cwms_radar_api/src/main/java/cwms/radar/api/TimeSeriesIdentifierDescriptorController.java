@@ -51,6 +51,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     public static final String ACTIVE = "active";
     public static final String INTERVAL_OFFSET = "interval-offset";
     public static final String METHOD = "method";
+    public static final String FAIL_IF_EXISTS = "fail-if-exists";
     private static final int DEFAULT_PAGE_SIZE = 500;
 
     private final MetricRegistry metrics;
@@ -211,7 +212,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = "fail-if-exists", type = Boolean.class,
+                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
@@ -234,10 +235,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             boolean versioned = false;
             Number numForwards = null;
             Number numBackwards = null;
-            boolean failIfExists = false;
-
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             dao.create(tsid, versioned, numForwards, numBackwards, failIfExists);
-
             ctx.status(HttpServletResponse.SC_CREATED);
         } catch (JsonProcessingException ex) {
             RadarError re = new RadarError("Failed to process create request");
@@ -315,7 +314,6 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
                 dao.update(office, timeseriesId, intervalOffset, forward, backward, active);
             }
-
         }
 
     }
