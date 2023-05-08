@@ -1,10 +1,15 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.FORMAT;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -36,26 +41,24 @@ import org.jooq.DSLContext;
 public class OfficeController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(OfficeController.class.getName());
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
 
     public OfficeController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = OfficeController.class.getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
 
     @OpenApi(
-            queryParams = @OpenApiParam(name = "format",
+            queryParams = @OpenApiParam(name = FORMAT,
                     deprecated = true,
                     description = "(Deprecated in favor of Accept header) Specifies the encoding "
                             + "format of the response. Valid value for the format field for this "
@@ -78,14 +81,12 @@ public class OfficeController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
 
-        try (
-                final Timer.Context timeContext = getAllRequestsTime.time();
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
                 DSLContext dsl = getDslContext(ctx)) {
             OfficeDao dao = new OfficeDao(dsl);
             List<Office> offices = dao.getOffices();
-            String formatParm = ctx.queryParamAsClass("format", String.class).getOrDefault("");
+            String formatParm = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
 
@@ -98,9 +99,9 @@ public class OfficeController implements CrudHandler {
     }
 
     @OpenApi(
-            pathParams = @OpenApiParam(name = "office", description = "The 3 letter office ID you"
+            pathParams = @OpenApiParam(name = OFFICE, description = "The 3 letter office ID you"
                     + " want more information for"),
-            queryParams = @OpenApiParam(name = "format",
+            queryParams = @OpenApiParam(name = FORMAT,
                     deprecated = true,
                     description = "(Deprecated in favor of Accept header) Specifies the encoding "
                             + "format of the response. Valid value for the format field for this "
@@ -123,14 +124,13 @@ public class OfficeController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String officeId) {
-        getOneRequest.mark();
         try (
-                final Timer.Context timeContext = getOneRequestTime.time();
+                final Timer.Context timeContext = markAndTime(GET_ONE);
                 DSLContext dsl = getDslContext(ctx)) {
             OfficeDao dao = new OfficeDao(dsl);
             Optional<Office> office = dao.getOfficeById(officeId);
             if (office.isPresent()) {
-                String formatParm = ctx.queryParamAsClass("format", String.class).getOrDefault("");
+                String formatParm = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
                 String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
                 String result = Formats.format(contentType, office.get());
@@ -139,7 +139,7 @@ public class OfficeController implements CrudHandler {
                 requestResultSize.update(result.length());
             } else {
                 Map<String, String> map = new HashMap<>();
-                map.put("office", "An office with that name does not exist");
+                map.put(OFFICE, "An office with that name does not exist");
                 RadarError re = new RadarError("Not Found", map);
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }

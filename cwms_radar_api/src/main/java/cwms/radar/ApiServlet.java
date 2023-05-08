@@ -39,6 +39,7 @@ import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
+import cwms.radar.api.Controllers;
 import cwms.radar.api.LevelsController;
 import cwms.radar.api.LocationCategoryController;
 import cwms.radar.api.LocationController;
@@ -296,7 +297,7 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles);
         radarCrud("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles);
-        radarCrud("/levels/{" + LevelsController.LEVEL_ID + "}",
+        radarCrud("/levels/{" + Controllers.LEVEL_ID + "}",
                 new LevelsController(metrics), requiredRoles);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);

@@ -25,6 +25,16 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+
+import static cwms.radar.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.SPECIFIED_LEVEL_ID;
+import static cwms.radar.api.Controllers.TEMPLATE_ID_MASK;
+import static cwms.radar.api.Controllers.UPDATE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -56,11 +66,6 @@ import org.jooq.DSLContext;
 
 
 public class SpecifiedLevelController implements CrudHandler {
-    static final String OFFICE = "office";
-    static final String TEMPLATE_ID_MASK = "template-id-mask";
-    static final String SPECIFIED_LEVEL_ID = "specified-level-id";
-    static final String FAIL_IF_EXISTS = "fail-if-exists";
-
     private static final Logger logger = Logger.getLogger(SpecifiedLevelController.class.getName());
     private static final String TAG = "Specified Levels";
     private final MetricRegistry metrics;
@@ -70,7 +75,7 @@ public class SpecifiedLevelController implements CrudHandler {
     public SpecifiedLevelController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     @NotNull
@@ -110,7 +115,7 @@ public class SpecifiedLevelController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (Timer.Context timeContext = markAndTime("getAll");
+        try (Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             SpecifiedLevelDao dao = getDao(dsl);
             List<SpecifiedLevel> levels = dao.getSpecifiedLevels(office, templateIdMask);
@@ -133,7 +138,7 @@ public class SpecifiedLevelController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String templateId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
         // generated methods, choose Tools | Specs.
     }
 
@@ -183,7 +188,7 @@ public class SpecifiedLevelController implements CrudHandler {
         tags = {TAG}
     )
     public void update(Context ctx, String oldSpecifiedLevelId) {
-        try (Timer.Context ignored = markAndTime("update");
+        try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             SpecifiedLevelDao dao = getDao(dsl);
             String newSpecifiedLevelId = ctx.queryParam(SPECIFIED_LEVEL_ID);
@@ -208,7 +213,7 @@ public class SpecifiedLevelController implements CrudHandler {
         tags = {TAG}
     )
     public void delete(Context ctx, String specifiedLevelId) {
-        try (Timer.Context ignored = markAndTime("update");
+        try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             SpecifiedLevelDao dao = getDao(dsl);
             String office = ctx.queryParam(OFFICE);

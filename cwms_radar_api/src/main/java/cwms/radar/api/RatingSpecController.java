@@ -2,6 +2,18 @@ package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.METHOD;
+import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RATING_ID;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -14,6 +26,7 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -29,6 +42,7 @@ import org.jooq.DSLContext;
 
 public class RatingSpecController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingSpecController.class.getName());
+
     private final MetricRegistry metrics;
 
     private static final int DEFAULT_PAGE_SIZE = 100;
@@ -38,7 +52,7 @@ public class RatingSpecController implements CrudHandler {
     public RatingSpecController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -52,20 +66,20 @@ public class RatingSpecController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", description = "Specifies the owning office of "
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                             + "the Rating Specs whose data is to be included in the response. If "
                             + "this field is not specified, matching rating information from all "
                             + "offices shall be returned."),
                     @OpenApiParam(name = "rating-id-mask", description = "RegExp that specifies "
                             + "the rating IDs to be included in the response. If this field is "
                             + "not specified, all Rating Specs shall be returned."),
-                    @OpenApiParam(name = "page",
+                    @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque"
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = "page-size", type = Integer.class,
+                    @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                             description = "How many entries per page returned. "
                             + "Default " + DEFAULT_PAGE_SIZE + "."
                     ),
@@ -80,16 +94,16 @@ public class RatingSpecController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
+        String cursor = ctx.queryParamAsClass(PAGE, String.class).getOrDefault("");
         int pageSize =
-                ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
+                ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
-        String office = ctx.queryParam("office");
+        String office = ctx.queryParam(OFFICE);
         String ratingIdMask = ctx.queryParam("rating-id-mask");
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (final Timer.Context timeContext = markAndTime("getAll");
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
             RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office,
@@ -112,11 +126,11 @@ public class RatingSpecController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "rating-id", required = true, description = "Specifies "
+                    @OpenApiParam(name = RATING_ID, required = true, description = "Specifies "
                             + "the rating-id of the Rating Spec to be included in the response")
             },
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the Rating Specs whose data is to be included in "
                             + "the response. If this field is not specified, matching rating "
                             + "information from all offices shall be returned."),
@@ -135,9 +149,9 @@ public class RatingSpecController implements CrudHandler {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-        String office = ctx.queryParam("office");
+        String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context timeContext = markAndTime("getOne");
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
 

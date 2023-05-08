@@ -1,6 +1,29 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.BEGIN;
+import static cwms.radar.api.Controllers.CASCADE_DELETE;
+import static cwms.radar.api.Controllers.DATE;
+import static cwms.radar.api.Controllers.DATUM;
+import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.EFFECTIVE_DATE;
+import static cwms.radar.api.Controllers.END;
+import static cwms.radar.api.Controllers.FORMAT;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.LEVEL_ID;
+import static cwms.radar.api.Controllers.LEVEL_ID_MASK;
+import static cwms.radar.api.Controllers.NAME;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.TIMEZONE;
+import static cwms.radar.api.Controllers.UNIT;
+import static cwms.radar.api.Controllers.UPDATE;
+import static cwms.radar.api.Controllers.VERSION;
+import static cwms.radar.api.Controllers.queryParamAsClass;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -53,12 +76,7 @@ import org.jooq.DSLContext;
 
 public class LevelsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
-    public static final String EFFECTIVE_DATE = "effective-date";
-    public static final String OFFICE = "office";
-    public static final String DATE = "date";
-    public static final String LEVEL_ID = "level-id";
-    public static final String LEVEL_ID_MASK = "level-id-mask";
-    public static final String NAME = "name";
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -69,8 +87,7 @@ public class LevelsController implements CrudHandler {
     public LevelsController(MetricRegistry metrics) {
         this.metrics = metrics;
 
-        requestResultSize = this.metrics.histogram((name(this.getClass().getName(), "results",
-                "size")));
+        requestResultSize = this.metrics.histogram((name(this.getClass().getName(), RESULTS, SIZE)));
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -129,7 +146,7 @@ public class LevelsController implements CrudHandler {
                             + "location level id of the Location Level to be deleted"),
             },
             queryParams = {
-                    @OpenApiParam(name = "cascade-delete", type = Boolean.class),
+                    @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class),
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                             + "the location level whose data is to be deleted. If this field is "
                             + "not specified, matching location level information will be deleted"
@@ -147,13 +164,13 @@ public class LevelsController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime("delete"); DSLContext dsl =
+        try (final Timer.Context timeContext = markAndTime(DELETE); DSLContext dsl =
                 getDslContext(ctx)) {
             String office = ctx.queryParam(OFFICE);
-            String dateString = Controllers.queryParamAsClass(ctx,
+            String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
-                    name(LevelsController.class.getName(), "delete"));
-            Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam("cascade-delete"));
+                    name(LevelsController.class.getName(), DELETE));
+            Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam(CASCADE_DELETE));
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = dateString != null
                     ? zonedDateTimeAdapter.unmarshal(dateString) : null;
@@ -178,7 +195,7 @@ public class LevelsController implements CrudHandler {
                             + "office of the location level(s) whose data is to be included in the"
                             + " response. If this field is not specified, matching location level "
                             + "information from all offices shall be returned."),
-                    @OpenApiParam(name = "unit", description = "Specifies the unit or unit system"
+                    @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
                             + " of the response. Valid values for the unit field are:\r\n 1. EN. "
                             + "  Specifies English unit system.  Location level values will be in"
                             + " the default English units for their parameters.\r\n2. SI.   "
@@ -186,25 +203,25 @@ public class LevelsController implements CrudHandler {
                             + "the default SI units for their parameters.\r\n3. Other. Any unit "
                             + "returned in the response to the units URI request that is "
                             + "appropriate for the requested parameters."),
-                    @OpenApiParam(name = "datum", description = "Specifies the elevation datum of"
+                    @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                             + " the response. This field affects only elevation location levels. "
                             + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
                             + "values will in the specified or default units above the NAVD-88 "
                             + "datum.\r\n2. NGVD29.  The elevation values will be in the "
                             + "specified or default units above the NGVD-29 datum."),
-                    @OpenApiParam(name = "begin", description = "Specifies the start of the time "
+                    @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
                             + "window for data to be included in the response. If this field is "
                             + "not specified, any required time window begins 24 hours prior to "
                             + "the specified or default end time."),
-                    @OpenApiParam(name = "end", description = "Specifies the end of the time "
+                    @OpenApiParam(name = END, description = "Specifies the end of the time "
                             + "window for data to be included in the response. If this field is "
                             + "not specified, any required time window ends at the current time"),
-                    @OpenApiParam(name = "timezone", description = "Specifies the time zone of "
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                             + "the values of the begin and end fields (unless otherwise "
                             + "specified), as well as the time zone of any times in the response."
                             + " If this field is not specified, the default time zone of UTC "
                             + "shall be used."),
-                    @OpenApiParam(name = "format", description = "Specifies the encoding format "
+                    @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
                             + "of the response. Requests specifying an Accept header:"
                             + Formats.JSONV2 + " must not include this field. "
                             + "Valid format field values for this URI are:\r\n"
@@ -213,10 +230,10 @@ public class LevelsController implements CrudHandler {
                             + "3.    xml\r\n"
                             + "4.    wml2 (only if name field is specified)\r\n"
                             + "5.    json (default)\r\n"),
-                    @OpenApiParam(name = "page", description = "This identifies where in the "
+                    @OpenApiParam(name = PAGE, description = "This identifies where in the "
                             + "request you are. This is an opaque value, and can be obtained from "
                             + "the 'next-page' value in the response."),
-                    @OpenApiParam(name = "page-size", type = Integer.class, description = "How "
+                    @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
                             + "many entries per page returned. Default " + defaultPageSize + ".")},
             responses = {
                     @OpenApiResponse(status = "200", content = {
@@ -230,33 +247,33 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("getAll");
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
-            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format);
-            String version = contentType.getParameters().get("version");
+            String version = contentType.getParameters().get(VERSION);
 
-            String levelIdMask = Controllers.queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK,
+            String levelIdMask = queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK,
                     NAME}, String.class, null, metrics,
-                    name(LevelsController.class.getName(),"getAll"));
+                    name(LevelsController.class.getName(), GET_ALL));
 
             String office = ctx.queryParam(OFFICE);
-            String unit = ctx.queryParam("unit");
-            String datum = ctx.queryParam("datum");
-            String begin = ctx.queryParam("begin");
-            String end = ctx.queryParam("end");
+            String unit = ctx.queryParam(UNIT);
+            String datum = ctx.queryParam(DATUM);
+            String begin = ctx.queryParam(BEGIN);
+            String end = ctx.queryParam(END);
 
-            String timezone = ctx.queryParamAsClass("timezone", String.class)
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                     .getOrDefault("UTC");
 
             if ("2".equals(version)) {
 
-                String cursor = ctx.queryParamAsClass("page", String.class)
+                String cursor = ctx.queryParamAsClass(PAGE, String.class)
                         .getOrDefault("");
-                int pageSize = ctx.queryParamAsClass("page-size", Integer.class)
+                int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
                         .getOrDefault(defaultPageSize);
 
                 ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
@@ -344,11 +361,11 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String levelId) {
         String office = ctx.queryParam(OFFICE);
-        String dateString = Controllers.queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
+        String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
-                        "getOne"));
+                        GET_ONE));
 
-        try (final Timer.Context timeContext = markAndTime("getOne");
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
@@ -393,11 +410,11 @@ public class LevelsController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime("update")) {
+        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
 
-            String dateString = Controllers.queryParamAsClass(ctx,
+            String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
-                    name(LevelsController.class.getName(), "update"));
+                    name(LevelsController.class.getName(), UPDATE));
 
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);

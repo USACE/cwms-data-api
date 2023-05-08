@@ -1,10 +1,15 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.CATEGORY_ID;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -31,24 +36,22 @@ public class LocationCategoryController implements CrudHandler {
     private static final String TAG = "Location Categories-Beta";
 
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
     public LocationCategoryController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "office", description = "Specifies the owning office of the "
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                     + "location category(ies) whose data is to be included in the response. If "
                     + "this field is not specified, matching location category information from "
                     + "all offices shall be returned."),},
@@ -64,11 +67,11 @@ public class LocationCategoryController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
-        try (final Timer.Context timeContext = getAllRequestsTime.time();
+
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
 
             List<LocationCategory> cats = dao.getLocationCategories(office);
 
@@ -100,11 +103,11 @@ public class LocationCategoryController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "category-id", required = true, description = "Specifies"
+                    @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
                             + " the Category whose data is to be included in the response."),
             },
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the Location Category whose data is to be "
                             + "included in the response."),
             },
@@ -120,11 +123,11 @@ public class LocationCategoryController implements CrudHandler {
             tags = {TAG})
     @Override
     public void getOne(Context ctx, String categoryId) {
-        getOneRequest.mark();
-        try (final Timer.Context timeContext = getOneRequestTime.time();
+
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
 
             Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
             if (grp.isPresent()) {

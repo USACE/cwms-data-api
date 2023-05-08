@@ -1,6 +1,22 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.AT;
+import static cwms.radar.api.Controllers.BEGIN;
+import static cwms.radar.api.Controllers.DATUM;
+import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.END;
+import static cwms.radar.api.Controllers.FORMAT;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.METHOD;
+import static cwms.radar.api.Controllers.NAME;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.TIMEZONE;
+import static cwms.radar.api.Controllers.UNIT;
+import static cwms.radar.api.Controllers.UPDATE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -40,16 +56,7 @@ import org.jooq.DSLContext;
 
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
-    public static final String OFFICE = "office";
-    public static final String NAME = "name";
-    public static final String UNIT = "unit";
-    public static final String DATUM = "datum";
-    public static final String AT = "at";
-    public static final String BEGIN = "begin";
-    public static final String END = "end";
-    public static final String TIMEZONE = "timezone";
-    public static final String FORMAT = "format";
-    public static final String METHOD = "method";
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -62,7 +69,7 @@ public class RatingController implements CrudHandler {
     public RatingController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     private static RatingSet.DatabaseLoadMethod getDatabaseLoadMethod(String input) {
@@ -153,7 +160,7 @@ public class RatingController implements CrudHandler {
     public void delete(Context ctx, @NotNull String ratingSpecId) {
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime("delete");
+        try (final Timer.Context ignored = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
             ratingDao.delete(office, ratingSpecId);
@@ -223,7 +230,7 @@ public class RatingController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime("getAll");
+        try (final Timer.Context ignored = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
 
@@ -303,7 +310,7 @@ public class RatingController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String rating) {
 
-        try (final Timer.Context ignored = markAndTime("getOne")) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
@@ -402,7 +409,7 @@ public class RatingController implements CrudHandler {
             }, required = true), method = HttpMethod.PUT, path = "/ratings", tags = {"Ratings"})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
-        try (final Timer.Context ignored = markAndTime("update");
+        try (final Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
 
