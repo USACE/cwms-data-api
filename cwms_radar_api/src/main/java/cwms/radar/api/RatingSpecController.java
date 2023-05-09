@@ -25,7 +25,9 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.CREATE;
 import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.radar.api.Controllers.GET_ALL;
 import static cwms.radar.api.Controllers.GET_ONE;
 import static cwms.radar.api.Controllers.METHOD;
@@ -41,6 +43,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.JooqDao;
+import cwms.radar.data.dao.JsonRatingUtils;
 import cwms.radar.data.dao.RatingSpecDao;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.data.dto.rating.RatingSpecs;
@@ -53,11 +56,14 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.transform.TransformerException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -202,11 +208,57 @@ public class RatingSpecController implements CrudHandler {
     }
 
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Create new Rating Specification",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = RatingSpec.class, type = Formats.XMLV2)
+            },
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                description = "Create will fail if provided ID already exists. Default: true")
+        },
+        method = HttpMethod.POST,
+        tags = {TAG}
+    )
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
-        // generated methods, choose Tools | Specs.
+        try (final Timer.Context ignored = markAndTime(CREATE);
+             DSLContext dsl = getDslContext(ctx)) {
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
+            String body = ctx.body();
+            String xml = translateToXml(body, formatHeader);
+            RatingSpecDao dao = new RatingSpecDao(dsl);
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            dao.create(xml, failIfExists);
+            ctx.status(HttpServletResponse.SC_CREATED);
+        }
+    }
+
+    private static String translateToXml(String body, String contentType) {
+        String retval;
+
+        if ((Formats.XML).equals(contentType)) {
+            retval = body;
+        } else if ((Formats.JSON).equals(contentType)) {
+            retval = translateJsonToXml(body);
+        } else {
+            throw new IllegalArgumentException("Unexpected contentType format:" + contentType);
+        }
+
+        return retval;
+    }
+
+    private static String translateJsonToXml(String body) {
+        String retval;
+        try {
+            retval = JsonRatingUtils.jsonToXml(body);
+        } catch (IOException | TransformerException ex) {
+            throw new IllegalArgumentException("Failed to translate request into rating spec XML", ex);
+        }
+        return retval;
     }
 
     @OpenApi(ignore = true)
@@ -231,10 +283,9 @@ public class RatingSpecController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        String office = ctx.queryParam(OFFICE);
-
         try (final Timer.Context ignored = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
+            String office = ctx.queryParam(OFFICE);
             RatingSpecDao ratingDao = getRatingSpecDao(dsl);
             JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
             ratingDao.delete(office, method, ratingSpecId);

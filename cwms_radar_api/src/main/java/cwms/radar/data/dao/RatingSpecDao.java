@@ -50,6 +50,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.conf.ParamType;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
@@ -358,5 +359,9 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         }
         CWMS_RATING_PACKAGE.call_DELETE_SPECS(dsl.configuration(), ratingSpecId,
             deleteAction, office);
+    }
+
+    public void create(String xml, boolean failIfExists) {
+        CWMS_RATING_PACKAGE.call_STORE_SPECS__3(dsl.configuration(), xml, OracleTypeMap.formatBool(failIfExists));
     }
 }
