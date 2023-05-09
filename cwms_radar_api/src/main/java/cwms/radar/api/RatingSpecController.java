@@ -1,12 +1,34 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
 import static cwms.radar.api.Controllers.DELETE;
 import static cwms.radar.api.Controllers.GET_ALL;
 import static cwms.radar.api.Controllers.GET_ONE;
 import static cwms.radar.api.Controllers.METHOD;
-import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.radar.api.Controllers.OFFICE;
 import static cwms.radar.api.Controllers.PAGE;
 import static cwms.radar.api.Controllers.PAGE_SIZE;
@@ -26,8 +48,8 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -42,6 +64,7 @@ import org.jooq.DSLContext;
 
 public class RatingSpecController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingSpecController.class.getName());
+    private static final String TAG = "Ratings";
 
     private final MetricRegistry metrics;
 
@@ -90,7 +113,7 @@ public class RatingSpecController implements CrudHandler {
                                     @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
                             }
                     )},
-            tags = {"Ratings"}
+            tags = {TAG}
     )
     @Override
     public void getAll(Context ctx) {
@@ -142,7 +165,7 @@ public class RatingSpecController implements CrudHandler {
                             }
                     )
             },
-            tags = {"Ratings"}
+            tags = {TAG}
     )
     @Override
     public void getOne(Context ctx, String ratingId) {
@@ -193,11 +216,30 @@ public class RatingSpecController implements CrudHandler {
         // generated methods, choose Tools | Specs.
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        pathParams = {
+            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-spec-id of the ratings data to be deleted."),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                + "owning office of the ratings to be deleted."),
+            @OpenApiParam(name = METHOD,  required = true, description = "Specifies the delete method used.",
+                type = JooqDao.DeleteMethod.class)
+        },
+        description = "Deletes requested rating specification",
+        method = HttpMethod.DELETE, tags = {TAG}
+    )
     @Override
-    public void delete(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
-        // generated methods, choose Tools | Specs.
+    public void delete(Context ctx, @NotNull String ratingSpecId) {
+        String office = ctx.queryParam(OFFICE);
+
+        try (final Timer.Context ignored = markAndTime(DELETE);
+             DSLContext dsl = getDslContext(ctx)) {
+            RatingSpecDao ratingDao = getRatingSpecDao(dsl);
+            JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
+            ratingDao.delete(office, method, ratingSpecId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+        }
     }
 
 }

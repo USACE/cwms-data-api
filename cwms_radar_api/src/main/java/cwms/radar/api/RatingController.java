@@ -1,10 +1,33 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.api.Controllers.AT;
 import static cwms.radar.api.Controllers.BEGIN;
 import static cwms.radar.api.Controllers.DATUM;
-import static cwms.radar.api.Controllers.DELETE;
 import static cwms.radar.api.Controllers.END;
 import static cwms.radar.api.Controllers.FORMAT;
 import static cwms.radar.api.Controllers.GET_ALL;
@@ -153,25 +176,10 @@ public class RatingController implements CrudHandler {
         return RatingXmlFactory.ratingSet(body);
     }
 
-    @OpenApi(queryParams = {@OpenApiParam(name = OFFICE, required = true, description =
-            "Specifies the owning office of the rating to be deleted.")},
-            method = HttpMethod.DELETE, tags = {"Ratings"})
+    @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
-            RatingDao ratingDao = getRatingDao(dsl);
-            ratingDao.delete(office, ratingSpecId);
-
-            ctx.status(HttpServletResponse.SC_ACCEPTED);
-            ctx.json("Deleted RatingSet");
-        } catch (IOException | RatingException ex) {
-            RadarError re = new RadarError("Failed to process delete request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-        }
     }
 
     @OpenApi(queryParams = {
