@@ -27,19 +27,24 @@ package cwms.radar.api;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.radar.api.Controllers.AT;
 import static cwms.radar.api.Controllers.BEGIN;
+import static cwms.radar.api.Controllers.DATE_FORMAT;
 import static cwms.radar.api.Controllers.DATUM;
+import static cwms.radar.api.Controllers.DELETE;
 import static cwms.radar.api.Controllers.END;
+import static cwms.radar.api.Controllers.EXAMPLE_DATE;
 import static cwms.radar.api.Controllers.FORMAT;
 import static cwms.radar.api.Controllers.GET_ALL;
 import static cwms.radar.api.Controllers.GET_ONE;
 import static cwms.radar.api.Controllers.METHOD;
 import static cwms.radar.api.Controllers.NAME;
 import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.RATING_ID;
 import static cwms.radar.api.Controllers.RESULTS;
 import static cwms.radar.api.Controllers.SIZE;
 import static cwms.radar.api.Controllers.TIMEZONE;
 import static cwms.radar.api.Controllers.UNIT;
 import static cwms.radar.api.Controllers.UPDATE;
+import static cwms.radar.api.Controllers.VERSION_DATE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -67,6 +72,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,6 +85,7 @@ import org.jooq.DSLContext;
 
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
+    private static final String TAG = "Ratings";
 
     private final MetricRegistry metrics;
 
@@ -115,7 +122,7 @@ public class RatingController implements CrudHandler {
                     @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.JSONV2)},
             required = true),
-            method = HttpMethod.POST, path = "/ratings", tags = {"Ratings"})
+            method = HttpMethod.POST, path = "/ratings", tags = {TAG})
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("create"); DSLContext dsl =
@@ -176,10 +183,37 @@ public class RatingController implements CrudHandler {
         return RatingXmlFactory.ratingSet(body);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        pathParams = {
+            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be deleted. "),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the ratings to be deleted."),
+            @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window to delete. "
+                + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+            @OpenApiParam(name = END, required = true, description = "The end of the time window to delete."
+                + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+            @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
+                + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include offset or time zone information. "
+                + "Defaults to UTC."),
+        },
+        method = HttpMethod.DELETE,
+        tags = {TAG}
+    )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-
+        try (Timer.Context ignored = markAndTime(DELETE);
+             DSLContext dsl = getDslContext(ctx)) {
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            Instant startTimeDate = DateUtils.parseUserDate(ctx.queryParam(BEGIN), timezone).toInstant();
+            Instant endTimeDate = DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant();
+            String office = ctx.queryParam(OFFICE);
+            RatingDao ratingDao = getRatingDao(dsl);
+            ratingDao.delete(office, ratingSpecId, startTimeDate, endTimeDate);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+        }
     }
 
     @OpenApi(queryParams = {
@@ -234,7 +268,7 @@ public class RatingController implements CrudHandler {
                             + "parameters did not find a rating table."),
                 @OpenApiResponse(status = "501", description = "Requested format is not "
                             + "implemented")},
-            tags = {"Ratings"})
+            tags = {TAG})
     @Override
     public void getAll(Context ctx) {
 
@@ -313,7 +347,7 @@ public class RatingController implements CrudHandler {
                             @OpenApiContent(type = Formats.JSONV2),
                             @OpenApiContent(type = Formats.XMLV2)})},
             description = "Returns CWMS Rating Data",
-            tags = {"Ratings"})
+            tags = {TAG})
 
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String rating) {
@@ -403,7 +437,7 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime("getRatingSet");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieve(method, officeId, rating, beginZdt, endZdt);
+            ratingSet = ratingDao.retrieve(method, officeId, rating, beginZdt.toInstant(), endZdt.toInstant());
         }
 
         return ratingSet;
@@ -414,7 +448,7 @@ public class RatingController implements CrudHandler {
             requestBody = @OpenApiRequestBody(content = {
                     @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.JSONV2)
-            }, required = true), method = HttpMethod.PUT, path = "/ratings", tags = {"Ratings"})
+            }, required = true), method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
         try (final Timer.Context ignored = markAndTime(UPDATE);
