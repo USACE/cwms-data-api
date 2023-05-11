@@ -385,7 +385,7 @@ public class ApiServlet extends HttpServlet {
                                    .addSecurityItem(new SecurityRequirement().addList(provider))
         );
         ops.path("/swagger-docs")
-            .responseModifier((ctx,api) -> {                
+            .responseModifier((ctx,api) -> {
                 api.getPaths().forEach((key,path) -> {
                     setSecurityRequirements(key,path,secReqs);
                 });
@@ -396,7 +396,7 @@ public class ApiServlet extends HttpServlet {
                 doc.json("400", RadarError.class);
                 doc.json("401", RadarError.class);
                 doc.json("403", RadarError.class);
-                doc.json("404", RadarError.class);                
+                doc.json("404", RadarError.class);
             })
             .activateAnnotationScanningFor("cwms.radar.api");
         config.registerPlugin(new OpenApiPlugin(ops));

@@ -106,7 +106,7 @@ services:
 
   auth:
     image: quay.io/keycloak/keycloak:19.0.1
-    command: ["start", "--features-disabled=admin2"]
+    command: ["start", "--features-disabled=admin2","--import-realm"]
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
@@ -121,7 +121,7 @@ services:
       - KC_HTTPS_KEY_STORE_PASSWORD=badpassword
     volumes:
       - ./compose_files/pki/certs/main.ks:/conf/server.keystore:ro
-      - ./kdata:/opt/keycloak/data:rw
+      - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=Host(`auth.localhost`)"
@@ -133,6 +133,7 @@ services:
     depends_on:
       traefik:
         condition: service_healthy
+    
 
 
   # Proxy for HTTPS for OpenID
