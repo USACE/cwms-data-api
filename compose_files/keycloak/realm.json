@@ -2287,19 +2287,19 @@
       "realmRoles": [
         "cwms_user"
       ]
-  },
-  {
-    "username": "m5hectest",
-    "enabled": true,
-    "credentials": [
-      {
-        "type": "password",
-        "value": "m5hectest"
+    },
+    {
+      "username": "m5hectest",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "m5hectest"
+      }
+      ],
+      "realmRoles": [
+          "cwms_user"
+      ]
     }
-    ],
-    "realmRoles": [
-        "cwms_user"
-    ]
-}
-]
+  ]
 }
