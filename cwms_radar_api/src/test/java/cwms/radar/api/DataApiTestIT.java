@@ -1,12 +1,45 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
+import cwms.radar.data.dto.Location;
+import fixtures.RadarApiSetupCallback;
+import fixtures.TestAccounts;
+import fixtures.users.MockCwmsUserPrincipalImpl;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
-
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
@@ -17,14 +50,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import cwms.auth.CwmsUserPrincipal;
-import cwms.radar.data.dto.Location;
-import fixtures.RadarApiSetupCallback;
-import fixtures.TestAccounts;
-import fixtures.users.MockCwmsUserPrincipalImpl;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 /**
@@ -316,5 +341,14 @@ public class DataApiTestIT {
         DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE11G);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
         return dsl;
+    }
+
+    protected static String readResourceFile(String resourcePath) throws IOException {
+        URL resource = DataApiTestIT.class.getClassLoader().getResource(resourcePath);
+        if (resource == null) {
+            throw new IOException("Resource not found: " + resourcePath);
+        }
+        Path path = new File(resource.getFile()).toPath();
+        return String.join("\n", Files.readAllLines(path));
     }
 }

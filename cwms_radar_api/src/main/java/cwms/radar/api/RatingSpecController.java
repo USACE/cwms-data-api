@@ -25,18 +25,7 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.api.Controllers.CREATE;
-import static cwms.radar.api.Controllers.DELETE;
-import static cwms.radar.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.GET_ONE;
-import static cwms.radar.api.Controllers.METHOD;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.PAGE;
-import static cwms.radar.api.Controllers.PAGE_SIZE;
-import static cwms.radar.api.Controllers.RATING_ID;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -231,7 +220,7 @@ public class RatingSpecController implements CrudHandler {
             String body = ctx.body();
             String xml = translateToXml(body, formatHeader);
             RatingSpecDao dao = new RatingSpecDao(dsl);
-            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
             dao.create(xml, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
@@ -240,9 +229,9 @@ public class RatingSpecController implements CrudHandler {
     private static String translateToXml(String body, String contentType) {
         String retval;
 
-        if ((Formats.XML).equals(contentType)) {
+        if (contentType.contains(Formats.XMLV2)) {
             retval = body;
-        } else if ((Formats.JSON).equals(contentType)) {
+        } else if (contentType.contains(Formats.JSONV2)) {
             retval = translateJsonToXml(body);
         } else {
             throw new IllegalArgumentException("Unexpected contentType format:" + contentType);
@@ -279,7 +268,8 @@ public class RatingSpecController implements CrudHandler {
                 type = JooqDao.DeleteMethod.class)
         },
         description = "Deletes requested rating specification",
-        method = HttpMethod.DELETE, tags = {TAG}
+        method = HttpMethod.DELETE,
+        tags = {TAG}
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
