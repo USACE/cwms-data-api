@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.data.dao;
 
 import static usace.cwms.db.dao.util.OracleTypeMap.parseBool;
@@ -6,7 +30,6 @@ import static usace.cwms.db.dao.util.OracleTypeMap.toZoneId;
 import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dto.CwmsDTOPaginated;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
-
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptors;
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -25,10 +48,6 @@ import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentifierDescriptor> {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-    public enum DeleteMethod {
-        DELETE_ALL, DELETE_KEY, DELETE_DATA
-    }
 
 
     public TimeSeriesIdentifierDescriptorDao(DSLContext dsl) {

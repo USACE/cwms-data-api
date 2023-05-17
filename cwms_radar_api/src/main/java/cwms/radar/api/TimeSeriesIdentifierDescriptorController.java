@@ -1,3 +1,27 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -36,7 +60,6 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -66,25 +89,11 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
     private final Histogram requestResultSize;
 
-    static {
-        JavalinValidation.register(TimeSeriesIdentifierDescriptorDao.DeleteMethod.class,
-                TimeSeriesIdentifierDescriptorController::getDeleteMethod);
-    }
-
     public TimeSeriesIdentifierDescriptorController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
 
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private static TimeSeriesIdentifierDescriptorDao.DeleteMethod getDeleteMethod(String input) {
-        TimeSeriesIdentifierDescriptorDao.DeleteMethod retval = null;
-
-        if (input != null) {
-            retval = TimeSeriesIdentifierDescriptorDao.DeleteMethod.valueOf(input.toUpperCase());
-        }
-        return retval;
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -334,7 +343,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the timeseries to be deleted."),
                     @OpenApiParam(name = METHOD,  required = true, description = "Specifies the delete method used.",
-                            type = TimeSeriesIdentifierDescriptorDao.DeleteMethod.class)
+                            type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
             method = HttpMethod.DELETE, tags = {TAG}
@@ -342,8 +351,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
-        TimeSeriesIdentifierDescriptorDao.DeleteMethod method = ctx.queryParamAsClass(METHOD,
-                        TimeSeriesIdentifierDescriptorDao.DeleteMethod.class).get();
+        JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
 
         String office = ctx.queryParam(OFFICE);
 
