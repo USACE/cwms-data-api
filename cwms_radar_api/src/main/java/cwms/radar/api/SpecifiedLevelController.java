@@ -25,16 +25,7 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
-import static cwms.radar.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
-import static cwms.radar.api.Controllers.SPECIFIED_LEVEL_ID;
-import static cwms.radar.api.Controllers.TEMPLATE_ID_MASK;
-import static cwms.radar.api.Controllers.UPDATE;
+import static cwms.radar.api.Controllers.*;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -156,8 +147,9 @@ public class SpecifiedLevelController implements CrudHandler {
         method = HttpMethod.POST,
         tags = {TAG}
     )
+    @Override
     public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime("create");
+        try (Timer.Context ignored = markAndTime(CREATE);
              DSLContext dsl = getDslContext(ctx)) {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
@@ -181,13 +173,14 @@ public class SpecifiedLevelController implements CrudHandler {
         },
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the timeseries identifier to be renamed"),
+                + "owning office of the specified level to be renamed"),
             @OpenApiParam(name = SPECIFIED_LEVEL_ID, description = "The new specified level id.")
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
-    public void update(Context ctx, String oldSpecifiedLevelId) {
+    @Override
+    public void update(Context ctx, @NotNull String oldSpecifiedLevelId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             SpecifiedLevelDao dao = getDao(dsl);

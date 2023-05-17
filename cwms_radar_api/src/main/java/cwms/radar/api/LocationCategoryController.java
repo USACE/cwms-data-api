@@ -31,11 +31,14 @@ import static cwms.radar.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationCategoryDao;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -43,9 +46,11 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
@@ -106,8 +111,8 @@ public class LocationCategoryController implements CrudHandler {
 
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
-                final RadarError re = new RadarError("Cannot requested location category for "
-                        + "office provided");
+                RadarError re = new RadarError("Cannot find requested location category for "
+                        + "office provided: " + office);
 
                 logger.info(() -> {
                     StringBuilder builder = new StringBuilder(re.toString())
@@ -161,7 +166,8 @@ public class LocationCategoryController implements CrudHandler {
 
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
-                final RadarError re = new RadarError("Cannot requested location category id");
+                RadarError re = new RadarError("Cannot find requested location category id: " + categoryId
+                    + " with office: " + office);
 
                 logger.info(() -> {
                     StringBuilder builder = new StringBuilder(re.toString())
@@ -175,10 +181,43 @@ public class LocationCategoryController implements CrudHandler {
 
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Create new LocationCategory",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
+            },
+            required = true),
+        method = HttpMethod.POST,
+        tags = {TAG}
+    )
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+        try (Timer.Context ignored = markAndTime(CREATE);
+             DSLContext dsl = getDslContext(ctx)) {
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String body = ctx.body();
+            LocationCategory deserialize = deserialize(body, formatHeader);
+            LocationCategoryDao dao = new LocationCategoryDao(dsl);
+            dao.create(deserialize);
+            ctx.status(HttpServletResponse.SC_CREATED);
+        } catch (JsonProcessingException ex) {
+            RadarError re = new RadarError("Failed to process create request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
+    }
+
+    private LocationCategory deserialize(String body, String format) throws JsonProcessingException {
+        LocationCategory retval;
+        if (ContentType.equivalent(Formats.JSON, format)) {
+            ObjectMapper om = JsonV1.buildObjectMapper();
+            retval = om.readValue(body, LocationCategory.class);
+        } else {
+            throw new IllegalArgumentException("Unsupported format: " + format);
+        }
+        return retval;
     }
 
     @OpenApi(ignore = true)

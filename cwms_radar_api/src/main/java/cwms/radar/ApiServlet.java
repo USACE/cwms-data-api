@@ -24,9 +24,7 @@
 
 package cwms.radar;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.prefixPath;
-import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -59,6 +57,7 @@ import cwms.radar.api.TimeSeriesIdentifierDescriptorController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.AlreadyExists;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.api.errors.InvalidItemException;
 import cwms.radar.api.errors.JsonFieldsException;
@@ -229,6 +228,11 @@ public class ApiServlet extends HttpServlet {
                     RadarError re = new RadarError("Bad Request.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(AlreadyExists.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Already Exists.");
+                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Not Found.");

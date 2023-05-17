@@ -33,7 +33,7 @@ import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 
-public class LocationCategoryDao extends JooqDao<LocationCategory>
+public final class LocationCategoryDao extends JooqDao<LocationCategory>
 {
 	public LocationCategoryDao(DSLContext dsl)
 	{
@@ -83,5 +83,14 @@ public class LocationCategoryDao extends JooqDao<LocationCategory>
 	public void delete(String categoryId, boolean cascade, String office) {
 		String cascadeParam = OracleTypeMap.formatBool(cascade);
 		CWMS_LOC_PACKAGE.call_DELETE_LOC_CAT(dsl.configuration(), categoryId, cascadeParam, office);
+	}
+
+	public void create(LocationCategory category) {
+		CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dsl.configuration(), category.getId(), category.getDescription(),
+			category.getOfficeId());
+	}
+
+	public void update(String oldCategoryId, String newCategoryId, String office) {
+		CWMS_LOC_PACKAGE.call_RENAME_LOC_CATEGORY(dsl.configuration(), oldCategoryId, newCategoryId, null, "T", office);
 	}
 }
