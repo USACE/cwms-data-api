@@ -170,7 +170,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // There should only be one key in the map
-        if (retval.size() != 1) {
+        if (retval.size() > 1) {
             throw new IllegalStateException("More than one template found for templateId: " + templateId);
         }
 

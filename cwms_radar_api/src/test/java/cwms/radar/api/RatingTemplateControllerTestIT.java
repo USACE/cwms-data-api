@@ -34,7 +34,7 @@ import cwms.radar.data.dao.JooqDao;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
-import hec.data.cwmsRating.io.RatingSpecContainer;
+import hec.data.cwmsRating.io.RatingTemplateContainer;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import org.junit.jupiter.api.Tag;
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
-class RatingSpecControllerTestIT extends DataApiTestIT
+class RatingTemplateControllerTestIT extends DataApiTestIT
 {
 
 	@Test
@@ -52,13 +52,9 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
 		createLocation(locationId, true, officeId);
 		String ratingXml = readResourceFile("cwms/radar/api/Zanesville_Stage_Flow_COE_Production.xml");
-		RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
-		specContainer.officeId = officeId;
-		specContainer.specOfficeId = officeId;
-		specContainer.locationId = locationId;
-		specContainer.specId = specContainer.specId.replace("Zanesville", locationId);
-		String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
-		String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+		RatingTemplateContainer ratingTemplateContainer = RatingSpecXmlFactory.ratingTemplateContainer(ratingXml);
+		ratingTemplateContainer.officeId = officeId;
+		String templateXml = RatingSpecXmlFactory.toXml(ratingTemplateContainer, "", 0);
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 		//Create Template
 		given()
@@ -74,21 +70,6 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
-		//Create Spec
-		given()
-			.accept(Formats.JSONV2)
-			.contentType(Formats.XMLV2)
-			.body(specXml)
-			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("/ratings/spec")
-			.then()
-			.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED));
-
 		//Read
 		given()
 			.accept(Formats.JSONV2)
@@ -98,17 +79,16 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("/ratings/spec/" + specContainer.specId)
+			.get("/ratings/template/" + ratingTemplateContainer.templateId)
 			.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_OK))
-			.body("rating-id", equalTo(specContainer.specId))
-			.body("office-id", equalTo(specContainer.officeId))
-			.body("template-id", equalTo(specContainer.templateId))
-			.body("in-range-method", equalTo(specContainer.inRangeMethod))
-			.body("out-range-low-method", equalTo(specContainer.outRangeLowMethod))
-			.body("out-range-high-method", equalTo(specContainer.outRangeHighMethod));
+			.body("office-id", equalTo(ratingTemplateContainer.officeId))
+			.body("id", equalTo(ratingTemplateContainer.templateId))
+			.body("independent-parameter-specs[0].in-range-method", equalTo(ratingTemplateContainer.inRangeMethods[0]))
+			.body("independent-parameter-specs[0].out-range-low-method", equalTo(ratingTemplateContainer.outRangeLowMethods[0]))
+			.body("independent-parameter-specs[0].out-range-high-method", equalTo(ratingTemplateContainer.outRangeHighMethods[0]));
 		//Delete
 		given()
 			.accept(Formats.JSONV2)
@@ -119,7 +99,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.delete("/ratings/spec/" + specContainer.specId)
+			.delete("/ratings/template/" + ratingTemplateContainer.templateId)
 			.then()
 			.assertThat()
 			.log().body().log().everything(true)
@@ -134,7 +114,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("/ratings/spec/" + specContainer.specId)
+			.get("/ratings/template/" + ratingTemplateContainer.templateId)
 			.then()
 			.assertThat()
 			.log().body().log().everything(true)
