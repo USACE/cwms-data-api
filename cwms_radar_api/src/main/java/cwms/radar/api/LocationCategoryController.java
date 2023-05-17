@@ -1,12 +1,31 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.api.Controllers.CATEGORY_ID;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.GET_ONE;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.*;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -20,6 +39,7 @@ import cwms.radar.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -163,13 +183,33 @@ public class LocationCategoryController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String locationCode) {
+    public void update(Context ctx, String categoryId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Deletes requested location category",
+        pathParams = {
+            @OpenApiParam(name = CATEGORY_ID, description = "The location category to be deleted"),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                + "owning office of the timeseries identifier to be deleted"),
+            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, required = false,
+                description = "Specifies whether to delete any location groups in this location category. Default: false"),
+        },
+        method = HttpMethod.DELETE,
+        tags = {TAG}
+    )
     @Override
-    public void delete(Context ctx, String locationCode) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    public void delete(Context ctx, String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE);
+             DSLContext dsl = getDslContext(ctx)) {
+            LocationCategoryDao dao = new LocationCategoryDao(dsl);
+            String office = ctx.queryParam(OFFICE);
+            boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
+            dao.delete(categoryId, cascadeDelete, office);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+        }
     }
 }
