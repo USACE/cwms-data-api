@@ -1,33 +1,56 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
-import static cwms.radar.api.Controllers.CATEGORY_ID;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.GET_ONE;
-import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.*;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.TimeSeriesCategoryDao;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
+import cwms.radar.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
@@ -138,10 +161,48 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Create new TimeSeriesCategory",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = TimeSeriesCategory.class, type = Formats.JSON)
+            },
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                description = "Create will fail if provided ID already exists. Default: true"),
+        },
+        method = HttpMethod.POST,
+        tags = {TAG}
+    )
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        try (Timer.Context ignored = markAndTime(CREATE);
+             DSLContext dsl = getDslContext(ctx)) {
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String body = ctx.body();
+            TimeSeriesCategory deserialize = deserialize(body, formatHeader);
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
+            dao.create(deserialize, failIfExists);
+            ctx.status(HttpServletResponse.SC_CREATED);
+        } catch (JsonProcessingException ex) {
+            RadarError re = new RadarError("Failed to process create request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
+    }
+
+    private TimeSeriesCategory deserialize(String body, String format) throws JsonProcessingException {
+        TimeSeriesCategory retval;
+        if (ContentType.equivalent(Formats.JSON, format)) {
+            ObjectMapper om = JsonV1.buildObjectMapper();
+            retval = om.readValue(body, TimeSeriesCategory.class);
+        } else {
+            throw new IllegalArgumentException("Unsupported format: " + format);
+        }
+        return retval;
     }
 
     @OpenApi(ignore = true)
@@ -150,9 +211,29 @@ public class TimeSeriesCategoryController implements CrudHandler {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Deletes requested time series category",
+        pathParams = {
+            @OpenApiParam(name = CATEGORY_ID, description = "The time series category to be deleted"),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                + "owning office of the time series category to be deleted"),
+            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
+                description = "Specifies whether to delete any time series groups in this time series category. Default: false"),
+        },
+        method = HttpMethod.DELETE,
+        tags = {TAG}
+    )
     @Override
-    public void delete(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+    public void delete(Context ctx, String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE);
+             DSLContext dsl = getDslContext(ctx)) {
+            TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
+            String office = ctx.queryParam(OFFICE);
+            boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
+            dao.delete(categoryId, cascadeDelete, office);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+        }
     }
 }
