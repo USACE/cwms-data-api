@@ -342,8 +342,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     @NotNull
     private static LOC_ALIAS_TYPE3 convertToLocAliasType(AssignedLocation a) {
+        BigDecimal attribute = OracleTypeMap.toBigDecimal(a.getAttribute());
         return new LOC_ALIAS_TYPE3(a.getLocationId(),
-            Optional.ofNullable(a.getAttribute()).map(n -> BigDecimal.valueOf(n.doubleValue())).orElse(null), a.getAliasId(), a.getRefLocationId());
+            attribute, a.getAliasId(), a.getRefLocationId());
     }
 
     public void renameLocationGroup(String oldGroupId, LocationGroup newGroup) {

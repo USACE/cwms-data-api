@@ -303,7 +303,7 @@ public class LocationGroupController implements CrudHandler {
                 + "location category of the location group to be deleted"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the location group to be deleted"),
-            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, required = false,
+            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
                 description = "Specifies whether to specifies whether to unassign any location assignments. Default: false"),
         },
         method = HttpMethod.DELETE,
