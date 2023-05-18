@@ -54,8 +54,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.geojson.FeatureCollection;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationGroupController implements CrudHandler {
@@ -310,7 +310,7 @@ public class LocationGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NonNull String groupId) {
+    public void delete(Context ctx, @NotNull String groupId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             LocationGroupDao dao = new LocationGroupDao(dsl);
