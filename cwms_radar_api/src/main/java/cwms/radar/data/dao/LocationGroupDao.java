@@ -337,6 +337,26 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(configuration, categoryId,
             group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
             group.getSharedRefLocationId());
+        assignLocs(group);
+    }
+
+    @NotNull
+    private static LOC_ALIAS_TYPE3 convertToLocAliasType(AssignedLocation a) {
+        return new LOC_ALIAS_TYPE3(a.getLocationId(),
+            Optional.ofNullable(a.getAttribute()).map(n -> BigDecimal.valueOf(n.doubleValue())).orElse(null), a.getAliasId(), a.getRefLocationId());
+    }
+
+    public void renameLocationGroup(String oldGroupId, LocationGroup newGroup) {
+        CWMS_LOC_PACKAGE.call_RENAME_LOC_GROUP(dsl.configuration(), newGroup.getLocationCategory().getId(),
+            oldGroupId, newGroup.getId(), newGroup.getDescription(), "T", newGroup.getOfficeId());
+    }
+
+    public void unassignAllLocs(LocationGroup group) {
+        CWMS_LOC_PACKAGE.call_UNASSIGN_LOC_GROUP(dsl.configuration(), group.getLocationCategory().getId(),
+            group.getId(), null, "T", group.getOfficeId());
+    }
+
+    public void assignLocs(LocationGroup group) {
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if(assignedLocations != null)
         {
@@ -344,14 +364,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .map(LocationGroupDao::convertToLocAliasType)
                 .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
-            CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(configuration, categoryId, group.getId(),
-                assignedLocs, group.getOfficeId());
+            CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dsl.configuration(), group.getLocationCategory().getId(),
+                group.getId(), assignedLocs, group.getOfficeId());
         }
-    }
-
-    @NotNull
-    private static LOC_ALIAS_TYPE3 convertToLocAliasType(AssignedLocation a) {
-        return new LOC_ALIAS_TYPE3(a.getLocationId(),
-            Optional.ofNullable(a.getAttribute()).map(n -> BigDecimal.valueOf(n.doubleValue())).orElse(null), a.getAliasId(), a.getRefLocationId());
     }
 }

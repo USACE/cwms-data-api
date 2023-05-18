@@ -250,10 +250,47 @@ public class LocationGroupController implements CrudHandler {
         return retval;
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Update existing LocationGroup",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
+            },
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
+                + "unassign all existing locations before assigning new locations specified in the content body "
+                + "Default: false"),
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                + "owning office of the location group to be updated"),
+        },
+        method = HttpMethod.PATCH,
+        tags = {TAG}
+    )
     @Override
-    public void update(Context ctx, String groupId) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
+    public void update(Context ctx, String oldGroupId) {
+
+        try (Timer.Context ignored = markAndTime(CREATE);
+             DSLContext dsl = getDslContext(ctx)) {
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String body = ctx.body();
+            LocationGroup deserialize = deserialize(body, formatHeader);
+            boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS, Boolean.class).getOrDefault(false);
+            LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
+            if(!oldGroupId.equals(deserialize.getId())) {
+                locationGroupDao.renameLocationGroup(oldGroupId, deserialize);
+            }
+            if(replaceAssignedLocs){
+                locationGroupDao.unassignAllLocs(deserialize);
+            }
+            locationGroupDao.assignLocs(deserialize);
+            ctx.status(HttpServletResponse.SC_ACCEPTED);
+        } catch (JsonProcessingException ex) {
+            RadarError re = new RadarError("Failed to process create request");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
     }
 
     @OpenApi(
