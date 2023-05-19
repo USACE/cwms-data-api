@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletResponse;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
+import fixtures.users.UserSpecSource;
+import fixtures.users.annotation.AuthType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static cwms.radar.data.dao.JsonRatingUtilsTest.loadResourceAsString;
@@ -29,7 +32,8 @@ public class AccessManagerTestIT extends DataApiTestIT
 	private static KeyUser SPK_NO_ROLES_USER = KeyUser.SPK_NO_ROLES;
 
 	@ParameterizedTest
-	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivsWithGuest")
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(userTypes = { AuthType.UserType.GUEST_AND_PRIVS })
 	public void can_getOne_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec){
 		Response response = given()
 				.spec(authSpec)
@@ -44,7 +48,8 @@ public class AccessManagerTestIT extends DataApiTestIT
 	}
 
 	@ParameterizedTest
-	@MethodSource("fixtures.users.UserSpecSource#userSpecsValidPrivs")
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(userTypes = { AuthType.UserType.NO_PRIVS })
 	public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");
@@ -61,8 +66,10 @@ public class AccessManagerTestIT extends DataApiTestIT
 				.assertThat().statusCode(is(401));
 	}
 
-	@Test
-	public void can_create_with_user() throws IOException
+	@ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(userTypes = { AuthType.UserType.PRIVS })
+	public void can_create_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
 		String json = loadResourceAsString("cwms/radar/api/location_create_spk.json");
 		assertNotNull(json);
@@ -71,7 +78,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 		given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
-				.header("Authorization",SPK_NORMAL_USER.toHeaderValue())
+				.spec(authSpec)
 				.body(json)
 				.when()
 				.post(  "/locations")
@@ -79,8 +86,10 @@ public class AccessManagerTestIT extends DataApiTestIT
 				.assertThat().statusCode(HttpServletResponse.SC_ACCEPTED);
 	}
 
-	@Test
-	public void cant_create_with_user_without_role() throws IOException
+	@ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(userTypes = { AuthType.UserType.NO_PRIVS })
+	public void cant_create_with_user_without_role(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");
 		assertNotNull(json);
@@ -89,13 +98,11 @@ public class AccessManagerTestIT extends DataApiTestIT
 		given()
 				.contentType("application/json")
 				.queryParam("office", "SPK")
-				.header("Authorization",SPK_NO_ROLES_USER.toHeaderValue())
+				.spec(authSpec)
 				.body(json)
 				.when()
 				.post(  "/locations")
 				.then()
 				.assertThat().statusCode(is(403));
 	}
-
-
 }
