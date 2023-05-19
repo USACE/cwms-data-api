@@ -24,13 +24,12 @@
 
 package cwms.radar.api;
 
-import static cwms.radar.api.Controllers.METHOD;
+import static cwms.radar.api.Controllers.CASCADE_DELETE;
 import static cwms.radar.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
@@ -59,7 +58,6 @@ class LocationCategoryControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSON)
 			.body(xml)
 			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
 			.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -71,7 +69,6 @@ class LocationCategoryControllerTestIT extends DataApiTestIT
 		given()
 			.accept(Formats.JSON)
 			.contentType(Formats.JSON)
-			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
 			.when()
 			.redirects().follow(true)
@@ -90,7 +87,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSON)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
-			.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+			.queryParam(CASCADE_DELETE, "true")
 			.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -104,7 +101,6 @@ class LocationCategoryControllerTestIT extends DataApiTestIT
 		given()
 			.accept(Formats.JSON)
 			.contentType(Formats.JSON)
-			.header("Authorization", user.toHeaderValue())
 			.queryParam("office", officeId)
 			.when()
 			.redirects().follow(true)
