@@ -234,7 +234,7 @@ public class LocationCategoryController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the location category to be deleted"),
-            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, required = false,
+            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
                 description = "Specifies whether to delete any location groups in this location category. Default: false"),
         },
         method = HttpMethod.DELETE,
