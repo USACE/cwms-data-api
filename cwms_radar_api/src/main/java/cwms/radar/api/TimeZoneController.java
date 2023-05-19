@@ -1,10 +1,15 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.FORMAT;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -22,38 +27,37 @@ import org.jooq.DSLContext;
 
 public class TimeZoneController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeZoneController.class.getName());
+
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
     public TimeZoneController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "format", required = false, description = "Specifies the"
+                    @OpenApiParam(name = FORMAT, required = false, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
                             + " for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json "
                             + "(default)")
@@ -67,12 +71,11 @@ public class TimeZoneController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
-        try (Timer.Context timeContext = getAllRequestsTime.time();
+        try (Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)
               ) {
             TimeZoneDao dao = new TimeZoneDao(dsl);
-            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("json");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
 
 
             switch (format) {
@@ -118,16 +121,15 @@ public class TimeZoneController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        getOneRequest.mark();
-        try (Timer.Context timeContext = getOneRequestTime.time()) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        try (Timer.Context timeContext = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
 }

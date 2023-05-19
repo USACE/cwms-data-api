@@ -22,24 +22,24 @@
  * SOFTWARE.
  */
 
-package cwms.radar.data.dao;
+package cwms.radar.api.errors;
 
-import hec.data.RatingException;
-import hec.data.cwmsRating.RatingSet;
-import java.io.IOException;
-import java.time.Instant;
+public class InvalidItemException extends RuntimeException {
+    public InvalidItemException(String message) {
+        super(message);
+    }
 
-public interface RatingDao {
-    void create(RatingSet ratingSet) throws IOException, RatingException;
+    public InvalidItemException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
-                       Instant start, Instant end) throws IOException, RatingException;
+    public InvalidItemException(Throwable cause) {
+        super(cause);
+    }
 
-    String retrieveRatings(String format, String names, String unit, String datum, String office,
-                           String start, String end, String timezone);
+    public InvalidItemException() {
+        super();
+    }
 
 
-    void store(RatingSet ratingSet) throws IOException, RatingException;
-
-    void delete(String officeId, String specificationId, Instant start, Instant end);
 }

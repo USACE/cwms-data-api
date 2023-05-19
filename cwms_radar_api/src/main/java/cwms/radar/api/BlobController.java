@@ -1,9 +1,20 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.CURSOR;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.LIKE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGESIZE2;
+import static cwms.radar.api.Controllers.PAGESIZE3;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.queryParamAsClass;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -34,21 +45,21 @@ import org.jooq.DSLContext;
 public class BlobController implements CrudHandler {
 
     private static final int defaultPageSize = 20;
+
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
+
     private final Histogram requestResultSize;
 
     public BlobController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = BlobController.class.getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -57,31 +68,31 @@ public class BlobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office",
+                    @OpenApiParam(name = OFFICE,
                             description = "Specifies the owning office. If this field is not "
                                     + "specified, matching information from all offices shall be "
                                     + "returned."),
-                    @OpenApiParam(name = "page",
+                    @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque"
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = "cursor",
+                    @OpenApiParam(name = CURSOR,
                             deprecated = true,
                             description = "Deprecated. Use 'page' instead."
                     ),
-                    @OpenApiParam(name = "pageSize",
+                    @OpenApiParam(name = PAGESIZE3,
                             deprecated = true,
                             type = Integer.class,
                             description = "Deprecated.  Use page-size instead."
                     ),
-                    @OpenApiParam(name = "page-size",
+                    @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. Default "
                                     + defaultPageSize + "."
                     ),
-                    @OpenApiParam(name = "like",
+                    @OpenApiParam(name = LIKE,
                             type = String.class,
                             description = "Posix regular expression describing the blob id's you "
                                     + "want"
@@ -99,16 +110,16 @@ public class BlobController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
+
         try (
-                final Timer.Context timeContext = getAllRequestsTime.time();
+                final Timer.Context timeContext = markAndTime(GET_ALL);
                 DSLContext dsl = getDslContext(ctx)
         ) {
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
             Optional<String> officeOpt = Optional.ofNullable(office);
 
-            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
-                    String.class, "", metrics, name(BlobController.class.getName(), "getAll"));
+            String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
+                    String.class, "", metrics, name(BlobController.class.getName(), GET_ALL));
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new RadarError("cursor or page passed in but failed validation"))
@@ -116,11 +127,11 @@ public class BlobController implements CrudHandler {
                 return;
             }
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
-                            "pagesize"}, Integer.class, defaultPageSize, metrics,
-                    name(BlobController.class.getName(), "getAll"));
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
+                            PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+                    name(BlobController.class.getName(), GET_ALL));
 
-            String like = ctx.queryParamAsClass("like", String.class).getOrDefault(".*");
+            String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -139,19 +150,19 @@ public class BlobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "office", description = "Specifies the owning office."),
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
             tags = {"Blob"}
     )
     @Override
     public void getOne(Context ctx, String blobId) {
-        getOneRequest.mark();
+
         try (
-                final Timer.Context timeContext = getOneRequestTime.time();
+                final Timer.Context timeContext = markAndTime(GET_ONE);
                 DSLContext dsl = getDslContext(ctx)
         ) {
             BlobDao dao = new BlobDao(dsl);
-            String officeQP = ctx.queryParam("office");
+            String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);
             Optional<Blob> optAc = dao.getByUniqueName(blobId, office);
 

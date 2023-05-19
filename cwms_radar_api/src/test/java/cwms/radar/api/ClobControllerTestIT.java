@@ -35,7 +35,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
         Response response = given()
                 .log().everything(true)
                 .accept(Formats.JSONV2)
-                .queryParam(ClobController.OFFICE, SPK)
+                .queryParam(Controllers.OFFICE, SPK)
                 .get("/clobs/" + urlencoded);
 
         response.then().log().everything(true).assertThat()

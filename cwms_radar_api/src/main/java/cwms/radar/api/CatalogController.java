@@ -1,9 +1,26 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.ACCEPT;
+import static cwms.radar.api.Controllers.CURSOR;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.LIKE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGESIZE2;
+import static cwms.radar.api.Controllers.PAGESIZE3;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.TIMESERIES;
+import static cwms.radar.api.Controllers.TIMESERIESCATEGORYLIKE2;
+import static cwms.radar.api.Controllers.TIMESERIES_CATEGORY_LIKE;
+import static cwms.radar.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.radar.api.Controllers.UNITSYSTEM2;
+import static cwms.radar.api.Controllers.UNIT_SYSTEM;
+import static cwms.radar.api.Controllers.queryParamAsClass;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.enums.UnitSystem;
@@ -34,8 +51,7 @@ public class CatalogController implements CrudHandler {
     private static final String TAG = "Catalog-Beta";
 
     private final MetricRegistry metrics;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
     private final int defaultPageSize = 500;
@@ -43,9 +59,12 @@ public class CatalogController implements CrudHandler {
     public CatalogController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(tags = {TAG}, ignore = true)
@@ -68,48 +87,48 @@ public class CatalogController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "page",
+                    @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are."
                     ),
-                    @OpenApiParam(name = "cursor",
+                    @OpenApiParam(name = CURSOR,
                             deprecated = true,
                             description = "Deprecated. Use 'page' instead."
                     ),
-                    @OpenApiParam(name = "page-size",
+                    @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entires per page returned. Default 500."
                     ),
-                    @OpenApiParam(name = "pageSize",
+                    @OpenApiParam(name = PAGESIZE3,
                             deprecated = true,
                             type = Integer.class,
                             description = "Deprecated. Use page-size."
                     ),
-                    @OpenApiParam(name = "unitSystem",
+                    @OpenApiParam(name = UNITSYSTEM2,
                             deprecated = true,
                             type = UnitSystem.class,
                             description = "Deprecated. Use unit-system."
                     ),
-                    @OpenApiParam(name = "unit-system",
+                    @OpenApiParam(name = UNIT_SYSTEM,
                             type = UnitSystem.class,
                             description = UnitSystem.DESCRIPTION
                     ),
-                    @OpenApiParam(name = "office",
+                    @OpenApiParam(name = OFFICE,
                             description = "3-4 letter office name representing the district you "
                                     + "want to isolate data to."
                     ),
-                    @OpenApiParam(name = "like",
+                    @OpenApiParam(name = LIKE,
                             description = "Posix regular expression matching against the id"
                     ),
-                    @OpenApiParam(name = "timeseries-category-like",
+                    @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
                             description = "Posix regular expression matching against the "
                                     + "timeseries category id"
                     ),
-                    @OpenApiParam(name = "timeseriesCategoryLike",
+                    @OpenApiParam(name = TIMESERIESCATEGORYLIKE2,
                             deprecated = true,
                             description = "Deprecated. Use timeseries-category-like."
                     ),
-                    @OpenApiParam(name = "timeseries-group-like",
+                    @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
                             description = "Posix regular expression matching against the "
                                     + "timeseries group id"
                     ),
@@ -152,53 +171,49 @@ public class CatalogController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String dataSet) {
-        getOneRequest.mark();
+
         try (
-                final Timer.Context timeContext = getOneRequestTime.time();
+                final Timer.Context timeContext = markAndTime(GET_ONE);
                 DSLContext dsl = JooqDao.getDslContext(ctx)
         ) {
 
             String valDataSet =
                     ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
 
-            String cursor = Controllers.queryParamAsClass(ctx, new String[]{"page", "cursor"},
-                    String.class, "", metrics, name(CatalogController.class.getName(), "getOne"));
+            String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
+                    String.class, "", metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{"page-size", "pageSize",
-                    "pagesize"}, Integer.class, defaultPageSize, metrics,
-                    name(CatalogController.class.getName(), "getOne"));
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
+                    PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+                    name(CatalogController.class.getName(), GET_ONE));
 
-            String unitSystem = Controllers.queryParamAsClass(ctx,
-                    new String[]{"unit-system", "unitSystem"},
+            String unitSystem = queryParamAsClass(ctx,
+                    new String[]{UNIT_SYSTEM, UNITSYSTEM2},
                     String.class, UnitSystem.SI.getValue(), metrics,
-                    name(CatalogController.class.getName(), "getOne"));
+                    name(CatalogController.class.getName(), GET_ONE));
 
-            String office = ctx.queryParamAsClass("office", String.class).allowNullable()
+            String office = ctx.queryParamAsClass(OFFICE, String.class).allowNullable()
                             .check(Office::validOfficeCanNull, "Invalid office provided")
                             .get();
 
-            String like = ctx.queryParamAsClass("like", String.class).getOrDefault(".*");
+            String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
-            String tsCategoryLike = Controllers.queryParamAsClass(ctx, new String[]{"timeseries"
-                            + "-category-like", "timeseriesCategoryLike"},
-                    String.class, null, metrics, name(CatalogController.class.getName(), "getOne"));
+            String tsCategoryLike = queryParamAsClass(ctx, new String[]{"timeseries-category-like", TIMESERIESCATEGORYLIKE2},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String tsGroupLike = Controllers.queryParamAsClass(ctx, new String[]{"timeseries"
-                            + "-group-like", "timeseriesGroupLike"},
-                    String.class, null, metrics, name(CatalogController.class.getName(), "getOne"));
+            String tsGroupLike = queryParamAsClass(ctx, new String[]{"timeseries-group-like", "timeseriesGroupLike"},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locCategoryLike = Controllers.queryParamAsClass(ctx, new String[]{"location"
-                            + "-category-like", "locationCategoryLike"},
-                    String.class, null, metrics, name(CatalogController.class.getName(), "getOne"));
+            String locCategoryLike = queryParamAsClass(ctx, new String[]{"location-category-like", "locationCategoryLike"},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locGroupLike = Controllers.queryParamAsClass(ctx, new String[]{"location-group"
-                            + "-like", "locationGroupLike"},
-                    String.class, null, metrics, name(CatalogController.class.getName(), "getOne"));
+            String locGroupLike = queryParamAsClass(ctx, new String[]{"location-group-like", "locationGroupLike"},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String acceptHeader = ctx.header("Accept");
+            String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
-            if ("timeseries".equalsIgnoreCase(valDataSet)) {
+            if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
                         locGroupLike, tsCategoryLike, tsGroupLike);

@@ -142,7 +142,7 @@ dependencies {
     testImplementation 'org.testcontainers:database-commons:1.17.3'
     testImplementation "org.testcontainers:jdbc:1.17.3"
     testImplementation "org.testcontainers:junit-jupiter:1.17.3"
-    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.6'
+    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.7'
 
     testImplementation "org.apache.commons:commons-csv:1.9.0"
     testImplementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'

@@ -1,10 +1,19 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.CATEGORY_ID;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.GROUP_ID;
+import static cwms.radar.api.Controllers.INCLUDE_ASSIGNED;
+import static cwms.radar.api.Controllers.INCLUDE_ASSIGNED2;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.queryParamAsClass;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,32 +41,31 @@ import org.jooq.DSLContext;
 
 public class LocationGroupController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
-    public final String TAG = "Location Groups-Beta";
+
+    public static final String TAG = "Location Groups-Beta";
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
     public LocationGroupController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "office", description = "Specifies the owning office of the "
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                     + "location group(s) whose data is to be included in the response. If this "
                     + "field is not specified, matching location groups information from all "
                     + "offices shall be returned."),
-            @OpenApiParam(name = "include-assigned", type = Boolean.class, description = "Include"
+            @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
                     + " the assigned locations in the returned location groups. (default: false)"),
-            @OpenApiParam(name = "includeAssigned", deprecated = true, type = Boolean.class,
+            @OpenApiParam(name = INCLUDE_ASSIGNED2, deprecated = true, type = Boolean.class,
                     description = "Deprecated. Use include-assigned instead."),},
             responses = {
                     @OpenApiResponse(status = "200",
@@ -71,18 +79,17 @@ public class LocationGroupController implements CrudHandler {
             description = "Returns CWMS Location Groups Data", tags = {TAG})
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
-        try (final Timer.Context timeContext = getAllRequestsTime.time();
+
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)
         ) {
             LocationGroupDao cdm = new LocationGroupDao(dsl);
 
-            String office = ctx.queryParam("office");
+            String office = ctx.queryParam(OFFICE);
 
-            boolean includeAssigned = Controllers.queryParamAsClass(ctx, new String[]{"include"
-                            + "-assigned", "includeAssigned"},
+            boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED, INCLUDE_ASSIGNED2},
                     Boolean.class, false, metrics, name(LocationGroupController.class.getName(),
-                            "getAll"));
+                            GET_ALL));
 
             List<LocationGroup> grps = cdm.getLocationGroups(office, includeAssigned);
 
@@ -114,14 +121,14 @@ public class LocationGroupController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "group-id", required = true, description = "Specifies "
+                    @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
                             + "the location_group whose data is to be included in the response")
             },
             queryParams = {
-                    @OpenApiParam(name = "office", required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the location group whose data is to be included "
                             + "in the response."),
-                    @OpenApiParam(name = "category-id", required = true, description = "Specifies"
+                    @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
                             + " the category containing the location group whose data is to be "
                             + "included in the response."),
             },
@@ -136,13 +143,13 @@ public class LocationGroupController implements CrudHandler {
             description = "Retrieves requested Location Group", tags = {TAG})
     @Override
     public void getOne(Context ctx, String groupId) {
-        getOneRequest.mark();
-        try (final Timer.Context timeContext = getOneRequestTime.time();
+
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)
         ) {
             LocationGroupDao cdm = new LocationGroupDao(dsl);
-            String office = ctx.queryParam("office");
-            String categoryId = ctx.queryParam("category-id");
+            String office = ctx.queryParam(OFFICE);
+            String categoryId = ctx.queryParam(CATEGORY_ID);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");

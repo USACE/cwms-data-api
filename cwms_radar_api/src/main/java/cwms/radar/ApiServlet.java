@@ -1,8 +1,30 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.prefixPath;
-import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -11,11 +33,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
+import cwms.radar.api.Controllers;
 import cwms.radar.api.LevelsController;
 import cwms.radar.api.LocationCategoryController;
 import cwms.radar.api.LocationController;
@@ -35,7 +57,9 @@ import cwms.radar.api.TimeSeriesIdentifierDescriptorController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.AlreadyExists;
 import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.InvalidItemException;
 import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
@@ -202,6 +226,16 @@ public class ApiServlet extends HttpServlet {
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(InvalidItemException.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Bad Request.");
+                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(AlreadyExists.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Already Exists.");
+                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
+                })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
@@ -270,7 +304,7 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles);
         radarCrud("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles);
-        radarCrud("/levels/{" + LevelsController.LEVEL_ID + "}",
+        radarCrud("/levels/{" + Controllers.LEVEL_ID + "}",
                 new LevelsController(metrics), requiredRoles);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
