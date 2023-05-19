@@ -1,29 +1,31 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.api.Controllers.BEGIN;
-import static cwms.radar.api.Controllers.CASCADE_DELETE;
-import static cwms.radar.api.Controllers.DATE;
-import static cwms.radar.api.Controllers.DATUM;
-import static cwms.radar.api.Controllers.DELETE;
-import static cwms.radar.api.Controllers.EFFECTIVE_DATE;
-import static cwms.radar.api.Controllers.END;
-import static cwms.radar.api.Controllers.FORMAT;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.GET_ONE;
-import static cwms.radar.api.Controllers.LEVEL_ID;
-import static cwms.radar.api.Controllers.LEVEL_ID_MASK;
-import static cwms.radar.api.Controllers.NAME;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.PAGE;
-import static cwms.radar.api.Controllers.PAGE_SIZE;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
-import static cwms.radar.api.Controllers.TIMEZONE;
-import static cwms.radar.api.Controllers.UNIT;
-import static cwms.radar.api.Controllers.UPDATE;
-import static cwms.radar.api.Controllers.VERSION;
-import static cwms.radar.api.Controllers.queryParamAsClass;
+import static cwms.radar.api.Controllers.*;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -63,7 +65,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -393,7 +394,7 @@ public class LevelsController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
                             + EFFECTIVE_DATE),
-                    @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
+                    @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies "
                             + "the effective date of Location Level that will be updated")
             },
             requestBody = @OpenApiRequestBody(
@@ -408,20 +409,10 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String levelId) {
+    public void update(@NotNull Context ctx, @NotNull String oldLevelId) {
+        try (final Timer.Context timeContext = markAndTime(UPDATE);
+             DSLContext dsl = getDslContext(ctx)) {
 
-        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
-
-            String dateString = queryParamAsClass(ctx,
-                    new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
-                    name(LevelsController.class.getName(), UPDATE));
-
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
-            ZoneId timezoneId = unmarshalledDateTime.getZone();
-            if (timezoneId == null) {
-                timezoneId = ZoneId.systemDefault();
-            }
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -429,37 +420,40 @@ public class LevelsController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(),
-                    contentType.getType());
-
-            if (levelFromBody.getOfficeId() == null) {
+                contentType.getType());
+            String officeId = levelFromBody.getOfficeId();
+            if (officeId == null) {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
-                        "The request body must specify the office.");
+                    "The request body must specify the office.");
             }
-
-            try (DSLContext dsl = getDslContext(ctx)) {
-                LocationLevelsDao levelsDao = getLevelsDao(dsl);
+            String newLevelId = levelFromBody.getLocationLevelId();
+            LocationLevelsDao levelsDao = getLevelsDao(dsl);
+            if (!oldLevelId.equals(newLevelId)) {
+                //if name changed then delete location with old name
+                levelsDao.renameLocationLevel(oldLevelId, newLevelId, officeId);
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Renamed Location Level");
+            } else {
+                String dateString = queryParamAsClass(ctx,
+                    new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
+                    name(LevelsController.class.getName(), UPDATE));
+                if(dateString == null) {
+                    throw new IllegalArgumentException("Cannot update location level effective date if no date is specified");
+                }
+                ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, ZoneId.systemDefault().getId());
                 //retrieveLocationLevel will throw an error if level does not exist
-                LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(levelId,
-                        UnitSystem.EN.getValue(), unmarshalledDateTime, levelFromBody.getOfficeId());
+                LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(oldLevelId,
+                    UnitSystem.EN.getValue(), unmarshalledDateTime, officeId);
                 existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(),
-                        existingLevelLevel);
+                    existingLevelLevel);
                 //only store (update) if level does exist
                 LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel,
-                        levelFromBody);
+                    levelFromBody);
                 updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
-                        .withLevelDate(unmarshalledDateTime).build();
-                if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(
-                        existingLevelLevel.getLocationLevelId())) {
-                    //if name changed then delete location with old name
-                    levelsDao.renameLocationLevel(levelId, updatedLocationLevel);
-                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed "
-                            + "Location Level");
-                } else {
-                    levelsDao.storeLocationLevel(updatedLocationLevel, timezoneId);
-                    ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
-                }
+                    .withLevelDate(unmarshalledDateTime).build();
+                levelsDao.storeLocationLevel(updatedLocationLevel, unmarshalledDateTime.getZone());
+                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
             }
-        } catch (Exception ex) {
+        } catch (JsonProcessingException ex) {
             RadarError re =
                     new RadarError("Failed to process request: " + ex.getLocalizedMessage());
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -588,7 +582,7 @@ public class LevelsController implements CrudHandler {
     }
 
     private LocationLevel updatedClearedFields(String body, String format,
-                                               LocationLevel existingLevel) throws IOException {
+                                               LocationLevel existingLevel) throws JsonProcessingException {
         ObjectMapper om = getObjectMapperForFormat(format);
         JsonNode root = om.readTree(body);
         JavaType javaType = om.getTypeFactory().constructType(LocationLevel.class);
@@ -606,7 +600,7 @@ public class LevelsController implements CrudHandler {
             }
         } catch (NullPointerException e) {
             //gets thrown if required field is null
-            throw new IOException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
         return retVal;
     }
