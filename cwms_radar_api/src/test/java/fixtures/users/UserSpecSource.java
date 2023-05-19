@@ -49,7 +49,7 @@ public class UserSpecSource implements ArgumentsProvider {
         final ArrayList<Arguments> list = new ArrayList<>();
         //list.add(Arguments.of("NONE",TestAccounts.KeyUser.GUEST,new RequestSpecBuilder().build()));
         Stream.of(TestAccounts.KeyUser.values())
-              .filter(u -> u.getRoles().length == 0)
+              .filter(u -> u.getRoles().length == 0 && !u.getName().equalsIgnoreCase("guest"))
               .forEach(u -> {
                 list.add(apiKeyUser(u));
                 list.add(cwmsAaaUser(u));
@@ -59,7 +59,7 @@ public class UserSpecSource implements ArgumentsProvider {
 
     private static Arguments apiKeyUser(TestAccounts.KeyUser user) {
         return Arguments.of("APIKEY",user,new RequestSpecBuilder().addHeader("Authorization",
-                                       TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue()).build());
+                                       user.toHeaderValue()).build());
     }
 
     private static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
@@ -93,11 +93,14 @@ public class UserSpecSource implements ArgumentsProvider {
             UserType uts[] = at.userTypes();
             for(UserType ut: uts) {
                 if( ut.equals(UserType.GUEST_AND_PRIVS)) {
+                    System.out.println("Adding GUEST users");
                     args.addAll(userSpecsValidPrivsWithGuest());
                 } else if (ut.equals(UserType.NO_PRIVS)) {
+                    System.out.println("Adding no priv users");
                     args.addAll(usersNoPrivs());
                 } else if (ut.equals(UserType.PRIVS)) {
-                    args.addAll(userSpecsValidPrivsWithGuest());
+                    System.out.println("Adding users with privs");
+                    args.addAll(userSpecsValidPrivs());
                 }
             }
 

@@ -60,10 +60,13 @@ public class KeyAccessManager extends RadarAccessManager {
         try {
             String key = getApiKey(ctx);
             String user = authorized(ctx, key, routeRoles);
+            if (user==null) {
+                throw new CwmsAuthException("Invalid credentials provided.");
+            }
             prepareContextWithUser(ctx, user,key);
             handler.handle(ctx);
         } catch (CwmsAuthException ex) {
-            logger.log(Level.WARNING,"Unauthorized login attempt",ex);
+            logger.log(Level.WARNING,"Unauthorized access attempt",ex);
             HashMap<String,String> msg = new HashMap<>();
             msg.put("message",ex.getMessage());
             RadarError re = new RadarError("Unauthorized",msg,true);
@@ -152,7 +155,7 @@ public class KeyAccessManager extends RadarAccessManager {
                     return rs.getString(1);
                 } else {
                     logger.info("No user for key");
-                    throw new CwmsAuthException("User not authorized.");
+                    throw new CwmsAuthException("Access not authorized.");
                 }
             }
         } catch (SQLException ex) {

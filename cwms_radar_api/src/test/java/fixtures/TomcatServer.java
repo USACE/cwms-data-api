@@ -1,18 +1,26 @@
 package fixtures;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpSession;
 
 import org.apache.catalina.Container;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Manager;
+import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.catalina.connector.Connector;
+import org.apache.catalina.connector.Request;
+import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.catalina.valves.ValveBase;
 
 
 /**
@@ -57,6 +65,7 @@ public class TomcatServer {
         logger.info("Got engine " + engine.getDefaultHost());
 
         host.addLifecycleListener(new HostConfig());
+        host.getPipeline().addValve(new SingleSignOn());
         tomcatInstance.addContext("", null);
         
         File radar = new File(radarWar);

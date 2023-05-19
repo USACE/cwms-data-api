@@ -53,5 +53,17 @@ public class TestAccounts {
         public String[] getRoles() {
             return Arrays.copyOf(roles,roles.length);
         }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("User{");
+            sb.append("UserName=").append(this.name).append(",")
+              .append("EDIPI=").append(this.edipi).append(",")
+              .append("Key=").append(this.apikey).append(",")
+              .append("JESSIONID=").append(this.jSessionId).append(",")
+              .append("Password=").append(this.password).append(",");
+            sb.append("Roles[").append(String.join(",",roles)).append("}");
+            return sb.toString();
+        }
     }
 }
