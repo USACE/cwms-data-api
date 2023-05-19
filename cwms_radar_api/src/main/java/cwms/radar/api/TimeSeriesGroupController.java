@@ -236,7 +236,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
+            @OpenApiParam(name = REPLACE_ASSIGNED_TS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing time series before assigning new time series specified in the content body "
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -254,7 +254,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
             TimeSeriesGroup deserialize = deserialize(body, formatHeader);
-            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS, Boolean.class).getOrDefault(false);
+            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class).getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
             if(!oldGroupId.equals(deserialize.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, deserialize);
