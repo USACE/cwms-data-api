@@ -49,7 +49,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 
 	@ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
-	@AuthType(userTypes = { AuthType.UserType.NO_PRIVS })
+	@AuthType(user = TestAccounts.KeyUser.GUEST)
 	public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
 		String json = loadResourceAsString("cwms/radar/api/location_create.json");

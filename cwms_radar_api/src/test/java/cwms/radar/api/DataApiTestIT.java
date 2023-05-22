@@ -162,6 +162,8 @@ public class DataApiTestIT {
                     }
                     
                 });
+                RadarApiSetupCallback.getSsoValve()
+                                     .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
             }
         } catch(Exception ex) {
             throw ex;

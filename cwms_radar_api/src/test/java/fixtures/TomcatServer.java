@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
 
 import org.apache.catalina.Container;
@@ -12,15 +13,20 @@ import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Manager;
+import org.apache.catalina.Pipeline;
+import org.apache.catalina.Valve;
 import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.session.StandardSession;
 import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.valves.ValveBase;
+
+import fixtures.tomcat.SingleSignOnWrapper;
 
 
 /**
@@ -33,6 +39,7 @@ public class TomcatServer {
     private static final Logger logger = Logger.getLogger(TomcatServer.class.getName());
     private Tomcat tomcatInstance = null;
     private Manager sessionManager = null;
+    private SingleSignOnWrapper ssoValve = new SingleSignOnWrapper();
     /**
      * Setups the baseline for tomcat to run.
      * @param baseDir set to the CATALINA_BASE directory the build has setup
@@ -52,6 +59,7 @@ public class TomcatServer {
         tomcatInstance.setBaseDir(baseDir);
         Host host = tomcatInstance.getHost();
 
+
         host.setAppBase("webapps");
         new File(tomcatInstance.getServer().getCatalinaBase(),"temp").mkdirs();
         new File(tomcatInstance.getServer().getCatalinaBase(),"webapps").mkdirs();
@@ -65,9 +73,34 @@ public class TomcatServer {
         logger.info("Got engine " + engine.getDefaultHost());
 
         host.addLifecycleListener(new HostConfig());
-        host.getPipeline().addValve(new SingleSignOn());
+        Pipeline pipeline = host.getPipeline();
+        pipeline.addValve(ssoValve);
+        /*pipeline.addValve(new ValveBase() {
+
+            @Override
+            public void invoke(Request request, Response response) throws IOException, ServletException {
+                Cookie cookies[] = request.getCookies();
+                if (cookies != null) {
+                    for(Cookie c: cookies) {
+                        if (c.getName().equalsIgnoreCase("JSESSIONID")) {
+                            logger.info("Setting principal from session.");
+                            StandardContext ctx = (StandardContext)request.getServletContext().getContext("/");
+                            Manager manager = ctx.getManager();
+                            StandardSession session = (StandardSession)manager.findSession(c.getValue());
+                            request.setUserPrincipal(session.getPrincipal());
+                        }
+                    }
+                }
+                Valve next = this.getNext();
+                if (next!=null) {
+                    next.invoke(request, response);
+                }
+            }
+
+        });
+        */
         tomcatInstance.addContext("", null);
-        
+
         File radar = new File(radarWar);
         try {
             File existingRadar = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
@@ -84,8 +117,12 @@ public class TomcatServer {
         return tomcatInstance.getConnector().getLocalPort();
     }
 
-    public Manager getTestSessionManager() {        
+    public Manager getTestSessionManager() {
         return this.sessionManager;
+    }
+
+    public SingleSignOnWrapper getSsoValve() {
+        return this.ssoValve;
     }
 
     /**
@@ -98,7 +135,7 @@ public class TomcatServer {
         this.sessionManager = ctx.getManager();
         for (Container c: tomcatInstance.getHost().findChildren() ) {
             System.out.println("Container: " + c.getName()+"/"+c.getClass().getName());
-            
+
             for (Container c2: c.findChildren()) {
                 System.out.println("--> Container: " + c2.getName());
             }

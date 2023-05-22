@@ -35,18 +35,14 @@ public class CwmsAccessManager extends RadarAccessManager {
     public void manage(@NotNull Handler handler, @NotNull Context ctx,
                        @NotNull Set<RouteRole> requiredRoles)
             throws Exception {
-        boolean shouldProceed = isAuthorized(ctx, requiredRoles);
 
-        if (shouldProceed) {
+        if (isAuthorized(ctx, requiredRoles)) {
             buildDataSource(ctx);
 
             // Let the handler handle the request.
             handler.handle(ctx);
         } else {
-            String msg = getFailMessage(ctx, requiredRoles);
-            logger.info(msg);
-            ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
-            ctx.status(401).result("Unauthorized");
+            throw new CwmsAuthException("Access not authorized",HttpServletResponse.SC_FORBIDDEN);
         }
     }
 
@@ -95,21 +91,21 @@ public class CwmsAccessManager extends RadarAccessManager {
         Optional<String> retval = Optional.empty();
         if (ctx != null && attrName != null && !attrName.isEmpty()) {
             Map<String, Object> attributeMap = ctx.attributeMap();
-
+            String attr = null;
             if (attributeMap.containsKey(attrName)) {
-                String attr = ctx.attribute(attrName);
-
-                if (attr != null && !attr.isEmpty()) {
-                    retval = Optional.of(attr);
-                } else {
-                    logger.log(Level.FINE, "{0} attribute value was null or empty",
-                            new Object[]{attrName});
-                }
+                attr = ctx.attribute(attrName);
+            } else if (ctx.queryParamMap().containsKey(attrName)) {
+                attr = ctx.queryParam(attrName);
             } else {
                 logger.log(Level.FINE, "No {0} attribute", new Object[]{attrName});
             }
+            if (attr != null && !attr.isEmpty()) {
+                retval = Optional.of(attr);
+            } else {
+                logger.log(Level.FINE, "{0} attribute value was null or empty",
+                        new Object[]{attrName});
+            }
         }
-
         return retval;
     }
 
@@ -192,8 +188,7 @@ public class CwmsAccessManager extends RadarAccessManager {
 
     @Override
     public boolean canAuth(Context ctx, Set<RouteRole> roles) {
-        return  (ctx.cookie("JSESSIONIDSSO") != null)
-              ||(ctx.cookie("JSESSIONID") != null);
+        return ctx.cookie("JSESSIONIDSSO") != null;
     }
 
 }

@@ -256,7 +256,7 @@ public class ApiServlet extends HttpServlet {
                 .exception(CwmsAuthException.class, (e,ctx) -> {
                     RadarError re = new RadarError(e.getMessage(),true);
                     logger.atInfo().withCause(e).log("Failed Authorization");
-                    ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(re);
+                    ctx.status(e.getAuthFailCode()).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
                     RadarError errResponse = new RadarError("System Error");

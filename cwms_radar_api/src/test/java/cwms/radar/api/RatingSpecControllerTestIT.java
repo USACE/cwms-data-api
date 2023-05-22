@@ -49,7 +49,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 	@Test
 	void test_create_read_delete() throws Exception {
 		String locationId = "RatingSpecTest";
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK"; // TODO: sort out office id usage
 		createLocation(locationId, true, officeId);
 		String ratingXml = readResourceFile("cwms/radar/api/Zanesville_Stage_Flow_COE_Production.xml");
 		RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
