@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.radar.ApiServlet;
+import cwms.radar.api.Controllers;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
@@ -85,7 +86,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
         
 
         ConnectionPreparer userPreparer = new DirectUserPreparer(user);
-        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
+        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam(Controllers.OFFICE));
         DelegatingConnectionPreparer apiPreparer = 
             new DelegatingConnectionPreparer(officePrepare,userPreparer);
 

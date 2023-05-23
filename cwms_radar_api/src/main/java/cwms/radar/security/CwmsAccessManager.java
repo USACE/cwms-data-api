@@ -2,6 +2,7 @@ package cwms.radar.security;
 
 import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.ApiServlet;
+import cwms.radar.api.Controllers;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
@@ -29,7 +30,8 @@ import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 
 public class CwmsAccessManager extends RadarAccessManager {
-    public static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
+    private static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
+    private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";
 
     @Override
     public void manage(@NotNull Handler handler, @NotNull Context ctx,
@@ -79,7 +81,7 @@ public class CwmsAccessManager extends RadarAccessManager {
     }
 
     private static Optional<String> getOffice(Context ctx) {
-        Optional<String> retval = getStringAttribute("office", ctx);
+        Optional<String> retval = getStringAttribute(Controllers.OFFICE, ctx);
         if (!retval.isPresent()) {
             // ApiServet guesses the office from the context and puts it in office_id.
             retval = getStringAttribute(ApiServlet.OFFICE_ID, ctx);
@@ -188,7 +190,7 @@ public class CwmsAccessManager extends RadarAccessManager {
 
     @Override
     public boolean canAuth(Context ctx, Set<RouteRole> roles) {
-        return ctx.cookie("JSESSIONIDSSO") != null;
+        return ctx.cookie(SESSION_COOKIE_NAME) != null;
     }
 
 }

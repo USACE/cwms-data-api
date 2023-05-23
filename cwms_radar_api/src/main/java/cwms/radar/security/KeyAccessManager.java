@@ -1,6 +1,7 @@
 package cwms.radar.security;
 
 import cwms.radar.ApiServlet;
+import cwms.radar.api.Controllers;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.datasource.ApiKeyUserPreparer;
 import cwms.radar.datasource.ConnectionPreparer;
@@ -86,7 +87,7 @@ public class KeyAccessManager extends RadarAccessManager {
         logger.info("Validated Api Key for user=" + user);
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
-        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam("office"));
+        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam(Controllers.OFFICE));
         DelegatingConnectionPreparer apiPreparer = 
             new DelegatingConnectionPreparer(keyPreparer,officePrepare);
 
