@@ -24,10 +24,6 @@
 
 package cwms.radar.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.api.Controllers.*;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
-
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -42,23 +38,23 @@ import cwms.radar.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.*;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.*;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 
 public class SpecifiedLevelController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(SpecifiedLevelController.class.getName());
-    private static final String TAG = "Specified Levels";
+    private static final String TAG = "Levels";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -205,6 +201,7 @@ public class SpecifiedLevelController implements CrudHandler {
         method = HttpMethod.DELETE,
         tags = {TAG}
     )
+    @Override
     public void delete(Context ctx, String specifiedLevelId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {

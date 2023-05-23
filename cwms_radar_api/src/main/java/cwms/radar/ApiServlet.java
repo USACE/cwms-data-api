@@ -312,7 +312,7 @@ public class ApiServlet extends HttpServlet {
                 new ClobController(metrics), requiredRoles);
         radarCrud("/pools/{pool-id}",
                 new PoolController(metrics), requiredRoles);
-        radarCrud("/specified-levels/{level-id}",
+        radarCrud("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles);
     }
 
@@ -382,11 +382,11 @@ public class ApiServlet extends HttpServlet {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
-                
+
                 req.addList(manager.getName());
                 secReqs.add(req);
             }
-            
+
         });
         
         config.accessManager(am);
