@@ -7,3 +7,6 @@ build
 **/bin
 gradle.properties
 .idea
+kdata
+pki/certs
+compose.env

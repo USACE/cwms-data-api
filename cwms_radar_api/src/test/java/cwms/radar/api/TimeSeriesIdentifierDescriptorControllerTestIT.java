@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
@@ -90,6 +92,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
                     .accept(Formats.JSONV2)
                     .contentType(Formats.JSONV2)
                     .queryParam("office", OFFICE)
+                    .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
                     .header("Authorization", user.toHeaderValue())
                     .when()
                     .redirects().follow(true)

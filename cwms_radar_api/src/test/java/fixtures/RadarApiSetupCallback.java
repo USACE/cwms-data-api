@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.catalina.Manager;
+import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.commons.io.IOUtils;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.JsonConfig;
@@ -163,6 +165,10 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
     public static Manager getTestSessionManager() {
         return radarInstance.getTestSessionManager();
+    }
+
+    public static SingleSignOnWrapper getSsoValve() {
+        return radarInstance.getSsoValve();
     }
 
 }

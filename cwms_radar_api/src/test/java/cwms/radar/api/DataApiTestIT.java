@@ -28,6 +28,10 @@ import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
+import io.restassured.RestAssured;
+import io.restassured.config.JsonConfig;
+import io.restassured.path.json.config.JsonPathConfig;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -41,6 +45,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
+import org.apache.catalina.SessionEvent;
+import org.apache.catalina.SessionListener;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
@@ -48,8 +54,12 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import com.google.common.flogger.FluentLogger;
+
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 /**
@@ -59,6 +69,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
 public class DataApiTestIT {
+    private static FluentLogger logger = FluentLogger.forEnclosingClass();
     /**
      * List of locations that will need to be deleted when tests are done.
      */
@@ -142,6 +153,17 @@ public class DataApiTestIT {
                 session.setAuthType("CLIENT-CERT");
                 session.setPrincipal(mcup);
                 session.activate();
+                session.addSessionListener(new SessionListener() {
+
+                    @Override
+                    public void sessionEvent(SessionEvent event) {
+                        logger.atInfo().log("Got event of type: %s",event.getType());
+                        logger.atInfo().log("Session is:",event.getSession().toString());
+                    }
+                    
+                });
+                RadarApiSetupCallback.getSsoValve()
+                                     .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
             }
         } catch(Exception ex) {
             throw ex;

@@ -11,8 +11,7 @@ public class CwmsAccessManagerProvider implements AccessManagerProvider {
     }
 
     @Override
-    public RadarAccessManager create() {        
+    public RadarAccessManager create() {
         return new CwmsAccessManager();
     }
-    
 }

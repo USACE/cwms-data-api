@@ -14,9 +14,12 @@ USER $USER
 COPY --from=cache /cache /home/gradle/.gradle
 WORKDIR /builddir
 COPY . /builddir/
-RUN  gradle prepareDockerBuild --info --no-daemon
+RUN  gradle clean prepareDockerBuild --info --no-daemon
 
-FROM tomcat:9.0.64-jdk8 as api
+FROM tomcat:9.0.74-jdk8 as api
+#RUN DEBIAN_FRONTEND="noninteractive" \ 
+#    apt-get -y update && \
+#    apt-get -y upgrade --fix-missing
 
 COPY --from=builder /builddir/cwms_radar_api/build/docker/radar/ /usr/local/tomcat
 COPY --from=builder /builddir/cwms_radar_api/build/docker/context.xml /usr/local/tomcat/conf

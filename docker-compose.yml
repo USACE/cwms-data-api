@@ -53,10 +53,9 @@ services:
       - INSTALLONCE=1
       - QUIET=1
     command: >
-      sh -xc "echo \"begin cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS Users', 'HQ'); cwms_sec.add_user_to_group('$${OFFICE_EROC}webtest','CWMS User Admins', 'HQ'); end;\" > /tmp/sql.sql &&
-                     echo "/" >> /tmp/sql.sql
-                     echo "quit" >> /tmp/sql.sql
-                    sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/tmp/sql"
+      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC"
+    volumes:
+      - ./compose_files/sql:/setup_sql:ro
     depends_on:
       db:
         condition: service_healthy
@@ -74,61 +73,87 @@ services:
         condition: service_completed_successfully
       traefik:
         condition: service_healthy
-    image: cwms-rest-api:2.6-compose
+    image: cwms-rest-api:3.0-compose
     build:
       target: api
       context: .
       dockerfile: Dockerfile
+    command: bash -c "keytool -trustcacerts -importcert -alias cda_lab_root -keystore /opt/java/openjdk/jre/lib/security/cacerts -storepass changeit -file /conf/rootca.pem -noprompt || catalina.sh run"
     restart: unless-stopped
+    volumes:
+      - ./compose_files/pki/certs:/conf/
     environment:
       - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
       - RADAR_JDBC_USERNAME=q0webtest
       - RADAR_JDBC_PASSWORD=simplecwmspasswD1
       - radar.access.provider=MultipleAccessManager
-      - radar.access.providers=KeyAccessManager,CwmsAccessManager
+      - radar.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
+      - cwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration
+      - cwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms
     expose:
       - 7000
     healthcheck:
       test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
       interval: 1m30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
+      timeout: 1s
+      retries: 10
+      start_period: 2s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.data-api.rule=Host(`cwms-data.localhost`)"
-      - "traefik.http.routers.data-api.entryPoints=web"
+      - "traefik.http.routers.data-api.entryPoints=web-secure"
+      - "traefik.http.routers.data-api.tls=true"
 
   auth:
-    image: authelia/authelia:4.37.5
-    restart: unless-stopped
+    image: quay.io/keycloak/keycloak:19.0.1
+    command: ["start", "--features-disabled=admin2","--import-realm"]
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_FEATURES=admin-fine-grained-authz
+      - KC_HOSTNAME=auth.localhost:8444
+      - KC_HOSTNAME_URL=https://auth.localhost:8444
+      - KC_HOSTNAME_STRICT=false
+      - KC_PROXY=edge
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KC_HTTPS_KEY_STORE_FILE=/conf/server.keystore
+      - KC_HTTPS_KEY_STORE_PASSWORD=badpassword
     volumes:
-      - ./config/test-compose/authelia:/config:ro
-      - auth_data:/data
-    command:
-      - "authelia"
-      - "--config=/config/config.yaml"
+      - ./compose_files/pki/certs/main.ks:/conf/server.keystore:ro
+      - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=Host(`auth.localhost`)"
-      - "traefik.http.routers.auth.entryPoints=web"
+      - "traefik.http.routers.auth.entryPoints=web-secure"
+      - "traefik.http.routers.auth.tls=true"
+    expose:
+      - 8080
+      - 8443
+    depends_on:
+      traefik:
+        condition: service_healthy
+    
+
+
   # Proxy for HTTPS for OpenID
   traefik:
     image: "traefik:v2.9"
     container_name: "traefik"
-    command:
-      - "--log.level=DEBUG"
-      #- "--accesslog=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.watch=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:81"
-      - "--ping"
     ports:
       - "81:81"
-      - "8080:8080"
+      - "8444:8443"
+    expose:
+      - "8080"
     volumes:
+      - ./compose_files/traefik/traefik.yml:/etc/traefik/traefik.yaml:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ./compose_files/pki/certs:/certs:ro
     healthcheck:
       test: traefik healthcheck --ping
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.api.entryPoints=traefik"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.tls=true"

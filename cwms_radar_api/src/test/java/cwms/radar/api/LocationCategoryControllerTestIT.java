@@ -47,7 +47,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_create_read_delete() throws Exception {
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK";
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 		LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(), "IntegrationTesting");
 		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);

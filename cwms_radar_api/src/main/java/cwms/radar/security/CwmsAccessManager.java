@@ -2,6 +2,7 @@ package cwms.radar.security;
 
 import cwms.auth.CwmsUserPrincipal;
 import cwms.radar.ApiServlet;
+import cwms.radar.api.Controllers;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
@@ -29,24 +30,21 @@ import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 
 public class CwmsAccessManager extends RadarAccessManager {
-    public static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
+    private static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
+    private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";
 
     @Override
     public void manage(@NotNull Handler handler, @NotNull Context ctx,
                        @NotNull Set<RouteRole> requiredRoles)
             throws Exception {
-        boolean shouldProceed = isAuthorized(ctx, requiredRoles);
 
-        if (shouldProceed) {
+        if (isAuthorized(ctx, requiredRoles)) {
             buildDataSource(ctx);
 
             // Let the handler handle the request.
             handler.handle(ctx);
         } else {
-            String msg = getFailMessage(ctx, requiredRoles);
-            logger.info(msg);
-            ctx.status(HttpServletResponse.SC_UNAUTHORIZED).json(RadarError.notAuthorized());
-            ctx.status(401).result("Unauthorized");
+            throw new CwmsAuthException("Access not authorized",HttpServletResponse.SC_FORBIDDEN);
         }
     }
 
@@ -83,7 +81,7 @@ public class CwmsAccessManager extends RadarAccessManager {
     }
 
     private static Optional<String> getOffice(Context ctx) {
-        Optional<String> retval = getStringAttribute("office", ctx);
+        Optional<String> retval = getStringAttribute(Controllers.OFFICE, ctx);
         if (!retval.isPresent()) {
             // ApiServet guesses the office from the context and puts it in office_id.
             retval = getStringAttribute(ApiServlet.OFFICE_ID, ctx);
@@ -95,21 +93,21 @@ public class CwmsAccessManager extends RadarAccessManager {
         Optional<String> retval = Optional.empty();
         if (ctx != null && attrName != null && !attrName.isEmpty()) {
             Map<String, Object> attributeMap = ctx.attributeMap();
-
+            String attr = null;
             if (attributeMap.containsKey(attrName)) {
-                String attr = ctx.attribute(attrName);
-
-                if (attr != null && !attr.isEmpty()) {
-                    retval = Optional.of(attr);
-                } else {
-                    logger.log(Level.FINE, "{0} attribute value was null or empty",
-                            new Object[]{attrName});
-                }
+                attr = ctx.attribute(attrName);
+            } else if (ctx.queryParamMap().containsKey(attrName)) {
+                attr = ctx.queryParam(attrName);
             } else {
                 logger.log(Level.FINE, "No {0} attribute", new Object[]{attrName});
             }
+            if (attr != null && !attr.isEmpty()) {
+                retval = Optional.of(attr);
+            } else {
+                logger.log(Level.FINE, "{0} attribute value was null or empty",
+                        new Object[]{attrName});
+            }
         }
-
         return retval;
     }
 
@@ -192,7 +190,7 @@ public class CwmsAccessManager extends RadarAccessManager {
 
     @Override
     public boolean canAuth(Context ctx, Set<RouteRole> roles) {
-        return ctx.cookie("JSESSIONIDSSO") != null;
+        return ctx.cookie(SESSION_COOKIE_NAME) != null;
     }
 
 }

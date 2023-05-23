@@ -19,6 +19,10 @@ To build the war:
 
 This will compile the jar and run the basic unit tests.
 
+## Development stack
+
+See the README.docker-compose.md for instructions using the docker-compose environment
+
 ## Testing
 
 To run the integration tests:
