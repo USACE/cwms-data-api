@@ -75,30 +75,6 @@ public class TomcatServer {
         host.addLifecycleListener(new HostConfig());
         Pipeline pipeline = host.getPipeline();
         pipeline.addValve(ssoValve);
-        /*pipeline.addValve(new ValveBase() {
-
-            @Override
-            public void invoke(Request request, Response response) throws IOException, ServletException {
-                Cookie cookies[] = request.getCookies();
-                if (cookies != null) {
-                    for(Cookie c: cookies) {
-                        if (c.getName().equalsIgnoreCase("JSESSIONID")) {
-                            logger.info("Setting principal from session.");
-                            StandardContext ctx = (StandardContext)request.getServletContext().getContext("/");
-                            Manager manager = ctx.getManager();
-                            StandardSession session = (StandardSession)manager.findSession(c.getValue());
-                            request.setUserPrincipal(session.getPrincipal());
-                        }
-                    }
-                }
-                Valve next = this.getNext();
-                if (next!=null) {
-                    next.invoke(request, response);
-                }
-            }
-
-        });
-        */
         tomcatInstance.addContext("", null);
 
         File radar = new File(radarWar);
