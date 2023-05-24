@@ -310,6 +310,9 @@ public class DataApiTestIT {
                 stmt.setString(2,timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
+                if (ex.getMessage().contains("TS_ALREADY_EXISTS")) {
+                    return; // this is okay
+                }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
         }, db.getPdUser());

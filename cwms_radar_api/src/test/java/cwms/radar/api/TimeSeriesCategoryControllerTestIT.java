@@ -47,7 +47,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_create_read_delete() throws Exception {
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK";
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 		TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
 		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
@@ -56,6 +56,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
 		given()
 			.accept(Formats.JSON)
 			.contentType(Formats.JSON)
+			.queryParam(OFFICE, officeId)
 			.body(xml)
 			.header("Authorization", user.toHeaderValue())
 			.when()

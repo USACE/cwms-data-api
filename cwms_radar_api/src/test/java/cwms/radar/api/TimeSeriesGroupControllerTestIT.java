@@ -136,9 +136,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_read_delete() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
-        createLocation(timeSeriesId, true, officeId);
+        createTimeseries(officeId, timeSeriesId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
@@ -154,6 +154,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         given()
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -172,6 +173,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(OFFICE, officeId)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -274,7 +276,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_rename_group() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
@@ -309,6 +311,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(OFFICE, officeId)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -404,8 +407,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_add_assigned_locs() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+    void test_add_assigned_timeseries() throws Exception {
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
@@ -440,6 +443,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(OFFICE, officeId)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -485,9 +489,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("office-id", equalTo(group.getOfficeId()))
             .body("id", equalTo(group.getId()))
             .body("description", equalTo(group.getDescription()))
-            .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId2))
-            .body("assigned-time-series[0].alias-id", equalTo("AliasId2"))
-            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId2));
+            .body("assigned-time-series[1].timeseries-id", equalTo(timeSeriesId2))
+            .body("assigned-time-series[1].alias-id", equalTo("AliasId2"))
+            .body("assigned-time-series[1].ref-ts-id", equalTo(timeSeriesId2));
         //Clear Assigned TS
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);
@@ -497,7 +501,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_LOCS, "true")
+            .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
             .when()
             .redirects().follow(true)
@@ -505,6 +509,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .patch("/timeseries/group/"+ group.getId())
             .then()
             .assertThat()
+            .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
         given()
@@ -516,7 +521,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/timeseries/group/" + group.getId())
+            .delete("/timeseries/group/{group}",group.getId())
             .then()
             .assertThat()
             .log().body().log().everything(true)
@@ -527,6 +532,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE,true)
             .when()
             .redirects().follow(true)
             .redirects().max(3)
