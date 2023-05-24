@@ -36,11 +36,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Schema(description = "A representation of a timeseries group")
 @XmlRootElement(name="timeseries-group")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TimeSeriesGroup implements CwmsDTO
-{
+public class TimeSeriesGroup extends CwmsDTO {
 	private String id;
 	private TimeSeriesCategory timeSeriesCategory;
-	private String officeId;
 	private String description;
 
 	private String sharedAliasId;
@@ -51,13 +49,14 @@ public class TimeSeriesGroup implements CwmsDTO
 
 
 	public TimeSeriesGroup() {
+		super(null);
 	}
 
 	public TimeSeriesGroup(TimeSeriesCategory cat, String grpOfficeId, String grpId, String grpDesc,
 						   String sharedTsAliasId, String sharedRefTsId)
 	{
+		super(grpOfficeId);
 		this.timeSeriesCategory = new TimeSeriesCategory(cat);
-		this.officeId = grpOfficeId;
 		this.id = grpId;
 		this.description = grpDesc;
 		this.sharedAliasId = sharedTsAliasId;
@@ -67,12 +66,12 @@ public class TimeSeriesGroup implements CwmsDTO
 
 	public TimeSeriesGroup(TimeSeriesGroup group)
 	{
-			this.timeSeriesCategory = new TimeSeriesCategory(group.timeSeriesCategory);
-			this.officeId = group.officeId;
-			this.id = group.id;
-			this.description = group.description;
-			this.sharedAliasId = group.sharedAliasId;
-			this.sharedRefTsId = group.sharedRefTsId;
+		super(group.getOfficeId());
+		this.timeSeriesCategory = new TimeSeriesCategory(group.timeSeriesCategory);
+		this.id = group.id;
+		this.description = group.description;
+		this.sharedAliasId = group.sharedAliasId;
+		this.sharedRefTsId = group.sharedRefTsId;
 	}
 
 	public TimeSeriesGroup(TimeSeriesGroup group, List<AssignedTimeSeries> timeSeries){
@@ -96,11 +95,6 @@ public class TimeSeriesGroup implements CwmsDTO
 	public String getDescription()
 	{
 		return description;
-	}
-
-	public String getOfficeId()
-	{
-		return officeId;
 	}
 
 	public String getSharedAliasId()

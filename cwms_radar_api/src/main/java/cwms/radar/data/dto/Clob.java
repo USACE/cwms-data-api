@@ -9,9 +9,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "clob")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Clob implements CwmsDTO {
-    @JsonProperty(required = true)
-    private String office;
+public class Clob extends CwmsDTO {
     @JsonProperty(required = true)
     private String id;
     private String description;
@@ -19,17 +17,14 @@ public class Clob implements CwmsDTO {
 
     @SuppressWarnings("unused")
     private Clob() {
+        super(null);
     }
 
     public Clob(String office, String id, String description, String value) {
-        this.office = office;
+        super(office);
         this.id = id;
         this.description = description;
         this.value = value;
-    }
-
-    public String getOffice() {
-        return office;
     }
 
     public String getId() {
@@ -47,7 +42,7 @@ public class Clob implements CwmsDTO {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(getOffice()).append("/").append(id).append(";description=").append(description);
+        builder.append(getOfficeId()).append("/").append(id).append(";description=").append(description);
         return builder.toString();
     }
 

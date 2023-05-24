@@ -12,24 +12,18 @@ import java.time.ZoneId;
 @JsonDeserialize(builder = cwms.radar.data.dto.TimeSeriesIdentifierDescriptor.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class TimeSeriesIdentifierDescriptor implements CwmsDTO {
-
-    private final String officeId;
+public class TimeSeriesIdentifierDescriptor extends CwmsDTO {
     private final String timeSeriesId;
     private final String timezoneName;
     private final Long intervalOffsetMinutes;
     private final boolean active;
 
     private TimeSeriesIdentifierDescriptor(Builder builder) {
-        this.officeId = builder.officeId;
+        super(builder.officeId);
         this.timeSeriesId = builder.timeSeriesId;
         this.timezoneName = builder.timezoneName;
         this.intervalOffsetMinutes = builder.intervalOffsetMinutes;
         this.active = builder.active;
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     public String getTimeSeriesId() {

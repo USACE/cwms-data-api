@@ -30,7 +30,7 @@ class ClobTest {
         assertNotNull(clob2);
 
         assertEquals(clob.getId(), clob2.getId());
-        assertEquals(clob.getOffice(), clob2.getOffice());
+        assertEquals(clob.getOfficeId(), clob2.getOfficeId());
         assertEquals(clob.getDescription(), clob2.getDescription());
         assertEquals(clob.getValue(), clob2.getValue());
     }
@@ -50,7 +50,7 @@ class ClobTest {
         assertNotNull(clob2);
 
         assertEquals(clob.getId(), clob2.getId());
-        assertEquals(clob.getOffice(), clob2.getOffice());
+        assertEquals(clob.getOfficeId(), clob2.getOfficeId());
         assertEquals(clob.getDescription(), clob2.getDescription());
         assertEquals(clob.getValue(), clob2.getValue());
     }
@@ -79,7 +79,7 @@ class ClobTest {
         assertNotNull(clob2);
 
         assertEquals(clob.getId(), clob2.getId());
-        assertEquals(clob.getOffice(), clob2.getOffice());
+        assertEquals(clob.getOfficeId(), clob2.getOfficeId());
         assertEquals(clob.getDescription(), clob2.getDescription());
         assertEquals(clob.getValue(), clob2.getValue());
     }

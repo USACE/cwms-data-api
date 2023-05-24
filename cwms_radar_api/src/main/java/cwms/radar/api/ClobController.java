@@ -253,7 +253,7 @@ public class ClobController implements CrudHandler {
             try {
                 Clob clob = deserialize(ctx.body(), formatHeader);
 
-                if (clob.getOffice() == null) {
+                if (clob.getOfficeId() == null) {
                     throw new FormattingException("An officeId is required when creating a clob");
                 }
 
@@ -341,7 +341,7 @@ public class ClobController implements CrudHandler {
             try {
                 Clob clob = deserialize(ctx.body(), formatHeader);
 
-                if (clob.getOffice() == null) {
+                if (clob.getOfficeId() == null) {
                     throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
                     "An office is required in the request body when updating a clob");
                 }
@@ -371,13 +371,13 @@ public class ClobController implements CrudHandler {
     private Clob fillOutClob(Clob clob, String reqId) {
         Clob retval = clob;
 
-        if (clob != null && (clob.getId() == null || clob.getOffice() == null)) {
+        if (clob != null && (clob.getId() == null || clob.getOfficeId() == null)) {
             String id = clob.getId();
             if (id == null) {
                 id = reqId;
             }
 
-            retval = new Clob(id, clob.getOffice(), clob.getDescription(), clob.getValue());
+            retval = new Clob(id, clob.getOfficeId(), clob.getDescription(), clob.getValue());
         }
 
         return retval;

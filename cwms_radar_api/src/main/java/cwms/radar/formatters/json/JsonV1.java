@@ -14,6 +14,7 @@ import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
@@ -86,7 +87,7 @@ public class JsonV1 implements OutputFormatter{
 	}
 
 	@Override
-	public String format(CwmsDTO dto)
+	public String format(CwmsDTOBase dto)
 	{
 		Object fmtv1 = buildFormatting(dto);
 		try
@@ -100,7 +101,7 @@ public class JsonV1 implements OutputFormatter{
 	}
 
 	@Override
-	public String format(List<? extends CwmsDTO> daoList)
+	public String format(List<? extends CwmsDTOBase> daoList)
 	{
 		Object wrapped = buildFormatting(daoList);
 		try
@@ -113,7 +114,7 @@ public class JsonV1 implements OutputFormatter{
 		}
 	}
 
-	private Object buildFormatting(CwmsDTO dao)
+	private Object buildFormatting(CwmsDTOBase dao)
 	{
 		Object retval = null;
 
@@ -161,13 +162,13 @@ public class JsonV1 implements OutputFormatter{
 		return retval;
 	}
 
-	private Object buildFormatting(List<? extends CwmsDTO> daoList)
+	private Object buildFormatting(List<? extends CwmsDTOBase> daoList)
 	{
 		Object retval = null;
 
 		if(daoList != null && !daoList.isEmpty())
 		{
-			CwmsDTO firstObj = daoList.get(0);
+			CwmsDTOBase firstObj = daoList.get(0);
 			if(firstObj instanceof Office)
 			{
 				List<Office> officesList = daoList.stream().map(Office.class::cast).collect(Collectors.toList());

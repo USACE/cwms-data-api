@@ -3,6 +3,7 @@ package cwms.radar.formatters.csv;
 import java.util.List;
 
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.Formats;
@@ -18,7 +19,7 @@ public class CsvV1 implements OutputFormatter {
     }
 
     @Override
-    public String format(CwmsDTO dto) {
+    public String format(CwmsDTOBase dto) {
         String retval = null;
         if( dto instanceof Office )
         {
@@ -30,11 +31,11 @@ public class CsvV1 implements OutputFormatter {
     }
 
     @Override
-    public String format(List<? extends CwmsDTO> dtoList) {
+    public String format(List<? extends CwmsDTOBase> dtoList) {
         String retval = null;
         if(dtoList != null && !dtoList.isEmpty())
         {
-            CwmsDTO dto = dtoList.get(0);
+            CwmsDTOBase dto = dtoList.get(0);
             if( dto instanceof Office)
             {
                 retval = new CsvV1Office().format(dtoList);

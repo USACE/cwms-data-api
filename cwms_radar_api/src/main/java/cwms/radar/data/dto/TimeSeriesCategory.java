@@ -34,27 +34,21 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Schema(description = "A representation of a TimeSeries category")
 @XmlRootElement(name="timeseries-category")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TimeSeriesCategory implements CwmsDTO
+public class TimeSeriesCategory extends CwmsDTO
 {
-	private String officeId;
 	private String id;
 	private String description;
 
 	public TimeSeriesCategory(@JsonProperty("office-id") String catOfficeId,
 							  @JsonProperty("id") String catId, @JsonProperty("description") String catDesc)
 	{
-		this.officeId = catOfficeId;
+		super(catOfficeId);
 		this.id = catId;
 		this.description = catDesc;
 	}
 
 	public TimeSeriesCategory(TimeSeriesCategory other){
 		this(other.getOfficeId(), other.getId(), other.getDescription());
-	}
-
-	public String getOfficeId()
-	{
-		return officeId;
 	}
 
 	public String getId()

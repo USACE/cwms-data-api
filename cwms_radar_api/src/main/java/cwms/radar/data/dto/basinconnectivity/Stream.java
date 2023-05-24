@@ -6,7 +6,7 @@ import cwms.radar.data.dto.basinconnectivity.buildercontracts.stream.*;
 
 import java.util.*;
 
-public final class Stream implements CwmsDTO
+public final class Stream extends CwmsDTO
 {
     private final String streamName;
     private final List<Stream> tributaries;//streams that flow into this
@@ -20,12 +20,12 @@ public final class Stream implements CwmsDTO
     private final Double confluenceStation;
     private final Double diversionStation;
     private final List<StreamLocation> streamLocations;
-    private final String officeId;
     private final String comment;
     private final Double averageSlope;
 
     private Stream(Builder streamBuilder)
     {
+        super(streamBuilder.officeId);
         streamName = streamBuilder.streamName;
         startsDownstream = streamBuilder.startsDownstream;
         divertingStreamId = streamBuilder.divertingStreamId;
@@ -40,7 +40,6 @@ public final class Stream implements CwmsDTO
         streamReaches = streamBuilder.streamReaches;
         comment = streamBuilder.comment;
         averageSlope = streamBuilder.averageSlope;
-        officeId = streamBuilder.officeId;
     }
 
     public List<StreamLocation> getStreamLocations()
@@ -111,11 +110,6 @@ public final class Stream implements CwmsDTO
     public Double getAverageSlope()
     {
         return averageSlope;
-    }
-
-    public String getOfficeId()
-    {
-        return officeId;
     }
 
     public static class Builder implements BuildStream, BuildDiversionStation, BuildConfluenceStation, BuildDiversionBank, BuildConfluenceBank

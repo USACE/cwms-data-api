@@ -26,7 +26,7 @@ package cwms.radar.data.dto;
 
 import cwms.radar.api.errors.FieldException;
 
-public class AssignedLocation implements CwmsDTO
+public class AssignedLocation implements CwmsDTOBase
 {
 	private String locationId;
 	private String officeId;

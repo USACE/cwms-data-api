@@ -2,7 +2,7 @@ package cwms.radar.data.dto;
 
 import cwms.radar.api.errors.FieldException;
 
-public class RecentValue implements CwmsDTO
+public class RecentValue implements CwmsDTOBase
 {
 	String id;
 	TsvDqu dqu;

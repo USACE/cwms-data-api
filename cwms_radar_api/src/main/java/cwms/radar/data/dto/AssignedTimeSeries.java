@@ -27,7 +27,7 @@ package cwms.radar.data.dto;
 import cwms.radar.api.errors.FieldException;
 import java.math.BigDecimal;
 
-public class AssignedTimeSeries implements CwmsDTO
+public class AssignedTimeSeries implements CwmsDTOBase
 {
 	private String timeseriesId;
 	private BigDecimal tsCode;

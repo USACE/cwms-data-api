@@ -17,8 +17,7 @@ import org.jetbrains.annotations.NotNull;
 @JsonDeserialize(builder = RatingTemplate.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class RatingTemplate implements CwmsDTO {
-    private final String officeId;
+public class RatingTemplate extends CwmsDTO {
     private final String id;
     private final String version;
 
@@ -30,9 +29,9 @@ public class RatingTemplate implements CwmsDTO {
     private final List<String> ratingIds;
 
     public RatingTemplate(Builder builder) {
+        super(builder.officeId);
         this.id = builder.id;
         this.version = builder.version;
-        this.officeId = builder.officeId;
         this.description = builder.description;
         this.dependentParameter = builder.dependentParameter;
         this.independentParameterSpecs = builder.independentParameterList;
@@ -45,10 +44,6 @@ public class RatingTemplate implements CwmsDTO {
 
     public String getVersion() {
         return version;
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     public String getDescription() {

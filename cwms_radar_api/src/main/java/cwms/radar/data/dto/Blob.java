@@ -1,13 +1,13 @@
 package cwms.radar.data.dto;
 
+import org.checkerframework.checker.units.qual.s;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import cwms.radar.api.errors.FieldException;
 
-public class Blob implements CwmsDTO
+public class Blob extends CwmsDTO
 {
-	@JsonProperty(required=true)
-	private String office;
 	@JsonProperty(required=true)
 	private String id;
 	private String description;
@@ -16,16 +16,11 @@ public class Blob implements CwmsDTO
 
 	public Blob(String office, String id, String description, String type, byte[] value)
 	{
-		this.office = office;
+		super(office);
 		this.id = id;
 		this.description = description;
 		this.mediaTypeId = type;
 		this.value = value;
-	}
-
-	public String getOffice()
-	{
-		return office;
 	}
 
 	public String getId()
@@ -51,7 +46,7 @@ public class Blob implements CwmsDTO
 	@Override
 	public String toString(){
 		StringBuilder builder = new StringBuilder();
-		builder.append(getOffice()).append("/").append(id).append(";description=").append(description);
+		builder.append(getOfficeId()).append("/").append(id).append(";description=").append(description);
 		return builder.toString();
 	}
 

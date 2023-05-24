@@ -35,13 +35,10 @@ import rma.util.RMAConst;
 @JsonDeserialize(builder = LocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class LocationLevel implements CwmsDTO {
+public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
     private final String locationLevelId;
-    @JsonProperty(required = true)
-    @Schema(description = "Owning office of the level")
-    private final String officeId;
     @Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
             + "location level. Mutually exclusive with seasonalValues and "
             + "siParameterUnitsConstantValue")
@@ -88,6 +85,7 @@ public final class LocationLevel implements CwmsDTO {
     private final String attributeComment;
 
     private LocationLevel(Builder builder) {
+        super(builder.officeId);
         seasonalTimeSeriesId = builder.seasonalTimeSeriesId;
         seasonalValues = builder.seasonalValues;
         specifiedLevelId = builder.specifiedLevelId;
@@ -109,7 +107,6 @@ public final class LocationLevel implements CwmsDTO {
         attributeDurationId = builder.attributeDurationId;
         attributeComment = builder.attributeComment;
         locationLevelId = builder.locationId;
-        officeId = builder.officeId;
     }
 
     public String getSeasonalTimeSeriesId() {
@@ -194,10 +191,6 @@ public final class LocationLevel implements CwmsDTO {
 
     public String getLocationLevelId() {
         return locationLevelId;
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     @JsonPOJOBuilder

@@ -33,7 +33,7 @@ class ClobDaoTest {
             logger.atFine().log("Found: " + found.size());
 
             for (Clob clob : found) {
-                dao.delete(clob.getOffice(), clob.getId());
+                dao.delete(clob.getOfficeId(), clob.getId());
             }
 
             found = dao.getClobsLike(OFFICE, "TEST/TEST%");

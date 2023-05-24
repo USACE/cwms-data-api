@@ -210,7 +210,7 @@ public class ClobDao extends JooqDao<Clob> {
                 clob.getId(),
                 clob.getDescription(),
                 pFailIfExists,
-                clob.getOffice()
+                clob.getOfficeId()
         );
 
     }
@@ -240,7 +240,7 @@ public class ClobDao extends JooqDao<Clob> {
                 clob.getId(),
                 clob.getDescription(),
                 p_ignore_nulls,
-                clob.getOffice()
+                clob.getOfficeId()
         );
     }
 }

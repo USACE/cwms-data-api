@@ -10,6 +10,7 @@ import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationLevel;
 import cwms.radar.data.dto.LocationLevels;
@@ -94,7 +95,7 @@ public class JsonV2 implements OutputFormatter {
     }
 
     @Override
-    public String format(CwmsDTO dto) {
+    public String format(CwmsDTOBase dto) {
         try {
             return om.writeValueAsString(dto);
         } catch (JsonProcessingException e) {
@@ -103,7 +104,7 @@ public class JsonV2 implements OutputFormatter {
     }
 
     @Override
-    public String format(List<? extends CwmsDTO> dtoList) {
+    public String format(List<? extends CwmsDTOBase> dtoList) {
         try {
             return om.writeValueAsString(dtoList);
         } catch (JsonProcessingException e) {
