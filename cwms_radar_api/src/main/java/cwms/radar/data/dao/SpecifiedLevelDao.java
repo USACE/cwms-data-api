@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.logging.Logger;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.dao.CwmsDbLevelJooq;
 
-public class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
-    private static final Logger logger = Logger.getLogger(SpecifiedLevelDao.class.getName());
+public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String SPECIFIED_LEVEL_ID = "SPECIFIED_LEVEL_ID";
     public static final String DESCRIPTION = "DESCRIPTION";
@@ -42,5 +42,22 @@ public class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
         });
 
         return retval;
+    }
+
+    public void create(SpecifiedLevel specifiedLevel, boolean failIfExists) {
+        CWMS_LEVEL_PACKAGE.call_STORE_SPECIFIED_LEVEL(dsl.configuration(),
+            specifiedLevel.getId(), specifiedLevel.getDescription(), OracleTypeMap.formatBool(failIfExists),
+            specifiedLevel.getOfficeId());
+    }
+
+    public void update(String oldSpecifiedLevelId, String newSpecifiedLevelId, String officeId) {
+        CWMS_LEVEL_PACKAGE.call_RENAME_SPECIFIED_LEVEL(dsl.configuration(),
+            oldSpecifiedLevelId, newSpecifiedLevelId, officeId);
+    }
+
+    public void delete(String specifiedLevelId, String office) {
+        String failIfNotFound = OracleTypeMap.formatBool(true);
+        CWMS_LEVEL_PACKAGE.call_DELETE_SPECIFIED_LEVEL(dsl.configuration(), specifiedLevelId, failIfNotFound,
+            office);
     }
 }

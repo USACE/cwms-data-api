@@ -2,6 +2,43 @@ package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+import static cwms.radar.api.Controllers.ACCEPT;
+import static cwms.radar.api.Controllers.BEGIN;
+import static cwms.radar.api.Controllers.CATEGORY_ID;
+import static cwms.radar.api.Controllers.CREATE_AS_LRTS;
+import static cwms.radar.api.Controllers.CURSOR;
+import static cwms.radar.api.Controllers.DATE_FORMAT;
+import static cwms.radar.api.Controllers.DATUM;
+import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.END;
+import static cwms.radar.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.radar.api.Controllers.EXAMPLE_DATE;
+import static cwms.radar.api.Controllers.FORMAT;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.GROUP_ID;
+import static cwms.radar.api.Controllers.MAX_VERSION;
+import static cwms.radar.api.Controllers.NAME;
+import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGESIZE2;
+import static cwms.radar.api.Controllers.PAGESIZE3;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.radar.api.Controllers.STORE_RULE;
+import static cwms.radar.api.Controllers.TIMESERIES;
+import static cwms.radar.api.Controllers.TIMEZONE;
+import static cwms.radar.api.Controllers.TS_IDS;
+import static cwms.radar.api.Controllers.UNIT;
+import static cwms.radar.api.Controllers.UPDATE;
+import static cwms.radar.api.Controllers.VERSION;
+import static cwms.radar.api.Controllers.VERSION_DATE;
+import static cwms.radar.api.Controllers.queryParamAsClass;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -17,7 +54,6 @@ import cwms.radar.data.dao.StoreRule;
 import cwms.radar.data.dao.TimeSeriesDao;
 import cwms.radar.data.dao.TimeSeriesDaoImpl;
 import cwms.radar.data.dao.TimeSeriesDeleteOptions;
-import cwms.radar.data.dao.TimeSeriesIdentifierDescriptorDao;
 import cwms.radar.data.dto.RecentValue;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.data.dto.Tsv;
@@ -46,12 +82,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -68,35 +101,12 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
-    public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
 
-    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
-    public static final String VERSION_DATE = "version-date";
-    public static final String CREATE_AS_LRTS = "create-as-lrts";
-    public static final String STORE_RULE = "store-rule";
-    public static final String OVERRIDE_PROTECTION = "override-protection";
-    public static final String TIMEZONE = "timezone";
-    public static final String OFFICE = "office";
-    public static final String START_TIME_INCLUSIVE = "start-time-inclusive";
-    public static final String END_TIME_INCLUSIVE = "end-time-inclusive";
-    public static final String MAX_VERSION = "max-version";
-
-    public static final String NAME = "name";
-    public static final String UNIT = "unit";
-    public static final String DATUM = "datum";
-    public static final String BEGIN = "begin";
-    public static final String END = "end";
-    public static final String FORMAT = "format";
-    public static final String PAGE = "page";
-    public static final String CURSOR = "cursor";
-    public static final String PAGE_SIZE = "page-size";
-    public static final String TIMESERIES = "timeseries";
     public static final String TAG = "TimeSeries";
 
     private final MetricRegistry metrics;
@@ -108,7 +118,7 @@ public class TimeSeriesController implements CrudHandler {
     public TimeSeriesController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     static {
@@ -191,7 +201,7 @@ public class TimeSeriesController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = "timeseries", required = true, description = "The timeseries-id of the timeseries values to be deleted. "),
+                    @OpenApiParam(name = TIMESERIES, required = true, description = "The timeseries-id of the timeseries values to be deleted. "),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the timeseries to be deleted."),
@@ -219,7 +229,7 @@ public class TimeSeriesController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime("delete");
+        try (final Timer.Context ignored = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
@@ -324,7 +334,7 @@ public class TimeSeriesController implements CrudHandler {
                                     "How many entries per page returned. "
                                             + "Default " + defaultPageSize + "."
                     ),
-                    @OpenApiParam(name = "pageSize",
+                    @OpenApiParam(name = PAGESIZE3,
                             deprecated = true,
                             type = Integer.class,
                             description = "Deprecated. Please use page-size instead."
@@ -353,8 +363,8 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime("getAll");
-                DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL);
+             DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = ctx.queryParam(NAME);
@@ -366,19 +376,19 @@ public class TimeSeriesController implements CrudHandler {
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             // The following parameters are only used for jsonv2 and xmlv2
-            String cursor = Controllers.queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
+            String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
-                            "getAll"));
+                            GET_ALL));
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{PAGE_SIZE, "pageSize",
-                    "pagesize"}, Integer.class, defaultPageSize, metrics,
-                    name(TimeSeriesController.class.getName(), "getAll"));
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
+                    PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+                    name(TimeSeriesController.class.getName(), GET_ALL));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
 
             String results;
-            String version = contentType.getParameters().get("version");
+            String version = contentType.getParameters().get(VERSION);
 
             ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
             begin = begin != null ? begin : "PT-24H";
@@ -437,8 +447,8 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
-        try (final Timer.Context ignored = markAndTime("getOne")) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
 
     }
@@ -479,8 +489,8 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
 
-        try (final Timer.Context ignored = markAndTime("update");
-                DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE);
+             DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
@@ -556,7 +566,7 @@ public class TimeSeriesController implements CrudHandler {
 
     @NotNull
     private ContentType getContentType(Context ctx) {
-        String acceptHeader = ctx.req.getHeader("Accept");
+        String acceptHeader = ctx.req.getHeader(ACCEPT);
         String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
         ContentType contentType = Formats.parseHeader(formatHeader);
         if (contentType == null) {
@@ -635,10 +645,9 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String office = ctx.queryParam(OFFICE);
-            String categoryId =
-                    ctx.queryParamAsClass("category-id", String.class).allowNullable().get();
-            String groupId = ctx.pathParamAsClass("group-id", String.class).allowNullable().get();
-            String tsIdsParam = ctx.queryParamAsClass("ts-ids", String.class).allowNullable().get();
+            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get(); // !!! TODO document this param
+            String groupId = ctx.pathParamAsClass(GROUP_ID, String.class).allowNullable().get();
+            String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).allowNullable().get();// !!! TODO document this param
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
             gregorianCalendar.set(Calendar.HOUR, 0);

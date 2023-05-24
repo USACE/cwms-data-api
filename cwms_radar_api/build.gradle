@@ -91,6 +91,7 @@ dependencies {
     runtimeOnly 'jstl:jstl:1.2'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 
     // Now using the FormatService annotation in runtime in JsonV1 too.
@@ -141,14 +142,14 @@ dependencies {
     testImplementation 'org.testcontainers:database-commons:1.17.3'
     testImplementation "org.testcontainers:jdbc:1.17.3"
     testImplementation "org.testcontainers:junit-jupiter:1.17.3"
-    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.6'
+    testImplementation 'mil.army.usace.hec:testcontainers-cwms:1.0.7'
 
     testImplementation "org.apache.commons:commons-csv:1.9.0"
     testImplementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
 
 //    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
-    webjars('org.webjars:swagger-ui:4.10.3') {
+    webjars('org.webjars:swagger-ui:4.18.2') {
         transitive = false
     }
 
@@ -237,8 +238,11 @@ task run(type: JavaExec) {
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-    jvmArgs += "-Dradar.access.provider=KeyAccessManager"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+    jvmArgs += "-Dradar.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dradar.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
+    jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration"
+    jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms"
 }
 
 task integrationTests(type: Test) {

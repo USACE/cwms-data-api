@@ -24,8 +24,6 @@ public class MultipleAccessManager extends RadarAccessManager {
     }   
 
     private RadarAccessManager getManagerFor(Context ctx, Set<RouteRole> roles) {
-        // There is always a GUEST manager so downstream managers don't have to worry about.
-        managers.add(new GuestAccessManager()); 
         for (RadarAccessManager am: managers) {            
             if (am.canAuth(ctx, roles)) {
                 return am;
@@ -37,7 +35,8 @@ public class MultipleAccessManager extends RadarAccessManager {
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         RadarAccessManager am = getManagerFor(ctx, routeRoles);
-        
+        log.info("Principal: " + ctx.req.getUserPrincipal());
+        log.info("Session: " + ctx.req.getSession(false));
         if (am != null) {
             am.manage(handler, ctx, routeRoles);
         } else {

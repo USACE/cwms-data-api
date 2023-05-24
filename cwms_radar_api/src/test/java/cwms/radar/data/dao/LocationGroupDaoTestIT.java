@@ -23,7 +23,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
 
     @AfterAll
     public static void deload_data() throws Exception {
-        loadSqlDataFromResource("cwms/radar/data/sql/store_loc_groups.sql");
+        loadSqlDataFromResource("cwms/radar/data/sql/delete_loc_groups.sql");
     }
 
     @Test
@@ -34,7 +34,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c, "SPK"));
                 List<LocationGroup> groups = dao.getLocationGroups("SPK");
                 Optional<LocationGroup> group = groups.stream()
-                    .filter(g -> "Test Group1".equals(g.getId()))
+                    .filter(g -> "Test Group2".equals(g.getId()))
                     .findFirst();
                 assertTrue(group.isPresent());
             } catch (Exception e) {

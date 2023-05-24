@@ -1,6 +1,47 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.ACTIVE;
+import static cwms.radar.api.Controllers.DELETE;
+import static cwms.radar.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.INTERVAL_OFFSET;
+import static cwms.radar.api.Controllers.METHOD;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.SNAP_BACKWARD;
+import static cwms.radar.api.Controllers.SNAP_FORWARD;
+import static cwms.radar.api.Controllers.TIMESERIES_ID;
+import static cwms.radar.api.Controllers.TIMESERIES_ID_REGEX;
+import static cwms.radar.api.Controllers.UPDATE;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -19,7 +60,6 @@ import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -40,42 +80,20 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
-    public static final Logger logger =
-            Logger.getLogger(TimeSeriesIdentifierDescriptorController.class.getName());
+    public static final Logger logger = Logger.getLogger(TimeSeriesIdentifierDescriptorController.class.getName());
     public static final String TAG = "TimeSeries Identifier-Beta";
-    public static final String OFFICE = "office";
-    public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
-    public static final String TIMESERIES_ID = "timeseries-id";
-    public static final String SNAP_FORWARD = "snap-forward";
-    public static final String SNAP_BACKWARD = "snap-backward";
-    public static final String ACTIVE = "active";
-    public static final String INTERVAL_OFFSET = "interval-offset";
-    public static final String METHOD = "method";
+
     private static final int DEFAULT_PAGE_SIZE = 500;
 
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
 
-    static {
-        JavalinValidation.register(TimeSeriesIdentifierDescriptorDao.DeleteMethod.class,
-                TimeSeriesIdentifierDescriptorController::getDeleteMethod);
-    }
-
     public TimeSeriesIdentifierDescriptorController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
 
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
-    }
-
-    private static TimeSeriesIdentifierDescriptorDao.DeleteMethod getDeleteMethod(String input) {
-        TimeSeriesIdentifierDescriptorDao.DeleteMethod retval = null;
-
-        if (input != null) {
-            retval = TimeSeriesIdentifierDescriptorDao.DeleteMethod.valueOf(input.toUpperCase());
-        }
-        return retval;
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -96,13 +114,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     + "that will be applied to the timeseries-id field. If this field is "
                     + "not specified the results will not be constrained by timeseries-id."),
 
-            @OpenApiParam(name = "page",
+            @OpenApiParam(name = PAGE,
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are. This is an opaque"
                             + " value, and can be obtained from the 'next-page' value in "
                             + "the response."
             ),
-            @OpenApiParam(name = "page-size", type = Integer.class,
+            @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                     description = "How many entries per page returned. "
                             + "Default " + DEFAULT_PAGE_SIZE + "."
             )},
@@ -117,11 +135,11 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             + "Data", tags = {TAG})
     @Override
     public void getAll(Context ctx) {
-        String cursor = ctx.queryParamAsClass("page", String.class).getOrDefault("");
+        String cursor = ctx.queryParamAsClass(PAGE, String.class).getOrDefault("");
         int pageSize =
-                ctx.queryParamAsClass("page-size", Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
+                ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
-        try (final Timer.Context ignored = markAndTime("getAll");
+        try (final Timer.Context ignored = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
@@ -172,7 +190,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String timeseriesId) {
 
-        try (final Timer.Context ignored = markAndTime("getOne");
+        try (final Timer.Context ignored = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
@@ -211,7 +229,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = "fail-if-exists", type = Boolean.class,
+                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
@@ -234,10 +252,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             boolean versioned = false;
             Number numForwards = null;
             Number numBackwards = null;
-            boolean failIfExists = false;
-
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             dao.create(tsid, versioned, numForwards, numBackwards, failIfExists);
-
             ctx.status(HttpServletResponse.SC_CREATED);
         } catch (JsonProcessingException ex) {
             RadarError re = new RadarError("Failed to process create request");
@@ -301,7 +317,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         }
         
 
-        try (final Timer.Context ignored = markAndTime("update");
+        try (final Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
 
@@ -315,7 +331,6 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
                 dao.update(office, timeseriesId, intervalOffset, forward, backward, active);
             }
-
         }
 
     }
@@ -328,7 +343,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the timeseries to be deleted."),
                     @OpenApiParam(name = METHOD,  required = true, description = "Specifies the delete method used.",
-                            type = TimeSeriesIdentifierDescriptorDao.DeleteMethod.class)
+                            type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
             method = HttpMethod.DELETE, tags = {TAG}
@@ -336,12 +351,11 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
-        TimeSeriesIdentifierDescriptorDao.DeleteMethod method = ctx.queryParamAsClass(METHOD,
-                        TimeSeriesIdentifierDescriptorDao.DeleteMethod.class).get();
+        JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime("delete");
+        try (final Timer.Context ignored = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
             logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);

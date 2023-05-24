@@ -1,10 +1,14 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.FORMAT;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -23,20 +27,18 @@ import org.jooq.DSLContext;
 public class UnitsController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
     public UnitsController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(ignore = true)
@@ -53,7 +55,7 @@ public class UnitsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = "format", required = false, description = "Specifies the"
+                    @OpenApiParam(name = FORMAT, required = false, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
                             + " for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json "
                             + "(default)")
@@ -67,13 +69,13 @@ public class UnitsController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        getAllRequests.mark();
+
         try (
-                final Timer.Context timeContext = getAllRequestsTime.time();
+                final Timer.Context timeContext = markAndTime(GET_ALL);
                 DSLContext dsl = getDslContext(ctx)
         ) {
             UnitsDao dao = new UnitsDao(dsl);
-            String format = ctx.queryParamAsClass("format", String.class).getOrDefault("json");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
 
 
             switch (format) {
@@ -117,8 +119,8 @@ public class UnitsController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String unit) {
-        getOneRequest.mark();
-        try (Timer.Context timeContext = getOneRequestTime.time()) {
+
+        try (Timer.Context timeContext = markAndTime(GET_ONE)) {
             ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(RadarError.notImplemented());
         }
     }

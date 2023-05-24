@@ -1,41 +1,57 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import cwms.radar.api.errors.FieldException;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-import cwms.radar.api.errors.FieldException;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 @Schema(description = "A representation of a timeseries group")
 @XmlRootElement(name="timeseries-group")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TimeSeriesGroup implements CwmsDTO
 {
-	private final String id;
-	private final TimeSeriesCategory timeSeriesCategory;
-	private final String officeId;
-	private final String description;
+	private String id;
+	private TimeSeriesCategory timeSeriesCategory;
+	private String officeId;
+	private String description;
 
 	private String sharedAliasId;
 	private String sharedRefTsId;
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	private List<AssignedTimeSeries> assignedTimeSeries = null;
+	private List<AssignedTimeSeries> assignedTimeSeries = new ArrayList<>();
 
 
-
-	public TimeSeriesGroup(String catDbOfficeId, String tsCategoryId, String tsCategoryDesc,
-						   String grpDbOfficeId, String tsGroupId, String tsGroupDesc,
-						   String sharedTsAliasId, String sharedRefTsId){
-			this(new TimeSeriesCategory(catDbOfficeId, tsCategoryId, tsCategoryDesc),
-					grpDbOfficeId, tsGroupId, tsGroupDesc,
-					sharedTsAliasId, sharedRefTsId);
-		}
+	public TimeSeriesGroup() {
+	}
 
 	public TimeSeriesGroup(TimeSeriesCategory cat, String grpOfficeId, String grpId, String grpDesc,
 						   String sharedTsAliasId, String sharedRefTsId)

@@ -1,13 +1,35 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.data.dao;
 
 import static org.jooq.SQLDialect.ORACLE;
 
 import cwms.radar.ApiServlet;
 import cwms.radar.api.errors.AlreadyExists;
+import cwms.radar.api.errors.InvalidItemException;
 import cwms.radar.api.errors.NotFoundException;
-import cwms.radar.datasource.ConnectionPreparer;
-import cwms.radar.datasource.ConnectionPreparingDataSource;
-import cwms.radar.datasource.SessionOfficePreparer;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -33,16 +55,32 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 public abstract class JooqDao<T> extends Dao<T> {
     static ExecuteListener listener = new ExceptionWrappingListener();
 
+    public enum DeleteMethod {
+        DELETE_ALL, DELETE_KEY, DELETE_DATA
+    }
+
     protected JooqDao(DSLContext dsl) {
         super(dsl);
     }
 
+    /**
+     * This method is used by the ApiServlet to get a jOOQ DSLContext given
+     * the current request context.  ApiServlet places certain attributes into
+     * the context and this method uses those attributes to create a DSLContext.
+     * An ExecuteListener is also added to the DSLContext to wrap certain
+     * recognized SQLExceptions in more specific CDA exception types.  This
+     * enables ApiServlet to handle the exception specialization in a more
+     * generic way.
+     *
+     * @param ctx The current request context.
+     * @return A DSLContext for the current request.
+     */
     public static DSLContext getDslContext(Context ctx) {
         DSLContext retval;
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if (dataSource != null) {
-            return DSL.using(dataSource, SQLDialect.ORACLE11G);
+            retval = DSL.using(dataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
             Connection database = ctx.attribute(ApiServlet.DATABASE);
@@ -80,6 +118,11 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retval;
     }
 
+    /**
+     * Oracle supports case insensitive regexp search but the syntax for calling it is a
+     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
+     * an easy to read manner without having to worry about the syntax.
+     */
     public static Condition caseInsensitiveLikeRegex(Field<String> field, String regex) {
         return new CustomCondition() {
             @Override
@@ -93,7 +136,14 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
-
+    /**
+     * This method tries to determine if the given RuntimeException
+     * is one of several types of exception (e.q NotFound,
+     * AlreadyExists, NullArg) that can be specially handled by ApiServlet
+     * by returning specific HTTP codes or error messages.
+     * @param input
+     * @return
+     */
     public static RuntimeException wrapException(RuntimeException input) {
         RuntimeException retval = input;
 
@@ -104,6 +154,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retval = buildAlreadyExists(input);
         } else if (isNullArgument(input)) {
             retval = buildNullArgument(input);
+        } else if (isInvalidItem(input)) {
+            retval = buildInvalidItem(input);
         }
 
         return retval;
@@ -146,6 +198,21 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<Integer> codes = Arrays.asList(20001, 20025, 20034);
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
+
+            retval = matches(sqlException, codes, segments);
+        }
+        return retval;
+    }
+
+    public static boolean isInvalidItem(RuntimeException input) {
+        boolean retval = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+
+            List<Integer> codes = Arrays.asList(20019);
+            List<String> segments = Arrays.asList("INVALID_ITEM");
 
             retval = matches(sqlException, codes, segments);
         }
@@ -243,10 +310,34 @@ public abstract class JooqDao<T> extends Dao<T> {
         return exception;
     }
 
+    private static InvalidItemException buildInvalidItem(RuntimeException input) {
+        // The cause can be kinda long and include all the line numbers from the pl/sql.
+
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        InvalidItemException exception = new InvalidItemException(cause);
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                exception = new InvalidItemException(parts[0]);
+            }
+        }
+        return exception;
+    }
 
 
-
-    // ExecuteListeners aren't called by DSL.connection blocks...
+    /**
+     * JooqDao provides its own connection method because the DSL.connection
+     * method does not cause thrown exception to be wrapped.
+     * @param dslContext the DSLContext to use
+     * @param cr the ConnectionRunnable to run with the connection
+     */
     void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
@@ -255,6 +346,13 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
+    /**
+     * Like DSL.connection the DSL.connectionResult method does not cause thrown
+     * exceptions to be wrapped.  This method delegates to DSL.connectionResult
+     * but will wrap exceptions into more specific exception types were possible.
+     * @param dslContext the DSLContext to use
+     * @param var1 the ConnectionCallable to run with the connection
+     */
     <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
             return dslContext.connectionResult(var1);

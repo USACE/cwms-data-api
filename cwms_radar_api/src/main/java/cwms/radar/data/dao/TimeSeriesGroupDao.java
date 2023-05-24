@@ -1,4 +1,30 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar.data.dao;
+
+import static java.util.stream.Collectors.toList;
 
 import cwms.radar.data.dto.AssignedTimeSeries;
 import cwms.radar.data.dto.TimeSeriesCategory;
@@ -12,6 +38,7 @@ import java.util.logging.Logger;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
@@ -19,8 +46,12 @@ import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectOrderByStep;
 import org.jooq.SelectSeekStep1;
 import org.jooq.impl.DSL;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T;
+import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T;
 
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static final Logger logger = Logger.getLogger(TimeSeriesGroupDao.class.getName());
@@ -172,4 +203,46 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
+    public void delete(String categoryId, String groupId, String office) {
+        CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(dsl.configuration(), categoryId, groupId, office);
+    }
+
+    public void create(TimeSeriesGroup group, boolean failIfExists) {
+        Configuration configuration = dsl.configuration();
+        String categoryId = group.getTimeSeriesCategory().getId();
+        CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
+            group.getId(), group.getDescription(), OracleTypeMap.formatBool(failIfExists),
+            "T", group.getSharedAliasId(),
+            group.getSharedRefTsId(), group.getOfficeId());
+        assignTs(group);
+    }
+
+    public void assignTs(TimeSeriesGroup group) {
+        List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
+        if(assignedTimeSeries != null)
+        {
+            List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
+                .map(TimeSeriesGroupDao::convertToTsAliasType)
+                .collect(toList());
+            TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
+            CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(dsl.configuration(), group.getTimeSeriesCategory().getId(),
+                group.getId(), assignedLocs, group.getOfficeId());
+        }
+    }
+
+    private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
+        BigDecimal attribute = OracleTypeMap.toBigDecimal(assignedTimeSeries.getAttribute());
+        return new TS_ALIAS_T(assignedTimeSeries.getTimeseriesId(), attribute,
+            assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
+    }
+
+    public void renameTimeSeriesGroup(String oldGroupId, TimeSeriesGroup group) {
+        CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(dsl.configuration(), group.getTimeSeriesCategory().getId(),
+            oldGroupId, group.getId(), group.getOfficeId());
+    }
+
+    public void unassignAllTs(TimeSeriesGroup group) {
+        CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(dsl.configuration(), group.getTimeSeriesCategory().getId(),
+            group.getId(), null, "T", group.getOfficeId());
+    }
 }

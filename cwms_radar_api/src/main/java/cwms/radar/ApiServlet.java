@@ -1,8 +1,30 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.radar;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.prefixPath;
-import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -11,11 +33,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-
 import cwms.radar.api.BasinController;
 import cwms.radar.api.BlobController;
 import cwms.radar.api.CatalogController;
 import cwms.radar.api.ClobController;
+import cwms.radar.api.Controllers;
 import cwms.radar.api.LevelsController;
 import cwms.radar.api.LocationCategoryController;
 import cwms.radar.api.LocationController;
@@ -35,12 +57,15 @@ import cwms.radar.api.TimeSeriesIdentifierDescriptorController;
 import cwms.radar.api.TimeZoneController;
 import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.AlreadyExists;
 import cwms.radar.api.errors.FieldException;
+import cwms.radar.api.errors.InvalidItemException;
 import cwms.radar.api.errors.JsonFieldsException;
 import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
+import cwms.radar.security.CwmsAuthException;
 import cwms.radar.security.Role;
 import cwms.radar.spi.AccessManagers;
 import cwms.radar.spi.RadarAccessManager;
@@ -59,6 +84,7 @@ import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.io.IOException;
@@ -66,6 +92,7 @@ import java.io.PrintWriter;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.management.ServiceNotFoundException;
@@ -117,7 +144,7 @@ public class ApiServlet extends HttpServlet {
     // For example 2.4 not 2.4.13
     public static final String VERSION = "3.0";
     public static final String PROVIDER_KEY = "radar.access.provider";
-    public static final String DEFAULT_PROVIDER = "CwmsAccessManager";
+    public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -199,6 +226,16 @@ public class ApiServlet extends HttpServlet {
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(InvalidItemException.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Bad Request.");
+                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(AlreadyExists.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Already Exists.");
+                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
+                })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
@@ -215,6 +252,11 @@ public class ApiServlet extends HttpServlet {
                 .exception(JsonFieldsException.class, (e, ctx) -> {
                     RadarError re = new RadarError(e.getMessage(), e.getDetails(), true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(CwmsAuthException.class, (e,ctx) -> {
+                    RadarError re = new RadarError(e.getMessage(),true);
+                    logger.atInfo().withCause(e).log("Failed Authorization");
+                    ctx.status(e.getAuthFailCode()).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
                     RadarError errResponse = new RadarError("System Error");
@@ -262,7 +304,7 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles);
         radarCrud("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles);
-        radarCrud("/levels/{" + LevelsController.LEVEL_ID + "}",
+        radarCrud("/levels/{" + Controllers.LEVEL_ID + "}",
                 new LevelsController(metrics), requiredRoles);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
@@ -356,8 +398,16 @@ public class ApiServlet extends HttpServlet {
 
         RadarAccessManager am = buildAccessManager(provider);
         Components components = new Components();
+        final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
         am.getContainedManagers().forEach((manager)->{
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
+            SecurityRequirement req = new SecurityRequirement();
+            if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
+                
+                req.addList(manager.getName());
+                secReqs.add(req);
+            }
+            
         });
         
         config.accessManager(am);
@@ -369,15 +419,10 @@ public class ApiServlet extends HttpServlet {
                                    .addSecurityItem(new SecurityRequirement().addList(provider))
         );
         ops.path("/swagger-docs")
-            .responseModifier((ctx,api) -> {                
+            .responseModifier((ctx,api) -> {
                 api.getPaths().forEach((key,path) -> {
-                    /* clear the lock icon from the GET handlers to reduce user confusion */
-                    Operation op = path.getGet();
-                    if (op != null) {
-                        logger.atInfo().log("removing security constraint for GET on " + key);
-                        op.setSecurity(new ArrayList<>());
-                    }
-                });                    
+                    setSecurityRequirements(key,path,secReqs);
+                });
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -385,11 +430,28 @@ public class ApiServlet extends HttpServlet {
                 doc.json("400", RadarError.class);
                 doc.json("401", RadarError.class);
                 doc.json("403", RadarError.class);
-                doc.json("404", RadarError.class);                
+                doc.json("404", RadarError.class);
             })
             .activateAnnotationScanningFor("cwms.radar.api");
         config.registerPlugin(new OpenApiPlugin(ops));
         
+    }
+
+    private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
+        /* clear the lock icon from the GET handlers to reduce user confusion */
+        Operation op = path.getGet();
+        logger.atFinest().log("setting security constraints for " + key);
+        setSecurity(path.getGet(), new ArrayList<>());
+        setSecurity(path.getDelete(),secReqs);
+        setSecurity(path.getPost(), secReqs);
+        setSecurity(path.getPut(), secReqs);
+        setSecurity(path.getPatch(),secReqs);
+    }
+
+    private static void setSecurity(Operation op,List<SecurityRequirement> reqs) {
+        if (op != null) {
+            op.setSecurity(reqs);
+        }
     }
 
     private static String getAccessManagerName() {

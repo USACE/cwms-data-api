@@ -1,10 +1,31 @@
 package cwms.radar.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+
+import static cwms.radar.api.Controllers.ANY_MASK;
+import static cwms.radar.api.Controllers.BOTTOM_MASK;
+import static cwms.radar.api.Controllers.CURSOR;
+import static cwms.radar.api.Controllers.GET_ALL;
+import static cwms.radar.api.Controllers.GET_ONE;
+import static cwms.radar.api.Controllers.ID_MASK;
+import static cwms.radar.api.Controllers.INCLUDE_EXPLICIT;
+import static cwms.radar.api.Controllers.INCLUDE_IMPLICIT;
+import static cwms.radar.api.Controllers.NAME_MASK;
+import static cwms.radar.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.radar.api.Controllers.OFFICE;
+import static cwms.radar.api.Controllers.PAGE;
+import static cwms.radar.api.Controllers.PAGESIZE2;
+import static cwms.radar.api.Controllers.PAGESIZE3;
+import static cwms.radar.api.Controllers.PAGE_SIZE;
+import static cwms.radar.api.Controllers.POOL_ID;
+import static cwms.radar.api.Controllers.PROJECT_ID;
+import static cwms.radar.api.Controllers.RESULTS;
+import static cwms.radar.api.Controllers.SIZE;
+import static cwms.radar.api.Controllers.TOP_MASK;
+import static cwms.radar.api.Controllers.queryParamAsClass;
 import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.radar.api.errors.RadarError;
@@ -27,37 +48,21 @@ import org.jooq.DSLContext;
 
 public class PoolController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(PoolController.class.getName());
-    public static final String ANY_MASK = "*";
     private static final int defaultPageSize = 100;
-    public static final String OFFICE = "office";
-    public static final String ID_MASK = "id-mask";
-    public static final String NAME_MASK = "name-mask";
-    public static final String BOTTOM_MASK = "bottom-mask";
-    public static final String TOP_MASK = "top-mask";
-    public static final String INCLUDE_EXPLICIT = "include-explicit";
-    public static final String INCLUDE_IMPLICIT = "include-implicit";
-    public static final String PAGE = "page";
-    public static final String CURSOR = "cursor";
-    public static final String PAGE_SIZE = "page-size";
-    public static final String PAGE_SIZE_CAMEL = "pageSize";
-    public static final String POOL_ID = "pool-id";
-    public static final String PROJECT_ID = "project-id";
 
     private final MetricRegistry metrics;
-    private final Meter getAllRequests;
-    private final Timer getAllRequestsTime;
-    private final Meter getOneRequest;
-    private final Timer getOneRequestTime;
+
     private final Histogram requestResultSize;
 
     public PoolController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
-        getAllRequests = this.metrics.meter(name(className, "getAll", "count"));
-        getAllRequestsTime = this.metrics.timer(name(className, "getAll", "time"));
-        getOneRequest = this.metrics.meter(name(className, "getOne", "count"));
-        getOneRequestTime = this.metrics.timer(name(className, "getOne", "time"));
-        requestResultSize = this.metrics.histogram((name(className, "results", "size")));
+
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(queryParams = {
@@ -87,7 +92,7 @@ public class PoolController implements CrudHandler {
                     description =
                             "How many entries per page returned. Default " + defaultPageSize + "."
             ),
-            @OpenApiParam(name = PAGE_SIZE_CAMEL,
+            @OpenApiParam(name = PAGESIZE3,
                     deprecated = true,
                     type = Integer.class,
                     description = "Deprecated. Use '" + PAGE_SIZE + "' instead."),},
@@ -102,8 +107,7 @@ public class PoolController implements CrudHandler {
             tags = {"Pools"})
     @Override
     public void getAll(@NotNull Context ctx) {
-        getAllRequests.mark();
-        try (final Timer.Context timeContext = getAllRequestsTime.time();
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
             PoolDao dao = new PoolDao(dsl);
             String office = ctx.queryParam(OFFICE);
@@ -123,13 +127,13 @@ public class PoolController implements CrudHandler {
                     .getOrDefault("true");
             boolean isImplicit = Boolean.parseBoolean(isImp);
 
-            String cursor = Controllers.queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
+            String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(PoolController.class.getName(),
-                            "getAll"));
+                            GET_ALL));
 
-            int pageSize = Controllers.queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGE_SIZE_CAMEL,
-                "pagesize"}, Integer.class, defaultPageSize, metrics,
-                    name(PoolController.class.getName(), "getAll"));
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
+                PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+                    name(PoolController.class.getName(), GET_ALL));
 
             Pools pools = dao.retrievePools(cursor, pageSize, projectIdMask, nameMask, bottomMask,
                     topMask, isExplicit, isImplicit, office);
@@ -182,8 +186,7 @@ public class PoolController implements CrudHandler {
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        getOneRequest.mark();
-        try (final Timer.Context timeContext = getOneRequestTime.time();
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             PoolDao dao = new PoolDao(dsl);
 
@@ -232,18 +235,18 @@ public class PoolController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(@NotNull Context ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 }
