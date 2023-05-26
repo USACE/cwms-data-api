@@ -24,29 +24,6 @@
 
 package cwms.radar.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.api.Controllers.AT;
-import static cwms.radar.api.Controllers.BEGIN;
-import static cwms.radar.api.Controllers.DATE_FORMAT;
-import static cwms.radar.api.Controllers.DATUM;
-import static cwms.radar.api.Controllers.DELETE;
-import static cwms.radar.api.Controllers.END;
-import static cwms.radar.api.Controllers.EXAMPLE_DATE;
-import static cwms.radar.api.Controllers.FORMAT;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.GET_ONE;
-import static cwms.radar.api.Controllers.METHOD;
-import static cwms.radar.api.Controllers.NAME;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.RATING_ID;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
-import static cwms.radar.api.Controllers.TIMEZONE;
-import static cwms.radar.api.Controllers.UNIT;
-import static cwms.radar.api.Controllers.UPDATE;
-import static cwms.radar.api.Controllers.VERSION_DATE;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
-
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -65,22 +42,21 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.plugin.openapi.annotations.*;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.*;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 
 public class RatingController implements CrudHandler {
@@ -356,16 +332,16 @@ public class RatingController implements CrudHandler {
             String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-            ZonedDateTime beginZdt = null;
+            Instant beginInstant = null;
             String begin = ctx.queryParam(BEGIN);
             if (begin != null) {
-                beginZdt = DateUtils.parseUserDate(begin, timezone);
+                beginInstant = DateUtils.parseUserDate(begin, timezone).toInstant();
             }
 
-            ZonedDateTime endZdt = null;
+            Instant endInstant = null;
             String end = ctx.queryParam(END);
             if (end != null) {
-                endZdt = DateUtils.parseUserDate(end, timezone);
+                endInstant = DateUtils.parseUserDate(end, timezone).toInstant();
             }
 
             RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
@@ -375,7 +351,7 @@ public class RatingController implements CrudHandler {
             // If we wanted to do async I think it would be like this
             //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginZdt, endZdt);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -386,8 +362,8 @@ public class RatingController implements CrudHandler {
 
     @Nullable
     private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
-                                      String officeId, String rating, ZonedDateTime beginZdt,
-                                      ZonedDateTime endZdt) {
+                                      String officeId, String rating, Instant begin,
+                                      Instant end) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -395,7 +371,7 @@ public class RatingController implements CrudHandler {
 
             if (Formats.JSONV2.equals(acceptHeader) || Formats.XMLV2.equals(acceptHeader)) {
                 try {
-                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, beginZdt, endZdt);
+                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
                         if (Formats.JSONV2.equals(acceptHeader)) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -431,13 +407,13 @@ public class RatingController implements CrudHandler {
     }
 
     private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-                                   String officeId, String rating, ZonedDateTime beginZdt,
-                                   ZonedDateTime endZdt) throws IOException, RatingException {
+                                   String officeId, String rating, Instant begin,
+                                   Instant end) throws IOException, RatingException {
         RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet");
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieve(method, officeId, rating, beginZdt.toInstant(), endZdt.toInstant());
+            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
         }
 
         return ratingSet;
