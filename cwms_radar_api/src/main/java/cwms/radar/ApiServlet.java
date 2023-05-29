@@ -24,8 +24,6 @@
 
 package cwms.radar;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -33,36 +31,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-import cwms.radar.api.BasinController;
-import cwms.radar.api.BlobController;
-import cwms.radar.api.CatalogController;
-import cwms.radar.api.ClobController;
-import cwms.radar.api.Controllers;
-import cwms.radar.api.LevelsController;
-import cwms.radar.api.LocationCategoryController;
-import cwms.radar.api.LocationController;
-import cwms.radar.api.LocationGroupController;
-import cwms.radar.api.OfficeController;
-import cwms.radar.api.ParametersController;
-import cwms.radar.api.PoolController;
-import cwms.radar.api.RatingController;
-import cwms.radar.api.RatingMetadataController;
-import cwms.radar.api.RatingSpecController;
-import cwms.radar.api.RatingTemplateController;
-import cwms.radar.api.SpecifiedLevelController;
-import cwms.radar.api.TimeSeriesCategoryController;
-import cwms.radar.api.TimeSeriesController;
-import cwms.radar.api.TimeSeriesGroupController;
-import cwms.radar.api.TimeSeriesIdentifierDescriptorController;
-import cwms.radar.api.TimeZoneController;
-import cwms.radar.api.UnitsController;
+import cwms.radar.api.*;
 import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.api.errors.AlreadyExists;
-import cwms.radar.api.errors.FieldException;
-import cwms.radar.api.errors.InvalidItemException;
-import cwms.radar.api.errors.JsonFieldsException;
-import cwms.radar.api.errors.NotFoundException;
-import cwms.radar.api.errors.RadarError;
+import cwms.radar.api.errors.*;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
 import cwms.radar.security.CwmsAuthException;
@@ -87,13 +58,11 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.time.DateTimeException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
+
 import javax.annotation.Resource;
 import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
@@ -103,10 +72,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import org.apache.http.entity.ContentType;
-import org.jetbrains.annotations.NotNull;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.DateTimeException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 
 /**
@@ -321,7 +295,7 @@ public class ApiServlet extends HttpServlet {
                 new RatingSpecController(metrics), requiredRoles);
         radarCrud("/ratings/metadata/{rating-id}",
                 new RatingMetadataController(metrics), requiredRoles);
-        radarCrud("/ratings/{rating}",
+        radarCrud("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles);
         radarCrud("/catalog/{dataset}",
                 new CatalogController(metrics), requiredRoles);

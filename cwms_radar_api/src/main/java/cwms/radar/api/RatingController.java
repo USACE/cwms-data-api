@@ -299,24 +299,28 @@ public class RatingController implements CrudHandler {
         }
     }
 
-    @OpenApi(queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description =
-                    "Specifies the owning office of the ratingset to be included in the "
-                            + "response."),
-            @OpenApiParam(name = BEGIN,  description = "Specifies the "
-                    + "start of the time window for data to be included in the response. "
-                    + "If this field is not specified no start time will be used."),
-            @OpenApiParam(name = END,  description = "Specifies the "
-                    + "end of the time window for data to be included in the response. If"
-                    + " this field is not specified no end time will be used."),
-            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                    + "the time zone of the values of the begin and end fields (unless "
-                    + "otherwise specified), as well as the time zone of any times in the"
-                    + " response. If this field is not specified, the default time zone "
-                    + "of UTC shall be used."),
-            @OpenApiParam(name = METHOD,  description = "Specifies "
-                    + "the retrieval method used.  If no method is provided EAGER will be used.",
-                    type = RatingSet.DatabaseLoadMethod.class),
+    @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be retrieve. "),
+            },
+            queryParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description =
+                            "Specifies the owning office of the ratingset to be included in the "
+                                    + "response."),
+                    @OpenApiParam(name = BEGIN, description = "Specifies the "
+                            + "start of the time window for data to be included in the response. "
+                            + "If this field is not specified no start time will be used."),
+                    @OpenApiParam(name = END, description = "Specifies the "
+                            + "end of the time window for data to be included in the response. If"
+                            + " this field is not specified no end time will be used."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                            + "the time zone of the values of the begin and end fields (unless "
+                            + "otherwise specified), as well as the time zone of any times in the"
+                            + " response. If this field is not specified, the default time zone "
+                            + "of UTC shall be used."),
+                    @OpenApiParam(name = METHOD, description = "Specifies "
+                            + "the retrieval method used.  If no method is provided EAGER will be used.",
+                            type = RatingSet.DatabaseLoadMethod.class),
             },
             responses = {
                     @OpenApiResponse(status = "200", content = {
