@@ -24,27 +24,12 @@
 
 package cwms.radar.data.dao;
 
-import static java.util.stream.Collectors.toList;
-
 import cwms.radar.data.dto.AssignedTimeSeries;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.Condition;
-import org.jooq.Configuration;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
-import org.jooq.SelectOnConditionStep;
-import org.jooq.SelectOrderByStep;
-import org.jooq.SelectSeekStep1;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -52,6 +37,15 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T;
 import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import static java.util.stream.Collectors.toList;
 
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static final Logger logger = Logger.getLogger(TimeSeriesGroupDao.class.getName());
@@ -179,17 +173,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         Condition whereCondition = DSL.trueCondition();
 
         if (officeId != null && !officeId.isEmpty()) {
-            if (CWMS.equalsIgnoreCase(officeId)) {
-                whereCondition = whereCondition
-                        .and(atcg.CAT_DB_OFFICE_ID.eq(CWMS))
-                        .and(atcg.GRP_DB_OFFICE_ID.eq(CWMS));
-                // If its CWMS then we show results for all offices.  Don't match on DB_OFFICE_ID
-            } else {
-                whereCondition = whereCondition
-                        .and(atcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
-                        .and(atcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
-                        .and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(officeId));
-            }
+            whereCondition = whereCondition.and(atcg.GRP_DB_OFFICE_ID.eq(officeId));
         }
 
         if (categoryId != null && !categoryId.isEmpty()) {
