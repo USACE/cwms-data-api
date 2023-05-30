@@ -24,37 +24,14 @@
 
 package cwms.radar.data.dao;
 
-import static java.util.stream.Collectors.toList;
-
 import cwms.radar.data.dto.AssignedLocation;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import kotlin.Pair;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.Condition;
-import org.jooq.Configuration;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
-import org.jooq.SelectConnectByStep;
-import org.jooq.SelectJoinStep;
-import org.jooq.SelectOnConditionStep;
-import org.jooq.SelectOrderByStep;
-import org.jooq.SelectSeekStep1;
-import org.jooq.TableField;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -63,6 +40,11 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_ARRAY3;
 import usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_TYPE3;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+import static java.util.stream.Collectors.toList;
 
 public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
@@ -268,8 +250,10 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             select = step.where(table.GRP_DB_OFFICE_ID.eq(officeId));
         }
 
-        retval = select.orderBy(table.LOC_CATEGORY_ID, table.LOC_GROUP_ATTRIBUTE,
-                table.LOC_GROUP_ID).fetchSize(1000).fetch().into(LocationGroup.class);
+        retval = select.orderBy(table.LOC_CATEGORY_ID, table.LOC_GROUP_ATTRIBUTE, table.LOC_GROUP_ID)
+                .fetchSize(1000)
+                .fetch()
+                .map(m -> buildLocationGroup(m, buildLocationCategory(m)));
 
         return retval;
     }

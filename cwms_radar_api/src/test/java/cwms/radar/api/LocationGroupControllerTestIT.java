@@ -24,11 +24,6 @@
 
 package cwms.radar.api;
 
-import static cwms.radar.api.Controllers.*;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 import cwms.radar.data.dto.AssignedLocation;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
@@ -36,16 +31,88 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
-import java.util.List;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+
+import static cwms.radar.api.Controllers.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
 class LocationGroupControllerTestIT extends DataApiTestIT
 {
+	@Test
+	void test_getall() throws Exception {
+		String officeId = "SPK";
+		String locationId = "LocationGroupTest";
+		createLocation(locationId, true, officeId);
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+		LocationCategory cat = new LocationCategory(officeId, "TestCategory", "IntegrationTesting");
+		LocationGroup group = new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
+				"sharedLocAliasId", locationId, 123);
+		List<AssignedLocation> assignedLocations = group.getAssignedLocations();
+		assignedLocations.add(new AssignedLocation(locationId, officeId, "AliasId", 1, locationId));
+		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+		String categoryXml = Formats.format(contentType, cat);
+		String groupXml = Formats.format(contentType, group);
+		//Create Category
+		given()
+				.accept(Formats.JSON)
+				.contentType(Formats.JSON)
+				.body(categoryXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, officeId)
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/location/category");
+		//Create Group
+		given()
+				.accept(Formats.JSON)
+				.contentType(Formats.JSON)
+				.body(groupXml)
+				.header("Authorization", user.toHeaderValue())
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/location/group");
+		//Read
+		given()
+				.accept(Formats.JSON)
+				.contentType(Formats.JSON)
+				.queryParam(OFFICE, officeId)
+				.queryParam(INCLUDE_ASSIGNED, false)
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/location/group")
+				.then()
+				.assertThat()
+				.log().body().log().everything(true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.body("[0].office-id", notNullValue())
+				.body("[0].id", notNullValue());
+		//Delete Category
+		given()
+				.accept(Formats.JSON)
+				.contentType(Formats.JSON)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, officeId)
+				.queryParam(CASCADE_DELETE, "true")
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.delete("/location/category/" + group.getLocationCategory().getId())
+				.then()
+				.assertThat()
+				.log().body().log().everything(true)
+				.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+	}
 
 	@Test
 	void test_create_read_delete() throws Exception {
