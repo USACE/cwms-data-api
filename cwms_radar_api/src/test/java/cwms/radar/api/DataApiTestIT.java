@@ -25,12 +25,11 @@
 package cwms.radar.api;
 
 import cwms.radar.data.dto.Location;
+import cwms.radar.data.dto.LocationCategory;
+import cwms.radar.data.dto.LocationGroup;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-import io.restassured.RestAssured;
-import io.restassured.config.JsonConfig;
-import io.restassured.path.json.config.JsonPathConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +52,7 @@ import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -74,12 +74,16 @@ public class DataApiTestIT {
      * List of locations that will need to be deleted when tests are done.
      */
     private static ArrayList<Location> locationsCreated = new ArrayList<>();
-
+    
     protected static String createLocationQuery = null;
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
     protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+
+    private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
+	private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
+
 
     /**
      * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
@@ -384,4 +388,75 @@ public class DataApiTestIT {
         Path path = new File(resource.getFile()).toPath();
         return String.join("\n", Files.readAllLines(path));
     }
+
+    
+    /**
+     * Let the infrastructure know a group is getting created so it can
+     * be deleted in cases of test failure.
+     * @param group
+     */
+	protected void registerGroup(LocationGroup group) {
+		if (!groupsCreated.contains(group)) {
+			groupsCreated.add(group);
+		}
+	}
+
+    /**
+     * Let the infrastructure know a category is getting created so it can 
+     * be deleted in cases of test failure.
+     * @param category
+     */
+	protected void registerCategory(LocationCategory category) {
+		if (!categoriesCreated.contains(category)) {
+			categoriesCreated.add(category);
+		}
+	}
+
+    @AfterEach
+	public void cleanupLocationGroups() throws Exception {
+        if (this.groupsCreated.isEmpty()) {
+            logger.atInfo().log("No groups to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up groups test did not remove.");
+		CwmsDatabaseContainer<?> cwmsDb = RadarApiSetupCallback.getDatabaseLink();
+		cwmsDb.connection( c-> {
+			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
+				for (LocationGroup g: groupsCreated) {
+					delGroup.clearParameters();
+					delGroup.setString(1,g.getId());
+					delGroup.setString(2,g.getOfficeId());
+					delGroup.executeUpdate();
+				};
+			} catch (SQLException ex) {
+				if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
+					throw new RuntimeException("Failed to remove group in test cleanup/", ex);
+				} // otherwise we don't get it was successfully deleted in the test
+			}
+		});
+	}
+
+    @AfterEach
+	public void cleanupLocationCategories() throws Exception {
+        if (this.categoriesCreated.isEmpty()) {
+            logger.atInfo().log("No location categories to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up location categories that tests did not remove.");
+		CwmsDatabaseContainer<?> cwmsDb = RadarApiSetupCallback.getDatabaseLink();
+		cwmsDb.connection( c-> {
+			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_cat(?,'T',?); end;")) {
+				for (LocationCategory cat: categoriesCreated) {
+					delGroup.clearParameters();
+					delGroup.setString(1,cat.getId());
+					delGroup.setString(2,cat.getOfficeId());
+					delGroup.executeUpdate();
+				};
+			} catch (SQLException ex) {
+				if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
+					throw new RuntimeException("Failed to remove group in test cleanup/", ex);
+				} // otherwise we don't get it was successfully deleted in the test
+			}
+		});
+	}
 }

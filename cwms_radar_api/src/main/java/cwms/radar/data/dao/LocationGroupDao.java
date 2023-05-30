@@ -327,6 +327,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     public void delete(String categoryId, String groupId, boolean cascadeDelete, String office) {
+        setOffice(office);
         CWMS_LOC_PACKAGE.call_DELETE_LOC_GROUP__2(dsl.configuration(), categoryId, groupId,
             OracleTypeMap.formatBool(cascadeDelete), office);
     }
@@ -334,6 +335,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     public void create(LocationGroup group) {
         Configuration configuration = dsl.configuration();
         String categoryId = group.getLocationCategory().getId();
+        setOffice(group);
         CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(configuration, categoryId,
             group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
             group.getSharedRefLocationId());
@@ -348,16 +350,19 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     public void renameLocationGroup(String oldGroupId, LocationGroup newGroup) {
+        setOffice(newGroup);
         CWMS_LOC_PACKAGE.call_RENAME_LOC_GROUP(dsl.configuration(), newGroup.getLocationCategory().getId(),
             oldGroupId, newGroup.getId(), newGroup.getDescription(), "T", newGroup.getOfficeId());
     }
 
     public void unassignAllLocs(LocationGroup group) {
+        setOffice(group);
         CWMS_LOC_PACKAGE.call_UNASSIGN_LOC_GROUP(dsl.configuration(), group.getLocationCategory().getId(),
             group.getId(), null, "T", group.getOfficeId());
     }
 
     public void assignLocs(LocationGroup group) {
+
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if(assignedLocations != null)
         {
@@ -365,6 +370,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .map(LocationGroupDao::convertToLocAliasType)
                 .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
+            setOffice(group);
             CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dsl.configuration(), group.getLocationCategory().getId(),
                 group.getId(), assignedLocs, group.getOfficeId());
         }

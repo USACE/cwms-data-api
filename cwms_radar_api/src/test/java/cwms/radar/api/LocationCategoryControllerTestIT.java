@@ -30,20 +30,32 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
 import cwms.radar.data.dto.LocationCategory;
+import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+
 import javax.servlet.http.HttpServletResponse;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
 class LocationCategoryControllerTestIT extends DataApiTestIT
 {
+
+	
+
+	
 
 	@Test
 	void test_create_read_delete() throws Exception {
@@ -52,6 +64,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT
 		LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(), "IntegrationTesting");
 		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
 		String xml = Formats.format(contentType, cat);
+		registerCategory(cat);;
 		//Create Category
 		given()
 			.accept(Formats.JSON)

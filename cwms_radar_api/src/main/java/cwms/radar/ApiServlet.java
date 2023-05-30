@@ -138,6 +138,7 @@ public class ApiServlet extends HttpServlet {
     public static final String CWMS_USERS_ROLE = "CWMS Users";
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
+    public static final String RAW_DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
 
     // The VERSION should match the gradle version but not contain the patch version.
@@ -476,8 +477,9 @@ public class ApiServlet extends HttpServlet {
         try {
             String office = officeFromContext(req.getContextPath());
             req.setAttribute(OFFICE_ID, office);
-
+            //logger.atInfo().log("Connection user name is: %s")
             req.setAttribute(DATA_SOURCE, cwms);
+            req.setAttribute(RAW_DATA_SOURCE,cwms);
             javalin.service(req, resp);
         } catch (Exception ex) {
             RadarError re = new RadarError("Major Database Issue");
