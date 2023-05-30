@@ -168,12 +168,16 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
-    private Condition buildWhereCondition(String officeId, String categoryId, String groupId) {
+    private Condition buildWhereCondition(String groupOfficeId, String categoryId, String groupId) {
         AV_TS_CAT_GRP atcg = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         Condition whereCondition = DSL.trueCondition();
 
-        if (officeId != null && !officeId.isEmpty()) {
-            whereCondition = whereCondition.and(atcg.GRP_DB_OFFICE_ID.eq(officeId));
+        if (groupOfficeId != null && !groupOfficeId.isEmpty()) {
+            //We do not need to filter on the category office id since category ids
+            //are unique unlike group ids.
+            //We also don't want to filter on assigned time series' offices since that could leave
+            //incomplete groups. If that is ever needed, it should be a separate context variable.
+            whereCondition = whereCondition.and(atcg.GRP_DB_OFFICE_ID.eq(groupOfficeId));
         }
 
         if (categoryId != null && !categoryId.isEmpty()) {
