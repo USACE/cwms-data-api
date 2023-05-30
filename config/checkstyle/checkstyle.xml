@@ -265,5 +265,8 @@
             <property name="exceptionVariableName" value="expected"/>
         </module>
         <module name="CommentsIndentation"/>
+        <!-- <module name="ParameterOnNewLine">
+            <property name="option" value="always" />
+        </module> -->
     </module>
 </module>
