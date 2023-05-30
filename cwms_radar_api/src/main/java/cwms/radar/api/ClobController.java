@@ -233,8 +233,6 @@ public class ClobController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    /** office is used by the AccessManager. It is ignored in the code below. */
-                    @OpenApiParam(name = OFFICE, type = String.class, description = "User office for write operation."),
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },

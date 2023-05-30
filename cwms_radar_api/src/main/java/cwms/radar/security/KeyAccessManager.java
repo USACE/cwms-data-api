@@ -50,7 +50,7 @@ public class KeyAccessManager extends RadarAccessManager {
 
     private static final String SET_API_USER_DIRECT_WITH_OFFICE = "begin "
         //+ "cwms_env.clear_session_privileges;"
-        + "cwms_env.set_session_office_id(NULL);"
+        + "cwms_env.set_session_office_id(?);"
         + "cwms_env.set_session_user_direct(upper(?)); end;";
 
     private static final String CHECK_API_KEY =
@@ -155,8 +155,8 @@ public class KeyAccessManager extends RadarAccessManager {
             PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);
             PreparedStatement checkForKey = conn.prepareStatement(CHECK_API_KEY);) {
             String connUser = conn.getMetaData().getUserName();
-            //setApiUser.setString(1,office);
-            setApiUser.setString(1,connUser);
+            setApiUser.setString(1,office);
+            setApiUser.setString(2,connUser);
             setApiUser.execute();
             checkForKey.setString(1,key);
             try (ResultSet rs = checkForKey.executeQuery()) {
