@@ -3,13 +3,12 @@ package cwms.radar.data.dto.basinconnectivity;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
 
-public class StreamLocation implements CwmsDTO
+public class StreamLocation extends CwmsDTO
 {
     private final String locationName;
     private final String streamName;
     private final Double station;
     private final String bank;
-    private final String officeId;
     private final Double publishedStation;
     private final Double navigationStation;
     private final Double lowestMeasurableStage;
@@ -18,11 +17,11 @@ public class StreamLocation implements CwmsDTO
 
     private StreamLocation(Builder builder)
     {
+        super(builder.officeId);
         locationName = builder.locationName;
         streamName = builder.streamName;
         station = builder.station;
         bank = builder.bank;
-        officeId = builder.officeId;
         publishedStation = builder.publishedStation;
         navigationStation = builder.navigationStation;
         lowestMeasurableStage = builder.lowestMeasurableStage;
@@ -73,11 +72,6 @@ public class StreamLocation implements CwmsDTO
     public Double getUngagedDrainageArea()
     {
         return ungagedDrainageArea;
-    }
-
-    public String getOfficeId()
-    {
-        return officeId;
     }
 
     public static class Builder

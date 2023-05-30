@@ -359,9 +359,20 @@ public class DataApiTestIT {
         },"cwms_20");
     }
 
+    /**
+     * Get context, setting a specific session office.
+     */
     protected static DSLContext dslContext(Connection connection, String officeId) {
         DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE11G);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+        return dsl;
+    }
+
+    /**
+     * Get context without setting office
+     */
+    protected static DSLContext dslContext(Connection connection) {
+        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE11G);
         return dsl;
     }
 

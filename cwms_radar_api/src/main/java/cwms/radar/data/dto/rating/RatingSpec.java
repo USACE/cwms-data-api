@@ -18,8 +18,7 @@ import org.jetbrains.annotations.NotNull;
 @JsonDeserialize(builder = RatingSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class RatingSpec implements CwmsDTO {
-    private final String officeId;
+public class RatingSpec extends CwmsDTO {
     private final String ratingId;
     private final String templateId;
     private final String locationId;
@@ -42,7 +41,7 @@ public class RatingSpec implements CwmsDTO {
 
 
     public RatingSpec(Builder builder) {
-        this.officeId = builder.officeId;
+        super(builder.officeId);
         this.ratingId = builder.ratingId;
         this.templateId = builder.templateId;
         this.locationId = builder.locationId;
@@ -59,10 +58,6 @@ public class RatingSpec implements CwmsDTO {
         this.dependentRoundingSpec = builder.dependentRoundingSpec;
         this.description = builder.description;
         this.effectiveDates = builder.effectiveDates;
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     public String getRatingId() {

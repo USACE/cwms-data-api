@@ -25,6 +25,7 @@
 package cwms.radar.formatters;
 
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.helpers.ResourceHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -130,7 +131,7 @@ public class Formats {
     }
 
 
-    private String getFormatted(ContentType type, CwmsDTO toFormat) throws FormattingException {
+    private String getFormatted(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         Objects.requireNonNull(toFormat, "Object to be formatted should not be null");
         formatters.keySet().forEach(k -> logger.fine(k::toString));
         OutputFormatter outputFormatter = getOutputFormatter(type, toFormat.getClass());
@@ -145,7 +146,7 @@ public class Formats {
 
     }
 
-    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTO> klass) {
+    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
         Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
         if (contentFormatters != null) {
@@ -154,8 +155,8 @@ public class Formats {
         return outputFormatter;
     }
 
-    private String getFormatted(ContentType type, List<? extends CwmsDTO> dtos, Class<?
-            extends CwmsDTO> rootType) throws FormattingException {
+    private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
+            extends CwmsDTOBase> rootType) throws FormattingException {
         for (ContentType key : formatters.keySet()) {
             logger.finest(key.toString());
         }
@@ -182,14 +183,14 @@ public class Formats {
         }
     }
 
-    public static String format(ContentType type, CwmsDTO toFormat) throws FormattingException {
+    public static String format(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         logger.finest("formats");
         init();
         return formats.getFormatted(type, toFormat);
     }
 
-    public static String format(ContentType type, List<? extends CwmsDTO> toFormat, Class<?
-            extends CwmsDTO> rootType) throws FormattingException {
+    public static String format(ContentType type, List<? extends CwmsDTOBase> toFormat, Class<?
+            extends CwmsDTOBase> rootType) throws FormattingException {
         logger.finest("format list");
         init();
         return formats.getFormatted(type, toFormat, rootType);
@@ -272,5 +273,5 @@ public class Formats {
             }
         }
         return null;
-    }    
+    }
 }

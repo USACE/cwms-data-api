@@ -34,22 +34,16 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Schema(description = "A representation of a location category")
 @XmlRootElement(name="location_category")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class LocationCategory implements CwmsDTO
+public class LocationCategory extends CwmsDTO
 {
-	private final String officeId;
 	private final String id;
 	private final String description;
 
 	public LocationCategory(@JsonProperty("office-id") String catDbOfficeId, @JsonProperty("id") String locCategoryId, @JsonProperty("description") String locCategoryDesc)
 	{
-		this.officeId = catDbOfficeId;
+		super(catDbOfficeId);
 		this.id = locCategoryId;
 		this.description = locCategoryDesc;
-	}
-
-	public String getOfficeId()
-	{
-		return officeId;
 	}
 
 	public String getId()

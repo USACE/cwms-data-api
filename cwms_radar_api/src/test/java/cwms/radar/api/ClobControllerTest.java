@@ -148,14 +148,14 @@ public class ClobControllerTest extends ControllerTest{
 
     @Test
     void testDeserialize() throws JsonProcessingException {
-        String input = "{\"office\":\"MYOFFICE\",\"id\":\"MYID\",\"description\":\"MYDESC\","
+        String input = "{\"office-id\":\"MYOFFICE\",\"id\":\"MYID\",\"description\":\"MYDESC\","
                 + "\"value\":\"MYVALUE\"}";
 
         ClobController controller = new ClobController(new MetricRegistry());
 
         Clob clob = controller.deserialize(input, Formats.JSONV2);
         assertNotNull(clob);
-        assertEquals("MYOFFICE", clob.getOffice());
+        assertEquals("MYOFFICE", clob.getOfficeId());
         assertEquals("MYID", clob.getId());
         assertEquals("MYDESC", clob.getDescription());
         assertEquals("MYVALUE", clob.getValue());

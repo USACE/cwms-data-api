@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 @JsonDeserialize(builder = Location.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Location implements CwmsDTO {
+public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;
     private final Double latitude;
@@ -44,9 +44,9 @@ public final class Location implements CwmsDTO {
     private final Double elevation;
     private final String mapLabel;
     private final String boundingOfficeId;
-    private final String officeId;
 
     private Location(Builder builder) {
+        super(builder.officeId);
         this.name = builder.name;
         this.latitude = builder.latitude;
         this.longitude = builder.longitude;
@@ -68,7 +68,6 @@ public final class Location implements CwmsDTO {
         this.elevation = builder.elevation;
         this.mapLabel = builder.mapLabel;
         this.boundingOfficeId = builder.boundingOfficeId;
-        this.officeId = builder.officeId;
     }
 
     public String getName() {
@@ -155,10 +154,6 @@ public final class Location implements CwmsDTO {
         return boundingOfficeId;
     }
 
-    public String getOfficeId() {
-        return officeId;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -224,7 +219,7 @@ public final class Location implements CwmsDTO {
                 + ", elevation=" + elevation
                 + ", mapLabel='" + mapLabel + '\''
                 + ", boundingOfficeId='" + boundingOfficeId + '\''
-                + ", officeId='" + officeId + '\''
+                + ", officeId='" + getOfficeId() + '\''
                 + '}';
     }
 

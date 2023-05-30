@@ -13,6 +13,7 @@ import javax.xml.bind.Marshaller;
 
 import cwms.radar.data.dto.Catalog;
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
@@ -43,7 +44,7 @@ public class XMLv1 implements OutputFormatter {
     }
 
     @Override
-    public String format(CwmsDTO dto) {
+    public String format(CwmsDTOBase dto) {
         try{
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
@@ -66,7 +67,7 @@ public class XMLv1 implements OutputFormatter {
 
     @Override
     @SuppressWarnings("unchecked") // we're ALWAYS checking before conversion in this function
-    public String format(List<? extends CwmsDTO> dtoList) {
+    public String format(List<? extends CwmsDTOBase> dtoList) {
         try{
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);

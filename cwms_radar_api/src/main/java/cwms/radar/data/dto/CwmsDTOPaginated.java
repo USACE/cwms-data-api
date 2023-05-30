@@ -26,7 +26,7 @@ import kotlin.jvm.functions.Function1;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public abstract class CwmsDTOPaginated implements CwmsDTO {
+public abstract class CwmsDTOPaginated implements CwmsDTOBase {
     private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
 
     @Schema(

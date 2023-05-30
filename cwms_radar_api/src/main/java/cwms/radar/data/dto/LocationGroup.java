@@ -35,11 +35,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Schema(description = "A representation of a location group")
 @XmlRootElement(name="location_group")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class LocationGroup implements CwmsDTO
+public class LocationGroup extends CwmsDTO
 {
 	private String id;
 	private LocationCategory locationCategory;
-	private String officeId;
 	private String description;
 
 	private String sharedLocAliasId;
@@ -50,14 +49,15 @@ public class LocationGroup implements CwmsDTO
 
 	public LocationGroup()
 	{
-
+		// Should be unused
+		super(null);
 	}
 
 	public LocationGroup(LocationCategory cat, String grpOfficeId, String grpId, String grpDesc,
 						 String sharedLocAliasId, String sharedRefLocationId, Number locGroupAttribute)
 	{
+		super(grpOfficeId);
 		this.locationCategory = cat;
-		this.officeId = grpOfficeId;
 		this.id = grpId;
 		this.description = grpDesc;
 		this.sharedLocAliasId = sharedLocAliasId;
@@ -67,23 +67,21 @@ public class LocationGroup implements CwmsDTO
 
 	public LocationGroup(LocationGroup group, List<AssignedLocation> locs){
 		this(group);
-		if(locs != null && !locs.isEmpty())
-		{
+		if (locs != null && !locs.isEmpty()) {
 			this.assignedLocations = new ArrayList<>(locs);
 		}
 	}
 
-	public LocationGroup(LocationGroup group){
+	public LocationGroup(LocationGroup group) {
+		super(group.getOfficeId());
 		this.locationCategory = group.getLocationCategory();
-		this.officeId = group.getOfficeId();
 		this.id = group.getId();
 		this.description = group.getDescription();
 		this.sharedLocAliasId = group.getSharedLocAliasId();
 		this.sharedRefLocationId = group.getSharedRefLocationId();
 		this.locGroupAttribute = group.getLocGroupAttribute();
 		List<AssignedLocation> locs = group.getAssignedLocations();
-		if(locs != null && !locs.isEmpty())
-		{
+		if (locs != null && !locs.isEmpty()) {
 			this.assignedLocations = new ArrayList<>(locs);
 		}
 	}
@@ -96,11 +94,6 @@ public class LocationGroup implements CwmsDTO
 	public LocationCategory getLocationCategory()
 	{
 		return locationCategory;
-	}
-
-	public String getOfficeId()
-	{
-		return officeId;
 	}
 
 	public String getDescription()

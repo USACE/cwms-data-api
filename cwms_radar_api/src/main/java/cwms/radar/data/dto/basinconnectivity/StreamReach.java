@@ -3,25 +3,24 @@ package cwms.radar.data.dto.basinconnectivity;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
 
-public class StreamReach implements CwmsDTO
+public class StreamReach extends CwmsDTO
 {
     private final String upstreamLocationName;
     private final String downstreamLocationName;
     private final String streamName;
     private final String reachName;
-    private final String officeId;
     private final String comment;
     private final String configuration;
 
     StreamReach(Builder builder)
     {
+        super(builder.officeId);
         streamName = builder.streamName;
         reachName = builder.reachName;
         upstreamLocationName = builder.upstreamLocationName;
         downstreamLocationName = builder.downstreamLocationName;
         comment = builder.comment;
         configuration = builder.configuration;
-        officeId = builder.officeId;
     }
 
     public String getReachName()
@@ -52,11 +51,6 @@ public class StreamReach implements CwmsDTO
     public String getConfiguration()
     {
         return configuration;
-    }
-
-    public String getOfficeId()
-    {
-        return officeId;
     }
 
     public static class Builder

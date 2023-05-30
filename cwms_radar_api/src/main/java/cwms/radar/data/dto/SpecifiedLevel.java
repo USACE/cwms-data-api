@@ -2,32 +2,26 @@ package cwms.radar.data.dto;
 
 import cwms.radar.api.errors.FieldException;
 
-public class SpecifiedLevel implements CwmsDTO
+public class SpecifiedLevel extends CwmsDTO
 {
 	private String id;
-	private String officeId;
 	private String description;
 
 	public SpecifiedLevel()
 	{
-
+		super(null);
 	}
 
 	public SpecifiedLevel(String id, String officeId, String description)
 	{
+		super(officeId);
 		this.id = id;
-		this.officeId = officeId;
 		this.description = description;
 	}
 
 	public String getId()
 	{
 		return id;
-	}
-
-	public String getOfficeId()
-	{
-		return officeId;
 	}
 
 	public String getDescription()
@@ -76,5 +70,3 @@ public class SpecifiedLevel implements CwmsDTO
 
 	}
 }
-
-

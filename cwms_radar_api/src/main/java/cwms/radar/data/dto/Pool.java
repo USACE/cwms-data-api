@@ -7,8 +7,7 @@ import cwms.radar.api.errors.FieldException;
 import usace.cwms.db.dao.ifc.pool.PoolNameType;
 import usace.cwms.db.dao.ifc.pool.PoolType;
 
-public class Pool extends PoolType implements CwmsDTO
-{
+public class Pool extends PoolType implements CwmsDTOBase {
 	private final Number attribute;
 	private final String description;
 	private final String clobText;

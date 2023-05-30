@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import cwms.radar.data.dto.AssignedLocation;
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.formatters.Formats;
@@ -39,7 +40,7 @@ public class CsvV1LocationGroup implements OutputFormatter{
     }
 
     @Override
-    public String format(CwmsDTO dto) {
+    public String format(CwmsDTOBase dto) {
         LocationGroup locationGroup = (LocationGroup)dto;
 
         ObjectWriter writer = buildWriter();
@@ -72,7 +73,7 @@ public class CsvV1LocationGroup implements OutputFormatter{
 
     @Override
     @SuppressWarnings("unchecked") // for the daoList conversion
-    public String format(List<? extends CwmsDTO> dtoList) {        
+    public String format(List<? extends CwmsDTOBase> dtoList) {
         List<LocationGroup> locationGroups = (List<LocationGroup>)dtoList;
         ObjectWriter writer = buildWriter();
         try

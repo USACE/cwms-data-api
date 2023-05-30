@@ -12,6 +12,7 @@ import javax.xml.bind.Marshaller;
 
 import cwms.radar.data.dto.Clobs;
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.TimeSeries;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
@@ -42,7 +43,7 @@ public class XMLv2 implements OutputFormatter {
     }
 
     @Override
-    public String format(CwmsDTO dto) {
+    public String format(CwmsDTOBase dto) {
         try{
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
@@ -59,7 +60,7 @@ public class XMLv2 implements OutputFormatter {
     }
 
     @Override
-    public String format(List<? extends CwmsDTO> dtoList) {
+    public String format(List<? extends CwmsDTOBase> dtoList) {
         throw new UnsupportedOperationException("Unable to process your request");
     }
 

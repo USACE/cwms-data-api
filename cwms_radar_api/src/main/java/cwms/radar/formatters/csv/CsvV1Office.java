@@ -2,7 +2,7 @@ package cwms.radar.formatters.csv;
 
 import java.util.List;
 
-import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.Office;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.OutputFormatter;
@@ -32,7 +32,7 @@ public class CsvV1Office implements OutputFormatter{
     }
 
     @Override
-    public String format(CwmsDTO dto) {
+    public String format(CwmsDTOBase dto) {
         Office office = (Office)dto;
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
@@ -43,7 +43,7 @@ public class CsvV1Office implements OutputFormatter{
 
     @Override
     @SuppressWarnings("unchecked") // for the daoList conversion
-    public String format(List<? extends CwmsDTO> dtoList) {        
+    public String format(List<? extends CwmsDTOBase> dtoList) {
         List<Office> offices = (List<Office>)dtoList;
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");

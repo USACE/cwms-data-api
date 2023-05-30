@@ -31,7 +31,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             try {
-                LocationGroupDao dao = new LocationGroupDao(dslContext(c, "SPK"));
+                LocationGroupDao dao = new LocationGroupDao(dslContext(c));
                 List<LocationGroup> groups = dao.getLocationGroups("SPK");
                 Optional<LocationGroup> group = groups.stream()
                     .filter(g -> "Test Group2".equals(g.getId()))
@@ -48,7 +48,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             try {
-                LocationGroupDao dao = new LocationGroupDao(dslContext(c, "SPK"));
+                LocationGroupDao dao = new LocationGroupDao(dslContext(c));
                 Optional<LocationGroup> group = dao.getLocationGroup("SPK", "Test Category2", "Test Group2");
                 assertTrue(group.isPresent());
             } catch (Exception e) {

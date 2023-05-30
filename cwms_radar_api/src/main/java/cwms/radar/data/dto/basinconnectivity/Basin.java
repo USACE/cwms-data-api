@@ -3,10 +3,9 @@ package cwms.radar.data.dto.basinconnectivity;
 import cwms.radar.api.errors.FieldException;
 import cwms.radar.data.dto.CwmsDTO;
 
-public final class Basin implements CwmsDTO
+public final class Basin extends CwmsDTO
 {
     private final String basinName;
-    private final String officeId;
     private final Stream primaryStream;
     private final Double sortOrder;
     private final Double basinArea;
@@ -15,9 +14,9 @@ public final class Basin implements CwmsDTO
 
     private Basin(Builder builder)
     {
+        super(builder.officeId);
         basinName = builder.basinName;
         primaryStream = builder.primaryStream;
-        officeId = builder.officeId;
         sortOrder = builder.sortOrder;
         basinArea = builder.basinArea;
         contributingArea = builder.contributingArea;
@@ -32,11 +31,6 @@ public final class Basin implements CwmsDTO
     public Stream getPrimaryStream()
     {
         return primaryStream;
-    }
-
-    public String getOfficeId()
-    {
-        return officeId;
     }
 
     public Double getSortOrder()

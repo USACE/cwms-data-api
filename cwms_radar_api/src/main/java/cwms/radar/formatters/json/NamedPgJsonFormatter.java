@@ -7,6 +7,7 @@ import cwms.radar.api.graph.basinconnectivity.BasinConnectivityGraph;
 import cwms.radar.api.graph.pg.dto.NamedPgGraphData;
 import cwms.radar.api.graph.pg.dto.PgGraphData;
 import cwms.radar.data.dto.CwmsDTO;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.basinconnectivity.Basin;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;
@@ -33,7 +34,7 @@ public class NamedPgJsonFormatter implements OutputFormatter
     }
 
     @Override
-    public String format(CwmsDTO dto)
+    public String format(CwmsDTOBase dto)
     {
         String retVal;
         try
@@ -58,10 +59,10 @@ public class NamedPgJsonFormatter implements OutputFormatter
     }
 
     @Override
-    public String format(List<? extends CwmsDTO> dtoList)
+    public String format(List<? extends CwmsDTOBase> dtoList)
     {
         StringBuilder retval = new StringBuilder();
-        for(CwmsDTO dto : dtoList)
+        for(CwmsDTOBase dto : dtoList)
         {
             retval.append(format(dto));
         }

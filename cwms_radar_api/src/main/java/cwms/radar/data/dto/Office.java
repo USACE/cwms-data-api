@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "A representation of a CWMS office")
 @XmlRootElement(name="office")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Office implements CwmsDTO{
+public class Office implements CwmsDTOBase {
     private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
          *
