@@ -36,15 +36,15 @@ public class KeyAccessManager extends RadarAccessManager {
     private static final String AUTH_HEADER = "Authorization";
 
     // At this level we just care that the user has permissions in *any* office
-    private static final String RETRIEVE_GROUPS_OF_USER = 
+    private static final String RETRIEVE_GROUPS_OF_USER =
           "select unique user_group_id "
         + "from cwms_20.av_sec_users where is_member ='T' and username = upper(?)";
-    
+
     private static final String SET_API_USER_DIRECT = "begin "
         + "cwms_env.set_session_user_direct(upper(?));"
         + "end;";
 
-    private static final String RETRIEVE_DEFAULT_USER_OFFICE = 
+    private static final String RETRIEVE_DEFAULT_USER_OFFICE =
           "select unique db_office_id from av_sec_users where is_member='T' "
         + "and username=upper(?) and rownum = 1";
 
@@ -79,9 +79,9 @@ public class KeyAccessManager extends RadarAccessManager {
     }
 
     /**
-     * Allows connection to be correctly setup, key is used to assert user, then the office 
+     * Allows connection to be correctly setup, key is used to assert user, then the office
      * is set to the user specified office for further checks within the database.
-     * 
+     *
      * @param ctx javalin context if additional parameters are required.
      * @param user username, which is ignored except a log message
      * @param key the API key that was presented for this connection
@@ -90,9 +90,6 @@ public class KeyAccessManager extends RadarAccessManager {
         logger.info("Validated Api Key for user=" + user);
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
-        //ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam(Controllers.OFFICE));
-        //DelegatingConnectionPreparer apiPreparer = 
-        //    new DelegatingConnectionPreparer(keyPreparer,officePrepare);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
@@ -101,7 +98,7 @@ public class KeyAccessManager extends RadarAccessManager {
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, keyPreparer));
         } else {
-            ctx.attribute(ApiServlet.DATA_SOURCE, 
+            ctx.attribute(ApiServlet.DATA_SOURCE,
                           new ConnectionPreparingDataSource(keyPreparer, dataSource));
         }
     }
@@ -197,7 +194,7 @@ public class KeyAccessManager extends RadarAccessManager {
 
     @Override
     public String getName() {
-        return "ApiKey";    
+        return "ApiKey";
     }
 
     @Override
@@ -208,7 +205,4 @@ public class KeyAccessManager extends RadarAccessManager {
         }
         return header.trim().startsWith("apikey");
     }
-
-    
-
 }

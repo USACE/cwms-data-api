@@ -38,7 +38,7 @@ public abstract class Dao<T> {
 
     /**
      * This should be called before attempting to write an object to the database.
-     * @param object Object Owned by an office id. 
+     * @param object Object Owned by an office id.
      */
     protected void setOffice(CwmsDTO object) {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), object.getOfficeId());

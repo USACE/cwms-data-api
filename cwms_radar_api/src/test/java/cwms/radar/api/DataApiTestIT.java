@@ -74,7 +74,7 @@ public class DataApiTestIT {
      * List of locations that will need to be deleted when tests are done.
      */
     private static ArrayList<Location> locationsCreated = new ArrayList<>();
-    
+
     protected static String createLocationQuery = null;
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
@@ -138,9 +138,9 @@ public class DataApiTestIT {
                 if(user.getApikey() == null) {
                     continue;
                 }
-                db.connection((c)-> {            
+                db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
-                        stmt.setString(1,user.getName());                
+                        stmt.setString(1,user.getName());
                         stmt.setString(2,user.getName()+"TestKey");
                         stmt.setString(3,user.getApikey());
                         stmt.execute();
@@ -148,7 +148,7 @@ public class DataApiTestIT {
                         throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
-                
+
                 StandardSession session = (StandardSession)tsm.createSession(user.getJSessionId());
                 if(session == null) {
                     throw new RuntimeException("Test Session Manager is unusable.");
@@ -164,7 +164,7 @@ public class DataApiTestIT {
                         logger.atInfo().log("Got event of type: %s",event.getType());
                         logger.atInfo().log("Session is:",event.getSession().toString());
                     }
-                    
+
                 });
                 RadarApiSetupCallback.getSsoValve()
                                      .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
@@ -186,9 +186,9 @@ public class DataApiTestIT {
             try {
                 Location location = it.next();
                 CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-                db.connection((c)-> {            
+                db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
-                        stmt.setString(1,location.getName());                
+                        stmt.setString(1,location.getName());
                         stmt.setString(2,location.getOfficeId());
                         stmt.execute();
                     } catch (SQLException ex) {
@@ -206,7 +206,7 @@ public class DataApiTestIT {
 
     /**
      * Removes all registered users' API keys from the database.
-     * 
+     *
      * Future work will have this deleting all users/user credentials.
      * @throws Exception
      */
@@ -215,9 +215,9 @@ public class DataApiTestIT {
         try {
             CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
-                db.connection((c)-> {            
+                db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(removeApiKey);) {
-                        stmt.setString(1,user.getName());                
+                        stmt.setString(1,user.getName());
                         stmt.setString(2,user.getName()+"TestKey");
                         stmt.execute();
                     } catch (SQLException ex) {
@@ -232,13 +232,13 @@ public class DataApiTestIT {
 
     /**
      * Creates location with all minimum required data.
-     * Additional calls to this function with the same location name are noop. 
-     * 
+     * Additional calls to this function with the same location name are noop.
+     *
      * @param location Location name
      * @param active Is this location active (allows writing timeseries)
      * @param office Office ID
-     * @param latitude 
-     * @param longitude 
+     * @param latitude
+     * @param longitude
      * @param horizontalDatum horizontal reference for this location, such as WGS84
      * @param kind Arbitrary string define purpose of location
      */
@@ -256,7 +256,7 @@ public class DataApiTestIT {
         if (locationsCreated.contains(loc)) {
             return; // we already have this location registered
         }
-        
+
         db.connection((c)-> {
             try(PreparedStatement stmt = c.prepareStatement(createLocationQuery);) {
                 stmt.setString(1,location);
@@ -277,7 +277,7 @@ public class DataApiTestIT {
 
     /**
      * Creates a location saving the data for later deletion. With the following defaults:
-     * 
+     *
      * <table>
      * <th><td>Parameter</td><td>Value</td></th>
      * <tr><td>latitude</td><td>0.0</td></tr>
@@ -286,7 +286,7 @@ public class DataApiTestIT {
      * <tr><td>timeZone</td><td>UTC</td></tr>
      * <tr><td>kind</td><td>STREAM</td></tr>
      * </table>
-     * 
+     *
      * @param location CWMS Location Name.
      * @param active should this location be flagged active or not.
      * @param office owning office
@@ -301,7 +301,7 @@ public class DataApiTestIT {
     /**
      * Create a timeseries (location must already exist), no data or other meta data will be set.
      * This only creates the timeseries name. Not data or other parameters are set.
-     * 
+     *
      * @param office owning office
      * @param timeseries timeseries name
      * @throws SQLException
@@ -321,7 +321,7 @@ public class DataApiTestIT {
 
     /**
      * If necessary for a specific test add the TEST user to the appropriate office CWMS Group.
-     * 
+     *
      * @param user CWMS User Name
      * @param group CWMS Group Name
      * @param office CWMS Office ID
@@ -343,7 +343,7 @@ public class DataApiTestIT {
 
     /**
      * If necessary for a specific test remove a user from a CWMS Group.
-     * 
+     *
      * @param user CWMS User Name
      * @param group CWMS Group Name
      * @param office CWMS Office ID
@@ -389,7 +389,7 @@ public class DataApiTestIT {
         return String.join("\n", Files.readAllLines(path));
     }
 
-    
+
     /**
      * Let the infrastructure know a group is getting created so it can
      * be deleted in cases of test failure.
@@ -402,7 +402,7 @@ public class DataApiTestIT {
 	}
 
     /**
-     * Let the infrastructure know a category is getting created so it can 
+     * Let the infrastructure know a category is getting created so it can
      * be deleted in cases of test failure.
      * @param category
      */

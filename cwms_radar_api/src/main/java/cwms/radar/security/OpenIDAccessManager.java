@@ -54,7 +54,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
     private DataSource dataSource = null;
 
 
-    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {        
+    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {
         try {
             config = new OpenIDConfig(new URL(wellKnownUrl));
             jwtParser = Jwts.parserBuilder()
@@ -76,18 +76,18 @@ public class OpenIDAccessManager extends RadarAccessManager {
 
 
     /**
-     * Allows connection to be correctly setup. User name already verified 
+     * Allows connection to be correctly setup. User name already verified
      * by signed JWT. Just assert to system.
-     * 
+     *
      * @param ctx javalin context if additional parameters are required.
      * @param user username, which is ignored except a log message
      */
     private void prepareContextWithUser(Context ctx, String user) throws SQLException {
-        
+
 
         ConnectionPreparer userPreparer = new DirectUserPreparer(user);
         ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam(Controllers.OFFICE));
-        DelegatingConnectionPreparer apiPreparer = 
+        DelegatingConnectionPreparer apiPreparer =
             new DelegatingConnectionPreparer(officePrepare,userPreparer);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
@@ -97,7 +97,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, apiPreparer));
         } else {
-            ctx.attribute(ApiServlet.DATA_SOURCE, 
+            ctx.attribute(ApiServlet.DATA_SOURCE,
                           new ConnectionPreparingDataSource(apiPreparer, dataSource));
         }
     }
@@ -146,7 +146,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
         private ZonedDateTime lastCheck;
         private HashMap<String,Key> realmPublicKeys = new HashMap<>();
         private int realmPublicKeyTimeoutMinutes;
-        private KeyFactory keyFactory = null; 
+        private KeyFactory keyFactory = null;
 
         public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
             this.jwksUrl = jwksUrl;
@@ -175,7 +175,7 @@ public class OpenIDAccessManager extends RadarAccessManager {
                 }
                 lastCheck = ZonedDateTime.now();
             }
-        }        
+        }
 
         private void updateSigningKey() throws IOException, InvalidKeySpecException {
             HttpURLConnection http = null;

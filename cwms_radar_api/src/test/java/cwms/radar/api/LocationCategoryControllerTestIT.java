@@ -50,13 +50,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-class LocationCategoryControllerTestIT extends DataApiTestIT
-{
-
-	
-
-	
-
+class LocationCategoryControllerTestIT extends DataApiTestIT {
 	@Test
 	void test_create_read_delete() throws Exception {
 		String officeId = "SPK";
