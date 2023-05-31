@@ -24,27 +24,110 @@
 
 package cwms.radar.api;
 
-import static cwms.radar.api.Controllers.METHOD;
-import static cwms.radar.api.Controllers.OFFICE;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 import cwms.radar.data.dao.JooqDao;
+import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSpecContainer;
-import javax.servlet.http.HttpServletResponse;
+import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import javax.servlet.http.HttpServletResponse;
+import java.util.stream.IntStream;
+
+import static cwms.radar.api.Controllers.METHOD;
+import static cwms.radar.api.Controllers.OFFICE;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
 class RatingSpecControllerTestIT extends DataApiTestIT
 {
+
+	@Test
+	void test_empty_rating_spec() throws Exception {
+		String locationId = "RatingSpecTestEmpty";
+		String officeId = "SPK";
+		createLocation(locationId, true, officeId);
+		String ratingXml = readResourceFile("cwms/radar/api/empty_rating_spec.xml");
+		RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
+		specContainer.officeId = officeId;
+		specContainer.specOfficeId = officeId;
+		specContainer.locationId = locationId;
+		specContainer.specId = specContainer.specId.replace("TEST", locationId);
+		String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+		String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+		//Create Template
+		given()
+				.accept(Formats.JSONV2)
+				.contentType(Formats.XMLV2)
+				.body(templateXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, officeId)
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings/template")
+				.then()
+				.assertThat()
+				.statusCode(is(HttpServletResponse.SC_CREATED));
+		//Create Spec
+		given()
+				.accept(Formats.JSONV2)
+				.contentType(Formats.XMLV2)
+				.body(specXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, officeId)
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings/spec")
+				.then()
+				.assertThat()
+				.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		//Read
+		Response response = given()
+				.accept(Formats.JSONV2)
+				.contentType(Formats.JSONV2)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam("office", officeId)
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings/metadata");
+		RatingSpec ratingSpec = new RatingSpec(new RatingSpec.Builder().fromRatingSpec(new hec.data.cwmsRating.RatingSpec(specContainer)));
+		JsonPath path = new JsonPath(response.asString());
+		//get values of JSON array after getting array size
+		boolean foundMatching = IntStream.range(0, path.getInt("rating-metadata.size()"))
+				.mapToObj(i -> path.getObject("rating-metadata[" + i + "].rating-spec", RatingSpec.class))
+				.anyMatch(s -> s.hashCode() == ratingSpec.hashCode());
+		assertTrue(foundMatching);
+		//Delete
+		given()
+				.accept(Formats.JSONV2)
+				.contentType(Formats.JSONV2)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, officeId)
+				.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+				.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.delete("/ratings/spec/" + specContainer.specId)
+				.then()
+				.assertThat()
+				.log().body().log().everything(true)
+				.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+	}
 
 	@Test
 	void test_create_read_delete() throws Exception {
