@@ -1,7 +1,28 @@
-package cwms.radar.data.dao;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static org.jooq.impl.DSL.field;
+package cwms.radar.data.dao;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -14,35 +35,25 @@ import cwms.radar.data.dto.rating.RatingSpec;
 import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jooq.*;
+import org.jooq.impl.DSL;
+import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
+
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jooq.Condition;
-import org.jooq.Configuration;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.Record1;
-import org.jooq.Record2;
-import org.jooq.SelectConditionStep;
-import org.jooq.SelectForUpdateStep;
-import org.jooq.impl.DSL;
-import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_RATING;
-import usace.cwms.db.jooq.codegen.tables.AV_TRANSITIONAL_RATING;
-import usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_RATING;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static org.jooq.impl.DSL.field;
 
 public class RatingMetadataDao extends JooqDao<RatingSpec> {
     private static final Logger logger = Logger.getLogger(RatingMetadataDao.class.getName());
@@ -117,9 +128,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
 
     @NotNull
     public Set<String> getRatingIds(String office, String templateIdMask, int offset, int limit) {
-        AV_RATING ratView = AV_RATING.AV_RATING;
-        AV_VIRTUAL_RATING virtView = AV_VIRTUAL_RATING.AV_VIRTUAL_RATING;
-        AV_TRANSITIONAL_RATING transView = AV_TRANSITIONAL_RATING.AV_TRANSITIONAL_RATING;
+        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
 
         try (final Timer.Context ignored = markAndTime("getRatingIds")) {
             Condition condition = DSL.trueCondition();
@@ -127,50 +136,28 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             Condition transCondition = DSL.trueCondition();
 
             if (office != null) {
-                condition = condition.and(ratView.OFFICE_ID.eq(office));
-                virtCondition = virtCondition.and(virtView.OFFICE_ID.eq(office));
-                transCondition = transCondition.and(transView.OFFICE_ID.eq(office));
+                condition = condition.and(specView.OFFICE_ID.eq(office));
             }
 
             if (templateIdMask != null) {
-                Condition ratingIdLike = JooqDao.caseInsensitiveLikeRegex(ratView.RATING_ID,
+                Condition ratingIdLike = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID,
                         templateIdMask);
                 condition = condition.and(ratingIdLike);
-                Condition virtSpecLike = JooqDao.caseInsensitiveLikeRegex(virtView.RATING_SPEC,
-                        templateIdMask);
-                virtCondition = virtCondition.and(virtSpecLike);
-                Condition transLike = JooqDao.caseInsensitiveLikeRegex(transView.RATING_SPEC,
-                        templateIdMask);
-                transCondition = transCondition.and(transLike);
             }
 
             Field<String> idField = field("RATING_ID", String.class);
 
             SelectConditionStep<Record2<String, String>> ratingStep = dsl.select(
-                            ratView.OFFICE_ID,
-                            ratView.RATING_ID.as(idField))
-                    .from(ratView)
+                            specView.OFFICE_ID,
+                            specView.RATING_ID.as(idField))
+                    .from(specView)
                     .where(condition);
 
-            SelectConditionStep<Record2<String, String>> virtStep = dsl.select(
-                            virtView.OFFICE_ID,
-                            virtView.RATING_SPEC.as(idField))
-                    .from(virtView)
-                    .where(virtCondition);
-
-            SelectConditionStep<Record2<String, String>> transStep = dsl.select(
-                            transView.OFFICE_ID,
-                            transView.RATING_SPEC.as(idField))
-                    .from(transView)
-                    .where(transCondition);
-
             SelectForUpdateStep<Record1<String>> query = dsl.selectDistinct(idField)
-                    .from(ratingStep.union(virtStep).union(transStep))
+                    .from(ratingStep)
                     .orderBy(idField.asc())
                     .limit(limit)
                     .offset(offset);
-
-//        logger.info(() -> query.getSQL(ParamType.INLINED));
 
             return new LinkedHashSet<>(query.fetch(idField));
         }
@@ -201,12 +188,8 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             Map<RatingSpec, Set<AbstractRatingMetadata>> retval = new LinkedHashMap<>();
 
             mapStream.forEach(map -> map.forEach((spec, ratings) -> {
-                Set<AbstractRatingMetadata> setForSpec = retval.get(spec);
-                if (ratings != null) {
-                    if (setForSpec == null) {
-                        setForSpec = new LinkedHashSet<>();
-                        retval.put(spec, setForSpec);
-                    }
+                Set<AbstractRatingMetadata> setForSpec = retval.computeIfAbsent(spec, s -> new LinkedHashSet<>());
+                if(ratings != null) {
                     setForSpec.addAll(ratings);
                 }
             }));
