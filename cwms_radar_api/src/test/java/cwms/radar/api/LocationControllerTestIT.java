@@ -80,7 +80,6 @@ public class LocationControllerTestIT extends DataApiTestIT {
 
         // get it back
         given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().everything(true)
                 .accept(Formats.JSON)
                 .header("Authorization", user.toHeaderValue())
@@ -96,7 +95,6 @@ public class LocationControllerTestIT extends DataApiTestIT {
 
         // delete without cascade should fail
         given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().everything(true)
                 .accept(Formats.JSON)
                 .header("Authorization", user.toHeaderValue())
@@ -111,9 +109,8 @@ public class LocationControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CONFLICT));
 
-        // delete without cascade should fail
+        // delete with cascade should succeed
         given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().everything(true)
                 .accept(Formats.JSON)
                 .header("Authorization", user.toHeaderValue())

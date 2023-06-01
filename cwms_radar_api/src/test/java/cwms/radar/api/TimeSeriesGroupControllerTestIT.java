@@ -24,13 +24,6 @@
 
 package cwms.radar.api;
 
-import static cwms.radar.api.Controllers.*;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import cwms.radar.data.dto.AssignedTimeSeries;
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
@@ -40,10 +33,6 @@ import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.List;
-import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.hamcrest.Matchers;
 import org.jooq.Configuration;
@@ -53,6 +42,18 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+
+import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.List;
+
+import static cwms.radar.api.Controllers.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 @Tag("Start_here_Thursday")
@@ -136,11 +137,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_read_delete() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
-        createLocation(timeSeriesId, true, officeId);
+        createTimeseries(officeId, timeSeriesId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
@@ -208,7 +209,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_LOCS, "true")
+            .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
             .when()
             .redirects().follow(true)
@@ -274,10 +275,10 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_rename_group() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_rename_group_cat", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_rename_group", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
@@ -316,7 +317,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
-        TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "newGroupName", "IntegrationTesting",
+        TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
             "sharedTsAliasId2", timeSeriesId);
         String newGroupXml = Formats.format(contentType, newGroup);
         //Rename Group
@@ -363,7 +364,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(newGroupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, newGroup.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_LOCS, "true")
+            .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, newGroup.getOfficeId())
             .when()
             .redirects().follow(true)
@@ -405,11 +406,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_add_assigned_locs() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
-        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_rename_group", "IntegrationTesting",
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_add_assigned_locs", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
@@ -485,9 +486,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("office-id", equalTo(group.getOfficeId()))
             .body("id", equalTo(group.getId()))
             .body("description", equalTo(group.getDescription()))
-            .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId2))
-            .body("assigned-time-series[0].alias-id", equalTo("AliasId2"))
-            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId2));
+            .body("assigned-time-series[1].timeseries-id", equalTo(timeSeriesId2))
+            .body("assigned-time-series[1].alias-id", equalTo("AliasId2"))
+            .body("assigned-time-series[1].ref-ts-id", equalTo(timeSeriesId2));
         //Clear Assigned TS
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);
@@ -497,7 +498,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_LOCS, "true")
+            .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
             .when()
             .redirects().follow(true)

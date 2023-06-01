@@ -116,7 +116,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_create_read_delete() throws Exception {
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK";
 		String locationId = "LocationGroupTest";
 		createLocation(locationId, true, officeId);
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -224,7 +224,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_rename_group() throws Exception {
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK";
 		String locationId = "LocationGroupTest";
 		createLocation(locationId, true, officeId);
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -320,7 +320,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_add_assigned_locs() throws Exception {
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK";
 		String locationId = "LocationGroupTest";
 		createLocation(locationId, true, officeId);
 		String locationId2 = "LocationGroupTest2";
