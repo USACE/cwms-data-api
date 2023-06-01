@@ -1,18 +1,28 @@
-package cwms.radar.api;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.radar.api.Controllers.CREATE;
-import static cwms.radar.api.Controllers.DATUM;
-import static cwms.radar.api.Controllers.DELETE;
-import static cwms.radar.api.Controllers.FORMAT;
-import static cwms.radar.api.Controllers.GET_ALL;
-import static cwms.radar.api.Controllers.GET_ONE;
-import static cwms.radar.api.Controllers.OFFICE;
-import static cwms.radar.api.Controllers.RESULTS;
-import static cwms.radar.api.Controllers.SIZE;
-import static cwms.radar.api.Controllers.UNIT;
-import static cwms.radar.api.Controllers.UPDATE;
-import static cwms.radar.data.dao.JooqDao.getDslContext;
+package cwms.radar.api;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -37,12 +47,12 @@ import cwms.radar.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.*;
+import org.geojson.FeatureCollection;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
@@ -50,10 +60,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
-import org.geojson.FeatureCollection;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.radar.api.Controllers.*;
+import static cwms.radar.data.dao.JooqDao.getDslContext;
 
 
 /**
@@ -338,7 +348,11 @@ public class LocationController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                             + "the location whose data is to be deleted. If this field is not "
                             + "specified, matching location information will be deleted from all "
-                            + "offices.")
+                            + "offices."),
+                    //Keeping hidden from the API docs for now as this call is particularly destructive
+                    //@OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
+                    //description = "Specifies whether to specifies whether to delete associated data " +
+                    //"for this location before deleting the location itself. Default: false")
             },
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
@@ -352,21 +366,13 @@ public class LocationController implements CrudHandler {
     @Override
     public void delete(Context ctx, @NotNull String locationId) {
 
-        try (final Timer.Context timeContext = markAndTime(DELETE);
+        try (Timer.Context timeContext = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
             String office = ctx.queryParam(OFFICE);
             LocationsDao locationsDao = getLocationsDao(dsl);
-            locationsDao.deleteLocation(locationId, office);
+            boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
+            locationsDao.deleteLocation(locationId, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
-        } catch (NotFoundException e) {
-            RadarError re = new RadarError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            ctx.json(re);
-        } catch (IOException ex) {
-            RadarError re = new RadarError("Failed to delete location");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
