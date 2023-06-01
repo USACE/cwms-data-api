@@ -36,7 +36,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
-import cwms.radar.api.errors.DeleteNotAllowedException;
+import cwms.radar.api.errors.DeleteConflictException;
 import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
@@ -379,7 +379,7 @@ public class LocationController implements CrudHandler {
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);
             if(cause != null && cause.getErrorCode() == 20031) {
-                throw new DeleteNotAllowedException("Unable to delete requested location: " + locationId + " for office: " + office, cause);
+                throw new DeleteConflictException("Unable to delete requested location: " + locationId + " for office: " + office, cause);
             }
             throw ex;
         }

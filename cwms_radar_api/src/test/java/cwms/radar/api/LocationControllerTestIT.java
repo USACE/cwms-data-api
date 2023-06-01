@@ -109,7 +109,7 @@ public class LocationControllerTestIT extends DataApiTestIT {
                 .then()
                 .log().body().log().everything(true)
                 .assertThat()
-                .statusCode(is(HttpServletResponse.SC_METHOD_NOT_ALLOWED));
+                .statusCode(is(HttpServletResponse.SC_CONFLICT));
 
         // delete without cascade should fail
         given()

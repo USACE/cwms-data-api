@@ -28,9 +28,9 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class DeleteNotAllowedException extends RuntimeException {
+public final class DeleteConflictException extends RuntimeException {
 
-    public DeleteNotAllowedException(String message, SQLException cause) {
+    public DeleteConflictException(String message, SQLException cause) {
         super(message, cause);
     }
 
