@@ -36,6 +36,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.UnitSystem;
+import cwms.radar.api.errors.DeleteNotAllowedException;
 import cwms.radar.api.errors.NotFoundException;
 import cwms.radar.api.errors.RadarError;
 import cwms.radar.data.dao.LocationsDao;
@@ -51,9 +52,11 @@ import io.javalin.plugin.openapi.annotations.*;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -366,13 +369,19 @@ public class LocationController implements CrudHandler {
     @Override
     public void delete(Context ctx, @NotNull String locationId) {
 
+        String office = ctx.queryParam(OFFICE);
         try (Timer.Context timeContext = markAndTime(DELETE);
              DSLContext dsl = getDslContext(ctx)) {
-            String office = ctx.queryParam(OFFICE);
             LocationsDao locationsDao = getLocationsDao(dsl);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             locationsDao.deleteLocation(locationId, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
+        } catch (DataAccessException ex) {
+            SQLException cause = ex.getCause(SQLException.class);
+            if(cause != null && cause.getErrorCode() == 20031) {
+                throw new DeleteNotAllowedException("Unable to delete requested location: " + locationId + " for office: " + office, cause);
+            }
+            throw ex;
         }
     }
 

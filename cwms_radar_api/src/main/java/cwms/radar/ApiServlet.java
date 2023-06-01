@@ -210,6 +210,11 @@ public class ApiServlet extends HttpServlet {
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
+                .exception(DeleteNotAllowedException.class, (e, ctx) -> {
+                    RadarError re = new RadarError("Cannot perform requested delete. Data is referenced elsewhere in CWMS.", e.getDetails());
+                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    ctx.status(HttpServletResponse.SC_METHOD_NOT_ALLOWED).json(re);
+                })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     RadarError re = new RadarError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString(), e);
