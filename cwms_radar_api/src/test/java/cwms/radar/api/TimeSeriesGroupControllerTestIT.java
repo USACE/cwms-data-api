@@ -71,9 +71,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar");
         createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-radar");
         createLocation("Clear Creek",true,"LRL");
-//        createTimeseries("LRL","Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
-//        loadSqlDataFromResource("cwms/radar/data/sql/mixed_ts_group.sql");
-//        loadSqlDataFromResource("cwms/radar/data/sql/spk_aliases_and_groups.sql");
+        createTimeseries("LRL","Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
+        loadSqlDataFromResource("cwms/radar/data/sql/mixed_ts_group.sql");
+        loadSqlDataFromResource("cwms/radar/data/sql/spk_aliases_and_groups.sql");
     }
 
     @Test
