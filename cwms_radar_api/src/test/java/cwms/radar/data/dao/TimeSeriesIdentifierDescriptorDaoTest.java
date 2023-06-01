@@ -1,23 +1,46 @@
-package cwms.radar.data.dao;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import static cwms.radar.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+package cwms.radar.data.dao;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.radar.api.enums.Nation;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.time.ZoneId;
-import java.util.Optional;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.time.ZoneId;
+import java.util.Optional;
+
+import static cwms.radar.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Disabled   // Disabled b/c this was testing against a real database.
 class TimeSeriesIdentifierDescriptorDaoTest {
@@ -120,8 +143,6 @@ class TimeSeriesIdentifierDescriptorDaoTest {
         try (DSLContext dsl = getDslContext(OFFICE)) {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
             locationsDao.deleteLocation(location.getName(), location.getOfficeId());
-        } catch (IOException ex) {
-            System.out.println("Location already successfully deleted. Clean-up complete");
         }
     }
 

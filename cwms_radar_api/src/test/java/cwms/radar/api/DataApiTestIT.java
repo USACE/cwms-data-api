@@ -24,13 +24,25 @@
 
 package cwms.radar.api;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dto.Location;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-import io.restassured.RestAssured;
-import io.restassured.config.JsonConfig;
-import io.restassured.path.json.config.JsonPathConfig;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.catalina.Manager;
+import org.apache.catalina.SessionEvent;
+import org.apache.catalina.SessionListener;
+import org.apache.catalina.session.StandardSession;
+import org.apache.commons.io.IOUtils;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,24 +55,6 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.apache.catalina.Manager;
-import org.apache.catalina.SessionEvent;
-import org.apache.catalina.SessionListener;
-import org.apache.catalina.session.StandardSession;
-import org.apache.commons.io.IOUtils;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-import com.google.common.flogger.FluentLogger;
-
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 /**
  * Helper class to manage cycling tests multiple times against a database.
@@ -310,6 +304,9 @@ public class DataApiTestIT {
                 stmt.setString(2,timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
+                if (ex.getMessage().contains("TS_ALREADY_EXISTS")) {
+                    return; // this is okay
+                }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
         }, db.getPdUser());

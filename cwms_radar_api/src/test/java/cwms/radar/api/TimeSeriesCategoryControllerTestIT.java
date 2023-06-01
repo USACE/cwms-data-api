@@ -24,21 +24,22 @@
 
 package cwms.radar.api;
 
-import static cwms.radar.api.Controllers.CASCADE_DELETE;
-import static cwms.radar.api.Controllers.OFFICE;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
 import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import javax.servlet.http.HttpServletResponse;
+
+import static cwms.radar.api.Controllers.CASCADE_DELETE;
+import static cwms.radar.api.Controllers.OFFICE;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
 @ExtendWith(RadarApiSetupCallback.class)
@@ -47,7 +48,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_create_read_delete() throws Exception {
-		String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+		String officeId = "SPK";
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 		TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
 		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
