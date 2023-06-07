@@ -63,7 +63,6 @@ class ClobTest {
         String output = xml.format(clob);
 
         assertNotNull(output);
-
         // Output looks like:
         // <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         // <clob>
