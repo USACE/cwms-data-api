@@ -253,6 +253,7 @@ task integrationTests(type: Test) {
     useJUnitPlatform() {
         includeTags "integration"
     }
+    failFast true
     shouldRunAfter test
     classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs
