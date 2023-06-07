@@ -120,7 +120,8 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
                 user = cwmsDb.getUsername();
             }
             System.out.println(String.format("Running %s as %s %s",data,user,cwmsDb.getPassword()));
-            cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()), user);
+            cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()
+                                                                    .replace("&password.",cwmsDb.getPassword())), user);
         }
 
     }

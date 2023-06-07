@@ -8,6 +8,7 @@ import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
 import cwms.radar.datasource.SessionOfficePreparer;
+import cwms.radar.helpers.ResourceHelper;
 import cwms.radar.spi.RadarAccessManager;
 
 import io.javalin.core.security.RouteRole;
@@ -36,9 +37,7 @@ public class KeyAccessManager extends RadarAccessManager {
     private static final String AUTH_HEADER = "Authorization";
 
     // At this level we just care that the user has permissions in *any* office
-    private static final String RETRIEVE_GROUPS_OF_USER =
-          "select unique user_group_id "
-        + "from cwms_20.av_sec_users where is_member ='T' and username = upper(?)";
+    private final String RETRIEVE_GROUPS_OF_USER;
 
     private static final String SET_API_USER_DIRECT = "begin "
         + "cwms_env.set_session_user_direct(upper(?));"
@@ -49,14 +48,16 @@ public class KeyAccessManager extends RadarAccessManager {
         + "and username=upper(?) and rownum = 1";
 
     private static final String SET_API_USER_DIRECT_WITH_OFFICE = "begin "
-        //+ "cwms_env.clear_session_privileges;"
-        + "cwms_env.set_session_office_id(?);"
-        + "cwms_env.set_session_user_direct(upper(?)); end;";
+        + "cwms_env.set_session_user_direct(upper(?),upper(?)); end;";
 
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
 
     private DataSource dataSource = null;
+
+    public KeyAccessManager() {
+        this.RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",this.getClass());
+    }
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
@@ -128,10 +129,11 @@ public class KeyAccessManager extends RadarAccessManager {
             PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);
             PreparedStatement getRoles = conn.prepareStatement(RETRIEVE_GROUPS_OF_USER);
         ) {
-            setApiUser.setString(1,office);
+            //setApiUser.setString(1,office);
             String connUser = conn.getMetaData().getUserName();
             logger.info("Connection user = "+connUser);
-            setApiUser.setString(2,connUser);
+            setApiUser.setString(1,connUser);
+            setApiUser.setString(2,office);
             setApiUser.execute();
             getRoles.setString(1,user);
             try (ResultSet rs = getRoles.executeQuery()) {
@@ -147,13 +149,11 @@ public class KeyAccessManager extends RadarAccessManager {
 
     private String checkKey(String key, Context ctx, String office) throws CwmsAuthException {
         try (Connection conn = dataSource.getConnection();
-            // TODO: system not reseting to "l2webtest" user correctly, call below appears to be returning
-            // the last session user for some reason.
             PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);
             PreparedStatement checkForKey = conn.prepareStatement(CHECK_API_KEY);) {
             String connUser = conn.getMetaData().getUserName();
-            setApiUser.setString(1,office);
-            setApiUser.setString(2,connUser);
+            setApiUser.setString(1,connUser);
+            setApiUser.setString(2,office);
             setApiUser.execute();
             checkForKey.setString(1,key);
             try (ResultSet rs = checkForKey.executeQuery()) {
