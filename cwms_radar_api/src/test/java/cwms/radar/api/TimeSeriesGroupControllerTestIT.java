@@ -136,9 +136,10 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_read_delete() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
-        createLocation(timeSeriesId, true, officeId);
+        createLocation(timeSeriesId.split("\\.")[0],true,officeId);
+        createTimeseries(officeId,timeSeriesId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
@@ -274,8 +275,10 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_rename_group() throws Exception {
-        String officeId = RadarApiSetupCallback.getDatabaseLink().getOfficeId();
+        String officeId = "SPK";
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
+        createLocation(timeSeriesId.split("\\.")[0],true,officeId);
+        createTimeseries(officeId, timeSeriesId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_rename_group", "IntegrationTesting",

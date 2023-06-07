@@ -314,6 +314,9 @@ public class DataApiTestIT {
                 stmt.setString(2,timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
+                if (ex.getErrorCode() == 20003) {
+                    return; // TS already exists. that's find for these tests.
+                }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
         }, db.getPdUser());

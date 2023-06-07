@@ -97,7 +97,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 
         return dsl;
-    }
+    }    
 
     @Override
     public List<T> getAll(Optional<String> limitToOffice) {
