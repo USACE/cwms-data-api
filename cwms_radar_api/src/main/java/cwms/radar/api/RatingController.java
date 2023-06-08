@@ -98,6 +98,10 @@ public class RatingController implements CrudHandler {
                     @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.JSONV2)},
             required = true),
+            queryParams = {
+                    @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
+                            description = "Also store updates to the rating template. Default: true")
+            },
             method = HttpMethod.POST, path = "/ratings", tags = {TAG})
     public void create(@NotNull Context ctx) {
 
@@ -105,7 +109,8 @@ public class RatingController implements CrudHandler {
                 getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
             RatingSet ratingSet = deserializeRatingSet(ctx);
-            ratingDao.create(ratingSet);
+            boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
+            ratingDao.create(ratingSet, storeTemplate);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
         } catch (IOException | RatingException ex) {
             RadarError re = new RadarError("Failed to process create request");

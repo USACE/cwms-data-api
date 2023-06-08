@@ -45,12 +45,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public void create(RatingSet ratingSet) throws IOException, RatingException {
+    public void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
                 // can't exist if we are creating, if it exists use store
                 boolean overwriteExisting = false;
-                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, true);
+                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, storeTemplate);
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
