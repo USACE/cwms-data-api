@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cwms.radar.api.DataApiTestIT;
 import cwms.radar.data.dto.LocationGroup;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import java.util.List;
 import java.util.Optional;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -28,7 +28,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
 
     @Test
     void testGetAllWithoutAssignedLocations() throws Exception {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
@@ -45,7 +45,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
 
     @Test
     void testGetOneWithoutAssignedLocations() throws Exception {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));

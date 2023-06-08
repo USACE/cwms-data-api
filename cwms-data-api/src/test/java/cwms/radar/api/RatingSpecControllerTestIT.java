@@ -27,7 +27,7 @@ package cwms.radar.api;
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.rating.RatingSpec;
 import cwms.radar.formatters.Formats;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.path.json.JsonPath;
@@ -48,7 +48,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@ExtendWith(CwmsDataApiSetupCallback.class)
 class RatingSpecControllerTestIT extends DataApiTestIT
 {
 

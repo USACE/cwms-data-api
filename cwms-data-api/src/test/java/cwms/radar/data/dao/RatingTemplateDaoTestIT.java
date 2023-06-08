@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cwms.radar.api.DataApiTestIT;
 import cwms.radar.data.dto.rating.RatingTemplate;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -33,14 +33,14 @@ class RatingTemplateDaoTestIT extends DataApiTestIT {
 
     @BeforeAll
     public static void swt_permissions() throws Exception {
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         addUserToGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
         addUserToGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
 
     @AfterAll
     public static void remove_swt_permissiosn() throws Exception {
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         removeUserFromGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
         removeUserFromGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
@@ -48,7 +48,7 @@ class RatingTemplateDaoTestIT extends DataApiTestIT {
     @Test
     void testRetrieveRatingTemplates() throws SQLException {
 
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
             testRetrieveRatingTemplate(c, "SWT");
         });

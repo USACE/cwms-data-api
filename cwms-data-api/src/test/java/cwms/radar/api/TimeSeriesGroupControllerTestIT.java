@@ -29,7 +29,7 @@ import cwms.radar.data.dto.TimeSeriesCategory;
 import cwms.radar.data.dto.TimeSeriesGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -266,7 +266,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     private static BigDecimal getTsCode(String officeId, String timeSeriesId) throws SQLException {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         BigDecimal tsCode = db.connection((c) -> {
             Configuration configuration = OracleDSL.using(c).configuration();
             BigDecimal officeCode = CWMS_UTIL_PACKAGE.call_GET_OFFICE_CODE(configuration, officeId);

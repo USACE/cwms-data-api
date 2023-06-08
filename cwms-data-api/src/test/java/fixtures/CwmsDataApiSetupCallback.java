@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.catalina.Manager;
-import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.commons.io.IOUtils;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -27,21 +26,21 @@ import io.restassured.path.json.config.JsonPathConfig;
 
 
 @SuppressWarnings("rawtypes")
-public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback{
+public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
 
-    private static TomcatServer radarInstance;
+    private static TomcatServer cdaInstance;
     private static CwmsDatabaseContainer<?> cwmsDb;
 
-    private static final String ORACLE_IMAGE = System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C);
-    private static final String ORACLE_VOLUME = System.getProperty("RADAR.oracle.database.volume", "cwmsdb_radar_volume");
-    private static final String CWMS_DB_IMAGE = System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16");
+    private static final String ORACLE_IMAGE = System.getProperty("CDA.oracle.database.image",System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C));
+    private static final String ORACLE_VOLUME = System.getProperty("CDA.oracle.database.volume",System.getProperty("RADAR.oracle.database.volume", "cwmsdb_data_api_volume"));
+    private static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.iamge",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16"));
 
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
 
         System.out.println("After all called");
-        if( radarInstance != null ){
+        if( cdaInstance != null ){
             //cwmsDb.stop();
             //cwmsDb.close();
             //radarInstance.stop();
@@ -54,7 +53,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
     public void beforeAll(ExtensionContext context) throws Exception {
         System.out.println("Before all called");
         System.out.println(context.getDisplayName());
-        if( radarInstance == null ){
+        if( cdaInstance == null ){
             
             cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
@@ -65,23 +64,29 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
 
             this.loadDefaultData(cwmsDb);
             this.loadTimeSeriesData(cwmsDb);
-            System.setProperty("RADAR_JDBC_URL", cwmsDb.getJdbcUrl());
-            System.setProperty("RADAR_JDBC_USERNAME",cwmsDb.getPdUser()
-                                                               .replace("hectest_pu",
-                                                                                "webtest")
-                                                            );
-            System.setProperty("RADAR_JDBC_PASSWORD", cwmsDb.getPassword());
+            final String jdbcUrl = cwmsDb.getJdbcUrl();
+            final String user = cwmsDb.getPdUser().replace("hectest_pu","webtest");
+            final String pw = cwmsDb.getPassword();
+            System.setProperty("RADAR_JDBC_URL", jdbcUrl);
+            System.setProperty("RADAR_JDBC_USERNAME", user);
+            System.setProperty("RADAR_JDBC_PASSWORD", pw);
+
+            System.setProperty("CDA_JDBC_URL", jdbcUrl);
+            System.setProperty("CDA_JDBC_USERNAME", user);
+            System.setProperty("CDA_JDBC_PASSWORD", pw);
+
+
             //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
             System.out.println("warFile property:" + System.getProperty("warFile"));            
             
-            radarInstance = new TomcatServer("build/tomcat", 
+            cdaInstance = new TomcatServer("build/tomcat", 
                                              System.getProperty("warFile"),
                                              0,
                                              System.getProperty("warContext"));
-            radarInstance.start();
-            System.out.println("Tomcat Listing on " + radarInstance.getPort());
-            RestAssured.baseURI=RadarApiSetupCallback.httpUrl();
-            RestAssured.port = RadarApiSetupCallback.httpPort();
+            cdaInstance.start();
+            System.out.println("Tomcat Listing on " + cdaInstance.getPort());
+            RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
+            RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = "/cwms-data";
             RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
             // we only use doubles
@@ -146,7 +151,7 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
     }
 
     public static int httpPort() {
-        return radarInstance.getPort();
+        return cdaInstance.getPort();
     }
 
     public static CwmsDatabaseContainer getDatabaseLink() {
@@ -165,11 +170,11 @@ public class RadarApiSetupCallback implements BeforeAllCallback,AfterAllCallback
     }
 
     public static Manager getTestSessionManager() {
-        return radarInstance.getTestSessionManager();
+        return cdaInstance.getTestSessionManager();
     }
 
     public static SingleSignOnWrapper getSsoValve() {
-        return radarInstance.getSsoValve();
+        return cdaInstance.getSsoValve();
     }
 
 }

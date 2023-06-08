@@ -28,7 +28,7 @@ import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -65,7 +65,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
  */
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
     private static FluentLogger logger = FluentLogger.forEnclosingClass();
     /**
@@ -94,7 +94,7 @@ public class DataApiTestIT {
                     DataApiTestIT.class
                     .getClassLoader()
                     .getResourceAsStream(resource),"UTF-8");
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
             try(PreparedStatement stmt = c.prepareStatement(sql);) {
                 stmt.execute();
@@ -130,8 +130,8 @@ public class DataApiTestIT {
     @BeforeAll
     public static void register_users() throws Exception {
         try {
-            final Manager tsm = RadarApiSetupCallback.getTestSessionManager();
-            CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+            final Manager tsm = CwmsDataApiSetupCallback.getTestSessionManager();
+            CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 if(user.getApikey() == null) {
                     continue;
@@ -164,7 +164,7 @@ public class DataApiTestIT {
                     }
 
                 });
-                RadarApiSetupCallback.getSsoValve()
+                CwmsDataApiSetupCallback.getSsoValve()
                                      .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
             }
         } catch(RuntimeException ex) {
@@ -183,7 +183,7 @@ public class DataApiTestIT {
         while(it.hasNext()) {
             try {
                 Location location = it.next();
-                CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+                CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
                 db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
                         stmt.setString(1,location.getName());
@@ -211,7 +211,7 @@ public class DataApiTestIT {
     @AfterAll
     public static void deregister_users() throws Exception {
         try {
-            CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+            CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(removeApiKey);) {
@@ -241,7 +241,7 @@ public class DataApiTestIT {
      * @param kind Arbitrary string define purpose of location
      */
     protected static void createLocation(String location, boolean active, String office, Double latitude, Double longitude, String horizontalDatum, String timeZone, String kind) throws SQLException {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
                                             kind,
                                             ZoneId.of(timeZone),
@@ -305,7 +305,7 @@ public class DataApiTestIT {
      * @throws SQLException
      */
     protected static void createTimeseries(String office, String timeseries) throws SQLException {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
             try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery);) {
                 stmt.setString(1,office);
@@ -329,7 +329,7 @@ public class DataApiTestIT {
      * @throws Exception Any errors running the sql command
      */
     protected static void addUserToGroup(String user, String group, String office) throws Exception {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
             try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;");) {
                 stmt.setString(1,user);
@@ -351,7 +351,7 @@ public class DataApiTestIT {
      * @throws Exception Any errors running the sql command
      */
     protected static void removeUserFromGroup(String user, String group, String office) throws Exception {
-        CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
             try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;");) {
                 stmt.setString(1,user);
@@ -420,7 +420,7 @@ public class DataApiTestIT {
             return;
         }
         logger.atInfo().log("Cleaning up groups test did not remove.");
-		CwmsDatabaseContainer<?> cwmsDb = RadarApiSetupCallback.getDatabaseLink();
+		CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
 		cwmsDb.connection( c-> {
 			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
 				for (LocationGroup g: groupsCreated) {
@@ -444,7 +444,7 @@ public class DataApiTestIT {
             return;
         }
         logger.atInfo().log("Cleaning up location categories that tests did not remove.");
-		CwmsDatabaseContainer<?> cwmsDb = RadarApiSetupCallback.getDatabaseLink();
+		CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
 		cwmsDb.connection( c-> {
 			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_cat(?,'T',?); end;")) {
 				for (LocationCategory cat: categoriesCreated) {

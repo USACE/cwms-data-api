@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletResponse;
 
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import fixtures.users.UserSpecSource;
@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@ExtendWith(CwmsDataApiSetupCallback.class)
 public class AccessManagerTestIT extends DataApiTestIT
 {
 	private static KeyUser SPK_NORMAL_USER = KeyUser.SPK_NORMAL;

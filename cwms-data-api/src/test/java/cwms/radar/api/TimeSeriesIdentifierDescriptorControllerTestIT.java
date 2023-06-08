@@ -11,7 +11,7 @@ import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;

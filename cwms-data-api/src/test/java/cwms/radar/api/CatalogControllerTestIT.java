@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 
 import cwms.radar.formatters.Formats;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 
 import static io.restassured.RestAssured.*;
 import io.restassured.response.Response;
@@ -19,7 +19,7 @@ import io.restassured.response.Response;
 import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@ExtendWith(CwmsDataApiSetupCallback.class)
 public class CatalogControllerTestIT extends DataApiTestIT {
 
     

@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.data.dto.SpecifiedLevel;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@ExtendWith(CwmsDataApiSetupCallback.class)
 public class SpecifiedLevelIdIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";

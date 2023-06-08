@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 
 import cwms.radar.data.dao.JooqDao;
 import cwms.radar.formatters.Formats;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingTemplateContainer;
 import javax.servlet.http.HttpServletResponse;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@ExtendWith(CwmsDataApiSetupCallback.class)
 class RatingTemplateControllerTestIT extends DataApiTestIT
 {
 

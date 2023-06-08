@@ -14,7 +14,7 @@ import cwms.radar.api.DataApiTestIT;
 import cwms.radar.data.dto.rating.AbstractRatingMetadata;
 import cwms.radar.data.dto.rating.RatingMetadata;
 import cwms.radar.data.dto.rating.RatingMetadataList;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.RatingException;
 import hec.data.cwmsRating.AbstractRating;
@@ -47,14 +47,14 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
 // It takes 8 minutes or so to run it this way.
     @BeforeAll
     public static void swt_permissions() throws Exception {
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         addUserToGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
         addUserToGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
 
     @AfterAll
     public static void remove_swt_permissiosn() throws Exception {
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         removeUserFromGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
         removeUserFromGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
@@ -62,7 +62,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
     @Test
     void testRetrieveMetadata() throws SQLException {
 
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection((Consumer<Connection>) c -> {//
             testRetrieveMetadata(c, "SWT");
         });
@@ -209,7 +209,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
     @Test
     void testRetrieveRatings() throws SQLException  {
         String swt = "SWT";
-        CwmsDatabaseContainer<?> databaseLink = RadarApiSetupCallback.getDatabaseLink();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
             try (DSLContext lrl = getDslContext(c, swt)) {
                 long start = System.nanoTime();

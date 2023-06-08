@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.radar.data.dto.Clob;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.json.JsonV2;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.response.Response;
 

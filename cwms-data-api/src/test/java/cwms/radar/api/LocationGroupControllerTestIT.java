@@ -29,7 +29,7 @@ import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
-import fixtures.RadarApiSetupCallback;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 
 import org.junit.jupiter.api.Disabled;
