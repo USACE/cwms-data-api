@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.time.Instant;
 
 public interface RatingDao {
-    void create(RatingSet ratingSet) throws IOException, RatingException;
+    void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
                        Instant start, Instant end) throws IOException, RatingException;
