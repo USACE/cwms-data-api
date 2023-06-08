@@ -15,8 +15,8 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = 'cwms_rest_api'
+rootProject.name = 'cwms-data-api'
 
 include ":annotations"
 include ":access-manager-api"
-include ":cwms_radar_api"
+include ":cwms-data-api"

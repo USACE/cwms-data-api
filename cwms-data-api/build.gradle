@@ -198,7 +198,7 @@ test {
 }
 
 
-description = 'CWMS RADAR API'
+description = 'CWMS-Data-API'
 
 sourceSets {
     main {
@@ -294,7 +294,7 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
 
     from(war.outputs.files.singleFile) {
         //include "${project.name}-${project.version}.jar"
-        into "radar/webapps"
+        into "cda/webapps"
         rename(".*\\.war", "cwms-data.war")
     }
 }
