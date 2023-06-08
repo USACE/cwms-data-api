@@ -26,6 +26,7 @@ package cwms.radar.data.dao;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+
 import java.io.IOException;
 import java.time.Instant;
 
@@ -39,7 +40,7 @@ public interface RatingDao {
                            String start, String end, String timezone);
 
 
-    void store(RatingSet ratingSet) throws IOException, RatingException;
+    void store(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     void delete(String officeId, String specificationId, Instant start, Instant end);
 }

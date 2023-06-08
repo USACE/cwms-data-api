@@ -24,8 +24,6 @@
 
 package cwms.radar.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -33,6 +31,8 @@ import cwms.radar.data.dao.JooqDao;
 import cwms.radar.data.dao.TimeSeriesIdentifierDescriptorDao;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 
 public final class Controllers {
@@ -91,6 +91,7 @@ public final class Controllers {
     public static final String RATING_ID = "rating-id";
     public static final String TEMPLATE_ID = "template-id";
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
+    public static final String STORE_TEMPLATE = "store-template";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
