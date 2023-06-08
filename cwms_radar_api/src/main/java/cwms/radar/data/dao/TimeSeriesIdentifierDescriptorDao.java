@@ -58,13 +58,18 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     public void create(TimeSeriesIdentifierDescriptor tsid, boolean versionedFlag,
                        Number intervalForward, Number intervalBackward, boolean failIfExists
     ) {
-        BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(dsl.configuration(),
+        dsl.connection(c -> {
+            BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(
+                getDslContext(c,tsid.getOfficeId()).configuration(),
                 tsid.getTimeSeriesId(),
                 tsid.getIntervalOffsetMinutes(), intervalForward, intervalBackward,
                 OracleTypeMap.formatBool(versionedFlag),
                 OracleTypeMap.formatBool(tsid.isActive()),
                 OracleTypeMap.formatBool(failIfExists), tsid.getOfficeId());
-        logger.atFine().log("Created tsCode: %s for %s", tsCode, tsid.getTimeSeriesId());
+            logger.atFine().log("Created tsCode: %s for %s", tsCode, tsid.getTimeSeriesId());
+        });
+        
+        
     }
 
     public TimeSeriesIdentifierDescriptors getTimeSeriesIdentifiers(String cursor, int pageSize, String office,

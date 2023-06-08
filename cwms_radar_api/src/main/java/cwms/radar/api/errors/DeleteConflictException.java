@@ -22,23 +22,27 @@
  * SOFTWARE.
  */
 
-package cwms.radar.data.dao;
+package cwms.radar.api.errors;
 
-import cwms.radar.data.dto.Catalog;
-import cwms.radar.data.dto.Location;
-import org.geojson.FeatureCollection;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
-import java.io.IOException;
+public final class DeleteConflictException extends RuntimeException {
 
-public interface LocationsDao {
-    String getLocations(String names,String format, String units, String datum, String officeId);
-    Location getLocation(String locationName, String unitSystem,
-                         String officeId) throws IOException;
-    void deleteLocation(String locationName, String officeId);
-    void deleteLocation(String locationName, String officeId, boolean cascadeDelete);
-    void storeLocation(Location location) throws IOException;
-    void renameLocation(String oldLocationName, Location renamedLocation) throws IOException;
-    FeatureCollection buildFeatureCollection(String names, String units, String officeId);
-    Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office, 
-                               String idLike, String categoryLike, String groupLike);
+    public DeleteConflictException(String message, SQLException cause) {
+        super(message, cause);
+    }
+
+    public Map<String, Object> getDetails() {
+        String sqlExceptionMessage = getCause().getLocalizedMessage();
+        String[] parts = sqlExceptionMessage.split("\n");
+        if (parts.length > 1) {
+            sqlExceptionMessage = parts[0];
+        }
+        Map<String, Object> retval = new HashMap<>();
+        retval.put(getMessage(), sqlExceptionMessage);
+        return retval;
+    }
+
 }

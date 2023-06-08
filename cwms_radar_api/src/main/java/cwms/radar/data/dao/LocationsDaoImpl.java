@@ -1,14 +1,28 @@
-package cwms.radar.data.dao;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.name;
-import static org.jooq.impl.DSL.select;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
+package cwms.radar.data.dao;
 
 import cwms.radar.api.enums.Nation;
 import cwms.radar.api.enums.Unit;
@@ -18,36 +32,29 @@ import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.catalog.CatalogEntry;
 import cwms.radar.data.dto.catalog.LocationAlias;
 import cwms.radar.data.dto.catalog.LocationCatalogEntry;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.logging.Logger;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.CommonTableExpression;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.SelectConditionStep;
-import org.jooq.SelectSeekStep3;
-import org.jooq.Table;
+import org.jooq.*;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.logging.Logger;
+
+import static cwms.radar.data.dao.DeleteRule.DELETE_LOC;
+import static cwms.radar.data.dao.DeleteRule.DELETE_LOC_CASCADE;
+import static java.util.stream.Collectors.*;
+import static org.jooq.impl.DSL.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
@@ -135,15 +142,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public void deleteLocation(String locationName, String officeId) throws IOException {
-        try {
-            connection(dsl, c -> {
-                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                locJooq.delete(c, officeId, locationName);
-            });
-        } catch (DataAccessException ex) {
-            throw new IOException(ex);
-        }
+    public void deleteLocation(String locationName, String officeId) {        
+        deleteLocation(locationName, officeId, false);
+    }
+
+    @Override
+    public void deleteLocation(String locationName, String officeId, boolean cascadeDelete) {
+        dsl.connection(c->{
+            Configuration configuration = getDslContext(c, officeId).configuration();
+            if(cascadeDelete) {
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC_CASCADE.getRule(), officeId);
+            } else {
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC.getRule(), officeId);
+            }
+        });
     }
 
     @Override
@@ -151,6 +163,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         location.validate();
         try {
             connection(dsl, c -> {
+                setOffice(c,location);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.store(c, location.getOfficeId(), location.getName(),
@@ -177,7 +190,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             throws IOException {
         renamedLocation.validate();
         try {
-            connection(dsl, c ->            {
+            connection(dsl, c -> {
+                setOffice(c,renamedLocation);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,

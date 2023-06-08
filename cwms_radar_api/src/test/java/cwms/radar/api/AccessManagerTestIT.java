@@ -81,7 +81,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 				.spec(authSpec)
 				.body(json)
 				.when()
-				.post(  "/locations")
+				.post(  "/locations/")
 				.then()
 				.assertThat().statusCode(HttpServletResponse.SC_ACCEPTED);
 	}

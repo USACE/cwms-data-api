@@ -1,11 +1,15 @@
 package cwms.radar.data.dao;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import org.jooq.DSLContext;
 
 import cwms.radar.data.dto.CwmsDTO;
+import usace.cwms.db.dao.ifc.env.CwmsDbEnv;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LOG;;
@@ -41,7 +45,22 @@ public abstract class Dao<T> {
      * @param object Object Owned by an office id.
      */
     protected void setOffice(CwmsDTO object) {
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), object.getOfficeId());
+        this.setOffice(object.getOfficeId());
+    }
+
+    /**
+     * set session office on specific connection
+     * @param c opened connection
+     * @param object Data containing a valid CWMS office
+     * @throws SQLException
+     */
+    protected void setOffice(Connection c, CwmsDTO object) throws SQLException {
+        this.setOffice(c,object.getOfficeId());
+    }
+
+    protected void setOffice(Connection c, String office) throws SQLException {
+        CwmsDbEnv db = CwmsDbServiceLookup.buildCwmsDb(CwmsDbEnv.class, c);
+        db.setSessionOfficeId(c,office);
     }
 
     /**

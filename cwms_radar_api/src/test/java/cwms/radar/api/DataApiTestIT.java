@@ -24,12 +24,15 @@
 
 package cwms.radar.api;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dto.Location;
 import cwms.radar.data.dto.LocationCategory;
 import cwms.radar.data.dto.LocationGroup;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +45,7 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
@@ -57,11 +60,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import com.google.common.flogger.FluentLogger;
-
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-
 /**
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.

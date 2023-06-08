@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIT License
+  ~
+  ~ Copyright (c) 2023 Hydrologic Engineering Center
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all
+  ~ copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  ~ SOFTWARE.
+  -->
+
+<ratings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd">
+    <rating-template office-id="SPK">
+        <parameters-id>Elev;Area</parameters-id>
+        <version>Unit-Test</version>
+        <ind-parameter-specs>
+            <ind-parameter-spec position="1">
+                <parameter>Elev</parameter>
+                <in-range-method>LINEAR</in-range-method>
+                <out-range-low-method>NEAREST</out-range-low-method>
+                <out-range-high-method>NEAREST</out-range-high-method>
+            </ind-parameter-spec>
+        </ind-parameter-specs>
+        <dep-parameter>Area</dep-parameter>
+        <description>template description</description>
+    </rating-template>
+    <rating-spec office-id="SPK">
+        <rating-spec-id>TEST.Elev;Area.Unit-Test.Unit-Test-Spec</rating-spec-id>
+        <template-id>Elev;Area.Unit-Test</template-id>
+        <location-id>TEST</location-id>
+        <version>Unit-Test-Spec</version>
+        <source-agency/>
+        <in-range-method>LINEAR</in-range-method>
+        <out-range-low-method>NEAREST</out-range-low-method>
+        <out-range-high-method>NEAREST</out-range-high-method>
+        <active>true</active>
+        <auto-update>false</auto-update>
+        <auto-activate>false</auto-activate>
+        <auto-migrate-extension>false</auto-migrate-extension>
+        <ind-rounding-specs>
+            <ind-rounding-spec position="1">2223456782</ind-rounding-spec>
+        </ind-rounding-specs>
+        <dep-rounding-spec>2222233332</dep-rounding-spec>
+        <description>spec description</description>
+    </rating-spec>
+</ratings>

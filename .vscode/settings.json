@@ -5,5 +5,7 @@
     ],
     "java.compile.nullAnalysis.mode": "automatic",
     "liveServer.settings.multiRootWorkspaceName": "cwms-radar-api",
-    "liveServer.settings.root": "/cwms_radar_api/src/main/webapp"
+    "liveServer.settings.root": "/cwms_radar_api/src/main/webapp",
+    "java.format.settings.url": "config/checkstyle/checkstyle.xml"
+
 }
