@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import org.jooq.Condition;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -179,6 +180,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     public void update(String office, String timeseriesId, Number utcOffsetMinutes, Number intervalForward,
                        Number intervalBackward, boolean activeFlag) {
         connection(dsl, connection -> {
+            setOffice(connection,office);
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.updateTsId(connection, office, timeseriesId, utcOffsetMinutes, intervalForward, intervalBackward, activeFlag);
         });
@@ -186,13 +188,16 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     }
 
     public void rename(String officeId, String origId, String newId, Long utcOffset) {
-
-        if (utcOffset == null) {
-            CWMS_TS_PACKAGE.call_RENAME_TS(dsl.configuration(), officeId, origId, newId);
-        } else {
-            CWMS_TS_PACKAGE.call_RENAME_TS__2(dsl.configuration(), origId, newId, utcOffset,
-                    officeId);
-        }
+        dsl.connection(c ->{
+            Configuration configuration = getDslContext(c, officeId).configuration();
+            if (utcOffset == null) {
+                CWMS_TS_PACKAGE.call_RENAME_TS(configuration, officeId, origId, newId);
+            } else {
+                CWMS_TS_PACKAGE.call_RENAME_TS__2(configuration, origId, newId, utcOffset,
+                        officeId);
+            }
+        });
+        
     }
 
     public void delete(String office, String timeseriesId, DeleteMethod method) {
@@ -214,6 +219,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
     public void deleteAll(String officeId, String tsId) {
         connection(dsl, connection -> {
+            setOffice(connection,officeId);
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.deleteAll(connection, officeId, tsId);
         });
@@ -221,6 +227,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
     public void deleteData(String officeId, String tsId) {
         connection(dsl, connection -> {
+            setOffice(connection,officeId);
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.deleteData(connection, officeId, tsId);
         });
@@ -228,6 +235,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
     public void deleteKey(String officeId, String tsId) {
         connection(dsl, connection -> {
+            setOffice(connection,officeId);
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.deleteKey(connection, officeId, tsId);
         });

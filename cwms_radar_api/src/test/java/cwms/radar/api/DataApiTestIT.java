@@ -167,8 +167,8 @@ public class DataApiTestIT {
                 RadarApiSetupCallback.getSsoValve()
                                      .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
             }
-        } catch(Exception ex) {
-            throw ex;
+        } catch(RuntimeException ex) {
+            throw new Exception("User registration failed",ex);
         }
     }
 
