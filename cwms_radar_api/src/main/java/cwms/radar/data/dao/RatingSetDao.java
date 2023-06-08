@@ -26,15 +26,16 @@ package cwms.radar.data.dao;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.Timestamp;
-import java.time.Instant;
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.Timestamp;
+import java.time.Instant;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
@@ -44,13 +45,13 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public void create(RatingSet ratingSet) throws IOException, RatingException {
+    public void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
                 setOffice(c, ratingSet.getRatingSpec().getOfficeId());
                 // can't exist if we are creating, if it exists use store
                 boolean overwriteExisting = false;
-                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, true);
+                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, storeTemplate);
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
@@ -108,12 +109,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     // store/update
     @Override
-    public void store(RatingSet ratingSet) throws IOException, RatingException {
+    public void store(RatingSet ratingSet, boolean includeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
                 setOffice(c,ratingSet.getRatingSpec().getOfficeId());
                 boolean overwriteExisting = true;
-                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, true);
+                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, includeTemplate);
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();

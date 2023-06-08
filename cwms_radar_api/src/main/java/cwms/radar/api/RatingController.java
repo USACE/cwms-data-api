@@ -98,6 +98,10 @@ public class RatingController implements CrudHandler {
                     @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.JSONV2)},
             required = true),
+            queryParams = {
+                    @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
+                            description = "Also store updates to the rating template. Default: true")
+            },
             method = HttpMethod.POST, path = "/ratings", tags = {TAG})
     public void create(@NotNull Context ctx) {
 
@@ -105,7 +109,8 @@ public class RatingController implements CrudHandler {
                 getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
             RatingSet ratingSet = deserializeRatingSet(ctx);
-            ratingDao.create(ratingSet);
+            boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
+            ratingDao.create(ratingSet, storeTemplate);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
         } catch (IOException | RatingException ex) {
             RadarError re = new RadarError("Failed to process create request");
@@ -428,15 +433,21 @@ public class RatingController implements CrudHandler {
             requestBody = @OpenApiRequestBody(content = {
                     @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.JSONV2)
-            }, required = true), method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
+            }, required = true),
+            queryParams = {
+                    @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
+                            description = "Also store updates to the rating template. Default: true")
+            },
+            method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
         try (final Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
 
+            boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             RatingSet ratingSet = deserializeRatingSet(ctx);
-            ratingDao.store(ratingSet);
+            ratingDao.store(ratingSet, storeTemplate);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated RatingSet");
         } catch (IOException | RatingException ex) {
             RadarError re = new RadarError("Failed to process request to update RatingSet");

@@ -26,6 +26,7 @@ package cwms.radar.data.dao;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.regex.Matcher;
@@ -34,8 +35,8 @@ import java.util.regex.Pattern;
 public interface RatingDao {
 
     static final Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
-
-    void create(RatingSet ratingSet) throws IOException, RatingException;
+    
+    void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
                        Instant start, Instant end) throws IOException, RatingException;
@@ -44,7 +45,7 @@ public interface RatingDao {
                            String start, String end, String timezone);
 
 
-    void store(RatingSet ratingSet) throws IOException, RatingException;
+    void store(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     void delete(String officeId, String specificationId, Instant start, Instant end);
 

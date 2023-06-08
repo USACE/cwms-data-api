@@ -52,14 +52,14 @@ dependencies {
 
     implementation "mil.army.usace.hec:hec-nucleus-data:1.0.33"
     implementation "mil.army.usace.hec:hec-nucleus-metadata:1.0.33"
-    implementation( 'mil.army.usace.hec:hec-cwms-ratings-core:2.0.1' ) {
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-core:2.0.2' ) {
         
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
     }
 
-    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-xml:2.0.1' )
-    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.1' )
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-xml:2.0.2' )
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.2' )
 
     implementation('org.jooq.pro:jooq:3.11.2') {
         exclude group: "com.oracle", module: "*"
@@ -253,7 +253,6 @@ task integrationTests(type: Test) {
     useJUnitPlatform() {
         includeTags "integration"
     }
-    failFast false // true appears to interfere with DataApiTestIT::afterAll methods getting called to cleanup
     shouldRunAfter test
     classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs
