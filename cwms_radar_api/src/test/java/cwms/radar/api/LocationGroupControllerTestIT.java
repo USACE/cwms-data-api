@@ -44,7 +44,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
-@Disabled()
+@Disabled() 
 class LocationGroupControllerTestIT extends DataApiTestIT
 {
 	@Test

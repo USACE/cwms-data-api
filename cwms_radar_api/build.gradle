@@ -253,7 +253,7 @@ task integrationTests(type: Test) {
     useJUnitPlatform() {
         includeTags "integration"
     }
-    failFast true
+    failFast false // true appears to interfere with DataApiTestIT::afterAll methods getting called to cleanup
     shouldRunAfter test
     classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs

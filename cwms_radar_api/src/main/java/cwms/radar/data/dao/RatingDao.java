@@ -28,8 +28,13 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public interface RatingDao {
+
+    static final Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
+
     void create(RatingSet ratingSet) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
@@ -42,4 +47,14 @@ public interface RatingDao {
     void store(RatingSet ratingSet) throws IOException, RatingException;
 
     void delete(String officeId, String specificationId, Instant start, Instant end);
+
+    static String extractOfficeFromXml(String xml) {
+        Matcher officeMatch = officeMatcher.matcher(xml);
+        
+        if(officeMatch.find()) {
+            return officeMatch.group(1);
+        } else {
+            throw new RuntimeException("Unable to determine office for data set");
+        }
+    }
 }
