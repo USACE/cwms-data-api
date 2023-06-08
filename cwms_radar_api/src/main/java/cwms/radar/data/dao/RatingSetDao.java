@@ -48,6 +48,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     public void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
+                setOffice(c, ratingSet.getRatingSpec().getOfficeId());
                 // can't exist if we are creating, if it exists use store
                 boolean overwriteExisting = false;
                 RatingJdbcFactory.store(ratingSet, c, overwriteExisting, storeTemplate);
@@ -111,6 +112,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     public void store(RatingSet ratingSet, boolean includeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
+                setOffice(c,ratingSet.getRatingSpec().getOfficeId());
                 boolean overwriteExisting = true;
                 RatingJdbcFactory.store(ratingSet, c, overwriteExisting, includeTemplate);
             });
@@ -127,8 +129,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     public void delete(String officeId, String specificationId, Instant start, Instant end) {
         Timestamp startDate = new Timestamp(start.toEpochMilli());
         Timestamp endDate = new Timestamp(end.toEpochMilli());
-        CWMS_RATING_PACKAGE.call_DELETE_RATINGS(dsl.configuration(), specificationId, startDate,
-            endDate, "UTC", officeId);
+        dsl.connection(c->
+            CWMS_RATING_PACKAGE.call_DELETE_RATINGS(
+                getDslContext(c,officeId).configuration(), specificationId, startDate,
+                endDate, "UTC", officeId
+            )
+        );
     }
 
 

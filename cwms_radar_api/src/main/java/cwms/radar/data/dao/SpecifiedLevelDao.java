@@ -45,19 +45,44 @@ public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
     }
 
     public void create(SpecifiedLevel specifiedLevel, boolean failIfExists) {
-        CWMS_LEVEL_PACKAGE.call_STORE_SPECIFIED_LEVEL(dsl.configuration(),
-            specifiedLevel.getId(), specifiedLevel.getDescription(), OracleTypeMap.formatBool(failIfExists),
-            specifiedLevel.getOfficeId());
+        try {
+        dsl.connection(c -> 
+            CWMS_LEVEL_PACKAGE.call_STORE_SPECIFIED_LEVEL(
+                getDslContext(c,specifiedLevel.getOfficeId()).configuration(),
+                specifiedLevel.getId(), specifiedLevel.getDescription(), OracleTypeMap.formatBool(failIfExists),
+                specifiedLevel.getOfficeId())
+        );
+        } catch(RuntimeException ex) {
+            throw wrapException(ex);
+        }
+        
     }
 
     public void update(String oldSpecifiedLevelId, String newSpecifiedLevelId, String officeId) {
-        CWMS_LEVEL_PACKAGE.call_RENAME_SPECIFIED_LEVEL(dsl.configuration(),
-            oldSpecifiedLevelId, newSpecifiedLevelId, officeId);
+        try {
+            dsl.connection(c->
+            CWMS_LEVEL_PACKAGE.call_RENAME_SPECIFIED_LEVEL(
+                getDslContext(c,officeId).configuration(),
+                oldSpecifiedLevelId, newSpecifiedLevelId, officeId)
+            );
+        } catch(RuntimeException ex) {
+            throw wrapException(ex);
+        }
+        
+        
     }
 
     public void delete(String specifiedLevelId, String office) {
         String failIfNotFound = OracleTypeMap.formatBool(true);
-        CWMS_LEVEL_PACKAGE.call_DELETE_SPECIFIED_LEVEL(dsl.configuration(), specifiedLevelId, failIfNotFound,
-            office);
+        try {
+            dsl.connection(c->
+                CWMS_LEVEL_PACKAGE.call_DELETE_SPECIFIED_LEVEL(
+                    getDslContext(c,office).configuration(), specifiedLevelId, failIfNotFound,
+                    office)
+            );
+        } catch(RuntimeException ex) {
+            throw wrapException(ex);
+        }
+        
     }
 }

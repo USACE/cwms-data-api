@@ -25,10 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
 public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
@@ -37,7 +36,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
     public void test_create_delete() throws JsonProcessingException, SQLException {
 
         createLocation("Alder Springs",true,"SPK");
-        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.TEST_.*";
+        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ID.*";
 
         // Check that we don't have any ts like this in the catalog.
         List<String> names = getIdsLike(OFFICE, likePattern);
@@ -49,7 +48,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
         // Create a bunch of ts and store them.
         int count = 8;
         for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.TEST_%d", i);
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ID%d", i);
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
@@ -77,7 +76,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
 
         // Now lets delete them
         for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.TEST_%d", i);
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ID%d", i);
 
             // String urlencoded = java.net.URLEncoder.encode(tsId); // This isn't the right thing
             // to call here b/c it encodes a space into +

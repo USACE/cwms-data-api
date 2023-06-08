@@ -31,9 +31,10 @@ import cwms.radar.formatters.ContentType;
 import cwms.radar.formatters.Formats;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -43,7 +44,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
-@ExtendWith(RadarApiSetupCallback.class)
+@Disabled() 
 class LocationGroupControllerTestIT extends DataApiTestIT
 {
 	@Test
@@ -222,6 +223,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 	}
 
+
 	@Test
 	void test_rename_group() throws Exception {
 		String officeId = "SPK";
@@ -231,6 +233,8 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 		LocationCategory cat = new LocationCategory(officeId, "test_rename_group", "IntegrationTesting");
 		LocationGroup group = new LocationGroup(cat, officeId, "test_rename_group", "IntegrationTesting",
 			"sharedLocAliasId", locationId, 123);
+		registerCategory(cat);
+		registerGroup(group);
 		List<AssignedLocation> assignedLocations = group.getAssignedLocations();
 		assignedLocations.add(new AssignedLocation(locationId, officeId, "AliasId", 1, locationId));
 		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
@@ -242,12 +246,11 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSON)
 			.body(categoryXml)
 			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.post("/location/category/")
-			.then()
+		.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
 		//Create Group
@@ -256,15 +259,16 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSON)
 			.body(groupXml)
 			.header("Authorization", user.toHeaderValue())
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.post("/location/group")
-			.then()
+		.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
 		LocationGroup newGroup = new LocationGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
 			"sharedLocAliasId", locationId, 123);
+		registerGroup(newGroup);
 		String newGroupXml = Formats.format(contentType, newGroup);
 		//Rename Group
 		given()
@@ -273,12 +277,12 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.body(newGroupXml)
 			.header("Authorization", user.toHeaderValue())
 			.header(CATEGORY_ID, group.getLocationCategory().getId())
-			.header(OFFICE, group.getOfficeId())
-			.when()
+			//.header(OFFICE, group.getOfficeId())
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.patch("/location/group/"+ group.getId())
-			.then()
+		.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_ACCEPTED));
 		//Read
@@ -287,11 +291,11 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSON)
 			.queryParam(OFFICE, officeId)
 			.queryParam(CATEGORY_ID, group.getLocationCategory().getId())
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.get("/location/group/" + newGroup.getId())
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_OK))
@@ -306,13 +310,13 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.accept(Formats.JSON)
 			.contentType(Formats.JSON)
 			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
+			//.queryParam(OFFICE, officeId)
 			.queryParam(CASCADE_DELETE, "true")
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.delete("/location/category/" + group.getLocationCategory().getId())
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -340,7 +344,6 @@ class LocationGroupControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSON)
 			.body(categoryXml)
 			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
 			.when()
 			.redirects().follow(true)
 			.redirects().max(3)

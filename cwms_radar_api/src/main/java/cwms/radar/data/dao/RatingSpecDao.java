@@ -357,11 +357,24 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
                     + deleteMethod);
         }
-        CWMS_RATING_PACKAGE.call_DELETE_SPECS(dsl.configuration(), ratingSpecId,
-            deleteAction, office);
+        dsl.connection(c ->
+            CWMS_RATING_PACKAGE.call_DELETE_SPECS(
+                getDslContext(c,office).configuration(),
+                ratingSpecId,
+                deleteAction,
+                office)
+        );
+        
     }
 
     public void create(String xml, boolean failIfExists) {
-        CWMS_RATING_PACKAGE.call_STORE_SPECS__3(dsl.configuration(), xml, OracleTypeMap.formatBool(failIfExists));
+        final String office = RatingDao.extractOfficeFromXml(xml);
+        dsl.connection(c -> 
+            CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
+                getDslContext(c,office).configuration(),
+                xml,
+                OracleTypeMap.formatBool(failIfExists))
+        );
+        
     }
 }

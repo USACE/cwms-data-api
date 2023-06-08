@@ -204,19 +204,23 @@ public class ClobDao extends JooqDao<Clob> {
         } else {
             pFailIfExists = "F";
         }
-
-        CWMS_TEXT_PACKAGE.call_STORE_TEXT(dsl.configuration(),
+        dsl.connection(c->{
+            CWMS_TEXT_PACKAGE.call_STORE_TEXT(
+                getDslContext(c, clob.getOfficeId()).configuration(),
                 clob.getValue(),
                 clob.getId(),
                 clob.getDescription(),
                 pFailIfExists,
-                clob.getOfficeId()
-        );
-
+                clob.getOfficeId());
+        });
     }
 
     public void delete(String officeId, String id) {
-        CWMS_TEXT_PACKAGE.call_DELETE_TEXT(dsl.configuration(), id, officeId);
+        dsl.connection(c->
+            CWMS_TEXT_PACKAGE.call_DELETE_TEXT(
+                getDslContext(c,officeId).configuration(), id, officeId
+            )
+        );
     }
 
     public void update(Clob clob, boolean ignoreNulls) {
@@ -234,13 +238,15 @@ public class ClobDao extends JooqDao<Clob> {
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
         // Also note: when p_ignore_nulls == 'F' and the value is "" (empty string)
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
-
-        CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(dsl.configuration(),
+        dsl.connection(c->
+            CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(
+                getDslContext(c,clob.getOfficeId()).configuration(),
                 clob.getValue(),
                 clob.getId(),
                 clob.getDescription(),
                 p_ignore_nulls,
                 clob.getOfficeId()
+            )
         );
     }
 }

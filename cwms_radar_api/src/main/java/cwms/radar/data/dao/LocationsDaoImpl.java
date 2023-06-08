@@ -142,17 +142,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public void deleteLocation(String locationName, String officeId) {
+    public void deleteLocation(String locationName, String officeId) {        
         deleteLocation(locationName, officeId, false);
     }
 
     @Override
     public void deleteLocation(String locationName, String officeId, boolean cascadeDelete) {
-        if(cascadeDelete) {
-            CWMS_LOC_PACKAGE.call_DELETE_LOCATION(dsl.configuration(), locationName, DELETE_LOC_CASCADE.getRule(), officeId);
-        } else {
-            CWMS_LOC_PACKAGE.call_DELETE_LOCATION(dsl.configuration(), locationName, DELETE_LOC.getRule(), officeId);
-        }
+        dsl.connection(c->{
+            Configuration configuration = getDslContext(c, officeId).configuration();
+            if(cascadeDelete) {
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC_CASCADE.getRule(), officeId);
+            } else {
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC.getRule(), officeId);
+            }
+        });
     }
 
     @Override
@@ -160,6 +163,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         location.validate();
         try {
             connection(dsl, c -> {
+                setOffice(c,location);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.store(c, location.getOfficeId(), location.getName(),
@@ -186,7 +190,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             throws IOException {
         renamedLocation.validate();
         try {
-            connection(dsl, c ->            {
+            connection(dsl, c -> {
+                setOffice(c,renamedLocation);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
                 String elevationUnits = Unit.METER.getValue();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,

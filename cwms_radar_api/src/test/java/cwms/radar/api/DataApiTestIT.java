@@ -26,22 +26,12 @@ package cwms.radar.api;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.radar.data.dto.Location;
+import cwms.radar.data.dto.LocationCategory;
+import cwms.radar.data.dto.LocationGroup;
 import fixtures.RadarApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.apache.catalina.Manager;
-import org.apache.catalina.SessionEvent;
-import org.apache.catalina.SessionListener;
-import org.apache.catalina.session.StandardSession;
-import org.apache.commons.io.IOUtils;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 import java.io.File;
@@ -56,6 +46,20 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.catalina.Manager;
+import org.apache.catalina.SessionEvent;
+import org.apache.catalina.SessionListener;
+import org.apache.catalina.session.StandardSession;
+import org.apache.commons.io.IOUtils;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
 /**
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
@@ -74,6 +78,10 @@ public class DataApiTestIT {
     protected static String createTimeseriesQuery = null;
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
     protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+
+    private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
+	private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
+
 
     /**
      * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
@@ -128,9 +136,9 @@ public class DataApiTestIT {
                 if(user.getApikey() == null) {
                     continue;
                 }
-                db.connection((c)-> {            
+                db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
-                        stmt.setString(1,user.getName());                
+                        stmt.setString(1,user.getName());
                         stmt.setString(2,user.getName()+"TestKey");
                         stmt.setString(3,user.getApikey());
                         stmt.execute();
@@ -138,7 +146,7 @@ public class DataApiTestIT {
                         throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
-                
+
                 StandardSession session = (StandardSession)tsm.createSession(user.getJSessionId());
                 if(session == null) {
                     throw new RuntimeException("Test Session Manager is unusable.");
@@ -154,13 +162,13 @@ public class DataApiTestIT {
                         logger.atInfo().log("Got event of type: %s",event.getType());
                         logger.atInfo().log("Session is:",event.getSession().toString());
                     }
-                    
+
                 });
                 RadarApiSetupCallback.getSsoValve()
                                      .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
             }
-        } catch(Exception ex) {
-            throw ex;
+        } catch(RuntimeException ex) {
+            throw new Exception("User registration failed",ex);
         }
     }
 
@@ -176,9 +184,9 @@ public class DataApiTestIT {
             try {
                 Location location = it.next();
                 CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
-                db.connection((c)-> {            
+                db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
-                        stmt.setString(1,location.getName());                
+                        stmt.setString(1,location.getName());
                         stmt.setString(2,location.getOfficeId());
                         stmt.execute();
                     } catch (SQLException ex) {
@@ -196,7 +204,7 @@ public class DataApiTestIT {
 
     /**
      * Removes all registered users' API keys from the database.
-     * 
+     *
      * Future work will have this deleting all users/user credentials.
      * @throws Exception
      */
@@ -205,9 +213,9 @@ public class DataApiTestIT {
         try {
             CwmsDatabaseContainer<?> db = RadarApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
-                db.connection((c)-> {            
+                db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(removeApiKey);) {
-                        stmt.setString(1,user.getName());                
+                        stmt.setString(1,user.getName());
                         stmt.setString(2,user.getName()+"TestKey");
                         stmt.execute();
                     } catch (SQLException ex) {
@@ -222,13 +230,13 @@ public class DataApiTestIT {
 
     /**
      * Creates location with all minimum required data.
-     * Additional calls to this function with the same location name are noop. 
-     * 
+     * Additional calls to this function with the same location name are noop.
+     *
      * @param location Location name
      * @param active Is this location active (allows writing timeseries)
      * @param office Office ID
-     * @param latitude 
-     * @param longitude 
+     * @param latitude
+     * @param longitude
      * @param horizontalDatum horizontal reference for this location, such as WGS84
      * @param kind Arbitrary string define purpose of location
      */
@@ -246,7 +254,7 @@ public class DataApiTestIT {
         if (locationsCreated.contains(loc)) {
             return; // we already have this location registered
         }
-        
+
         db.connection((c)-> {
             try(PreparedStatement stmt = c.prepareStatement(createLocationQuery);) {
                 stmt.setString(1,location);
@@ -267,7 +275,7 @@ public class DataApiTestIT {
 
     /**
      * Creates a location saving the data for later deletion. With the following defaults:
-     * 
+     *
      * <table>
      * <th><td>Parameter</td><td>Value</td></th>
      * <tr><td>latitude</td><td>0.0</td></tr>
@@ -276,7 +284,7 @@ public class DataApiTestIT {
      * <tr><td>timeZone</td><td>UTC</td></tr>
      * <tr><td>kind</td><td>STREAM</td></tr>
      * </table>
-     * 
+     *
      * @param location CWMS Location Name.
      * @param active should this location be flagged active or not.
      * @param office owning office
@@ -291,7 +299,7 @@ public class DataApiTestIT {
     /**
      * Create a timeseries (location must already exist), no data or other meta data will be set.
      * This only creates the timeseries name. Not data or other parameters are set.
-     * 
+     *
      * @param office owning office
      * @param timeseries timeseries name
      * @throws SQLException
@@ -304,8 +312,8 @@ public class DataApiTestIT {
                 stmt.setString(2,timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
-                if (ex.getMessage().contains("TS_ALREADY_EXISTS")) {
-                    return; // this is okay
+                if (ex.getErrorCode() == 20003) {
+                    return; // TS already exists. that's find for these tests.
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
@@ -314,7 +322,7 @@ public class DataApiTestIT {
 
     /**
      * If necessary for a specific test add the TEST user to the appropriate office CWMS Group.
-     * 
+     *
      * @param user CWMS User Name
      * @param group CWMS Group Name
      * @param office CWMS Office ID
@@ -336,7 +344,7 @@ public class DataApiTestIT {
 
     /**
      * If necessary for a specific test remove a user from a CWMS Group.
-     * 
+     *
      * @param user CWMS User Name
      * @param group CWMS Group Name
      * @param office CWMS Office ID
@@ -381,4 +389,75 @@ public class DataApiTestIT {
         Path path = new File(resource.getFile()).toPath();
         return String.join("\n", Files.readAllLines(path));
     }
+
+
+    /**
+     * Let the infrastructure know a group is getting created so it can
+     * be deleted in cases of test failure.
+     * @param group
+     */
+	protected void registerGroup(LocationGroup group) {
+		if (!groupsCreated.contains(group)) {
+			groupsCreated.add(group);
+		}
+	}
+
+    /**
+     * Let the infrastructure know a category is getting created so it can
+     * be deleted in cases of test failure.
+     * @param category
+     */
+	protected void registerCategory(LocationCategory category) {
+		if (!categoriesCreated.contains(category)) {
+			categoriesCreated.add(category);
+		}
+	}
+
+    @AfterEach
+	public void cleanupLocationGroups() throws Exception {
+        if (this.groupsCreated.isEmpty()) {
+            logger.atInfo().log("No groups to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up groups test did not remove.");
+		CwmsDatabaseContainer<?> cwmsDb = RadarApiSetupCallback.getDatabaseLink();
+		cwmsDb.connection( c-> {
+			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
+				for (LocationGroup g: groupsCreated) {
+					delGroup.clearParameters();
+					delGroup.setString(1,g.getId());
+					delGroup.setString(2,g.getOfficeId());
+					delGroup.executeUpdate();
+				};
+			} catch (SQLException ex) {
+				if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
+					throw new RuntimeException("Failed to remove group in test cleanup/", ex);
+				} // otherwise we don't get it was successfully deleted in the test
+			}
+		});
+	}
+
+    @AfterEach
+	public void cleanupLocationCategories() throws Exception {
+        if (this.categoriesCreated.isEmpty()) {
+            logger.atInfo().log("No location categories to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up location categories that tests did not remove.");
+		CwmsDatabaseContainer<?> cwmsDb = RadarApiSetupCallback.getDatabaseLink();
+		cwmsDb.connection( c-> {
+			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_cat(?,'T',?); end;")) {
+				for (LocationCategory cat: categoriesCreated) {
+					delGroup.clearParameters();
+					delGroup.setString(1,cat.getId());
+					delGroup.setString(2,cat.getOfficeId());
+					delGroup.executeUpdate();
+				};
+			} catch (SQLException ex) {
+				if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
+					throw new RuntimeException("Failed to remove group in test cleanup/", ex);
+				} // otherwise we don't get it was successfully deleted in the test
+			}
+		});
+	}
 }

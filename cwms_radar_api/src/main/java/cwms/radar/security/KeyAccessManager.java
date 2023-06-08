@@ -8,6 +8,7 @@ import cwms.radar.datasource.ConnectionPreparer;
 import cwms.radar.datasource.ConnectionPreparingDataSource;
 import cwms.radar.datasource.DelegatingConnectionPreparer;
 import cwms.radar.datasource.SessionOfficePreparer;
+import cwms.radar.helpers.ResourceHelper;
 import cwms.radar.spi.RadarAccessManager;
 
 import io.javalin.core.security.RouteRole;
@@ -35,29 +36,32 @@ public class KeyAccessManager extends RadarAccessManager {
     private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
     private static final String AUTH_HEADER = "Authorization";
 
-    private static final String RETRIEVE_GROUPS_OF_USER = "select "
-        + "privs.user_group_id"
-        + " from table("
-        + "cwms_sec.get_assigned_priv_groups_tab(?)"
-        + ") privs"
-        + " where is_member = 'T'";
+    // At this level we just care that the user has permissions in *any* office
+    private final String RETRIEVE_GROUPS_OF_USER;
 
-    private static final String SET_API_USER_DIRECT = "begin " 
-        + "cwms_env.set_session_user_direct(upper(?)); cwms_env.set_session_office_id(?)"
-        + ";end;";
+    private static final String SET_API_USER_DIRECT = "begin "
+        + "cwms_env.set_session_user_direct(upper(?));"
+        + "end;";
+
+    private static final String RETRIEVE_DEFAULT_USER_OFFICE =
+          "select unique db_office_id from av_sec_users where is_member='T' "
+        + "and username=upper(?) and rownum = 1";
 
     private static final String SET_API_USER_DIRECT_WITH_OFFICE = "begin "
-        + "cwms_env.set_session_office_id(upper(?));"
-        + "cwms_env.set_session_user_direct(upper(?)); end;";
+        + "cwms_env.set_session_user_direct(upper(?),upper(?)); end;";
 
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
 
     private DataSource dataSource = null;
 
+    public KeyAccessManager() {
+        this.RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",this.getClass());
+    }
+
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        dataSource = ctx.attribute(ApiServlet.RAW_DATA_SOURCE);
         try {
             String key = getApiKey(ctx);
             String user = authorized(ctx, key, routeRoles);
@@ -76,9 +80,9 @@ public class KeyAccessManager extends RadarAccessManager {
     }
 
     /**
-     * Allows connection to be correctly setup, key is used to assert user, then the office 
+     * Allows connection to be correctly setup, key is used to assert user, then the office
      * is set to the user specified office for further checks within the database.
-     * 
+     *
      * @param ctx javalin context if additional parameters are required.
      * @param user username, which is ignored except a log message
      * @param key the API key that was presented for this connection
@@ -87,25 +91,22 @@ public class KeyAccessManager extends RadarAccessManager {
         logger.info("Validated Api Key for user=" + user);
 
         ConnectionPreparer keyPreparer = new ApiKeyUserPreparer(key);
-        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam(Controllers.OFFICE));
-        DelegatingConnectionPreparer apiPreparer = 
-            new DelegatingConnectionPreparer(keyPreparer,officePrepare);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
 
             // Have it do our extra step last.
-            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, apiPreparer));
+            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, keyPreparer));
         } else {
-            ctx.attribute(ApiServlet.DATA_SOURCE, 
-                          new ConnectionPreparingDataSource(apiPreparer, dataSource));
+            ctx.attribute(ApiServlet.DATA_SOURCE,
+                          new ConnectionPreparingDataSource(keyPreparer, dataSource));
         }
     }
 
     private String authorized(Context ctx, String key, Set<RouteRole> routeRoles) {
         String retval = null;
-        String office = ctx.queryParam("office");
+        String office = ctx.attribute("office_id");
         String user = checkKey(key,ctx,office);
 
         if (routeRoles == null || routeRoles.isEmpty()) {
@@ -125,13 +126,16 @@ public class KeyAccessManager extends RadarAccessManager {
     private Set<RouteRole> getRoles(String user,String office) {
         Set<RouteRole> roles = new HashSet<>();
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT);
+            PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);
             PreparedStatement getRoles = conn.prepareStatement(RETRIEVE_GROUPS_OF_USER);
         ) {
-            setApiUser.setString(1,user);
+            //setApiUser.setString(1,office);
+            String connUser = conn.getMetaData().getUserName();
+            logger.info("Connection user = "+connUser);
+            setApiUser.setString(1,connUser);
             setApiUser.setString(2,office);
             setApiUser.execute();
-            getRoles.setString(1,office);
+            getRoles.setString(1,user);
             try (ResultSet rs = getRoles.executeQuery()) {
                 while (rs.next()) {
                     roles.add(new Role(rs.getString(1)));
@@ -147,8 +151,9 @@ public class KeyAccessManager extends RadarAccessManager {
         try (Connection conn = dataSource.getConnection();
             PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);
             PreparedStatement checkForKey = conn.prepareStatement(CHECK_API_KEY);) {
-            setApiUser.setString(1,office);
-            setApiUser.setString(2,conn.getMetaData().getUserName());
+            String connUser = conn.getMetaData().getUserName();
+            setApiUser.setString(1,connUser);
+            setApiUser.setString(2,office);
             setApiUser.execute();
             checkForKey.setString(1,key);
             try (ResultSet rs = checkForKey.executeQuery()) {
@@ -161,7 +166,7 @@ public class KeyAccessManager extends RadarAccessManager {
             }
         } catch (SQLException ex) {
             logger.log(Level.WARNING,"Failed API key check",ex);
-            throw new CwmsAuthException("Authorized failed");
+            throw new CwmsAuthException("Authorized failed",ex);
         }
     }
 
@@ -189,7 +194,7 @@ public class KeyAccessManager extends RadarAccessManager {
 
     @Override
     public String getName() {
-        return "ApiKey";    
+        return "ApiKey";
     }
 
     @Override
@@ -200,7 +205,4 @@ public class KeyAccessManager extends RadarAccessManager {
         }
         return header.trim().startsWith("apikey");
     }
-
-    
-
 }

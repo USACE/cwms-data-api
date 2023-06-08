@@ -829,12 +829,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             int intervalBackward = 0;
             boolean versionedFlag = versionDate != null;
             boolean activeFlag = true;
-            BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(dsl.configuration(),
-                input.getName(),
-                input.getIntervalOffset(), intervalForward, intervalBackward,
-                OracleTypeMap.formatBool(versionedFlag),
-                OracleTypeMap.formatBool(activeFlag),
-                OracleTypeMap.formatBool(false), input.getOfficeId());
+            // the code does not need to be created before hand.
+            // do not add a call to create_ts_code
             if (!input.getValues().isEmpty()) {
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
                         versionDate, input.getValues(), createAsLrts, storeRule,
@@ -858,6 +854,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private void store(Connection connection, String officeId, String tsId, String units,
                       Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
                       StoreRule storeRule, boolean overrideProtection) throws SQLException {
+        setOffice(connection,officeId);
         CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
         final int count = values == null ? 0 : values.size();
@@ -887,8 +884,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
                     + "first.");
         }
-        connection(dsl, connection -> store(connection, input.getOfficeId(), name, input.getUnits(), versionDate,
-                input.getValues(), createAsLrts, storeRule, overrideProtection));
+        connection(dsl, connection -> {
+            setOffice(connection,input.getOfficeId());
+            store(connection, input.getOfficeId(), name, input.getUnits(), versionDate,
+                input.getValues(), createAsLrts, storeRule, overrideProtection);
+        });
     }
 
 
@@ -907,6 +907,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public void delete(String officeId, String tsId, TimeSeriesDeleteOptions options){
         connection(dsl, connection -> {
+            setOffice(connection,officeId);
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
             tsDao.deleteTs(connection, officeId, tsId, options.getStartTime(), options.getEndTime(),
                     options.isStartTimeInclusive(), options.isEndTimeInclusive(),

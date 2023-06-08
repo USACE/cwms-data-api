@@ -82,15 +82,18 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory>
 
 	public void delete(String categoryId, boolean cascade, String office) {
 		String cascadeParam = OracleTypeMap.formatBool(cascade);
+		setOffice(office);
 		CWMS_LOC_PACKAGE.call_DELETE_LOC_CAT(dsl.configuration(), categoryId, cascadeParam, office);
 	}
 
 	public void create(LocationCategory category) {
+		setOffice(category);
 		CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dsl.configuration(), category.getId(), category.getDescription(),
 			category.getOfficeId());
 	}
 
 	public void update(String oldCategoryId, String newCategoryId, String office) {
+		setOffice(office);
 		CWMS_LOC_PACKAGE.call_RENAME_LOC_CATEGORY(dsl.configuration(), oldCategoryId, newCategoryId, null, "T", office);
 	}
 }

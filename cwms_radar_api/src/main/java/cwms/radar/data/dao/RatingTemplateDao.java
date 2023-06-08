@@ -38,6 +38,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +56,8 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
 
 public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     private static final Logger logger = Logger.getLogger(RatingTemplateDao.class.getName());
+
+    
 
     public RatingTemplateDao(DSLContext dsl) {
         super(dsl);
@@ -287,8 +291,12 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     }
 
     public void create(String xml, boolean failIfExists) {
-
-        CWMS_RATING_PACKAGE.call_STORE_TEMPLATES__3(dsl.configuration(), xml, OracleTypeMap.formatBool(failIfExists));
+        final String office = RatingDao.extractOfficeFromXml(xml);
+        
+        dsl.connection(c -> 
+            CWMS_RATING_PACKAGE.call_STORE_TEMPLATES__3(
+                getDslContext(c,office).configuration(), xml, OracleTypeMap.formatBool(failIfExists))
+        );
     }
 
     public void delete(String office, DeleteMethod deleteMethod, String ratingTemplateId) {
@@ -307,6 +315,10 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
                     + deleteMethod);
         }
-        CWMS_RATING_PACKAGE.call_DELETE_TEMPLATES(dsl.configuration(), ratingTemplateId, deleteAction, office);
+        dsl.connection(c -> 
+            CWMS_RATING_PACKAGE.call_DELETE_TEMPLATES(
+                getDslContext(c,office).configuration(), ratingTemplateId, deleteAction, office)
+        );
+        
     }
 }

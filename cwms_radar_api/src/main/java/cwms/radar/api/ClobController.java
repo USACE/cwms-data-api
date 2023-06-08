@@ -51,7 +51,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 import java.io.StringReader;
 import java.util.Objects;
@@ -233,8 +232,6 @@ public class ClobController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    /** office is used by the AccessManager. It is ignored in the code below. */
-                    @OpenApiParam(name = OFFICE, type = String.class, description = "User office for write operation."),
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },

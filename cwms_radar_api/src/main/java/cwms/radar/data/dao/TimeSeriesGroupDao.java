@@ -192,20 +192,28 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
 
     public void delete(String categoryId, String groupId, String office) {
-        CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(dsl.configuration(), categoryId, groupId, office);
+        dsl.connection(c -> 
+            CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(
+                getDslContext(c,office).configuration(), categoryId, groupId, office
+            )
+        );
+        
     }
 
     public void create(TimeSeriesGroup group, boolean failIfExists) {
-        Configuration configuration = dsl.configuration();
-        String categoryId = group.getTimeSeriesCategory().getId();
-        CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
+        dsl.connection(c-> {
+            Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
+            String categoryId = group.getTimeSeriesCategory().getId();
+            CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
             group.getId(), group.getDescription(), OracleTypeMap.formatBool(failIfExists),
             "T", group.getSharedAliasId(),
             group.getSharedRefTsId(), group.getOfficeId());
-        assignTs(group);
+            assignTs(configuration,group);
+        });
+        
     }
 
-    public void assignTs(TimeSeriesGroup group) {
+    private void assignTs(Configuration configuration,TimeSeriesGroup group) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
         if(assignedTimeSeries != null)
         {
@@ -213,9 +221,13 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 .map(TimeSeriesGroupDao::convertToTsAliasType)
                 .collect(toList());
             TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
-            CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(dsl.configuration(), group.getTimeSeriesCategory().getId(),
+            CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
                 group.getId(), assignedLocs, group.getOfficeId());
         }
+    }
+
+    public void assignTs(TimeSeriesGroup group) {
+        dsl.connection(c->assignTs(getDslContext(c,group.getOfficeId()).configuration(),group));
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
@@ -225,12 +237,20 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void renameTimeSeriesGroup(String oldGroupId, TimeSeriesGroup group) {
-        CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(dsl.configuration(), group.getTimeSeriesCategory().getId(),
-            oldGroupId, group.getId(), group.getOfficeId());
+        dsl.connection(c->
+            CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(
+                getDslContext(c,group.getOfficeId()).configuration(), 
+                group.getTimeSeriesCategory().getId(), oldGroupId, group.getId(),
+                group.getOfficeId())
+        );
     }
 
     public void unassignAllTs(TimeSeriesGroup group) {
-        CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(dsl.configuration(), group.getTimeSeriesCategory().getId(),
-            group.getId(), null, "T", group.getOfficeId());
+        dsl.connection(c ->
+            CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
+                getDslContext(c,group.getOfficeId()).configuration(), 
+                group.getTimeSeriesCategory().getId(), group.getId(),
+                null, "T", group.getOfficeId())
+        );
     }
 }

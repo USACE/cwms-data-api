@@ -19,7 +19,7 @@ public final class ResourceHelper {
     public static String getResourceAsString(String resource, Class<?> context) {
         InputStream formatList = getResourceAsStream(resource, context);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(formatList));) {
-            reader.lines().collect(Collectors.joining("\n"));
+            return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
             logger.log(Level.SEVERE,"Error access resource",e);
         }

@@ -97,7 +97,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 
         return dsl;
-    }
+    }    
 
     @Override
     public List<T> getAll(Optional<String> limitToOffice) {
@@ -161,7 +161,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retval;
     }
 
-    public static Optional<SQLException> getSqlException(RuntimeException input) {
+    public static Optional<SQLException> getSqlException(Throwable input) {
         Throwable cause = input;
 
         if (input instanceof DataAccessException) {
@@ -171,6 +171,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (cause instanceof SQLException) {
             return Optional.of((SQLException) cause);
+        } else if(cause instanceof DataAccessException) {
+            return getSqlException(cause); // There might be nested DataAccessExceptions
         } else {
             return Optional.empty();
         }

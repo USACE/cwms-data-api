@@ -1,6 +1,9 @@
 package cwms.radar.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import cwms.radar.api.errors.FieldException;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -9,6 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "clob")
 @XmlAccessorType(XmlAccessType.FIELD)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Clob extends CwmsDTO {
     @JsonProperty(required = true)
     private String id;

@@ -3,9 +3,12 @@ package cwms.radar.data.dto;
 import org.checkerframework.checker.units.qual.s;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import cwms.radar.api.errors.FieldException;
 
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Blob extends CwmsDTO
 {
 	@JsonProperty(required=true)
