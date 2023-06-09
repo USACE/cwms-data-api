@@ -693,13 +693,6 @@ public class LevelsController implements CrudHandler {
             TimeSeries timeSeries = levelsDao.retrieveLocationLevelAsTimeSeries(levelRef, beginZdt.toInstant(), endZdt.toInstant(), interval);
             ctx.json(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (NotFoundException e) {
-            throw e;
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Failed to retrieve Location Level request: "
-                    + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }

@@ -316,7 +316,7 @@ public class ApiServlet extends HttpServlet {
         LevelsController levelsController = new LevelsController(metrics);
         cdaCrud("/levels/{" + Controllers.LEVEL_ID + "}",
                 levelsController, requiredRoles);
-        get("/levels/timeseries/{level-id}", levelsController::getLevelAsTimeSeries);
+        get("/levels/{" + Controllers.LEVEL_ID + "}/timeseries", levelsController::getLevelAsTimeSeries);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
         cdaCrud("/timeseries/category/{category-id}",

@@ -61,6 +61,7 @@ import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
 import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
@@ -572,13 +573,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         ZoneId locationZoneId = getLocationZoneId(levelRef.getLocationRef());
         ZTSV_ARRAY specifiedTimes = buildTsvArray(start, end, interval, locationZoneId);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
         ZTSV_ARRAY locLvlValues = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
                 specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
                 "UTC", officeId);
         if (locLvlValues.isEmpty()) {
             throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);
         }
-        return buildTimeSeries(levelRef, interval, officeId, levelUnits, locLvlValues, locationZoneId);
+        return buildTimeSeries(levelRef, interval, locLvlValues, locationZoneId);
     }
 
     private ZoneId getLocationZoneId(LocationTemplate locationRef) {
@@ -587,12 +589,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return OracleTypeMap.toZoneId(timeZone, locationRef.getLocationId());
     }
 
-    private static TimeSeries buildTimeSeries(ILocationLevelRef levelRef, Interval interval, String officeId,
-                                              String levelUnits, ZTSV_ARRAY locLvlValues, ZoneId locationTimeZone) {
+    private static TimeSeries buildTimeSeries(ILocationLevelRef levelRef, Interval interval,
+                                              ZTSV_ARRAY locLvlValues, ZoneId locationTimeZone) {
         String timeSeriesId = levelRef.getLocationRef().getLocationId() + "." + levelRef.getParameter().getParameter()
                 + "." + levelRef.getParameterType().getParameterType() + "." + interval.getInterval() + "."
                 + levelRef.getDuration().toString() + "." + levelRef.getSpecifiedLevel().getId();
         int size = locLvlValues.size();
+        String levelUnits = levelRef.getParameter().getUnitsString();
+        String officeId = levelRef.getOfficeId();
         Instant start = locLvlValues.get(0).getDATE_TIME().toInstant();
         Instant end = locLvlValues.get(size - 1).getDATE_TIME().toInstant();
         ZonedDateTime firstValueTime = ZonedDateTime.ofInstant(start, NumericalConstants.UTC_ZONEID);
