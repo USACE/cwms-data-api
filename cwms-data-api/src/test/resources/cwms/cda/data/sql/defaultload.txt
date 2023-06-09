@@ -1,4 +1,4 @@
-# list of resources to load by default for testing RADAR
+# list of resources to load by default for testing CWMS-Data-API
 # still sorting the user/group concept out.
 # when putting sql in here, assume it will be executed against
 # an existing test database. it should not fail on duplicate data IF that 

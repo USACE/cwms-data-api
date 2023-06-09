@@ -74,7 +74,7 @@ public class LocationControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Create associated time series so delete fails without cascade
         try {
-            createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.radar-test");
+            createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
         } catch (Exception ex) {
 
         }

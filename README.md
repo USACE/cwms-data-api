@@ -1,7 +1,7 @@
 # CWMS DATA API (CDA) 
 *Formerly known as RADAR*
 
-![Build CWMS RADAR](https://github.com/USACE/cwms-data-api/workflows/Build%20CWMS%20CDA/badge.svg)
+![Build CWMS Data-Api](https://github.com/USACE/cwms-data-api/workflows/Build%20CWMS%20Data%20API/badge.svg)
 
 This is a new implementation of a REST API for data retrieval of USACE Water Data.
 

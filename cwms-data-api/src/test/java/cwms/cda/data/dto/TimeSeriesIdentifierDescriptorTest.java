@@ -93,7 +93,7 @@ class TimeSeriesIdentifierDescriptorTest {
     {
         // This test verifies that the TimeSeriesIdentifierDescriptor can be serialized by the Formats class.
         // It will fail like:
-        //  No Format for this content-type and data-type : (application/json;version=2, cwms.radar.data.dto.TimeSeriesIdentifierDescriptor)
+        //  No Format for this content-type and data-type : (application/json;version=2, cwms.cda.data.dto.TimeSeriesIdentifierDescriptor)
         // If JsonV2 does not contain TimeSeriesIdentifierDescriptor in its list of classes
         TimeSeriesIdentifierDescriptor tsID = buildTsId();
 

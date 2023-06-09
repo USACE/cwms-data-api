@@ -166,7 +166,7 @@ public class ApiServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
-        totalRequests = metrics.meter("radar.total_requests");
+        totalRequests = metrics.meter("cwms.dataapi.total_requests");
         super.init(config);
     }
 

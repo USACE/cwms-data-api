@@ -144,7 +144,7 @@ public class TomcatServer {
      */
     public static void main(String []args) {
         String baseDir = args[0];
-        String radarWar = args[1];
+        String cdaWar = args[1];
         String contextName = args[2];
         int port = Integer.parseInt(
                 System.getProperty("CDA_LISTEN_PORT",
@@ -153,7 +153,7 @@ public class TomcatServer {
                 );
 
         try {
-            TomcatServer tomcat = new TomcatServer(baseDir, radarWar, port, contextName);
+            TomcatServer tomcat = new TomcatServer(baseDir, cdaWar, port, contextName);
             tomcat.start();
             tomcat.await();
         } catch (Exception e) {

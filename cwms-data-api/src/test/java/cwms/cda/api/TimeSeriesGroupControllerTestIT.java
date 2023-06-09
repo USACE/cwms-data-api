@@ -68,12 +68,12 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createLocation("Alder Springs",true,"SPK");
         createLocation("Wet Meadows",true,"SPK");
         createLocation("Pine Flat-Outflow",true,"SPK");
-        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
-        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-radar");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-radar");
+        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
+        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
+        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
+        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda");
         createLocation("Clear Creek",true,"LRL");
-        createTimeseries("LRL","Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
+        createTimeseries("LRL","Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
         loadSqlDataFromResource("cwms/cda/data/sql/mixed_ts_group.sql");
         loadSqlDataFromResource("cwms/cda/data/sql/spk_aliases_and_groups.sql");
     }
@@ -128,8 +128,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         assertNotNull(tsIds);
         assertFalse(tsIds.isEmpty());
 
-        String[] lookFor = {"Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-radar",
-                "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar"};
+        String[] lookFor = {"Clear Creek.Precip-Cumulative.Inst.15Minutes.0.raw-cda",
+                "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda"};
 
         for(final String tsId : lookFor)
         {
@@ -140,7 +140,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_read_delete() throws Exception {
         String officeId = "SPK";
-        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         createTimeseries(officeId,timeSeriesId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -279,7 +279,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     @Test
     void test_rename_group() throws Exception {
         String officeId = "SPK";
-        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         createTimeseries(officeId, timeSeriesId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -412,7 +412,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     @Test
     void test_add_assigned_locs() throws Exception {
         String officeId = "SPK";
-        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar";
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_add_assigned_locs", "IntegrationTesting",
@@ -454,7 +454,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         assignedTimeSeries.clear();
-        String timeSeriesId2 = "Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar";
+        String timeSeriesId2 = "Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda";
         BigDecimal tsCode2 = getTsCode(officeId, timeSeriesId2);
         assignedTimeSeries.add(new AssignedTimeSeries(timeSeriesId2, tsCode2, "AliasId2", timeSeriesId2, 2));
         groupXml = Formats.format(contentType, group);

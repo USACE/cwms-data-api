@@ -152,8 +152,8 @@ LRE,IronMountain.Precip.Inst.1Day.0.cadbv2-raw,T,IronMountain,null,null,ft,null,
 LRE,IronMountain.Precip.Inst.1Day.0.cadbv2-raw,T,IronMountain,null,null,m,null,45.82,-88.12,null,Iron Mountain Weather Station,null,null,US/Central,Dickinson,MI
 LRE,Lorain.Temp-Air.Min.1Day.1Day.cadbv2-raw,T,Lorain,null,null,ft,null,41.35,-82.18,null,Lorain Weather Station,null,null,US/Eastern,Lorain,OH
 LRE,Lorain.Temp-Air.Min.1Day.1Day.cadbv2-raw,T,Lorain,null,null,m,null,41.35,-82.18,null,Lorain Weather Station,null,null,US/Eastern,Lorain,OH
-LRE,LowerRapids.Stage-Radar.Inst.6Minutes.0.lrdldm-raw,T,LowerRapids,null,null,m,null,null,null,null,null,null,null,null,null,null
-LRE,LowerRapids.Stage-Radar.Inst.6Minutes.0.lrdldm-raw,T,LowerRapids,null,null,ft,null,null,null,null,null,null,null,null,null,null
+LRE,LowerRapids.Stage-Cda.Inst.6Minutes.0.lrdldm-raw,T,LowerRapids,null,null,m,null,null,null,null,null,null,null,null,null,null
+LRE,LowerRapids.Stage-Cda.Inst.6Minutes.0.lrdldm-raw,T,LowerRapids,null,null,ft,null,null,null,null,null,null,null,null,null,null
 LRE,Mansfield.Precip.Inst.1Day.0.precip-raw,T,Mansfield,null,null,m,null,40.82,-82.52,null,Mansfield Weather Station,null,null,US/Eastern,Richland,OH
 LRE,Mansfield.Precip.Inst.1Day.0.precip-raw,T,Mansfield,Stream Gage,1121.28,ft,NGVD29,41.7969444,-77.0805556,NAD27,Mansfield,Tioga River near Mansfield,DCP,US/Eastern,Tioga,PA
 LRE,Mansfield.Precip.Inst.1Day.0.precip-raw,T,Mansfield,null,null,ft,null,40.82,-82.52,null,Mansfield Weather Station,null,null,US/Eastern,Richland,OH
@@ -418,8 +418,8 @@ LRP,Kinzua-WQData.Temp-Temp27.Inst.0.0.WQDataLive-TS110-Raw,T,Kinzua-WQData,null
 LRP,Kinzua-WQData.Temp-Temp27.Inst.0.0.WQDataLive-TS110-Raw,T,Kinzua-WQData,null,0.0,m,NAVD88,41.838492,-79.003822,WGS84,null,null,null,US/Eastern,Warren,PA
 LRP,Kittanning-Upper.Cond.Inst.15Minutes.0.OBS,T,Kittanning-Upper,null,773.4,ft,NGVD29,40.8203,-79.5317,WGS84,"L/D-7, Kittanning, PA (Upper)","Allegheny River at L/D-7, Kittanning, PA (Upper)","Allegheny River at L/D-7, Kittanning, PA (Upper)",US/Eastern,Armstrong,PA
 LRP,Kittanning-Upper.Cond.Inst.15Minutes.0.OBS,T,Kittanning-Upper,null,235.73232000000002,m,NGVD29,40.8203,-79.5317,WGS84,"L/D-7, Kittanning, PA (Upper)","Allegheny River at L/D-7, Kittanning, PA (Upper)","Allegheny River at L/D-7, Kittanning, PA (Upper)",US/Eastern,Armstrong,PA
-LRP,MJKirwan-Lake.Stor-Radar.Inst.30Minutes.0.OBS,T,MJKirwan-Lake,null,0.0,ft,NAVD88,41.1564,-81.0808,WGS84,"Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH",US/Eastern,Portage,OH
-LRP,MJKirwan-Lake.Stor-Radar.Inst.30Minutes.0.OBS,T,MJKirwan-Lake,null,0.0,m,NAVD88,41.1564,-81.0808,WGS84,"Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH",US/Eastern,Portage,OH
+LRP,MJKirwan-Lake.Stor-Cda.Inst.30Minutes.0.OBS,T,MJKirwan-Lake,null,0.0,ft,NAVD88,41.1564,-81.0808,WGS84,"Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH",US/Eastern,Portage,OH
+LRP,MJKirwan-Lake.Stor-Cda.Inst.30Minutes.0.OBS,T,MJKirwan-Lake,null,0.0,m,NAVD88,41.1564,-81.0808,WGS84,"Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH","Michael J Kirwan Reservoir, OH",US/Eastern,Portage,OH
 LRP,Maxwell-Lower.Stage-Upper-Alt.Inst.1Hour.0.OBS,T,Maxwell-Lower,null,734.5,ft,NGVD29,39.9975,-79.959,WGS84,"Maxwell L/D, PA (Lower)","Monongahela River at Maxwell L/D, PA (Lower)","Monongahela River at Maxwell L/D, PA (Lower)",US/Eastern,Fayette,PA
 LRP,Maxwell-Lower.Stage-Upper-Alt.Inst.1Hour.0.OBS,T,Maxwell-Lower,null,223.87560000000002,m,NGVD29,39.9975,-79.959,WGS84,"Maxwell L/D, PA (Lower)","Monongahela River at Maxwell L/D, PA (Lower)","Monongahela River at Maxwell L/D, PA (Lower)",US/Eastern,Fayette,PA
 LRP,Nilan.pH.Inst.1Hour.0.OBS,T,Nilan,null,238.0488,m,NGVD29,39.7316667,-79.890278,WGS84,"Nilan, PA","Cheat River at Nilan, PA","Cheat River at Nilan, PA",US/Eastern,Fayette,PA

@@ -28,17 +28,17 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         createLocation("Alder Springs",true,"SPK");
         createLocation("Wet Meadows",true,"SPK");
         createLocation("Pine Flat-Outflow",true,"SPK");
-        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-radar");
-        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-radar");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-radar");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-radar");
+        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
+        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
+        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
+        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda");
     }
 
     @Test
     public void test_no_aliased_results_returned(){
         given().accept(Formats.JSONV2)
             .queryParam("office", "SPK")
-            .queryParam("like",".*-radar$")
+            .queryParam("like",".*-cda$")
         .get("/catalog/TIMESERIES").then().assertThat()
             .statusCode(is(200))
             .body("$",hasKey("total"))
@@ -51,7 +51,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     public void test_queries_are_case_insensitive(){
         given().accept("application/json;version=2")
         .queryParam("office", "SPK")
-        .queryParam("like","alder spRINgs.*-RADAR$")
+        .queryParam("like","alder spRINgs.*-CDA$")
         .get("/catalog/TIMESERIES").then().assertThat()
         .statusCode(is(200))
         .body("$",hasKey("total"))

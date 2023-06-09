@@ -41,9 +41,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
         System.out.println("After all called");
         if( cdaInstance != null ){
-            //cwmsDb.stop();
-            //cwmsDb.close();
-            //radarInstance.stop();
+            // test-containers will handle stopping everything
         }
 
     }
