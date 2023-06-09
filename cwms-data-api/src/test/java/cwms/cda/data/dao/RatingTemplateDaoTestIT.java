@@ -1,35 +1,52 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.cda.data.dao;
 
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import cwms.cda.api.DataApiTestIT;
+import cwms.cda.data.dto.rating.RatingTemplate;
 import fixtures.CwmsDataApiSetupCallback;
-import fixtures.TestAccounts;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.io.RatingJdbcCompatUtil;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.function.Consumer;
+import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import cwms.cda.api.DataApiTestIT;
-import cwms.cda.data.dto.rating.RatingTemplate;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Set;
+
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
-@Disabled // tested through RatingControllerIT tests. Currently something about the backwards compatibility module
-// not being found. Suspect class loader issue
 class RatingTemplateDaoTestIT extends DataApiTestIT {
 
     @BeforeAll
@@ -42,8 +59,8 @@ class RatingTemplateDaoTestIT extends DataApiTestIT {
     @AfterAll
     public static void remove_swt_permissiosn() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        removeUserFromGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
-        removeUserFromGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
+//        removeUserFromGroup(databaseLink.getUsername(), "CWMS Users", "SWT");
+//        removeUserFromGroup(databaseLink.getUsername(), "TS ID Creator", "SWT");
     }
 
     @Test
@@ -122,7 +139,7 @@ class RatingTemplateDaoTestIT extends DataApiTestIT {
         RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlRating);
         assertNotNull(ratingSet);
 
-        RatingJdbcCompatUtil.getInstance().storeToDatabase(ratingSet,c, true, true);
+        RatingJdbcFactory.store(ratingSet,c, true, true);
     }
 
 
