@@ -1,4 +1,0 @@
-cwms.radar.security.CwmsAccessManagerProvider
-cwms.radar.security.OpenIDAccessManagerProvider
-cwms.radar.security.KeyAccessManagerProvider
-cwms.radar.security.MultipleAccessManagerProvider

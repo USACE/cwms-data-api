@@ -1,11 +1,11 @@
 # CWMS DATA API (CDA) 
 *Formerly known as RADAR*
 
-![Build CWMS RADAR](https://github.com/USACE/cwms-radar-api/workflows/Build%20CWMS%20RADAR/badge.svg)
+![Build CWMS Data-Api](https://github.com/USACE/cwms-data-api/workflows/Build%20CWMS%20Data%20API/badge.svg)
 
 This is a new implementation of a REST API for data retrieval of USACE Water Data.
 
-See the [📃 Wiki](https://github.com/USACE/cwms-radar-api/wiki) for how to get started
+See the [📃 Wiki](https://github.com/USACE/cwms-data-api/wiki) for how to get started
 
 
 ## Development notes
@@ -58,7 +58,7 @@ This will allow Junit to cascade delete the locations so the test can be cycled 
 For DataApiTestIT failure to delete a location that does not exist is considered a normal condition and ignored.
 
 We use [RestAssured](https://rest-assured.io/) to do the testing with logging set to "print request/response on failure" on by default. 
-(See RadarApiSetupCallBack.java for more additional defaults.)
+(See CdaApiSetupCallBack.java for more additional defaults.)
 
 We do not currently have examples of parameterized tests, but the use there of is highly encouraged to make adding simple test 
 cases easier.

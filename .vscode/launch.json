@@ -10,25 +10,7 @@
             "name": "Launch TomcatServer",
             "request": "launch",
             "mainClass": "fixtures.TomcatServer",
-            "projectName": "cwms_radar_api"
-        },
-        {
-            "type": "java",
-            "name": "Launch RadarAPI",
-            "request": "launch",
-            "mainClass": "mil.army.usace.hec.RadarAPI",
-            "projectName": "cwms_radar_standalone",
-            "env": {
-                "RADAR_JDBC_URL": "jdbc:oracle:thin:@${env:RADAR_DB_URL}",
-                "RADAR_JDBC_USERNAME": "${env:RADAR_DB_USER}",
-                "RADAR_JDBC_PASSWORD": "${env:RADAR_DB_PASSWORD}",
-                "RADAR_LISTEN_PORT": "7000",
-                "RADAR_DEBUG_LOGGING": "true"
-            },
-            "sourcePaths": [
-                "**src/main/**",
-                "build/generated/sources/annotationProcessor/java/main",
-            ]
+            "projectName": "cwms-data-api"
         },
         {
             "type": "java",

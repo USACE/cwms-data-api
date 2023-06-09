@@ -1,5 +1,5 @@
 ---
-name: Build CWMS RADAR
+name: Build CWMS Data API
 on:
   push:
     branches:
@@ -30,7 +30,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: warfile
-          path: cwms_radar_api/build/libs/${{steps.thebuild.outputs.WARFILE}}
+          path: cwms-data-api/build/libs/${{steps.thebuild.outputs.WARFILE}}
           retention-days: 1
           if-no-files-found: error
       - name: Build docker image
@@ -98,10 +98,10 @@ jobs:
       - name: Build docker image
         run: |
           ./gradlew dockerBuild
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:latest
-          docker push $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
-          docker push $ALT_REGISTRY/cwms/radar-api:latest
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:latest
+          docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
+          docker push $ALT_REGISTRY/cwms/data-api:latest
       - name: Logout of ALT registry
         if: ${{ always() }}
         run: docker logout ${{ steps.login-alt.outputs.registry }}
@@ -123,7 +123,7 @@ jobs:
         with:
           java-version: '8'
           java-package: jdk
-      - name: get RADAR version
+      - name: get Data-API version
         id: get_version
         run: .github/workflows/get_version.sh      
       - name: Configure AWS credentials
@@ -144,15 +144,16 @@ jobs:
           registry: ${{ secrets.ALT_REGISTRY }}
           username: ${{ secrets.ALT_REG_USER }}
           password: ${{ secrets.ALT_REG_PASSWORD }} 
-      - name: Build, tag, and push image to Amazon ECR (midas-api)
+      - name: Build, tag, and push image to Amazon ECR (cwms/data-api)
         if: ${{ success() }}
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          # do not change to cwms-data-api; upstream config also requires change
           ECR_REPOSITORY: cwms-radar-api
           IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
           ALT_REGISTRY: ${{ secrets.ALT_REGISTRY }}
         run: |
-          ./gradlew :cwms_radar_api:build --init-script init.gradle
+          ./gradlew :cwms-data-api:build --init-script init.gradle
           ./gradlew dockerBuild --init-script init.gradle
           
           docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -160,10 +161,10 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/radar-api:latest-dev
-          docker push $ALT_REGISTRY/cwms/radar-api:$IMAGE_TAG
-          docker push $ALT_REGISTRY/cwms/radar-api:latest-dev
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
+          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:latest-dev
+          docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
+          docker push $ALT_REGISTRY/cwms/data-api:latest-dev
       - name: Logout of Amazon ECR
         if: ${{ always() }}
         run: docker logout ${{ steps.login-ecr.outputs.registry }}

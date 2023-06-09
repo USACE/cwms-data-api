@@ -124,7 +124,7 @@ Please [fork](https://help.github.com/en/articles/fork-a-repo) the repository on
 Once you have made your changes submit a [pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork).
 Please submit all PRs to the develop branch.
 
-Barring nothing working at all or the code not being related to CWMS RADAR your contributions will be accepted.
+Barring nothing working at all or the code not being related to CWMS Data API your contributions will be accepted.
 
 
 ## Releases an branching
