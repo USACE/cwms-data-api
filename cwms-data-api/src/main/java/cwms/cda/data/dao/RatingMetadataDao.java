@@ -47,6 +47,8 @@ import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -62,6 +64,11 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             + "<ratings xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
             + "xsi:noNamespaceSchemaLocation=\"https://www.hec.usace.army"
             + ".mil/xmlSchema/cwms/Ratings.xsd\"/>";
+    private final Executor executor = Executors.newCachedThreadPool(r -> {
+        Thread thread = new Thread(r, getClass().getSimpleName());
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final MetricRegistry metrics;
 
@@ -173,7 +180,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             if (useParallel) {
                 mapStream = ratingIds.stream()
                         .map(ratingId -> CompletableFuture.supplyAsync(() ->
-                                retrieveRatings(office, ratingId, start, end)))
+                                retrieveRatings(office, ratingId, start, end), executor))
                         .collect(Collectors.toList())
                         .stream()
                         .map(CompletableFuture::join);
