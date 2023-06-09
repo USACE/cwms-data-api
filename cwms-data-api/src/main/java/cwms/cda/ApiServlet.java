@@ -31,38 +31,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-
-import cwms.cda.spi.AccessManagers;
-import cwms.cda.spi.CdaAccessManager;
-import cwms.cda.api.BasinController;
-import cwms.cda.api.BlobController;
-import cwms.cda.api.CatalogController;
-import cwms.cda.api.ClobController;
-import cwms.cda.api.Controllers;
-import cwms.cda.api.LevelsController;
-import cwms.cda.api.LocationCategoryController;
-import cwms.cda.api.LocationController;
-import cwms.cda.api.LocationGroupController;
-import cwms.cda.api.OfficeController;
-import cwms.cda.api.ParametersController;
-import cwms.cda.api.PoolController;
-import cwms.cda.api.RatingController;
-import cwms.cda.api.RatingMetadataController;
-import cwms.cda.api.RatingSpecController;
-import cwms.cda.api.RatingTemplateController;
-import cwms.cda.api.SpecifiedLevelController;
-import cwms.cda.api.TimeSeriesCategoryController;
-import cwms.cda.api.TimeSeriesController;
-import cwms.cda.api.TimeSeriesGroupController;
-import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
-import cwms.cda.api.TimeZoneController;
-import cwms.cda.api.UnitsController;
+import cwms.cda.api.*;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.*;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.Role;
+import cwms.cda.spi.AccessManagers;
+import cwms.cda.spi.CdaAccessManager;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -308,8 +285,10 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles);
         cdaCrud("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles);
+        LevelsController levelsController = new LevelsController(metrics);
         cdaCrud("/levels/{" + Controllers.LEVEL_ID + "}",
-                new LevelsController(metrics), requiredRoles);
+                levelsController, requiredRoles);
+        get("/levels/timeseries/{level-id}", levelsController::getLevelAsTimeSeries);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
         cdaCrud("/timeseries/category/{category-id}",
