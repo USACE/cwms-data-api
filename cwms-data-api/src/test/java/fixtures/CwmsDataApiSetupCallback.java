@@ -98,7 +98,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }    
 
     private void loadTimeSeriesData(CwmsDatabaseContainer<?> cwmsDb2) {
-        String csv = this.loadResourceAsString("/cwms/radar/data/timeseries.csv");
+        String csv = this.loadResourceAsString("/cwms/cda/data/timeseries.csv");
         StringReader reader = new StringReader(csv);        
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
@@ -133,7 +133,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private ArrayList<String> getDefaultList() {
         ArrayList<String> list = new ArrayList<>();
-        InputStream listStream = getClass().getResourceAsStream("/cwms/radar/data/sql/defaultload.txt");
+        InputStream listStream = getClass().getResourceAsStream("/cwms/cda/data/sql/defaultload.txt");
         try( BufferedReader br = new BufferedReader( new InputStreamReader(listStream) );) {
             String line = null;
             while( (line = br.readLine() ) != null){

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context cookies="true">
     <Resource name="jdbc/CWMS3" auth="Container" type="javax.sql.DataSource"
-              username="${RADAR_JDBC_USERNAME}" password="${RADAR_JDBC_PASSWORD}"
-              url="${RADAR_JDBC_URL}"
+              username="${CDA_JDBC_USERNAME}" password="${CDA_JDBC_PASSWORD}"
+              url="${CDA_JDBC_URL}"
               driverClassName="oracle.jdbc.OracleDriver"
-              initialSize="${RADAR_POOL_INIT_SIZE}" maxWait="10000"
-              maxActive="${RADAR_POOL_MAX_ACTIVE}" maxIdle="${RADAR_POOL_MAX_IDLE}"
-              minIdle="${RADAR_POOL_MIN_IDLE}"
+              initialSize="${CDA_POOL_INIT_SIZE}" maxWait="10000"
+              maxActive="${CDA_POOL_MAX_ACTIVE}" maxIdle="${CDA_POOL_MAX_IDLE}"
+              minIdle="${CDA_POOL_MIN_IDLE}"
               validationQuery="select 1 from dual"
               validationQueryTimeout="1"              
               removeAbandonedOnBorrow="true"              

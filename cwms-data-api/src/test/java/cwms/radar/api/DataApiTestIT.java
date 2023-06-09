@@ -109,17 +109,17 @@ public class DataApiTestIT {
         createLocationQuery = IOUtils.toString(
                                 TimeseriesControllerTestIT.class
                                     .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/create_location.sql"),"UTF-8"
+                                    .getResourceAsStream("cwms/cda/data/sql_templates/create_location.sql"),"UTF-8"
                             );
         createTimeseriesQuery = IOUtils.toString(
                                 TimeseriesControllerTestIT.class
                                     .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/create_timeseries.sql"),"UTF-8"
+                                    .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries.sql"),"UTF-8"
                             );
         deleteLocationQuery = IOUtils.toString(
                                 TimeseriesControllerTestIT.class
                                     .getClassLoader()
-                                    .getResourceAsStream("cwms/radar/data/sql_templates/delete_location.sql"),"UTF-8"
+                                    .getResourceAsStream("cwms/cda/data/sql_templates/delete_location.sql"),"UTF-8"
                             );
     }
 

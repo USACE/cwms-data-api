@@ -30,7 +30,7 @@ class LocationControllerTest extends ControllerTest
     @Test
     void testDeserializeLocationXml() throws IOException
     {
-        String xml = loadResourceAsString("cwms/radar/api/location_create.xml");
+        String xml = loadResourceAsString("cwms/cda/api/location_create.xml");
         assertNotNull(xml);
         Location location = LocationController.deserializeLocation(xml, Formats.XML);
         assertNotNull(location);
@@ -44,7 +44,7 @@ class LocationControllerTest extends ControllerTest
     @Test
     void testDeserializeLocationJSON() throws IOException
     {
-        String json = loadResourceAsString("cwms/radar/api/location_create.json");
+        String json = loadResourceAsString("cwms/cda/api/location_create.json");
         assertNotNull(json);
         Location location = LocationController.deserializeLocation(json, Formats.JSON);
         assertNotNull(location);

@@ -83,11 +83,11 @@ services:
     volumes:
       - ./compose_files/pki/certs:/conf/
     environment:
-      - RADAR_JDBC_URL=jdbc:oracle:thin:@db/CWMS
-      - RADAR_JDBC_USERNAME=q0webtest
-      - RADAR_JDBC_PASSWORD=simplecwmspasswD1
-      - radar.access.provider=MultipleAccessManager
-      - radar.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
+      - CDA_JDBC_URL=jdbc:oracle:thin:@db/CWMS
+      - CDA_JDBC_USERNAME=q0webtest
+      - CDA_JDBC_PASSWORD=simplecwmspasswD1
+      - cwms.dataapi.access.provider=MultipleAccessManager
+      - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
       - cwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms
     expose:

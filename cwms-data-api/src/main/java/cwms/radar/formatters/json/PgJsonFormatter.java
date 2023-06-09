@@ -2,6 +2,7 @@ package cwms.radar.formatters.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import cwms.radar.api.graph.Edge;
 import cwms.radar.api.graph.Graph;
 import cwms.radar.api.graph.Node;
@@ -14,7 +15,7 @@ import cwms.radar.api.graph.pg.properties.PgProperties;
 import cwms.radar.api.graph.pg.properties.basinconnectivity.PgReachEdgeProperties;
 import cwms.radar.api.graph.pg.properties.basinconnectivity.PgStreamEdgeProperties;
 import cwms.radar.api.graph.pg.properties.basinconnectivity.PgStreamNodeProperties;
-import cwms.radar.data.dto.*;
+import cwms.radar.data.dto.CwmsDTOBase;
 import cwms.radar.data.dto.basinconnectivity.Basin;
 import cwms.radar.formatters.Formats;
 import cwms.radar.formatters.FormattingException;

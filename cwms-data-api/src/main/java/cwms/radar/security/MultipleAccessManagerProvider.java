@@ -10,7 +10,8 @@ import cwms.radar.spi.AccessManagers;
 import cwms.radar.spi.RadarAccessManager;
 
 public class MultipleAccessManagerProvider implements AccessManagerProvider {
-    private static final String PROVIDERS_LIST_KEY = "radar.access.providers";
+    private static final String PROVIDERS_LIST_KEY_OLD = "radar.access.providers";
+    private static final String PROVIDERS_LIST_KEY = "cwms.dataapi.access.providers";
     private static final Logger log = Logger.getLogger(MultipleAccessManager.class.getName());
 
     @Override
@@ -22,7 +23,17 @@ public class MultipleAccessManagerProvider implements AccessManagerProvider {
     public RadarAccessManager create() {        
         ArrayList<RadarAccessManager> managers = new ArrayList<>();
         managers.add(new GuestAccessManager());
-        String managersString = System.getProperty(PROVIDERS_LIST_KEY,System.getenv(PROVIDERS_LIST_KEY));
+        String managersString = System.getProperty(
+                                    PROVIDERS_LIST_KEY,
+                                    System.getProperty(
+                                        PROVIDERS_LIST_KEY_OLD,
+                                        System.getenv(PROVIDERS_LIST_KEY)
+                                        )
+                                );
+        if (managersString == null) {
+            // one last variable to check
+            managersString = System.getenv(PROVIDERS_LIST_KEY_OLD);
+        }
         if (managersString == null) {
             log.info("No additional access managers provided. Defaulting to readonly.");
             log.info(() -> "Set environment property '" + PROVIDERS_LIST_KEY

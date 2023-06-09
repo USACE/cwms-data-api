@@ -14,7 +14,7 @@ public class TsRandomSamplerTest {
 
     @Test
     public void can_load_timeseries_list() throws Exception {
-        InputStream stream = getClass().getResourceAsStream("/cwms/radar/data/timeseries.csv");
+        InputStream stream = getClass().getResourceAsStream("/cwms/cda/data/timeseries.csv");
         assertNotNull(stream, "unable to load csv file");
         List<TsRandomSampler.TsSample> list = TsRandomSampler.load_data(new InputStreamReader(stream));
         assertFalse(list.isEmpty(), "not timeseries returned from list");

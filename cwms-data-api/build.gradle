@@ -258,14 +258,15 @@ task integrationTests(type: Test) {
     classpath += configurations.tomcatLibs
     // The before all extension will take care of these properties
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-    jvmArgs += "-Dradar.access.provider=MultipleAccessManager"
-    jvmArgs += "-Dradar.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 

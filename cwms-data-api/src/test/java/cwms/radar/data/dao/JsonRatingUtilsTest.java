@@ -104,7 +104,7 @@ public class JsonRatingUtilsTest
 		String xmlRating;
 		try
 		{
-			xmlRating = loadResourceAsString("cwms/radar/data/dao/" + filename);
+			xmlRating = loadResourceAsString("cwms/cda/data/dao/" + filename);
 			// make sure we got something.
 			assertNotNull(xmlRating);
 

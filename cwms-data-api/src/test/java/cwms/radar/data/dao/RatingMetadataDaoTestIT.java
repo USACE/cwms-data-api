@@ -160,7 +160,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
     static void storeRatings(Connection c, String[] files) throws IOException, RatingException {
 
         for(String filename : files){
-            storeRatingSet(c, "cwms/radar/data/dao/" + filename);
+            storeRatingSet(c, "cwms/cda/data/dao/" + filename);
         }
     }
 
@@ -182,7 +182,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
     @Test
     @Disabled("data file not available")
     void testParse() throws IOException, RatingException {
-        String resourcePath = "cwms/radar/data/dao/swt_ratings.xml";
+        String resourcePath = "cwms/cda/data/dao/swt_ratings.xml";
 
         InputStream stream =
                 RatingMetadataDaoTestIT.class.getClassLoader().getResourceAsStream(resourcePath);

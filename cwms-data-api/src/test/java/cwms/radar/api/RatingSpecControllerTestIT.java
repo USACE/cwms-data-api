@@ -57,7 +57,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 		String locationId = "RatingSpecTestEmpty";
 		String officeId = "SPK";
 		createLocation(locationId, true, officeId);
-		String ratingXml = readResourceFile("cwms/radar/api/empty_rating_spec.xml");
+		String ratingXml = readResourceFile("cwms/cda/api/empty_rating_spec.xml");
 		RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
 		specContainer.officeId = officeId;
 		specContainer.specOfficeId = officeId;
@@ -134,7 +134,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 		String locationId = "RatingSpecTest";
 		String officeId = "SPK"; // TODO: sort out office id usage
 		createLocation(locationId, true, officeId);
-		String ratingXml = readResourceFile("cwms/radar/api/Zanesville_Stage_Flow_COE_Production.xml");
+		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
 		specContainer.officeId = officeId;
 		specContainer.specOfficeId = officeId;

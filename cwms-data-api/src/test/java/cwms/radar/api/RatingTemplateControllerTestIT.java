@@ -51,7 +51,7 @@ class RatingTemplateControllerTestIT extends DataApiTestIT
 		String locationId = "RatingSpecTest";
 		String officeId = "SPK";
 		createLocation(locationId, true, officeId);
-		String ratingXml = readResourceFile("cwms/radar/api/Zanesville_Stage_Flow_COE_Production.xml");
+		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		RatingTemplateContainer ratingTemplateContainer = RatingSpecXmlFactory.ratingTemplateContainer(ratingXml);
 		ratingTemplateContainer.officeId = officeId;
 		String templateXml = RatingSpecXmlFactory.toXml(ratingTemplateContainer, "", 0);

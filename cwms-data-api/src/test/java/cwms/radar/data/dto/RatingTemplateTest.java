@@ -22,7 +22,7 @@ class RatingTemplateTest
 	{
 		String filename = "ARBU.Elev_Stor.Linear.Production.xml.gz";
 
-		String xmlRating = JsonRatingUtilsTest.loadResourceAsString("cwms/radar/data/dao/" + filename);
+		String xmlRating = JsonRatingUtilsTest.loadResourceAsString("cwms/cda/data/dao/" + filename);
 		// make sure we got something.
 		assertNotNull(xmlRating);
 

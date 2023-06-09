@@ -15,7 +15,7 @@ class LevelControllerTest extends ControllerTest
     void testDeserializeSeasonalLevelXml() throws Exception
     {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
-        String xml = loadResourceAsString("cwms/radar/api/levels_seasonal_create.xml");
+        String xml = loadResourceAsString("cwms/cda/api/levels_seasonal_create.xml");
         assertNotNull(xml);
         LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML);
         assertNotNull(level);
@@ -30,7 +30,7 @@ class LevelControllerTest extends ControllerTest
     void testDeserializeSeasonalLevelJSON() throws Exception
     {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
-        String json = loadResourceAsString("cwms/radar/api/levels_seasonal_create.json");
+        String json = loadResourceAsString("cwms/cda/api/levels_seasonal_create.json");
         assertNotNull(json);
         LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON);
         assertNotNull(level);
@@ -45,7 +45,7 @@ class LevelControllerTest extends ControllerTest
     void testDeserializeConstantLevelXml() throws Exception
     {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
-        String xml = loadResourceAsString("cwms/radar/api/levels_constant_create.xml");
+        String xml = loadResourceAsString("cwms/cda/api/levels_constant_create.xml");
         assertNotNull(xml);
         LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML);
         assertNotNull(level);
@@ -60,7 +60,7 @@ class LevelControllerTest extends ControllerTest
     void testDeserializeConstantLevelJSON() throws Exception
     {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
-        String json = loadResourceAsString("cwms/radar/api/levels_constant_create.json");
+        String json = loadResourceAsString("cwms/cda/api/levels_constant_create.json");
         assertNotNull(json);
         LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON);
         assertNotNull(level);
@@ -75,7 +75,7 @@ class LevelControllerTest extends ControllerTest
     void testDeserializeTimeSeriesLevelXml() throws Exception
     {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
-        String xml = loadResourceAsString("cwms/radar/api/levels_timeseries_create.xml");
+        String xml = loadResourceAsString("cwms/cda/api/levels_timeseries_create.xml");
         assertNotNull(xml);
         LocationLevel level = LevelsController.deserializeLocationLevel(xml, Formats.XML);
         assertNotNull(level);
@@ -90,7 +90,7 @@ class LevelControllerTest extends ControllerTest
     void testDeserializeTimeSeriesLevelJSON() throws Exception
     {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
-        String json = loadResourceAsString("cwms/radar/api/levels_timeseries_create.json");
+        String json = loadResourceAsString("cwms/cda/api/levels_timeseries_create.json");
         assertNotNull(json);
         LocationLevel level = LevelsController.deserializeLocationLevel(json, Formats.JSON);
         assertNotNull(level);

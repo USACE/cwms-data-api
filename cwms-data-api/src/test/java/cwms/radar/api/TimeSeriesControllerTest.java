@@ -145,7 +145,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
-            String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+            String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
             TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);  // Should this be XMLv2?
 
@@ -160,7 +160,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
 
     @Test
     public void testDeserializeTimeSeriesXml() throws IOException {
-            String xml = loadResourceAsString("cwms/radar/api/timeseries_create.xml");
+            String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
 			 // Should this be XMLv2?
             TimeSeries ts = TimeSeriesController.deserializeTimeSeries(xml, Formats.XMLV2);
@@ -173,7 +173,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
 
     @Test
     public void testDeserializeTimeSeriesJSON() throws IOException     {
-        String jsonV2 = loadResourceAsString("cwms/radar/api/timeseries_create.json");
+        String jsonV2 = loadResourceAsString("cwms/cda/api/timeseries_create.json");
         assertNotNull(jsonV2);
         TimeSeries ts = TimeSeriesController.deserializeTimeSeries(jsonV2, Formats.JSONV2);
 

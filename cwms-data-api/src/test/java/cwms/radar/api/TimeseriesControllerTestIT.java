@@ -29,7 +29,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
         
         String tsData = IOUtils.toString(
             this.getClass()
-                .getResourceAsStream("/cwms/radar/api/lrl/pseudo_reg_1hour.json"),"UTF-8"
+                .getResourceAsStream("/cwms/cda/api/lrl/pseudo_reg_1hour.json"),"UTF-8"
             );
 
         JsonNode ts = mapper.readTree(tsData);
@@ -91,7 +91,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     public void test_lrl_1day() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/radar/api/lrl/1day_offset.json"),"UTF-8");
+        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset.json"),"UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -152,7 +152,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     public void test_delete_ts() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/radar/api/lrl/1day_offset.json"),"UTF-8");
+        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset.json"),"UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];

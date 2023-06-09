@@ -146,7 +146,11 @@ public class TomcatServer {
         String baseDir = args[0];
         String radarWar = args[1];
         String contextName = args[2];
-        int port = Integer.parseInt(System.getProperty("RADAR_LISTEN_PORT","0").trim());
+        int port = Integer.parseInt(
+                System.getProperty("CDA_LISTEN_PORT",
+                    System.getProperty("RADAR_LISTEN_PORT","0").trim()
+                    )
+                );
 
         try {
             TomcatServer tomcat = new TomcatServer(baseDir, radarWar, port, contextName);

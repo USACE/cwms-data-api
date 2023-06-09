@@ -52,7 +52,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 	@AuthType(user = TestAccounts.KeyUser.GUEST)
 	public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
-		String json = loadResourceAsString("cwms/radar/api/location_create.json");
+		String json = loadResourceAsString("cwms/cda/api/location_create.json");
 		assertNotNull(json);
 
 		given()
@@ -71,7 +71,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 	@AuthType(userTypes = { AuthType.UserType.PRIVS })
 	public void can_create_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
-		String json = loadResourceAsString("cwms/radar/api/location_create_spk.json");
+		String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
 		assertNotNull(json);
 
 
@@ -91,7 +91,7 @@ public class AccessManagerTestIT extends DataApiTestIT
 	@AuthType(userTypes = { AuthType.UserType.NO_PRIVS })
 	public void cant_create_with_user_without_role(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException
 	{
-		String json = loadResourceAsString("cwms/radar/api/location_create.json");
+		String json = loadResourceAsString("cwms/cda/api/location_create.json");
 		assertNotNull(json);
 
 		final String postBody = "";

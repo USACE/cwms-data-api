@@ -170,7 +170,7 @@ class VerticalDatumInfoTest
 	@Test
 	void testVertDatum1() throws VerticalDatumException, IOException
 	{
-		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/radar/data/dto/vert1.xml");
+		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert1.xml");
 		assertNotNull(stream);
 		String v = readFully(stream);
 
@@ -189,7 +189,7 @@ class VerticalDatumInfoTest
 	@Test
 	void testVertDatum2() throws VerticalDatumException, IOException
 	{
-		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/radar/data/dto/vert2.xml");
+		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert2.xml");
 		assertNotNull(stream);
 		String v = readFully(stream);
 
@@ -208,7 +208,7 @@ class VerticalDatumInfoTest
 	@Test
 	void testVertDatum3() throws VerticalDatumException, IOException, JAXBException
 	{
-		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/radar/data/dto/vert3.xml");
+		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert3.xml");
 		assertNotNull(stream);
 		String v = readFully(stream);
 

@@ -112,7 +112,7 @@ class RatingsControllerTest {
         try
         {
             // Read in a resource and build our test data
-            String resourcePath = "cwms/radar/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
+            String resourcePath = "cwms/cda/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
             String refRating = JsonRatingUtilsTest.loadResourceAsString(resourcePath);
             assertNotNull(refRating);
             RatingSet refRatingSet = RatingXmlFactory.ratingSet(refRating);
@@ -197,7 +197,7 @@ class RatingsControllerTest {
         try
         {
             // Read in a resource and build our test data
-            String resourcePath = "cwms/radar/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
+            String resourcePath = "cwms/cda/data/dao/BEAV.Stage_Flow.BASE.PRODUCTION.xml";
             String refRatingXml = JsonRatingUtilsTest.loadResourceAsString(resourcePath);
             assertNotNull(refRatingXml);
             RatingSet refRatingSet = RatingXmlFactory.ratingSet(refRatingXml);

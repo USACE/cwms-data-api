@@ -69,7 +69,7 @@ public class JsonRatingUtils {
         // The way we are writing out json, all the xml attributes were turned into
         // child json fields.  We know certain fields (e.g. office-id, position)
         // should be attributes.
-        String resourceLocation = "/cwms/radar/data/rating/remove_office.xsl";
+        String resourceLocation = "/cwms/cda/data/rating/remove_office.xsl";
         InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
         String officeXsl = readStream(resourceAsStream);
 
@@ -98,7 +98,7 @@ public class JsonRatingUtils {
     }
 
     private static Source buildSourceFromResource(String filename) {
-        String resourceLocation = "/cwms/radar/data/rating/" + filename;
+        String resourceLocation = "/cwms/cda/data/rating/" + filename;
         InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
         if (resourceAsStream == null) {
             throw new IllegalArgumentException("Could not find resource: " + resourceLocation);

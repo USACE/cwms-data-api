@@ -18,12 +18,12 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
 
     @BeforeAll
     public static void load_data() throws Exception {
-        loadSqlDataFromResource("cwms/radar/data/sql/store_loc_groups.sql");
+        loadSqlDataFromResource("cwms/cda/data/sql/store_loc_groups.sql");
     }
 
     @AfterAll
     public static void deload_data() throws Exception {
-        loadSqlDataFromResource("cwms/radar/data/sql/delete_loc_groups.sql");
+        loadSqlDataFromResource("cwms/cda/data/sql/delete_loc_groups.sql");
     }
 
     @Test

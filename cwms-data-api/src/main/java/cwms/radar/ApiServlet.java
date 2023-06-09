@@ -31,7 +31,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-import cwms.radar.api.*;
+
+import cwms.radar.api.BasinController;
+import cwms.radar.api.BlobController;
+import cwms.radar.api.CatalogController;
+import cwms.radar.api.ClobController;
+import cwms.radar.api.Controllers;
+import cwms.radar.api.LevelsController;
+import cwms.radar.api.LocationCategoryController;
+import cwms.radar.api.LocationController;
+import cwms.radar.api.LocationGroupController;
+import cwms.radar.api.OfficeController;
+import cwms.radar.api.ParametersController;
+import cwms.radar.api.PoolController;
+import cwms.radar.api.RatingController;
+import cwms.radar.api.RatingMetadataController;
+import cwms.radar.api.RatingSpecController;
+import cwms.radar.api.RatingTemplateController;
+import cwms.radar.api.SpecifiedLevelController;
+import cwms.radar.api.TimeSeriesCategoryController;
+import cwms.radar.api.TimeSeriesController;
+import cwms.radar.api.TimeSeriesGroupController;
+import cwms.radar.api.TimeSeriesIdentifierDescriptorController;
+import cwms.radar.api.TimeZoneController;
+import cwms.radar.api.UnitsController;
 import cwms.radar.api.enums.UnitSystem;
 import cwms.radar.api.errors.*;
 import cwms.radar.formatters.Formats;
@@ -119,7 +142,7 @@ public class ApiServlet extends HttpServlet {
     // For example 2.4 not 2.4.13
     public static final String VERSION = "3.0";
     public static final String PROVIDER_KEY_OLD = "radar.access.provider";
-    public static final String PROVIDER_KEY = "cda.access.provider";
+    public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
