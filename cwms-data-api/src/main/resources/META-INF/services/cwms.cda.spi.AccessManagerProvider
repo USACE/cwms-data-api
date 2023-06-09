@@ -1,0 +1,4 @@
+cwms.cda.security.CwmsAccessManagerProvider
+cwms.cda.security.OpenIDAccessManagerProvider
+cwms.cda.security.KeyAccessManagerProvider
+cwms.cda.security.MultipleAccessManagerProvider

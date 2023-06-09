@@ -232,6 +232,7 @@ task run(type: JavaExec) {
 
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
 
     args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
@@ -239,8 +240,8 @@ task run(type: JavaExec) {
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    jvmArgs += "-Dradar.access.provider=MultipleAccessManager"
-    jvmArgs += "-Dradar.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
+    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dcwms.dataapi..access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
     jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration"
     jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms"
 }

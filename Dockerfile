@@ -3,7 +3,7 @@ USER $USER
 WORKDIR /builddir
 ENV GRADLE_USER_HOME /cache
 COPY build.gradle /builddir/
-COPY cwms_radar_api/build.gradle /builddir/cwms_radar_api/
+COPY cwms-data-api/build.gradle /builddir/cwms-data-api/
 COPY annotations/build.gradle /builddir/annotations/
 COPY access-manager-api/build.gradle /builddir/access-amanger-api/
 COPY settings.gradle /builddir/
@@ -21,18 +21,18 @@ FROM tomcat:9.0.74-jdk8 as api
 #    apt-get -y update && \
 #    apt-get -y upgrade --fix-missing
 
-COPY --from=builder /builddir/cwms_radar_api/build/docker/radar/ /usr/local/tomcat
-COPY --from=builder /builddir/cwms_radar_api/build/docker/context.xml /usr/local/tomcat/conf
-COPY --from=builder /builddir/cwms_radar_api/build/docker/server.xml /usr/local/tomcat/conf
-COPY --from=builder /builddir/cwms_radar_api/build/docker/setenv.sh /usr/local/tomcat/bin
-COPY --from=builder /builddir/cwms_radar_api/build/docker/libs/ /usr/local/tomcat/lib
+COPY --from=builder /builddir/cwms-data-api/build/docker/cda/ /usr/local/tomcat
+COPY --from=builder /builddir/cwms_data_api_api/build/docker/context.xml /usr/local/tomcat/conf
+COPY --from=builder /builddir/cwms_data_api_api/build/docker/server.xml /usr/local/tomcat/conf
+COPY --from=builder /builddir/cwms_data_api_api/build/docker/setenv.sh /usr/local/tomcat/bin
+COPY --from=builder /builddir/cwms_data_api_api/build/docker/libs/ /usr/local/tomcat/lib
 
-ENV RADAR_JDBC_DRIVER "oracle.jdbc.driver.OracleDriver"
-ENV RADAR_JDBC_URL "jdbc:oracle:thin:@localhost/CWMSDEV"
-ENV RADAR_JDBC_USERNAME "username here"
-ENV RADAR_JDBC_PASSWORD "password here"
-ENV RADAR_POOL_INIT_SIZE "5"
-ENV RADAR_POOL_MAX_ACTIVE "10"
-ENV RADAR_POOL_MAX_IDLE "5"
-ENV RADAR_POOL_MIN_IDLE "2"
+ENV CDA_JDBC_DRIVER "oracle.jdbc.driver.OracleDriver"
+ENV CDA_JDBC_URL "jdbc:oracle:thin:@localhost/CWMSDEV"
+ENV CDA_JDBC_USERNAME "username here"
+ENV CDA_JDBC_PASSWORD "password here"
+ENV CDA_POOL_INIT_SIZE "5"
+ENV CDA_POOL_MAX_ACTIVE "10"
+ENV CDA_POOL_MAX_IDLE "5"
+ENV CDA_POOL_MIN_IDLE "2"
 EXPOSE 7000

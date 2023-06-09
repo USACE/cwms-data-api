@@ -14,24 +14,6 @@
         },
         {
             "type": "java",
-            "name": "Launch RadarAPI",
-            "request": "launch",
-            "mainClass": "mil.army.usace.hec.RadarAPI",
-            "projectName": "cwms_radar_standalone",
-            "env": {
-                "CDA_JDBC_URL": "jdbc:oracle:thin:@${env:CDA_DB_URL}",
-                "CDA_JDBC_USERNAME": "${env:CDA_DB_USER}",
-                "CDA_JDBC_PASSWORD": "${env:CDA_DB_PASSWORD}",
-                "CDA_LISTEN_PORT": "7000",
-                "CDA_DEBUG_LOGGING": "true"
-            },
-            "sourcePaths": [
-                "**src/main/**",
-                "build/generated/sources/annotationProcessor/java/main",
-            ]
-        },
-        {
-            "type": "java",
             "name": "Remote Debug-Gradle",
             "request": "attach",
             "port": 5005,

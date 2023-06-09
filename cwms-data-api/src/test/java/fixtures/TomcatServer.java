@@ -43,14 +43,14 @@ public class TomcatServer {
     /**
      * Setups the baseline for tomcat to run.
      * @param baseDir set to the CATALINA_BASE directory the build has setup
-     * @param radarWar points to the actual WAR file to load
+     * @param cdaWar points to the actual WAR file to load
      * @param port Network port to listen on
      * @param contextName url prefix to use, can be "/","/cwms-data","/spk-data"
      *                    etc
      * @throws Exception any error that gets thrown
      */
     public TomcatServer(final String baseDir,
-                        final String radarWar,
+                        final String cdaWar,
                         final int port,
                         final String contextName
     ) throws Exception {
@@ -77,12 +77,12 @@ public class TomcatServer {
         pipeline.addValve(ssoValve);
         tomcatInstance.addContext("", null);
 
-        File radar = new File(radarWar);
+        File cda = new File(cdaWar);
         try {
-            File existingRadar = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
-            ExpandWar.delete(existingRadar);
-            ExpandWar.delete(new File(existingRadar.getAbsolutePath()+".war"));
-            ExpandWar.copy(radar, new File(tomcatInstance.getHost().getAppBaseFile(),"cwms-data.war"));
+            File existingCda = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
+            ExpandWar.delete(existingCda);
+            ExpandWar.delete(new File(existingCda.getAbsolutePath()+".war"));
+            ExpandWar.copy(cda, new File(tomcatInstance.getHost().getAppBaseFile(),"cwms-data.war"));
         } catch( Exception ex) {
             throw new Exception("Unable to setup war",ex);
         }
