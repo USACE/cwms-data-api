@@ -24,31 +24,55 @@
 
 package cwms.cda.data.dao;
 
-import static java.util.stream.Collectors.toList;
-import static org.jooq.impl.DSL.asterisk;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
-
 import cwms.cda.api.enums.Unit;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LocationLevels;
 import cwms.cda.data.dto.SeasonalValueBean;
+import cwms.cda.data.dto.TimeSeries;
 import hec.data.DataSetException;
 import hec.data.DataSetIllegalArgumentException;
 import hec.data.Parameter;
 import hec.data.Units;
 import hec.data.UnitsConversionException;
+import hec.data.level.IAttributeParameterTypedValue;
+import hec.data.level.ILocationLevelRef;
 import hec.data.level.ISeasonalValue;
 import hec.data.level.JDomLocationLevelImpl;
 import hec.data.level.JDomSeasonalIntervalImpl;
 import hec.data.level.JDomSeasonalValueImpl;
 import hec.data.level.JDomSeasonalValuesImpl;
+import hec.data.location.LocationTemplate;
+import mil.army.usace.hec.metadata.Interval;
+import mil.army.usace.hec.metadata.IntervalFactory;
+import mil.army.usace.hec.metadata.constants.NumericalConstants;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.SelectLimitPercentAfterOffsetStep;
+import org.jooq.exception.DataAccessException;
+import org.jooq.types.DayToSecond;
+import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
+import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -63,20 +87,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.SelectLimitPercentAfterOffsetStep;
-import org.jooq.exception.DataAccessException;
-import org.jooq.types.DayToSecond;
-import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
-import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
+
+import static java.util.stream.Collectors.toList;
+import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
+import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
+import static org.jooq.impl.DSL.asterisk;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
 
 public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao {
     private static final Logger logger = Logger.getLogger(LocationLevelsDaoImpl.class.getName());
@@ -540,5 +556,88 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         stringValueUnits._units = attrEnUnit;
     }
 
+    @Override
+    public TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end,
+                                                        Interval interval) {
+        String officeId = levelRef.getOfficeId();
+        String locationLevelId = levelRef.getLocationLevelId();
+        String levelUnits = levelRef.getParameter().getUnitsString();
+        String attributeId = null;
+        Number attributeValue = null;
+        String attributeUnits = null;
+        IAttributeParameterTypedValue attribute = levelRef.getAttribute();
+        if (attribute != null) {
+            attributeId = attribute.getAttributeId();
+            attributeValue = attribute.getValueBigDecimal();
+            attributeUnits = attribute.getUnits();
+        }
+        ZoneId locationZoneId = getLocationZoneId(levelRef.getLocationRef());
+        ZTSV_ARRAY specifiedTimes = buildTsvArray(start, end, interval, locationZoneId);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+        ZTSV_ARRAY locLvlValues = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
+                specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
+                "UTC", officeId);
+        if (locLvlValues.isEmpty()) {
+            throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);
+        }
+        return buildTimeSeries(levelRef, interval, locLvlValues, locationZoneId);
+    }
 
+    private ZoneId getLocationZoneId(LocationTemplate locationRef) {
+        String timeZone = CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(dsl.configuration(),
+                locationRef.getLocationId(), locationRef.getOfficeId());
+        return OracleTypeMap.toZoneId(timeZone, locationRef.getLocationId());
+    }
+
+    private static TimeSeries buildTimeSeries(ILocationLevelRef levelRef, Interval interval,
+                                              ZTSV_ARRAY locLvlValues, ZoneId locationTimeZone) {
+        String timeSeriesId = levelRef.getLocationRef().getLocationId() + "." + levelRef.getParameter().getParameter()
+                + "." + levelRef.getParameterType().getParameterType() + "." + interval.getInterval() + "."
+                + levelRef.getDuration().toString() + "." + levelRef.getSpecifiedLevel().getId();
+        int size = locLvlValues.size();
+        String levelUnits = levelRef.getParameter().getUnitsString();
+        String officeId = levelRef.getOfficeId();
+        Instant start = locLvlValues.get(0).getDATE_TIME().toInstant();
+        Instant end = locLvlValues.get(size - 1).getDATE_TIME().toInstant();
+        ZonedDateTime firstValueTime = ZonedDateTime.ofInstant(start, NumericalConstants.UTC_ZONEID);
+        ZonedDateTime lastValueTime = ZonedDateTime.ofInstant(end, NumericalConstants.UTC_ZONEID);
+        TimeSeries timeSeries = new TimeSeries(null, size, size, timeSeriesId,
+                officeId, firstValueTime, lastValueTime, levelUnits,
+                java.time.Duration.ofSeconds(interval.getSeconds()),
+                null, null, locationTimeZone.getId());
+        for (ZTSV_TYPE tsv : locLvlValues) {
+            Timestamp dateTime = tsv.getDATE_TIME();
+            Double value = tsv.getVALUE();
+            if (value == null) {
+                value = NumericalConstants.HEC_UNDEFINED_DOUBLE;
+            }
+            BigDecimal qualityCode = tsv.getQUALITY_CODE();
+            int quality = 0;
+            if (qualityCode != null) {
+                quality = qualityCode.intValue();
+            }
+            timeSeries.addValue(dateTime, value, quality);
+        }
+        return timeSeries;
+    }
+
+    private ZTSV_ARRAY buildTsvArray(Instant start, Instant end, Interval interval, ZoneId locationTimeZone) {
+        ZTSV_ARRAY retval = new ZTSV_ARRAY();
+        Interval iterateInterval = interval;
+        if (interval.isIrregular()) {
+            iterateInterval = IntervalFactory.findAny(isRegular().and(equalsName(interval.getInterval())))
+                    .orElse(IntervalFactory.regular1Day());
+        }
+        try {
+
+            Instant time = start;
+            while (time.isBefore(end) || time.equals(end)) {
+                retval.add(new ZTSV_TYPE(Timestamp.from(time), null, null));
+                time = iterateInterval.getNextIntervalTime(time, locationTimeZone);
+            }
+        } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
+            throw new IllegalArgumentException("Error building time series intervals for interval id: " + interval, ex);
+        }
+        return retval;
+    }
 }

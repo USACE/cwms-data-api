@@ -26,6 +26,11 @@ package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.TimeSeries;
+import hec.data.level.ILocationLevelRef;
+import mil.army.usace.hec.metadata.Interval;
+
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
@@ -47,4 +52,6 @@ public interface LocationLevelsDao {
     LocationLevels getLocationLevels(String cursor, int pageSize,
                                      String names, String office, String unit, String datum,
                                      ZonedDateTime beginZdt, ZonedDateTime endZdt);
+
+    TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end, Interval interval);
 }

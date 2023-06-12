@@ -31,9 +31,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-
-import cwms.cda.spi.AccessManagers;
-import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
@@ -58,11 +55,19 @@ import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.*;
+import cwms.cda.api.errors.AlreadyExists;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.DeleteConflictException;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.InvalidItemException;
+import cwms.cda.api.errors.JsonFieldsException;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.Role;
+import cwms.cda.spi.AccessManagers;
+import cwms.cda.spi.CdaAccessManager;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -308,8 +313,10 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles);
         cdaCrud("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles);
+        LevelsController levelsController = new LevelsController(metrics);
         cdaCrud("/levels/{" + Controllers.LEVEL_ID + "}",
-                new LevelsController(metrics), requiredRoles);
+                levelsController, requiredRoles);
+        get("/levels/{" + Controllers.LEVEL_ID + "}/timeseries", levelsController::getLevelAsTimeSeries);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         get("/timeseries/recent/{group-id}", tsController::getRecent);
         cdaCrud("/timeseries/category/{category-id}",
