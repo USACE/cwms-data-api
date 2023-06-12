@@ -24,31 +24,28 @@
 
 package cwms.cda.data.dao;
 
-import cwms.cda.data.dto.County;
+import cwms.cda.data.dto.State;
 import org.jooq.DSLContext;
+import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_STATE;
 
 import java.util.List;
 
-import static usace.cwms.db.jooq.codegen.tables.AV_COUNTY.AV_COUNTY;
-
-public class CountyDao extends JooqDao<County> {
-    public CountyDao(DSLContext dsl) {
+public class StateDao extends JooqDao<State> {
+    public StateDao(DSLContext dsl) {
         super(dsl);
     }
 
     /**
-     * Returns all counties in CDA.
+     * Returns all states in CDA.
      * 
-     * @return a list of counties
+     * @return a list of states
      * 
      * @see List
      */
-    public List<County> getCounties() {
-        return dsl.select(AV_COUNTY.COUNTY_NAME, AV_COUNTY.COUNTY_ID, AV_COUNTY.STATE_INITIAL)
-                .from(AV_COUNTY)
-                .orderBy(AV_COUNTY.STATE_INITIAL.asc(), AV_COUNTY.COUNTY_ID.asc())
-                .fetch()
-                .map(r -> new County(r.get(AV_COUNTY.COUNTY_NAME), r.get(AV_COUNTY.COUNTY_ID), r.get(AV_COUNTY.STATE_INITIAL)));
+    public List<State> getStates() {
+        return CWMS_CAT_PACKAGE.call_CAT_STATE(dsl.configuration())
+                .map(r -> new State(r.get(AV_STATE.AV_STATE.STATE_INITIAL), r.get("STATE_NAME", String.class)));
     }
 
 }
