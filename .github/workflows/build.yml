@@ -58,7 +58,7 @@ jobs:
         id: get_version
         run: .github/workflows/get_version.sh
       - name: show version
-        run: echo ${{steps.get_version.outputs.VERSION}}
+        run: echo ${VERSION}
       - name: tag repo
         uses: actions/github-script@v3
         with:
@@ -67,7 +67,7 @@ jobs:
             github.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: "refs/tags/${{steps.get_version.outputs.VERSION}}",
+              ref: "refs/tags/${{env.VERSION}}",
               sha: context.sha
             })
       - name: Create Release
@@ -76,8 +76,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.get_version.outputs.VERSION}}
-          release_name: Release ${{steps.get_version.outputs.VERSION}}
+          tag_name: ${{env.VERSION}}
+          release_name: Release ${{env.VERSION}}
       - name: Upload Tomcat War
         id: upload-war
         uses: actions/upload-release-asset@v1
@@ -86,7 +86,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: warfile/${{ needs.build.outputs.thewar}}
-          asset_name: ${{ steps.get_version.outputs.WAR_FILE_NAME}}
+          asset_name: ${{ env.WAR_FILE_NAME}}
           asset_content_type: application/x-webarchive
       - name: Login to Alt Registry
         uses: docker/login-action@v2.0.0
@@ -96,6 +96,8 @@ jobs:
           username: ${{ secrets.ALT_REG_USER }}
           password: ${{ secrets.ALT_REG_PASSWORD }}
       - name: Build docker image
+        env:
+          IMAGE_TAG: ${{env.VERSION}}
         run: |
           ./gradlew dockerBuild
           docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
@@ -150,7 +152,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           # do not change to cwms-data-api; upstream config also requires change
           ECR_REPOSITORY: cwms-radar-api
-          IMAGE_TAG: ${{steps.get_version.outputs.VERSION}}
+          IMAGE_TAG: ${{env.VERSION}}
           ALT_REGISTRY: ${{ secrets.ALT_REGISTRY }}
         run: |
           ./gradlew :cwms-data-api:build --init-script init.gradle
