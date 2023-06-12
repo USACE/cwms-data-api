@@ -38,7 +38,7 @@ import java.util.ArrayList;
 @XmlRootElement(name="state")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class State implements CwmsDTOBase {
-    @XmlElement(name="name")
+    @XmlElement(name="state-initial")
     private String stateInitial;
     @XmlElement(name="name")
     private String name;
