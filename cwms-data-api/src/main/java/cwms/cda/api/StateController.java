@@ -28,8 +28,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.CountyDao;
-import cwms.cda.data.dto.County;
+import cwms.cda.data.dao.StateDao;
+import cwms.cda.data.dto.State;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -48,22 +48,22 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 /**
- * Handles all county CRUD methods.
- * 
- * @see CountyController
+ * Handles all state CRUD methods.
+ *
+ * @see StateController
  */
-public class CountyController implements CrudHandler {
+public class StateController implements CrudHandler {
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
     /**
-     * Sets up county endpoint metrics for the controller.
+     * Sets up state endpoint metrics for the controller.
      *
      * @param metrics set the MetricRegistry for this class
      */
-    public CountyController(MetricRegistry metrics) {
+    public StateController(MetricRegistry metrics) {
         this.metrics = metrics;
-        String className = CountyController.class.getName();
+        String className = StateController.class.getName();
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
@@ -74,22 +74,22 @@ public class CountyController implements CrudHandler {
     @OpenApi(
             responses = {
                     @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
-                            description = "A list of counties.",
+                            description = "A list of states.",
                             content = {
-                                    @OpenApiContent(from = County.class, isArray = true, type = Formats.JSONV2),
+                                    @OpenApiContent(from = State.class, isArray = true, type = Formats.JSONV2),
                             }),
             },
-            tags = {"Counties"}
+            tags = {"States"}
     )
     @Override
     public void getAll(Context ctx) {
         try (Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)) {
-            CountyDao dao = new CountyDao(dsl);
-            List<County> counties = dao.getCounties();
+             DSLContext dsl = getDslContext(ctx)) {
+            StateDao dao = new StateDao(dsl);
+            List<State> states = dao.getStates();
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader);
-            String result = Formats.format(contentType, counties, County.class);
+            String result = Formats.format(contentType, states, State.class);
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
@@ -98,7 +98,7 @@ public class CountyController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String county) {
+    public void getOne(Context ctx, String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
@@ -110,13 +110,13 @@ public class CountyController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String county) {
+    public void update(Context ctx, String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String county) {
+    public void delete(Context ctx, String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 

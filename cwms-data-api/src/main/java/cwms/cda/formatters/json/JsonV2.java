@@ -42,6 +42,7 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.Pool;
 import cwms.cda.data.dto.Pools;
 import cwms.cda.data.dto.SpecifiedLevel;
+import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
@@ -66,6 +67,7 @@ import java.util.List;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
         Office.class,
+        State.class,
         County.class,
         Location.class,
         Catalog.class,

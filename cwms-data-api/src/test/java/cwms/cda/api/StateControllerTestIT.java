@@ -38,25 +38,24 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
 @ExtendWith(CwmsDataApiSetupCallback.class)
-public class CountyControllerTestIT extends DataApiTestIT {
+public class StateControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    void test_county_catalog()  {
+    void test_state_catalog()  {
         given()
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .get("/counties/")
+                .get("/states/")
                 .then()
                 .assertThat()
                 .log().body().log().everything(true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("[0].name", equalTo("Unknown County or County N/A"))
-                .body("[0].county-id", equalTo("000"))
+                .body("[0].name", equalTo("Unknown State or State N/A"))
                 .body("[0].state-initial", equalTo("00"));
     }
 }

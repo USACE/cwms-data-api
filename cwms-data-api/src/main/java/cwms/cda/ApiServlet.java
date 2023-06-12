@@ -49,6 +49,7 @@ import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
+import cwms.cda.api.StateController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
@@ -120,6 +121,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
         "/swagger-docs",
         "/timeseries/*",
         "/offices/*",
+        "/states/*",
         "/counties/*",
         "/location/*",
         "/locations/*",
@@ -307,6 +309,8 @@ public class ApiServlet extends HttpServlet {
                 new LocationGroupController(metrics), requiredRoles);
         cdaCrud("/locations/{location-id}",
                 new LocationController(metrics), requiredRoles);
+        cdaCrud("/states/{state}",
+                new StateController(metrics), requiredRoles);
         cdaCrud("/counties/{county}",
                 new CountyController(metrics), requiredRoles);
         cdaCrud("/offices/{office}",
