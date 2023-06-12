@@ -125,7 +125,7 @@ jobs:
           java-package: jdk
       - name: get Data-API version
         id: get_version
-        run: .github/workflows/get_version.sh      
+        run: .github/workflows/get_version.sh
       - name: Configure AWS credentials
         if: ${{ always() }}
         uses: aws-actions/configure-aws-credentials@v1
@@ -143,7 +143,7 @@ jobs:
         with:
           registry: ${{ secrets.ALT_REGISTRY }}
           username: ${{ secrets.ALT_REG_USER }}
-          password: ${{ secrets.ALT_REG_PASSWORD }} 
+          password: ${{ secrets.ALT_REG_PASSWORD }}
       - name: Build, tag, and push image to Amazon ECR (cwms/data-api)
         if: ${{ success() }}
         env:
@@ -155,7 +155,7 @@ jobs:
         run: |
           ./gradlew :cwms-data-api:build --init-script init.gradle
           ./gradlew dockerBuild --init-script init.gradle
-          
+
           docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
