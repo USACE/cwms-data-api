@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Base64.Decoder;
 
@@ -26,12 +28,8 @@ import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
-import cwms.cda.api.Controllers;
-import cwms.cda.datasource.ConnectionPreparer;
-import cwms.cda.datasource.ConnectionPreparingDataSource;
-import cwms.cda.datasource.DelegatingConnectionPreparer;
-import cwms.cda.datasource.DirectUserPreparer;
-import cwms.cda.datasource.SessionOfficePreparer;
+import cwms.cda.data.dao.AuthDao;
+
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -68,48 +66,22 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        String user = getUserFromToken(ctx);
-        prepareContextWithUser(ctx, user);
+        Optional<DataApiPrincipal> p = getUserFromToken(ctx);
+        AuthDao.isAuthorized(ctx,p,routeRoles);
+        AuthDao.prepareContextWithUser(ctx, p.get());
         handler.handle(ctx);
     }
 
 
-    /**
-     * Allows connection to be correctly setup. User name already verified
-     * by signed JWT. Just assert to system.
-     *
-     * @param ctx javalin context if additional parameters are required.
-     * @param user username, which is ignored except a log message
-     */
-    private void prepareContextWithUser(Context ctx, String user) throws SQLException {
 
-
-        ConnectionPreparer userPreparer = new DirectUserPreparer(user);
-        ConnectionPreparer officePrepare = new SessionOfficePreparer(ctx.queryParam(Controllers.OFFICE));
-        DelegatingConnectionPreparer apiPreparer =
-            new DelegatingConnectionPreparer(officePrepare,userPreparer);
-
-        if (dataSource instanceof ConnectionPreparingDataSource) {
-            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
-            ConnectionPreparer existingPreparer = cpDs.getPreparer();
-
-            // Have it do our extra step last.
-            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, apiPreparer));
-        } else {
-            ctx.attribute(ApiServlet.DATA_SOURCE,
-                          new ConnectionPreparingDataSource(apiPreparer, dataSource));
-        }
-    }
-
-    private String getUserFromToken(Context ctx) {
+    private Optional<DataApiPrincipal> getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             String username = token.getBody().get("preferred_username",String.class);
-            return username;
+            // TODO: get roles from JWT and DB
+            return Optional.of(new DataApiPrincipal(username, new HashSet<RouteRole>()));
         } catch (JwtException ex) {
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
-
         }
     }
 
