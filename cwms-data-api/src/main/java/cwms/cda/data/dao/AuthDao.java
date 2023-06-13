@@ -36,7 +36,7 @@ import io.javalin.http.Context;
 
 public class AuthDao extends Dao<DataApiPrincipal>{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    public static final String SCHEMA_TO_OLD = "The CWMS-Data-API requires schema version "
+    public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
     // At this level we just care that the user has permissions in *any* office
     private final String RETRIEVE_GROUPS_OF_USER;
@@ -60,7 +60,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
         if(getDbVersion() < Dao.CWMS_23_03_16) {
-            throw new RuntimeException(SCHEMA_TO_OLD);
+            throw new RuntimeException(SCHEMA_TOO_OLD);
         }
         this.defaultOffice = defaultOffice;
         try {
