@@ -45,10 +45,6 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         + "cwms_env.set_session_user_direct(upper(?));"
         + "end;";
 
-    private static final String RETRIEVE_DEFAULT_USER_OFFICE =
-          "select unique db_office_id from av_sec_users where is_member='T' "
-        + "and username=upper(?) and rownum = 1";
-
     private static final String SET_API_USER_DIRECT_WITH_OFFICE = "begin "
         + "cwms_env.set_session_user_direct(upper(?),upper(?)); end;";
 
@@ -97,11 +93,23 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         return Optional.of(new DataApiPrincipal(userName,roles));
     }   
 
+    /**
+     * Setup session environment so we can query the required tables.
+     * @param conn
+     * @throws SQLException
+     */
     private void setSessionForAuthCheck(Connection conn) throws SQLException {
-        try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);) {
-            setApiUser.setString(1,connectionUser);
-            setApiUser.setString(2,defaultOffice);
-            setApiUser.execute();
+        if (hasEnvFix) {
+            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);) {
+                setApiUser.setString(1,connectionUser);
+                setApiUser.setString(2,defaultOffice);
+                setApiUser.execute();
+            }
+        } else {
+            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT);) {
+                setApiUser.setString(1,connectionUser);
+                setApiUser.execute();
+            }
         }
     }
 
