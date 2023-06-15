@@ -27,19 +27,20 @@ public class CwmsAccessManager extends CdaAccessManager {
     public void manage(@NotNull Handler handler, @NotNull Context ctx,
                        @NotNull Set<RouteRole> requiredRoles)
             throws Exception {
-        Optional<DataApiPrincipal> p = getApiPrincipal(ctx);
+        DataApiPrincipal p = getApiPrincipal(ctx);
         AuthDao.isAuthorized(ctx,p,requiredRoles);
-        AuthDao.prepareContextWithUser(ctx, p.get());
+        AuthDao.prepareContextWithUser(ctx, p);
         handler.handle(ctx);
     }
 
-    private Optional<DataApiPrincipal> getApiPrincipal(Context ctx) {
+    private DataApiPrincipal getApiPrincipal(Context ctx) {
         Optional<String> user = getUser(ctx);
         if(user.isPresent()) {
             Set<RouteRole> roles = getRoles(ctx);
-            return Optional.of(new DataApiPrincipal(user.get(), roles));
+            return new DataApiPrincipal(user.get(), roles);
+        } else {
+            throw new CwmsAuthException("Invalid credentials provided",401);
         }
-        return Optional.empty();
     }
 
     private static Optional<String> getUser(Context ctx) {

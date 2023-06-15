@@ -82,15 +82,25 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         throw new UnsupportedOperationException("Unimplemented method 'getAll'");
     }
 
+    /**
+     * Reserved for future use, get user principal by presented unique name and office.
+     * (Also required by Dao<dataApiPrincipal>)
+     */
     @Override
-    public Optional<DataApiPrincipal> getByUniqueName(String uniqueName, Optional<String> limitToOffice) {
+    public Optional<DataApiPrincipal> getByUniqueName(String uniqueName, Optional<String> limitToOffice) throws CwmsAuthException {
         throw new UnsupportedOperationException("Unimplemented method 'getByUniqueName'");
     }
 
-    public Optional<DataApiPrincipal> getByApiKey(String apikey) throws CwmsAuthException {
+    /**
+     * Retrieve required user information from database for a given APIKEY.
+     * @param apikey
+     * @return valid DataApiPrincipal object for further authorization verification.
+     * @throws CwmsAuthException throw for any issue with verification of Key or user information.
+     */
+    public DataApiPrincipal getByApiKey(String apikey) throws CwmsAuthException {
         String userName = checkKey(apikey);
         Set<RouteRole> roles = getRolesForUser(userName);
-        return Optional.of(new DataApiPrincipal(userName,roles));
+        return new DataApiPrincipal(userName,roles);
     }   
 
     /**
@@ -122,13 +132,11 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                     if (rs.next()) {
                         return rs.getString(1);
                     } else {
-                        logger.atInfo().log("No user for key");
-                        throw new CwmsAuthException("Access not authorized.");
+                        throw new CwmsAuthException("No user for key");
                     }
                 }
             } catch (SQLException ex) {
-                logger.atWarning().withCause(ex).log("Failed API key check");
-                throw new CwmsAuthException("Authorized failed",ex);
+                throw new CwmsAuthException("Failed API key check",ex);
             }
         });
     }
@@ -150,7 +158,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                     }
                 }
             } catch (SQLException ex) {
-                logger.atWarning().withCause(ex).log("Failed to retrieve roles for user.");
+                logger.atWarning().withCause(ex).log("Failed to retrieve any roles for user.");
             }
         });
         return roles;
@@ -192,18 +200,18 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @param p
      * @param routeRoles
      */
-    public static void isAuthorized(Context ctx, Optional<DataApiPrincipal> p, Set<RouteRole> routeRoles) throws CwmsAuthException {    
+    public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles) throws CwmsAuthException {
         if (routeRoles == null || routeRoles.isEmpty()) {
             logger.atFinest().log("Passthrough, no required roles defined.");
             return;
-        } else if (p.isPresent()) {
-            Set<RouteRole> specifiedRoles = p.get().getRoles();
+        } else if (p != null) {
+            Set<RouteRole> specifiedRoles = p.getRoles();
             if (specifiedRoles.containsAll(routeRoles)) {
                 logger.atFinest().log("User has required roles.");
                 return;
             } else {
-                logger.atFine().log(getFailMessage(ctx,routeRoles,p.get()));
-                throw new CwmsAuthException("Operation not authorized for user",403);
+                logger.atFine().log();
+                throw new CwmsAuthException(getFailMessage(ctx,routeRoles,p),403);
             }
         } else {
             throw new CwmsAuthException("No credentials provided.",401);

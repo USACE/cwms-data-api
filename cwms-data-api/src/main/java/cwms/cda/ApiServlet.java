@@ -263,8 +263,13 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(CwmsAuthException.class, (e,ctx) -> {
-                    CdaError re = new CdaError(e.getMessage(),true);
-                    logger.atInfo().withCause(e).log("Failed Authorization");
+                    CdaError re;
+                    switch (e.getAuthFailCode()) {
+                        case 401: re = new CdaError("Invalid user",true); break;
+                        case 403: re = new CdaError("Not Authorized",true); break;
+                        default: re = new CdaError("Unknown auth error.");
+                    }
+                    logger.atInfo().withCause(e).log(e.getMessage());
                     ctx.status(e.getAuthFailCode()).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {

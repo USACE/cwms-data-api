@@ -66,20 +66,20 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        Optional<DataApiPrincipal> p = getUserFromToken(ctx);
+        DataApiPrincipal p = getUserFromToken(ctx);
         AuthDao.isAuthorized(ctx,p,routeRoles);
-        AuthDao.prepareContextWithUser(ctx, p.get());
+        AuthDao.prepareContextWithUser(ctx, p);
         handler.handle(ctx);
     }
 
 
 
-    private Optional<DataApiPrincipal> getUserFromToken(Context ctx) throws CwmsAuthException {
+    private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             String username = token.getBody().get("preferred_username",String.class);
             // TODO: get roles from JWT and DB
-            return Optional.of(new DataApiPrincipal(username, new HashSet<RouteRole>()));
+            return new DataApiPrincipal(username, new HashSet<RouteRole>());
         } catch (JwtException ex) {
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }

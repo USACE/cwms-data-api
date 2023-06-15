@@ -28,20 +28,12 @@ public class KeyAccessManager extends CdaAccessManager {
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        init(ctx);
-        try {
-            String key = getApiKey(ctx);
-            Optional<DataApiPrincipal> p = authDao.getByApiKey(key);
-            AuthDao.isAuthorized(ctx, p, routeRoles);
-            AuthDao.prepareContextWithUser(ctx, p.get());
-            handler.handle(ctx);
-        } catch (CwmsAuthException ex) {
-            logger.log(Level.WARNING,"Unauthorized access attempt",ex);
-            HashMap<String,String> msg = new HashMap<>();
-            msg.put("message",ex.getMessage());
-            CdaError re = new CdaError("Unauthorized",msg,true);
-            ctx.status(ex.getAuthFailCode()).json(re);
-        }
+        init(ctx);        
+        String key = getApiKey(ctx);
+        DataApiPrincipal p = authDao.getByApiKey(key);
+        AuthDao.isAuthorized(ctx, p, routeRoles);
+        AuthDao.prepareContextWithUser(ctx, p);
+        handler.handle(ctx);
     }
 
     private void init(Context ctx) {
