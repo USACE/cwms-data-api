@@ -53,7 +53,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
 
 
-    private boolean hasEnvFix;
+    private boolean hasCwmsEnvMultiOficeAuthFix;
     private String connectionUser;
     private String defaultOffice;
 
@@ -66,12 +66,12 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         try {
             defaultOffice = dsl.connectionResult(c->c.getMetaData().getUserName());
             dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?)", connectionUser,defaultOffice);
-            hasEnvFix = true;
+            hasCwmsEnvMultiOficeAuthFix = true;
         } catch (DataAccessException ex) {
             if( ex.getLocalizedMessage()
                   .toLowerCase()
                   .contains("wrong number or types of arguments in call")) {
-                hasEnvFix = false;
+                hasCwmsEnvMultiOficeAuthFix = false;
             }
         }
         this.RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",this.getClass());
@@ -109,7 +109,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @throws SQLException
      */
     private void setSessionForAuthCheck(Connection conn) throws SQLException {
-        if (hasEnvFix) {
+        if (hasCwmsEnvMultiOficeAuthFix) {
             try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);) {
                 setApiUser.setString(1,connectionUser);
                 setApiUser.setString(2,defaultOffice);
