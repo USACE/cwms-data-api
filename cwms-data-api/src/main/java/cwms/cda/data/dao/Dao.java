@@ -17,6 +17,7 @@ import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LO
 public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
     public static final int CWMS_21_1_1 = 210101;
+    public static final int CWMS_23_03_16 = 230316;
 
     private int cwmsDbVersion = 0;
     @SuppressWarnings("unused")
