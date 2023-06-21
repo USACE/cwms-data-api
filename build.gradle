@@ -10,7 +10,7 @@ eclipse {
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '3.0.1'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
+    version = '3.0.2'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }
 
 // versions for shared dependencies
