@@ -38,17 +38,31 @@ import hec.data.cwmsRating.RatingSet;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record1;
+import org.jooq.Record2;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectForUpdateStep;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -64,11 +78,13 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             + "<ratings xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
             + "xsi:noNamespaceSchemaLocation=\"https://www.hec.usace.army"
             + ".mil/xmlSchema/cwms/Ratings.xsd\"/>";
-    private final Executor executor = Executors.newCachedThreadPool(r -> {
-        Thread thread = new Thread(r, getClass().getSimpleName());
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final Executor executor = new ThreadPoolExecutor(6, Integer.MAX_VALUE,
+            60L, TimeUnit.SECONDS,
+            new SynchronousQueue<>(), r -> {
+                Thread thread = new Thread(r, getClass().getSimpleName());
+                thread.setDaemon(true);
+                return thread;
+            });
 
     private final MetricRegistry metrics;
 
@@ -139,8 +155,6 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
 
         try (final Timer.Context ignored = markAndTime("getRatingIds")) {
             Condition condition = DSL.trueCondition();
-            Condition virtCondition = DSL.trueCondition();
-            Condition transCondition = DSL.trueCondition();
 
             if (office != null) {
                 condition = condition.and(specView.OFFICE_ID.eq(office));
