@@ -50,9 +50,15 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
+
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
+
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 public abstract class JooqDao<T> extends Dao<T> {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
     static ExecuteListener listener = new ExceptionWrappingListener();
 
     public enum DeleteMethod {
@@ -83,6 +89,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retval = DSL.using(dataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
+            logger.atSevere().withStackTrace(StackSize.FULL)
+                  .log("System still using old context method.");
             Connection database = ctx.attribute(ApiServlet.DATABASE);
             retval = getDslContext(database, officeId);
         }

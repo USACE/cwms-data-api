@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 
 import cwms.cda.data.dto.CwmsDTO;
 import usace.cwms.db.dao.ifc.env.CwmsDbEnv;
@@ -25,11 +27,13 @@ public abstract class Dao<T> {
 
     public Dao(DSLContext dsl) {
         this.dsl = dsl;
-        String version = dsl.select(AV_DB_CHANGE_LOG.VERSION)
-           .from(AV_DB_CHANGE_LOG)
-           .orderBy(AV_DB_CHANGE_LOG.VERSION_DATE.desc())
-           .limit(1)
-           .fetchOne().component1();
+        String version = dsl.connectionResult(c-> {
+            return DSL.using(c,SQLDialect.ORACLE11G).select(AV_DB_CHANGE_LOG.VERSION)
+                .from(AV_DB_CHANGE_LOG)
+                .orderBy(AV_DB_CHANGE_LOG.VERSION_DATE.desc())
+                .limit(1)
+                .fetchOne().component1();
+        });
         String parts[] = version.split("\\.");
         cwmsDbVersion =
             Integer.parseInt(parts[0])*10000
