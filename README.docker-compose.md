@@ -4,7 +4,7 @@ Due to the nature of the needs of this system it is not possible to just up and 
 
 ## Here are the following pre-steps
 1. Add `<real host ip> cwms-data.localhost auth.localhost traefik.localhost` to the /etc/hosts file
-2. In the pki directory run `./genall.sh`. This will create the initial PKI infrastructure
+2. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
 3. Create an environment file with appropriate references for your environment and testing.
 
 
