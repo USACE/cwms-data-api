@@ -22,15 +22,15 @@ FROM tomcat:9.0.74-jdk8 as api
 #    apt-get -y upgrade --fix-missing
 
 COPY --from=builder /builddir/cwms-data-api/build/docker/cda/ /usr/local/tomcat
-COPY --from=builder /builddir/cwms_data_api_api/build/docker/context.xml /usr/local/tomcat/conf
-COPY --from=builder /builddir/cwms_data_api_api/build/docker/server.xml /usr/local/tomcat/conf
-COPY --from=builder /builddir/cwms_data_api_api/build/docker/setenv.sh /usr/local/tomcat/bin
-COPY --from=builder /builddir/cwms_data_api_api/build/docker/libs/ /usr/local/tomcat/lib
+COPY --from=builder /builddir/cwms-data-api/build/docker/context.xml /usr/local/tomcat/conf
+COPY --from=builder /builddir/cwms-data-api/build/docker/server.xml /usr/local/tomcat/conf
+COPY --from=builder /builddir/cwms-data-api/build/docker/setenv.sh /usr/local/tomcat/bin
+COPY --from=builder /builddir/cwms-data-api/build/docker/libs/ /usr/local/tomcat/lib
 
 ENV CDA_JDBC_DRIVER "oracle.jdbc.driver.OracleDriver"
-ENV CDA_JDBC_URL "jdbc:oracle:thin:@localhost/CWMSDEV"
-ENV CDA_JDBC_USERNAME "username here"
-ENV CDA_JDBC_PASSWORD "password here"
+ENV CDA_JDBC_URL ""
+ENV CDA_JDBC_USERNAME ""
+ENV CDA_JDBC_PASSWORD ""
 ENV CDA_POOL_INIT_SIZE "5"
 ENV CDA_POOL_MAX_ACTIVE "10"
 ENV CDA_POOL_MAX_IDLE "5"

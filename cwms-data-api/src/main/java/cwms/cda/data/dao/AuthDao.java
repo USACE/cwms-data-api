@@ -27,6 +27,7 @@ import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
 import cwms.cda.datasource.DirectUserPreparer;
+import cwms.cda.datasource.SessionOfficePreparer;
 import cwms.cda.helpers.ResourceHelper;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
@@ -64,7 +65,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         }
         this.defaultOffice = defaultOffice;
         try {
-            defaultOffice = dsl.connectionResult(c->c.getMetaData().getUserName());
+            connectionUser = dsl.connectionResult(c->c.getMetaData().getUserName());
             dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?)", connectionUser,defaultOffice);
             hasCwmsEnvMultiOficeAuthFix = true;
         } catch (DataAccessException ex) {
@@ -215,6 +216,27 @@ public class AuthDao extends Dao<DataApiPrincipal>{
             }
         } else {
             throw new CwmsAuthException("No credentials provided.",401);
+        }
+    }
+
+    /**
+     * Set the Context and datasource to be suitable for processing guest requests.
+     */
+    public void prepareGuestContext(Context ctx) {
+        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        ConnectionPreparer officePreparer = new SessionOfficePreparer(defaultOffice);
+        ConnectionPreparer userPreparer = new DirectUserPreparer(connectionUser);
+        ConnectionPreparer guestPreparer = new DelegatingConnectionPreparer(userPreparer,officePreparer);
+
+        if (dataSource instanceof ConnectionPreparingDataSource) {
+            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
+            ConnectionPreparer existingPreparer = cpDs.getPreparer();
+
+            // Have it do our extra step last.
+            cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, guestPreparer));
+        } else {
+            ctx.attribute(ApiServlet.DATA_SOURCE,
+                          new ConnectionPreparingDataSource(guestPreparer, dataSource));
         }
     }
 

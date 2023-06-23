@@ -142,6 +142,7 @@ public class ApiServlet extends HttpServlet {
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
+    /** Default OFFICE where needed. Based on context. e.g. /cwms-data -> HQ, /spk-data -> SPK */
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
     public static final String RAW_DATA_SOURCE = "data_source";
