@@ -60,7 +60,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -80,7 +80,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             + ".mil/xmlSchema/cwms/Ratings.xsd\"/>";
     private final Executor executor = new ThreadPoolExecutor(6, Integer.MAX_VALUE,
             60L, TimeUnit.SECONDS,
-            new SynchronousQueue<>(), r -> {
+            new LinkedBlockingQueue<>(), r -> {
                 Thread thread = new Thread(r, getClass().getSimpleName());
                 thread.setDaemon(true);
                 return thread;
