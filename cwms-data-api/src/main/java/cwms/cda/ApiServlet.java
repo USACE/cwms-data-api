@@ -64,6 +64,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
@@ -185,6 +186,7 @@ public class ApiServlet extends HttpServlet {
     public void init() {
         logger.atInfo().log("Initializing API");
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
+        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
