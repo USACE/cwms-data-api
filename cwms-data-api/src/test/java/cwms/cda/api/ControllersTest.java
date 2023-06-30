@@ -15,7 +15,7 @@ import com.codahale.metrics.MetricRegistry;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
+import io.javalin.core.validation.ValidationException;
 import io.javalin.http.Context;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -113,14 +113,7 @@ class ControllersTest {
 
         Context ctx = buildContext(nameToUse, null);
 
-        // If its a Boolean flag and the user doesn't specify anything then javalin is going to throw an exception.
-        try {
-            Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).get();
-            fail("Expected a ValidationException to be thrown");
-        }catch (io.javalin.core.validation.ValidationException ve){
-            // This is expected
-            return;
-        }
+        assertThrows(ValidationException.class, () -> ctx.queryParamAsClass(nameToUse, Boolean.class).get());
 
         // allowNullable() will skip the exception but return null;
         Boolean flag = ctx.queryParamAsClass(nameToUse, Boolean.class).allowNullable().get();
@@ -270,15 +263,4 @@ class ControllersTest {
         assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("delete-data"));
     }
 
-    @Test
-    void testDeleteMethodValidationRegistration() throws ClassNotFoundException {
-
-        // Trigger static initialization of Controllers class
-        Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
-        assertNotNull(ignored);
-
-        assertTrue(JavalinValidation.INSTANCE.hasConverter(JooqDao.DeleteMethod.class));
-        JooqDao.DeleteMethod deleteMethod = JavalinValidation.INSTANCE.convertValue(JooqDao.DeleteMethod.class, "delete_data");
-        assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
-    }
 }

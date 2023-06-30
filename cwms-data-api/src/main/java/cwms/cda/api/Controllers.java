@@ -30,8 +30,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
-import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+import org.jetbrains.annotations.Nullable;
 
 
 public final class Controllers {
@@ -128,10 +128,6 @@ public final class Controllers {
     public static final String PROJECT_ID = "project-id";
     public static final String NOT_SUPPORTED_YET = "Not supported yet.";
     static final String SPECIFIED_LEVEL_ID = "specified-level-id";
-
-    static {
-        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-    }
 
     private Controllers() {
 
@@ -231,6 +227,14 @@ public final class Controllers {
         return retval;
     }
 
+    /**
+     * This method converts the String argument into the appropriate JooqDao.DeleteMethod enum item.
+     * ApiServlet registers this method with Javalin.  The method gets used by Javalin to turn
+     * user's query parameters into DeleteMethod items as necessary for delete methods that have
+     * parameters annotated like: "type = JooqDao.DeleteMethod.class"
+     * @param input String to convert
+     * @return DeleteMethod item or null if input is null
+     */
     public static JooqDao.DeleteMethod getDeleteMethod(String input) {
         JooqDao.DeleteMethod retval = null;
 

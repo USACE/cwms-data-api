@@ -185,8 +185,7 @@ public class ApiServlet extends HttpServlet {
     @Override
     public void init() {
         logger.atInfo().log("Initializing API");
-        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
-        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        registerConverters();
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
@@ -290,6 +289,11 @@ public class ApiServlet extends HttpServlet {
 
                 .routes(this::configureRoutes)
                 .javalinServlet();        
+    }
+
+    public static void registerConverters() {
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
+        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
     }
 
     private CdaAccessManager buildAccessManager(String provider) {
