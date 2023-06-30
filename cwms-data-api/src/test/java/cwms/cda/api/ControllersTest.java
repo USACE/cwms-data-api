@@ -5,15 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
-
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -244,5 +246,39 @@ class ControllersTest {
         Number intervalForward = ctx.queryParamAsClass(nameToUse, Double.class).getOrDefault(null);
         assertNull(intervalForward);
 
+    }
+
+    @Test
+    void testDeleteMethod(){
+        JooqDao.DeleteMethod deleteMethod = Controllers.getDeleteMethod(null);
+        assertNull(deleteMethod);
+
+        assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("garbage"));
+
+        deleteMethod = Controllers.getDeleteMethod("delete_data");
+        assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
+
+        deleteMethod = Controllers.getDeleteMethod("DELETE_DATA");
+        assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
+
+        deleteMethod = Controllers.getDeleteMethod("delete_key");
+        assertEquals(JooqDao.DeleteMethod.DELETE_KEY, deleteMethod);
+
+        deleteMethod = Controllers.getDeleteMethod("delete_all");
+        assertEquals(JooqDao.DeleteMethod.DELETE_ALL, deleteMethod);
+
+        assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("delete-data"));
+    }
+
+    @Test
+    void testDeleteMethodValidationRegistration() throws ClassNotFoundException {
+
+        // Trigger static initialization of Controllers class
+        Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
+        assertNotNull(ignored);
+
+        assertTrue(JavalinValidation.INSTANCE.hasConverter(JooqDao.DeleteMethod.class));
+        JooqDao.DeleteMethod deleteMethod = JavalinValidation.INSTANCE.convertValue(JooqDao.DeleteMethod.class, "delete_data");
+        assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
     }
 }

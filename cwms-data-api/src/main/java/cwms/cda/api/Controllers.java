@@ -24,19 +24,17 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.TimeSeriesIdentifierDescriptorDao;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 
 public final class Controllers {
-
 
 
     public static final String GET_ONE = "getOne";
@@ -132,8 +130,7 @@ public final class Controllers {
     static final String SPECIFIED_LEVEL_ID = "specified-level-id";
 
     static {
-        JavalinValidation.register(JooqDao.DeleteMethod.class,
-            Controllers::getDeleteMethod);
+        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
     }
 
     private Controllers() {
@@ -234,11 +231,11 @@ public final class Controllers {
         return retval;
     }
 
-    public static TimeSeriesIdentifierDescriptorDao.DeleteMethod getDeleteMethod(String input) {
-        TimeSeriesIdentifierDescriptorDao.DeleteMethod retval = null;
+    public static JooqDao.DeleteMethod getDeleteMethod(String input) {
+        JooqDao.DeleteMethod retval = null;
 
         if (input != null) {
-            retval = TimeSeriesIdentifierDescriptorDao.DeleteMethod.valueOf(input.toUpperCase());
+            retval = JooqDao.DeleteMethod.valueOf(input.toUpperCase());
         }
         return retval;
     }
