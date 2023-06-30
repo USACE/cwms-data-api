@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
@@ -252,12 +253,7 @@ class ControllersTest {
         JooqDao.DeleteMethod deleteMethod = Controllers.getDeleteMethod(null);
         assertNull(deleteMethod);
 
-        try {
-            deleteMethod = Controllers.getDeleteMethod("garbage");
-            fail("Expected an exception to be thrown");
-        } catch (IllegalArgumentException iae){
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("garbage"));
 
         deleteMethod = Controllers.getDeleteMethod("delete_data");
         assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
@@ -271,42 +267,18 @@ class ControllersTest {
         deleteMethod = Controllers.getDeleteMethod("delete_all");
         assertEquals(JooqDao.DeleteMethod.DELETE_ALL, deleteMethod);
 
-        try {
-            deleteMethod = Controllers.getDeleteMethod("delete-data");
-            fail("Expected an exception to be thrown");
-        } catch (IllegalArgumentException iae){
-            // expected
-        }
-
-
+        assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("delete-data"));
     }
 
     @Test
-    void testDeleteMethodValidationRegistration(){
-        JavalinValidation jv = JavalinValidation.INSTANCE;
+    void testDeleteMethodValidationRegistration() throws ClassNotFoundException {
 
-        boolean hadConverter = jv.hasConverter(JooqDao.DeleteMethod.class);
+        // Trigger static initialization of Controllers class
+        Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
+        assertNotNull(ignored);
 
-        if(!hadConverter){
-            String message = "FYI the converter was not registered.  "
-                    + "This means that the Controllers class static initializer hadn't been called."
-                    + " Triggering the static initializer to run.";
-            // System.out.println(message);
-            try {
-                Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
-                assertNotNull(ignored);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            // Could also call a static method instead.
-//            JooqDao.DeleteMethod dontcare = Controllers.getDeleteMethod("delete_data");
-        }
-
-        assertTrue(jv.hasConverter(JooqDao.DeleteMethod.class));
-
-        assertTrue(jv.hasConverter(JooqDao.DeleteMethod.class));
-        JooqDao.DeleteMethod deleteMethod = jv.convertValue(JooqDao.DeleteMethod.class, "delete_data");
+        assertTrue(JavalinValidation.INSTANCE.hasConverter(JooqDao.DeleteMethod.class));
+        JooqDao.DeleteMethod deleteMethod = JavalinValidation.INSTANCE.convertValue(JooqDao.DeleteMethod.class, "delete_data");
         assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
-
     }
 }
