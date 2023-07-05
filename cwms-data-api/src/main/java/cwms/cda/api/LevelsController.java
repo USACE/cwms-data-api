@@ -646,7 +646,7 @@ public class LevelsController implements CrudHandler {
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
                     @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
-                            + "the values retrieved.")
+                            + "the values retrieved."),
             },
             responses = {
                     @OpenApiResponse(status = "200",
@@ -666,7 +666,9 @@ public class LevelsController implements CrudHandler {
                             + "implemented")
             },
             description = "Retrieves requested Location Level",
-            tags = {"Levels"}
+            tags = {"Levels"},
+            method = HttpMethod.GET,
+            path = "/levels/{level-id}/timeseries"
     )
     public void getLevelAsTimeSeries(Context ctx) {
 
