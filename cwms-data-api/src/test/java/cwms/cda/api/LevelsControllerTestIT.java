@@ -56,6 +56,44 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     public static final String OFFICE = "SPK";
 
     @Test
+    void test_location_level() throws Exception {
+        createLocation("level_as_single_value", true, OFFICE);
+        String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        LocationLevel level = new LocationLevel.Builder(levelId, time)
+                .withOfficeId(OFFICE)
+                .withConstantValue(1.0)
+                .withLevelUnitsId("ac-ft")
+                .build();
+            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+                DSLContext dsl = dslContext((Connection) c, OFFICE);
+                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+                dao.storeLocationLevel(level, level.getLevelDate().getZone());
+            });
+
+        //Read level
+        String levelRet = given()
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+                .queryParam(UNIT, "ac-ft")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/{level-id}", levelId)
+                .then()
+                .assertThat()
+                .log().body().log().everything(true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .extract()
+                .response()
+                .asString();
+    }
+
+
+
+    @Test
     void test_level_as_timeseries() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_timeseries", true, OFFICE);
@@ -67,6 +105,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             LocationLevel level = new LocationLevel.Builder(levelId, time.plusDays(i))
                     .withOfficeId(OFFICE)
                     .withConstantValue((double) i)
+                    .withLevelUnitsId("cfs")
                     .build();
             levels.put(level.getLevelDate().toInstant(), level);
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
@@ -85,6 +124,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .queryParam(BEGIN, time.toInstant().toString())
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
                 .queryParam(INTERVAL, "1Hour")
+                .queryParam(UNIT, "cfs")
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -109,7 +149,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             Double constantValue = levels.floorEntry(record.getDateTime().toInstant())
                     .getValue()
                     .getConstantValue();
-            assertEquals(constantValue, record.getValue(), "Value check failed at iteration: " + i);
+            assertEquals(constantValue, record.getValue(), 0.0001, "Value check failed at iteration: " + i);
         }
     }
 }

@@ -246,20 +246,18 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     @Override
-    public LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem,
+    public LocationLevel retrieveLocationLevel(String locationLevelName, String units,
                                                ZonedDateTime effectiveDate, String officeId) {
         TimeZone timezone = TimeZone.getTimeZone(effectiveDate.getZone());
         Date date =
                 Date.from(effectiveDate.toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
-        String unitIn = UnitSystem.EN.value().equals(unitSystem) ? Unit.FEET.getValue() :
-                Unit.METER.getValue();
         AtomicReference<LocationLevel> locationLevelRef = new AtomicReference<>();
 
         connection(dsl, c -> {
             CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
             LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
-                    locationLevelName, unitIn, date, timezone, null, null,
-                    unitIn, false, officeId);
+                    locationLevelName, units, date, timezone, null, null,
+                    units, false, officeId);
             LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
             locationLevelRef.set(level);
         });
@@ -558,10 +556,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     @Override
     public TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end,
-                                                        Interval interval) {
+                                                        Interval interval, String units) {
         String officeId = levelRef.getOfficeId();
         String locationLevelId = levelRef.getLocationLevelId();
-        String levelUnits = levelRef.getParameter().getUnitsString();
+        String levelUnits = units;
         String attributeId = null;
         Number attributeValue = null;
         String attributeUnits = null;

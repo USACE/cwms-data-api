@@ -355,7 +355,9 @@ public class LevelsController implements CrudHandler {
                     @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
                             + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
-                            + "the effective date of Location Level to be returned")
+                            + "the effective date of Location Level to be returned"),
+                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
+                            + "the values retrieved.")
             },
             responses = {
                     @OpenApiResponse(status = "200",content = {
@@ -368,6 +370,7 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String levelId) {
         String office = ctx.queryParam(OFFICE);
+        String units = ctx.queryParam(UNIT);
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         GET_ONE));
@@ -379,7 +382,7 @@ public class LevelsController implements CrudHandler {
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
-                    UnitSystem.EN.getValue(), unmarshalledDateTime, office);
+                    units, unmarshalledDateTime, office);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (NotFoundException e) {
@@ -642,6 +645,8 @@ public class LevelsController implements CrudHandler {
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
+                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
+                            + "the values retrieved.")
             },
             responses = {
                     @OpenApiResponse(status = "200",
@@ -675,6 +680,10 @@ public class LevelsController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
+            String units = ctx.queryParam(UNIT);
+            if (units == null) {
+                throw new IllegalArgumentException(UNIT + " parameter must be provided.");
+            };
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             String intervalParameter = ctx.queryParamAsClass(INTERVAL, String.class).getOrDefault("0");
 
@@ -690,7 +699,7 @@ public class LevelsController implements CrudHandler {
             Interval interval = IntervalFactory.findAny(IntervalFactory.equalsName(intervalParameter))
                     .orElseThrow(() -> new IllegalArgumentException("Invalid interval string: " + intervalParameter + " for location level as timeseries"));
             JDomLocationLevelRef levelRef = new JDomLocationLevelRef(office, levelId);
-            TimeSeries timeSeries = levelsDao.retrieveLocationLevelAsTimeSeries(levelRef, beginZdt.toInstant(), endZdt.toInstant(), interval);
+            TimeSeries timeSeries = levelsDao.retrieveLocationLevelAsTimeSeries(levelRef, beginZdt.toInstant(), endZdt.toInstant(), interval, units);
             ctx.json(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
