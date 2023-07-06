@@ -60,7 +60,7 @@ public final class LocationLevel extends CwmsDTO {
     @Schema(description = "Single value for this location level. Mutually exclusive with "
             + "seasonableTimeSeriesId and seasonValues.")
     private final Double constantValue;
-    @Schema(description = "Units thhe provided levels are in")
+    @Schema(description = "Units the provided levels are in")
     private final String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)

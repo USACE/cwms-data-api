@@ -53,5 +53,5 @@ public interface LocationLevelsDao {
                                      String names, String office, String unit, String datum,
                                      ZonedDateTime beginZdt, ZonedDateTime endZdt);
 
-    TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end, Interval interval);
+    TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end, Interval interval, String units);
 }
