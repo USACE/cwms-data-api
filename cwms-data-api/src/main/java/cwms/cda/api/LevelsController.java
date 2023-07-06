@@ -683,9 +683,6 @@ public class LevelsController implements CrudHandler {
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
             String units = ctx.queryParam(UNIT);
-            if (units == null) {
-                throw new IllegalArgumentException(UNIT + " parameter must be provided.");
-            };
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             String intervalParameter = ctx.queryParamAsClass(INTERVAL, String.class).getOrDefault("0");
 
