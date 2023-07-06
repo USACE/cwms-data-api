@@ -51,6 +51,7 @@ import mil.army.usace.hec.metadata.constants.NumericalConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
@@ -64,6 +65,7 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
@@ -258,6 +260,18 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
                     locationLevelName, units, date, timezone, null, null,
                     units, false, officeId);
+            if (units == null) {
+                final String parameter = locationLevelName.split("\\.")[1];
+                Configuration configuration = getDslContext(c, officeId).configuration();
+                logger.info("Getting default units for " + parameter);
+                final String defaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                    configuration,
+                    parameter,
+                    UnitSystem.SI.getValue()
+                    );
+                logger.info("Default units are " + defaultUnits);
+                levelPojo.setLevelUnitsId(defaultUnits);
+            }
             LocationLevel level = getLevelFromPojo(levelPojo, effectiveDate);
             locationLevelRef.set(level);
         });
