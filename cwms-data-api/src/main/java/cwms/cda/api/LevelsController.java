@@ -356,7 +356,7 @@ public class LevelsController implements CrudHandler {
                             + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                             + "the effective date of Location Level to be returned"),
-                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
+                    @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
                             + "the values retrieved.")
             },
             responses = {
@@ -645,7 +645,7 @@ public class LevelsController implements CrudHandler {
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
+                    @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
                             + "the values retrieved."),
             },
             responses = {

@@ -46,7 +46,7 @@ import java.util.TreeMap;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag("integration")
@@ -71,24 +71,40 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 dao.storeLocationLevel(level, level.getLevelDate().getZone());
             });
 
-        //Read level
-        String levelRet = given()
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
-                .queryParam(UNIT, "ac-ft")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/levels/{level-id}", levelId)
-                .then()
-                .assertThat()
-                .log().body().log().everything(true)
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .extract()
-                .response()
-                .asString();
+        //Read level without unit
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())       
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            // I think we need to create a custom matcher.
+            // This really shouldn't use equals but due to a quirk in
+            // RestAssured it appears to be necessary.
+            .body("constant-value",equalTo(1233.4818f)); // 1 ac-ft to m3
+
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("constant-value",equalTo(1.0F));
     }
 
 
@@ -116,7 +132,8 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         }
 
         //Read level timeseries
-        TimeSeries timeSeries = given()
+        TimeSeries timeSeries = 
+            given()
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
@@ -125,15 +142,15 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
                 .queryParam(INTERVAL, "1Hour")
                 .queryParam(UNIT, "cfs")
-                .when()
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/levels/" + levelId + "/timeseries/")
-                .then()
+            .then()
                 .assertThat()
                 .log().body().log().everything(true)
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .extract()
+            .extract()
                 .response()
                 .as(TimeSeries.class);
         assertEquals("level_as_timeseries.Flow.Ave.1Hour.1Day.Regulating", timeSeries.getName());
