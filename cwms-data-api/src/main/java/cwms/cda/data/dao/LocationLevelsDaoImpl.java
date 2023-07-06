@@ -260,7 +260,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             LocationLevelPojo levelPojo = levelJooq.retrieveLocationLevel(c,
                     locationLevelName, units, date, timezone, null, null,
                     units, false, officeId);
-            if (units == null) {
+            if (units == null && levelPojo.getLevelUnitsId() == null) {
                 final String parameter = locationLevelName.split("\\.")[1];
                 Configuration configuration = getDslContext(c, officeId).configuration();
                 logger.info("Getting default units for " + parameter);
