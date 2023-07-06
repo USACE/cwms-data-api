@@ -85,6 +85,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("m3"))
             // I think we need to create a custom matcher.
             // This really shouldn't use equals but due to a quirk in
             // RestAssured it appears to be necessary.
@@ -104,6 +105,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ac-ft"))
             .body("constant-value",equalTo(1.0F));
     }
 
