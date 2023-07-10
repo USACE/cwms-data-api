@@ -64,6 +64,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
@@ -185,6 +186,7 @@ public class ApiServlet extends HttpServlet {
     public void init() {
         logger.atInfo().log("Initializing API");
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
+        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
@@ -227,22 +229,22 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request", e.getDetails());
-                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request");
-                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(InvalidItemException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request.");
-                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(AlreadyExists.class, (e, ctx) -> {
                     CdaError re = new CdaError("Already Exists.");
-                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
                 .exception(DeleteConflictException.class, (e, ctx) -> {
@@ -252,7 +254,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(NotFoundException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Not Found.");
-                    logger.atInfo().withCause(e).log(re.toString(), e);
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
                 .exception(FieldException.class, (e, ctx) -> {

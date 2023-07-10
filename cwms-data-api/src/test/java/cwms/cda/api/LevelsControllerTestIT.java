@@ -46,7 +46,7 @@ import java.util.TreeMap;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag("integration")
@@ -54,6 +54,62 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class LevelsControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+
+    @Test
+    void test_location_level() throws Exception {
+        createLocation("level_as_single_value", true, OFFICE);
+        String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        LocationLevel level = new LocationLevel.Builder(levelId, time)
+                .withOfficeId(OFFICE)
+                .withConstantValue(1.0)
+                .withLevelUnitsId("ac-ft")
+                .build();
+            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+                DSLContext dsl = dslContext((Connection) c, OFFICE);
+                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+                dao.storeLocationLevel(level, level.getLevelDate().getZone());
+            });
+
+        //Read level without unit
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())       
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("m3"))
+            // I think we need to create a custom matcher.
+            // This really shouldn't use equals but due to a quirk in
+            // RestAssured it appears to be necessary.
+            .body("constant-value",equalTo(1233.4818f)); // 1 ac-ft to m3
+
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ac-ft"))
+            .body("constant-value",equalTo(1.0F));
+    }
+
+
 
     @Test
     void test_level_as_timeseries() throws Exception {
@@ -67,6 +123,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             LocationLevel level = new LocationLevel.Builder(levelId, time.plusDays(i))
                     .withOfficeId(OFFICE)
                     .withConstantValue((double) i)
+                    .withLevelUnitsId("cfs")
                     .build();
             levels.put(level.getLevelDate().toInstant(), level);
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
@@ -77,7 +134,8 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         }
 
         //Read level timeseries
-        TimeSeries timeSeries = given()
+        TimeSeries timeSeries = 
+            given()
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
@@ -85,15 +143,16 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .queryParam(BEGIN, time.toInstant().toString())
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
                 .queryParam(INTERVAL, "1Hour")
-                .when()
+                .queryParam(UNIT, "cfs")
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/levels/" + levelId + "/timeseries/")
-                .then()
+            .then()
                 .assertThat()
                 .log().body().log().everything(true)
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .extract()
+            .extract()
                 .response()
                 .as(TimeSeries.class);
         assertEquals("level_as_timeseries.Flow.Ave.1Hour.1Day.Regulating", timeSeries.getName());
@@ -109,7 +168,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             Double constantValue = levels.floorEntry(record.getDateTime().toInstant())
                     .getValue()
                     .getConstantValue();
-            assertEquals(constantValue, record.getValue(), "Value check failed at iteration: " + i);
+            assertEquals(constantValue, record.getValue(), 0.0001, "Value check failed at iteration: " + i);
         }
     }
 }
