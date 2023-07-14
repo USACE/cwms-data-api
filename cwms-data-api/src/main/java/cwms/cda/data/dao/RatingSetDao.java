@@ -24,6 +24,9 @@
 
 package cwms.cda.data.dao;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
@@ -36,6 +39,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
@@ -45,13 +49,14 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException {
+    public void create(String ratingSetXml, boolean storeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
-                setOffice(c, ratingSet.getRatingSpec().getOfficeId());
                 // can't exist if we are creating, if it exists use store
-                boolean overwriteExisting = false;
-                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, storeTemplate);
+                String office = extractOfficeId(ratingSetXml);
+                DSLContext context = getDslContext(c, office);
+                CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
+                        ratingSetXml, "T", storeTemplate ? "T" : "F");
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
@@ -60,6 +65,18 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             }
             throw new IOException("Failed to create Rating", ex);
         }
+    }
+
+    private static String extractOfficeId(String ratingSet) throws JsonProcessingException {
+        XmlMapper xmlMapper = new XmlMapper();
+        JsonNode node = xmlMapper.readTree(ratingSet);
+        List<JsonNode> values = node.findValues("office-id");
+        String office = "";
+        if (!values.isEmpty()) {
+            //Getting the last instance since the order is template, spec, rating
+            office = values.get(values.size() - 1).textValue();
+        }
+        return office;
     }
 
     @Override
@@ -109,12 +126,13 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     // store/update
     @Override
-    public void store(RatingSet ratingSet, boolean includeTemplate) throws IOException, RatingException {
+    public void store(String ratingSetXml, boolean includeTemplate) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
-                setOffice(c,ratingSet.getRatingSpec().getOfficeId());
-                boolean overwriteExisting = true;
-                RatingJdbcFactory.store(ratingSet, c, overwriteExisting, includeTemplate);
+                String office = extractOfficeId(ratingSetXml);
+                DSLContext context = getDslContext(c, office);
+                CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
+                        ratingSetXml, "F", includeTemplate ? "T" : "F");
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
