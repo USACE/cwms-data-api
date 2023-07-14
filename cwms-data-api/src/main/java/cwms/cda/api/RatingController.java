@@ -42,7 +42,12 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.*;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,7 +113,7 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime("create"); DSLContext dsl =
                 getDslContext(ctx)) {
             RatingDao ratingDao = getRatingDao(dsl);
-            RatingSet ratingSet = deserializeRatingSet(ctx);
+            String ratingSet = deserializeRatingSet(ctx);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             ratingDao.create(ratingSet, storeTemplate);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
@@ -134,24 +139,18 @@ public class RatingController implements CrudHandler {
         return contentType;
     }
 
-    private RatingSet deserializeRatingSet(Context ctx) throws IOException, RatingException {
-        return deserializeRatingSet(ctx.body(), getContentType(ctx));
+    private String deserializeRatingSet(Context ctx) throws IOException, RatingException {
+        return deserializeRatingSet(ctx.body(), getContentType(ctx).getType());
     }
 
-
-    public RatingSet deserializeRatingSet(String body, ContentType contentType)
-            throws IOException, RatingException {
-        return deserializeRatingSet(body, contentType.getType());
-    }
-
-    public RatingSet deserializeRatingSet(String body, String contentType) throws IOException,
+    String deserializeRatingSet(String body, String contentType) throws IOException,
             RatingException {
-        RatingSet retval;
+        String retval;
 
         if ((Formats.XML).equals(contentType)) {
-            retval = deserializeFromXml(body);
+            retval = body;
         } else if ((Formats.JSON).equals(contentType)) {
-            retval = JsonRatingUtils.fromJson(body);
+            retval = RatingXmlFactory.toXml(JsonRatingUtils.fromJson(body), "");
         } else {
             throw new IOException("Unexpected format:" + contentType);
         }
@@ -446,7 +445,7 @@ public class RatingController implements CrudHandler {
             RatingDao ratingDao = getRatingDao(dsl);
 
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
-            RatingSet ratingSet = deserializeRatingSet(ctx);
+            String ratingSet = deserializeRatingSet(ctx);
             ratingDao.store(ratingSet, storeTemplate);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated RatingSet");
         } catch (IOException | RatingException ex) {
