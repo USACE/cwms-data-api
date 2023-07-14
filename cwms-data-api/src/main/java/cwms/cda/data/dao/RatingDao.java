@@ -36,7 +36,7 @@ public interface RatingDao {
 
     static final Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
     
-    void create(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException;
+    void create(String ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
                        Instant start, Instant end) throws IOException, RatingException;
@@ -45,7 +45,7 @@ public interface RatingDao {
                            String start, String end, String timezone);
 
 
-    void store(RatingSet ratingSet, boolean storeTemplate) throws IOException, RatingException;
+    void store(String ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     void delete(String officeId, String specificationId, Instant start, Instant end);
 
