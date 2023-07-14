@@ -46,7 +46,6 @@ import org.jooq.Record1;
 import org.jooq.Record2;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectForUpdateStep;
-import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
@@ -154,7 +153,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
 
         try (final Timer.Context ignored = markAndTime("getRatingIds")) {
-            Condition condition = DSL.trueCondition();
+            Condition condition = specView.ALIASED_ITEM.isNull();
 
             if (office != null) {
                 condition = condition.and(specView.OFFICE_ID.eq(office));
