@@ -35,4 +35,8 @@ ENV CDA_POOL_INIT_SIZE "5"
 ENV CDA_POOL_MAX_ACTIVE "10"
 ENV CDA_POOL_MAX_IDLE "5"
 ENV CDA_POOL_MIN_IDLE "2"
+ENV cwms.dataapi.access.providers "KeyAccessManager,OpenID"
+ENV cwms.dataapi.access.openid.wellKnownUrl "https://identity-test.cwbi.us/auth/realms/cwbi/.well-known/openid-configuration"
+ENV cwms.dataapi.access.openid.issuer "https://identity-test.cwbi.us/auth/realms/cwbi"
+ENV cwms.dataapi.access.openid.timeout "604800"
 EXPOSE 7000
