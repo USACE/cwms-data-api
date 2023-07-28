@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,6 +25,7 @@ import org.jooq.exception.DataAccessException;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
@@ -39,6 +42,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
+    public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
     // At this level we just care that the user has permissions in *any* office
     private final String RETRIEVE_GROUPS_OF_USER;
 
@@ -181,7 +185,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         logger.atInfo().log("Validated Api Key for user=%s", p.getName());
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         ConnectionPreparer userPreparer = new DirectUserPreparer(p.getName());
-
+        ctx.attribute(DATA_API_PRINCIPAL,p);
         if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
@@ -250,4 +254,42 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         return "Request for: " + ctx.req.getRequestURI() + " denied. Missing roles: " + missing;
     }
 
+
+    /**
+     * Return create an ApiKey for future authentication and authorization.
+     * @param p Principal object, to get the username
+     * @param keyName Friendly name for this key
+     * @param expires when this key expires; can be null to never expire
+     * @return The created ApiKey
+     */
+    public ApiKey createApiKey(DataApiPrincipal p, String keyName, Date expires) {
+        return null;
+    }
+
+    /**
+     * Return all API Keys for a given user
+     * @param p User for which we want the keys
+     * @return List of all the keys, with the actual key removed (only user,name,created, and expires)
+     */
+    public List<ApiKey> apiKeysForUser(DataApiPrincipal p)
+    {
+        List<ApiKey> keys = new ArrayList<ApiKey>();
+        return keys;
+    }
+
+    /**
+     * Remove a given API Key
+     * @param p User principal to narrow and limit request
+     * @param keyName name of the key to remove
+     */
+    public void deleteKeyForUser(DataApiPrincipal p, String keyName)
+    {
+        // todo
+    }
+
+
+    public DataApiPrincipal getDataApiPrincipal(Context ctx)
+    {
+        return ctx.attribute(DATA_API_PRINCIPAL);
+    }
 }

@@ -73,7 +73,7 @@ public class UserSpecSource implements ArgumentsProvider {
                                        user.toHeaderValue()).build());
     }
 
-    private static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
+    public static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
         /**
          * For whatever reason our integration test tomcat system didn't
          * want to deal with JSESSIONIDSSO. For the purpose of these tests that
