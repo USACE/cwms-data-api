@@ -49,7 +49,7 @@ public class UserSpecSource implements ArgumentsProvider {
         if(user.equals(TestAccounts.KeyUser.GUEST)) {
             return Arguments.of("NONE",TestAccounts.KeyUser.GUEST,new RequestSpecBuilder().build());
         } else {
-            throw new IllegalStateException("Valid user not provided.");
+            return cwmsAaaUser(user);
         }
     }
 
@@ -73,7 +73,7 @@ public class UserSpecSource implements ArgumentsProvider {
                                        user.toHeaderValue()).build());
     }
 
-    public static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
+    private static Arguments cwmsAaaUser(TestAccounts.KeyUser user) {
         /**
          * For whatever reason our integration test tomcat system didn't
          * want to deal with JSESSIONIDSSO. For the purpose of these tests that

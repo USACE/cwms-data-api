@@ -1,14 +1,60 @@
 package cwms.cda.api.auth;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+
+import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dto.auth.ApiKey;
+import cwms.cda.formatters.Formats;
+import cwms.cda.security.DataApiPrincipal;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.*;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import org.jooq.DSLContext;
 
 public class ApiKeyController implements CrudHandler {
+    public final MetricRegistry metrics;
 
+    private final Histogram requestResultSize;
+
+    public ApiKeyController(MetricRegistry metrics) {
+        this.metrics = metrics;
+
+        requestResultSize = this.metrics.histogram((name(this.getClass().getName(), RESULTS, SIZE)));
+    }
+
+    @OpenApi(
+        requestBody = @OpenApiRequestBody(
+                    content = {
+                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
+                    }
+        ),
+        description = "Create, View, or Delete API keys for a user",
+        tags = {"Authorization"}
+    )
     @Override
     public void create(Context ctx) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'create'");
+        DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
+        try(DSLContext dsl = getDslContext(ctx)) {
+            AuthDao auth = new AuthDao(dsl,null);
+            ApiKey sourceData = ctx.bodyAsClass(ApiKey.class);
+            ApiKey key = auth.createApiKey(p, sourceData);
+            if(key == null) {
+                ctx.status(HttpCode.BAD_REQUEST);
+            } else {
+                ctx.json(key).status(HttpCode.CREATED);
+            }
+        }
     }
 
     @Override

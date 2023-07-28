@@ -2,12 +2,16 @@ package cwms.cda.data.dao;
 
 import static org.jooq.impl.DSL.*;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,6 +41,7 @@ import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 
 public class AuthDao extends Dao<DataApiPrincipal>{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -56,6 +61,8 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
 
+    public static String CREATE_API_KEY = "insert into at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
+    public static String REMOTE_API_KEY = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
 
     private boolean hasCwmsEnvMultiOficeAuthFix;
@@ -262,8 +269,42 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @param expires when this key expires; can be null to never expire
      * @return The created ApiKey
      */
-    public ApiKey createApiKey(DataApiPrincipal p, String keyName, Date expires) {
-        return null;
+    public ApiKey createApiKey(DataApiPrincipal p, ApiKey sourceData) throws CwmsAuthException {
+        
+        try {
+            if(!p.getName().equalsIgnoreCase(sourceData.getUserId())) {
+                throw new CwmsAuthException("You may not create API keys for any user other than your own.",HttpCode.UNAUTHORIZED.getStatus());
+            }
+            SecureRandom randomSource = SecureRandom.getInstanceStrong();
+            String key = randomSource.ints(48,122) // allow a-zA-Z0-9
+                                 .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                                 .limit(256)
+                                 .collect(StringBuilder::new,StringBuilder::appendCodePoint, StringBuilder::append)
+                                 .toString();
+            final ApiKey newKey = new ApiKey(sourceData.getUserId(),sourceData.getKeyName(),key,ZonedDateTime.now(ZoneId.of("UTC")),sourceData.getExpires());
+            dsl.connection(c->{
+                setSessionForAuthCheck(c);
+                try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY);) {
+                    createKey.setString(1,newKey.getUserId());
+                    createKey.setString(2,newKey.getKeyName());
+                    createKey.setString(3,newKey.getApiKey());
+                    createKey.setDate(4,new Date(newKey.getCreated().toInstant().toEpochMilli()));
+                    if (newKey.getExpires() != null) {
+                        createKey.setDate(5,new Date(newKey.getExpires().toInstant().toEpochMilli()));
+                    } else {
+                        createKey.setDate(5,null);
+                    }
+                } catch (SQLException ex) {
+                    logger.atWarning().withCause(ex).log("Failed to retrieve any roles for user.");
+                }
+            });
+
+            return newKey;
+        } catch (NoSuchAlgorithmException ex) {            
+            throw new CwmsAuthException("Unable to generate appropriate key", ex, HttpCode.INTERNAL_SERVER_ERROR.getStatus());
+        }
+        
+
     }
 
     /**
