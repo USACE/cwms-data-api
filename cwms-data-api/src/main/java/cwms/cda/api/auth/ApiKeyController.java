@@ -20,6 +20,8 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
+import java.util.List;
+
 import org.jooq.DSLContext;
 
 public class ApiKeyController implements CrudHandler {
@@ -38,6 +40,12 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     }
+        ),
+        responses = @OpenApiResponse(
+                    content = {
+                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
+                    },
+                    status = "201"
         ),
         description = "Create, View, or Delete API keys for a user",
         tags = {"Authorization"}
@@ -63,10 +71,23 @@ public class ApiKeyController implements CrudHandler {
         throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }
 
-    @Override
+    @OpenApi(
+        responses = @OpenApiResponse(
+                    content = {
+                        @OpenApiContent(from = ApiKey[].class, type = Formats.JSON)
+                    },
+                    status = "201"
+        ),
+        description = "Create, View, or Delete API keys for a user",
+        tags = {"Authorization"}
+    )
     public void getAll(Context ctx) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
+        DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
+        try(DSLContext dsl = getDslContext(ctx)) {
+            AuthDao auth = new AuthDao(dsl,null);
+            List<ApiKey> keys = auth.apiKeysForUser(p);
+            ctx.json(keys).status(HttpCode.OK);            
+        }
     }
 
     @Override

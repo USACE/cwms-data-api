@@ -314,7 +314,7 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
-        crud("/auth/keys/{user-id}",new ApiKeyController(metrics), requiredRoles);
+        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
         cdaCrud("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles);
         cdaCrud("/location/group/{group-id}",

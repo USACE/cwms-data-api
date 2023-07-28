@@ -66,4 +66,17 @@ public class ApiKey {
     public ZonedDateTime getExpires() {
         return expires;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("ApiKey{")
+          .append("userId=").append(userId).append(", ")
+          .append("keyName=").append(keyName).append(", ")
+          .append("apiKey=").append(apiKey == null ? "0" : apiKey.length()).append(" hidden characters, ")
+          .append("created=").append(created).append(", ")
+          .append("expires=").append(expires)
+          .append("}");
+        return sb.toString();
+    }
 }

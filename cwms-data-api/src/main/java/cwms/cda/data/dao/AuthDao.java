@@ -63,7 +63,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     public static String CREATE_API_KEY = "insert into at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
     public static String REMOTE_API_KEY = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
-
+    public static String LIST_KEYS = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
 
     private boolean hasCwmsEnvMultiOficeAuthFix;
     private String connectionUser;
@@ -294,8 +294,6 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                     } else {
                         createKey.setDate(5,null);
                     }
-                } catch (SQLException ex) {
-                    logger.atWarning().withCause(ex).log("Failed to retrieve any roles for user.");
                 }
             });
 
@@ -315,7 +313,26 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public List<ApiKey> apiKeysForUser(DataApiPrincipal p)
     {
         List<ApiKey> keys = new ArrayList<ApiKey>();
+        dsl.connection(c->{
+                setSessionForAuthCheck(c);
+                try (PreparedStatement listKeys = c.prepareStatement(LIST_KEYS);) {
+                    listKeys.setString(1,p.getName());
+                    try (ResultSet rs = listKeys.executeQuery()) {
+                        while(rs.next()) {
+                            keys.add(rs2ApiKey(rs));
+                        }
+                    }
+                }
+            });
         return keys;
+    }
+
+    private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
+        String userId = rs.getString("userid");
+        String keyName = rs.getString("key_name");
+        ZonedDateTime created = rs.getObject("created",ZonedDateTime.class);
+        ZonedDateTime expires = rs.getObject("expires",ZonedDateTime.class);
+        return new ApiKey(userId,keyName,null,created,expires);
     }
 
     /**
