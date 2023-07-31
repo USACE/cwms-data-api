@@ -359,7 +359,14 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      */
     public void deleteKeyForUser(DataApiPrincipal p, String keyName)
     {
-        // todo
+        dsl.connection( c -> {
+            setSessionForAuthCheck(c);
+            try (PreparedStatement deleteKey = c.prepareStatement(REMOVE_API_KEY);) {
+                deleteKey.setString(1, p.getName());
+                deleteKey.setString(2, keyName);
+                deleteKey.execute();
+            }
+        });
     }
 
 

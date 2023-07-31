@@ -49,7 +49,7 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = "201"
         ),
-        description = "Create, View, or Delete API keys for a user",
+        description = "Create a new API Key for user. The randomly generated key is returned to the caller. A provided key will be ignored.",
         tags = {"Authorization"}
     )
     @Override
@@ -67,10 +67,29 @@ public class ApiKeyController implements CrudHandler {
         }
     }
 
+    @OpenApi(
+        requestBody = @OpenApiRequestBody(
+                    content = {
+                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
+                    }
+        ),
+        responses = @OpenApiResponse(
+                    content = {
+                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
+                    },
+                    status = "201"
+        ),
+        description = "Delete API key for a user",
+        tags = {"Authorization"}
+    )
     @Override
-    public void delete(Context ctx, String arg1) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+    public void delete(Context ctx, String keyName) {
+        DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
+        try(DSLContext dsl = getDslContext(ctx)) {
+            AuthDao auth = new AuthDao(dsl,null);
+            auth.deleteKeyForUser(p, keyName);
+            ctx.status(HttpCode.NO_CONTENT);
+        }
     }
 
     @OpenApi(
@@ -120,10 +139,12 @@ public class ApiKeyController implements CrudHandler {
         }
     }
 
+    @OpenApi(
+        ignore = true // users should delete and recreate keys. There is nothing to update.
+    )
     @Override
     public void update(Context ctx, String arg1) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'update'");
+        throw new UnsupportedOperationException("Update is not implemented. Delete and create a new key.");
     }
     
 }

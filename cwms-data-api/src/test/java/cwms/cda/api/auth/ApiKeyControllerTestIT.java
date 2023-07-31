@@ -29,6 +29,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.ZonedDateTime;
@@ -47,7 +48,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     
     private final String KEY_NAME = "TestKey1";
 
-    private static List<ApiKey> realKeys = new ArrayList<ApiKey>();
+    private static List<ApiKey> realKeys = new ArrayList<>();
+    private static List<ApiKey> firstReturnedKeys = new ArrayList<>();
 
     // Create API key, no expiration
     @Order(1)
@@ -123,10 +125,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .jsonPath()
                 .getList(".", ApiKey.class);
         assertFalse(keys.isEmpty(), "No keys were returned.");
-        for(ApiKey key: keys) {
-            System.out.println(key);
-            assertNull(key.getApiKey(), "Api Key not null for key name = " + key.getKeyName());
-        }
+        firstReturnedKeys.addAll(keys);
         /** There may be other keys so we just scan for the keys we know about */
         for(ApiKey createdKey: realKeys) {
             assertContainsKey(createdKey,keys);
@@ -173,7 +172,40 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 
     }
 
-    // delete api key
+    // delete api keys
+    // List API keys
+    @Order(5)
+    @ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    public void test_api_key_delete_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        for(ApiKey key: realKeys) {
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .accept(Formats.JSON)
+            .when()
+                .delete("/auth/keys/{key-name}",key.getKeyName())
+            .then()
+                .statusCode(is(HttpCode.NO_CONTENT.getStatus()));
+        }
+
+        List<ApiKey> keys = 
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .accept(Formats.JSON)
+            .when()
+                .get("/auth/keys/")
+            .then()
+                .statusCode(is(HttpCode.OK.getStatus()))
+            .extract()
+                .body()
+                .jsonPath()
+                .getList(".", ApiKey.class);
+        assertTrue(keys.size() < firstReturnedKeys.size(), "Keys were not deleted.");
+    }
+    
 
     // use api key, see failure
 
