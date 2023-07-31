@@ -15,9 +15,7 @@ import cwms.cda.api.LocationController;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import fixtures.TestAccounts;
-import fixtures.TestAccounts.KeyUser;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
 import io.javalin.http.HttpCode;
@@ -34,8 +32,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * Forced order is used here to allow better error reporting
  * but to let all the tests run and make sure 
@@ -45,8 +41,10 @@ import javax.servlet.http.HttpServletResponse;
 @TestInstance(Lifecycle.PER_CLASS)
 public class ApiKeyControllerTestIT extends DataApiTestIT {
 
-    List<ApiKey> realKeys = new ArrayList<ApiKey>();
+    
     private final String KEY_NAME = "TestKey1";
+
+    private static List<ApiKey> realKeys = new ArrayList<ApiKey>();
 
     // Create API key, no expiration
     @Order(1)
@@ -66,7 +64,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails()
             .log().everything(true)
             .statusCode(is(HttpCode.CREATED.getStatus()))
-            .body("user-id",is(key.getUserId()))
+            .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
             .body("api-key.size()",is(256))
             .body("created",not(equalTo(null)))
@@ -95,7 +93,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails()
             .log().everything(true)
             .statusCode(is(HttpCode.CREATED.getStatus()))
-            .body("user-id",is(key.getUserId()))
+            .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
             .body("api-key.size()",is(256))            
             .body("created",not(equalTo(null)))
@@ -117,7 +115,9 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .when()
                 .get("/auth/keys/")
             .then()
-            
+                .log().ifValidationFails()
+                .log().everything(true)
+                .statusCode(is(HttpCode.OK.getStatus()))
             .extract()
                 .body()
                 .jsonPath()
@@ -182,9 +182,15 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
               && expected.getUserId().equals(expectedKey.getUserId())
               // Don't compare the ApiKey itself, it's not returned
               && expected.getCreated().equals(expectedKey.getCreated())
-              && expected.getExpires().equals(expectedKey.getExpires())
             ) {
-                return;
+                ZonedDateTime expectedKeyExpires = expectedKey.getExpires();
+                ZonedDateTime expectedExpires = expected.getExpires();
+                if(expectedKeyExpires == null && expectedExpires == null) {
+                    return;
+                } else if((expectedKeyExpires != null && expectedExpires != null) 
+                        && expectedExpires.isEqual(expectedKeyExpires)) {
+                    return;
+                }
             }
         }
         fail("Expected key (" + expectedKey.toString() + ") was not found in the returned set of keys.");

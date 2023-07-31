@@ -3,6 +3,8 @@ package cwms.cda.api.auth;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
@@ -78,7 +80,7 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = "201"
         ),
-        description = "Create, View, or Delete API keys for a user",
+        description = "View all keys for the current user",
         tags = {"Authorization"}
     )
     public void getAll(Context ctx) {
@@ -90,10 +92,32 @@ public class ApiKeyController implements CrudHandler {
         }
     }
 
+    @OpenApi(
+        pathParams = {
+            @OpenApiParam(name="key-name", required = true, description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
+        },
+        responses = @OpenApiResponse(
+                    content = {
+                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
+                    },
+                    status = "201"
+        ),
+        description = "View specific key",
+        tags = {"Authorization"}
+    )
     @Override
-    public void getOne(Context ctx, String arg1) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getOne'");
+    public void getOne(Context ctx, String keyName) {
+        DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
+        try(DSLContext dsl = getDslContext(ctx)) {
+            AuthDao auth = new AuthDao(dsl,null);
+            ApiKey key = auth.apiKeyForUser(p,keyName);
+            if(key != null) {
+                ctx.json(key).status(HttpCode.OK);            
+            } else {
+                throw new NotFoundException("Requested Key was not found. NOTE: api key names are case-sensitive.");
+            }
+            
+        }
     }
 
     @Override

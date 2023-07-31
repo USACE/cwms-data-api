@@ -78,7 +78,7 @@ public class DataApiTestIT {
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?)";
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
 	private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
@@ -215,9 +215,8 @@ public class DataApiTestIT {
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(removeApiKey);) {
+                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys);) {
                         stmt.setString(1,user.getName());
-                        stmt.setString(2,user.getName()+"TestKey");
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to delete api key",ex);

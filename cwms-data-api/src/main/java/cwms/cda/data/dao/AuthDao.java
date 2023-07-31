@@ -61,9 +61,10 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
 
-    public static String CREATE_API_KEY = "insert into at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
-    public static String REMOTE_API_KEY = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static String CREATE_API_KEY = "insert into cwms_20.at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
+    public static String REMOVE_API_KEY = "delete from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
     public static String LIST_KEYS = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
+    public static String GET_SINGLE_KEY = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
     private boolean hasCwmsEnvMultiOficeAuthFix;
     private String connectionUser;
@@ -281,7 +282,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                                  .limit(256)
                                  .collect(StringBuilder::new,StringBuilder::appendCodePoint, StringBuilder::append)
                                  .toString();
-            final ApiKey newKey = new ApiKey(sourceData.getUserId(),sourceData.getKeyName(),key,ZonedDateTime.now(ZoneId.of("UTC")),sourceData.getExpires());
+            final ApiKey newKey = new ApiKey(sourceData.getUserId().toUpperCase(),sourceData.getKeyName(),key,ZonedDateTime.now(ZoneId.of("UTC")),sourceData.getExpires());
             dsl.connection(c->{
                 setSessionForAuthCheck(c);
                 try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY);) {
@@ -294,9 +295,9 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                     } else {
                         createKey.setDate(5,null);
                     }
+                    createKey.execute();
                 }
             });
-
             return newKey;
         } catch (NoSuchAlgorithmException ex) {            
             throw new CwmsAuthException("Unable to generate appropriate key", ex, HttpCode.INTERNAL_SERVER_ERROR.getStatus());
@@ -310,8 +311,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @param p User for which we want the keys
      * @return List of all the keys, with the actual key removed (only user,name,created, and expires)
      */
-    public List<ApiKey> apiKeysForUser(DataApiPrincipal p)
-    {
+    public List<ApiKey> apiKeysForUser(DataApiPrincipal p) {
         List<ApiKey> keys = new ArrayList<ApiKey>();
         dsl.connection(c->{
                 setSessionForAuthCheck(c);
@@ -325,6 +325,23 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                 }
             });
         return keys;
+    }
+
+    public ApiKey apiKeyForUser(DataApiPrincipal p, String keyName) {
+        return dsl.connectionResult(c -> {
+            setSessionForAuthCheck(c); 
+            try (PreparedStatement singleKey = c.prepareStatement(GET_SINGLE_KEY);) {
+                singleKey.setString(1,p.getName());
+                singleKey.setString(2,keyName);
+                try (ResultSet rs = singleKey.executeQuery()) {
+                    if(rs.next()) {
+                        return rs2ApiKey(rs);
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        });
     }
 
     private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
