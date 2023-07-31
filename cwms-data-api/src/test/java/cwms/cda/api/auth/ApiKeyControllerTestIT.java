@@ -15,10 +15,13 @@ import cwms.cda.api.LocationController;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
 import fixtures.TestAccounts;
+import fixtures.TestAccounts.KeyUser;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
 import io.javalin.http.HttpCode;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
@@ -55,14 +58,13 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME);
 
         ApiKey returnedKey = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .spec(authSpec)
             .contentType("application/json")
             .body(key)
         .when()
             .post("/auth/keys")
         .then()
-            .log().ifValidationFails()
-            .log().everything(true)
             .statusCode(is(HttpCode.CREATED.getStatus()))
             .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
@@ -84,14 +86,13 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME,null,null,ZonedDateTime.now());
 
         ApiKey returnedKey = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .spec(authSpec)
             .contentType("application/json")
             .body(key)
         .when()
             .post("/auth/keys")
         .then()
-            .log().ifValidationFails()
-            .log().everything(true)
             .statusCode(is(HttpCode.CREATED.getStatus()))
             .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
@@ -110,13 +111,12 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     public void test_api_key_listing(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         List<ApiKey> keys = 
             given()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .spec(authSpec)
                 .accept(Formats.JSON)
             .when()
                 .get("/auth/keys/")
             .then()
-                .log().ifValidationFails()
-                .log().everything(true)
                 .statusCode(is(HttpCode.OK.getStatus()))
             .extract()
                 .body()
@@ -133,6 +133,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         }
 
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .spec(authSpec)
             .accept(Formats.JSON)
         .when()
@@ -141,9 +142,10 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .statusCode(HttpCode.OK.getStatus());
     }
 
-    /*
+    
     // use api key
     @Test
+    @Order(4)
     public void test_key_usage() throws Exception {
         createLocation("ApiKey-Test Location",true,"SPK");
         String json = loadResourceAsString("cwms/cda/api/location_create.json");
@@ -156,7 +158,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
         given()
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(serializedLocation)
@@ -166,11 +168,10 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/locations")
         .then()
-            .log().body().log().everything(true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpCode.ACCEPTED.getStatus()));
 
-    }*/
+    }
 
     // delete api key
 
