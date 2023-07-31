@@ -113,7 +113,10 @@ public class ApiKeyController implements CrudHandler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name="key-name", required = true, description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
+            @OpenApiParam(
+                name="key-name",
+                required = true,
+                description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
         },
         responses = @OpenApiResponse(
                     content = {
@@ -133,7 +136,11 @@ public class ApiKeyController implements CrudHandler {
             if(key != null) {
                 ctx.json(key).status(HttpCode.OK);            
             } else {
-                throw new NotFoundException("Requested Key was not found. NOTE: api key names are case-sensitive.");
+                CdaError msg = new CdaError(
+                        "Requested Key was not found. NOTE: api key names are case-sensitive.",
+                        true
+                    );
+                ctx.json(msg).status(HttpCode.NOT_FOUND);
             }
             
         }

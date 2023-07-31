@@ -188,6 +188,16 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .delete("/auth/keys/{key-name}",key.getKeyName())
             .then()
                 .statusCode(is(HttpCode.NO_CONTENT.getStatus()));
+
+            // try to retrieve the key
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .accept(Formats.JSON)
+            .when()
+                .get("/auth/keys/{key-name}",key.getKeyName())
+            .then()
+                .statusCode(is(HttpCode.NOT_FOUND.getStatus()));
         }
 
         List<ApiKey> keys = 
