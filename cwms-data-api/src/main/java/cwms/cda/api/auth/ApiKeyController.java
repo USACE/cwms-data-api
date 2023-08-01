@@ -8,6 +8,7 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
+import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
@@ -63,6 +64,12 @@ public class ApiKeyController implements CrudHandler {
                 ctx.status(HttpCode.BAD_REQUEST);
             } else {
                 ctx.json(key).status(HttpCode.CREATED);
+            }
+        } catch (CwmsAuthException ex) {
+            if( ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
+                ctx.json(new CdaError(ex.getMessage(),true)).status(ex.getAuthFailCode());
+            } else {
+                throw ex;
             }
         }
     }

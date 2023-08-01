@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.LocationController;
+import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
@@ -67,6 +68,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .when()
             .post("/auth/keys")
         .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpCode.CREATED.getStatus()))
             .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
@@ -95,6 +97,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .when()
             .post("/auth/keys")
         .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpCode.CREATED.getStatus()))
             .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
@@ -105,8 +108,31 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         realKeys.add(returnedKey);
     }
 
-    // List API keys
     @Order(3)
+    @ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    public void test_api_key_creation_not_other_user(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final String KEY_NAME = "TestKey1-Expires";
+
+        // This doesn't need to be a user in the database, the check is done before it gets there
+        final ApiKey key = new ApiKey("Bob",KEY_NAME,null,null,ZonedDateTime.now());
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .spec(authSpec)
+            .contentType("application/json")
+            .body(key)
+        .when()
+            .post("/auth/keys")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .body("message",is(AuthDao.ONLY_OWN_KEY_MESSAGE));
+    }
+
+    // List API keys
+    @Order(4)
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
@@ -119,6 +145,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .when()
                 .get("/auth/keys/")
             .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpCode.OK.getStatus()))
             .extract()
                 .body()
@@ -144,7 +171,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     
     // use api key
     @Test
-    @Order(4)
+    @Order(5)
     public void test_key_usage() throws Exception {
         createLocation("ApiKey-Test Location",true,"SPK");
         String json = loadResourceAsString("cwms/cda/api/location_create.json");
@@ -167,6 +194,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/locations")
         .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpCode.ACCEPTED.getStatus()));
 
@@ -174,7 +202,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 
     // delete api keys
     // List API keys
-    @Order(5)
+    @Order(6)
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
@@ -187,6 +215,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .when()
                 .delete("/auth/keys/{key-name}",key.getKeyName())
             .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpCode.NO_CONTENT.getStatus()));
 
             // try to retrieve the key
@@ -197,6 +226,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .when()
                 .get("/auth/keys/{key-name}",key.getKeyName())
             .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpCode.NOT_FOUND.getStatus()));
         }
 
@@ -208,6 +238,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .when()
                 .get("/auth/keys/")
             .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpCode.OK.getStatus()))
             .extract()
                 .body()

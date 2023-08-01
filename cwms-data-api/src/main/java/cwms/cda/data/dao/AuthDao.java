@@ -61,10 +61,11 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
 
-    public static String CREATE_API_KEY = "insert into cwms_20.at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
-    public static String REMOVE_API_KEY = "delete from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
-    public static String LIST_KEYS = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
-    public static String GET_SINGLE_KEY = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
+    public static final String REMOVE_API_KEY = "delete from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String LIST_KEYS = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
+    public static final String GET_SINGLE_KEY = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String ONLY_OWN_KEY_MESSAGE = "You may not create API keys for any user other than your own.";
 
     private boolean hasCwmsEnvMultiOficeAuthFix;
     private String connectionUser;
@@ -274,7 +275,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         
         try {
             if(!p.getName().equalsIgnoreCase(sourceData.getUserId())) {
-                throw new CwmsAuthException("You may not create API keys for any user other than your own.",HttpCode.UNAUTHORIZED.getStatus());
+                throw new CwmsAuthException(ONLY_OWN_KEY_MESSAGE, HttpCode.UNAUTHORIZED.getStatus());
             }
             SecureRandom randomSource = SecureRandom.getInstanceStrong();
             String key = randomSource.ints(48,122) // allow a-zA-Z0-9
@@ -300,7 +301,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
             });
             return newKey;
         } catch (NoSuchAlgorithmException ex) {            
-            throw new CwmsAuthException("Unable to generate appropriate key", ex, HttpCode.INTERNAL_SERVER_ERROR.getStatus());
+            throw new CwmsAuthException("Unable to generate appropriate key.", ex, HttpCode.INTERNAL_SERVER_ERROR.getStatus());
         }
         
 
