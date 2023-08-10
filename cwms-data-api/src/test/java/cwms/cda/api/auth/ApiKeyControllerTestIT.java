@@ -48,6 +48,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 
     
     private final String KEY_NAME = "TestKey1";
+    private final String EXPIRED_KEY_NAME = "TestKey2-Expired";
 
     private static List<ApiKey> realKeys = new ArrayList<>();
     private static List<ApiKey> firstReturnedKeys = new ArrayList<>();
@@ -87,7 +88,9 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     public void test_api_key_creation_with_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         final String KEY_NAME = "TestKey1-Expires";
         
+        
         final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME,null,null,ZonedDateTime.now());
+        final ApiKey expiredKey = new ApiKey(key.getUserId(),EXPIRED_KEY_NAME,null,null,ZonedDateTime.now().minusMinutes(1L));
 
         ApiKey returnedKey = given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -101,6 +104,24 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpCode.CREATED.getStatus()))
             .body("user-id",is(key.getUserId().toUpperCase()))
             .body("key-name",is(key.getKeyName()))
+            .body("api-key.size()",is(256))            
+            .body("created",not(equalTo(null)))
+            .body("expires",not(equalTo(null)))
+            .extract().as(ApiKey.class);
+        realKeys.add(returnedKey);
+
+        returnedKey = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .spec(authSpec)
+            .contentType("application/json")
+            .body(expiredKey)
+        .when()
+            .post("/auth/keys")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.CREATED.getStatus()))
+            .body("user-id",is(expiredKey.getUserId().toUpperCase()))
+            .body("key-name",is(expiredKey.getKeyName()))
             .body("api-key.size()",is(256))            
             .body("created",not(equalTo(null)))
             .body("expires",not(equalTo(null)))
@@ -175,13 +196,13 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     public void test_key_usage() throws Exception {
         createLocation("ApiKey-Test Location",true,"SPK");
         String json = loadResourceAsString("cwms/cda/api/location_create.json");
-        Location location = new Location.Builder(LocationController.deserializeLocation(json, Formats.JSON))
+        final Location location = new Location.Builder(LocationController.deserializeLocation(json, Formats.JSON))
                 .withOfficeId("SPK")
                 .withName(getClass().getSimpleName())
                 .build();
         String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
 
-        KeyUser user = KeyUser.SPK_NORMAL;
+        final KeyUser user = KeyUser.SPK_NORMAL;
         // create location
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -198,6 +219,44 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpCode.ACCEPTED.getStatus()));
 
+        final ApiKey expiredKey = realKeys.stream()
+                                          .filter(k -> k.getKeyName().equals(EXPIRED_KEY_NAME))
+                                          .findFirst()
+                                          .orElseThrow(() -> new Exception("expired key not in real keys list."));
+        final Location updateLocation = new Location.Builder(location)
+                        .withCountyName("Sacramento")
+                        .build();
+        final String serializedUpdateLocation = JsonV1.buildObjectMapper().writeValueAsString(updateLocation);
+        // fail to use expired key
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedUpdateLocation)
+            .header("Authorization", "apikey " + expiredKey.getApiKey())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .put("/locations/{location-id}",updateLocation.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
+        // fail to use no existent key
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedUpdateLocation)
+            .header("Authorization", "apikey This_Key_doesn't_exist")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .put("/locations/{location-id}",updateLocation.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
     }
 
     // delete api keys

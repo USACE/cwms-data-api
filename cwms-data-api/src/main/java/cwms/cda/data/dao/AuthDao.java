@@ -12,12 +12,14 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.logging.Level;
 
 import javax.sql.DataSource;
@@ -278,8 +280,8 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                 throw new CwmsAuthException(ONLY_OWN_KEY_MESSAGE, HttpCode.UNAUTHORIZED.getStatus());
             }
             SecureRandom randomSource = SecureRandom.getInstanceStrong();
-            String key = randomSource.ints(48,122) // allow a-zA-Z0-9
-                                 .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+            String key = randomSource.ints((char)'0',(char)'z') // allow a-zA-Z0-9
+                                 .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)) // actually filter to above
                                  .limit(256)
                                  .collect(StringBuilder::new,StringBuilder::appendCodePoint, StringBuilder::append)
                                  .toString();
@@ -290,9 +292,9 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                     createKey.setString(1,newKey.getUserId());
                     createKey.setString(2,newKey.getKeyName());
                     createKey.setString(3,newKey.getApiKey());
-                    createKey.setDate(4,new Date(newKey.getCreated().toInstant().toEpochMilli()));
+                    createKey.setDate(4,new Date(newKey.getCreated().toInstant().toEpochMilli()),Calendar.getInstance(TimeZone.getTimeZone("UTC")));
                     if (newKey.getExpires() != null) {
-                        createKey.setDate(5,new Date(newKey.getExpires().toInstant().toEpochMilli()));
+                        createKey.setDate(5,new Date(newKey.getExpires().toInstant().toEpochMilli()),Calendar.getInstance(TimeZone.getTimeZone("UTC")));
                     } else {
                         createKey.setDate(5,null);
                     }
