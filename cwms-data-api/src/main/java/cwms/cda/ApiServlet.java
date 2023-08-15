@@ -56,6 +56,7 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.UnitsController;
+import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
@@ -119,6 +120,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
  *
  */
 @WebServlet(urlPatterns = { "/catalog/*",
+        "/auth/*",
         "/swagger-docs",
         "/timeseries/*",
         "/offices/*",
@@ -311,6 +313,8 @@ public class ApiServlet extends HttpServlet {
 
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
+        // Even view on this one requires authorization
+        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
         cdaCrud("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles);
         cdaCrud("/location/group/{group-id}",

@@ -2,16 +2,24 @@ package cwms.cda.data.dao;
 
 import static org.jooq.impl.DSL.*;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.logging.Level;
 
 import javax.sql.DataSource;
@@ -23,6 +31,7 @@ import org.jooq.exception.DataAccessException;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
@@ -34,11 +43,13 @@ import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 
 public class AuthDao extends Dao<DataApiPrincipal>{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
+    public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
     // At this level we just care that the user has permissions in *any* office
     private final String RETRIEVE_GROUPS_OF_USER;
 
@@ -52,7 +63,11 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
 
-
+    public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
+    public static final String REMOVE_API_KEY = "delete from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String LIST_KEYS = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
+    public static final String GET_SINGLE_KEY = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String ONLY_OWN_KEY_MESSAGE = "You may not create API keys for any user other than your own.";
 
     private boolean hasCwmsEnvMultiOficeAuthFix;
     private String connectionUser;
@@ -181,7 +196,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         logger.atInfo().log("Validated Api Key for user=%s", p.getName());
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         ConnectionPreparer userPreparer = new DirectUserPreparer(p.getName());
-
+        ctx.attribute(DATA_API_PRINCIPAL,p);
         if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
@@ -250,4 +265,116 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         return "Request for: " + ctx.req.getRequestURI() + " denied. Missing roles: " + missing;
     }
 
+
+    /**
+     * Return create an ApiKey for future authentication and authorization.
+     * @param p Principal object, to get the username
+     * @param keyName Friendly name for this key
+     * @param expires when this key expires; can be null to never expire
+     * @return The created ApiKey
+     */
+    public ApiKey createApiKey(DataApiPrincipal p, ApiKey sourceData) throws CwmsAuthException {
+        
+        try {
+            if(!p.getName().equalsIgnoreCase(sourceData.getUserId())) {
+                throw new CwmsAuthException(ONLY_OWN_KEY_MESSAGE, HttpCode.UNAUTHORIZED.getStatus());
+            }
+            SecureRandom randomSource = SecureRandom.getInstanceStrong();
+            String key = randomSource.ints((char)'0',(char)'z') // allow a-zA-Z0-9
+                                 .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)) // actually filter to above
+                                 .limit(256)
+                                 .collect(StringBuilder::new,StringBuilder::appendCodePoint, StringBuilder::append)
+                                 .toString();
+            final ApiKey newKey = new ApiKey(sourceData.getUserId().toUpperCase(),sourceData.getKeyName(),key,ZonedDateTime.now(ZoneId.of("UTC")),sourceData.getExpires());
+            dsl.connection(c->{
+                setSessionForAuthCheck(c);
+                try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY);) {
+                    createKey.setString(1,newKey.getUserId());
+                    createKey.setString(2,newKey.getKeyName());
+                    createKey.setString(3,newKey.getApiKey());
+                    createKey.setDate(4,new Date(newKey.getCreated().toInstant().toEpochMilli()),Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+                    if (newKey.getExpires() != null) {
+                        createKey.setDate(5,new Date(newKey.getExpires().toInstant().toEpochMilli()),Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+                    } else {
+                        createKey.setDate(5,null);
+                    }
+                    createKey.execute();
+                }
+            });
+            return newKey;
+        } catch (NoSuchAlgorithmException ex) {            
+            throw new CwmsAuthException("Unable to generate appropriate key.", ex, HttpCode.INTERNAL_SERVER_ERROR.getStatus());
+        }
+        
+
+    }
+
+    /**
+     * Return all API Keys for a given user
+     * @param p User for which we want the keys
+     * @return List of all the keys, with the actual key removed (only user,name,created, and expires)
+     */
+    public List<ApiKey> apiKeysForUser(DataApiPrincipal p) {
+        List<ApiKey> keys = new ArrayList<ApiKey>();
+        dsl.connection(c->{
+                setSessionForAuthCheck(c);
+                try (PreparedStatement listKeys = c.prepareStatement(LIST_KEYS);) {
+                    listKeys.setString(1,p.getName());
+                    try (ResultSet rs = listKeys.executeQuery()) {
+                        while(rs.next()) {
+                            keys.add(rs2ApiKey(rs));
+                        }
+                    }
+                }
+            });
+        return keys;
+    }
+
+    public ApiKey apiKeyForUser(DataApiPrincipal p, String keyName) {
+        return dsl.connectionResult(c -> {
+            setSessionForAuthCheck(c); 
+            try (PreparedStatement singleKey = c.prepareStatement(GET_SINGLE_KEY);) {
+                singleKey.setString(1,p.getName());
+                singleKey.setString(2,keyName);
+                try (ResultSet rs = singleKey.executeQuery()) {
+                    if(rs.next()) {
+                        return rs2ApiKey(rs);
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        });
+    }
+
+    private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
+        String userId = rs.getString("userid");
+        String keyName = rs.getString("key_name");
+        ZonedDateTime created = rs.getObject("created",ZonedDateTime.class);
+        ZonedDateTime expires = rs.getObject("expires",ZonedDateTime.class);
+        return new ApiKey(userId,keyName,null,created,expires);
+    }
+
+    /**
+     * Remove a given API Key
+     * @param p User principal to narrow and limit request
+     * @param keyName name of the key to remove
+     */
+    public void deleteKeyForUser(DataApiPrincipal p, String keyName)
+    {
+        dsl.connection( c -> {
+            setSessionForAuthCheck(c);
+            try (PreparedStatement deleteKey = c.prepareStatement(REMOVE_API_KEY);) {
+                deleteKey.setString(1, p.getName());
+                deleteKey.setString(2, keyName);
+                deleteKey.execute();
+            }
+        });
+    }
+
+
+    public DataApiPrincipal getDataApiPrincipal(Context ctx)
+    {
+        return ctx.attribute(DATA_API_PRINCIPAL);
+    }
 }

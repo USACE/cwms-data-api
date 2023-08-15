@@ -49,7 +49,7 @@ public class UserSpecSource implements ArgumentsProvider {
         if(user.equals(TestAccounts.KeyUser.GUEST)) {
             return Arguments.of("NONE",TestAccounts.KeyUser.GUEST,new RequestSpecBuilder().build());
         } else {
-            throw new IllegalStateException("Valid user not provided.");
+            return cwmsAaaUser(user);
         }
     }
 
