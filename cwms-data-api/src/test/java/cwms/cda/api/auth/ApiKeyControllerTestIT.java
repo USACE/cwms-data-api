@@ -127,6 +127,26 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .body("expires",not(equalTo(null)))
             .extract().as(ApiKey.class);
         realKeys.add(returnedKey);
+
+
+        final String bodyWithSpecificExpiresFormat = "{\"user-id\": \"" + theUser.getName() + "\",\"key-name\": \"foo\",\"api-key\": \"string\",\"expires\": \"2023-09-23T14:20:00.908Z\"}";
+        returnedKey = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .spec(authSpec)
+            .contentType("application/json")
+            .body(bodyWithSpecificExpiresFormat)
+        .when()
+            .post("/auth/keys")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.CREATED.getStatus()))
+            .body("user-id",is(expiredKey.getUserId().toUpperCase()))
+            .body("key-name",is("foo"))
+            .body("api-key.size()",is(256))
+            .body("created",not(equalTo(null)))
+            .body("expires",not(equalTo(null)))
+            .extract().as(ApiKey.class);
+        realKeys.add(returnedKey);
     }
 
     @Order(3)

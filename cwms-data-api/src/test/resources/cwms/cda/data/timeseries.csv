@@ -362,10 +362,10 @@ LRP,Acmetonia-UpperWQ.Cond.Inst.15Minutes.0.RAW,T,Acmetonia-UpperWQ,null,221.223
 LRP,Acmetonia-UpperWQ.Cond.Inst.15Minutes.0.RAW,T,Acmetonia-UpperWQ,null,725.8,ft,NGVD29,40.5362,-79.8145,WGS84,"L/D-3, CW Bill Young (Upper WQ)","Allegheny River at L/D-3, CW Bill Young, PA (Upper Water Quality)","Allegheny River at L/D-3, CW Bill Young, PA (Upper Water Quality)",US/Eastern,Allegheny,PA
 LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,null,311.33796,m,NAVD88,39.4892,-79.6361,WGS84,"Albright, WV","Cheat River at Albright, WV","Cheat River at Albright, WV",US/Eastern,Preston,WV
 LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,null,null,m,null,39.494722222222,-79.645,null,CHEAT RIVER AT ALBRIGHT,Precip - CHEAT RIVER AT ALBRIGHT,Precip - CHEAT RIVER AT ALBRIGHT,UTC,Preston,WV
-LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,Precip Gage,357.7399999999999,m,NAVD88,39.494722222222,79.644722222222,NAD83,Albright,Cheat River at Albright,DCP,US/Eastern,Preston,WV
+LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,Precip Gage,357.7399999999999,m,NAVD88,39.494722222222,-79.644722222222,NAD83,Albright,Cheat River at Albright,DCP,US/Eastern,Preston,WV
 LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,null,1021.4499999999999,ft,NAVD88,39.4892,-79.6361,WGS84,"Albright, WV","Cheat River at Albright, WV","Cheat River at Albright, WV",US/Eastern,Preston,WV
 LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,null,null,ft,null,39.494722222222,-79.645,null,CHEAT RIVER AT ALBRIGHT,Precip - CHEAT RIVER AT ALBRIGHT,Precip - CHEAT RIVER AT ALBRIGHT,UTC,Preston,WV
-LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,Precip Gage,1173.6876640419944,ft,NAVD88,39.494722222222,79.644722222222,NAD83,Albright,Cheat River at Albright,DCP,US/Eastern,Preston,WV
+LRP,Albright.Flow.Inst.~1Day.0.OHRFC,T,Albright,Precip Gage,1173.6876640419944,ft,NAVD88,39.494722222222,-79.644722222222,NAD83,Albright,Cheat River at Albright,DCP,US/Eastern,Preston,WV
 LRP,Alliance.Stage.Inst.1Hour.0.OBS,T,Alliance,null,null,ft,null,40.95,-81.116666666667,null,ALLIANCE,Precip - ALLIANCE,Precip - ALLIANCE,UTC,Stark,OH
 LRP,Alliance.Stage.Inst.1Hour.0.OBS,T,Alliance,null,1034.79,ft,NAVD88,40.9328,-81.0947,WGS84,"Alliance, OH","Mahoning River at Alliance, OH","Mahoning River at Alliance, OH",US/Eastern,Stark,OH
 LRP,Alliance.Stage.Inst.1Hour.0.OBS,T,Alliance,DCP,0.0,ft,Local Datum 1,29.684544444444,-89.9699,null,Mississippi River at Alliance,Mississippi River at Alliance,"On upstream end of Coke Dock of the Alliance Refinery, right bank at river mile 62.5.  Gage reinstalled in July, 2008.",US/Central,Plaquemines,LA
@@ -376,9 +376,9 @@ LRP,BloomingValley.Stage.Inst.15Minutes.0.OBS,T,BloomingValley,null,1199.9999999
 LRP,BloomingValley.Stage.Inst.15Minutes.0.OBS,T,BloomingValley,null,365.76,m,NGVD29,41.6906,-80.048,WGS84,"Blooming Valley, PA","Woodcock Creek at Blooming Valley, PA","Woodcock Creek at Blooming Valley, PA",US/Eastern,Crawford,PA
 LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,null,null,m,null,39.268333333333,-80.352222222222,null,WEST FORK RIVER CLARKSBURG,Precip - WEST FORK RIVER NEAR CLARKSBURG,Precip - WEST FORK RIVER NEAR CLARKSBURG,UTC,Harrison,WV
 LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,null,283.598112,m,NAVD88,39.2386,-80.3592,WGS84,"Clarksburg, WV","West Fork River at Clarksburg, WV","West Fork River at Clarksburg, WV",US/Eastern,Harrison,WV
-LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,Precip Gage,182.59999999999997,m,NAVD88,39.235166666667,77.294416666667,NAD83,Clarksburg,Ten Mile Creek Precipitation Gage at Slidell,DCP,US/Eastern,Montgomery,MD
+LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,Precip Gage,182.59999999999997,m,NAVD88,39.235166666667,-77.294416666667,NAD83,Clarksburg,Ten Mile Creek Precipitation Gage at Slidell,DCP,US/Eastern,Montgomery,MD
 LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,null,930.4399999999999,ft,NAVD88,39.2386,-80.3592,WGS84,"Clarksburg, WV","West Fork River at Clarksburg, WV","West Fork River at Clarksburg, WV",US/Eastern,Harrison,WV
-LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,Precip Gage,599.0813648293962,ft,NAVD88,39.235166666667,77.294416666667,NAD83,Clarksburg,Ten Mile Creek Precipitation Gage at Slidell,DCP,US/Eastern,Montgomery,MD
+LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,Precip Gage,599.0813648293962,ft,NAVD88,39.235166666667,-77.294416666667,NAD83,Clarksburg,Ten Mile Creek Precipitation Gage at Slidell,DCP,US/Eastern,Montgomery,MD
 LRP,Clarksburg.Stage.Inst.30Minutes.0.OBS,T,Clarksburg,null,null,ft,null,39.268333333333,-80.352222222222,null,WEST FORK RIVER CLARKSBURG,Precip - WEST FORK RIVER NEAR CLARKSBURG,Precip - WEST FORK RIVER NEAR CLARKSBURG,UTC,Harrison,WV
 LRP,Colfax.Temp-Water.Inst.15Minutes.0.RAW,T,Colfax,null,855.6799999999998,ft,NAVD88,39.435,-80.1328,WGS84,"Colfax, WV","Tygart Valley River at Colfax, WV","Tygart Valley River at Colfax, WV",US/Eastern,Marion,WV
 LRP,Colfax.Temp-Water.Inst.15Minutes.0.RAW,T,Colfax,null,null,m,null,39.435,-80.1328,null,Tygart Valley River Colfax,Tygart Valley River at Colfax,Tygart Valley River at Colfax,UTC,Marion,WV
@@ -449,8 +449,8 @@ MVK,Caddo Lake.Stor.Inst.1Hour.0.DCP-rev,T,Caddo Lake,RESERVOIR,0.0,ft,NGVD29,32
 MVK,Caddo Lake.Stor.Inst.1Hour.0.DCP-rev,T,Caddo Lake,RESERVOIR,0.0,m,NGVD29,32.704379,-93.918663,NAD83,Caddo Lake Nr,Caddo Lake Nr,"Caddo Lake Nr. Shreveport, LA",CST6CDT,Caddo,LA
 MVK,Chicot Pump-LS.Precip.Total.1Hour.1Hour.DCP-rev,T,Chicot Pump-LS,null,0.0,m,NGVD29,33.431108,-91.239977,NAD83,Chicot Pump-LS,"Lake Chicot Pumping Plant Landside, AR","Lake Chicot Pumping Plant Landside, AR",CST6CDT,Chicot,AR
 MVK,Chicot Pump-LS.Precip.Total.1Hour.1Hour.DCP-rev,T,Chicot Pump-LS,null,0.0,ft,NGVD29,33.431108,-91.239977,NAD83,Chicot Pump-LS,"Lake Chicot Pumping Plant Landside, AR","Lake Chicot Pumping Plant Landside, AR",CST6CDT,Chicot,AR
-MVK,Columbia L&D-Piezometer B5.Stage.Inst.1Hour.0.DCP-rev,T,Columbia L&D-Piezometer B5,null,0.0,ft,NGVD29,0,0,NAD83,null,null,null,US/Central,Caldwell,LA
-MVK,Columbia L&D-Piezometer B5.Stage.Inst.1Hour.0.DCP-rev,T,Columbia L&D-Piezometer B5,null,0.0,m,NGVD29,0,0,NAD83,null,null,null,US/Central,Caldwell,LA
+MVK,Columbia L&D-Piezometer B5.Stage.Inst.1Hour.0.DCP-rev,T,Columbia L&D-Piezometer B5,null,0.0,ft,NGVD29,null,null,NAD83,null,null,null,US/Central,Caldwell,LA
+MVK,Columbia L&D-Piezometer B5.Stage.Inst.1Hour.0.DCP-rev,T,Columbia L&D-Piezometer B5,null,0.0,m,NGVD29,null,null,NAD83,null,null,null,US/Central,Caldwell,LA
 MVK,Felsenthal L&D-Upper.Elev.Inst.15Minutes.0.DCP-rev,T,Felsenthal L&D-Upper,null,0.0,m,NGVD29,33.059687,-92.122639,NAD83,Felsenthal L&D Upper,Ouachita River @ Felsenthal Lock and Dam Upper,Ouachita River @ Felsenthal Lock and Dam Upper,CST6CDT,Union,AR
 MVK,Felsenthal L&D-Upper.Elev.Inst.15Minutes.0.DCP-rev,T,Felsenthal L&D-Upper,null,0.0,ft,NGVD29,33.059687,-92.122639,NAD83,Felsenthal L&D Upper,Ouachita River @ Felsenthal Lock and Dam Upper,Ouachita River @ Felsenthal Lock and Dam Upper,CST6CDT,Union,AR
 MVK,Grand Ecore.Precip.Total.~1Day.1Day.DCP-rev,T,Grand Ecore,Stream Gauge,75.08999999999999,ft,NGVD29,31.825115,-93.083928,NAD83,"Red River @ Grand Ecore, LA","Red River @ Grand Ecore, LA","Red River @ Grand Ecore, LA",CST6CDT,Natchitoches,LA
@@ -487,18 +487,18 @@ MVM,BB111.Flow.Inst.1Hour.0.opendcs-rev,T,BB111,satellite,45.72,m,NGVD29,34.9605
         8/16/2007
 
 Blackfish Bayou near Hughes AR",Etc/GMT+6,St. Francis,AR
-MVM,BL111.Stage.Inst.1Hour.0.opendcs-raw,T,BL111,Stream Gauge,0.0,m,NGVD29,0,0,NAD27,BL111,Big Lake @ BL111,null,CST6CDT,null,null
+MVM,BL111.Stage.Inst.1Hour.0.opendcs-raw,T,BL111,Stream Gauge,0.0,m,NGVD29,null,null,NAD27,BL111,Big Lake @ BL111,null,CST6CDT,null,null
 MVM,BL111.Stage.Inst.1Hour.0.opendcs-raw,T,BL111,satellite w/phone,219.99999999999997,ft,NGVD29,35.992333,-90.120917,WGS84,Big Lake N. End Ctrl. Struc - US,Big Lake North End Control Structure - Upstream,Satlink @ LDR  -- Sutron Equipment installed 1/4/2008,Etc/GMT+6,Mississippi,AR
 MVM,BL111.Stage.Inst.1Hour.0.opendcs-raw,T,BL111,satellite w/phone,67.056,m,NGVD29,35.992333,-90.120917,WGS84,Big Lake N. End Ctrl. Struc - US,Big Lake North End Control Structure - Upstream,Satlink @ LDR  -- Sutron Equipment installed 1/4/2008,Etc/GMT+6,Mississippi,AR
-MVM,BL111.Stage.Inst.1Hour.0.opendcs-raw,T,BL111,Stream Gauge,0.0,ft,NGVD29,0,0,NAD27,BL111,Big Lake @ BL111,null,CST6CDT,null,null
+MVM,BL111.Stage.Inst.1Hour.0.opendcs-raw,T,BL111,Stream Gauge,0.0,ft,NGVD29,null,null,NAD27,BL111,Big Lake @ BL111,null,CST6CDT,null,null
 MVM,DT102.Flow.Inst.1Hour.0.opendcs-rev,T,DT102,data logger,58.52160000000001,m,NGVD29,35.557639,-90.322722,WGS84,"Ditch 47 at Spear Lake, AR",null,"New Satlink II at Ditch 1, Spear Lake",America/Chicago,Poinsett,AR
 MVM,DT102.Flow.Inst.1Hour.0.opendcs-rev,T,DT102,data logger,192.0,ft,NGVD29,35.557639,-90.322722,WGS84,"Ditch 47 at Spear Lake, AR",null,"New Satlink II at Ditch 1, Spear Lake",America/Chicago,Poinsett,AR
 MVM,DT102.Stage.Inst.1Hour.0.opendcs-rev,T,DT102,data logger,58.52160000000001,m,NGVD29,35.557639,-90.322722,WGS84,"Ditch 47 at Spear Lake, AR",null,"New Satlink II at Ditch 1, Spear Lake",America/Chicago,Poinsett,AR
 MVM,DT102.Stage.Inst.1Hour.0.opendcs-rev,T,DT102,data logger,192.0,ft,NGVD29,35.557639,-90.322722,WGS84,"Ditch 47 at Spear Lake, AR",null,"New Satlink II at Ditch 1, Spear Lake",America/Chicago,Poinsett,AR
 MVM,FM111.Stage.Inst.1Day.0.rev,T,FM111,satellite,335.89,ft,NGVD29,35.741111,-88.793611,null,"M. F. FK'D Deer at Oakfield, TN","Middle Fork Forked Deer River at Oakfield, TN",Satlink @ LDR,CST6CDT,Gibson,TN
 MVM,FM111.Stage.Inst.1Day.0.rev,T,FM111,satellite,102.379272,m,NGVD29,35.741111,-88.793611,null,"M. F. FK'D Deer at Oakfield, TN","Middle Fork Forked Deer River at Oakfield, TN",Satlink @ LDR,CST6CDT,Gibson,TN
-MVM,HABOL.Stage.Inst.30Minutes.0.opendcs-rev,T,HABOL,satellite,null,m,null,0,0,null,null,"Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on","Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on Hatchie River",UTC,Unknown County or County N/A,TN
-MVM,HABOL.Stage.Inst.30Minutes.0.opendcs-rev,T,HABOL,satellite,null,ft,null,0,0,null,null,"Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on","Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on Hatchie River",UTC,Unknown County or County N/A,TN
+MVM,HABOL.Stage.Inst.30Minutes.0.opendcs-rev,T,HABOL,satellite,null,m,null,null,null,null,null,"Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on","Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on Hatchie River",UTC,Unknown County or County N/A,TN
+MVM,HABOL.Stage.Inst.30Minutes.0.opendcs-rev,T,HABOL,satellite,null,ft,null,null,null,null,null,"Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on","Hatchie at Bolivar, TN  operated by TN USGS @ Bolivar, TN on Hatchie River",UTC,Unknown County or County N/A,TN
 MVM,LD112.Stage.Inst.1Hour.0.opendcs-raw,T,LD112,satellite,91.71736800000001,m,null,37.2319,-89.6585,null,LITTLE RIVER DIVERSION,"Little River Diversion Channel at Dutchtown, MO","Little River Diversion Channel at Dutchtown, MO",US/Central,Cape Girardeau,MO
 MVM,LD112.Stage.Inst.1Hour.0.opendcs-raw,T,LD112,satellite,300.90999999999997,ft,null,37.2319,-89.6585,null,LITTLE RIVER DIVERSION,"Little River Diversion Channel at Dutchtown, MO","Little River Diversion Channel at Dutchtown, MO",US/Central,Cape Girardeau,MO
 MVM,LE113.Precip.Inst.1Hour.0.opendcs-raw,T,LE113,satellite,96.792288,m,NGVD29,35.259167,-89.353611,WGS84,"Loosahatchie at Somerville, TN","Loosahatchie River at Somervill, TN",null,US/Central,Fayette,TN
@@ -515,8 +515,8 @@ MVM,ND111.Volt.Inst.1Hour.0.opendcs-raw,T,ND111,null,0.0,ft,null,47.2212395,-98.
 MVM,ND111.Volt.Inst.1Hour.0.opendcs-raw,T,ND111,satellite,203.15,ft,null,36.86957,-89.524241,null,North Cut Ditch,null,null,US/Central,Shelby,TN
 MVM,ND111.Volt.Inst.1Hour.0.opendcs-raw,T,ND111,null,0.0,m,null,47.2212395,-98.6799,null,"UMRB Monitoring Network Station at Courtenay, ND",null,"Mesonet Site in Courtenay, ND",America/Chicago,Stutsman,ND
 MVM,ND111.Volt.Inst.1Hour.0.opendcs-raw,T,ND111,satellite,61.920120000000004,m,null,36.86957,-89.524241,null,North Cut Ditch,null,null,US/Central,Shelby,TN
-MVM,NOLA.Temp-Air.Inst.1Hour.0.opendcs-raw,T,NOLA,null,null,ft,null,0,0,null,null,"Mississippi River at New Orleans, LA  (Carrolton gage)","Mississippi River at New Orleans, LA  (Carrolton gage)",Etc/GMT+6,null,null
-MVM,NOLA.Temp-Air.Inst.1Hour.0.opendcs-raw,T,NOLA,null,null,m,null,0,0,null,null,"Mississippi River at New Orleans, LA  (Carrolton gage)","Mississippi River at New Orleans, LA  (Carrolton gage)",Etc/GMT+6,null,null
+MVM,NOLA.Temp-Air.Inst.1Hour.0.opendcs-raw,T,NOLA,null,null,ft,null,null,null,null,null,"Mississippi River at New Orleans, LA  (Carrolton gage)","Mississippi River at New Orleans, LA  (Carrolton gage)",Etc/GMT+6,null,null
+MVM,NOLA.Temp-Air.Inst.1Hour.0.opendcs-raw,T,NOLA,null,null,m,null,null,null,null,null,"Mississippi River at New Orleans, LA  (Carrolton gage)","Mississippi River at New Orleans, LA  (Carrolton gage)",Etc/GMT+6,null,null
 MVM,RL111.Volt.Inst.1Hour.0.opendcs-raw,T,RL111,satellite,82.32952800000001,m,NAVD88,36.3530555,-89.4061111,NAD27,Reelfoot Lake (USGS),"Reelfoot Lake Spillway near Tiptonville, TN (USGS)",null,CST6CDT,Lake,TN
 MVM,RL111.Volt.Inst.1Hour.0.opendcs-raw,T,RL111,satellite,270.11,ft,NAVD88,36.3530555,-89.4061111,NAD27,Reelfoot Lake (USGS),"Reelfoot Lake Spillway near Tiptonville, TN (USGS)",null,CST6CDT,Lake,TN
 MVM,SF116.Flow.Inst.1Hour.0.opendcs-rev,T,SF116,satellite,87.703152,m,NGVD29,36.573333,-90.185278,WGS84,"St. Francis at Dekyn's Store, MO","St. Francis River at Dekyn's Store, MO",St. Francis @ Dekyns Store,America/Chicago,Butler,MO
@@ -542,8 +542,8 @@ MVM,WR115.Flow.Inst.1Hour.0.opendcs-rev,T,WR115,satellite,152.96,ft,NGVD29,34.79
 MVN,Bayou_La_Rompe.Stage.Inst.1Hour.0.raw,T,Bayou_La_Rompe,DCP,0.0,m,NGVD29,30.233194444444,-91.589666666667,null,Bayou La Rompe,Bayou La Rompe at Lake Long,Approximately 8 miles SE of Butte Larose on Little Atchafalaya River near  junction of Bayou LaRompe and Lake Long Bayou.,US/Central,St. Martin,LA
 MVN,Buffalo Cove.Temp-Water.Inst.1Hour.0.raw,T,Buffalo Cove,null,0.0,ft,null,29.983333333333,-91.525,null,Buffalo Cove at Round Island nr Charenton,Buffalo Cove at Round Island nr Charenton,null,US/Central,Iberia,LA
 MVN,Buffalo Cove.Temp-Water.Inst.1Hour.0.raw,T,Buffalo Cove,null,0.0,m,null,29.983333333333,-91.525,null,Buffalo Cove at Round Island nr Charenton,Buffalo Cove at Round Island nr Charenton,null,US/Central,Iberia,LA
-MVN,Charenton_Canal.Stage.Inst.1Hour.0.raw,T,Charenton_Canal,null,0.0,m,null,0,0,null,Charenton Drainage Canal @ Charenton Floodgate,null,null,null,null,null
-MVN,Charenton_Canal.Stage.Inst.1Hour.0.raw,T,Charenton_Canal,null,0.0,ft,null,0,0,null,Charenton Drainage Canal @ Charenton Floodgate,null,null,null,null,null
+MVN,Charenton_Canal.Stage.Inst.1Hour.0.raw,T,Charenton_Canal,null,0.0,m,null,null,null,null,Charenton Drainage Canal @ Charenton Floodgate,null,null,null,null,null
+MVN,Charenton_Canal.Stage.Inst.1Hour.0.raw,T,Charenton_Canal,null,0.0,ft,null,null,null,null,Charenton Drainage Canal @ Charenton Floodgate,null,null,null,null,null
 MVN,Courtableau-Drainage_Structure.Stage-Crossing.Inst.1Day.0.Manual0700,T,Courtableau-Drainage_Structure,null,0.0,m,null,30.538888888889,-91.859444444444,null,Bayou Courtableau above Drainage Structure,null,null,Unknown or Not Applicable,St. Landry,LA
 MVN,Courtableau-Drainage_Structure.Stage-Crossing.Inst.1Day.0.Manual0700,T,Courtableau-Drainage_Structure,null,0.0,ft,null,30.538888888889,-91.859444444444,null,Bayou Courtableau above Drainage Structure,null,null,Unknown or Not Applicable,St. Landry,LA
 MVN,Empire.Stage.Inst.1Hour.0.raw,T,Empire,DCP,0.0,ft,Local Datum 1,29.389372222222,-89.596463888889,null,Mississippi River at Empire,Mississippi River at Empire,"Located at the entrance to Empire Lock at river mile 29.5.  Gage reinstalled on July 7, 2007.",US/Central,Plaquemines,LA
@@ -652,14 +652,14 @@ MVR,SAYI4.Opening-WEST.Inst.30Minutes.0.decodes,T,SAYI4,PROJECT,915.499999999999
 MVR,SAYI4.Opening-WEST.Inst.30Minutes.0.decodes,T,SAYI4,PROJECT,279.0444,m,NGVD29,41.70361,-93.68917,NAD27,SAYI4,Saylorville Lake Reservior Pool and MET Station,Saylorville Lake Reservior Pool and MET Station,America/Chicago,Polk,IA
 MVR,SAYI4.Volt.Inst.1Hour.0.decodes,T,SAYI4,PROJECT,915.4999999999999,ft,NGVD29,41.70361,-93.68917,NAD27,SAYI4,Saylorville Lake Reservior Pool and MET Station,Saylorville Lake Reservior Pool and MET Station,America/Chicago,Polk,IA
 MVR,SAYI4.Volt.Inst.1Hour.0.decodes,T,SAYI4,PROJECT,279.0444,m,NGVD29,41.70361,-93.68917,NAD27,SAYI4,Saylorville Lake Reservior Pool and MET Station,Saylorville Lake Reservior Pool and MET Station,America/Chicago,Polk,IA
-MVR,SCLM7.Stage.Inst.1Hour.0.decodes,T,SCLM7,null,null,ft,null,0,0,null,SCLM7,Missouri River at St,"Missouri River at St. Charles, MO (MVS)",America/Chicago,Unknown County or County N/A,00
-MVR,SCLM7.Stage.Inst.1Hour.0.decodes,T,SCLM7,null,null,m,null,0,0,null,SCLM7,Missouri River at St,"Missouri River at St. Charles, MO (MVS)",America/Chicago,Unknown County or County N/A,00
+MVR,SCLM7.Stage.Inst.1Hour.0.decodes,T,SCLM7,null,null,ft,null,null,null,null,SCLM7,Missouri River at St,"Missouri River at St. Charles, MO (MVS)",America/Chicago,Unknown County or County N/A,00
+MVR,SCLM7.Stage.Inst.1Hour.0.decodes,T,SCLM7,null,null,m,null,null,null,null,SCLM7,Missouri River at St,"Missouri River at St. Charles, MO (MVS)",America/Chicago,Unknown County or County N/A,00
 MVR,SEVI2.Flow.Inst.30Minutes.0.rev,T,SEVI2,GAGE,null,m,NGVD29,40.48556,-90.34278,null,SEVI2,"Spoon River at Seville, IL (USGS)","Spoon River at Seville, IL (USGS)",America/Chicago,Fulton,IL
 MVR,SEVI2.Flow.Inst.30Minutes.0.rev,T,SEVI2,GAGE,null,ft,NGVD29,40.48556,-90.34278,null,SEVI2,"Spoon River at Seville, IL (USGS)","Spoon River at Seville, IL (USGS)",America/Chicago,Fulton,IL
 MVR,SPLI4.Stage.Inst.30Minutes.0.rev,T,SPLI4,null,null,ft,null,43.20728,-91.95033,null,SPLI4,"Turkey River at Spillville, IA (USGS)","Turkey River at Spillville, IA (USGS)",America/Chicago,Winneshiek,IA
 MVR,SPLI4.Stage.Inst.30Minutes.0.rev,T,SPLI4,null,null,m,null,43.20728,-91.95033,null,SPLI4,"Turkey River at Spillville, IA (USGS)","Turkey River at Spillville, IA (USGS)",America/Chicago,Winneshiek,IA
-MVR,TEST4.Precip.Inst.30Minutes.0.decodes,T,TEST4,null,null,ft,null,0,0,null,TEST4,Test Time Slot,Test Time Slot,America/Chicago,Unknown County or County N/A,00
-MVR,TEST4.Precip.Inst.30Minutes.0.decodes,T,TEST4,null,null,m,null,0,0,null,TEST4,Test Time Slot,Test Time Slot,America/Chicago,Unknown County or County N/A,00
+MVR,TEST4.Precip.Inst.30Minutes.0.decodes,T,TEST4,null,null,ft,null,null,null,null,TEST4,Test Time Slot,Test Time Slot,America/Chicago,Unknown County or County N/A,00
+MVR,TEST4.Precip.Inst.30Minutes.0.decodes,T,TEST4,null,null,m,null,null,null,null,TEST4,Test Time Slot,Test Time Slot,America/Chicago,Unknown County or County N/A,00
 MVR,WDOM5.Stage.Inst.15Minutes.0.decodes,T,WDOM5,GAGE,null,m,NGVD29,43.89056,-95.15972,null,WDOM5,"West Fork Des Moines River above Windom, MN (USGS)","West Fork Des Moines River above Windom, MN (USGS)",America/Chicago,Cottonwood,MN
 MVR,WDOM5.Stage.Inst.15Minutes.0.decodes,T,WDOM5,GAGE,null,ft,NGVD29,43.89056,-95.15972,null,WDOM5,"West Fork Des Moines River above Windom, MN (USGS)","West Fork Des Moines River above Windom, MN (USGS)",America/Chicago,Cottonwood,MN
 MVR,WEBMET15.Speed-Wind-Gust.Inst.1Minute.0.decodes,T,WEBMET15,null,null,ft,null,41.517,-90.566246,null,WEBMET15,WEBMET AT L&D15 XMITS OVER NETWORK EVERY 1 MINUTE,WEBMET AT L&D15 XMITS OVER NETWORK EVERY 1 MINUTE,America/Chicago,Rock Island,IL
@@ -720,8 +720,8 @@ NAB,Cresson.Precip.Inst.15Minutes.0.DCP-raw,F,Cresson,null,null,ft,null,null,nul
 NAB,Cresson.Precip.Inst.15Minutes.0.DCP-raw,F,Cresson,null,null,m,null,null,null,null,Cresson FAKE,null,null,US/Eastern,null,null
 NAB,Curwensvl Snow2.%-ofArea-Snow.Inst.0.0.manual-rev,T,Curwensvl Snow2,Snow Survey,1700.0,ft,NGVD29,40.933333,-78.633333,NAD27,Curwensville Snow2,Curwensville snow survey site 2,Snow Survey Station,US/Eastern,Clearfield,PA
 NAB,Curwensvl Snow2.%-ofArea-Snow.Inst.0.0.manual-rev,T,Curwensvl Snow2,Snow Survey,518.1600000000001,m,NGVD29,40.933333,-78.633333,NAD27,Curwensville Snow2,Curwensville snow survey site 2,Snow Survey Station,US/Eastern,Clearfield,PA
-NAB,Grimes.Stage.Inst.15Minutes.0.DCP-raw,T,Grimes,Stream Gage,354.07152230971127,ft,NAVD88,39.514555555556,77.777222222222,NAD83,Grimes,Marsh Run at Grimes,DCP,US/Eastern,Washington,MD
-NAB,Grimes.Stage.Inst.15Minutes.0.DCP-raw,T,Grimes,Stream Gage,107.921,m,NAVD88,39.514555555556,77.777222222222,NAD83,Grimes,Marsh Run at Grimes,DCP,US/Eastern,Washington,MD
+NAB,Grimes.Stage.Inst.15Minutes.0.DCP-raw,T,Grimes,Stream Gage,354.07152230971127,ft,NAVD88,39.514555555556,-77.777222222222,NAD83,Grimes,Marsh Run at Grimes,DCP,US/Eastern,Washington,MD
+NAB,Grimes.Stage.Inst.15Minutes.0.DCP-raw,T,Grimes,Stream Gage,107.921,m,NAVD88,39.514555555556,-77.777222222222,NAD83,Grimes,Marsh Run at Grimes,DCP,US/Eastern,Washington,MD
 NAB,Lake Pleasant.Temp-Air.Inst.1Hour.0.DCP-raw,T,Lake Pleasant,RAWS Gage,554.7,m,NAVD88,43.470277777778,-74.413055555556,NAD83,Lake Pleasant RAWS,Lake Pleasant Remote Automated Weather Station,DCP,US/Eastern,Hamilton,NY
 NAB,Lake Pleasant.Temp-Air.Inst.1Hour.0.DCP-raw,T,Lake Pleasant,RAWS Gage,1819.8818897637796,ft,NAVD88,43.470277777778,-74.413055555556,NAD83,Lake Pleasant RAWS,Lake Pleasant Remote Automated Weather Station,DCP,US/Eastern,Hamilton,NY
 NAB,Mapleton Depot.Stage.Inst.1Day.0.GATCL-rev,T,Mapleton Depot,Stream Gage,169.868088,m,NGVD29,40.3921857,-77.9354878,WGS84,Mapleton Depot,Juniata River at Mapleton Depot,DCP,US/Eastern,Huntingdon,PA
@@ -748,8 +748,8 @@ NAB,Sayers Snow6.Depth-Snow.Inst.0.0.manual-raw,T,Sayers Snow6,Snow Survey,262.1
 NAB,Sayers Snow6.Depth-Snow.Inst.0.0.manual-raw,T,Sayers Snow6,Snow Survey,859.9999999999999,ft,NGVD29,40.883333,-77.8,NAD27,Sayers Snow6,Sayers snow survey site 6,Snow Survey Station,US/Eastern,Centre,PA
 NAB,Stillwater F1.Opening.Inst.0.0.manual-raw,T,Stillwater F1,Flood Gate,1567.9999999999995,ft,Local Datum 1,41.6972205,-75.4832249,WGS84,Stillwater Dam F1,Flood Gate 1 at Stillwater Dam,Flood Gate,US/Eastern,Susquehanna,PA
 NAB,Stillwater F1.Opening.Inst.0.0.manual-raw,T,Stillwater F1,Flood Gate,477.92639999999994,m,Local Datum 1,41.6972205,-75.4832249,WGS84,Stillwater Dam F1,Flood Gate 1 at Stillwater Dam,Flood Gate,US/Eastern,Susquehanna,PA
-NAB,Tonoloway Creek.Stage.Inst.15Minutes.0.DCP-rev,T,Tonoloway Creek,Stream Gage,398.8287401574803,ft,NAVD88,39.706361111111,78.15275,NAD83,Tonoloway Creek,Tonoloway Creek near Hancock,DCP,US/Eastern,Washington,MD
-NAB,Tonoloway Creek.Stage.Inst.15Minutes.0.DCP-rev,T,Tonoloway Creek,Stream Gage,121.563,m,NAVD88,39.706361111111,78.15275,NAD83,Tonoloway Creek,Tonoloway Creek near Hancock,DCP,US/Eastern,Washington,MD
+NAB,Tonoloway Creek.Stage.Inst.15Minutes.0.DCP-rev,T,Tonoloway Creek,Stream Gage,398.8287401574803,ft,NAVD88,39.706361111111,-78.15275,NAD83,Tonoloway Creek,Tonoloway Creek near Hancock,DCP,US/Eastern,Washington,MD
+NAB,Tonoloway Creek.Stage.Inst.15Minutes.0.DCP-rev,T,Tonoloway Creek,Stream Gage,121.563,m,NAVD88,39.706361111111,-78.15275,NAD83,Tonoloway Creek,Tonoloway Creek near Hancock,DCP,US/Eastern,Washington,MD
 NAB,Williamsport.Stage.Inst.1Hour.0.Natural,T,Williamsport,Gage,718.66,ft,NGVD29,39.5853,-83.1217,WGS84,Williamsport,Deer Ck @ Williamsport,Deer Ck @ Williamsport,US/Eastern,Pickaway,OH
 NAB,Williamsport.Stage.Inst.1Hour.0.Natural,T,Williamsport,null,null,ft,null,41.25,-76.92,null,Williamsport Weather Station,null,null,US/Eastern,Lycoming,PA
 NAB,Williamsport.Stage.Inst.1Hour.0.Natural,T,Williamsport,null,null,m,null,41.25,-76.92,null,Williamsport Weather Station,null,null,US/Eastern,Lycoming,PA
@@ -769,10 +769,10 @@ NAE,HEL.Dir-WIND1.Inst.15Minutes.0.DCP-raw,T,HEL,Climate Station,0.0,ft,null,66.
 NAE,HEL.Dir-WIND1.Inst.15Minutes.0.DCP-raw,T,HEL,Climate Station,0.0,m,null,66.4,-38,null,Helheim Glacier,Helheim Glacier,Helheim Glacier,Unknown or Not Applicable,Unknown County or County N/A,00
 NAE,HELSOUTH.Count-K2_2Current.Inst.1Hour.0.DCP-raw,T,HELSOUTH,null,null,m,null,66.4,-38.2,null,Helheim Glacier South,Helheim Glacier - South,Helheim Glacier - South,UTC,null,null
 NAE,HELSOUTH.Count-K2_2Current.Inst.1Hour.0.DCP-raw,T,HELSOUTH,null,null,ft,null,66.4,-38.2,null,Helheim Glacier South,Helheim Glacier - South,Helheim Glacier - South,UTC,null,null
-NAE,HUB.Stage-RANGE4.Inst.1Hour.0.DCP-raw,T,HUB,Climate Station,0.0,ft,NGVD29,59.994444444444,-139.486388888889,null,Hubbard Glacier,Hubbard Glacier @ Gilbert Point,Hubbard Glacier @ Gilbert Point,America/Anchorage,Unknown County or County N/A,AK
-NAE,HUB.Stage-RANGE4.Inst.1Hour.0.DCP-raw,T,HUB,Climate Station,0.0,m,NGVD29,59.994444444444,-139.486388888889,null,Hubbard Glacier,Hubbard Glacier @ Gilbert Point,Hubbard Glacier @ Gilbert Point,America/Anchorage,Unknown County or County N/A,AK
-NAE,ING.Volt.Inst.15Minutes.0.DCP-raw,T,ING,null,null,m,null,0,0,null,North Inglefield,null,null,UTC,null,null
-NAE,ING.Volt.Inst.15Minutes.0.DCP-raw,T,ING,null,null,ft,null,0,0,null,North Inglefield,null,null,UTC,null,null
+#NAE,HUB.Stage-RANGE4.Inst.1Hour.0.DCP-raw,T,HUB,Climate Station,0.0,ft,NGVD29,59.994444444444,-139.486388888889,WGS84,Hubbard Glacier,Hubbard Glacier @ Gilbert Point,Hubbard Glacier @ Gilbert Point,America/Anchorage,Unknown County or County N/A,AK
+#NAE,HUB.Stage-RANGE4.Inst.1Hour.0.DCP-raw,T,HUB,Climate Station,0.0,m,NGVD29,59.994444444444,-139.486388888889,WGS84,Hubbard Glacier,Hubbard Glacier @ Gilbert Point,Hubbard Glacier @ Gilbert Point,America/Anchorage,Unknown County or County N/A,AK
+NAE,ING.Volt.Inst.15Minutes.0.DCP-raw,T,ING,null,null,m,null,null,null,null,North Inglefield,null,null,UTC,null,null
+NAE,ING.Volt.Inst.15Minutes.0.DCP-raw,T,ING,null,null,ft,null,null,null,null,North Inglefield,null,null,UTC,null,null
 NAE,MHD.Elev-PZ31A.Inst.0.0.DCP-rev,T,MHD,Pool Gage,59.439048,m,null,41.764999,-72.1817,null,Mansfield Hollow Dam,"Mansfield Hollow Dam, Natchaug River","Mansfield Hollow Dam, Natchaug River",America/New_York,Tolland,CT
 NAE,MHD.Elev-PZ31A.Inst.0.0.DCP-rev,T,MHD,Pool Gage,195.01,ft,null,41.764999,-72.1817,null,Mansfield Hollow Dam,"Mansfield Hollow Dam, Natchaug River","Mansfield Hollow Dam, Natchaug River",America/New_York,Tolland,CT
 NAE,MHD.Elev-PZOW14S6.Inst.4Hours.0.DCP-rev,T,MHD,Pool Gage,195.01,ft,null,41.764999,-72.1817,null,Mansfield Hollow Dam,"Mansfield Hollow Dam, Natchaug River","Mansfield Hollow Dam, Natchaug River",America/New_York,Tolland,CT
@@ -806,20 +806,20 @@ NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,Stream Gauge,481.11,ft,NGV
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,231.76992,m,NGVD29,40.716029,-79.578871,WGS84,"L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",US/Eastern,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,null,m,null,null,null,null,null,null,null,Unknown or Not Applicable,Unknown County or County N/A,00
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,Stream Gauge,146.64232800000002,m,NGVD29,35.5869444,-92.4513889,NAD83,S Fork Little Red R-Clinton AR,"South Fork of Little Red at Clinton, AR - platform collects ","South Fork of Little Red at Clinton, AR - platform collects stage and precip data (HG,PC)",US/Central,Van Buren,AR
-NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,null,m,null,0,0,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
+NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,null,m,null,null,null,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,760.4,ft,NGVD29,40.716029,-79.578871,WGS84,"L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",US/Eastern,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,0.0,ft,null,40.716029,-79.5808,null,"Allegheny L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",UTC,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,null,ft,null,null,null,null,null,null,null,Unknown or Not Applicable,Unknown County or County N/A,00
-NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,null,ft,null,0,0,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
+NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,null,ft,null,null,null,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
 NAN,Clinton.Precip.Inst.15Minutes.0.Raw-DCP,T,Clinton,null,0.0,m,null,40.716029,-79.5808,null,"Allegheny L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",UTC,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,null,ft,null,null,null,null,null,null,null,Unknown or Not Applicable,Unknown County or County N/A,00
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,Stream Gauge,481.11,ft,NGVD29,35.5869444,-92.4513889,NAD83,S Fork Little Red R-Clinton AR,"South Fork of Little Red at Clinton, AR - platform collects ","South Fork of Little Red at Clinton, AR - platform collects stage and precip data (HG,PC)",US/Central,Van Buren,AR
-NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,null,ft,null,0,0,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
+NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,null,ft,null,null,null,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,0.0,m,null,40.716029,-79.5808,null,"Allegheny L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",UTC,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,760.4,ft,NGVD29,40.716029,-79.578871,WGS84,"L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",US/Eastern,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,null,m,null,null,null,null,null,null,null,Unknown or Not Applicable,Unknown County or County N/A,00
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,Stream Gauge,146.64232800000002,m,NGVD29,35.5869444,-92.4513889,NAD83,S Fork Little Red R-Clinton AR,"South Fork of Little Red at Clinton, AR - platform collects ","South Fork of Little Red at Clinton, AR - platform collects stage and precip data (HG,PC)",US/Central,Van Buren,AR
-NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,null,m,null,0,0,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
+NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,null,m,null,null,null,null,null,"Bayou de Chien nr Clinton, KY","Bayou de Chien nr Clinton, KY",null,null,null
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,231.76992,m,NGVD29,40.716029,-79.578871,WGS84,"L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",US/Eastern,Armstrong,PA
 NAN,Clinton.Precip.Inst.15Minutes.0.Rev-DCP,T,Clinton,null,0.0,ft,null,40.716029,-79.5808,null,"Allegheny L/D-6, Clinton","Allegheny River at L/D-6, Clinton","Allegheny River at L/D-6, Clinton",UTC,Armstrong,PA
 NAN,EssexFells.Precip.Inst.15Minutes.0.Rev-DCP,T,EssexFells,null,null,ft,null,null,null,null,null,null,null,Unknown or Not Applicable,Unknown County or County N/A,00
@@ -1082,14 +1082,14 @@ NWDM,MELM.Temp-Water.Inst.~1Day.0.Best-NWDM,T,MELM,null,null,m,null,null,null,nu
 NWDM,MELM.Temp-Water.Inst.~1Day.0.Best-NWDM,T,MELM,null,null,m,null,45.5259927,-112.7021447,null,"Big Hole River near Melrose, MT","Big Hole River near Melrose, MT",null,US/Central,Unknown County or County N/A,00
 NWDM,MELM.Temp-Water.Inst.~1Day.0.Best-NWDM,T,MELM,null,null,ft,null,null,null,null,null,null,null,null,null,null
 NWDM,MELM.Temp-Water.Inst.~1Day.0.Best-NWDM,T,MELM,null,null,ft,null,45.5259927,-112.7021447,null,"Big Hole River near Melrose, MT","Big Hole River near Melrose, MT",null,US/Central,Unknown County or County N/A,00
-NWDM,NCRK.Precip.Inst.1Hour.0.Best-NWDM,T,NCRK,null,null,m,null,0,0,null,NCRK-Norcatur-Sappa,null,null,US/Central,null,null
-NWDM,NCRK.Precip.Inst.1Hour.0.Best-NWDM,T,NCRK,null,null,ft,null,0,0,null,NCRK-Norcatur-Sappa,null,null,US/Central,null,null
+NWDM,NCRK.Precip.Inst.1Hour.0.Best-NWDM,T,NCRK,null,null,m,null,null,null,null,NCRK-Norcatur-Sappa,null,null,US/Central,null,null
+NWDM,NCRK.Precip.Inst.1Hour.0.Best-NWDM,T,NCRK,null,null,ft,null,null,null,null,NCRK-Norcatur-Sappa,null,null,US/Central,null,null
 NWDM,NLNE.Stage-Orifice.Inst.15Minutes.0.Raw-LRGS,T,NLNE,null,null,m,null,41.263333,-98.448889,null,"North Loup R nr Saint Paul, NE","North Loup River near Saint Paul, NE",null,US/Central,Howard,NE
 NWDM,NLNE.Stage-Orifice.Inst.15Minutes.0.Raw-LRGS,T,NLNE,null,null,ft,null,41.263333,-98.448889,null,"North Loup R nr Saint Paul, NE","North Loup River near Saint Paul, NE",null,US/Central,Howard,NE
-NWDM,NWCK.Precip.Inst.1Hour.0.Best-NWDM,T,NWCK,null,null,ft,null,0,0,null,NWCK-New_Cambria-Smoky_Hill,null,null,US/Central,null,null
-NWDM,NWCK.Precip.Inst.1Hour.0.Best-NWDM,T,NWCK,null,null,m,null,0,0,null,NWCK-New_Cambria-Smoky_Hill,null,null,US/Central,null,null
-NWDM,PCIA.Precip.Inst.1Hour.0.Best-NWDM,T,PCIA,null,null,m,null,0,0,null,PCIA,null,null,US/Central,null,null
-NWDM,PCIA.Precip.Inst.1Hour.0.Best-NWDM,T,PCIA,null,null,ft,null,0,0,null,PCIA,null,null,US/Central,null,null
+NWDM,NWCK.Precip.Inst.1Hour.0.Best-NWDM,T,NWCK,null,null,ft,null,null,null,null,NWCK-New_Cambria-Smoky_Hill,null,null,US/Central,null,null
+NWDM,NWCK.Precip.Inst.1Hour.0.Best-NWDM,T,NWCK,null,null,m,null,null,null,null,NWCK-New_Cambria-Smoky_Hill,null,null,US/Central,null,null
+NWDM,PCIA.Precip.Inst.1Hour.0.Best-NWDM,T,PCIA,null,null,m,null,null,null,null,PCIA,null,null,US/Central,null,null
+NWDM,PCIA.Precip.Inst.1Hour.0.Best-NWDM,T,PCIA,null,null,ft,null,null,null,null,PCIA,null,null,US/Central,null,null
 NWDM,POMA-UncontrolledOutlet.Flow.Inst.1Hour.0.Best-NWK,T,POMA-UncontrolledOutlet,null,null,ft,null,38.6512842,-95.5582047,null,null,null,null,US/Central,Osage,KS
 NWDM,POMA-UncontrolledOutlet.Flow.Inst.1Hour.0.Best-NWK,T,POMA-UncontrolledOutlet,null,null,m,null,38.6512842,-95.5582047,null,null,null,null,US/Central,Osage,KS
 NWDM,"SC02-D002,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap",T,"SC02-D002,0m",null,null,ft,null,40.585277777778,-96.846541666667,NAD83,null,null,null,America/Chicago,Lancaster,NE
@@ -1147,11 +1147,11 @@ NWDP,UMTW.Flow.Inst.~6Hours.0.MODEL-STP-FCST,T,UMTW,Stream Gauge,410.5656,m,NGVD
 NWDP,UMTW.Flow.Inst.~6Hours.0.MODEL-STP-FCST,T,UMTW,Stream Gauge,1347.0,ft,NGVD29,46.8626264,-120.480067,NAD83,Yakima River At Umtanum,Yakima River At Umtanum,null,US/Pacific,Kittitas,WA
 NWDP,WHDI.Temp-Air.Ave.~1Day.1Day.SNOTEL-REV,T,WHDI,SNOTEL,1978.152,m,NGVD29,42.75743,-112.47783,WGS84,Wildhorse Divide Snotel,WILDHORSE DIVIDE SNOTEL,NRCS Station ID 867,US/Mountain,Bannock,ID
 NWDP,WHDI.Temp-Air.Ave.~1Day.1Day.SNOTEL-REV,T,WHDI,SNOTEL,6489.999999999999,ft,NGVD29,42.75743,-112.47783,WGS84,Wildhorse Divide Snotel,WILDHORSE DIVIDE SNOTEL,NRCS Station ID 867,US/Mountain,Bannock,ID
-SAJ,At Steele Pt-Bottom.Conc-Salinity.Inst.0.0.USGS-Raw,T,At Steele Pt-Bottom,null,0.0,ft,null,0,0,null,St Lucie Estuary At Steele Pt-Bottom,null,null,US/Eastern,Unknown County or County N/A,FL
+SAJ,At Steele Pt-Bottom.Conc-Salinity.Inst.0.0.USGS-Raw,T,At Steele Pt-Bottom,null,0.0,ft,null,null,null,null,St Lucie Estuary At Steele Pt-Bottom,null,null,US/Eastern,Unknown County or County N/A,FL
 SAJ,Blw S78.Flow.Ave.0.0.USGS-Raw,T,Blw S78,null,null,m,null,null,null,null,Blw S78,null,null,US/Eastern,Unknown County or County N/A,FL
 SAJ,Blw S78.Flow.Ave.0.0.USGS-Raw,T,Blw S78,null,null,ft,null,null,null,null,Blw S78,null,null,US/Eastern,Unknown County or County N/A,FL
-SAJ,C44-E1AG5.Elev-GW.Inst.1Hour.0.DCP-raw,T,C44-E1AG5,null,0.0,m,null,0,0,null,E1AG5 at C44,null,null,US/Eastern,Martin,FL
-SAJ,C44-E1AG5.Elev-GW.Inst.1Hour.0.DCP-raw,T,C44-E1AG5,null,0.0,ft,null,0,0,null,E1AG5 at C44,null,null,US/Eastern,Martin,FL
+SAJ,C44-E1AG5.Elev-GW.Inst.1Hour.0.DCP-raw,T,C44-E1AG5,null,0.0,m,null,null,null,null,E1AG5 at C44,null,null,US/Eastern,Martin,FL
+SAJ,C44-E1AG5.Elev-GW.Inst.1Hour.0.DCP-raw,T,C44-E1AG5,null,0.0,ft,null,null,null,null,E1AG5 at C44,null,null,US/Eastern,Martin,FL
 SAJ,C44.Stage.Inst.1Hour.0.raw,T,C44,null,0.0,m,null,27.0780556,80.4318889,null,South C44 Res,C44,C44,US/Eastern,null,null
 SAJ,C44.Stage.Inst.1Hour.0.raw,T,C44,null,0.0,ft,null,27.0780556,80.4318889,null,South C44 Res,C44,C44,US/Eastern,null,null
 SAJ,G3620.Elev-GW.Inst.1Hour.0.DCP-raw,T,G3620,null,null,m,NGVD29,25.3866667,-80.5341667,WGS84,G3620,null,null,US/Eastern,Unknown County or County N/A,FL
@@ -1414,7 +1414,7 @@ SPA,Tolby.Precip.Inst.0.0.NRCS-rev,T,Tolby,SNOTEL,3102.864,m,NGVD29,36.47,-105.1
 SPA,Tolby.Precip.Inst.0.0.NRCS-rev,T,Tolby,SNOTEL,10179.999999999998,ft,NGVD29,36.47,-105.19,WGS84,Tolby,null,null,US/Mountain,Colfax,NM
 SPA,Undercliffe.Flow.Inst.15Minutes.0.DCP-raw,T,Undercliffe,Stream Gauge,null,m,null,38.003045,-104.467354,NAD83,Huerfano River nr Undercliffe,null,null,US/Mountain,Pueblo,CO
 SPA,Undercliffe.Flow.Inst.15Minutes.0.DCP-raw,T,Undercliffe,Stream Gauge,null,ft,null,38.003045,-104.467354,NAD83,Huerfano River nr Undercliffe,null,null,US/Mountain,Pueblo,CO
-SPK,Beardsley Lake.Stor.Ave.~1Day.1Decade.Raw-CDEC-Combined,T,Beardsley Lake,null,0.0,m,null,0,0,null,null,null,null,PST8PDT,null,null
+SPK,Beardsley Lake.Stor.Ave.~1Day.1Decade.Raw-CDEC-Combined,T,Beardsley Lake,null,0.0,m,null,null,null,null,null,null,null,PST8PDT,null,null
 SPK,Crane Flat Lkout.Temp-Air.Inst.0.0.CDEC-raw,T,Crane Flat Lkout,null,null,ft,null,null,null,null,null,null,null,null,null,null
 SPK,Crane Flat Lkout.Temp-Air.Inst.0.0.CDEC-raw,T,Crane Flat Lkout,null,null,m,null,null,null,null,null,null,null,null,null,null
 SPK,DryCr@Royer Park.Stage.Inst.0.0.Raw-CDEC-Combined,T,DryCr@Royer Park,null,null,ft,null,null,null,null,null,null,null,null,null,null
@@ -1443,8 +1443,8 @@ SPK,Pinecrest2Raws.Temp-Air.Inst.0.0.Raw-USBR-Combined,T,Pinecrest2Raws,null,nul
 SPK,Pinecrest2Raws.Temp-Air.Inst.0.0.Raw-USBR-Combined,T,Pinecrest2Raws,null,null,ft,null,null,null,null,null,null,null,null,null,null
 SPK,Railroad Flat.Precip-Raw.Inst.15Minutes.0.Combined-raw,T,Railroad Flat,null,2720.0099999999998,ft,NGVD29,38.3138889,-120.543056,null,New Hogan Lk-Railroad Flat,null,NHG - Railroad Flat Climate Station,US/Pacific,Calaveras,CA
 SPK,Railroad Flat.Precip-Raw.Inst.15Minutes.0.Combined-raw,T,Railroad Flat,null,829.0590480000001,m,NGVD29,38.3138889,-120.543056,null,New Hogan Lk-Railroad Flat,null,NHG - Railroad Flat Climate Station,US/Pacific,Calaveras,CA
-SPK,Redinger.Stor.Ave.~1Day.1Decade.Raw-USBR-Combined,T,Redinger,null,0.0,ft,null,0,0,null,null,null,null,PST8PDT,null,null
-SPK,Redinger.Stor.Ave.~1Day.1Decade.Raw-USBR-Combined,T,Redinger,null,0.0,m,null,0,0,null,null,null,null,PST8PDT,null,null
+SPK,Redinger.Stor.Ave.~1Day.1Decade.Raw-USBR-Combined,T,Redinger,null,0.0,ft,null,null,null,null,null,null,null,PST8PDT,null,null
+SPK,Redinger.Stor.Ave.~1Day.1Decade.Raw-USBR-Combined,T,Redinger,null,0.0,m,null,null,null,null,null,null,null,PST8PDT,null,null
 SPK,SF Tule R-nr Success.Flow.Inst.15Minutes.0.Calc-val_test2,T,SF Tule R-nr Success,null,null,m,null,null,null,null,null,null,null,null,null,null
 SPK,SF Tule R-nr Success.Flow.Inst.15Minutes.0.Calc-val_test2,T,SF Tule R-nr Success,null,null,ft,null,null,null,null,null,null,null,null,null,null
 SPK,Slvr Lk @ Brghtn.Depth-Snow.Inst.1Hour.0.NRCS-raw,T,Slvr Lk @ Brghtn,Gauge,8765.999999999998,ft,NGVD29,40.6,-111.5833333,WGS84,Brghtn,null,null,null,Salt Lake,UT
@@ -1504,9 +1504,9 @@ SPL,Vegas Valley Dr-Las Vegas W.Precip.Inst.15Minutes.0.GOES-rev,T,Vegas Valley 
 SPL,Vegas Valley Dr-Las Vegas W.Precip.Inst.15Minutes.0.GOES-rev,T,Vegas Valley Dr-Las Vegas W,null,515.1120000000001,m,null,36.136944,-115.038611,WGS84,Vegas Valley Drive,null,null,US/Pacific,Unknown County or County N/A,NV
 SPL,Wardlow-LAR at Long Beach.Precip.Inst.0.0.LATS-raw,T,Wardlow-LAR at Long Beach,null,12.0,ft,null,33.8175,-118.206389,WGS84,Wardlow,null,null,US/Pacific,Unknown County or County N/A,CA
 SPL,Wardlow-LAR at Long Beach.Precip.Inst.0.0.LATS-raw,T,Wardlow-LAR at Long Beach,null,3.6576000000000004,m,null,33.8175,-118.206389,WGS84,Wardlow,null,null,US/Pacific,Unknown County or County N/A,CA
-SWF,ARPT2-WLNEW-46.Stage.Inst.15Minutes.0.Decodes-Raw,T,ARPT2-WLNEW-46,null,null,m,NGVD29,0,0,null,Langham Ck at Addicks Res,"Langham Ck at Addicks Res Outflow nr Addicks, TX","Langham Ck at Addicks Res Outflow nr Addicks, TX",US/Central,Unknown County or County N/A,TX
-SWF,ARPT2-WLNEW-46.Stage.Inst.15Minutes.0.Decodes-Raw,T,ARPT2-WLNEW-46,null,83.88,ft,NAD27,0,0,NAD83,Langham Ck at Addicks Res,"Langham Ck at Addicks Res Outflow nr Addicks, TX","Langham Ck at Addicks Res Outflow nr Addicks, TX",US/Central,Unknown County or County N/A,TX
-SWF,ARPT2-WLNEW-46.Stage.Inst.15Minutes.0.Decodes-Raw,T,ARPT2-WLNEW-46,null,null,ft,NGVD29,0,0,null,Langham Ck at Addicks Res,"Langham Ck at Addicks Res Outflow nr Addicks, TX","Langham Ck at Addicks Res Outflow nr Addicks, TX",US/Central,Unknown County or County N/A,TX
+SWF,ARPT2-WLNEW-46.Stage.Inst.15Minutes.0.Decodes-Raw,T,ARPT2-WLNEW-46,null,null,m,NGVD29,null,null,null,Langham Ck at Addicks Res,"Langham Ck at Addicks Res Outflow nr Addicks, TX","Langham Ck at Addicks Res Outflow nr Addicks, TX",US/Central,Unknown County or County N/A,TX
+SWF,ARPT2-WLNEW-46.Stage.Inst.15Minutes.0.Decodes-Raw,T,ARPT2-WLNEW-46,null,83.88,ft,NAD27,null,null,NAD83,Langham Ck at Addicks Res,"Langham Ck at Addicks Res Outflow nr Addicks, TX","Langham Ck at Addicks Res Outflow nr Addicks, TX",US/Central,Unknown County or County N/A,TX
+SWF,ARPT2-WLNEW-46.Stage.Inst.15Minutes.0.Decodes-Raw,T,ARPT2-WLNEW-46,null,null,ft,NGVD29,null,null,null,Langham Ck at Addicks Res,"Langham Ck at Addicks Res Outflow nr Addicks, TX","Langham Ck at Addicks Res Outflow nr Addicks, TX",US/Central,Unknown County or County N/A,TX
 SWF,BIPT2.Flow.Ave.15Minutes.15Minutes.USGS-Rev,T,BIPT2,stream,null,m,null,30.1788225,-94.1887943,NAD83,BIPT2,null,null,US/Central,Unknown County or County N/A,TX
 SWF,BIPT2.Flow.Ave.15Minutes.15Minutes.USGS-Rev,T,BIPT2,stream,null,m,NGVD29,30.1788225,-94.1887943,NAD83,BIPT2,"Pine Island Bayou abv BI Pump Plant, Beaumont, TX",null,US/Central,Unknown County or County N/A,TX
 SWF,BIPT2.Flow.Ave.15Minutes.15Minutes.USGS-Rev,T,BIPT2,stream,null,ft,null,30.1788225,-94.1887943,NAD83,BIPT2,null,null,US/Central,Unknown County or County N/A,TX
@@ -1539,10 +1539,10 @@ SWF,GPVT2.Precip-INC.Total.1Hour.1Hour.MetV-ProjectEstimate,T,GPVT2,lake level+r
 SWF,GPVT2.Precip-INC.Total.1Hour.1Hour.MetV-ProjectEstimate,T,GPVT2,lake level+rain,0.0,ft,null,32.9725,-97.056111,NAD27,Grapevine Lake,"8054500 - Grapevine Lk nr Grapevine, TX","8054500 - Grapevine Lk nr Grapevine, TX",US/Central,Unknown County or County N/A,TX
 SWF,GPVT2.Precip-INC.Total.1Hour.1Hour.MetV-ProjectEstimate,T,GPVT2,lake level+rain,0.0,m,null,32.9725,-97.056111,NAD27,Grapevine Lake,"8054500 - Grapevine Lk nr Grapevine, TX","8054500 - Grapevine Lk nr Grapevine, TX",US/Central,Unknown County or County N/A,TX
 SWF,GPVT2.Precip-INC.Total.1Hour.1Hour.MetV-ProjectEstimate,T,GPVT2,lake level+rain,0.0,m,NGVD29,32.9725,-97.056111,null,Grapevine Lake,Grapevine Lake,"8054500 - Grapevine Lk nr Grapevine, TX",US/Central,Tarrant,TX
-SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,m,null,0,0,null,HGLO2,null,null,CST6CDT,Unknown County or County N/A,OK
-SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,ft,null,0,0,null,HGLO2,null,null,CST6CDT,Unknown County or County N/A,OK
-SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,ft,NGVD29,0,0,null,HGLO2,null,null,null,Unknown County or County N/A,OK
-SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,m,NGVD29,0,0,null,HGLO2,null,null,null,Unknown County or County N/A,OK
+SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,m,null,null,null,null,HGLO2,null,null,CST6CDT,Unknown County or County N/A,OK
+SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,ft,null,null,null,null,HGLO2,null,null,CST6CDT,Unknown County or County N/A,OK
+SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,ft,NGVD29,null,null,null,HGLO2,null,null,null,Unknown County or County N/A,OK
+SWF,HGLO2.Area.Inst.1Hour.0.Decodes-Rev,T,HGLO2,rain,null,m,NGVD29,null,null,null,HGLO2,null,null,null,Unknown County or County N/A,OK
 SWF,HORT2.Temp-DryBulb.Inst.1Hour.0.LCRA-OBS,T,HORT2,lake level+rain+LCRA,0.0,m,NGVD29,31.832778,-99.560556,null,Hords Creek Lake,Hords Creek Lake,"08141000 - Hords Ck Lk nr Valera, TX",US/Central,Coleman,TX
 SWF,HORT2.Temp-DryBulb.Inst.1Hour.0.LCRA-OBS,T,HORT2,lake level+rain+LCRA,0.0,ft,null,31.832778,-99.560556,WGS106,Hords Creek Lake,"08141000 - Hords Ck Lk nr Valera, TX","08141000 - Hords Ck Lk nr Valera, TX",US/Central,Unknown County or County N/A,TX
 SWF,HORT2.Temp-DryBulb.Inst.1Hour.0.LCRA-OBS,T,HORT2,lake level+rain+LCRA,0.0,ft,NGVD29,31.832778,-99.560556,null,Hords Creek Lake,Hords Creek Lake,"08141000 - Hords Ck Lk nr Valera, TX",US/Central,Coleman,TX
