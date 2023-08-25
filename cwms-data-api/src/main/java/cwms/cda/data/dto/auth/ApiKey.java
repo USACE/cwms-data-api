@@ -3,13 +3,18 @@ package cwms.cda.data.dto.auth;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.formatters.json.adapters.ZonedDateTimeJsonDeserializer;
+import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 
@@ -21,15 +26,19 @@ public class ApiKey {
     private String keyName;
     
     private String apiKey;
+
+    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = TimeSeries.ZONED_DATE_TIME_FORMAT)
     @Schema(
         accessMode = AccessMode.READ_ONLY,
-        description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + TimeSeries.ZONED_DATE_TIME_FORMAT + "')"
+        description = "The instant this Key was created, in ISO-8601 format with offset and timezone ('" + TimeSeries.ZONED_DATE_TIME_FORMAT + "')"
     )
     private ZonedDateTime created;
+
+    @JsonDeserialize(using = ZonedDateTimeJsonDeserializer.class)
     @JsonFormat(shape = Shape.STRING, pattern = TimeSeries.ZONED_DATE_TIME_FORMAT)
     @Schema(
-        description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + TimeSeries.ZONED_DATE_TIME_FORMAT + "')"
+        description = "When this key expires, in ISO-8601 format with offset and timezone ('" + TimeSeries.ZONED_DATE_TIME_FORMAT + "')"
     )
     private ZonedDateTime expires;
 
