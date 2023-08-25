@@ -17,6 +17,8 @@ import java.sql.SQLType;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -29,6 +31,7 @@ import org.jooq.impl.SQLDataType;
  */
 public class TsRandomSampler {
 
+    private static Logger logger = Logger.getLogger(TsRandomSampler.class.getName());
     private static CSVFormat TS_SAMPLE_FORMAT = CSVFormat.Builder
                                                         .create(CSVFormat.DEFAULT)
                                                         .setNullString("null")
@@ -86,6 +89,7 @@ public class TsRandomSampler {
     }
 
     public static class TsSample {
+        String line;
         String officeId;
         String cwmsTsId;
         String location;
@@ -105,7 +109,8 @@ public class TsRandomSampler {
         String stateInitial;                          
 
         public TsSample(CSVRecord csv) {
-            String tmp = null;    
+            String tmp = null;
+            line = csv.toString();
             officeId = csv.get("DB_OFFICE_ID");
             cwmsTsId = csv.get("CWMS_TS_ID");
             location = csv.get("LOCATION_ID");
@@ -135,6 +140,7 @@ public class TsRandomSampler {
         }
 
 
+        public String getLine() { return line; }
         public String getOfficeId() { return officeId; }
         public String getCwmsTsId() { return cwmsTsId; }
         public String getLocation() { return location; }
@@ -166,7 +172,7 @@ public class TsRandomSampler {
     }
 
     public static void save_to_db(List<TsSample> samples, Connection c)  {        
-        
+        String lastSample = null;
         try(
             PreparedStatement createLocation = c.prepareStatement(
                                                     IOUtils.toString(
@@ -183,6 +189,7 @@ public class TsRandomSampler {
         ) {
 
             for (TsSample sample: samples) {
+                lastSample = sample.getLine();
                 createLocation.setString(1, sample.getLocation());
                 createLocation.setString(2, sample.getLocationType());
                 if( sample.getElevation() == null ){
@@ -227,7 +234,7 @@ public class TsRandomSampler {
 
             
         } catch(SQLException e) {
-            throw new RuntimeException("failed to save timeseries and location base data",e);
+            logger.log(Level.WARNING,"failed to save timeseries and location base data at element " + lastSample,e);
         } catch(IOException e) {
             throw new RuntimeException("Unable to load creation query",e);
         }

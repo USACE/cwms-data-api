@@ -109,28 +109,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return getTimeseries(page, pageSize, names, office, units, begin, end);
     }
 
-    public ZonedDateTime getZonedDateTime(String begin, ZoneId fallbackZone,
-                                          ZonedDateTime beginFallback) {
-        // May need to revisit the date time formats.
-        // ISO_DATE_TIME format is like: 2021-10-05T15:26:23.658-07:00[America/Los_Angeles]
-        // Swagger doc claims we expect:           2021-06-10T13:00:00-0700[PST8PDT]
-        // The getTimeSeries that calls a stored procedure and returns a string may be what expects
-        // the format given as an example in the swagger doc.
-
-        if (begin == null) {
-            begin = beginFallback.toLocalDateTime().toString();
-        }
-        // Parse the date time in the best format it can find. Timezone is optional, but use it
-        // if it's found.
-        TemporalAccessor beginParsed = DateTimeFormatter.ISO_DATE_TIME.parseBest(begin,
-                ZonedDateTime::from,
-                LocalDateTime::from);
-        if (beginParsed instanceof ZonedDateTime) {
-            return ZonedDateTime.from(beginParsed);
-        }
-        return LocalDateTime.from(beginParsed).atZone(fallbackZone);
-    }
-
     @SuppressWarnings("deprecated")
     protected TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
