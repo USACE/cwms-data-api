@@ -23,6 +23,7 @@ public class MultipleAccessManagerProvider implements AccessManagerProvider {
     public CdaAccessManager create() {        
         ArrayList<CdaAccessManager> managers = new ArrayList<>();
         managers.add(new GuestAccessManager());
+        
         String managersString = System.getProperty(
                                     PROVIDERS_LIST_KEY,
                                     System.getProperty(
@@ -35,9 +36,11 @@ public class MultipleAccessManagerProvider implements AccessManagerProvider {
             managersString = System.getenv(PROVIDERS_LIST_KEY_OLD);
         }
         if (managersString == null) {
-            log.info("No additional access managers provided. Defaulting to readonly.");
+            log.info("No additional access managers provided. Defaulting to Cwms and Key access.");
             log.info(() -> "Set environment property '" + PROVIDERS_LIST_KEY
-                         + "' to comma seperated list of desired Managers if this is incorrect.");
+                         + "' to comma separated list of desired Managers or blank if this is incorrect.");
+            managers.add(new CwmsAccessManager()); // always enable Key and Cwms Access
+            managers.add(new KeyAccessManager());
         } else {
             AccessManagers am = new AccessManagers();
             for(String provider: managersString.split(",")) {
