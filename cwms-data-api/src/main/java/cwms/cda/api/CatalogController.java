@@ -5,6 +5,11 @@ import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LIKE;
+import static cwms.cda.api.Controllers.LOCATIONS;
+import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE2;
+import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE2;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGESIZE2;
@@ -16,6 +21,7 @@ import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMESERIESCATEGORYLIKE2;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE2;
 import static cwms.cda.api.Controllers.UNITSYSTEM2;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
 import static cwms.cda.api.Controllers.queryParamAsClass;
@@ -49,6 +55,7 @@ public class CatalogController implements CrudHandler {
 
     private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
     private static final String TAG = "Catalog-Beta";
+
 
     private final MetricRegistry metrics;
 
@@ -132,23 +139,23 @@ public class CatalogController implements CrudHandler {
                             description = "Posix regular expression matching against the "
                                     + "timeseries group id"
                     ),
-                    @OpenApiParam(name = "timeseriesGroupLike",
+                    @OpenApiParam(name = TIMESERIES_GROUP_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use timeseries-group-like."
                     ),
-                    @OpenApiParam(name = "location-category-like",
+                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
                             description = "Posix regular expression matching against the location"
                                     + " category id"
                     ),
-                    @OpenApiParam(name = "locationCategoryLike",
+                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use location-category-like."
                     ),
-                    @OpenApiParam(name = "location-group-like",
+                    @OpenApiParam(name = LOCATION_GROUP_LIKE,
                             description = "Posix regular expression matching against the location"
                                     + " group id"
                     ),
-                    @OpenApiParam(name = "locationGroupLike",
+                    @OpenApiParam(name = LOCATION_GROUP_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use location-group-like."
                     )
@@ -198,16 +205,16 @@ public class CatalogController implements CrudHandler {
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
-            String tsCategoryLike = queryParamAsClass(ctx, new String[]{"timeseries-category-like", TIMESERIESCATEGORYLIKE2},
+            String tsCategoryLike = queryParamAsClass(ctx, new String[]{TIMESERIES_CATEGORY_LIKE, TIMESERIESCATEGORYLIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String tsGroupLike = queryParamAsClass(ctx, new String[]{"timeseries-group-like", "timeseriesGroupLike"},
+            String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE, TIMESERIES_GROUP_LIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locCategoryLike = queryParamAsClass(ctx, new String[]{"location-category-like", "locationCategoryLike"},
+            String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE, LOCATION_CATEGORY_LIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locGroupLike = queryParamAsClass(ctx, new String[]{"location-group-like", "locationGroupLike"},
+            String locGroupLike = queryParamAsClass(ctx, new String[]{LOCATION_GROUP_LIKE, LOCATION_GROUP_LIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
             String acceptHeader = ctx.header(ACCEPT);
@@ -217,7 +224,7 @@ public class CatalogController implements CrudHandler {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
                         locGroupLike, tsCategoryLike, tsGroupLike);
-            } else if ("locations".equalsIgnoreCase(valDataSet)) {
+            } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
                 LocationsDao dao = new LocationsDaoImpl(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like,
                         locCategoryLike, locGroupLike);

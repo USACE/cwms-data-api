@@ -63,6 +63,12 @@ public final class Controllers {
     public static final String UNITSYSTEM2 = "unitSystem"; // deprecated
     public static final String TIMESERIES_CATEGORY_LIKE = "timeseries-category-like";
     public static final String TIMESERIESCATEGORYLIKE2 = "timeseriesCategoryLike"; // deprecated
+    public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
+    public static final String LOCATION_GROUP_LIKE = "location-group-like";
+    public static final String TIMESERIES_GROUP_LIKE2 = "timeseriesGroupLike"; // deprecated
+    public static final String LOCATION_CATEGORY_LIKE2 = "locationCategoryLike"; // deprecated
+    public static final String LOCATION_GROUP_LIKE2 = "locationGroupLike"; // deprecated
+
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
@@ -127,6 +133,7 @@ public final class Controllers {
     public static final String POOL_ID = "pool-id";
     public static final String PROJECT_ID = "project-id";
     public static final String NOT_SUPPORTED_YET = "Not supported yet.";
+
     static final String SPECIFIED_LEVEL_ID = "specified-level-id";
 
     static {
