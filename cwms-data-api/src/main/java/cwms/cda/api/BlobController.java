@@ -93,9 +93,7 @@ public class BlobController implements CrudHandler {
                                     + defaultPageSize + "."
                     ),
                     @OpenApiParam(name = LIKE,
-                            type = String.class,
-                            description = "Posix regular expression describing the blob id's you "
-                                    + "want"
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> describing the blob id's you want"
                     )
             },
             responses = {@OpenApiResponse(status = "200",

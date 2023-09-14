@@ -125,10 +125,10 @@ public class CatalogController implements CrudHandler {
                                     + "want to isolate data to."
                     ),
                     @OpenApiParam(name = LIKE,
-                            description = "Posix regular expression matching against the id"
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
                     ),
                     @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
-                            description = "Posix regular expression matching against the "
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries category id"
                     ),
                     @OpenApiParam(name = TIMESERIESCATEGORYLIKE2,
@@ -136,7 +136,7 @@ public class CatalogController implements CrudHandler {
                             description = "Deprecated. Use timeseries-category-like."
                     ),
                     @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
-                            description = "Posix regular expression matching against the "
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries group id"
                     ),
                     @OpenApiParam(name = TIMESERIES_GROUP_LIKE2,
@@ -144,7 +144,7 @@ public class CatalogController implements CrudHandler {
                             description = "Deprecated. Use timeseries-group-like."
                     ),
                     @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
-                            description = "Posix regular expression matching against the location"
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " category id"
                     ),
                     @OpenApiParam(name = LOCATION_CATEGORY_LIKE2,
@@ -152,7 +152,7 @@ public class CatalogController implements CrudHandler {
                             description = "Deprecated. Use location-category-like."
                     ),
                     @OpenApiParam(name = LOCATION_GROUP_LIKE,
-                            description = "Posix regular expression matching against the location"
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " group id"
                     ),
                     @OpenApiParam(name = LOCATION_GROUP_LIKE2,

@@ -86,7 +86,7 @@ public class LocationGroupController implements CrudHandler {
                     + " the assigned locations in the returned location groups. (default: false)"),
             @OpenApiParam(name = INCLUDE_ASSIGNED2, deprecated = true, type = Boolean.class,
                     description = "Deprecated. Use include-assigned instead."),
-            @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix regular expression "
+            @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                     + "matching against the location category id"), },
             responses = {
                     @OpenApiResponse(status = "200",
