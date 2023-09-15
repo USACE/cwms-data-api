@@ -39,6 +39,9 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.SNAP_BACKWARD;
 import static cwms.cda.api.Controllers.SNAP_FORWARD;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
 import static cwms.cda.api.Controllers.TIMESERIES_ID_REGEX;
 import static cwms.cda.api.Controllers.UPDATE;
@@ -124,13 +127,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     description = "How many entries per page returned. "
                             + "Default " + DEFAULT_PAGE_SIZE + "."
             )},
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = TimeSeriesIdentifierDescriptors.class)
                     }),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the time series identifier descriptors were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")}, description = "Returns CWMS timeseries identifier descriptor"
             + "Data", tags = {TAG})
     @Override
@@ -176,15 +179,15 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = TimeSeriesIdentifierDescriptor.class, type =
                                             Formats.JSONV2)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries identifier descriptor was not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor", tags = {TAG})
     @Override

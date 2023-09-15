@@ -12,6 +12,7 @@ import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 
 import com.codahale.metrics.Histogram;
@@ -96,7 +97,7 @@ public class BlobController implements CrudHandler {
                             description = "Posix <a href=\"regexp.html\">regular expression</a> describing the blob id's you want"
                     )
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of blobs.",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),

@@ -21,6 +21,9 @@ import static cwms.cda.api.Controllers.POOL_ID;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TOP_MASK;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -97,11 +100,11 @@ public class PoolController implements CrudHandler {
                     type = Integer.class,
                     description = "Deprecated. Use '" + PAGE_SIZE + "' instead."),},
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Pools.class)}),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of"
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of"
                             + " inputs provided the pools were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not"
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not"
                             + " implemented")},
             description = "Returns Pools Data",
             tags = {"Pools"})
@@ -174,14 +177,14 @@ public class PoolController implements CrudHandler {
 
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = Pool.class, type = Formats.JSONV2)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the Location Category was not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override

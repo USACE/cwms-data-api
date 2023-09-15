@@ -48,7 +48,7 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     },
-                    status = "201"
+                    status = STATUS_201
         ),
         description = "Create a new API Key for user. The randomly generated key is returned to the caller. A provided key will be ignored.",
         tags = {"Authorization"}
@@ -84,7 +84,7 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     },
-                    status = "201"
+                    status = STATUS_201
         ),
         description = "Delete API key for a user",
         tags = {"Authorization"}
@@ -104,7 +104,7 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey[].class, type = Formats.JSON)
                     },
-                    status = "201"
+                    status = STATUS_201
         ),
         description = "View all keys for the current user",
         tags = {"Authorization"}
@@ -129,7 +129,7 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     },
-                    status = "201"
+                    status = STATUS_201
         ),
         description = "View specific key",
         tags = {"Authorization"}

@@ -104,7 +104,7 @@ public class RatingSpecController implements CrudHandler {
                     ),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
                             }
@@ -155,7 +155,7 @@ public class RatingSpecController implements CrudHandler {
                             + "information from all offices shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = RatingSpec.class, type = Formats.JSONV2),
                             }

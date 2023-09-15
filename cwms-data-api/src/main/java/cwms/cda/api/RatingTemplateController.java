@@ -102,7 +102,7 @@ public class RatingTemplateController implements CrudHandler {
                     ),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = RatingTemplates.class, type =
                                             Formats.JSONV2),
@@ -159,7 +159,7 @@ public class RatingTemplateController implements CrudHandler {
                             + "information from all offices shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(isArray = true, from = RatingTemplate.class,
                                             type = Formats.JSONV2),
