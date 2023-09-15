@@ -70,6 +70,37 @@ class TimeseriesCatalogEntryTest
 
 	}
 
+	@Test
+	void test_json_serialization_no_cursor(){
+		CatalogEntry entry = buildEntry();
+		Catalog cat = new Catalog(null, 1, 10,
+				new ArrayList<CatalogEntry>(){{add(entry);}});
+
+		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+		String json = Formats.format(contentType, cat);
+
+		assertNotNull(json);
+		assertFalse(json.isEmpty());
+
+		assertFalse(json.contains("cursor"));
+	}
+
+	@Test
+	void test_xml_serialization_no_cursor() {
+		CatalogEntry entry = buildEntry();
+		Catalog cat = new Catalog(null, 1, 10,
+				new ArrayList<CatalogEntry>() {{
+					add(entry);
+				}});
+
+		ContentType contentType = Formats.parseHeader(Formats.XML);
+		String xml = Formats.format(contentType, cat);
+
+		assertNotNull(xml);
+		assertFalse(xml.isEmpty());
+		assertFalse(xml.contains("cursor"));
+	}
+
 
 	private TimeseriesCatalogEntry buildEntry()
 	{

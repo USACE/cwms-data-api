@@ -468,32 +468,33 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     @NotNull
     private static LocationCatalogEntry buildCatalogEntry(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 loc,
                                                           Set<LocationAlias> aliases) {
-        return new LocationCatalogEntry(
-            loc.getDB_OFFICE_ID(),
-            loc.getLOCATION_ID(),
-            loc.getNEAREST_CITY(),
-            loc.getPUBLIC_NAME(),
-            loc.getLONG_NAME(),
-            loc.getDESCRIPTION(),
-            loc.getLOCATION_KIND_ID(),
-            loc.getLOCATION_TYPE(),
-            loc.getTIME_ZONE_NAME(),
-            loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null,
-            loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null,
-            loc.getPUBLISHED_LATITUDE() != null ? loc.getPUBLISHED_LATITUDE().doubleValue() : null,
-            loc.getPUBLISHED_LONGITUDE() != null ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null,
-            loc.getHORIZONTAL_DATUM(),
-            loc.getELEVATION(),
-            loc.getUNIT_ID(),
-            loc.getVERTICAL_DATUM(),
-            loc.getNATION_ID(),
-            loc.getSTATE_INITIAL(),
-            loc.getCOUNTY_NAME(),
-            loc.getBOUNDING_OFFICE_ID(),
-            loc.getMAP_LABEL(),
-            loc.getACTIVE_FLAG().equalsIgnoreCase("T"),
-            aliases
-        );
+
+        return new LocationCatalogEntry.Builder()
+                .officeId(loc.getDB_OFFICE_ID())
+                .name(loc.getLOCATION_ID())
+                .nearestCity(loc.getNEAREST_CITY())
+                .publicName(loc.getPUBLIC_NAME())
+                .longName(loc.getLONG_NAME())
+                .description(loc.getDESCRIPTION())
+                .kind(loc.getLOCATION_KIND_ID())
+                .type(loc.getLOCATION_TYPE())
+                .timeZone(loc.getTIME_ZONE_NAME())
+                .latitude(loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null)
+                .longitude(loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null)
+                .publishedLatitude(loc.getPUBLISHED_LATITUDE() != null ? loc.getPUBLISHED_LATITUDE().doubleValue() : null)
+                .publishedLongitude(loc.getPUBLISHED_LONGITUDE() != null ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null)
+                .horizontalDatum(loc.getHORIZONTAL_DATUM())
+                .elevation(loc.getELEVATION())
+                .unit(loc.getUNIT_ID())
+                .verticalDatum(loc.getVERTICAL_DATUM())
+                .nation(loc.getNATION_ID())
+                .state(loc.getSTATE_INITIAL())
+                .county(loc.getCOUNTY_NAME())
+                .boundingOffice(loc.getBOUNDING_OFFICE_ID())
+                .mapLabel(loc.getMAP_LABEL())
+                .active(loc.getACTIVE_FLAG().equalsIgnoreCase("T"))
+                .aliases(aliases)
+                .build();
     }
 
 }
