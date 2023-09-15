@@ -2,6 +2,7 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
+import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LIKE;
@@ -48,6 +49,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
 
@@ -82,7 +84,7 @@ public class CatalogController implements CrudHandler {
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
-    public void delete(Context ctx, String entry) {
+    public void delete(Context ctx, @NotNull String entry) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
@@ -158,7 +160,9 @@ public class CatalogController implements CrudHandler {
                     @OpenApiParam(name = LOCATION_GROUP_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use location-group-like."
-                    )
+                    ),
+                    @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the location bounding office. Currently only supported for LOCATIONS."),
             },
             pathParams = {
                     @OpenApiParam(name = "dataset",
@@ -177,7 +181,7 @@ public class CatalogController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, String dataSet) {
+    public void getOne(Context ctx, @NotNull String dataSet) {
 
         try (
                 final Timer.Context timeContext = markAndTime(GET_ONE);
@@ -217,17 +221,26 @@ public class CatalogController implements CrudHandler {
             String locGroupLike = queryParamAsClass(ctx, new String[]{LOCATION_GROUP_LIKE, LOCATION_GROUP_LIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
+            String boundingOfficeLike = queryParamAsClass(ctx, new String[]{BOUNDING_OFFICE_LIKE},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
+
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
+
+                if (boundingOfficeLike != null) {
+                    throw new IllegalArgumentException(BOUNDING_OFFICE_LIKE
+                            + " is not supported for " + TIMESERIES + " catalog");
+                }
+
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
                         locGroupLike, tsCategoryLike, tsGroupLike);
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
                 LocationsDao dao = new LocationsDaoImpl(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like,
-                        locCategoryLike, locGroupLike);
+                        locCategoryLike, locGroupLike, boundingOfficeLike);
             }
             if (cat != null) {
                 String data = Formats.format(contentType, cat);
@@ -237,7 +250,7 @@ public class CatalogController implements CrudHandler {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                         + "information");
 
-                logger.info(() -> re.toString() + "with url:" + ctx.fullUrl());
+                logger.info(() -> re + "with url:" + ctx.fullUrl());
                 ctx.json(re).status(HttpCode.NOT_FOUND);
             }
         }
@@ -245,7 +258,7 @@ public class CatalogController implements CrudHandler {
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
-    public void update(Context ctx, String entry) {
+    public void update(Context ctx, @NotNull String entry) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
