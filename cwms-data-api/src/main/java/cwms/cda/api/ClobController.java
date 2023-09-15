@@ -123,7 +123,7 @@ public class ClobController implements CrudHandler {
                             description = "Deprecated, use 'include-values' instead."
                     ),
                     @OpenApiParam(name = LIKE,
-                            description = "Posix regular expression matching against the id"
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
                     )
             },
             responses = {@OpenApiResponse(status = "200",
