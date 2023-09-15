@@ -1,8 +1,13 @@
 package cwms.cda.data.dto.catalog;
 
-import javax.xml.bind.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
-@XmlRootElement(name="entry")
+@XmlRootElement(name = "entry")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlSeeAlso({TimeseriesCatalogEntry.class,LocationCatalogEntry.class})
 public abstract class CatalogEntry {
@@ -10,15 +15,18 @@ public abstract class CatalogEntry {
     private String office;
 
     @SuppressWarnings("unused") // for JAXB rendering
-    private CatalogEntry(){}
+    private CatalogEntry(){
 
-    public CatalogEntry(String office){
+    }
+
+    protected CatalogEntry(String office) {
         this.office = office;
     }
 
-    public String getOffice(){
+    public String getOffice() {
         return office;
     }
 
+    @JsonIgnore
     public abstract String getCursor();
 }
