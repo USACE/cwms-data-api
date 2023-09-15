@@ -162,7 +162,8 @@ public class CatalogController implements CrudHandler {
                             description = "Deprecated. Use location-group-like."
                     ),
                     @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                            + "matching against the location bounding office. Currently only supported for LOCATIONS."),
+                            + "matching against the location bounding office. Currently only supported for LOCATIONS. "
+                            + "When this field is used Locations with no bounding office set will not be present in results."),
             },
             pathParams = {
                     @OpenApiParam(name = "dataset",
