@@ -80,7 +80,7 @@ public class LocationCategoryController implements CrudHandler {
                     + "location category(ies) whose data is to be included in the response. If "
                     + "this field is not specified, matching location category information from "
                     + "all offices shall be returned."),},
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
                             @OpenApiContent(isArray = true, from = LocationCategory.class, type =
                                     Formats.JSON)
@@ -137,7 +137,7 @@ public class LocationCategoryController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = LocationCategory.class, type =
                                             Formats.JSON)

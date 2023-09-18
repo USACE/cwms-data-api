@@ -89,7 +89,7 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                     + "matching against the location category id"), },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(isArray = true, from = LocationGroup.class,
                                             type = Formats.JSON),
@@ -151,7 +151,7 @@ public class LocationGroupController implements CrudHandler {
                             + " the category containing the location group whose data is to be "
                             + "included in the response."),
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
                             @OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
                             @OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV),

@@ -18,6 +18,7 @@ import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMESERIESCATEGORYLIKE2;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
@@ -171,7 +172,7 @@ public class CatalogController implements CrudHandler {
                             description = "A list of what data? E.g. Timeseries, Locations, "
                                     + "Ratings, etc")
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of elements the data set you've selected.",
                     content = {
                             @OpenApiContent(from = Catalog.class, type = Formats.JSONV2),

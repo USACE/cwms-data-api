@@ -88,7 +88,8 @@ public class RatingSpecController implements CrudHandler {
                             + "the Rating Specs whose data is to be included in the response. If "
                             + "this field is not specified, matching rating information from all "
                             + "offices shall be returned."),
-                    @OpenApiParam(name = "rating-id-mask", description = "RegExp that specifies "
+                    @OpenApiParam(name = RATING_ID_MASK, description = "Posix "
+                            + "<a href=\"regexp.html\">regular expression</a>  that specifies "
                             + "the rating IDs to be included in the response. If this field is "
                             + "not specified, all Rating Specs shall be returned."),
                     @OpenApiParam(name = PAGE,
@@ -103,7 +104,7 @@ public class RatingSpecController implements CrudHandler {
                     ),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
                             }
@@ -117,7 +118,7 @@ public class RatingSpecController implements CrudHandler {
                 ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         String office = ctx.queryParam(OFFICE);
-        String ratingIdMask = ctx.queryParam("rating-id-mask");
+        String ratingIdMask = ctx.queryParam(RATING_ID_MASK);
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -154,7 +155,7 @@ public class RatingSpecController implements CrudHandler {
                             + "information from all offices shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = RatingSpec.class, type = Formats.JSONV2),
                             }

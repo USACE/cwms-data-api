@@ -134,7 +134,13 @@ public final class Controllers {
     public static final String PROJECT_ID = "project-id";
     public static final String NOT_SUPPORTED_YET = "Not supported yet.";
     public static final String BOUNDING_OFFICE_LIKE = "bounding-office-like";
-    static final String SPECIFIED_LEVEL_ID = "specified-level-id";
+    public static final String SPECIFIED_LEVEL_ID = "specified-level-id";
+    public static final String HAS_DATA = "has-data";
+    public static final String STATUS_200 = "200";
+    public static final String STATUS_201 = "201";
+    public static final String STATUS_404 = "404";
+    public static final String STATUS_501 = "501";
+    public static final String STATUS_400 = "400";
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);

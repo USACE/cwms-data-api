@@ -3,6 +3,9 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -35,6 +38,7 @@ public class BasinController implements CrudHandler {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
     public static final String TAG = "Basins-Beta";
 
+
     private final MetricRegistry metrics;
 
 
@@ -61,13 +65,13 @@ public class BasinController implements CrudHandler {
                             + "their parameters."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
                             }),
-                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a basin."),
-                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
             description = "Returns CWMS Basin Data",
@@ -112,13 +116,13 @@ public class BasinController implements CrudHandler {
                             + "their parameters."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
                             }),
-                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a basin."),
-                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
             description = "Returns CWMS Basin Data",

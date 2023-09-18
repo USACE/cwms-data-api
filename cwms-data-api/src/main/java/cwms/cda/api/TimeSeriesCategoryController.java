@@ -80,13 +80,13 @@ public class TimeSeriesCategoryController implements CrudHandler {
                     + "timeseries category(ies) whose data is to be included in the response. If "
                     + "this field is not specified, matching timeseries category information from"
                     + " all offices shall be returned."),},
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {@OpenApiContent(isArray = true, from = TimeSeriesCategory.class,
                             type = Formats.JSON)
                     }),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the categories were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")}, description = "Returns CWMS timeseries category "
             + "Data", tags = {TAG})
     @Override
@@ -122,15 +122,15 @@ public class TimeSeriesCategoryController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = TimeSeriesCategory.class, type =
                                             Formats.JSON)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries category was not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries category", tags = {TAG})
     @Override

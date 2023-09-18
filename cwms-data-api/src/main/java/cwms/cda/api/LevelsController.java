@@ -243,7 +243,7 @@ public class LevelsController implements CrudHandler {
                     @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
                             + "many entries per page returned. Default " + defaultPageSize + ".")},
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSON),
                             @OpenApiContent(type = ""),
                             @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
@@ -360,7 +360,7 @@ public class LevelsController implements CrudHandler {
                             + "the values retrieved.")
             },
             responses = {
-                    @OpenApiResponse(status = "200",content = {
+                    @OpenApiResponse(status = STATUS_200,content = {
                             @OpenApiContent(from = LocationLevel.class, type = Formats.JSONV2),
                     })
             },
@@ -649,7 +649,7 @@ public class LevelsController implements CrudHandler {
                             + "the values retrieved."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             description = "A CWMS Time Series representation of the specified location level.",
                             content = {
                                     @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -659,10 +659,10 @@ public class LevelsController implements CrudHandler {
                                     @OpenApiContent(from = TimeSeries.class, type = ""),
                             }
                     ),
-                    @OpenApiResponse(status = "400", description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a timeseries."),
-                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
             description = "Retrieves requested Location Level",

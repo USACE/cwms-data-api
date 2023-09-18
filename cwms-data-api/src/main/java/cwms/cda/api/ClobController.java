@@ -18,6 +18,7 @@ import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 
@@ -126,7 +127,7 @@ public class ClobController implements CrudHandler {
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
                     )
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of clobs.",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Clobs.class),
@@ -183,7 +184,7 @@ public class ClobController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "Returns requested clob.",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Clob.class),
