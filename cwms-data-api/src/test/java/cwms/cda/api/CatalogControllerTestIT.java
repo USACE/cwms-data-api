@@ -13,6 +13,8 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 
 import static io.restassured.RestAssured.*;
+
+import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
 
 import static org.hamcrest.Matchers.*;
@@ -63,13 +65,15 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     public void test_all_office_pagination_works() {
         
         assertTimeout(Duration.ofMinutes(5), () -> {
-            final int pageSize = 500;
+            final int pageSize = 200;
             Response initialResponse = 
                 given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
                     .queryParam("page-size",pageSize)
-                    .get("/catalog/TIMESERIES")
+                .get("/catalog/TIMESERIES")
                 .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
                     .assertThat()
                     .statusCode(is(200))
                     .body("$",hasKey("total"))
