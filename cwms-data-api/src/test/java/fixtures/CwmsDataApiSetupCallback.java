@@ -86,7 +86,6 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = "/cwms-data";
-            RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
             // we only use doubles
             RestAssured.config()
                        .jsonConfig(
