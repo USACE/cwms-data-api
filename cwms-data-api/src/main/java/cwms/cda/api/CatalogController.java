@@ -163,8 +163,8 @@ public class CatalogController implements CrudHandler {
                             description = "Deprecated. Use location-group-like."
                     ),
                     @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                            + "matching against the location bounding office. Currently only supported for LOCATIONS. "
-                            + "When this field is used Locations with no bounding office set will not be present in results."),
+                            + "matching against the location bounding office. "
+                            + "When this field is used items with no bounding office set will not be present in results."),
             },
             pathParams = {
                     @OpenApiParam(name = "dataset",
@@ -230,15 +230,9 @@ public class CatalogController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
-
-                if (boundingOfficeLike != null) {
-                    throw new IllegalArgumentException(BOUNDING_OFFICE_LIKE
-                            + " is not supported for " + TIMESERIES + " catalog");
-                }
-
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
-                        locGroupLike, tsCategoryLike, tsGroupLike);
+                        locGroupLike, tsCategoryLike, tsGroupLike, boundingOfficeLike);
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
                 LocationsDao dao = new LocationsDaoImpl(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like,
