@@ -411,7 +411,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 return buildCatalogEntry(row, aliases);
             })
             .collect(toList());
-        return new Catalog(cursorLocation, total, pageSize, entries);
+        return new Catalog(cursorLocation, total, pageSize, entries, office,
+                 idLike,  categoryLike,  groupLike,
+                 null, null, boundingOfficeLike);
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation) {
