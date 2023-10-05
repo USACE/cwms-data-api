@@ -270,7 +270,7 @@ public class DataApiTestIT {
             } catch (SQLException ex) {
                 throw new RuntimeException("Unable to create location",ex);
             }
-        }, db.getPdUser());
+        }, "cwms_20");
     }
 
     /**
@@ -317,7 +317,7 @@ public class DataApiTestIT {
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
-        }, db.getPdUser());
+        }, "cwms_20");
     }
 
     /**
