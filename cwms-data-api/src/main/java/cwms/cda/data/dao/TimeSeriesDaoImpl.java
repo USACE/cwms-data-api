@@ -209,19 +209,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
-        SQL retrieveSelectData = DSL.sql("table(" +
-                CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
-                        tsId,
-                        unit,
-                        CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
-                        CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
-                        DSL.inline("UTC", String.class),
-                        // All times are sent as UTC to the database, regardless of requested
-                        // timezone.
-                        null, null, null, null, null, null, null,
-                        officeId)
-                + ") retrieveTs"
-        );
+        SQL retrieveSelectData = DSL.sql(
+            "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+           +"'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
+            tsId,unit, beginTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(),
+            null,null,null,null,null,null,null,officeId);
+        
 
         Field<String> tzName;
         if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
@@ -242,17 +235,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             @SuppressWarnings("deprecated")
             SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = DSL.select(
                     dateTimeCol, valueCol, qualityCol
-            ).from(DSL.sql("table( "
-                    + CWMS_TS_PACKAGE.call_RETRIEVE_TS_OUT_TAB(
-                    valid.field("tsid", String.class),
-                    valid.field("units", String.class),
-                    CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTime.toInstant().toEpochMilli())),
-                    CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())),
-                    DSL.inline("UTC", String.class),
-                    // All times are sent as UTC to the database, regardless of requested timezone.
-                    null, null, null, null, null, null, null,
-                    valid.field("office_id", String.class))
-                    + ")"
+            ).from(DSL.sql(
+                "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+               +"'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
+                valid.field("tsid", String.class),
+                valid.field("units", String.class),
+                beginTime.toInstant().toEpochMilli(),
+                endTime.toInstant().toEpochMilli(),
+                null, null, null, null, null, null, null,
+                valid.field("office_id", String.class)
             ));
 
             totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
