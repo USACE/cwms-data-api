@@ -83,9 +83,14 @@ services:
     volumes:
       - ./compose_files/pki/certs:/conf/
     environment:
+      - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/CWMS
       - CDA_JDBC_USERNAME=q0webtest
       - CDA_JDBC_PASSWORD=simplecwmspasswD1
+      - CDA_POOL_INIT_SIZE=5
+      - CDA_POOL_MAX_ACTIVE=10
+      - CDA_POOL_MAX_IDLE=5
+      - CDA_POOL_MIN_IDLE=2
       - cwms.dataapi.access.provider=MultipleAccessManager
       - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
       - cwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration
