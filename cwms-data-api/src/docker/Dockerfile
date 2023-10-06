@@ -11,3 +11,13 @@ COPY setenv.sh /usr/local/tomcat/bin
 COPY libs/ /usr/local/tomcat/lib
 
 EXPOSE 7000
+
+#  env variables  (set in docker-compose.yml for development)
+# ENV CDA_JDBC_DRIVER=
+# ENV CDA_JDBC_URL=
+# ENV CDA_JDBC_USER=
+# ENV CDA_JDBC_PASSWORD=
+# ENV CDA_POOL_INIT_SIZE=
+# ENV CDA_POOL_MAX_ACTIVE=
+# ENV CDA_POOL_MAX_IDLE=
+# ENV CDA_POOL_MIN_IDLE=
