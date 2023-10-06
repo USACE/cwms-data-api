@@ -12,12 +12,11 @@ COPY libs/ /usr/local/tomcat/lib
 
 EXPOSE 7000
 
-#  env variables  (set in docker-compose.yml for development)
-# ENV CDA_JDBC_DRIVER=
-# ENV CDA_JDBC_URL=
-# ENV CDA_JDBC_USER=
-# ENV CDA_JDBC_PASSWORD=
-# ENV CDA_POOL_INIT_SIZE=
-# ENV CDA_POOL_MAX_ACTIVE=
-# ENV CDA_POOL_MAX_IDLE=
-# ENV CDA_POOL_MIN_IDLE=
+ENV CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
+ENV CDA_JDBC_URL=jdbc:oracle:thin:@db/CWMS
+ENV CDA_JDBC_USERNAME=q0webtest
+ENV CDA_JDBC_PASSWORD=simplecwmspasswD1
+ENV CDA_POOL_INIT_SIZE=5
+ENV CDA_POOL_MAX_ACTIVE=10
+ENV CDA_POOL_MAX_IDLE=5
+ENV CDA_POOL_MIN_IDLE=2
