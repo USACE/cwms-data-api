@@ -29,3 +29,18 @@ The following users and permissions are available:
 | l2hectest   | l2hectest   | SPK    | General User   |
 | l1hectest   | l1hectest   | SPL    | No permissions |
 | m5hectest   | m5hectest   | SWT    | General User   |
+
+
+## Inventory of services
+
+
+|service|host-port|container-port|description|test urls|
+|----|--|---|--|--|
+|[traefik](./compose_files/traefik/traefik.yml)|8444|8443|entry point - web traffic|https://cwms-data.localhost:8444/cwms-data/ https://auth.localhost:8444/auth/realms/cwms https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration|
+|db||1521|oracle database|
+|[api](./cwms-data-api/src/docker/Dockerfile)||7000|tomcat CWMS Data API |
+|[auth](./compose_files/keycloak/Dockerfile)||8080|authentication-token service (keycloak)|
+|db_install|||connects to db and installs CWMS schema|
+|db_webuser_ permissions|||connects to db and sets permissions |
+
+
