@@ -154,6 +154,7 @@ public class ApiServlet extends HttpServlet {
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
     public static final String VERSION = "3.0";
+    public static final String APPLICATION_TITLE = "CWMS Data API";
     public static final String PROVIDER_KEY_OLD = "radar.access.provider";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
@@ -421,7 +422,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void getOpenApiOptions(JavalinConfig config) {
-        Info applicationInfo = new Info().title("CWMS Data API").version(VERSION)
+        Info applicationInfo = new Info().title(APPLICATION_TITLE).version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
 
         String provider = getAccessManagerName();
