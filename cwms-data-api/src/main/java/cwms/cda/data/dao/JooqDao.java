@@ -95,7 +95,6 @@ public abstract class JooqDao<T> extends Dao<T> {
             logger.atSevere().withStackTrace(StackSize.FULL)
                   .log("System still using old context method.");
             Connection database = ctx.attribute(ApiServlet.DATABASE);
-            setClientInfo(ctx, database);
             retval = getDslContext(database, officeId);
         }
 
