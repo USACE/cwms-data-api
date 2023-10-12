@@ -151,7 +151,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         return cdaInstance.getPort();
     }
 
-    public static CwmsDatabaseContainer getDatabaseLink() {
+    public static CwmsDatabaseContainer<?> getDatabaseLink() {
         return cwmsDb;
     }
 

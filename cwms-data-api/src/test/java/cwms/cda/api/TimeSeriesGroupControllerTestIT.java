@@ -79,20 +79,23 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_group_SPK(){
+    void test_group_SPK() throws Exception {
 
-        Response response = given()
+        Response response =
+            given()
                 .accept("application/json")
                 .queryParam("office", "SPK")
+            .when()
                 .get("/timeseries/group");
 
-        response.then().assertThat()
-        .statusCode(is(200))
-        .body(
-                "$.size()", is(1),
+        response
+            .then()
+                .assertThat()
+                .statusCode(is(200))
+                .body("$.size()", is(1),
                 "[0].time-series-category.office-id", is("SPK"),
-                "[0].office-id", is("SPK")
-        );
+                    "[0].office-id", is("SPK")
+            );
 
         JsonPath jsonPathEval = response.jsonPath();
         List<String> ids = jsonPathEval.get("id");
@@ -102,15 +105,19 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_group_CWMS(){
+    void test_group_CWMS() throws Exception {
 
-        Response response = given()
+        Response response = 
+            given()
                 .accept("application/json")
                 .queryParam("office", CWMS_OFFICE)
+            .when()
                 .get("/timeseries/group");
 
         JsonPath jsonPathEval = response.jsonPath();
-        response.then().assertThat()
+        response
+            .then()
+                .assertThat()
                 .statusCode(is(200))
                 .body("$.size()",greaterThan(0))
         ;
@@ -162,11 +169,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/timeseries/category")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
@@ -176,11 +183,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/timeseries/group")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Read
@@ -189,11 +196,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/timeseries/group/" + group.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_OK))
@@ -214,11 +221,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/timeseries/group/"+ group.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
@@ -228,11 +235,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/timeseries/group/" + group.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -242,11 +249,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/timeseries/group/" + group.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
@@ -256,11 +263,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -301,11 +308,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/timeseries/category/")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
@@ -315,11 +322,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/timeseries/group")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
@@ -333,11 +340,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .header(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .header(OFFICE, group.getOfficeId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/timeseries/group/"+ group.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Read
@@ -346,11 +353,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/timeseries/group/" + newGroup.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_OK))
@@ -371,11 +378,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .queryParam(CATEGORY_ID, newGroup.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, newGroup.getOfficeId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/timeseries/group/"+ newGroup.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
@@ -385,11 +392,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/timeseries/group/" + newGroup.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -399,11 +406,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -432,11 +439,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
             .queryParam(OFFICE, officeId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/timeseries/category/")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
@@ -446,11 +453,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/timeseries/group")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         assignedTimeSeries.clear();
@@ -467,11 +474,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_LOCS, "true")
             .queryParam(OFFICE, group.getOfficeId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/timeseries/group/"+ group.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Read
@@ -480,11 +487,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/timeseries/group/" + group.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_OK))
@@ -505,11 +512,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/timeseries/group/"+ group.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
@@ -519,11 +526,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/timeseries/group/" + group.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -533,11 +540,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));

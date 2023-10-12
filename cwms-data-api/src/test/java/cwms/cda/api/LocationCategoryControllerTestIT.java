@@ -30,97 +30,86 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import cwms.cda.data.dto.LocationCategory;
-import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 
 @Tag("integration")
 @Disabled // tests failing for reasons other than office id switcharound.
 class LocationCategoryControllerTestIT extends DataApiTestIT {
-	@Test
-	void test_create_read_delete() throws Exception {
-		String officeId = "SPK";
-		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-		LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(), "IntegrationTesting");
-		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
-		String xml = Formats.format(contentType, cat);
-		registerCategory(cat);;
-		//Create Category
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.body(xml)
-			.header("Authorization", user.toHeaderValue())
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("/location/category")
-			.then()
-			.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED));
-		//Read
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.queryParam(OFFICE, officeId)
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/location/category/" + cat.getId())
-			.then()
-			.assertThat()
-			.log().body().log().everything(true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.body("office-id", equalTo(cat.getOfficeId()))
-			.body("id", equalTo(cat.getId()))
-			.body("description", equalTo(cat.getDescription()));
-		//Delete
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
-			.queryParam(CASCADE_DELETE, "true")
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("/location/category/" + cat.getId())
-			.then()
-			.assertThat()
-			.log().body().log().everything(true)
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    @Test
+    void test_create_read_delete() throws Exception {
+        String officeId = "SPK";
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(), "IntegrationTesting");
+        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        String xml = Formats.format(contentType, cat);
+        registerCategory(cat);
+        //Create Category
+        given()
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(xml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Read
+        given()
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/category/" + cat.getId())
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(cat.getOfficeId()))
+            .body("id", equalTo(cat.getId()))
+            .body("description", equalTo(cat.getDescription()));
+        //Delete
+        given()
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/category/" + cat.getId())
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
-		//Read Empty
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.queryParam("office", officeId)
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/location/category/" + cat.getId())
-			.then()
-			.assertThat()
-			.log().body().log().everything(true)
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
-	}
-
-
+        //Read Empty
+        given()
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/category/" + cat.getId())
+        .then()
+            .assertThat()
+            .log().body().log().everything(true)
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
 }

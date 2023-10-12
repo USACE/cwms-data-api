@@ -30,22 +30,18 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingTemplateContainer;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
-class RatingTemplateControllerTestIT extends DataApiTestIT
-{
+class RatingTemplateControllerTestIT extends DataApiTestIT {
 
 	@Test
 	void test_create_read_delete() throws Exception {
@@ -64,11 +60,11 @@ class RatingTemplateControllerTestIT extends DataApiTestIT
 			.body(templateXml)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.post("/ratings/template")
-			.then()
+		.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
 		//Read
@@ -77,11 +73,11 @@ class RatingTemplateControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSONV2)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam("office", officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.get("/ratings/template/" + ratingTemplateContainer.templateId)
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_OK))
@@ -97,11 +93,11 @@ class RatingTemplateControllerTestIT extends DataApiTestIT
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
 			.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.delete("/ratings/template/" + ratingTemplateContainer.templateId)
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -112,15 +108,13 @@ class RatingTemplateControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSONV2)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam("office", officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.get("/ratings/template/" + ratingTemplateContainer.templateId)
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 	}
-
-
 }

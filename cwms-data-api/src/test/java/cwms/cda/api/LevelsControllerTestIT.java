@@ -33,7 +33,6 @@ import fixtures.TestAccounts;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.Connection;
@@ -50,7 +49,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
 public class LevelsControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";

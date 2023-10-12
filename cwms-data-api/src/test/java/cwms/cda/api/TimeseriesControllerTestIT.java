@@ -27,7 +27,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        
+    
         String tsData = IOUtils.toString(
             this.getClass()
                 .getResourceAsStream("/cwms/cda/api/lrl/pseudo_reg_1hour.json"),"UTF-8"
@@ -58,7 +58,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().body().log().everything(true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-            
+    
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -81,7 +81,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values[1][1]",closeTo(600.0,0.0001))
                 .body("values[0][1]",closeTo(500.0,0.0001))
-                
+    
                 ;
         } catch( SQLException ex) {
             throw new RuntimeException("Unable to create location for TS",ex);
@@ -91,13 +91,13 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     public void test_lrl_1day() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        
+    
         String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset.json"),"UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
-        
+    
         try {
             createLocation(location,true,officeId);
 
@@ -119,7 +119,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().body().log().everything(true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-            
+    
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -140,10 +140,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().body().log().everything(true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]",closeTo(35,0.0001))
-                
-                
-                ;
+                .body("values[0][1]",closeTo(35,0.0001));
         } catch( SQLException ex) {
             throw new RuntimeException("Unable to create location for TS",ex);
         }
