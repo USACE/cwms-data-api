@@ -289,15 +289,15 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                     }
                 });
 
-        List<LocationGroup> retval = new ArrayList<>();
+        List<LocationGroup> retVal = new ArrayList<>();
         for (final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet()) {
-            retval.add(new LocationGroup(entry.getKey(), entry.getValue()));
+            retVal.add(new LocationGroup(entry.getKey(), entry.getValue()));
         }
-        return retval;
+        return retVal;
     }
 
     private List<LocationGroup> getGroupsWithoutAssignedLocations(String officeId, String locCategoryLike) {
-        List<LocationGroup> retval;
+        List<LocationGroup> retVal;
         AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         TableField[] columns = new TableField[]{table.CAT_DB_OFFICE_ID, table.LOC_CATEGORY_ID,
@@ -315,13 +315,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             condition = condition.and(caseInsensitiveLikeRegex(table.LOC_CATEGORY_ID, locCategoryLike));
         }
 
-        retval = step.where(condition)
+        retVal = step.where(condition)
                 .orderBy(table.LOC_CATEGORY_ID, table.LOC_GROUP_ATTRIBUTE, table.LOC_GROUP_ID)
                 .fetchSize(1000)
                 .fetch()
                 .map(m -> buildLocationGroup(m, buildLocationCategory(m)));
 
-        return retval;
+        return retVal;
     }
 
     public Feature buildFeatureFromAvLocRecordWithLocGroup(Record avLocRecord) {

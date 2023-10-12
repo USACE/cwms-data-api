@@ -2,7 +2,6 @@ package cwms.cda.security;
 
 import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import io.javalin.core.security.RouteRole;
@@ -13,14 +12,9 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
-import java.util.HashMap;
-import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class KeyAccessManager extends CdaAccessManager {
-    private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
     private static final String AUTH_HEADER = "Authorization";
 
     private AuthDao authDao;

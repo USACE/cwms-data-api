@@ -56,6 +56,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
+import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.types.DayToSecond;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
@@ -149,13 +150,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private static List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> getSeasonalValues(LocationLevel locationLevel) {
-        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> retval = Collections.emptyList();
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> retVal = Collections.emptyList();
 
         if (locationLevel != null) {
-            retval = buildSeasonalValues(locationLevel.getSeasonalValues());
+            retVal = buildSeasonalValues(locationLevel.getSeasonalValues());
         }
 
-        return retval;
+        return retVal;
     }
 
     @Nullable
@@ -236,7 +237,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
 
         } catch (DataAccessException ex) {
-            //logger.log(Level.SEVERE, "Failed to delete Location Level", ex);
             throw new RuntimeException("Failed to delete Location Level ", ex);
         }
     }
@@ -315,7 +315,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Integer total = null;
         int offset = 0;
 
-
         if (cursor != null && !cursor.isEmpty()) {
             String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
 
@@ -368,7 +367,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .offset(offset)
                 .limit(pageSize);
 
-        //logger.log(Level.INFO, "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+        logger.fine(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
 
         List<LocationLevel> levels = query
                 .stream()
@@ -634,7 +633,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private ZTSV_ARRAY buildTsvArray(Instant start, Instant end, Interval interval, ZoneId locationTimeZone) {
-        ZTSV_ARRAY retval = new ZTSV_ARRAY();
+        ZTSV_ARRAY retVal = new ZTSV_ARRAY();
         Interval iterateInterval = interval;
         if (interval.isIrregular()) {
             iterateInterval = IntervalFactory.findAny(isRegular().and(equalsName(interval.getInterval())))
@@ -644,12 +643,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
             Instant time = start;
             while (time.isBefore(end) || time.equals(end)) {
-                retval.add(new ZTSV_TYPE(Timestamp.from(time), null, null));
+                retVal.add(new ZTSV_TYPE(Timestamp.from(time), null, null));
                 time = iterateInterval.getNextIntervalTime(time, locationTimeZone);
             }
         } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
             throw new IllegalArgumentException("Error building time series intervals for interval id: " + interval, ex);
         }
-        return retval;
+        return retVal;
     }
 }

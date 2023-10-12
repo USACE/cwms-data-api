@@ -1,7 +1,8 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "cSpell.words": [
-        "clobs"
+        "clobs",
+        "codahale"
     ],
     "java.compile.nullAnalysis.mode": "automatic",
     "liveServer.settings.multiRootWorkspaceName": "cwms-data-api",

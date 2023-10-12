@@ -4,6 +4,7 @@ import org.jooq.ExecuteContext;
 import org.jooq.impl.DefaultExecuteListener;
 
 class ExceptionWrappingListener extends DefaultExecuteListener {
+
     @Override
     public void exception(ExecuteContext ctx) {
         super.exception(ctx);
@@ -12,6 +13,4 @@ class ExceptionWrappingListener extends DefaultExecuteListener {
 
         ctx.exception(exception);
     }
-
-
 }

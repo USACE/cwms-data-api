@@ -33,67 +33,62 @@ import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 
-public final class LocationCategoryDao extends JooqDao<LocationCategory>
-{
-	public LocationCategoryDao(DSLContext dsl)
-	{
-		super(dsl);
-	}
+public final class LocationCategoryDao extends JooqDao<LocationCategory> {
+    public LocationCategoryDao(DSLContext dsl) {
+        super(dsl);
+    }
 
-	public List<LocationCategory> getLocationCategories()
-	{
-		AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+    public List<LocationCategory> getLocationCategories() {
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		return dsl.selectDistinct(
-				table.CAT_DB_OFFICE_ID,
-				table.LOC_CATEGORY_ID,
-				table.LOC_CATEGORY_DESC)
-				.from(table)
-				.fetch().into(LocationCategory.class);
-	}
+        return dsl.selectDistinct(
+                table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID,
+                table.LOC_CATEGORY_DESC)
+                .from(table)
+                .fetch().into(LocationCategory.class);
+    }
 
-	public List<LocationCategory> getLocationCategories(String officeId)
-	{
-		if(officeId == null || officeId.isEmpty()){
-			return getLocationCategories();
-		}
-		AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+    public List<LocationCategory> getLocationCategories(String officeId) {
+        if (officeId == null || officeId.isEmpty()) {
+            return getLocationCategories();
+        }
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
-				table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
-				.from(table)
-				.where(table.CAT_DB_OFFICE_ID.eq(officeId))
-				.fetch().into(LocationCategory.class);
-	}
+        return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
+                .from(table)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId))
+                .fetch().into(LocationCategory.class);
+    }
 
-	public Optional<LocationCategory> getLocationCategory(String officeId, String categoryId)
-	{
-		AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+    public Optional<LocationCategory> getLocationCategory(String officeId, String categoryId) {
+        AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-		 Record3<String, String, String> fetchOne = dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
-				table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
-				.from(table)
-				.where(table.CAT_DB_OFFICE_ID.eq(officeId)
-						.and(table.LOC_CATEGORY_ID.eq(categoryId)))
-				.fetchOne();
-		return fetchOne != null ?
-			Optional.of(fetchOne.into(LocationCategory.class)) : Optional.empty();
-	}
+         Record3<String, String, String> fetchOne = dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
+                table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
+                .from(table)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId)
+                        .and(table.LOC_CATEGORY_ID.eq(categoryId)))
+                .fetchOne();
+        return fetchOne != null ?
+            Optional.of(fetchOne.into(LocationCategory.class)) : Optional.empty();
+    }
 
-	public void delete(String categoryId, boolean cascade, String office) {
-		String cascadeParam = OracleTypeMap.formatBool(cascade);
-		setOffice(office);
-		CWMS_LOC_PACKAGE.call_DELETE_LOC_CAT(dsl.configuration(), categoryId, cascadeParam, office);
-	}
+    public void delete(String categoryId, boolean cascade, String office) {
+        String cascadeParam = OracleTypeMap.formatBool(cascade);
+        setOffice(office);
+        CWMS_LOC_PACKAGE.call_DELETE_LOC_CAT(dsl.configuration(), categoryId, cascadeParam, office);
+    }
 
-	public void create(LocationCategory category) {
-		setOffice(category);
-		CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dsl.configuration(), category.getId(), category.getDescription(),
-			category.getOfficeId());
-	}
+    public void create(LocationCategory category) {
+        setOffice(category);
+        CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dsl.configuration(), category.getId(), category.getDescription(),
+            category.getOfficeId());
+    }
 
-	public void update(String oldCategoryId, String newCategoryId, String office) {
-		setOffice(office);
-		CWMS_LOC_PACKAGE.call_RENAME_LOC_CATEGORY(dsl.configuration(), oldCategoryId, newCategoryId, null, "T", office);
-	}
+    public void update(String oldCategoryId, String newCategoryId, String office) {
+        setOffice(office);
+        CWMS_LOC_PACKAGE.call_RENAME_LOC_CATEGORY(dsl.configuration(), oldCategoryId, newCategoryId, null, "T", office);
+    }
 }

@@ -305,9 +305,6 @@ public class ApiServlet extends HttpServlet {
         
     }
 
-
-
-
     protected void configureRoutes() {
 
         RouteRole[] requiredRoles = {new Role(CWMS_USERS_ROLE)};
@@ -426,7 +423,6 @@ public class ApiServlet extends HttpServlet {
                 .description("CWMS REST API for Data Retrieval");
 
         String provider = getAccessManagerName();
-        logger.atInfo().log("Using access provider:" + provider);
 
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
@@ -435,7 +431,6 @@ public class ApiServlet extends HttpServlet {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
-
                 req.addList(manager.getName());
                 secReqs.add(req);
             }
@@ -471,7 +466,6 @@ public class ApiServlet extends HttpServlet {
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
         /* clear the lock icon from the GET handlers to reduce user confusion */
-        Operation op = path.getGet();
         logger.atFinest().log("setting security constraints for " + key);
         setSecurity(path.getGet(), new ArrayList<>());
         setSecurity(path.getDelete(),secReqs);

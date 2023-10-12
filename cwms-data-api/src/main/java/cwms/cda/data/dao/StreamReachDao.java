@@ -48,5 +48,4 @@ public class StreamReachDao extends JooqDao<StreamReach> {
 
         return retVal;
     }
-
 }
