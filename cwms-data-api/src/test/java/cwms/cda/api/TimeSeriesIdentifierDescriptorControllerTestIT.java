@@ -11,7 +11,6 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -54,19 +53,19 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
 
             given()
 //                    .log().everything(true)
-                    .accept(Formats.JSONV2)
-                    .contentType(Formats.JSONV2)
-                    .body(serializedTs)
-                    .header("Authorization", user.toHeaderValue())
-                    .queryParam("office",OFFICE)
-                    .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .post("/timeseries/identifier-descriptor/")
-                    .then()
-                    .log().body().log().everything(true)
-                    .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_CREATED));
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().body().log().everything(true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
         }
 
         // Check that we have the right number of ts like this in the catalog.
@@ -88,19 +87,19 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
 
             given()
 //                    .log().everything(true)
-                    .accept(Formats.JSONV2)
-                    .contentType(Formats.JSONV2)
-                    .queryParam("office", OFFICE)
-                    .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
-                    .header("Authorization", user.toHeaderValue())
-                    .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .delete("/timeseries/identifier-descriptor/" + tsId)
-                    .then()
-                    .log().body().log().everything(true)
-                    .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK));
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+                .header("Authorization", user.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/identifier-descriptor/" + tsId)
+            .then()
+                .log().body().log().everything(true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
         }
 
 

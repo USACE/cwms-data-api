@@ -7,10 +7,8 @@ import java.time.Duration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import cwms.cda.formatters.Formats;
-import fixtures.CwmsDataApiSetupCallback;
 
 import static io.restassured.RestAssured.*;
 
@@ -20,7 +18,6 @@ import io.restassured.response.Response;
 import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
 public class CatalogControllerTestIT extends DataApiTestIT {
 
     @BeforeAll
@@ -40,7 +37,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam("office", "SPK")
             .queryParam("like",".*-cda$")
-        .get("/catalog/TIMESERIES")
+        .when()
+            .get("/catalog/TIMESERIES")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -57,7 +55,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept("application/json;version=2")
             .queryParam("office", "SPK")
             .queryParam("like","alder spRINgs.*-CDA$")
-        .get("/catalog/TIMESERIES")
+        .when()
+            .get("/catalog/TIMESERIES")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -76,7 +75,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
                     .queryParam("page-size",pageSize)
-                .get("/catalog/TIMESERIES")
+                .when()
+                    .get("/catalog/TIMESERIES")
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .assertThat()
@@ -100,7 +100,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                         .log().ifValidationFails(LogDetail.ALL, true)
                         .accept(Formats.JSONV2)
                         .queryParam("page",nextPage)
-                    .get("/catalog/TIMESERIES")
+                    .when()
+                        .get("/catalog/TIMESERIES")
                     .then()
                         .log().ifValidationFails(LogDetail.ALL, true)
                         .assertThat()

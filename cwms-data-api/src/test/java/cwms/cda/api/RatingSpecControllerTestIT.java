@@ -24,7 +24,6 @@
 
 package cwms.cda.api;
 
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.path.json.JsonPath;
@@ -32,7 +31,6 @@ import io.restassured.response.Response;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.rating.RatingSpec;
@@ -49,9 +47,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
-class RatingSpecControllerTestIT extends DataApiTestIT
-{
+class RatingSpecControllerTestIT extends DataApiTestIT {
 
 	@Test
 	void test_empty_rating_spec() throws Exception {
@@ -69,43 +65,45 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 		//Create Template
 		given()
-				.accept(Formats.JSONV2)
-				.contentType(Formats.XMLV2)
-				.body(templateXml)
-				.header("Authorization", user.toHeaderValue())
-				.queryParam(OFFICE, officeId)
-				.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.post("/ratings/template")
-				.then()
-				.assertThat()
-				.statusCode(is(HttpServletResponse.SC_CREATED));
+			.accept(Formats.JSONV2)
+			.contentType(Formats.XMLV2)
+			.body(templateXml)
+			.header("Authorization", user.toHeaderValue())
+			.queryParam(OFFICE, officeId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("/ratings/template")
+		.then()
+			.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 		//Create Spec
 		given()
-				.accept(Formats.JSONV2)
-				.contentType(Formats.XMLV2)
-				.body(specXml)
-				.header("Authorization", user.toHeaderValue())
-				.queryParam(OFFICE, officeId)
-				.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.post("/ratings/spec")
-				.then()
-				.assertThat()
-				.statusCode(is(HttpServletResponse.SC_CREATED));
+			.accept(Formats.JSONV2)
+			.contentType(Formats.XMLV2)
+			.body(specXml)
+			.header("Authorization", user.toHeaderValue())
+			.queryParam(OFFICE, officeId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("/ratings/spec")
+		.then()
+			.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 
 		//Read
-		Response response = given()
+		Response response = 
+			given()
 				.accept(Formats.JSONV2)
 				.contentType(Formats.JSONV2)
 				.header("Authorization", user.toHeaderValue())
 				.queryParam("office", officeId)
-				.when()
+			.when()
 				.redirects().follow(true)
 				.redirects().max(3)
 				.get("/ratings/metadata");
+			// then follows
 		RatingSpec ratingSpec = new RatingSpec(new RatingSpec.Builder().fromRatingSpec(new hec.data.cwmsRating.RatingSpec(specContainer)));
 		JsonPath path = new JsonPath(response.asString());
 		//get values of JSON array after getting array size
@@ -115,19 +113,19 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 		assertTrue(foundMatching);
 		//Delete
 		given()
-				.accept(Formats.JSONV2)
-				.contentType(Formats.JSONV2)
-				.header("Authorization", user.toHeaderValue())
-				.queryParam(OFFICE, officeId)
-				.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
-				.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.delete("/ratings/spec/" + specContainer.specId)
-				.then()
-				.assertThat()
-				.log().body().log().everything(true)
-				.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+			.accept(Formats.JSONV2)
+			.contentType(Formats.JSONV2)
+			.header("Authorization", user.toHeaderValue())
+			.queryParam(OFFICE, officeId)
+			.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("/ratings/spec/" + specContainer.specId)
+		.then()
+			.assertThat()
+			.log().body().log().everything(true)
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 	}
 
 	@Test
@@ -151,11 +149,11 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.body(templateXml)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.post("/ratings/template")
-			.then()
+		.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
 		//Create Spec
@@ -165,11 +163,11 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.body(specXml)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.post("/ratings/spec")
-			.then()
+		.then()
 			.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
 
@@ -179,11 +177,11 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSONV2)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam("office", officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.get("/ratings/spec/" + specContainer.specId)
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_OK))
@@ -200,11 +198,11 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
 			.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.delete("/ratings/spec/" + specContainer.specId)
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -215,15 +213,13 @@ class RatingSpecControllerTestIT extends DataApiTestIT
 			.contentType(Formats.JSONV2)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam("office", officeId)
-			.when()
+		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.get("/ratings/spec/" + specContainer.specId)
-			.then()
+		.then()
 			.assertThat()
 			.log().body().log().everything(true)
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 	}
-
-
 }

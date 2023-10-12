@@ -40,17 +40,16 @@ import static org.hamcrest.Matchers.is;
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class CountyControllerTestIT extends DataApiTestIT {
 
-
     @Test
-    void test_county_catalog()  {
+    void test_county_catalog() {
         given()
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .when()
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/counties/")
-                .then()
+            .then()
                 .assertThat()
                 .log().body()
                 .log().ifError()

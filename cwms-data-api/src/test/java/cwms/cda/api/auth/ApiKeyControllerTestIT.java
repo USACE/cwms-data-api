@@ -61,22 +61,23 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     public void test_api_key_creation_no_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME);
 
-        ApiKey returnedKey = given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .spec(authSpec)
-            .contentType("application/json")
-            .body(key)
-        .when()
-            .post("/auth/keys")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.CREATED.getStatus()))
-            .body("user-id",is(key.getUserId().toUpperCase()))
-            .body("key-name",is(key.getKeyName()))
-            .body("api-key.size()",is(256))
-            .body("created",not(equalTo(null)))
-            .body("expires",is(equalTo(null)))
-            .extract().as(ApiKey.class);
+        ApiKey returnedKey =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .contentType("application/json")
+                .body(key)
+            .when()
+                .post("/auth/keys")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .body("user-id",is(key.getUserId().toUpperCase()))
+                .body("key-name",is(key.getKeyName()))
+                .body("api-key.size()",is(256))
+                .body("created",not(equalTo(null)))
+                .body("expires",is(equalTo(null)))
+                .extract().as(ApiKey.class);
         realKeys.add(returnedKey);
     }
 
@@ -92,60 +93,63 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME,null,null,ZonedDateTime.now());
         final ApiKey expiredKey = new ApiKey(key.getUserId(),EXPIRED_KEY_NAME,null,null,ZonedDateTime.now().minusMinutes(1L));
 
-        ApiKey returnedKey = given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .spec(authSpec)
-            .contentType("application/json")
-            .body(key)
-        .when()
-            .post("/auth/keys")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.CREATED.getStatus()))
-            .body("user-id",is(key.getUserId().toUpperCase()))
-            .body("key-name",is(key.getKeyName()))
-            .body("api-key.size()",is(256))            
-            .body("created",not(equalTo(null)))
-            .body("expires",not(equalTo(null)))
-            .extract().as(ApiKey.class);
+        ApiKey returnedKey =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .contentType("application/json")
+                .body(key)
+            .when()
+                .post("/auth/keys")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .body("user-id",is(key.getUserId().toUpperCase()))
+                .body("key-name",is(key.getKeyName()))
+                .body("api-key.size()",is(256))            
+                .body("created",not(equalTo(null)))
+                .body("expires",not(equalTo(null)))
+                .extract().as(ApiKey.class);
         realKeys.add(returnedKey);
 
-        returnedKey = given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .spec(authSpec)
-            .contentType("application/json")
-            .body(expiredKey)
-        .when()
-            .post("/auth/keys")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.CREATED.getStatus()))
-            .body("user-id",is(expiredKey.getUserId().toUpperCase()))
-            .body("key-name",is(expiredKey.getKeyName()))
-            .body("api-key.size()",is(256))            
-            .body("created",not(equalTo(null)))
-            .body("expires",not(equalTo(null)))
-            .extract().as(ApiKey.class);
+        returnedKey =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .contentType("application/json")
+                .body(expiredKey)
+            .when()
+                .post("/auth/keys")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .body("user-id",is(expiredKey.getUserId().toUpperCase()))
+                .body("key-name",is(expiredKey.getKeyName()))
+                .body("api-key.size()",is(256))            
+                .body("created",not(equalTo(null)))
+                .body("expires",not(equalTo(null)))
+                .extract().as(ApiKey.class);
         realKeys.add(returnedKey);
 
 
         final String bodyWithSpecificExpiresFormat = "{\"user-id\": \"" + theUser.getName() + "\",\"key-name\": \"foo\",\"api-key\": \"string\",\"expires\": \"2023-09-23T14:20:00.908Z\"}";
-        returnedKey = given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .spec(authSpec)
-            .contentType("application/json")
-            .body(bodyWithSpecificExpiresFormat)
-        .when()
-            .post("/auth/keys")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.CREATED.getStatus()))
-            .body("user-id",is(expiredKey.getUserId().toUpperCase()))
-            .body("key-name",is("foo"))
-            .body("api-key.size()",is(256))
-            .body("created",not(equalTo(null)))
-            .body("expires",not(equalTo(null)))
-            .extract().as(ApiKey.class);
+        returnedKey = 
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .spec(authSpec)
+                .contentType("application/json")
+                .body(bodyWithSpecificExpiresFormat)
+            .when()
+                .post("/auth/keys")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .body("user-id",is(expiredKey.getUserId().toUpperCase()))
+                .body("key-name",is("foo"))
+                .body("api-key.size()",is(256))
+                .body("created",not(equalTo(null)))
+                .body("expires",not(equalTo(null)))
+                .extract().as(ApiKey.class);
         realKeys.add(returnedKey);
     }
 
@@ -338,7 +342,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             ) {
                 ZonedDateTime expectedKeyExpires = expectedKey.getExpires();
                 ZonedDateTime expectedExpires = expected.getExpires();
-                if(expectedKeyExpires == null && expectedExpires == null) {
+                if (expectedKeyExpires == null && expectedExpires == null) {
                     return;
                 } else if((expectedKeyExpires != null && expectedExpires != null) 
                         && expectedExpires.isEqual(expectedKeyExpires)) {

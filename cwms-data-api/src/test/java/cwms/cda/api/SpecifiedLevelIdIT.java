@@ -34,16 +34,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
 public class SpecifiedLevelIdIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
@@ -61,11 +58,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
@@ -76,11 +73,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .body("[0].id", equalTo(specifiedLevel.getId()))
@@ -94,11 +91,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
@@ -110,11 +107,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .body("size()", is(0))
@@ -137,11 +134,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Update
@@ -151,11 +148,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.SPECIFIED_LEVEL_ID, newId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
@@ -166,11 +163,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, newId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
             .log().body().log().everything(true)
             .body("[0].id", equalTo(newId))
@@ -190,11 +187,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.SPECIFIED_LEVEL_ID, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
@@ -211,11 +208,11 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
