@@ -92,7 +92,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
-            logger.atSevere().withStackTrace(StackSize.FULL)
+            logger.atFine().withStackTrace(StackSize.FULL)
                   .log("System still using old context method.");
             Connection database = ctx.attribute(ApiServlet.DATABASE);
             retVal = getDslContext(database, officeId);
