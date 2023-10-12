@@ -14,6 +14,7 @@ import cwms.cda.data.dto.Clob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -28,15 +29,16 @@ public class ClobControllerTestIT extends DataApiTestIT {
         String clobId = "TEST";
         String urlencoded = java.net.URLEncoder.encode(clobId);
 
-    
         given()
-            .log().everything(true)
+        .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
             .get("/clobs/" + urlencoded)
-        .then().log().everything(true).assertThat()
-            .statusCode(is(404));
+        .then()
+        .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
@@ -51,7 +53,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .body(serializedClob)
@@ -62,32 +64,31 @@ public class ClobControllerTestIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .post("/clobs/")
-        .then()        
-            .log().body().log().everything(true)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        /*
+        /* There is an issue with how javalin handles / in the path that are actually part
+        of the object name (NOTE: good candidate for actually having a GUID or other "code"
+        as part of the path and the actual name as a query parameter.
+        )
+
         String urlencoded = java.net.URLEncoder.encode(clobId);
         given()
-                .accept(Formats.JSONV2)
-                .log().everything(true)
-                .queryParam(ClobController.OFFICE, SPK)
-                .when()
-                .get("/clobs/"+urlencoded)//{clobId}", clobId)
-                .then()
-                .log().body().log().everything(true)
-                .assertThat()
-                .statusCode(is(200))
-                .body("office", is(SPK))
-                .body("id", is(clobId))
-                .body("description", is(origDesc))
-                .body("value", is(origValue))
-                
-        ;
+            .accept(Formats.JSONV2)
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(ClobController.OFFICE, SPK)
+        .when()
+            .get("/clobs/"+urlencoded)//{clobId}", clobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office", is(SPK))
+            .body("id", is(clobId))
+            .body("description", is(origDesc))
+            .body("value", is(origValue));
         */
-
     }
-
-
 }

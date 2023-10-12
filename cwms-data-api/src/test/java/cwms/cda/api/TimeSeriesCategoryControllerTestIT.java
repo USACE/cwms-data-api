@@ -25,6 +25,7 @@
 package cwms.cda.api;
 
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -56,6 +57,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         String xml = Formats.format(contentType, cat);
         //Create Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(xml)
@@ -66,9 +68,11 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .post("/timeseries/category")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Read
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
@@ -78,13 +82,14 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .get("/timeseries/category/" + cat.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(cat.getOfficeId()))
             .body("id", equalTo(cat.getId()))
             .body("description", equalTo(cat.getDescription()));
         //Delete
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -96,11 +101,12 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .delete("/timeseries/category/" + cat.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
         //Read Empty
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
@@ -110,7 +116,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .get("/timeseries/category/" + cat.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 }

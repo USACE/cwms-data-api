@@ -313,7 +313,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpCode.NOT_FOUND.getStatus()));
         }
 
-        List<ApiKey> keys = 
+        List<ApiKey> keys =
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .spec(authSpec)
@@ -329,9 +329,6 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .getList(".", ApiKey.class);
         assertTrue(keys.size() < firstReturnedKeys.size(), "Keys were not deleted.");
     }
-    
-
-    // use api key, see failure
 
     private void assertContainsKey(ApiKey expectedKey, List<ApiKey> returnedSet) {
         for (ApiKey expected: returnedSet) {

@@ -26,6 +26,8 @@ package cwms.cda.api;
 
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import io.restassured.filter.log.LogDetail;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,21 +45,20 @@ public class CountyControllerTestIT extends DataApiTestIT {
     @Test
     void test_county_catalog() {
         given()
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/counties/")
-            .then()
-                .assertThat()
-                .log().body()
-                .log().ifError()
-                .log().everything(true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("[0].name", equalTo("Unknown County or County N/A"))
-                .body("[0].county-id", equalTo("000"))
-                .body("[0].state-initial", equalTo("00"));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/counties/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].name", equalTo("Unknown County or County N/A"))
+            .body("[0].county-id", equalTo("000"))
+            .body("[0].state-initial", equalTo("00"));
     }
 }

@@ -73,7 +73,6 @@ class TimeSeriesIdentifierDescriptorTest {
 
         ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
         String result = ow.writeValueAsString(tsID);
-//        System.out.println(result);
 
         TimeSeriesIdentifierDescriptor tsID2 = om.readValue(result,
                 TimeSeriesIdentifierDescriptor.class);

@@ -40,7 +40,6 @@ class TimeseriesCatalogEntryTest
 		assertThat(path.getLong("catalog.entries.entry.interval-offset"), equalTo(-2147483648L));
 		assertThat(path.getString("catalog.entries.entry.time-zone"), equalTo("US/Central"));
 		Object tmp = path.get("catalog.entries.entry.extents");
-		System.out.println(tmp.toString());
 		assertThat(path.getString("catalog.entries.entry.extents.extents.earliest-time"), equalTo("2017-07-27T05:00:00Z"));
 		assertThat(path.getString("catalog.entries.entry.extents.extents.latest-time"), equalTo("2017-11-24T22:30:00Z"));
 
