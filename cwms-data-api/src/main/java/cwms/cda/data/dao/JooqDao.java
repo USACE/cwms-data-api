@@ -83,24 +83,24 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return A DSLContext for the current request.
      */
     public static DSLContext getDslContext(Context ctx) {
-        DSLContext retval;
+        DSLContext retVal;
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if (dataSource != null) {
             DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
                     setClientInfo(ctx, connection), dataSource);
-            retval = DSL.using(wrappedDataSource, SQLDialect.ORACLE11G);
+            retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
             logger.atSevere().withStackTrace(StackSize.FULL)
                   .log("System still using old context method.");
             Connection database = ctx.attribute(ApiServlet.DATABASE);
-            retval = getDslContext(database, officeId);
+            retVal = getDslContext(database, officeId);
         }
 
-        retval.configuration().set(new DefaultExecuteListenerProvider(listener));
+        retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
 
-        return retval;
+        return retVal;
     }
 
     private static Connection setClientInfo(Context ctx, Connection connection) {
@@ -135,12 +135,12 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     static Double toDouble(BigDecimal bigDecimal) {
-        Double retval = null;
+        Double retVal = null;
         if (bigDecimal != null) {
-            retval = bigDecimal.doubleValue();
+            retVal = bigDecimal.doubleValue();
         }
 
-        return retval;
+        return retVal;
     }
 
     /**
@@ -170,20 +170,20 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return
      */
     public static RuntimeException wrapException(RuntimeException input) {
-        RuntimeException retval = input;
+        RuntimeException retVal = input;
 
         // Add specializations as needed.
         if (isNotFound(input)) {
-            retval = buildNotFound(input);
+            retVal = buildNotFound(input);
         } else if (isAlreadyExists(input)) {
-            retval = buildAlreadyExists(input);
+            retVal = buildAlreadyExists(input);
         } else if (isNullArgument(input)) {
-            retval = buildNullArgument(input);
+            retVal = buildNullArgument(input);
         } else if (isInvalidItem(input)) {
-            retval = buildInvalidItem(input);
+            retVal = buildInvalidItem(input);
         }
 
-        return retval;
+        return retVal;
     }
 
     public static Optional<SQLException> getSqlException(Throwable input) {
@@ -216,7 +216,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
 
     public static boolean isNotFound(RuntimeException input) {
-        boolean retval = false;
+        boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
@@ -226,13 +226,13 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
-            retval = matches(sqlException, codes, segments);
+            retVal = matches(sqlException, codes, segments);
         }
-        return retval;
+        return retVal;
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
-        boolean retval = false;
+        boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
@@ -241,9 +241,9 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<Integer> codes = Arrays.asList(20019);
             List<String> segments = Arrays.asList("INVALID_ITEM");
 
-            retval = matches(sqlException, codes, segments);
+            retVal = matches(sqlException, codes, segments);
         }
-        return retval;
+        return retVal;
     }
 
     @NotNull
@@ -269,7 +269,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     public static boolean isAlreadyExists(RuntimeException input) {
-        boolean retval = false;
+        boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
@@ -277,10 +277,10 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<Integer> codes = Arrays.asList(20003, 20020, 20026);
             List<String> segments = Arrays.asList("ALREADY_EXISTS", " already exists.");
 
-            retval = matches(sqlException, codes, segments);
+            retVal = matches(sqlException, codes, segments);
 
         }
-        return retval;
+        return retVal;
     }
 
 
@@ -304,7 +304,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     private static boolean isNullArgument(RuntimeException input) {
-        boolean retval = false;
+        boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
@@ -312,10 +312,10 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<Integer> codes = Arrays.asList(20244);
             List<String> segments = Arrays.asList("NULL_ARGUMENT", " already exists.");
 
-            retval = matches(sqlException, codes, segments);
+            retVal = matches(sqlException, codes, segments);
 
         }
-        return retval;
+        return retVal;
     }
 
     private static RuntimeException buildNullArgument(RuntimeException input) {

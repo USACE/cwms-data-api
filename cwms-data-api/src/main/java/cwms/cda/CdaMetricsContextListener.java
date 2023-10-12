@@ -21,5 +21,4 @@ public class CdaMetricsContextListener extends MetricsServlet.ContextListener {
     protected MetricRegistry getMetricRegistry() {
         return METRIC_REGISTRY;
     }
-
 }

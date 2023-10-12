@@ -114,18 +114,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     protected TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
                                        ZonedDateTime beginTime, ZonedDateTime endTime) {
-        TimeSeries retval = null;
+        TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
         Integer total = null;
 
         if (page != null && !page.isEmpty()) {
-            String[] parts = CwmsDTOPaginated.decodeCursor(page);
+            final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
             logger.fine("Decoded cursor");
-            for (String p : parts) {
-                logger.finest(p);
-            }
+            logger.finest(() -> {
+                StringBuilder sb = new StringBuilder();
+                for (String p: parts)
+                {
+                    sb.append(p).append("\n");
+                }
+                return sb.toString();
+            });
 
             if (parts.length > 1) {
                 cursor = parts[0];
@@ -330,10 +335,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     )
             );
 
-            retval = timeseries;
+            retVal = timeseries;
         }
 
-        return retval;
+        return retVal;
     }
 
     // datumInfo comes back like:
@@ -347,17 +352,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     //          </offset>
     //        </vertical-datum-info>
     public static VerticalDatumInfo parseVerticalDatumInfo(String body) {
-        VerticalDatumInfo retval = null;
+        VerticalDatumInfo retVal = null;
         if (body != null && !body.isEmpty()) {
             try {
                 JAXBContext jaxbContext = JAXBContext.newInstance(VerticalDatumInfo.class);
                 Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-                retval = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
+                retVal = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
             } catch (JAXBException e) {
                 logger.log(Level.WARNING, "Failed to parse:" + body, e);
             }
         }
-        return retval;
+        return retVal;
     }
 
     @Override
@@ -403,7 +408,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             if (tsGroupLike != null) {
                 condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_GROUP, tsGroupLike));
             }
-
 
             SelectJoinStep<Record1<Integer>> selectCountFrom;
             if(boundingOfficeLike == null){
@@ -709,8 +713,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Timestamp dataEntryDate;
         // TODO:
         // !!! skipping DATA_ENTRY_DATE for now.  Need to figure out how to fix mapping in jooq.
-        //	!! dataEntryDate= jrecord.getValue("data_entry_date", Timestamp.class); // maps to
-        //	oracle.sql.TIMESTAMP
+        // !! dataEntryDate= jrecord.getValue("data_entry_date", Timestamp.class); // maps to
+        // oracle.sql.TIMESTAMP
         // !!!
         dataEntryDate = null;
         // !!!
@@ -735,7 +739,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
                                                 Timestamp pastLimit, Timestamp futureLimit) {
-        List<RecentValue> retval = new ArrayList<>();
+        List<RecentValue> retVal = new ArrayList<>();
 
         if (categoryId != null && groupId != null) {
             AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
@@ -780,10 +784,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .orderBy(field(tsView.ATTRIBUTE.getName()))
                     .forEach(jrecord -> {
                         RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
-                        retval.add(recentValue);
+                        retVal.add(recentValue);
                     });
         }
-        return retval;
+        return retVal;
     }
 
     @NotNull
@@ -796,7 +800,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public void create(TimeSeries input) {
-
         create(input, TimeSeriesDao.NON_VERSIONED,
                 false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
     }

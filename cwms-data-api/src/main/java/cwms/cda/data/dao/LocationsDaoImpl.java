@@ -169,7 +169,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public void deleteLocation(String locationName, String officeId) {        
+    public void deleteLocation(String locationName, String officeId) {
         deleteLocation(locationName, officeId, false);
     }
 

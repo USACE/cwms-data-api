@@ -3,7 +3,6 @@ package cwms.cda.data.dao;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 
-import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -114,9 +113,9 @@ public class ClobDao extends JooqDao<Clob> {
 
             total = count.fetchOne().value1();
         } else {
-            String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
+            final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
 
-            logger.fine("decoded cursor: " + String.join("||", parts));
+            logger.fine(() -> "decoded cursor: " + String.join("||", parts));
             for (String p : parts) {
                 logger.finest(p);
             }
@@ -146,7 +145,7 @@ public class ClobDao extends JooqDao<Clob> {
 
         Clobs.Builder builder = new Clobs.Builder(clobCursor, pageSize, total);
 
-        logger.finest(() -> query.getSQL(ParamType.INLINED) );
+        logger.fine(() -> query.getSQL(ParamType.INLINED) );
 
         query.fetch().forEach(row -> {
             usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(v_clob);
@@ -199,7 +198,7 @@ public class ClobDao extends JooqDao<Clob> {
     public void create(Clob clob, boolean failIfExists) {
 
         String pFailIfExists;
-        if(failIfExists) {
+        if (failIfExists) {
             pFailIfExists = "T";
         } else {
             pFailIfExists = "F";
@@ -226,7 +225,7 @@ public class ClobDao extends JooqDao<Clob> {
     public void update(Clob clob, boolean ignoreNulls) {
 
         String p_ignore_nulls;
-        if(ignoreNulls){
+        if (ignoreNulls){
             p_ignore_nulls = "T";
         } else {
             p_ignore_nulls = "F";

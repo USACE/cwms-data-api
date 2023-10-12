@@ -50,11 +50,9 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-
     public TimeSeriesIdentifierDescriptorDao(DSLContext dsl) {
         super(dsl);
     }
-
 
     public void create(TimeSeriesIdentifierDescriptor tsid, boolean versionedFlag,
                        Number intervalForward, Number intervalBackward, boolean failIfExists
@@ -69,8 +67,6 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                 OracleTypeMap.formatBool(failIfExists), tsid.getOfficeId());
             logger.atFine().log("Created tsCode: %s for %s", tsCode, tsid.getTimeSeriesId());
         });
-        
-        
     }
 
     public TimeSeriesIdentifierDescriptors getTimeSeriesIdentifiers(String cursor, int pageSize, String office,
@@ -240,6 +236,4 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
             tsDao.deleteKey(connection, officeId, tsId);
         });
     }
-
-
 }

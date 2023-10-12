@@ -38,8 +38,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +47,8 @@ import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.SelectForUpdateStep;
 import org.jooq.TableField;
+import org.jooq.conf.ParamType;
+
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
@@ -57,14 +57,11 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
 public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     private static final Logger logger = Logger.getLogger(RatingTemplateDao.class.getName());
 
-    
-
     public RatingTemplateDao(DSLContext dsl) {
         super(dsl);
     }
 
     public Set<RatingTemplate> retrieveRatingTemplates(String office, String templateIdMask) {
-        Set<RatingTemplate> retval;
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         Condition condition = specView.ALIASED_ITEM.isNull();
@@ -93,7 +90,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .where(condition)
                 .fetchSize(1000);
 
-        //		logger.info(() -> query.getSQL(ParamType.INLINED));
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         return buildRatingTemplateSet(query);
     }
@@ -127,7 +124,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     }
 
     public Optional<RatingTemplate> retrieveRatingTemplate(String office, String templateId) {
-        Set<RatingTemplate> retval;
+        Set<RatingTemplate> retVal;
 
         AV_RATING_TEMPLATE tempView = AV_RATING_TEMPLATE.AV_RATING_TEMPLATE;
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
@@ -150,7 +147,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .where(condition)
                 .fetchSize(1000);
 
-        //		logger.info(() -> query.getSQL(ParamType.INLINED));
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingTemplate, List<String>> map = new LinkedHashMap<>();
 
@@ -166,7 +163,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
             });
         }
 
-        retval = map.entrySet().stream()
+        retVal = map.entrySet().stream()
                 .map(entry -> new RatingTemplate.Builder()
                         .fromRatingTemplate(entry.getKey())
                         .withRatingIds(entry.getValue())
@@ -174,11 +171,11 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // There should only be one key in the map
-        if (retval.size() > 1) {
+        if (retVal.size() > 1) {
             throw new IllegalStateException("More than one template found for templateId: " + templateId);
         }
 
-        return retval.stream().findFirst();
+        return retVal.stream().findFirst();
     }
 
 
@@ -208,7 +205,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     }
 
     private List<ParameterSpec> buildParameterSpecs(String indParameters, String ratingMethods) {
-        List<ParameterSpec> retval = new ArrayList<>();
+        List<ParameterSpec> retVal = new ArrayList<>();
         String[] indParams = indParameters.split(",");
         String[] methodsForParam = ratingMethods.split("/");
 
@@ -220,10 +217,10 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         for (int i = 0; i < indParams.length; i++) {
             String[] methods = methodsForParam[i].split(",");
-            retval.add(new ParameterSpec(indParams[i], methods[1], methods[0], methods[2]));
+            retVal.add(new ParameterSpec(indParams[i], methods[1], methods[0], methods[2]));
         }
 
-        return retval;
+        return retVal;
     }
 
 
@@ -285,15 +282,15 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .limit(pageSize)
                 .offset(firstRow);
 
-//				logger.info(() -> query.getSQL(ParamType.INLINED));
+		logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         return buildRatingTemplateSet(query);
     }
 
     public void create(String xml, boolean failIfExists) {
         final String office = RatingDao.extractOfficeFromXml(xml);
-        
-        dsl.connection(c -> 
+
+        dsl.connection(c ->
             CWMS_RATING_PACKAGE.call_STORE_TEMPLATES__3(
                 getDslContext(c,office).configuration(), xml, OracleTypeMap.formatBool(failIfExists))
         );
@@ -315,10 +312,9 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
                     + deleteMethod);
         }
-        dsl.connection(c -> 
+        dsl.connection(c ->
             CWMS_RATING_PACKAGE.call_DELETE_TEMPLATES(
                 getDslContext(c,office).configuration(), ratingTemplateId, deleteAction, office)
         );
-        
     }
 }

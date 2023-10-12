@@ -205,23 +205,23 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                         .map(ratingId -> retrieveRatings(office, ratingId, start, end));
             }
 
-            Map<RatingSpec, Set<AbstractRatingMetadata>> retval = new LinkedHashMap<>();
+            Map<RatingSpec, Set<AbstractRatingMetadata>> retVal = new LinkedHashMap<>();
 
             mapStream.forEach(map -> map.forEach((spec, ratings) -> {
-                Set<AbstractRatingMetadata> setForSpec = retval.computeIfAbsent(spec, s -> new LinkedHashSet<>());
+                Set<AbstractRatingMetadata> setForSpec = retVal.computeIfAbsent(spec, s -> new LinkedHashSet<>());
                 if(ratings != null) {
                     setForSpec.addAll(ratings);
                 }
             }));
 
-            return retval;
+            return retVal;
         }
     }
 
     @NotNull
     public Map<RatingSpec, Set<AbstractRatingMetadata>> retrieveRatings(
             String office, String templateIdMask, ZonedDateTime start, ZonedDateTime end) {
-        Map<RatingSpec,Set<AbstractRatingMetadata>> retval = new LinkedHashMap<>();
+        Map<RatingSpec,Set<AbstractRatingMetadata>> retVal = new LinkedHashMap<>();
 
         try (final Timer.Context ignored = markAndTime("retrieveRatings")) {
             RatingSpecDao ratingSpecDao = new RatingSpecDao(dsl);
@@ -231,16 +231,16 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                 RatingSet ratingSet = getRatingSet(office, templateIdMask, start, end);
                 Set<AbstractRating> ratings = getAbstractRatings(ratingSet);
 
-                retval.put(spec.get(), RatingAdapter.toDTO(ratings));
+                retVal.put(spec.get(), RatingAdapter.toDTO(ratings));
             }
-            return retval;
+            return retVal;
         }
     }
 
     @Nullable
     private RatingSet getRatingSet(String office, String templateIdMask, ZonedDateTime start,
                                    ZonedDateTime end) {
-        RatingSet retval;
+        RatingSet retVal;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             Configuration configuration = dsl.configuration();
             String effectiveTw = "F";
@@ -270,9 +270,9 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                     recurse, includePoints, office);
 
             // Sometimes the xmlText comes back as an empty xml doc like EMPTY
-            retval = getRatingSetFromXml(xmlText);
+            retVal = getRatingSetFromXml(xmlText);
         }
-        return retval;
+        return retVal;
     }
 
     @Nullable
@@ -294,20 +294,19 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
 
     @Nullable
     public RatingSet getRatingSetFromXml(String xmlText) {
-        RatingSet retval = null;
+        RatingSet retVal = null;
         try (final Timer.Context ignored = markAndTime("getRatingSetFromXml")) {
             if (xmlText != null) {
                 xmlText = xmlText.trim();
                 if (xmlText.length() >= 200 || !EMPTY.equals(xmlText)) {
                     try {
-                        retval = RatingXmlFactory.ratingSet(xmlText);
+                        retVal = RatingXmlFactory.ratingSet(xmlText);
                     } catch (RatingException e) {
                         logger.log(Level.WARNING, "Could not parse xml: " + xmlText, e);
                     }
                 }
             }
-            return retval;
+            return retVal;
         }
     }
-
 }

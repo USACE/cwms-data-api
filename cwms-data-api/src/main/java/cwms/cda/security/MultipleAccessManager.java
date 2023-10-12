@@ -35,8 +35,8 @@ public class MultipleAccessManager extends CdaAccessManager {
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         CdaAccessManager am = getManagerFor(ctx, routeRoles);
-        log.info("Principal: " + ctx.req.getUserPrincipal());
-        log.info("Session: " + ctx.req.getSession(false));
+        log.fine("Principal: " + ctx.req.getUserPrincipal());
+        log.fine("Session: " + ctx.req.getSession(false));
         if (am != null) {
             am.manage(handler, ctx, routeRoles);
         } else {

@@ -29,5 +29,4 @@ public enum StoreRule {
         return retval;
     }
 
-
 }

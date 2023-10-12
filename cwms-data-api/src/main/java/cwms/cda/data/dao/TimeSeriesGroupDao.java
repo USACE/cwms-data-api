@@ -30,6 +30,7 @@ import cwms.cda.data.dto.TimeSeriesGroup;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
+import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -102,9 +103,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             select = selectOn.where(whereCond);
         }
 
-        SelectSeekStep1<?, BigDecimal> query = select.orderBy(grpAssgn.ATTRIBUTE);
+        final SelectSeekStep1<?, BigDecimal> query = select.orderBy(grpAssgn.ATTRIBUTE);
 
-        //logger.info(() -> query.getSQL(ParamType.INLINED));
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments =
                 query.fetch(mapper);
@@ -197,7 +198,6 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 getDslContext(c,office).configuration(), categoryId, groupId, office
             )
         );
-        
     }
 
     public void create(TimeSeriesGroup group, boolean failIfExists) {
