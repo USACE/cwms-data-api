@@ -25,6 +25,8 @@
 package cwms.cda.api;
 
 import cwms.cda.formatters.Formats;
+import io.restassured.filter.log.LogDetail;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +42,7 @@ public class StateControllerTestIT extends DataApiTestIT {
     @Test
     void test_state_catalog()  {
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
         .when()
@@ -48,8 +51,7 @@ public class StateControllerTestIT extends DataApiTestIT {
             .get("/states/")
         .then()
             .assertThat()
-            .log().body().log().everything(true)
-            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].name", equalTo("Unknown State or State N/A"))
             .body("[0].state-initial", equalTo("00"));

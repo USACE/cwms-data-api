@@ -22,6 +22,5 @@ public class TestJooqMock {
         scanner.close();
         Result<Record> record = dsl.fetchFromJSON(contents);
         MockResult result = new MockResult(1,record);
-        System.out.println(result.toString());
     }
 }

@@ -30,6 +30,8 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
+
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -71,17 +73,18 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
         //Read level without unit
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
-            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())       
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/levels/{level-id}", levelId)
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id",equalTo("m3"))
             // I think we need to create a custom matcher.
@@ -90,6 +93,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("constant-value",equalTo(1233.4818f)); // 1 ac-ft to m3
 
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
@@ -101,7 +105,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .get("/levels/{level-id}", levelId)
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id",equalTo("ac-ft"))
             .body("constant-value",equalTo(1.0F));
@@ -132,8 +136,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         }
 
         //Read level timeseries
-        TimeSeries timeSeries = 
+        TimeSeries timeSeries =
             given()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
@@ -148,7 +153,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .get("/levels/" + levelId + "/timeseries/")
             .then()
                 .assertThat()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_OK))
             .extract()
                 .response()

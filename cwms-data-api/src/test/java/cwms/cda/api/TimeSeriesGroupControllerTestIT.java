@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -83,19 +84,20 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         Response response =
             given()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept("application/json")
                 .queryParam("office", "SPK")
             .when()
-                .get("/timeseries/group");
-
-        response
+                .get("/timeseries/group")
             .then()
                 .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(200))
                 .body("$.size()", is(1),
                 "[0].time-series-category.office-id", is("SPK"),
-                    "[0].office-id", is("SPK")
-            );
+                    "[0].office-id", is("SPK"))
+            .extract()
+                .response();
 
         JsonPath jsonPathEval = response.jsonPath();
         List<String> ids = jsonPathEval.get("id");
@@ -109,18 +111,19 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         Response response = 
             given()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept("application/json")
                 .queryParam("office", CWMS_OFFICE)
             .when()
-                .get("/timeseries/group");
-
-        JsonPath jsonPathEval = response.jsonPath();
-        response
+                .get("/timeseries/group")
             .then()
                 .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(200))
                 .body("$.size()",greaterThan(0))
-        ;
+            .extract()
+                .response();
+        JsonPath jsonPathEval = response.jsonPath();
 
         List<String> ids = jsonPathEval.get("id");
 
@@ -163,6 +166,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String groupXml = Formats.format(contentType, group);
         //Create Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(categoryXml)
@@ -175,9 +179,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .post("/timeseries/category")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(groupXml)
@@ -189,9 +195,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .post("/timeseries/group")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Read
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
@@ -202,7 +210,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .get("/timeseries/group/" + group.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(group.getOfficeId()))
             .body("id", equalTo(group.getId()))
@@ -214,6 +222,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(groupXml)
@@ -227,9 +236,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .patch("/timeseries/group/"+ group.getId())
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -241,11 +252,12 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .delete("/timeseries/group/" + group.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
         //Read Empty
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
@@ -255,10 +267,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .get("/timeseries/group/" + group.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
         //Delete Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -269,7 +282,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
@@ -302,6 +315,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String groupXml = Formats.format(contentType, group);
         //Create Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(categoryXml)
@@ -314,9 +328,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .post("/timeseries/category/")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(groupXml)
@@ -328,12 +344,14 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .post("/timeseries/group")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
             "sharedTsAliasId2", timeSeriesId);
         String newGroupXml = Formats.format(contentType, newGroup);
         //Rename Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(newGroupXml)
@@ -346,9 +364,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .patch("/timeseries/group/"+ group.getId())
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Read
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
@@ -359,7 +379,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .get("/timeseries/group/" + newGroup.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(newGroup.getOfficeId()))
             .body("id", equalTo(newGroup.getId()))
@@ -371,6 +391,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         newGroup.getAssignedTimeSeries().clear();
         newGroupXml = Formats.format(contentType, newGroup);
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(newGroupXml)
@@ -384,9 +405,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .patch("/timeseries/group/"+ newGroup.getId())
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -398,10 +421,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .delete("/timeseries/group/" + newGroup.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
         //Delete Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -412,7 +436,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
@@ -433,6 +457,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String groupXml = Formats.format(contentType, group);
         //Create Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(categoryXml)
@@ -445,9 +470,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .post("/timeseries/category/")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(groupXml)
@@ -459,6 +486,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .post("/timeseries/group")
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         assignedTimeSeries.clear();
         String timeSeriesId2 = "Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda";
@@ -467,6 +495,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group);
         //Add Assigned Locs
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(groupXml)
@@ -480,9 +509,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .patch("/timeseries/group/"+ group.getId())
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Read
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
@@ -493,7 +524,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .get("/timeseries/group/" + group.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(group.getOfficeId()))
             .body("id", equalTo(group.getId()))
@@ -505,6 +536,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(groupXml)
@@ -518,9 +550,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .patch("/timeseries/group/"+ group.getId())
         .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Delete Group
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -532,10 +566,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .delete("/timeseries/group/" + group.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
         //Delete Category
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -546,7 +581,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 }

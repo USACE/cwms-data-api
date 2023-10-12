@@ -12,6 +12,7 @@ import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
@@ -52,7 +53,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
             String serializedTs = om.writeValueAsString(ts);
 
             given()
-//                    .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .body(serializedTs)
@@ -63,7 +64,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
                 .redirects().max(3)
                 .post("/timeseries/identifier-descriptor/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
         }
@@ -86,7 +87,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
             // RestAssured does the right thing with the url encoding - we don't need to escape
 
             given()
-//                    .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .queryParam("office", OFFICE)
@@ -97,7 +98,7 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
                 .redirects().max(3)
                 .delete("/timeseries/identifier-descriptor/" + tsId)
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
         }
@@ -129,21 +130,22 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
 
         int pageSize = 8000;
 
-        Response response = given().accept(Formats.JSONV2)
+        Response response = 
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
                 .queryParam("page-size", pageSize)
                 .queryParam("office", officeId)
                 .queryParam("like", likePattern)
+            .when()
                 .get("/catalog/TIMESERIES")
-                .then()
+            .then()
                 .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(200))
-
                 .extract().response();
 
         JsonPath jsonPath = response.jsonPath();
-        String total = jsonPath.getString("total");
-
-        System.out.println("total: " + total);
 
         List<String> names = jsonPath.getList("entries.name", String.class);
         if(names != null && !names.isEmpty()){

@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -55,6 +56,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
         registerCategory(cat);
         //Create Category
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .body(xml)
@@ -65,9 +67,11 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
             .post("/location/category")
         .then()
             .assertThat()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Read
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
@@ -77,13 +81,14 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
             .get("/location/category/" + cat.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(cat.getOfficeId()))
             .body("id", equalTo(cat.getId()))
             .body("description", equalTo(cat.getDescription()));
         //Delete
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
@@ -95,11 +100,12 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
             .delete("/location/category/" + cat.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
         //Read Empty
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
@@ -109,7 +115,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
             .get("/location/category/" + cat.getId())
         .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 }

@@ -280,10 +280,6 @@ public class TimeSeriesDaoTest
 			assertFalse(info.getApplication().isEmpty());
 			assertFalse(info.getDescription().isEmpty());
 			assertFalse(info.getVersion().isEmpty());
-//			System.out.println(
-//					"t:" + info.getTitle() + " a:" + info.getApplication() + " d:" + info.getDescription() + " v:" + info.getVersion());
 		}
-
 	}
-
 }

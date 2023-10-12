@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
 import org.junit.jupiter.api.Tag;
@@ -26,6 +27,7 @@ public class AccessManagerTestIT extends DataApiTestIT {
     @AuthType(userTypes = {AuthType.UserType.GUEST_AND_PRIVS})
     public void can_getOne_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) {
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .spec(authSpec)
             .contentType("application/json")
             .queryParam("office", "SPK")
@@ -34,7 +36,8 @@ public class AccessManagerTestIT extends DataApiTestIT {
         .when()
             .get(  "/locations")
         .then().assertThat()
-            .statusCode(is(200));
+			.log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     @ParameterizedTest
@@ -45,14 +48,17 @@ public class AccessManagerTestIT extends DataApiTestIT {
         assertNotNull(json);
 
         given()
-                .spec(authSpec)
-                .contentType("application/json")
-                .queryParam("office", "SPK")
-                .body(json)
-                .when()
-                .post(  "/locations")
-                .then()
-                .assertThat().statusCode(is(401));
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.spec(authSpec)
+			.contentType("application/json")
+			.queryParam("office", "SPK")
+			.body(json)
+		.when()
+			.post(  "/locations")
+		.then()
+			.assertThat()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
     }
 
     @ParameterizedTest
@@ -63,6 +69,7 @@ public class AccessManagerTestIT extends DataApiTestIT {
         assertNotNull(json);
 
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .contentType("application/json")
             .queryParam("office", "SPK")
             .spec(authSpec)
@@ -70,7 +77,9 @@ public class AccessManagerTestIT extends DataApiTestIT {
         .when()
             .post(  "/locations/")
         .then()
-            .assertThat().statusCode(HttpServletResponse.SC_ACCEPTED);
+			.log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+			.statusCode(is(HttpServletResponse.SC_ACCEPTED));
     }
 
     @ParameterizedTest
@@ -81,6 +90,7 @@ public class AccessManagerTestIT extends DataApiTestIT {
         assertNotNull(json);
 
         given()
+			.log().ifValidationFails(LogDetail.ALL,true)
             .contentType("application/json")
             .queryParam("office", "SPK")
             .spec(authSpec)
@@ -88,6 +98,8 @@ public class AccessManagerTestIT extends DataApiTestIT {
         .when()
             .post(  "/locations")
         .then()
-            .assertThat().statusCode(is(403));
+			.log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+			.statusCode(is(HttpServletResponse.SC_FORBIDDEN));
     }
 }

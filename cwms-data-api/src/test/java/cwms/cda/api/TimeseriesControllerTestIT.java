@@ -10,6 +10,7 @@ import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.RestAssured;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
@@ -27,7 +28,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-    
+
         String tsData = IOUtils.toString(
             this.getClass()
                 .getResourceAsStream("/cwms/cda/api/lrl/pseudo_reg_1hour.json"),"UTF-8"
@@ -44,7 +45,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
             // inserting the time series
             given()
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
@@ -55,14 +56,14 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .post("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
     
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -76,7 +77,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .get("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values[1][1]",closeTo(600.0,0.0001))
@@ -105,7 +106,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
             // inserting the time series
             given()
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
@@ -116,14 +117,14 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .post("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
     
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -137,7 +138,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .get("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values[0][1]",closeTo(35,0.0001));
@@ -161,7 +162,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // inserting the time series
         given()
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .body(tsData)
@@ -172,13 +173,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/timeseries/")
         .then()
-            .log().body().log().everything(true)
-        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
         given()
-            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .header("Authorization",user.toHeaderValue())
             .queryParam("office",officeId)
@@ -192,14 +192,13 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .delete("/timeseries/" + ts.get("name").asText())
         .then()
-            .log().body().log().everything(true)
-        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // get it back
         given()
-            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .body(tsData)
             .header("Authorization",user.toHeaderValue())
@@ -213,8 +212,8 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/timeseries/")
         .then()
-            .log().body().log().everything(true)
-        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("values[0][1]",nullValue());
     }
