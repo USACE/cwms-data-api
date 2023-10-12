@@ -109,12 +109,12 @@ public class JsonV2 implements OutputFormatter {
 
     @NotNull
     public static ObjectMapper buildObjectMapper(ObjectMapper om) {
-        ObjectMapper retval = om.copy();
+        ObjectMapper retVal = om.copy();
 
-        retval.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
-        retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        retval.registerModule(new JavaTimeModule());
-        return retval;
+        retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
+        retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        retVal.registerModule(new JavaTimeModule());
+        return retVal;
     }
 
     @Override
