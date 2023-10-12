@@ -51,13 +51,13 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     public void beforeAll(ExtensionContext context) throws Exception {
         System.out.println("Before all called");
         System.out.println(context.getDisplayName());
-        if( cdaInstance == null ){
-            
+        if (cdaInstance == null ) {
+
             cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
                             .withVolumeName(ORACLE_VOLUME)
-                            .withSchemaImage(CWMS_DB_IMAGE);                            
+                            .withSchemaImage(CWMS_DB_IMAGE);
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);
@@ -75,9 +75,9 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
 
             //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
-            System.out.println("warFile property:" + System.getProperty("warFile"));            
-            
-            cdaInstance = new TomcatServer("build/tomcat", 
+            System.out.println("warFile property:" + System.getProperty("warFile"));
+
+            cdaInstance = new TomcatServer("build/tomcat",
                                              System.getProperty("warFile"),
                                              0,
                                              System.getProperty("warContext"));
@@ -92,11 +92,11 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             JsonConfig.jsonConfig()
                                       .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
         }
-    }    
+    }
 
     private void loadTimeSeriesData(CwmsDatabaseContainer<?> cwmsDb2) {
         String csv = this.loadResourceAsString("/cwms/cda/data/timeseries.csv");
-        StringReader reader = new StringReader(csv);        
+        StringReader reader = new StringReader(csv);
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
             cwmsDb2.connection( (c) -> {
@@ -107,8 +107,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save timeseries list to db",e);
         }
-        
-        
+
+
     }
 
     private void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
@@ -155,15 +155,15 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         return cwmsDb;
     }
 
-    private String loadResourceAsString(String fileName) {        
+    private String loadResourceAsString(String fileName) {
         try {
             return IOUtils.toString(
                         getClass().getResourceAsStream(fileName),
                         "UTF-8"
                     );
-        } catch (IOException e) {            
+        } catch (IOException e) {
            throw new RuntimeException("Unable to load resource: " + fileName,e);
-        }        
+        }
     }
 
     public static Manager getTestSessionManager() {
