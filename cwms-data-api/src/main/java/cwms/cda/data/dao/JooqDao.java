@@ -24,20 +24,14 @@
 
 package cwms.cda.data.dao;
 
-import static org.jooq.SQLDialect.ORACLE;
-
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.datasource.ConnectionPreparingDataSource;
 import io.javalin.http.Context;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.ConnectionCallable;
@@ -50,11 +44,18 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
-
-import com.google.common.flogger.FluentLogger;
-import com.google.common.flogger.StackSize;
-
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+
+import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.jooq.SQLDialect.ORACLE;
 
 public abstract class JooqDao<T> extends Dao<T> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -86,7 +87,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         if (dataSource != null) {
-            retval = DSL.using(dataSource, SQLDialect.ORACLE11G);
+            DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
+                    setClientInfo(ctx, connection), dataSource);
+            retval = DSL.using(wrappedDataSource, SQLDialect.ORACLE11G);
         } else {
             // Some tests still use this method
             logger.atSevere().withStackTrace(StackSize.FULL)
@@ -98,6 +101,20 @@ public abstract class JooqDao<T> extends Dao<T> {
         retval.configuration().set(new DefaultExecuteListenerProvider(listener));
 
         return retval;
+    }
+
+    private static Connection setClientInfo(Context ctx, Connection connection) {
+        try {
+            connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.VERSION);
+            connection.setClientInfo("OCSID.MODULE", ctx.path());
+            connection.setClientInfo("OCSID.ACTION", ctx.method());
+            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
+        } catch (SQLClientInfoException ex) {
+            logger.atWarning()
+                    .withCause(ex)
+                    .log("Unable to set client info on connection.");
+        }
+        return connection;
     }
 
     public static DSLContext getDslContext(Connection database, String officeId) {
