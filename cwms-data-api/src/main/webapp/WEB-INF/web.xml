@@ -18,29 +18,6 @@
         <url-pattern>/status/prometheus</url-pattern>
     </servlet-mapping>
 
-<!--
-    <login-config>
-        <auth-method>BASIC</auth-method>
-        <realm-name></realm-name>
-   </login-config>
-
-   <security-constraint>
-    <web-resource-collection>
-            <web-resource-name>CWMS DATA</web-resource-name>
-            <url-pattern>/*</url-pattern>
-            <http-method>POST</http-method>
-            <http-method>PUT</http-method>
-            <http-method>DELETE</http-method>
-    </web-resource-collection>
-    <auth-constraint>
-            <role-name>CWMS Users</role-name>
-    </auth-constraint>
-    </security-constraint>
-
-    <security-role>
-        <role-name>CWMS Users</role-name>
-    </security-role>
--->
     <filter>
         <filter-name>CorsFilter</filter-name>
         <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
