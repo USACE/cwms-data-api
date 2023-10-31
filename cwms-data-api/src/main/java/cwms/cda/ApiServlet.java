@@ -433,16 +433,13 @@ public class ApiServlet extends HttpServlet {
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        final ArrayList<String> securityItems = new ArrayList<>();
         am.getContainedManagers().forEach((manager)->{
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
                 req.addList(manager.getName());
                 secReqs.add(req);
-                securityItems.add(manager.getName());
             }
-
         });
 
         config.accessManager(am);
