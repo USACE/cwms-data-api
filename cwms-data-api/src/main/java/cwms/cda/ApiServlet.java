@@ -279,7 +279,13 @@ public class ApiServlet extends HttpServlet {
                         case 403: re = new CdaError("Not Authorized",true); break;
                         default: re = new CdaError("Unknown auth error.");
                     }
-                    logger.atInfo().withCause(e).log(e.getMessage());
+
+                    if (logger.atFine().isEnabled()) {
+                        logger.atFine().withCause(e).log(e.getMessage());
+                    } else {
+                        logger.atInfo().log(e.getMessage());
+                    }
+
                     ctx.status(e.getAuthFailCode()).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
@@ -292,17 +298,17 @@ public class ApiServlet extends HttpServlet {
                 })
 
                 .routes(this::configureRoutes)
-                .javalinServlet();        
+                .javalinServlet();
     }
 
     private CdaAccessManager buildAccessManager(String provider) {
-        try {            
-            AccessManagers ams = new AccessManagers();       
+        try {
+            AccessManagers ams = new AccessManagers();
             return ams.get(provider);
         } catch (ServiceNotFoundException err) {
             throw new RuntimeException("Unable to initialize access manager",err);
         }
-        
+
     }
 
     protected void configureRoutes() {
@@ -427,16 +433,18 @@ public class ApiServlet extends HttpServlet {
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
+        final ArrayList<String> securityItems = new ArrayList<>();
         am.getContainedManagers().forEach((manager)->{
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
                 req.addList(manager.getName());
                 secReqs.add(req);
+                securityItems.add(manager.getName());
             }
 
         });
-        
+
         config.accessManager(am);
 
         OpenApiOptions ops =
@@ -461,13 +469,17 @@ public class ApiServlet extends HttpServlet {
             })
             .activateAnnotationScanningFor("cwms.cda.api");
         config.registerPlugin(new OpenApiPlugin(ops));
-        
+
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
         /* clear the lock icon from the GET handlers to reduce user confusion */
         logger.atFinest().log("setting security constraints for " + key);
-        setSecurity(path.getGet(), new ArrayList<>());
+        if (key.contains("/auth/")) {
+            setSecurity(path.getGet(), secReqs);
+        } else {
+            setSecurity(path.getGet(), new ArrayList<>());
+        }
         setSecurity(path.getDelete(),secReqs);
         setSecurity(path.getPost(), secReqs);
         setSecurity(path.getPut(), secReqs);

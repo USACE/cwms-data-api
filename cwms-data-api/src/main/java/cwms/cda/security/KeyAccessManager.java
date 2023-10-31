@@ -22,7 +22,7 @@ public class KeyAccessManager extends CdaAccessManager {
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        init(ctx);        
+        init(ctx);
         String key = getApiKey(ctx);
         DataApiPrincipal p = authDao.getByApiKey(key);
         AuthDao.isAuthorized(ctx, p, routeRoles);
@@ -33,6 +33,8 @@ public class KeyAccessManager extends CdaAccessManager {
     private void init(Context ctx) {
         if (authDao == null) {
             authDao = new AuthDao(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
+        } else {
+            authDao.resetContext(JooqDao.getDslContext(ctx));
         }
     }
 
@@ -53,8 +55,10 @@ public class KeyAccessManager extends CdaAccessManager {
     @Override
     public SecurityScheme getScheme() {
         return new SecurityScheme()
+                    .scheme("apikey")
                     .type(Type.APIKEY)
                     .in(In.HEADER)
+                    .description("Key value as generated from the /auth/keys endpoint. NOTE: you MUST manually prefix your key with 'apikey ' (without the single quotes).")
                     .name("Authorization");
     }
 
@@ -69,6 +73,6 @@ public class KeyAccessManager extends CdaAccessManager {
         if (header == null) {
             return false;
         }
-        return header.trim().startsWith("apikey");
+        return header.trim().toLowerCase().startsWith("apikey");
     }
 }
