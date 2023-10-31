@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import javax.sql.DataSource;
@@ -51,7 +52,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
     // At this level we just care that the user has permissions in *any* office
-    private final String RETRIEVE_GROUPS_OF_USER;
+    private static String RETRIEVE_GROUPS_OF_USER = null;
 
     private static final String SET_API_USER_DIRECT = "begin "
         + "cwms_env.set_session_user_direct(upper(?));"
@@ -69,28 +70,31 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public static final String GET_SINGLE_KEY = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
     public static final String ONLY_OWN_KEY_MESSAGE = "You may not create API keys for any user other than your own.";
 
-    private boolean hasCwmsEnvMultiOfficeAuthFix;
-    private String connectionUser;
-    private String defaultOffice;
+    private static boolean hasCwmsEnvMultiOfficeAuthFix = false;
+    private static String connectionUser = null;
+    private static String defaultOffice = null;
 
     public AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
         if (getDbVersion() < Dao.CWMS_23_03_16) {
             throw new RuntimeException(SCHEMA_TOO_OLD);
         }
-        this.defaultOffice = defaultOffice;
-        try {
-            connectionUser = dsl.connectionResult(c->c.getMetaData().getUserName());
-            dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?)", connectionUser,defaultOffice);
-            hasCwmsEnvMultiOfficeAuthFix = true;
-        } catch (DataAccessException ex) {
-            if( ex.getLocalizedMessage()
-                  .toLowerCase()
-                  .contains("wrong number or types of arguments in call")) {
-                hasCwmsEnvMultiOfficeAuthFix = false;
+
+        if (AuthDao.defaultOffice == null) {
+            AuthDao.defaultOffice = defaultOffice;
+            try {
+                connectionUser = dsl.connectionResult(c->c.getMetaData().getUserName());
+                dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?)", connectionUser,defaultOffice);
+                hasCwmsEnvMultiOfficeAuthFix = true;
+            } catch (DataAccessException ex) {
+                if( ex.getLocalizedMessage()
+                    .toLowerCase()
+                    .contains("wrong number or types of arguments in call")) {
+                    hasCwmsEnvMultiOfficeAuthFix = false;
+                }
             }
+            AuthDao.RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",this.getClass());
         }
-        this.RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",this.getClass());
     }
 
     @Override
@@ -140,21 +144,30 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     }
 
     private String checkKey(String key) throws CwmsAuthException {
-        return dsl.connectionResult(c-> {
-            setSessionForAuthCheck(c);
-            try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY);) {
-                checkForKey.setString(1,key);
-                try (ResultSet rs = checkForKey.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getString(1);
-                    } else {
-                        throw new CwmsAuthException("No user for key");
+        try {
+            return dsl.connectionResult(c-> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY);) {
+                    checkForKey.setString(1,key);
+                    try (ResultSet rs = checkForKey.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString(1);
+                        } else {
+                            throw new CwmsAuthException("No user for key");
+                        }
                     }
+                } catch (SQLException ex) {
+                    throw new CwmsAuthException("Failed API key check",ex);
                 }
-            } catch (SQLException ex) {
-                throw new CwmsAuthException("Failed API key check",ex);
+            });
+        } catch (DataAccessException ex) {
+            Throwable t = ex.getCause();
+            if (t instanceof CwmsAuthException) {
+                throw (CwmsAuthException)t;
+            } else {
+                throw ex;
             }
-        });
+        }
     }
 
     /**
@@ -193,7 +206,9 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public static void prepareContextWithUser(Context ctx, DataApiPrincipal p) throws SQLException {
         Objects.requireNonNull(ctx, "A valid Javalin Context must be provided to this call.");
         Objects.requireNonNull(p, "A valid data api principal must be provided to this call.");
-        logger.atInfo().log("Validated Api Key for user=%s", p.getName());
+        logger.atInfo()
+              .atMostEvery(5,TimeUnit.SECONDS)
+              .log("Validated Api Key for user=%s", p.getName());
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         ConnectionPreparer userPreparer = new DirectUserPreparer(p.getName());
         ctx.attribute(DATA_API_PRINCIPAL,p);
@@ -376,5 +391,13 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public DataApiPrincipal getDataApiPrincipal(Context ctx)
     {
         return ctx.attribute(DATA_API_PRINCIPAL);
+    }
+
+    /**
+     * Used to avoid constant instancing of the AuthDao objects
+     * @param dslContext
+     */
+    public void resetContext(DSLContext dslContext) {
+        this.dsl = dslContext;
     }
 }
