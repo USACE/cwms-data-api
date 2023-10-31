@@ -105,8 +105,9 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     private static Connection setClientInfo(Context ctx, Connection connection) {
         try {
+            //logger.atInfo().log("Path : " + ctx.url());
             connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.VERSION);
-            connection.setClientInfo("OCSID.MODULE", ctx.path());
+            connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
             connection.setClientInfo("OCSID.ACTION", ctx.method());
             connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
         } catch (SQLClientInfoException ex) {
@@ -122,7 +123,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 
         return dsl;
-    }    
+    }
 
     @Override
     public List<T> getAll(Optional<String> limitToOffice) {
