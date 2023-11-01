@@ -24,17 +24,18 @@
 
 package cwms.cda.api;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+
 import cwms.cda.formatters.Formats;
 import io.restassured.filter.log.LogDetail;
-
+import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import javax.servlet.http.HttpServletResponse;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
 public class StateControllerTestIT extends DataApiTestIT {
@@ -55,5 +56,25 @@ public class StateControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].name", equalTo("Unknown State or State N/A"))
             .body("[0].state-initial", equalTo("00"));
+    }
+
+    @Test
+    void test_state_has_ETag_and_Cache_Control()  {
+        String matcher;
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .header("ETag", not(isEmptyOrNullString()))
+            .headers("Cache-Control", containsString("max-age="));
+
     }
 }
