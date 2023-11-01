@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import cwms.cda.formatters.Formats;
+import io.javalin.core.util.Header;
 import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
@@ -73,8 +74,8 @@ public class StateControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
-            .header("ETag", not(isEmptyOrNullString()))
-            .headers("Cache-Control", containsString("max-age="));
+            .header(Header.ETAG, not(isEmptyOrNullString()))
+            .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="));
 
     }
 }
