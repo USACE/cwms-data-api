@@ -78,6 +78,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
+import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
@@ -90,6 +91,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import java.util.concurrent.TimeUnit;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -200,8 +202,7 @@ public class ApiServlet extends HttpServlet {
                     config.defaultContentType = "application/json";
                     config.contextPath = context;
                     getOpenApiOptions(config);
-                    //config.registerPlugin(new OpenApiPlugin());
-                    //config.enableDevLogging();
+                    config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
                 })
                 .attribute("PolicyFactory", sanitizer)
@@ -313,59 +314,98 @@ public class ApiServlet extends HttpServlet {
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
         crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
-        cdaCrud("/location/category/{category-id}",
-                new LocationCategoryController(metrics), requiredRoles);
-        cdaCrud("/location/group/{group-id}",
-                new LocationGroupController(metrics), requiredRoles);
-        cdaCrud("/locations/{location-id}",
-                new LocationController(metrics), requiredRoles);
-        cdaCrud("/states/{state}",
-                new StateController(metrics), requiredRoles);
-        cdaCrud("/counties/{county}",
-                new CountyController(metrics), requiredRoles);
-        cdaCrud("/offices/{office}",
-                new OfficeController(metrics), requiredRoles);
-        cdaCrud("/units/{unit-id}",
-                new UnitsController(metrics), requiredRoles);
-        cdaCrud("/parameters/{param-id}",
-                new ParametersController(metrics), requiredRoles);
-        cdaCrud("/timezones/{zone}",
-                new TimeZoneController(metrics), requiredRoles);
+        cdaCrudCache("/location/category/{category-id}",
+                new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/location/group/{group-id}",
+                new LocationGroupController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/locations/{location-id}",
+                new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/states/{state}",
+                new StateController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/counties/{county}",
+                new CountyController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/offices/{office}",
+                new OfficeController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/units/{unit-id}",
+                new UnitsController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/parameters/{param-id}",
+                new ParametersController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/timezones/{zone}",
+                new TimeZoneController(metrics), requiredRoles,60, TimeUnit.MINUTES);
         LevelsController levelsController = new LevelsController(metrics);
-        cdaCrud("/levels/{" + Controllers.LEVEL_ID + "}",
-                levelsController, requiredRoles);
-        get("/levels/{" + Controllers.LEVEL_ID + "}/timeseries", levelsController::getLevelAsTimeSeries);
+        cdaCrudCache("/levels/{" + Controllers.LEVEL_ID + "}",
+                levelsController, requiredRoles,5, TimeUnit.MINUTES);
+        String levelTsPath = "/levels/{" + Controllers.LEVEL_ID + "}/timeseries";
+        get(levelTsPath, levelsController::getLevelAsTimeSeries);
+        addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        get("/timeseries/recent/{group-id}", tsController::getRecent);
-        cdaCrud("/timeseries/category/{category-id}",
-                new TimeSeriesCategoryController(metrics), requiredRoles);
-        cdaCrud("/timeseries/identifier-descriptor/{timeseries-id}",
-                new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles);
-        cdaCrud("/timeseries/group/{group-id}",
-                new TimeSeriesGroupController(metrics), requiredRoles);
-        cdaCrud("/timeseries/{timeseries}", tsController, requiredRoles);
-        cdaCrud("/ratings/template/{template-id}",
-                new RatingTemplateController(metrics), requiredRoles);
-        cdaCrud("/ratings/spec/{rating-id}",
-                new RatingSpecController(metrics), requiredRoles);
-        cdaCrud("/ratings/metadata/{rating-id}",
-                new RatingMetadataController(metrics), requiredRoles);
-        cdaCrud("/ratings/{rating-id}",
-                new RatingController(metrics), requiredRoles);
-        cdaCrud("/catalog/{dataset}",
-                new CatalogController(metrics), requiredRoles);
-        cdaCrud("/basins/{basin-id}",
-                new BasinController(metrics), requiredRoles);
-        cdaCrud("/blobs/{blob-id}",
-                new BlobController(metrics), requiredRoles);
-        cdaCrud("/clobs/{clob-id}",
-                new ClobController(metrics), requiredRoles);
-        cdaCrud("/pools/{pool-id}",
-                new PoolController(metrics), requiredRoles);
-        cdaCrud("/specified-levels/{specified-level-id}",
-                new SpecifiedLevelController(metrics), requiredRoles);
+        String recentPath = "/timeseries/recent/{group-id}";
+        get(recentPath, tsController::getRecent);
+        addCacheControl(recentPath, 5, TimeUnit.MINUTES);
+
+        cdaCrudCache("/timeseries/category/{category-id}",
+                new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
+                new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/group/{group-id}",
+                new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/{timeseries}", tsController, requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/template/{template-id}",
+                new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/spec/{rating-id}",
+                new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/metadata/{rating-id}",
+                new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/{rating-id}",
+                new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/catalog/{dataset}",
+                new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/basins/{basin-id}",
+                new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/blobs/{blob-id}",
+                new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/clobs/{clob-id}",
+                new ClobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/pools/{pool-id}",
+                new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/specified-levels/{specified-level-id}",
+                new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
     }
 
+    /**
+     * This method delegates to the cdaCrud method but also adds an after filter for the specified
+     * path.  If the request was a GET request and the response does not already include
+     * Cache-Control then the filter will add the Cache-Control max-age header with the specified
+     * number of seconds.
+     * Controllers can include their own Cache-Control headers via:
+     *  "ctx.header(Header.CACHE_CONTROL, " public, max-age=" + 60);"
+     * This method lets the ApiServlet configure a default max-age for controllers that don't or
+     * forget to set their own.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param roles the required these roles are present to access post, patch
+     * @param duration the number of TimeUnit to cache GET responses.
+     * @param timeUnit the TimeUnit to use for duration.
+     */
+    public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler,
+                                    @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
+        cdaCrud(path, crudHandler, roles);
+        addCacheControl(path, duration, timeUnit);
+    }
+
+    private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
+        if(timeUnit != null && duration > 0) {
+            staticInstance().after(path, ctx -> {
+                String method = ctx.req.getMethod();  // "GET"
+                if (ctx.status() == HttpServletResponse.SC_OK
+                        && "GET".equals(method)
+                        && (!ctx.res.containsHeader(Header.CACHE_CONTROL))) {
+                    // only set the cache control header if it is not already set.
+                    ctx.header(Header.CACHE_CONTROL, "max-age=" + timeUnit.toSeconds(duration));
+                }
+            });
+        }
+    }
 
     /**
      * This method is very similar to the ApiBuilder.crud method but the specified roles
