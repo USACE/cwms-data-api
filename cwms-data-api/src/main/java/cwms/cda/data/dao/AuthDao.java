@@ -52,7 +52,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
     // At this level we just care that the user has permissions in *any* office
-    private static String RETRIEVE_GROUPS_OF_USER = null;
+    private static String RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",AuthDao.class);
 
     private static final String SET_API_USER_DIRECT = "begin "
         + "cwms_env.set_session_user_direct(upper(?));"
@@ -74,7 +74,14 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     private static String connectionUser = null;
     private static String defaultOffice = null;
 
-    public AuthDao(DSLContext dsl, String defaultOffice) {
+    /**
+     * Since every request uses this instead of constantly creating new objects we keep
+     * one per servicing thread and just reset the context so that setClientInfo still
+     * makes sense.
+     */
+    private static ThreadLocal<AuthDao> instance = new ThreadLocal<>();
+
+    private AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
         if (getDbVersion() < Dao.CWMS_23_03_16) {
             throw new RuntimeException(SCHEMA_TOO_OLD);
@@ -93,8 +100,37 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                     hasCwmsEnvMultiOfficeAuthFix = false;
                 }
             }
-            AuthDao.RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",this.getClass());
         }
+    }
+
+    /**
+     * Get Appropriate instance of the AuthDAO. Setup with the given DSLContext.
+     * The instance of AuthDAO returned is local to a given servicing thread.
+     *
+     * @param dsl
+     * @param defaultOffice can be null
+     * @return
+     */
+    public static AuthDao getInstance(DSLContext dsl, String defaultOffice) {
+        AuthDao dao = instance.get();
+        if (dao == null)
+        {
+            dao = new AuthDao(dsl,defaultOffice);
+            instance.set(dao);
+        } else {
+            dao.resetContext(dsl);
+        }
+        return dao;
+    }
+
+    /**
+     * Used in sections of code that will always be called after the default office is set
+     * but that still need to interact with this DAO.
+     * @param dsl
+     * @return
+     */
+    public static AuthDao getInstance(DSLContext dsl) {
+        return getInstance(dsl, null);
     }
 
     @Override

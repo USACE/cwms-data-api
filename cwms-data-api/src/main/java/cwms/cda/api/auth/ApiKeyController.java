@@ -57,7 +57,7 @@ public class ApiKeyController implements CrudHandler {
     public void create(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = new AuthDao(dsl,null);
+            AuthDao auth = AuthDao.getInstance(dsl);
             ApiKey sourceData = ctx.bodyAsClass(ApiKey.class);
             ApiKey key = auth.createApiKey(p, sourceData);
             if(key == null) {
@@ -93,7 +93,7 @@ public class ApiKeyController implements CrudHandler {
     public void delete(Context ctx, String keyName) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = new AuthDao(dsl,null);
+            AuthDao auth = AuthDao.getInstance(dsl);
             auth.deleteKeyForUser(p, keyName);
             ctx.status(HttpCode.NO_CONTENT);
         }
@@ -112,7 +112,7 @@ public class ApiKeyController implements CrudHandler {
     public void getAll(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = new AuthDao(dsl,null);
+            AuthDao auth = AuthDao.getInstance(dsl);
             List<ApiKey> keys = auth.apiKeysForUser(p);
             ctx.json(keys).status(HttpCode.OK);            
         }
@@ -138,7 +138,7 @@ public class ApiKeyController implements CrudHandler {
     public void getOne(Context ctx, String keyName) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = new AuthDao(dsl,null);
+            AuthDao auth = AuthDao.getInstance(dsl);
             ApiKey key = auth.apiKeyForUser(p,keyName);
             if(key != null) {
                 ctx.json(key).status(HttpCode.OK);            

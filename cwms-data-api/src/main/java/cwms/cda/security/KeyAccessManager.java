@@ -17,7 +17,7 @@ import java.util.Set;
 public class KeyAccessManager extends CdaAccessManager {
     private static final String AUTH_HEADER = "Authorization";
 
-    private AuthDao authDao;
+    private static AuthDao authDao;
 
 
     @Override
@@ -31,11 +31,7 @@ public class KeyAccessManager extends CdaAccessManager {
     }
 
     private void init(Context ctx) {
-        if (authDao == null) {
-            authDao = new AuthDao(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-        } else {
-            authDao.resetContext(JooqDao.getDslContext(ctx));
-        }
+        authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
     }
 
     private String getApiKey(Context ctx) {
