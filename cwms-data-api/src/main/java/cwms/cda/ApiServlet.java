@@ -164,6 +164,7 @@ public class ApiServlet extends HttpServlet {
     public static final String APPLICATION_TITLE = "CWMS Data API";
     public static final String PROVIDER_KEY_OLD = "radar.access.provider";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
+    public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
@@ -414,7 +415,13 @@ public class ApiServlet extends HttpServlet {
     public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler,
                                     @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
         cdaCrud(path, crudHandler, roles);
+
+        // path like /offices/{office} will match /offices/SWT getOne style url
         addCacheControl(path, duration, timeUnit);
+
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+        // path like "/offices/" matches /offices getAll style url
+        addCacheControl(pathWithoutResource, duration, timeUnit);
     }
 
     private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
@@ -443,27 +450,7 @@ public class ApiServlet extends HttpServlet {
     public static void cdaCrud(@NotNull String path, @NotNull CrudHandler crudHandler,
                                  @NotNull RouteRole... roles) {
         String fullPath = prefixPath(path);
-        String[] subPaths = Arrays.stream(fullPath.split("/"))
-                .filter(it -> !it.isEmpty()).toArray(String[]::new);
-        if (subPaths.length < 2) {
-            throw new IllegalArgumentException("CrudHandler requires a path like "
-                    + "'/resource/{resource-id}'");
-        }
-        String resourceId = subPaths[subPaths.length - 1];
-        if (!(
-                (resourceId.startsWith("{") && resourceId.endsWith("}"))
-                ||
-                (resourceId.startsWith("<") && resourceId.endsWith(">"))
-            )) {
-            throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
-                    + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>'");
-        }
-        String resourceBase = subPaths[subPaths.length - 2];
-        if (resourceBase.startsWith("{") || resourceBase.startsWith("<")
-                || resourceBase.endsWith("}") || resourceBase.endsWith(">")) {
-            throw new IllegalArgumentException("CrudHandler requires a resource base at the "
-                    + "beginning of the provided path, e.g. '/users/{user-id}'");
-        }
+        String resourceId = getResourceId(fullPath);
 
         //noinspection KotlinInternalInJava
         Map<CrudFunction, Handler> crudFunctions =
@@ -472,14 +459,46 @@ public class ApiServlet extends HttpServlet {
         Javalin instance = staticInstance();
         // getOne and getAll are assumed not to need authorization
         instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
-        instance.get(fullPath.replace(resourceId, ""),
+        String pathWithoutResource = fullPath.replace(resourceId, "");
+        instance.get(pathWithoutResource,
                 crudFunctions.get(CrudFunction.GET_ALL));
 
         // create, update and delete need authorization.
-        instance.post(fullPath.replace(resourceId, ""),
+        instance.post(pathWithoutResource,
                 crudFunctions.get(CrudFunction.CREATE), roles);
         instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
+    }
+
+    /**
+     * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
+     * @param fullPath
+     * @return
+     */
+    @NotNull
+    public static String getResourceId(String fullPath) {
+        String[] subPaths = Arrays.stream(fullPath.split("/"))
+                .filter(it -> !it.isEmpty()).toArray(String[]::new);
+        if (subPaths.length < 2) {
+            throw new IllegalArgumentException("CrudHandler requires a path like "
+                    + "'/resource/{resource-id}' given: " + fullPath);
+        }
+        String resourceId = subPaths[subPaths.length - 1];
+        if (!(
+                (resourceId.startsWith("{") && resourceId.endsWith("}"))
+                ||
+                (resourceId.startsWith("<") && resourceId.endsWith(">"))
+            )) {
+            throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
+                    + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>' given: " + fullPath);
+        }
+        String resourceBase = subPaths[subPaths.length - 2];
+        if (resourceBase.startsWith("{") || resourceBase.startsWith("<")
+                || resourceBase.endsWith("}") || resourceBase.endsWith(">")) {
+            throw new IllegalArgumentException("CrudHandler requires a resource base at the "
+                    + "beginning of the provided path, e.g. '/users/{user-id}' given: " + fullPath);
+        }
+        return resourceId;
     }
 
     private void getOpenApiOptions(JavalinConfig config) {
@@ -593,7 +612,7 @@ public class ApiServlet extends HttpServlet {
         if (office.isEmpty() || office.equalsIgnoreCase("cwms")) {
             office = "HQ";
         }
-        return office.toUpperCase();
+        return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
 
 }
