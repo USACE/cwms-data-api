@@ -10,6 +10,7 @@ import io.javalin.http.HandlerEntry;
 import io.javalin.http.HandlerType;
 import io.javalin.http.PathMatcher;
 import java.util.List;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -42,18 +43,49 @@ public class ApiServletTest {
         matcher.add(new HandlerEntry(HandlerType.AFTER, "/offices/{office}", true, handler, handler));
         matcher.add(new HandlerEntry(HandlerType.AFTER, "/offices", true, handler, handler));
 
+        String[] testPaths = new String[]{ "/offices", "/offices/", "/offices/SPK", "/offices/SPK/"};
 
-        List<HandlerEntry> matches = matcher.findEntries(HandlerType.AFTER, "/offices/SPK");
-        assertNotNull(matches);
-        assertFalse(matches.isEmpty());
+        for (String testPath : testPaths) {
+            List<HandlerEntry> matches = matcher.findEntries(HandlerType.AFTER, testPath);
+            assertNotNull(matches, "did not find match " + testPath);
+            assertFalse(matches.isEmpty(), testPath+" should have matched");
+        }
 
-        matches = matcher.findEntries(HandlerType.AFTER, "/offices/SPK/");
-        assertNotNull(matches);
-        assertFalse(matches.isEmpty());
 
-        matches = matcher.findEntries(HandlerType.AFTER, "/offices");
-        assertNotNull(matches);
-        assertFalse(matches.isEmpty());
+    }
+
+    @Test
+    @Disabled ("can't figure out a way to have one pattern match getOne and getAll style paths")
+    public void test_with_pattern() {
+// This is how ApiServlet might make afterPath
+//        String crudPath = "/offices/{office}";
+//        // Lets see if we can use a regex to make something that matches
+//        String regex = "(.*)(\\{.*})?"; //"(.*)(\\{.*\\})";
+//        String afterPath = crudPath.replaceAll(regex,"$1*");
+
+        // skip trying to build the pattern from the input in the test
+        // and just see what inputs to javalin will match
+        String afterPath;
+//        afterPath= "/offices/{office}"; // does not match /offices or /offices/
+//        afterPath= "/offices/*";  // does not match /offices
+//        afterPath= "/offices/{office}*";  // does not match /offices or /offices/
+//        afterPath= "/offices/{office}**"; // this pattern triggers an exception
+        afterPath= "/offices/*"; // does not match /offices
+
+
+        PathMatcher matcher = new PathMatcher();
+        Handler handler = (ctx) -> {};
+        matcher.add(new HandlerEntry(HandlerType.AFTER, afterPath, true, handler, handler));
+
+        String[] testPaths = new String[]{
+                "/offices",
+                "/offices/", "/offices/SPK", "/offices/SPK/"};
+
+        for (String testPath : testPaths) {
+            List<HandlerEntry> matches = matcher.findEntries(HandlerType.AFTER, testPath);
+            assertNotNull(matches, "did not find match " + testPath);
+            assertFalse(matches.isEmpty(), testPath+" should have matched");
+        }
 
     }
 
