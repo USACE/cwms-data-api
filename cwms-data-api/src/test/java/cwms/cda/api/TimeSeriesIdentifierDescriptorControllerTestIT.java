@@ -11,8 +11,8 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 
@@ -53,20 +53,20 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
             String serializedTs = om.writeValueAsString(ts);
 
             given()
-//                    .log().everything(true)
-                    .accept(Formats.JSONV2)
-                    .contentType(Formats.JSONV2)
-                    .body(serializedTs)
-                    .header("Authorization", user.toHeaderValue())
-                    .queryParam("office",OFFICE)
-                    .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .post("/timeseries/identifier-descriptor/")
-                    .then()
-                    .log().body().log().everything(true)
-                    .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_CREATED));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
         }
 
         // Check that we have the right number of ts like this in the catalog.
@@ -87,20 +87,20 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
             // RestAssured does the right thing with the url encoding - we don't need to escape
 
             given()
-//                    .log().everything(true)
-                    .accept(Formats.JSONV2)
-                    .contentType(Formats.JSONV2)
-                    .queryParam("office", OFFICE)
-                    .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
-                    .header("Authorization", user.toHeaderValue())
-                    .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .delete("/timeseries/identifier-descriptor/" + tsId)
-                    .then()
-                    .log().body().log().everything(true)
-                    .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+                .header("Authorization", user.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/identifier-descriptor/" + tsId)
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
         }
 
 
@@ -130,21 +130,22 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
 
         int pageSize = 8000;
 
-        Response response = given().accept(Formats.JSONV2)
+        Response response = 
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
                 .queryParam("page-size", pageSize)
                 .queryParam("office", officeId)
                 .queryParam("like", likePattern)
+            .when()
                 .get("/catalog/TIMESERIES")
-                .then()
+            .then()
                 .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(200))
-
                 .extract().response();
 
         JsonPath jsonPath = response.jsonPath();
-        String total = jsonPath.getString("total");
-
-        System.out.println("total: " + total);
 
         List<String> names = jsonPath.getList("entries.name", String.class);
         if(names != null && !names.isEmpty()){

@@ -1,12 +1,6 @@
 package fixtures;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.logging.Logger;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpSession;
 
 import org.apache.catalina.Container;
 import org.apache.catalina.Engine;
@@ -14,17 +8,13 @@ import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Pipeline;
-import org.apache.catalina.Valve;
-import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.catalina.connector.Connector;
-import org.apache.catalina.connector.Request;
-import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.session.StandardSession;
 import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.catalina.valves.ValveBase;
+
+import com.google.common.flogger.FluentLogger;
 
 import fixtures.tomcat.SingleSignOnWrapper;
 
@@ -36,7 +26,7 @@ import fixtures.tomcat.SingleSignOnWrapper;
  * @Since 2021-11-05
  */
 public class TomcatServer {
-    private static final Logger logger = Logger.getLogger(TomcatServer.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private Tomcat tomcatInstance = null;
     private Manager sessionManager = null;
     private SingleSignOnWrapper ssoValve = new SingleSignOnWrapper();
@@ -70,7 +60,7 @@ public class TomcatServer {
         tomcatInstance.setSilent(false);
         tomcatInstance.enableNaming();
         Engine engine = tomcatInstance.getEngine();
-        logger.info("Got engine " + engine.getDefaultHost());
+        logger.atFinest().log("Got engine " + engine.getDefaultHost());
 
         host.addLifecycleListener(new HostConfig());
         Pipeline pipeline = host.getPipeline();
@@ -109,14 +99,17 @@ public class TomcatServer {
         tomcatInstance.start();
         StandardContext ctx = (StandardContext)tomcatInstance.getHost().findChild("");
         this.sessionManager = ctx.getManager();
-        for (Container c: tomcatInstance.getHost().findChildren() ) {
-            System.out.println("Container: " + c.getName()+"/"+c.getClass().getName());
+        if (logger.atFinest().isEnabled())
+        {
+            for (Container c: tomcatInstance.getHost().findChildren() ) {
+                logger.atFinest().log("Container: " + c.getName()+"/"+c.getClass().getName());
 
-            for (Container c2: c.findChildren()) {
-                System.out.println("--> Container: " + c2.getName());
+                for (Container c2: c.findChildren()) {
+                    logger.atFinest().log("--> Container: " + c2.getName());
+                }
             }
         }
-        System.out.println("Tomcat listening at http://localhost:" + tomcatInstance.getConnector().getPort());
+        logger.atInfo().log("Tomcat listening at http://localhost:" + tomcatInstance.getConnector().getPort());
     }
 
     /**

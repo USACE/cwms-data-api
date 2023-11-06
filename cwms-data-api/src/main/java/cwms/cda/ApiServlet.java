@@ -154,6 +154,7 @@ public class ApiServlet extends HttpServlet {
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
     public static final String VERSION = "3.0";
+    public static final String APPLICATION_TITLE = "CWMS Data API";
     public static final String PROVIDER_KEY_OLD = "radar.access.provider";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
@@ -278,7 +279,13 @@ public class ApiServlet extends HttpServlet {
                         case 403: re = new CdaError("Not Authorized",true); break;
                         default: re = new CdaError("Unknown auth error.");
                     }
-                    logger.atInfo().withCause(e).log(e.getMessage());
+
+                    if (logger.atFine().isEnabled()) {
+                        logger.atFine().withCause(e).log(e.getMessage());
+                    } else {
+                        logger.atInfo().log(e.getMessage());
+                    }
+
                     ctx.status(e.getAuthFailCode()).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
@@ -291,21 +298,18 @@ public class ApiServlet extends HttpServlet {
                 })
 
                 .routes(this::configureRoutes)
-                .javalinServlet();        
+                .javalinServlet();
     }
 
     private CdaAccessManager buildAccessManager(String provider) {
-        try {            
-            AccessManagers ams = new AccessManagers();       
+        try {
+            AccessManagers ams = new AccessManagers();
             return ams.get(provider);
         } catch (ServiceNotFoundException err) {
             throw new RuntimeException("Unable to initialize access manager",err);
         }
-        
+
     }
-
-
-
 
     protected void configureRoutes() {
 
@@ -421,11 +425,10 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void getOpenApiOptions(JavalinConfig config) {
-        Info applicationInfo = new Info().title("CWMS Data API").version(VERSION)
+        Info applicationInfo = new Info().title(APPLICATION_TITLE).version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
 
         String provider = getAccessManagerName();
-        logger.atInfo().log("Using access provider:" + provider);
 
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
@@ -434,13 +437,11 @@ public class ApiServlet extends HttpServlet {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
-
                 req.addList(manager.getName());
                 secReqs.add(req);
             }
-
         });
-        
+
         config.accessManager(am);
 
         OpenApiOptions ops =
@@ -465,14 +466,17 @@ public class ApiServlet extends HttpServlet {
             })
             .activateAnnotationScanningFor("cwms.cda.api");
         config.registerPlugin(new OpenApiPlugin(ops));
-        
+
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
         /* clear the lock icon from the GET handlers to reduce user confusion */
-        Operation op = path.getGet();
         logger.atFinest().log("setting security constraints for " + key);
-        setSecurity(path.getGet(), new ArrayList<>());
+        if (key.contains("/auth/")) {
+            setSecurity(path.getGet(), secReqs);
+        } else {
+            setSecurity(path.getGet(), new ArrayList<>());
+        }
         setSecurity(path.getDelete(),secReqs);
         setSecurity(path.getPost(), secReqs);
         setSecurity(path.getPut(), secReqs);

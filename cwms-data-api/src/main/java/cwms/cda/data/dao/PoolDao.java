@@ -26,20 +26,16 @@ import usace.cwms.db.jooq.codegen.tables.AV_POOL;
 
 import static java.util.stream.Collectors.toList;
 
-public class PoolDao extends JooqDao<PoolType>
-{
+public class PoolDao extends JooqDao<PoolType> {
 	private static Logger logger = Logger.getLogger(PoolDao.class.getName());
 
-	public PoolDao(DSLContext dsl)
-	{
+	public PoolDao(DSLContext dsl) {
 		super(dsl);
 	}
 
-
 	public List<Pool> catalogPools(String projectIdMask, String poolNameMask,
 								   String bottomLevelMask, String topLevelMask, boolean includeExplicit,
-								   boolean includeImplicit, String officeIdMask)
-	{
+								   boolean includeImplicit, String officeIdMask) {
 		AV_POOL view = AV_POOL.AV_POOL;
 
 		List<String> types = getTypes(includeExplicit, includeImplicit);
@@ -55,8 +51,7 @@ public class PoolDao extends JooqDao<PoolType>
 	}
 
 	@NotNull
-	private List<String> getTypes(boolean includeExplicit, boolean includeImplicit)
-	{
+	private List<String> getTypes(boolean includeExplicit, boolean includeImplicit) {
 		List<String> types = new ArrayList<>();
 		if (includeExplicit)
 		{
@@ -73,28 +68,27 @@ public class PoolDao extends JooqDao<PoolType>
 
 
 	private Condition getCondition(String projectIdMask, String poolNameMask, String bottomLevelMask,
-								   String topLevelMask, String officeIdMask, List<String> types)
-	{
+								   String topLevelMask, String officeIdMask, List<String> types) {
 		AV_POOL view = AV_POOL.AV_POOL;
 		Condition condition = view.DEFINITION_TYPE.in(types);
 
-		if(projectIdMask != null){
+		if (projectIdMask != null) {
 			condition = condition.and(view.PROJECT_ID.upper().likeRegex(projectIdMask.toUpperCase()));
 		}
 
-		if(poolNameMask != null){
+		if (poolNameMask != null) {
 			condition = condition.and(view.POOL_NAME.upper().likeRegex(poolNameMask.toUpperCase()));
 		}
 
-		if(bottomLevelMask != null){
+		if (bottomLevelMask != null) {
 			condition = condition.and(view.BOTTOM_LEVEL.upper().likeRegex(bottomLevelMask.toUpperCase()));
 		}
 
-		if(topLevelMask != null){
+		if (topLevelMask != null) {
 			condition = condition.and(view.TOP_LEVEL.upper().likeRegex(topLevelMask.toUpperCase()));
 		}
 
-		if(officeIdMask != null){
+		if (officeIdMask != null) {
 			condition = condition.and(view.OFFICE_ID.upper().likeRegex(officeIdMask.toUpperCase()));
 		}
 		return condition;
@@ -117,8 +111,7 @@ public class PoolDao extends JooqDao<PoolType>
 
 
 	@NotNull
-	private static Pool toPool(Record catRecord, boolean isImplicit)
-	{
+	private static Pool toPool(Record catRecord, boolean isImplicit) {
 		String poolId = catRecord.get("POOL_NAME", String.class);
 		String projectId = catRecord.get("PROJECT_ID", String.class);
 		String officeId = catRecord.get("OFFICE_ID", String.class);
@@ -146,8 +139,7 @@ public class PoolDao extends JooqDao<PoolType>
 	}
 
 
-	public Pool retrievePool( String projectId, String poolName, String officeId)
-	{
+	public Pool retrievePool( String projectId, String poolName, String officeId) {
 		RETRIEVE_POOL pool = CWMS_POOL_PACKAGE.call_RETRIEVE_POOL(dsl.configuration(), projectId, poolName,	officeId);
 
 		Pool.Builder b = Pool.Builder.newInstance();
@@ -162,15 +154,12 @@ public class PoolDao extends JooqDao<PoolType>
 
 	public Pool retrievePoolFromCatalog(String projectId, String poolName,
 										String bottomMask, String topMask, boolean includeExplicit,
-										boolean includeImplicit, String officeIdMask)
-	{
+										boolean includeImplicit, String officeIdMask) {
 		Pool pool = null;
 
 		List<Pool> pools = catalogPools(projectId, poolName, bottomMask, topMask, includeExplicit, includeImplicit, officeIdMask);
-		if(pools != null && !pools.isEmpty())
-		{
-			if(pools.size() == 1)
-			{
+		if (pools != null && !pools.isEmpty()) {
+			if(pools.size() == 1) {
 				pool = pools.get(0);
 			} else {
 				throw new TooManyRowsException(String.format(
@@ -186,21 +175,20 @@ public class PoolDao extends JooqDao<PoolType>
 	public Pools retrievePools(String cursor, int pageSize,
 							   String projectIdMask, String poolNameMask,
 							   String bottomLevelMask, String topLevelMask, boolean includeExplicit,
-							   boolean includeImplicit, String officeIdMask){
+							   boolean includeImplicit, String officeIdMask) {
 		Integer total = null;
 		int offset = 0;
 
 		AV_POOL view = AV_POOL.AV_POOL;
 
-		if(cursor != null && !cursor.isEmpty())
-		{
+		if (cursor != null && !cursor.isEmpty()) {
 			String[] parts = Pools.decodeCursor(cursor);
 
-			logger.info("decoded cursor: " + Arrays.toString(parts));
+			logger.fine( () -> "decoded cursor: " + Arrays.toString(parts));
 
-			if(parts.length > 2) {
+			if (parts.length > 2) {
 				offset = Integer.parseInt(parts[0]);
-				if(!"null".equals(parts[1])){
+				if (!"null".equals(parts[1])) {
 					try {
 						total = Integer.valueOf(parts[1]);
 					} catch(NumberFormatException e){

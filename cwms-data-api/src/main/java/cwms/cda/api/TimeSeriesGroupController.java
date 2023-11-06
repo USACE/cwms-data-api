@@ -81,14 +81,14 @@ public class TimeSeriesGroupController implements CrudHandler {
                     + "field is not specified, matching timeseries groups information from all "
                     + "offices shall be returned.")},
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {@OpenApiContent(isArray = true, from =
                                     TimeSeriesGroup.class, type = Formats.JSON)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries group(s) were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")}, description = "Returns CWMS Timeseries Groups "
             + "Data", tags = {TAG})
     @Override
@@ -132,7 +132,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
                     }
 

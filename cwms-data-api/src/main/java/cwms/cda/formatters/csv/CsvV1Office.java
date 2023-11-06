@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
     "NAB,Baltimore District,District,NAD\r\n"+
     "NAD,North Atlantic Division,Division Headquarters,HQ"
 )
-public class CsvV1Office implements OutputFormatter{
+public class CsvV1Office implements OutputFormatter {
 
     public String Office;
     public String longName;
@@ -53,11 +53,11 @@ public class CsvV1Office implements OutputFormatter{
         return builder.toString();
     }
 
-    private String getOfficeTabHeader(){
+    private String getOfficeTabHeader() {
         return "#Office Name,Long Name,Office Type,Reports To Office";
     }
 
-    private String officeRow(Office office){
+    private String officeRow(Office office) {
         StringBuilder builder = new StringBuilder();
         builder.append(office.getName()).append(",")
                .append(office.getLongName()).append(",")

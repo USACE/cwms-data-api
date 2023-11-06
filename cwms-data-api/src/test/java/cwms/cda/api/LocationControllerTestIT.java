@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.RestAssured;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -59,19 +60,19 @@ public class LocationControllerTestIT extends DataApiTestIT {
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
         given()
-                .log().everything(true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(serializedLocation)
-                .header("Authorization", user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/locations")
-                .then()
-                .log().body().log().everything(true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
@@ -81,65 +82,64 @@ public class LocationControllerTestIT extends DataApiTestIT {
 
         // get it back
         given()
-                .log().everything(true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/locations/" + location.getName())
-                .then()
-                .log().body().log().everything(true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         // delete without cascade should fail
         given()
-                .log().everything(true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(CASCADE_DELETE, false)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/locations/" + location.getName())
-                .then()
-                .log().body().log().everything(true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CONFLICT));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CONFLICT));
 
         // delete with cascade should succeed
         given()
-                .log().everything(true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(CASCADE_DELETE, true)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/locations/" + location.getName())
-                .then()
-                .log().body().log().everything(true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
 
         // get it back
         given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().everything(true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/locations/" + location.getName())
-                .then()
-                .log().body().log().everything(true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 }

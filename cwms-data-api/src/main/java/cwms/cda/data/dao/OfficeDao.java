@@ -22,13 +22,13 @@ public class OfficeDao extends JooqDao<Office> {
      * Returns all offices in CDA.
      * * @param hasData specifies whether the office has data in CDA or not (all
      * offices)
-     * 
+     *
      * @return a list of offices
-     * 
+     *
      * @see List
      */
     public List<Office> getOffices(Boolean hasData) {
-        List<Office> retval;
+        List<Office> retVal;
         AV_OFFICE view = AV_OFFICE.AV_OFFICE;
 
         if (hasData) {
@@ -38,7 +38,7 @@ public class OfficeDao extends JooqDao<Office> {
                     .from(locView)
                     .where(locView.LOCATION_CODE.ne(0L).and(locView.DB_OFFICE_ID.ne("CWMS")))
                     .asTable("locViewDistinct");
-            retval = dsl.select(view.OFFICE_ID.as("name"),
+            retVal = dsl.select(view.OFFICE_ID.as("name"),
                     view.LONG_NAME, view.OFFICE_TYPE.as("type"),
                     view.REPORT_TO_OFFICE_ID.as("reportsTo"))
                     .from(view)
@@ -48,7 +48,7 @@ public class OfficeDao extends JooqDao<Office> {
                     .into(Office.class);
         } else {
             // The .as snippets lets it map directly into the Office ctor fields.
-            retval = dsl.select(view.OFFICE_ID.as("name"),
+            retVal = dsl.select(view.OFFICE_ID.as("name"),
                     view.LONG_NAME,
                     view.OFFICE_TYPE.as("type"),
                     view.REPORT_TO_OFFICE_ID.as("reportsTo"))
@@ -57,15 +57,15 @@ public class OfficeDao extends JooqDao<Office> {
                     .into(Office.class);
         }
 
-        return retval;
+        return retVal;
     }
 
     /**
      * Returns a specific office from CDA given an office ID (3-4 capital letters).
      * * @param officeId Case insensitive (3-4 letter) ID of a district
-     * 
+     *
      * @return a single office and its metadata
-     * 
+     *
      * @see Optional
      */
     public Optional<Office> getOfficeById(String officeId) {

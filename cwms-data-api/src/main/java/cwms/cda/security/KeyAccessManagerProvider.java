@@ -14,5 +14,4 @@ public class KeyAccessManagerProvider implements AccessManagerProvider {
     public CdaAccessManager create() {   
         return new KeyAccessManager();
     }
-    
 }

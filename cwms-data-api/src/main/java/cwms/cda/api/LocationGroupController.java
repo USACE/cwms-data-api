@@ -85,9 +85,11 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
                     + " the assigned locations in the returned location groups. (default: false)"),
             @OpenApiParam(name = INCLUDE_ASSIGNED2, deprecated = true, type = Boolean.class,
-                    description = "Deprecated. Use include-assigned instead."),},
+                    description = "Deprecated. Use include-assigned instead."),
+            @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                    + "matching against the location category id"), },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(isArray = true, from = LocationGroup.class,
                                             type = Formats.JSON),
@@ -110,7 +112,10 @@ public class LocationGroupController implements CrudHandler {
                     Boolean.class, false, metrics, name(LocationGroupController.class.getName(),
                             GET_ALL));
 
-            List<LocationGroup> grps = cdm.getLocationGroups(office, includeAssigned);
+            String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE},
+                    String.class, null, metrics, name(LocationGroupController.class.getName(), GET_ALL));
+
+            List<LocationGroup> grps = cdm.getLocationGroups(office, includeAssigned, locCategoryLike);
 
             if (!grps.isEmpty()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
@@ -125,12 +130,7 @@ public class LocationGroupController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 CdaError re = new CdaError("No location groups for office provided");
-                logger.info(() ->
-                        new StringBuilder()
-                                .append(re).append(System.lineSeparator())
-                                .append("for request ").append(ctx.fullUrl())
-                                .toString()
-                );
+                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
 
@@ -151,7 +151,7 @@ public class LocationGroupController implements CrudHandler {
                             + " the category containing the location group whose data is to be "
                             + "included in the response."),
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
                             @OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
                             @OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV),
@@ -161,7 +161,7 @@ public class LocationGroupController implements CrudHandler {
             )},
             description = "Retrieves requested Location Group", tags = {TAG})
     @Override
-    public void getOne(Context ctx, String groupId) {
+    public void getOne(Context ctx, @NotNull String groupId) {
 
         try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)
@@ -184,14 +184,8 @@ public class LocationGroupController implements CrudHandler {
                 if (grp.isPresent()) {
                     result = Formats.format(contentType, grp.get());
                 } else {
-                    CdaError re = new CdaError("Unable to find location group based on "
-                            + "parameters given");
-                    logger.info(() ->
-                            new StringBuilder()
-                                    .append(re).append(System.lineSeparator())
-                                    .append("for request ").append(ctx.fullUrl())
-                                    .toString()
-                    );
+                    CdaError re = new CdaError("Unable to find location group based on parameters given");
+                    logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                     return;
                 }
@@ -276,12 +270,13 @@ public class LocationGroupController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
             LocationGroup deserialize = deserialize(body, formatHeader);
-            boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS, Boolean.class).getOrDefault(false);
+            boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
+                    Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
-            if(!oldGroupId.equals(deserialize.getId())) {
+            if (!oldGroupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(oldGroupId, deserialize);
             }
-            if(replaceAssignedLocs){
+            if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize);
             }
             locationGroupDao.assignLocs(deserialize);

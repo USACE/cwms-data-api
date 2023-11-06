@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 public interface RatingDao {
 
     static final Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
-    
+
     void create(String ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
@@ -51,7 +51,7 @@ public interface RatingDao {
 
     static String extractOfficeFromXml(String xml) {
         Matcher officeMatch = officeMatcher.matcher(xml);
-        
+
         if(officeMatch.find()) {
             return officeMatch.group(1);
         } else {

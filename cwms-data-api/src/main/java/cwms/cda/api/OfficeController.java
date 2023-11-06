@@ -4,9 +4,11 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.HAS_DATA;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -31,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
@@ -41,7 +42,7 @@ import org.jooq.DSLContext;
  * @see OfficeController
  */
 public class OfficeController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(OfficeController.class.getName());
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -63,12 +64,12 @@ public class OfficeController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = "format", 
+            @OpenApiParam(name = FORMAT,
                 deprecated = true, 
                 description = "(Deprecated in favor of Accept header) Specifies the encoding "
                     + "format of the response. Valid value for the format field for this "
                     + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),
-            @OpenApiParam(name = "has-data", 
+            @OpenApiParam(name = HAS_DATA,
                 description = "A flag ('True'/'False') "
                     + "When set to true this returns offices that have operational data. "
                     + "Default value is <b>False</b>,. "
@@ -76,12 +77,11 @@ public class OfficeController implements CrudHandler {
                     + "target=\"_blank\">Feature #321</a>",
                 type = Boolean.class)
         }, responses = {
-            @OpenApiResponse(status = "200", 
+            @OpenApiResponse(status = STATUS_200,
             description = "A list of offices.", 
             content = {
                     @OpenApiContent(from = OfficeFormatV1.class, type = ""),
-                    @OpenApiContent(from = Office.class, isArray = true, type = 
-                            Formats.JSONV2),
+                    @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
                     @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
                     @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
                     @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
@@ -96,10 +96,10 @@ public class OfficeController implements CrudHandler {
                 DSLContext dsl = getDslContext(ctx)) {
             OfficeDao dao = new OfficeDao(dsl);
             String formatParm = ctx
-                .queryParamAsClass("format", String.class)
+                .queryParamAsClass(FORMAT, String.class)
                 .getOrDefault("");
             Boolean hasDataParm = ctx
-                .queryParamAsClass("has-data", Boolean.class)
+                .queryParamAsClass(HAS_DATA, Boolean.class)
                 .getOrDefault(false);
             List<Office> offices = dao.getOffices(hasDataParm);
 
@@ -123,7 +123,7 @@ public class OfficeController implements CrudHandler {
                             + "format of the response. Valid value for the format field for this "
                             + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"
             ),
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of offices.",
                     content = {
                         @OpenApiContent(from = OfficeFormatV1.class, type = ""),

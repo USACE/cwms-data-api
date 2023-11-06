@@ -25,59 +25,59 @@ public class RatingAdapter {
     }
 
     private static RatingSpec toDTO(hec.data.cwmsRating.RatingSpec spec) {
-        RatingSpec retval = null;
+        RatingSpec retVal = null;
 
         if (spec != null) {
             return new RatingSpec.Builder()
                     .fromRatingSpec(spec).build();
         }
 
-        return retval;
+        return retVal;
     }
 
     @Nullable
     public static Set<AbstractRatingMetadata> toDTO(Set<AbstractRating> ratings) {
-        Set<AbstractRatingMetadata> retval = null;
+        Set<AbstractRatingMetadata> retVal = null;
         if (ratings != null) {
-            retval = new LinkedHashSet<>();
+            retVal = new LinkedHashSet<>();
             for (AbstractRating rating : ratings) {
-                retval.add(toDTO(rating));
+                retVal.add(toDTO(rating));
             }
         }
-        return retval;
+        return retVal;
     }
 
     private static AbstractRatingMetadata toDTO(AbstractRating rating) {
-        AbstractRatingMetadata retval = null;
+        AbstractRatingMetadata retVal = null;
 
         if (rating instanceof UsgsStreamTableRating) {
-            retval = toUsgsStream((UsgsStreamTableRating) rating);
+            retVal = toUsgsStream((UsgsStreamTableRating) rating);
         } else if (rating instanceof hec.data.cwmsRating.VirtualRating) {
-            retval = toVirtual((hec.data.cwmsRating.VirtualRating) rating);
+            retVal = toVirtual((hec.data.cwmsRating.VirtualRating) rating);
         } else if (rating instanceof hec.data.cwmsRating.ExpressionRating) {
-            retval = toExpression((hec.data.cwmsRating.ExpressionRating) rating);
+            retVal = toExpression((hec.data.cwmsRating.ExpressionRating) rating);
         } else if (rating instanceof hec.data.cwmsRating.TransitionalRating) {
-            retval = toTransitional((hec.data.cwmsRating.TransitionalRating) rating);
+            retVal = toTransitional((hec.data.cwmsRating.TransitionalRating) rating);
         } else if (rating instanceof hec.data.cwmsRating.TableRating) {
-            retval = toTable((hec.data.cwmsRating.TableRating) rating);
+            retVal = toTable((hec.data.cwmsRating.TableRating) rating);
         }
 
-        return retval;
+        return retVal;
     }
 
     private static UsgsStreamRating toUsgsStream(UsgsStreamTableRating usgs) {
-        UsgsStreamRating retval = null;
+        UsgsStreamRating retVal = null;
         if (usgs != null) {
             UsgsStreamRating.Builder builder = new UsgsStreamRating.Builder();
             withAbstractFields(builder, usgs);
 
-            retval = builder.build();
+            retVal = builder.build();
         }
-        return retval;
+        return retVal;
     }
 
     private static VirtualRating toVirtual(hec.data.cwmsRating.VirtualRating rating) {
-        VirtualRating retval = null;
+        VirtualRating retVal = null;
         if (rating != null) {
             VirtualRating.Builder builder = new VirtualRating.Builder();
             withAbstractFields(builder, rating);
@@ -92,14 +92,14 @@ public class RatingAdapter {
 ////                        sourceRating.getRatingType(), sourceRating.getRatingUnits());
 ////                builder.withSourceRating(sr);
 //            }
-            retval = builder.build();
+            retVal = builder.build();
         }
-        return retval;
+        return retVal;
     }
 
     private static TransitionalRating toTransitional(
             hec.data.cwmsRating.TransitionalRating rating) {
-        TransitionalRating retval = null;
+        TransitionalRating retVal = null;
         if (rating != null) {
             TransitionalRating.Builder builder = new TransitionalRating.Builder();
             withAbstractFields(builder, rating);
@@ -117,33 +117,33 @@ public class RatingAdapter {
             }
             builder.withSourceRatingIds(ratingSpecIds);
 
-            retval = builder.build();
+            retVal = builder.build();
         }
-        return retval;
+        return retVal;
     }
 
     private static ExpressionRating toExpression(hec.data.cwmsRating.ExpressionRating rating) {
-        ExpressionRating retval = null;
+        ExpressionRating retVal = null;
         if (rating != null) {
             ExpressionRating.Builder builder = new ExpressionRating.Builder();
             withAbstractFields(builder, rating);
 
             builder.withExpression(rating.getExpression());
 
-            retval = builder.build();
+            retVal = builder.build();
         }
-        return retval;
+        return retVal;
     }
 
     private static TableRating toTable(hec.data.cwmsRating.TableRating rating) {
-        TableRating retval = null;
+        TableRating retVal = null;
         if (rating != null) {
             TableRating.Builder builder = new TableRating.Builder();
             withAbstractFields(builder, rating);
 
-            retval = builder.build();
+            retVal = builder.build();
         }
-        return retval;
+        return retVal;
     }
 
 

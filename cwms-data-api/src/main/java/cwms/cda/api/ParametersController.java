@@ -6,6 +6,7 @@ import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -62,7 +63,7 @@ public class ParametersController implements CrudHandler {
                             + "(default)")
             },
             responses = {
-                    @OpenApiResponse(status = "200")
+                    @OpenApiResponse(status = STATUS_200)
             },
             tags = {"Parameters"}
     )

@@ -120,7 +120,7 @@ public class LocationController implements CrudHandler {
                             + "geojson")
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSON),
                                     @OpenApiContent(type = Formats.TAB),
@@ -211,12 +211,12 @@ public class LocationController implements CrudHandler {
                             + "requested parameters.")
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from = Location.class),
                                     @OpenApiContent(type = Formats.XMLV2, from = Location.class)
                             }),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
@@ -299,7 +299,7 @@ public class LocationController implements CrudHandler {
             path = "/locations",
             tags = {"Locations"},
             responses = {
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the location was not found.")
             }
     )
@@ -362,7 +362,7 @@ public class LocationController implements CrudHandler {
             path = "/locations",
             tags = {"Locations"},
             responses = {
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the location was not found.")
             }
     )

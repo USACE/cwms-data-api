@@ -2,9 +2,15 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
+import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LIKE;
+import static cwms.cda.api.Controllers.LOCATIONS;
+import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE2;
+import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE2;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGESIZE2;
@@ -12,10 +18,12 @@ import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMESERIESCATEGORYLIKE2;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE2;
 import static cwms.cda.api.Controllers.UNITSYSTEM2;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
 import static cwms.cda.api.Controllers.queryParamAsClass;
@@ -42,6 +50,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
 
@@ -49,6 +58,7 @@ public class CatalogController implements CrudHandler {
 
     private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
     private static final String TAG = "Catalog-Beta";
+
 
     private final MetricRegistry metrics;
 
@@ -75,7 +85,7 @@ public class CatalogController implements CrudHandler {
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
-    public void delete(Context ctx, String entry) {
+    public void delete(Context ctx, @NotNull String entry) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
     }
 
@@ -118,10 +128,10 @@ public class CatalogController implements CrudHandler {
                                     + "want to isolate data to."
                     ),
                     @OpenApiParam(name = LIKE,
-                            description = "Posix regular expression matching against the id"
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
                     ),
                     @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
-                            description = "Posix regular expression matching against the "
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries category id"
                     ),
                     @OpenApiParam(name = TIMESERIESCATEGORYLIKE2,
@@ -129,29 +139,32 @@ public class CatalogController implements CrudHandler {
                             description = "Deprecated. Use timeseries-category-like."
                     ),
                     @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
-                            description = "Posix regular expression matching against the "
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries group id"
                     ),
-                    @OpenApiParam(name = "timeseriesGroupLike",
+                    @OpenApiParam(name = TIMESERIES_GROUP_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use timeseries-group-like."
                     ),
-                    @OpenApiParam(name = "location-category-like",
-                            description = "Posix regular expression matching against the location"
+                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " category id"
                     ),
-                    @OpenApiParam(name = "locationCategoryLike",
+                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use location-category-like."
                     ),
-                    @OpenApiParam(name = "location-group-like",
-                            description = "Posix regular expression matching against the location"
+                    @OpenApiParam(name = LOCATION_GROUP_LIKE,
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " group id"
                     ),
-                    @OpenApiParam(name = "locationGroupLike",
+                    @OpenApiParam(name = LOCATION_GROUP_LIKE2,
                             deprecated = true,
                             description = "Deprecated. Use location-group-like."
-                    )
+                    ),
+                    @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the location bounding office. "
+                            + "When this field is used items with no bounding office set will not be present in results."),
             },
             pathParams = {
                     @OpenApiParam(name = "dataset",
@@ -159,7 +172,7 @@ public class CatalogController implements CrudHandler {
                             description = "A list of what data? E.g. Timeseries, Locations, "
                                     + "Ratings, etc")
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of elements the data set you've selected.",
                     content = {
                             @OpenApiContent(from = Catalog.class, type = Formats.JSONV2),
@@ -170,7 +183,7 @@ public class CatalogController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, String dataSet) {
+    public void getOne(Context ctx, @NotNull String dataSet) {
 
         try (
                 final Timer.Context timeContext = markAndTime(GET_ONE);
@@ -198,16 +211,19 @@ public class CatalogController implements CrudHandler {
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
-            String tsCategoryLike = queryParamAsClass(ctx, new String[]{"timeseries-category-like", TIMESERIESCATEGORYLIKE2},
+            String tsCategoryLike = queryParamAsClass(ctx, new String[]{TIMESERIES_CATEGORY_LIKE, TIMESERIESCATEGORYLIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String tsGroupLike = queryParamAsClass(ctx, new String[]{"timeseries-group-like", "timeseriesGroupLike"},
+            String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE, TIMESERIES_GROUP_LIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locCategoryLike = queryParamAsClass(ctx, new String[]{"location-category-like", "locationCategoryLike"},
+            String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE, LOCATION_CATEGORY_LIKE2},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locGroupLike = queryParamAsClass(ctx, new String[]{"location-group-like", "locationGroupLike"},
+            String locGroupLike = queryParamAsClass(ctx, new String[]{LOCATION_GROUP_LIKE, LOCATION_GROUP_LIKE2},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
+
+            String boundingOfficeLike = queryParamAsClass(ctx, new String[]{BOUNDING_OFFICE_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
             String acceptHeader = ctx.header(ACCEPT);
@@ -216,11 +232,11 @@ public class CatalogController implements CrudHandler {
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
-                        locGroupLike, tsCategoryLike, tsGroupLike);
-            } else if ("locations".equalsIgnoreCase(valDataSet)) {
+                        locGroupLike, tsCategoryLike, tsGroupLike, boundingOfficeLike);
+            } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
                 LocationsDao dao = new LocationsDaoImpl(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like,
-                        locCategoryLike, locGroupLike);
+                        locCategoryLike, locGroupLike, boundingOfficeLike);
             }
             if (cat != null) {
                 String data = Formats.format(contentType, cat);
@@ -230,7 +246,7 @@ public class CatalogController implements CrudHandler {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                         + "information");
 
-                logger.info(() -> re.toString() + "with url:" + ctx.fullUrl());
+                logger.info(() -> re + "with url:" + ctx.fullUrl());
                 ctx.json(re).status(HttpCode.NOT_FOUND);
             }
         }
@@ -238,7 +254,7 @@ public class CatalogController implements CrudHandler {
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
-    public void update(Context ctx, String entry) {
+    public void update(Context ctx, @NotNull String entry) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 

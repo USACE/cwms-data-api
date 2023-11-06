@@ -87,7 +87,7 @@ public class SpecifiedLevelController implements CrudHandler {
                             + "specified, all specified levels shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from =
                                             SpecifiedLevel.class)

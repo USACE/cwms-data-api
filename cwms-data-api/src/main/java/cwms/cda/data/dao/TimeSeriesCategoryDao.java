@@ -35,67 +35,62 @@ import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
-public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory>
-{
+public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
 
-	public TimeSeriesCategoryDao(DSLContext dsl)
-	{
-		super(dsl);
-	}
+    public TimeSeriesCategoryDao(DSLContext dsl) {
+        super(dsl);
+    }
 
-	public Optional<TimeSeriesCategory> getTimeSeriesCategory(String officeId, String categoryId)
-	{
-		AV_TS_CAT_GRP view = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
+    public Optional<TimeSeriesCategory> getTimeSeriesCategory(String officeId, String categoryId) {
+        AV_TS_CAT_GRP view = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
 
-		Record3<String, String, String> fetchOne = dsl.selectDistinct(view.CAT_DB_OFFICE_ID, view.TS_CATEGORY_ID,
-				view.TS_CATEGORY_DESC)
-				.from(view)
-				.where(view.CAT_DB_OFFICE_ID.eq(officeId))
-				.and(view.TS_CATEGORY_ID.eq(categoryId))
-				.fetchOne();
+        Record3<String, String, String> fetchOne = dsl.selectDistinct(view.CAT_DB_OFFICE_ID, view.TS_CATEGORY_ID,
+                view.TS_CATEGORY_DESC)
+                .from(view)
+                .where(view.CAT_DB_OFFICE_ID.eq(officeId))
+                .and(view.TS_CATEGORY_ID.eq(categoryId))
+                .fetchOne();
 
-		return fetchOne != null ?
-			Optional.of(fetchOne.into(TimeSeriesCategory.class)) : Optional.empty();
-	}
+        return fetchOne != null ?
+            Optional.of(fetchOne.into(TimeSeriesCategory.class)) : Optional.empty();
+    }
 
-	public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId)
-	{
-		AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
+    public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId) {
+        AV_TS_CAT_GRP table = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
 
-		SelectWhereStep<Record3<String, String, String>> step = dsl.selectDistinct(
-				table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,table.TS_CATEGORY_DESC)
-				.from(table);
-		Select select;
-		if ( officeId != null && !officeId.isEmpty())
-		{
-			select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId));
-		}else {
-			 select = step;
-		}
+        SelectWhereStep<Record3<String, String, String>> step = dsl.selectDistinct(
+                table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,table.TS_CATEGORY_DESC)
+                .from(table);
+        Select<?> select;
+        if ( officeId != null && !officeId.isEmpty())
+        {
+            select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId));
+        }else {
+             select = step;
+        }
 
-		return select.fetch().into(TimeSeriesCategory.class);
-	}
+        return select.fetch().into(TimeSeriesCategory.class);
+    }
 
-	public List<TimeSeriesCategory> getTimeSeriesCategories()
-	{
-		return getTimeSeriesCategories(null);
-	}
+    public List<TimeSeriesCategory> getTimeSeriesCategories() {
+        return getTimeSeriesCategories(null);
+    }
 
-	public void delete(String categoryId, boolean cascadeDelete, String office) {
-		this.setOffice(office);
-		dsl.connection((c)-> 
-			CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(
-				getDslContext(c,office).configuration(), categoryId,
-				OracleTypeMap.formatBool(cascadeDelete), office)
-		);
-	}
+    public void delete(String categoryId, boolean cascadeDelete, String office) {
+        this.setOffice(office);
+        dsl.connection((c)->
+            CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(
+                getDslContext(c,office).configuration(), categoryId,
+                OracleTypeMap.formatBool(cascadeDelete), office)
+        );
+    }
 
-	public void create(TimeSeriesCategory category, boolean failIfExists) {
-		this.setOffice(category);
-		dsl.connection((c) -> 
-			CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(
-				getDslContext(c,category.getOfficeId()).configuration(), category.getId(), category.getDescription(),
-				OracleTypeMap.formatBool(failIfExists), "T", category.getOfficeId())
-		);
-	}
+    public void create(TimeSeriesCategory category, boolean failIfExists) {
+        this.setOffice(category);
+        dsl.connection((c) ->
+            CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(
+                getDslContext(c,category.getOfficeId()).configuration(), category.getId(), category.getDescription(),
+                OracleTypeMap.formatBool(failIfExists), "T", category.getOfficeId())
+        );
+    }
 }

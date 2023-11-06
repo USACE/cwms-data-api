@@ -34,16 +34,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
+
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
 public class SpecifiedLevelIdIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
@@ -56,71 +55,75 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         String serializedLevel = om.writeValueAsString(specifiedLevel);
         //Create
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         //Read
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .body("[0].id", equalTo(specifiedLevel.getId()))
             .body("[0].office-id", equalTo(specifiedLevel.getOfficeId()))
             .body("[0].description", equalTo(specifiedLevel.getDescription()))
             .statusCode(is(HttpServletResponse.SC_OK));
         //Delete
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
         //Read Empty
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .body("size()", is(0))
             .statusCode(is(HttpServletResponse.SC_OK));
     }
-
 
     @Test
     void test_update() throws JsonProcessingException {
@@ -132,51 +135,55 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         String newId = "Test" + (epochSeconds + 1);
         //Create
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
         //Update
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.SPECIFIED_LEVEL_ID, newId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
         //Read
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, newId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/specified-levels/")
-            .then()
+        .then()
             .assertThat()
-            .log().body().log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .body("[0].id", equalTo(newId))
             .statusCode(is(HttpServletResponse.SC_OK));
     }
-
 
     @Test
     void test_update_does_not_exist() throws JsonProcessingException {
@@ -185,17 +192,19 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("BadUpdate" + epochSeconds, OFFICE, "CDA Integration Test");
         //Update
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.SPECIFIED_LEVEL_ID, specifiedLevel.getId())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
 
@@ -207,16 +216,18 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestBadDelete" + epochSeconds, OFFICE, "CDA Integration Test");
         //Update
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/specified-levels/" + specifiedLevel.getId())
-            .then()
+        .then()
             .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 }

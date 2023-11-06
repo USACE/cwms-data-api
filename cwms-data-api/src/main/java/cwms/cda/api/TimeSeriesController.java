@@ -29,6 +29,10 @@ import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_RULE;
 import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
@@ -340,7 +344,7 @@ public class TimeSeriesController implements CrudHandler {
                             description = "Deprecated. Please use page-size instead."
                     )
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of elements of the data set you've selected.",
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -350,10 +354,10 @@ public class TimeSeriesController implements CrudHandler {
                             @OpenApiContent(from = TimeSeries.class, type = ""),
                     }
             ),
-                    @OpenApiResponse(status = "400", description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a timeseries."),
-                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
             method = HttpMethod.GET,
@@ -625,12 +629,12 @@ public class TimeSeriesController implements CrudHandler {
                     + "field is not specified, matching timeseries groups information from all "
                     + "offices shall be returned."),},
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(isArray = true, from = Tsv.class, type = Formats.JSON)}
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries group(s) were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")
             },
             path = "/timeseries/recent",

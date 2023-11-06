@@ -17,20 +17,19 @@ public class BasinDao extends JooqDao<Basin> {
     }
 
     public List<Basin> getAllBasins(String unitSystem, String officeId) throws SQLException {
-        List<Basin> retval = new ArrayList<>();
+        List<Basin> retVal = new ArrayList<>();
         CwmsDbBasinJooq basinJooq = new CwmsDbBasinJooq();
         String areaUnitIn = UnitSystem.EN.value().equals(unitSystem)
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
         try {
-            connection(dsl, c ->
-            {
+            connection(dsl, c -> {
                 ResultSet rs = basinJooq.catBasins(c, null, null, null, areaUnitIn, officeId);
-                retval.addAll(buildBasinsFromResultSet(rs, unitSystem));
+                retVal.addAll(buildBasinsFromResultSet(rs, unitSystem));
             });
         } catch (Exception ex) {
             throw new SQLException(ex);
         }
-        return retval;
+        return retVal;
     }
 
     public Basin getBasin(String basinId, String unitSystem, String officeId) throws SQLException {
@@ -43,10 +42,12 @@ public class BasinDao extends JooqDao<Basin> {
         Double[] pContributingDrainageArea = new Double[1];
         String areaUnitIn = UnitSystem.EN.value().equals(unitSystem)
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
+
         connection(dsl, c -> basinJooq.retrieveBasin(c, pParentBasinId, pSortOrder,
                 pPrimaryStreamId, pTotalDrainageArea, pContributingDrainageArea, basinId,
                 areaUnitIn, officeId));
-        Basin retval = new Basin.Builder(basinId, officeId)
+
+        Basin retVal = new Basin.Builder(basinId, officeId)
                 .withBasinArea(pTotalDrainageArea[0])
                 .withContributingArea(pContributingDrainageArea[0])
                 .withParentBasinId(pParentBasinId[0])
@@ -55,13 +56,13 @@ public class BasinDao extends JooqDao<Basin> {
         if (pPrimaryStreamId[0] != null) {
             StreamDao streamDao = new StreamDao(dsl);
             Stream primaryStream = streamDao.getStream(pPrimaryStreamId[0], unitSystem, officeId);
-            retval = new Basin.Builder(retval).withPrimaryStream(primaryStream).build();
+            retVal = new Basin.Builder(retVal).withPrimaryStream(primaryStream).build();
         }
-        return retval;
+        return retVal;
     }
 
     private List<Basin> buildBasinsFromResultSet(ResultSet rs, String unitSystem) throws SQLException {
-        List<Basin> retval = new ArrayList<>();
+        List<Basin> retVal = new ArrayList<>();
         while (rs.next()) {
             String officeId = rs.getString("OFFICE_ID");
             String basinId = rs.getString("BASIN_ID");
@@ -81,10 +82,10 @@ public class BasinDao extends JooqDao<Basin> {
                 Stream primaryStream = streamDao.getStream(primaryStreamId, unitSystem, officeId);
                 basin = new Basin.Builder(basin).withPrimaryStream(primaryStream).build();
             }
-            retval.add(basin);
+            retVal.add(basin);
         }
 
-        return retval;
+        return retVal;
     }
 
 }

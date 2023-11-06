@@ -37,7 +37,7 @@ public class LocationCatalogEntry extends CatalogEntry {
         super(null);
     }
 
-    public LocationCatalogEntry(String office,
+    private LocationCatalogEntry(String office,
                                 String name,
                                 String nearestCity,
                                 String publicName,
@@ -201,4 +201,164 @@ public class LocationCatalogEntry extends CatalogEntry {
     public String getCursor() {
         return (getOffice() + "/" + name).toUpperCase();
     }
+
+
+    public static class Builder {
+        private String office;
+        private String name;
+        private String nearestCity;
+        private String publicName;
+        private String longName;
+        private String description;
+        private String kind;
+        private String type;
+        private String timeZone;
+        private Double latitude;
+        private Double longitude;
+        private Double publishedLatitude;
+        private Double publishedLongitude;
+        private String horizontalDatum;
+        private Double elevation;
+        private String unit;
+        private String verticalDatum;
+        private String nation;
+        private String state;
+        private String county;
+        private String boundingOffice;
+        private String mapLabel;
+        private boolean active;
+        private Collection<LocationAlias> aliases;
+
+        public Builder officeId(final String office) {
+            this.office = office;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder nearestCity(String nearestCity) {
+            this.nearestCity = nearestCity;
+            return this;
+        }
+
+        public Builder publicName(String publicName) {
+            this.publicName = publicName;
+            return this;
+        }
+
+        public Builder longName(String longName) {
+            this.longName = longName;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder kind(String kind) {
+            this.kind = kind;
+            return this;
+        }
+
+        public Builder type(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder timeZone(String timeZone) {
+            this.timeZone = timeZone;
+            return this;
+        }
+
+        public Builder latitude(Double latitude) {
+            this.latitude = latitude;
+            return this;
+        }
+
+        public Builder longitude(Double longitude) {
+            this.longitude = longitude;
+            return this;
+        }
+
+        public Builder publishedLatitude(Double publishedLatitude) {
+            this.publishedLatitude = publishedLatitude;
+            return this;
+        }
+
+        public Builder publishedLongitude(Double publishedLongitude) {
+            this.publishedLongitude = publishedLongitude;
+            return this;
+        }
+
+        public Builder horizontalDatum(String horizontalDatum) {
+            this.horizontalDatum = horizontalDatum;
+            return this;
+        }
+
+        public Builder elevation(Double elevation) {
+            this.elevation = elevation;
+            return this;
+        }
+
+        public Builder unit(String unit) {
+            this.unit = unit;
+            return this;
+        }
+
+        public Builder verticalDatum(String verticalDatum) {
+            this.verticalDatum = verticalDatum;
+            return this;
+        }
+
+        public Builder nation(String nation) {
+            this.nation = nation;
+            return this;
+        }
+
+        public Builder state(String state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder county(String county) {
+            this.county = county;
+            return this;
+        }
+
+        public Builder boundingOffice(String boundingOffice) {
+            this.boundingOffice = boundingOffice;
+            return this;
+        }
+
+        public Builder mapLabel(String mapLabel) {
+            this.mapLabel = mapLabel;
+            return this;
+        }
+
+        public Builder active(boolean active) {
+            this.active = active;
+            return this;
+        }
+
+        public Builder aliases(Collection<LocationAlias> aliases) {
+            this.aliases = aliases;
+            return this;
+        }
+
+        public LocationCatalogEntry build() {
+            return new LocationCatalogEntry(office, name, nearestCity, publicName,
+                    longName, description, kind, type, timeZone, latitude, longitude,
+                    publishedLatitude, publishedLongitude, horizontalDatum, elevation, unit,
+                    verticalDatum, nation, state, county, boundingOffice, mapLabel, active,
+                    aliases);
+        }
+
+
+    }
+
+
 }

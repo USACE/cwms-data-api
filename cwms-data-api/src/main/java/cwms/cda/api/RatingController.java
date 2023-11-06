@@ -238,15 +238,15 @@ public class RatingController implements CrudHandler {
                     + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
                     + "xml\r\n4.    json (default)")},
             responses = {
-                @OpenApiResponse(status = "200", content = {
+                @OpenApiResponse(status = STATUS_200, content = {
                         @OpenApiContent(type = Formats.JSON),
                         @OpenApiContent(type = Formats.XML),
                         @OpenApiContent(type = Formats.TAB),
                         @OpenApiContent(type = Formats.CSV)
                 }),
-                @OpenApiResponse(status = "404", description = "The provided combination of "
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a rating table."),
-                @OpenApiResponse(status = "501", description = "Requested format is not "
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")},
             tags = {TAG})
     @Override
@@ -327,7 +327,7 @@ public class RatingController implements CrudHandler {
                             type = RatingSet.DatabaseLoadMethod.class),
             },
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSONV2),
                             @OpenApiContent(type = Formats.XMLV2)})},
             description = "Returns CWMS Rating Data",
