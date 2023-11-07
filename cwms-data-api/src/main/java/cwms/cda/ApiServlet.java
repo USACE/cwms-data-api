@@ -105,12 +105,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.Manifest;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
@@ -178,6 +183,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+        logger.atInfo().log("Initializing CWMS Data API Version:  " + obtainFullVersion(config));
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
@@ -187,7 +193,6 @@ public class ApiServlet extends HttpServlet {
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
     public void init() {
-        logger.atInfo().log("Initializing API");
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         ObjectMapper om = new ObjectMapper();
@@ -299,6 +304,19 @@ public class ApiServlet extends HttpServlet {
 
                 .routes(this::configureRoutes)
                 .javalinServlet();
+    }
+
+    private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
+        String relativeWARPath = "/META-INF/MANIFEST.MF";
+        String absoluteDiskPath = servletConfig.getServletContext().getRealPath(relativeWARPath);
+        Path path = Paths.get(absoluteDiskPath);
+
+        try (InputStream inputStream = Files.newInputStream(path)) {
+            Manifest manifest = new Manifest(inputStream);
+            return manifest.getMainAttributes().getValue("build-version");
+        } catch (IOException e) {
+            throw new ServletException("Error obtaining servlet version", e);
+        }
     }
 
     private CdaAccessManager buildAccessManager(String provider) {
