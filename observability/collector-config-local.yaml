@@ -1,0 +1,48 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:5555
+  # filelog:
+  #   include: [/home/radar/tomcat/apache-tomcat-9.0.68/logs/*.log]
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  attributes:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: log.file.name
+
+exporters:
+  prometheus:
+    endpoint: collector:6666
+    namespace: default
+  otlp:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  loki:
+    # endpoint: "http://loki:3100/loki/api/v1/push"
+    endpoint: "http://localhost:3100/loki/api/v1/push"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
+    logs:
+      receivers: [otlp]
+      processors: [attributes]
+      exporters: [loki]
+
+  telemetry:
+    logs:
+      level: debug
