@@ -107,7 +107,7 @@ public class LocationGroupController implements CrudHandler {
 
             String office = ctx.queryParam(OFFICE);
 
-            boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED, INCLUDE_ASSIGNED2},
+            boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
                     Boolean.class, false, metrics, name(LocationGroupController.class.getName(),
                             GET_ALL));
 
