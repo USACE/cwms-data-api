@@ -25,8 +25,7 @@ exporters:
     tls:
       insecure: true
   loki:
-    # endpoint: "http://loki:3100/loki/api/v1/push"
-    endpoint: "http://localhost:3100/loki/api/v1/push"
+    endpoint: "http://loki:3100/loki/api/v1/push"
 
 service:
   pipelines:
