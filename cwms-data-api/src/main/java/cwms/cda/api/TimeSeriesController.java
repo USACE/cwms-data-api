@@ -23,8 +23,6 @@ import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
 import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGESIZE2;
-import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
@@ -374,8 +372,8 @@ public class TimeSeriesController implements CrudHandler {
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
-                    PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE  },
+                    Integer.class, defaultPageSize, metrics,
                     name(TimeSeriesController.class.getName(), GET_ALL));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
