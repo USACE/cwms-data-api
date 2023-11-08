@@ -95,6 +95,17 @@ services:
       - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
       - cwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=swt-data,service.version=3.0.9-9-28-23-SNAPSHOT,deployment.environment=development
+      - OTEL_TRACES_SAMPLER=always_on
+      - OTEL_IMR_EXPORT_INTERVAL=5000
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_COMPRESSION=gzip
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:5555
+      - OTEL_IMR_EXPORTING_INTERVAL=5000
+      - OTEL_EXPORTER_OTLP_INSECURE=true
     expose:
       - 7000
     healthcheck:

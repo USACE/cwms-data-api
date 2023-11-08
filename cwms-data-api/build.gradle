@@ -6,6 +6,7 @@ configurations {
     docker
     baseLibs
     tomcatLibs
+    telemetry
 }
 
 configurations.implementation {
@@ -137,6 +138,9 @@ dependencies {
     tomcatLibs "com.google.flogger:flogger:0.7.4"
     tomcatLibs "com.google.flogger:flogger-system-backend:0.7.4"
 
+    telemetry 'software.amazon.opentelemetry:aws-opentelemetry-agent:1.31.0'
+
+
     testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
 
 
@@ -226,8 +230,14 @@ task generateConfig(type: Copy) {
     outputs.dir "$buildDir/tomcat/conf"
 }
 
+task copyAutomaticTelemetry(type: Copy) {
+    from configurations.telemetry
+    into "$buildDir/tomcat/telemetry"
+}
+
 task run(type: JavaExec) {
     dependsOn generateConfig
+    dependsOn copyAutomaticTelemetry
     dependsOn war
 
     classpath += configurations.baseLibs
@@ -253,6 +263,7 @@ task run(type: JavaExec) {
 task integrationTests(type: Test) {
     dependsOn test
     dependsOn generateConfig
+    dependsOn copyAutomaticTelemetry
     dependsOn war
 
     useJUnitPlatform() {
