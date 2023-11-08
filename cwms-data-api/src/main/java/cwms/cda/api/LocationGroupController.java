@@ -61,7 +61,7 @@ import org.jooq.DSLContext;
 public class LocationGroupController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
 
-    public static final String TAG = "Location Groups-Beta";
+    public static final String TAG = "Location Groups";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;

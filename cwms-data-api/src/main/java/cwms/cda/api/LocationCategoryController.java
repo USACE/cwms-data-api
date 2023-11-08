@@ -53,12 +53,13 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationCategoryController implements CrudHandler {
     public static final Logger logger =
             Logger.getLogger(LocationCategoryController.class.getName());
-    private static final String TAG = "Location Categories-Beta";
+    private static final String TAG = "Location Categories";
 
     private final MetricRegistry metrics;
 
@@ -147,7 +148,7 @@ public class LocationCategoryController implements CrudHandler {
             description = "Retrieves requested Location Category",
             tags = {TAG})
     @Override
-    public void getOne(Context ctx, String categoryId) {
+    public void getOne(Context ctx, @NotNull String categoryId) {
 
         try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
@@ -222,7 +223,7 @@ public class LocationCategoryController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String categoryId) {
+    public void update(Context ctx, @NotNull String categoryId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
@@ -241,7 +242,7 @@ public class LocationCategoryController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String categoryId) {
+    public void delete(Context ctx, @NotNull String categoryId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             LocationCategoryDao dao = new LocationCategoryDao(dsl);

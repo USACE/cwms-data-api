@@ -53,12 +53,13 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesCategoryController implements CrudHandler {
     public static final Logger logger =
             Logger.getLogger(TimeSeriesCategoryController.class.getName());
-    public static final String TAG = "TimeSeries Categories-Beta";
+    public static final String TAG = "TimeSeries Categories";
 
     private final MetricRegistry metrics;
 
@@ -134,7 +135,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested timeseries category", tags = {TAG})
     @Override
-    public void getOne(Context ctx, String categoryId) {
+    public void getOne(Context ctx, @NotNull String categoryId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE);
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
@@ -207,7 +208,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String locationCode) {
+    public void update(@NotNull Context ctx, @NotNull String locationCode) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
@@ -226,7 +227,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String categoryId) {
+    public void delete(Context ctx, @NotNull String categoryId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);

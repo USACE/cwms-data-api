@@ -84,7 +84,7 @@ import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(TimeSeriesIdentifierDescriptorController.class.getName());
-    public static final String TAG = "TimeSeries Identifier-Beta";
+    public static final String TAG = "TimeSeries Identifier";
 
     private static final int DEFAULT_PAGE_SIZE = 500;
 
