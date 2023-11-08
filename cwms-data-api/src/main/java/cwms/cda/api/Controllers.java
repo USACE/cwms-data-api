@@ -24,14 +24,18 @@
 
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.LongCounter;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 
 public final class Controllers {
@@ -237,6 +241,37 @@ public final class Controllers {
             if (retval == null) {
                 retval = defaultValue;
                 metrics.counter(name(className, "default")).inc();
+            }
+
+        }
+
+        return retval;
+    }
+
+    public static <T> T queryParamAsClass(io.javalin.http.Context ctx, String[] names,
+                                          Class<T> clazz, T defaultValue, OpenTelemetry otelSdk,
+                                          String className) {
+        T retval = null;
+
+        Validator<T> validator = ctx.queryParamAsClass(names[0], clazz);
+        LongCounter counter = otelSdk.getMeter(className).counterBuilder("queryParamAsClass").build();
+        AttributeKey<String> attributeKey = AttributeKey.stringKey("matching");
+        if (validator.hasValue()) {
+            retval = validator.get();
+            counter.add(1, Attributes.of(attributeKey, "correct"));
+        } else {
+            for (int i = 1; i < names.length; i++) {
+                validator = ctx.queryParamAsClass(names[i], clazz);
+                if (validator.hasValue()) {
+                    retval = validator.get();
+                    counter.add(1, Attributes.of(attributeKey, "deprecated"));
+                    break;
+                }
+            }
+
+            if (retval == null) {
+                retval = defaultValue;
+                counter.add(1, Attributes.of(attributeKey, "default"));
             }
 
         }

@@ -85,13 +85,14 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.concurrent.TimeUnit;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -117,6 +118,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
@@ -168,6 +170,7 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
+    private OpenTelemetrySdk otelSdk;
     private Meter totalRequests;
 
     private static final long serialVersionUID = 1L;
@@ -178,7 +181,6 @@ public class ApiServlet extends HttpServlet {
     DataSource cwms;
 
 
-
     @Override
     public void destroy() {
         javalin.destroy();
@@ -187,6 +189,7 @@ public class ApiServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         logger.atInfo().log("Initializing CWMS Data API Version:  " + obtainFullVersion(config));
+        otelSdk = AutoConfiguredOpenTelemetrySdk.initialize().getOpenTelemetrySdk();
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
@@ -384,7 +387,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/catalog/{dataset}",
-                new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new CatalogController(otelSdk), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/basins/{basin-id}",
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",

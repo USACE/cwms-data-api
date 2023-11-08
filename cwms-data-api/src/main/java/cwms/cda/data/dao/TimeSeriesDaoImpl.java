@@ -1,15 +1,28 @@
-package cwms.cda.data.dao;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.condition;
-import static org.jooq.impl.DSL.count;
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.max;
-import static org.jooq.impl.DSL.name;
-import static org.jooq.impl.DSL.partitionBy;
-import static org.jooq.impl.DSL.select;
-import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
-import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
+package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -23,31 +36,11 @@ import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
-import java.io.StringReader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
+import io.opentelemetry.context.Scope;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
@@ -79,15 +72,50 @@ import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static org.jooq.impl.DSL.*;
+import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
+import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
+
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
 
     public static final boolean OVERRIDE_PROTECTION = true;
+    private final Tracer tracer;
 
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
-        super(dsl);
+        this(dsl, TracerProvider.noop().get(TimeSeriesDaoImpl.class.getName()));
+    }
 
+    public TimeSeriesDaoImpl(DSLContext dsl, Tracer tracer) {
+        super(dsl);
+        this.tracer = tracer;
     }
 
 
@@ -519,49 +547,56 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         overallQuery.addOrderBy(limitTable.field("DB_OFFICE_ID").upper(), limitTable.field("CWMS_TS_ID").upper());
 
         logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
-        Result<?> result = overallQuery.fetch();
+        Span span = tracer.spanBuilder("getTimeSeriesCatalog").startSpan();
+        try (Scope scope = span.makeCurrent()){
+            Result<?> result = overallQuery.fetch();
 
-        // NOTE: leave as separate, eventually this will include aliases which
-        // will at extra rows per TS
-        LinkedHashMap<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
-        result.forEach(row -> {
-            String officeTsId = new StringBuilder()
-                    .append(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
-                    .append("/")
-                    .append(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
-                    .toString();
-            if (!tsIdExtentMap.containsKey(officeTsId)) {
-                TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
-                        .officeId(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
-                        .cwmsTsId(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
-                        .units(row.get(AV_CWMS_TS_ID2.UNIT_ID))
-                        .interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
-                        .intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
-                if (this.getDbVersion() > Dao.CWMS_21_1_1) {
-                    builder.timeZone(row.get("TIME_ZONE_ID", String.class));
+            // NOTE: leave as separate, eventually this will include aliases which
+            // will at extra rows per TS
+            LinkedHashMap<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
+            result.forEach(row -> {
+                String officeTsId = new StringBuilder()
+                        .append(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
+                        .append("/")
+                        .append(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
+                        .toString();
+                if (!tsIdExtentMap.containsKey(officeTsId)) {
+                    TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
+                            .officeId(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
+                            .cwmsTsId(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
+                            .units(row.get(AV_CWMS_TS_ID2.UNIT_ID))
+                            .interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
+                            .intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
+                    if (this.getDbVersion() > Dao.CWMS_21_1_1) {
+                        builder.timeZone(row.get("TIME_ZONE_ID", String.class));
+                    }
+                    tsIdExtentMap.put(officeTsId, builder);
                 }
-                tsIdExtentMap.put(officeTsId, builder);
-            }
 
-            if (row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null) {
-                //tsIdExtentMap.get(tsId)
-                TimeSeriesExtents extents =
-                        new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
-                                row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
-                                row.get(AV_TS_EXTENTS_UTC.LATEST_TIME),
-                                row.get(AV_TS_EXTENTS_UTC.LAST_UPDATE)
-                        );
-                tsIdExtentMap.get(officeTsId).withExtent(extents);
-            }
-        });
+                if (row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null) {
+                    //tsIdExtentMap.get(tsId)
+                    TimeSeriesExtents extents =
+                            new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
+                                    row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
+                                    row.get(AV_TS_EXTENTS_UTC.LATEST_TIME),
+                                    row.get(AV_TS_EXTENTS_UTC.LAST_UPDATE)
+                            );
+                    tsIdExtentMap.get(officeTsId).withExtent(extents);
+                }
+            });
 
-        List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
-                .map(e -> e.getValue().build())
-                .collect(Collectors.toList());
-        return new Catalog(catPage != null ? catPage.toString() : null,
-                total, pageSize, entries, office,
-                idLike, locCategoryLike, locGroupLike,
-                tsCategoryLike, tsGroupLike);
+            List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
+                    .map(e -> e.getValue().build())
+                    .collect(Collectors.toList());
+            return new Catalog(catPage != null ? catPage.toString() : null,
+                    total, pageSize, entries, office,
+                    idLike, locCategoryLike, locGroupLike,
+                    tsCategoryLike, tsGroupLike);
+        } catch (RuntimeException ex) {
+            span.setStatus(StatusCode.ERROR, ex.getMessage());
+            span.recordException(ex);
+            throw ex;
+        }
     }
 
 
