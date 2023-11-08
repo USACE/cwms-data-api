@@ -158,9 +158,6 @@ public class LevelsController implements CrudHandler {
                             + "the location level whose data is to be deleted. If this field is "
                             + "not specified, matching location level information will be deleted"
                             + " from all offices."),
-
-                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
-                            + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
                             + "effective date of the level to be deleted. If not provided will "
                             + "delete all data and reference to the location level.")
@@ -193,8 +190,6 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = NAME, deprecated = true, description = "Deprecated, use "
-                            + LEVEL_ID_MASK + ". "),
                     @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
                             + "the location level(s) whose data is to be included in the response. "
                             + "Uses * for all."),
@@ -352,8 +347,6 @@ public class LevelsController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "office of the Location Level to be returned"),
-                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
-                            + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                             + "the effective date of Location Level to be returned"),
                     @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
@@ -401,8 +394,6 @@ public class LevelsController implements CrudHandler {
                             + "location level id of the Location Level to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
-                            + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies "
                             + "the effective date of Location Level that will be updated")
             },

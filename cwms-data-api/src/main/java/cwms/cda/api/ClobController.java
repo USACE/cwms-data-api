@@ -99,29 +99,15 @@ public class ClobController implements CrudHandler {
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = CURSOR,
-                            deprecated = true,
-                            description = "Deprecated. Use 'page' instead."
-                    ),
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. Default "
                                     + defaultPageSize + "."
                     ),
-                    @OpenApiParam(name = PAGESIZE3,
-                            deprecated = true,
-                            type = Integer.class,
-                            description = "Deprecated, use 'page-size' instead."
-                    ),
                     @OpenApiParam(name = INCLUDE_VALUES,
                             type = Boolean.class,
                             description = "Do you want the value associated with this particular "
                                     + "clob (default: false)"
-                    ),
-                    @OpenApiParam(name = INCLUDE_VALUES2,
-                            deprecated = true,
-                            type = Boolean.class,
-                            description = "Deprecated, use 'include-values' instead."
                     ),
                     @OpenApiParam(name = LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"

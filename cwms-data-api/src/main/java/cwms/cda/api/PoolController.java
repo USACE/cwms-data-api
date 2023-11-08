@@ -86,19 +86,11 @@ public class PoolController implements CrudHandler {
                             + " in the request you are. This is an opaque value, and can be"
                             + " obtained from the 'next-page' value in the response."
             ),
-            @OpenApiParam(name = CURSOR,
-                    deprecated = true,
-                    description = "Deprecated. Use '" + PAGE + "' instead."
-            ),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description =
                             "How many entries per page returned. Default " + defaultPageSize + "."
-            ),
-            @OpenApiParam(name = PAGESIZE3,
-                    deprecated = true,
-                    type = Integer.class,
-                    description = "Deprecated. Use '" + PAGE_SIZE + "' instead."),},
+            ),},
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Pools.class)}),

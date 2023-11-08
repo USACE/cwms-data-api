@@ -101,23 +101,10 @@ public class CatalogController implements CrudHandler {
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are."
                     ),
-                    @OpenApiParam(name = CURSOR,
-                            deprecated = true,
-                            description = "Deprecated. Use 'page' instead."
-                    ),
+
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entires per page returned. Default 500."
-                    ),
-                    @OpenApiParam(name = PAGESIZE3,
-                            deprecated = true,
-                            type = Integer.class,
-                            description = "Deprecated. Use page-size."
-                    ),
-                    @OpenApiParam(name = UNITSYSTEM2,
-                            deprecated = true,
-                            type = UnitSystem.class,
-                            description = "Deprecated. Use unit-system."
                     ),
                     @OpenApiParam(name = UNIT_SYSTEM,
                             type = UnitSystem.class,
@@ -134,33 +121,17 @@ public class CatalogController implements CrudHandler {
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries category id"
                     ),
-                    @OpenApiParam(name = TIMESERIESCATEGORYLIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use timeseries-category-like."
-                    ),
                     @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries group id"
-                    ),
-                    @OpenApiParam(name = TIMESERIES_GROUP_LIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use timeseries-group-like."
                     ),
                     @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " category id"
                     ),
-                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use location-category-like."
-                    ),
                     @OpenApiParam(name = LOCATION_GROUP_LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " group id"
-                    ),
-                    @OpenApiParam(name = LOCATION_GROUP_LIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use location-group-like."
                     ),
                     @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                             + "matching against the location bounding office. "

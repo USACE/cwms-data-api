@@ -79,15 +79,6 @@ public class BlobController implements CrudHandler {
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = CURSOR,
-                            deprecated = true,
-                            description = "Deprecated. Use 'page' instead."
-                    ),
-                    @OpenApiParam(name = PAGESIZE3,
-                            deprecated = true,
-                            type = Integer.class,
-                            description = "Deprecated.  Use page-size instead."
-                    ),
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. Default "
