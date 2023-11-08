@@ -1,31 +1,30 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.cda.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-import java.io.InputStream;
-import java.sql.Connection;
-import java.util.HashMap;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.codahale.metrics.MetricRegistry;
-
 import cwms.cda.formatters.FormattingException;
-
-import org.jooq.tools.jdbc.MockConnection;
-import org.jooq.tools.jdbc.MockFileDatabase;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
 import io.javalin.core.util.Header;
@@ -35,6 +34,18 @@ import io.javalin.http.HttpCode;
 import io.javalin.http.util.ContextUtil;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
+import io.opentelemetry.api.OpenTelemetry;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class CatalogControllerTest extends ControllerTest{
 
@@ -43,7 +54,7 @@ public class CatalogControllerTest extends ControllerTest{
     @ValueSource(strings = {"blurge,","appliation/json+fred"})
     public void bad_formats_return_501(String format ) throws Exception {
         final String testBody = "test";
-        CatalogController controller = spy(new CatalogController(new MetricRegistry()));
+        CatalogController controller = spy(new CatalogController(OpenTelemetry.noop()));
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
@@ -69,7 +80,7 @@ public class CatalogControllerTest extends ControllerTest{
 
     @Test
     public void catalog_returns_only_original_ids_by_default() throws Exception {
-        CatalogController controller = new CatalogController(new MetricRegistry());
+        CatalogController controller = new CatalogController(OpenTelemetry.noop());
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = new TestHttpServletResponse();
 
