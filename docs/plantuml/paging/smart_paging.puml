@@ -4,13 +4,12 @@
 actor Client as "Client"
 control ReverseProxy as "Server Cache"
 group Session [Client 1]
-    Client -> CDA: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>/pages?begin=2023-11-01T00:00:00-0700[UTC]&end=current
+    Client -> CDA: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>/pages?begin=2023-11-05T00:00:00-0700[UTC]&end=current
     CDA -> CDA: calculate pages based on interval
     CDA -> Client: \n \
                     /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-10T12:00:00-0700[UTC]&end=2023-11-10T13:53:00-0700[UTC]\n \
                     /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-10T00:00:00-0700[UTC]&end=2023-11-10T12:00:00-0700[UTC]\n \
-                    /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-05T00:00:00-0700[UTC]&end=2023-11-10T00:00:00-0700[UTC]\n \
-                    /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-01T00:00:00-0700[UTC]&end=2023-11-05T00:00:00-0700[UTC]\n
+                    /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-05T00:00:00-0700[UTC]&end=2023-11-10T00:00:00-0700[UTC]\n
     par thread 1
         Client -> ReverseProxy: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-10T12:00:00-0700[UTC]&end=2023-11-10T13:53:00-0700[UTC]
         ReverseProxy -> CDA: cache current?
@@ -31,13 +30,6 @@ group Session [Client 1]
         CDA -> ReverseProxy: no
         ReverseProxy -> CDA: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-05T00:00:00-0700[UTC]&end=2023-11-10T00:00:00-0700[UTC]
         CDA -> Database: query time series for SWT ACTT2.Elev.Inst.1Hour.0.Ccp-Rev\nstarting with 2023-11-05T00:00:00-0700[UTC] \n ending with 2023-11-10T00:00:00-0700[UTC]
-        CDA -> Client: time series data
-    else thread 4
-        Client -> ReverseProxy: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-01T00:00:00-0700[UTC]&end=2023-11-05T00:00:00-0700[UTC]
-        ReverseProxy -> CDA: cache current?
-        CDA -> ReverseProxy: no
-        ReverseProxy -> CDA: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-01T00:00:00-0700[UTC]&end=2023-11-05T00:00:00-0700[UTC]
-        CDA -> Database: query time series for SWT ACTT2.Elev.Inst.1Hour.0.Ccp-Rev\nstarting with 2023-11-01T00:00:00-0700[UTC] \n ending with 2023-11-05T00:00:00-0700[UTC]
         CDA -> Client: time series data
     end
 else Session 2
@@ -61,19 +53,22 @@ else Session 3
         Client -> ReverseProxy: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-10T00:00:00-0700[UTC]&end=2023-11-10T12:00:00-0700[UTC]
         ReverseProxy -> CDA: cache current?
         CDA -> ReverseProxy: yes
-        ReverseProxy -> Client: time series data
+        ReverseProxy -[#green]> Client: time series data
     else thread 3
         Client -> ReverseProxy: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-05T00:00:00-0700[UTC]&end=2023-11-10T00:00:00-0700[UTC]
         ReverseProxy -> CDA: cache current?
         CDA -> ReverseProxy: yes
-        ReverseProxy -> Client: time series data
+        ReverseProxy -[#green]> Client: time series data
     else thread 4
         Client -> ReverseProxy: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-01T00:00:00-0700[UTC]&end=2023-11-05T00:00:00-0700[UTC]
         ReverseProxy -> CDA: cache current?
-        CDA -> ReverseProxy: yes
-        ReverseProxy -> Client: time series data
+        CDA -> ReverseProxy: no
+        ReverseProxy -> CDA: /timeseries/<ACTT2.Elev.Inst.1Hour.0.Ccp-Rev>?office=SWT&begin=2023-11-01T00:00:00-0700[UTC]&end=2023-11-05T00:00:00-0700[UTC]
+        CDA -> Database: query time series for SWT ACTT2.Elev.Inst.1Hour.0.Ccp-Rev\nstarting with 2023-11-01T00:00:00-0700[UTC] \n ending with 2023-11-05T00:00:00-0700[UTC]
+        CDA -> Client: time series data
     end
 end
 
-footer For this example "current" time is 2023-11-10T13:53:00-0700[UTC]
+footer For this example "current" time is 2023-11-10T13:53:00-0700[UTC] \n\n \
+Green arrow indicates performance improvement due to caching
 @enduml

@@ -48,17 +48,19 @@ else Session 2
         Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<1>&tsid_end=<2>
         ReverseProxy -> CDA: cache current?
         CDA -> ReverseProxy: yes
-        ReverseProxy -> Client: time series ids 
+        ReverseProxy -[#green]> Client: time series ids
     else thread 2
         Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<3>&tsid_end=<4>
         ReverseProxy -> CDA: cache current?
         CDA -> ReverseProxy: yes
-        ReverseProxy -> Client: time series ids
+        ReverseProxy -[#green]> Client: time series ids
     else thread 3
         Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<5>&tsid_end=<6>
         ReverseProxy -> CDA: cache current?
         CDA -> ReverseProxy: yes
-        ReverseProxy -> Client: time series ids
+        ReverseProxy -[#green]> Client: time series ids
     end
 end
+
+footer Green arrow indicates performance improvement due to caching
 @enduml
