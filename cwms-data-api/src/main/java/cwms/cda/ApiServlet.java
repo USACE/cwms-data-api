@@ -85,13 +85,22 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.core.instrument.binder.system.UptimeMetrics;
+import io.micrometer.registry.otlp.OtlpConfig;
+import io.micrometer.registry.otlp.OtlpMeterRegistry;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.concurrent.TimeUnit;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -117,6 +126,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
@@ -168,6 +178,7 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
+    private MeterRegistry meterRegistry;
     private Meter totalRequests;
 
     private static final long serialVersionUID = 1L;
@@ -186,9 +197,27 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        logger.atInfo().log("Initializing CWMS Data API Version:  " + obtainFullVersion(config));
+        String fullVersion = obtainFullVersion(config);
+        logger.atInfo().log("Initializing %s Version: %s", new Object[]{APPLICATION_TITLE, fullVersion});
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
+        OtlpConfig otlpConfig = key -> {
+            //From the docs: https://micrometer.io/docs/registry/otlp
+            //If you instead of returning null, bind it to a property source (e.g.: a simple Map can work),
+            //you can override the default configuration through properties.
+            return null;
+        };
+
+        meterRegistry = new OtlpMeterRegistry(otlpConfig, Clock.SYSTEM);
+        meterRegistry.config().commonTags("application", APPLICATION_TITLE);
+        meterRegistry.config().commonTags("application-version", fullVersion);
+        new ClassLoaderMetrics().bindTo(meterRegistry);
+        new JvmMemoryMetrics().bindTo(meterRegistry);
+        new JvmGcMetrics().bindTo(meterRegistry);
+        new JvmThreadMetrics().bindTo(meterRegistry);
+        new UptimeMetrics().bindTo(meterRegistry);
+        new ProcessorMetrics().bindTo(meterRegistry);
+
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
         super.init(config);
     }
@@ -384,7 +413,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/catalog/{dataset}",
-                new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new CatalogController(meterRegistry), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/basins/{basin-id}",
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
