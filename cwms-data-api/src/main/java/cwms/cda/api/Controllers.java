@@ -24,14 +24,15 @@
 
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+import io.micrometer.core.instrument.MeterRegistry;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 
 public final class Controllers {
@@ -166,6 +167,12 @@ public final class Controllers {
         return timer.time();
     }
 
+    public static io.micrometer.core.instrument.Timer markAndTime(MeterRegistry registry, String className,
+                                                                  String subject) {
+        registry.counter(name(className, subject, COUNT)).increment();
+        return registry.timer(name(className, subject, TIME));
+    }
+
     /**
      * Returns the first matching query param or the provided default value if no match is found.
      *
@@ -237,6 +244,35 @@ public final class Controllers {
             if (retval == null) {
                 retval = defaultValue;
                 metrics.counter(name(className, "default")).inc();
+            }
+
+        }
+
+        return retval;
+    }
+
+    public static <T> T queryParamAsClass(io.javalin.http.Context ctx, String[] names,
+                                          Class<T> clazz, T defaultValue, MeterRegistry metrics,
+                                          String className) {
+        T retval = null;
+
+        Validator<T> validator = ctx.queryParamAsClass(names[0], clazz);
+        if (validator.hasValue()) {
+            retval = validator.get();
+            metrics.counter(name(className, "correct")).increment();
+        } else {
+            for (int i = 1; i < names.length; i++) {
+                validator = ctx.queryParamAsClass(names[i], clazz);
+                if (validator.hasValue()) {
+                    retval = validator.get();
+                    metrics.counter(name(className, "deprecated")).increment();
+                    break;
+                }
+            }
+
+            if (retval == null) {
+                retval = defaultValue;
+                metrics.counter(name(className, "default")).increment();
             }
 
         }

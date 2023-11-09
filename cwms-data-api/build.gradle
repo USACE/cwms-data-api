@@ -104,6 +104,9 @@ dependencies {
     implementation "io.prometheus:simpleclient_dropwizard:0.15.0"
     implementation "io.prometheus:simpleclient_servlet:0.15.0"
 
+    //Using OpenTelemetry implementations for Proof of Concept
+    implementation 'io.micrometer:micrometer-registry-otlp:latest.release'
+
 
     implementation "com.fasterxml.jackson.core:jackson-databind:$JACKSON_VERSION"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:$JACKSON_VERSION"
