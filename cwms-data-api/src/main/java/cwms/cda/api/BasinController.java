@@ -36,7 +36,7 @@ import org.jooq.DSLContext;
 
 public class BasinController implements CrudHandler {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
-    public static final String TAG = "Basins-Beta";
+    public static final String TAG = "Basins";
 
 
     private final MetricRegistry metrics;

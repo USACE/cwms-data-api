@@ -57,7 +57,7 @@ import org.owasp.html.PolicyFactory;
 public class CatalogController implements CrudHandler {
 
     private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
-    private static final String TAG = "Catalog-Beta";
+    private static final String TAG = "Catalog";
 
 
     private final MetricRegistry metrics;
