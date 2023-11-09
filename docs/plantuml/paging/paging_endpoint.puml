@@ -1,0 +1,64 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor Client as "Client"
+control ReverseProxy as "Server Cache"
+group Session [Client 1]
+    Client -> ReverseProxy: /catalog/timeseries/pages?office=SWT
+    ReverseProxy -> CDA: cache current?
+    CDA -> ReverseProxy: no
+    ReverseProxy -> CDA: /catalog/timeseries/pages?office=SWT
+    CDA -> Database: offset/keyset/etc pagination query
+    CDA -> ReverseProxy: cache
+    CDA -> Client: \n \
+                    /catalog/timeseries?office=SWT&tsid_start=<1>&tsid_end=<2>\n \
+                    /catalog/timeseries?office=SWT&tsid_start=<3>&tsid_end=<4>\n \
+                    /catalog/timeseries?office=SWT&tsid_start=<5>&tsid_end=<6>\n
+    par thread 1
+        Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<1>&tsid_end=<2>
+        ReverseProxy -> CDA: cache current?
+        CDA -> ReverseProxy: no
+        ReverseProxy -> CDA: /catalog/timeseries?office=SWT&tsid_start=<1>&tsid_end=<2>
+        CDA -> Database: query time series for SWT starting with <1> and ending with <2>
+        CDA -> Client: time series ids
+    else thread 2
+        Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<3>&tsid_end=<4>
+        ReverseProxy -> CDA: cache current?
+        CDA -> ReverseProxy: no
+        ReverseProxy -> CDA: /catalog/timeseries?office=SWT&tsid_start=<3>&tsid_end=<4>
+        CDA -> Database: query time series for SWT starting with <3> and ending with <4>
+        CDA -> Client: time series ids
+    else thread 3
+        Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<5>&tsid_end=<6>
+        ReverseProxy -> CDA: cache current?
+        CDA -> ReverseProxy: no
+        ReverseProxy -> CDA: /catalog/timeseries?office=SWT&tsid_start=<5>&tsid_end=<6>
+        CDA -> Database: query time series for SWT starting with <5> and ending with <6>
+        CDA -> Client: time series ids
+    end
+else Session 2
+    Client -> ReverseProxy: /catalog/timeseries/pages?office=SWT
+    ReverseProxy -> CDA: cache current?
+    CDA -> ReverseProxy: yes
+    ReverseProxy -> Client: \n \
+                    /catalog/timeseries?office=SWT&tsid_start=<1>&tsid_end=<2>\n \
+                    /catalog/timeseries?office=SWT&tsid_start=<3>&tsid_end=<4>\n \
+                    /catalog/timeseries?office=SWT&tsid_start=<5>&tsid_end=<6>\n
+    par thread 1
+        Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<1>&tsid_end=<2>
+        ReverseProxy -> CDA: cache current?
+        CDA -> ReverseProxy: yes
+        ReverseProxy -> Client: time series ids 
+    else thread 2
+        Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<3>&tsid_end=<4>
+        ReverseProxy -> CDA: cache current?
+        CDA -> ReverseProxy: yes
+        ReverseProxy -> Client: time series ids
+    else thread 3
+        Client -> ReverseProxy: /catalog/timeseries?office=SWT&tsid_start=<5>&tsid_end=<6>
+        ReverseProxy -> CDA: cache current?
+        CDA -> ReverseProxy: yes
+        ReverseProxy -> Client: time series ids
+    end
+end
+@enduml
