@@ -3,7 +3,7 @@
 Due to the nature of the needs of this system it is not possible to just up and run `docker-compose up`, some manual setup will be required.
 
 ## Here are the following pre-steps
-1. Add `<real host ip> cwms-data.localhost auth.localhost traefik.localhost` to the /etc/hosts file  (Warning: 127.0.0.1 doesn't work!)
+1. Add `<real host ip> cwms-data.localhost auth.localhost traefik.localhost` to the /etc/hosts file  (**Warning: 127.0.0.1 doesn't work!**)
 2. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
 3. Create an environment file with appropriate references for your environment and testing.
 
