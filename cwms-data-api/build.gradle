@@ -134,6 +134,8 @@ dependencies {
     tomcatLibs "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
     tomcatLibs "org.apache.tomcat:tomcat-juli:$tomcatVersion"
     tomcatLibs "org.apache.tomcat:tomcat-jdbc:$tomcatVersion"
+    tomcatLibs "com.google.flogger:flogger:0.7.4"
+    tomcatLibs "com.google.flogger:flogger-system-backend:0.7.4"
 
     testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
 
@@ -179,6 +181,10 @@ war {
     dependsOn extractWebJars
     from "$buildDir/extra"
     from "src/resources/"
+
+    manifest {
+        attributes "build-version": project.version
+    }
 
     doLast {
         println(war.archiveFileName.toString())

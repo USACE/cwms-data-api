@@ -58,7 +58,7 @@ import org.jooq.DSLContext;
 
 public class TimeSeriesGroupController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(TimeSeriesGroupController.class.getName());
-    public static final String TAG = "Timeseries Groups-Beta";
+    public static final String TAG = "Timeseries Groups";
 
     private final MetricRegistry metrics;
 
@@ -256,10 +256,10 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroup deserialize = deserialize(body, formatHeader);
             boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class).getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
-            if(!oldGroupId.equals(deserialize.getId())) {
+            if (!oldGroupId.equals(deserialize.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, deserialize);
             }
-            if(replaceAssignedTs){
+            if (replaceAssignedTs) {
                 timeSeriesGroupDao.unassignAllTs(deserialize);
             }
             timeSeriesGroupDao.assignTs(deserialize);

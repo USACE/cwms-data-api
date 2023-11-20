@@ -26,7 +26,6 @@ package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
@@ -35,47 +34,54 @@ import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-public class StateControllerTestIT extends DataApiTestIT {
+public class OfficeControllerIT extends DataApiTestIT {
+
+    public static final String OFFICE = "SPK";
 
     @Test
-    void test_state_catalog()  {
+    void test_get_all()  {
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/states/")
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].name", equalTo("Unknown State or State N/A"))
-            .body("[0].state-initial", equalTo("00"));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header(Header.ETAG, not(isEmptyOrNullString()))
+                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+                .body("[0].name", CoreMatchers.equalTo("CPC"))
+                ;
     }
 
     @Test
-    void test_state_has_ETag_and_Cache_Control()  {
-        String matcher;
+    void test_get_one()  {
+
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/states/")
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .header(Header.ETAG, not(isEmptyOrNullString()))
-            .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/" + OFFICE)
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header(Header.ETAG, not(isEmptyOrNullString()))
+                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+                .body("offices.offices[0].long-name", containsString("acramento"))
+        ;
 
     }
 }
