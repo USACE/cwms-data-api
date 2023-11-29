@@ -50,6 +50,7 @@ import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StateController;
+import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
@@ -130,6 +131,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
         "/auth/*",
         "/swagger-docs",
         "/timeseries/*",
+        "/text-timeseries/*",
         "/offices/*",
         "/states/*",
         "/counties/*",
@@ -395,6 +397,8 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/text-timeseries/{ts-id}",
+                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
     }
 
     /**
