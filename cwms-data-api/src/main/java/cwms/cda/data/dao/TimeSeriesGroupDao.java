@@ -61,7 +61,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId) {
-        Condition whereCond = null;
+        Condition whereCond = DSL.noCondition();
         if (officeId != null) {
             whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId);
         }
@@ -69,8 +69,33 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return getTimeSeriesGroupsWhere(whereCond);
     }
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId,
-                                                     String groupId) {
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, boolean includeAssigned, String tsCategoryLike, String tsGroupLike) {
+
+        Condition whereCond = DSL.noCondition();
+        if (officeId != null) {
+            whereCond = whereCond.and(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId));
+        }
+
+        if (tsCategoryLike != null) {
+            whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID, tsCategoryLike));
+        }
+
+        if (tsGroupLike != null) {
+            whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID, tsGroupLike));
+        } else {
+            whereCond = whereCond.and(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID.isNotNull());
+        }
+
+        if(includeAssigned){
+            return getTimeSeriesGroupsWhere(whereCond);
+        } else {
+            return getTimeSeriesGroupsWithoutAssigned(whereCond);
+        }
+
+    }
+
+
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId, String groupId) {
         return getTimeSeriesGroupsWhere(buildWhereCondition(officeId, categoryId, groupId));
     }
 
@@ -127,9 +152,30 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return retval;
     }
 
+    @NotNull
+    private List<TimeSeriesGroup> getTimeSeriesGroupsWithoutAssigned(Condition whereCond) {
+
+        SelectConditionStep<Record8<String, String, String, String, String, String, String, String>> query = dsl.select(
+                AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID,
+                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID)
+                .from(AV_TS_CAT_GRP.AV_TS_CAT_GRP)
+                .where(whereCond);
+
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
+
+        return query.fetch((RecordMapper<Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
+    }
+
     private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord) {
         AssignedTimeSeries retval = null;
 
+        String officeId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID);
         String timeseriesId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
         BigDecimal tsCode = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
 
@@ -142,7 +188,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             if (attrBD != null) {
                 attr = attrBD.intValue();
             }
-            retval = new AssignedTimeSeries(timeseriesId, tsCode, aliasId, refTsId, attr);
+            retval = new AssignedTimeSeries(officeId, timeseriesId, tsCode, aliasId, refTsId, attr);
         }
 
         return retval;
@@ -171,7 +217,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
     private Condition buildWhereCondition(String groupOfficeId, String categoryId, String groupId) {
         AV_TS_CAT_GRP atcg = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
-        Condition whereCondition = DSL.trueCondition();
+        Condition whereCondition = DSL.noCondition();
 
         if (groupOfficeId != null && !groupOfficeId.isEmpty()) {
             //We do not need to filter on the category office id since category ids
@@ -253,4 +299,6 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 null, "T", group.getOfficeId())
         );
     }
+
+
 }

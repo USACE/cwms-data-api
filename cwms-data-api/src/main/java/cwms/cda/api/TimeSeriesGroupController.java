@@ -79,7 +79,14 @@ public class TimeSeriesGroupController implements CrudHandler {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                     + "timeseries group(s) whose data is to be included in the response. If this "
                     + "field is not specified, matching timeseries groups information from all "
-                    + "offices shall be returned.")},
+                    + "offices shall be returned."),
+            @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
+                    + " the assigned timeseries in the returned timeseries groups. (default: true)"),
+            @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                    + "matching against the timeseries category id"),
+            @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                    + "matching against the timeseries group id")
+    },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {@OpenApiContent(isArray = true, from =
@@ -98,7 +105,15 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
-            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office);
+            boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
+                    Boolean.class, true, metrics, name(TimeSeriesGroupController.class.getName(),
+                            GET_ALL));
+            String tsCategoryLike = queryParamAsClass(ctx, new String[]{TIMESERIES_CATEGORY_LIKE},
+                    String.class, null, metrics, name(TimeSeriesGroupController.class.getName(), GET_ALL));
+            String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE},
+                    String.class, null, metrics, name(TimeSeriesGroupController.class.getName(), GET_ALL));
+
+            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office, includeAssigned, tsCategoryLike, tsGroupLike);
             if (grps.isEmpty()) {
                 CdaError re = new CdaError("No data found for The provided office");
                 logger.info(() -> re + " for request " + ctx.fullUrl());
