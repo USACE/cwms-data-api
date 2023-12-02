@@ -80,7 +80,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_group_SPK() throws Exception {
+    void test_group_SPK() {
 
         Response response =
             given()
@@ -160,7 +160,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -309,7 +309,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -451,7 +451,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -491,7 +491,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         assignedTimeSeries.clear();
         String timeSeriesId2 = "Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda";
         BigDecimal tsCode2 = getTsCode(officeId, timeSeriesId2);
-        assignedTimeSeries.add(new AssignedTimeSeries(timeSeriesId2, tsCode2, "AliasId2", timeSeriesId2, 2));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId2, tsCode2, "AliasId2", timeSeriesId2, 2));
         groupXml = Formats.format(contentType, group);
         //Add Assigned Locs
         given()
