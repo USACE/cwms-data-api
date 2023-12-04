@@ -14,8 +14,6 @@ import static cwms.cda.api.Controllers.NAME_MASK;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGESIZE2;
-import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.POOL_ID;
 import static cwms.cda.api.Controllers.PROJECT_ID;
@@ -86,19 +84,11 @@ public class PoolController implements CrudHandler {
                             + " in the request you are. This is an opaque value, and can be"
                             + " obtained from the 'next-page' value in the response."
             ),
-            @OpenApiParam(name = CURSOR,
-                    deprecated = true,
-                    description = "Deprecated. Use '" + PAGE + "' instead."
-            ),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description =
                             "How many entries per page returned. Default " + defaultPageSize + "."
-            ),
-            @OpenApiParam(name = PAGESIZE3,
-                    deprecated = true,
-                    type = Integer.class,
-                    description = "Deprecated. Use '" + PAGE_SIZE + "' instead."),},
+            ),},
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Pools.class)}),
@@ -134,8 +124,8 @@ public class PoolController implements CrudHandler {
                     String.class, "", metrics, name(PoolController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
-                PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE},
+                    Integer.class, defaultPageSize, metrics,
                     name(PoolController.class.getName(), GET_ALL));
 
             Pools pools = dao.retrievePools(cursor, pageSize, projectIdMask, nameMask, bottomMask,

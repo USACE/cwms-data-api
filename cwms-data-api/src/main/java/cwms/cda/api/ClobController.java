@@ -9,12 +9,9 @@ import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.IGNORE_NULLS;
 import static cwms.cda.api.Controllers.INCLUDE_VALUES;
-import static cwms.cda.api.Controllers.INCLUDE_VALUES2;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGESIZE2;
-import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
@@ -99,29 +96,15 @@ public class ClobController implements CrudHandler {
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = CURSOR,
-                            deprecated = true,
-                            description = "Deprecated. Use 'page' instead."
-                    ),
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. Default "
                                     + defaultPageSize + "."
                     ),
-                    @OpenApiParam(name = PAGESIZE3,
-                            deprecated = true,
-                            type = Integer.class,
-                            description = "Deprecated, use 'page-size' instead."
-                    ),
                     @OpenApiParam(name = INCLUDE_VALUES,
                             type = Boolean.class,
                             description = "Do you want the value associated with this particular "
                                     + "clob (default: false)"
-                    ),
-                    @OpenApiParam(name = INCLUDE_VALUES2,
-                            deprecated = true,
-                            type = Boolean.class,
-                            description = "Deprecated, use 'include-values' instead."
                     ),
                     @OpenApiParam(name = LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
@@ -159,12 +142,11 @@ public class ClobController implements CrudHandler {
                 return;
             }
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
-                            PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE}, Integer.class, defaultPageSize, metrics,
                     name(ClobController.class.getName(), GET_ALL));
 
-            boolean includeValues = queryParamAsClass(ctx, new String[]{INCLUDE_VALUES,
-                            INCLUDE_VALUES2}, Boolean.class, false, metrics,
+            boolean includeValues = queryParamAsClass(ctx, new String[]{INCLUDE_VALUES},
+                    Boolean.class, false, metrics,
                     name(ClobController.class.getName(), GET_ALL));
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
