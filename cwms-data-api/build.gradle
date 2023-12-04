@@ -137,9 +137,6 @@ dependencies {
     tomcatLibs "com.google.flogger:flogger:0.7.4"
     tomcatLibs "com.google.flogger:flogger-system-backend:0.7.4"
 
-    testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
-
-
     testImplementation "org.testcontainers:testcontainers:1.17.3"
     testImplementation 'org.testcontainers:database-commons:1.17.3'
     testImplementation "org.testcontainers:jdbc:1.17.3"
@@ -148,8 +145,6 @@ dependencies {
 
     testImplementation "org.apache.commons:commons-csv:1.9.0"
     testImplementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
-
-//    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
     webjars('org.webjars:swagger-ui:5.9.0') {
         transitive = false
