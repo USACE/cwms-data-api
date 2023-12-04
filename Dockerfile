@@ -16,7 +16,7 @@ WORKDIR /builddir
 COPY . /builddir/
 RUN  gradle clean prepareDockerBuild --info --no-daemon
 
-FROM tomcat:9.0.74-jdk8 as api
+FROM tomcat:9.0.83-jdk8 as api
 #RUN DEBIAN_FRONTEND="noninteractive" \ 
 #    apt-get -y update && \
 #    apt-get -y upgrade --fix-missing
