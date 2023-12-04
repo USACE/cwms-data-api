@@ -20,7 +20,7 @@ ext.JAVALIN_VERSION='4.6.7'
 
 ext.JACKSON_VERSION='2.13.3'
 ext.SWAGGER_CORE_VERSION='2.2.2'
-ext.tomcatVersion='9.0.64'
+ext.tomcatVersion='9.0.83!!'
 
 subprojects {
     apply plugin: 'java'
