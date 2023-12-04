@@ -39,7 +39,7 @@ import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.TextTimeSeriesDao;
+import cwms.cda.data.dao.TimeSeriesTextDao;
 import cwms.cda.data.dto.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -77,8 +77,8 @@ public class TextTimeSeriesController implements CrudHandler {
     }
 
     @NotNull
-    protected TextTimeSeriesDao getDao(DSLContext dsl) {
-        return new TextTimeSeriesDao(dsl);
+    protected TimeSeriesTextDao getDao(DSLContext dsl) {
+        return new TimeSeriesTextDao(dsl);
     }
 
 
@@ -114,7 +114,7 @@ public class TextTimeSeriesController implements CrudHandler {
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try (Timer.Context timeContext = markAndTime(GET_ALL);
              DSLContext dsl = getDslContext(ctx)) {
-            TextTimeSeriesDao dao = getDao(dsl);
+            TimeSeriesTextDao dao = getDao(dsl);
             List<TextTimeSeries> textTimeSeries = null;  // dao.get(office, templateIdMask);
 
             ctx.contentType(contentType.toString());
@@ -161,7 +161,7 @@ public class TextTimeSeriesController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             String body = ctx.body();
             TextTimeSeries deserialize = deserialize(body, formatHeader);
-            TextTimeSeriesDao dao = getDao(dsl);
+            TimeSeriesTextDao dao = getDao(dsl);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 //            dao.create(deserialize, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
@@ -189,7 +189,7 @@ public class TextTimeSeriesController implements CrudHandler {
     public void update(Context ctx, @NotNull String oldTextTimeSeriesId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
-            TextTimeSeriesDao dao = getDao(dsl);
+            TimeSeriesTextDao dao = getDao(dsl);
             String newTextTimeSeriesId = ctx.queryParam(TEXT_TIMESERIES_ID);
             String office = ctx.queryParam(OFFICE);
          //   dao.update(oldTextTimeSeriesId, newTextTimeSeriesId, office);
@@ -215,9 +215,9 @@ public class TextTimeSeriesController implements CrudHandler {
     public void delete(Context ctx, String textTimeSeriesId) {
         try (Timer.Context ignored = markAndTime(UPDATE);
              DSLContext dsl = getDslContext(ctx)) {
-            TextTimeSeriesDao dao = getDao(dsl);
+            TimeSeriesTextDao dao = getDao(dsl);
             String office = ctx.queryParam(OFFICE);
-      //      dao.delete(textTimeSeriesId, office);
+//            dao.delete(textTimeSeriesId, office);  // TODO: add this back.
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }

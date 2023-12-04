@@ -1,5 +1,6 @@
 package cwms.cda.data.dto.timeSeriesText;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -13,22 +14,43 @@ import java.util.Date;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
-    private final Date _dateTime;
-    private final Date _versionDate;
-    private final Date _dataEntryDate;
-    private final String _textId;
-    private final Long _attribute;
-    private final String _textValue;
-    private final boolean _newData;
+
+    private final Date dateTime;
+    private final Date versionDate;
+    private final Date dataEntryDate;
+    private final String textId;
+    private final Long attribute;
+    private final String textValue;
+    private final boolean newData;
 
     private RegularTextTimeSeriesRow(Builder builder) {
-        _dateTime = builder._dateTime;
-        _versionDate = builder._versionDate;
-        _dataEntryDate = builder._dataEntryDate;
-        _textId = builder._textId;
-        _attribute = builder._attribute;
-        _textValue = builder._textValue;
-        _newData = builder._newData;
+        dateTime = builder.dateTime;
+        versionDate = builder.versionDate;
+        dataEntryDate = builder.dataEntryDate;
+        textId = builder.textId;
+        attribute = builder.attribute;
+        textValue = builder.textValue;
+        newData = builder.newData;
+    }
+
+    public Date getVersionDate() {
+        return versionDate;
+    }
+
+    public String getTextId() {
+        return textId;
+    }
+
+    public Long getAttribute() {
+        return attribute;
+    }
+
+    public String getTextValue() {
+        return textValue;
+    }
+
+    public boolean isNewData() {
+        return newData;
     }
 
     @Override
@@ -38,65 +60,99 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
 
     @Override
     public Date getDateTime() {
-        return null;
+        return dateTime;
     }
 
     @Override
     public Date getDataEntryDate() {
-        return null;
+        return dataEntryDate;
+    }
+
+    @JsonIgnore
+    @Override
+    public DateDateKey getDateDateKey() {
+        return new DateDateKey(dateTime, dataEntryDate);
     }
 
     @Override
-    public DateDateKey getDateDateKey() {
-        return null;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RegularTextTimeSeriesRow that = (RegularTextTimeSeriesRow) o;
+
+        if (isNewData() != that.isNewData()) return false;
+        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
+            return false;
+        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null)
+            return false;
+        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
+            return false;
+        if (getTextId() != null ? !getTextId().equals(that.getTextId()) : that.getTextId() != null)
+            return false;
+        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
+            return false;
+        return getTextValue() != null ? getTextValue().equals(that.getTextValue()) : that.getTextValue() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getDateTime() != null ? getDateTime().hashCode() : 0;
+        result = 31 * result + (getVersionDate() != null ? getVersionDate().hashCode() : 0);
+        result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
+        result = 31 * result + (getTextId() != null ? getTextId().hashCode() : 0);
+        result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
+        result = 31 * result + (getTextValue() != null ? getTextValue().hashCode() : 0);
+        result = 31 * result + (isNewData() ? 1 : 0);
+        return result;
     }
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private Date _dateTime;
-        private Date _versionDate;
-        private Date _dataEntryDate;
-        private String _textId;
-        private Long _attribute;
-        private String _textValue;
-        private boolean _newData;
+        private Date dateTime;
+        private Date versionDate;
+        private Date dataEntryDate;
+        private String textId;
+        private Long attribute;
+        private String textValue;
+        private boolean newData;
 
         public Builder() {
         }
 
         public Builder withDateTime(Date dateTime) {
-            _dateTime = dateTime;
+            this.dateTime = dateTime;
             return this;
         }
 
         public Builder withVersionDate(Date versionDate) {
-            _versionDate = versionDate;
+            this.versionDate = versionDate;
             return this;
         }
 
         public Builder withDataEntryDate(Date dataEntryDate) {
-            _dataEntryDate = dataEntryDate;
+            this.dataEntryDate = dataEntryDate;
             return this;
         }
 
         public Builder withTextId(String textId) {
-            _textId = textId;
+            this.textId = textId;
             return this;
         }
 
         public Builder withAttribute(Long attribute) {
-            _attribute = attribute;
+            this.attribute = attribute;
             return this;
         }
 
         public Builder withTextValue(String textValue) {
-            _textValue = textValue;
+            this.textValue = textValue;
             return this;
         }
 
         public Builder withNewData(boolean newData) {
-            _newData = newData;
+            this.newData = newData;
             return this;
         }
 
@@ -105,7 +161,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         }
 
         public Builder from(RegularTextTimeSeriesRow regularTextTimeSeriesRow) {
-            if(regularTextTimeSeriesRow == null){
+            if (regularTextTimeSeriesRow == null) {
                 return withDateTime(null)
                         .withVersionDate(null)
                         .withDataEntryDate(null)
@@ -114,13 +170,13 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withTextValue(null)
                         .withNewData(false);
             } else {
-                return withDateTime(regularTextTimeSeriesRow._dateTime)
-                        .withVersionDate(regularTextTimeSeriesRow._versionDate)
-                        .withDataEntryDate(regularTextTimeSeriesRow._dataEntryDate)
-                        .withTextId(regularTextTimeSeriesRow._textId)
-                        .withAttribute(regularTextTimeSeriesRow._attribute)
-                        .withTextValue(regularTextTimeSeriesRow._textValue)
-                        .withNewData(regularTextTimeSeriesRow._newData);
+                return withDateTime(regularTextTimeSeriesRow.dateTime)
+                        .withVersionDate(regularTextTimeSeriesRow.versionDate)
+                        .withDataEntryDate(regularTextTimeSeriesRow.dataEntryDate)
+                        .withTextId(regularTextTimeSeriesRow.textId)
+                        .withAttribute(regularTextTimeSeriesRow.attribute)
+                        .withTextValue(regularTextTimeSeriesRow.textValue)
+                        .withNewData(regularTextTimeSeriesRow.newData);
             }
         }
     }

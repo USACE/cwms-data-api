@@ -131,7 +131,6 @@ import static io.javalin.apibuilder.ApiBuilder.*;
         "/auth/*",
         "/swagger-docs",
         "/timeseries/*",
-        "/text-timeseries/*",
         "/offices/*",
         "/states/*",
         "/counties/*",
@@ -370,6 +369,8 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        cdaCrudCache("/timeseries/text/{ts-id}",
+                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
@@ -397,8 +398,7 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/text-timeseries/{ts-id}",
-                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
     }
 
     /**
@@ -514,7 +514,7 @@ public class ApiServlet extends HttpServlet {
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        am.getContainedManagers().forEach((manager)->{
+        am.getContainedManagers().forEach(manager -> {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
@@ -533,9 +533,7 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
-                });
+                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
                 return api;
             })
             .defaultDocumentation(doc -> {

@@ -75,12 +75,16 @@ public class StandardTextValue extends CwmsDTO {
         }
 
         @JsonProperty("id")  // If we don't have this then Jackson gets confused whether to call this or the method that takes hec.data
-        public Builder withId(StandardTextId id){
-            this.id = id;
+        public Builder withId(StandardTextId standardTextId) {
+            if (standardTextId != null) {
+                this.id =  new StandardTextId.Builder().from(standardTextId).build();
+            } else {
+                this.id = null;
+            }
             return this;
         }
 
-        public Builder withId(hec.data.timeSeriesText.StandardTextId newId){
+        public Builder withId(hec.data.timeSeriesText.StandardTextId newId) {
             return withId(new StandardTextId.Builder().from(newId).build());
         }
 
