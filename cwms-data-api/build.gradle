@@ -271,6 +271,35 @@ task integrationTests(type: Test) {
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
+task prepareDockerBuild(type: Copy, dependsOn: war) {
+    doFirst {
+        project.mkdir("$buildDir/docker")
+    }
+    from "src/docker"
+    into "$buildDir/docker"
+
+    from(configurations.docker)
+
+    from(configurations.baseLibs) {
+        into "libs"
+    }
+
+    from(sourceSets.test.resources) {
+
+        include "**/conf/context.xml"
+        eachFile {
+            path = name
+        }
+        includeEmptyDirs = false
+    }
+
+    from(war.outputs.files.singleFile) {
+        //include "${project.name}-${project.version}.jar"
+        into "cda/webapps"
+        rename(".*\\.war", "cwms-data.war")
+    }
+}
+
 task generateTimeSeriesSamples(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     classpath += sourceSets.test.runtimeClasspath
