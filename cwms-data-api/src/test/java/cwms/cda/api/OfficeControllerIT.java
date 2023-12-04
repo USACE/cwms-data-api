@@ -80,7 +80,7 @@ public class OfficeControllerIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .header(Header.ETAG, not(isEmptyOrNullString()))
                 .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
-                .body("offices.offices[0].long-name", containsString("acramento"))
+                .body("long-name", containsString("Sacramento"))
         ;
 
     }
