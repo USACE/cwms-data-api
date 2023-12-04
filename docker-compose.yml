@@ -82,6 +82,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
+      - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
     environment:
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/CWMS

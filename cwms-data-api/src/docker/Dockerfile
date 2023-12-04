@@ -2,7 +2,7 @@ FROM adoptopenjdk:8 as builder
 
 USER $USER
 
-FROM tomcat:9.0.64-jdk8
+FROM tomcat:9.0.83-jdk8
 
 COPY cda/ /usr/local/tomcat
 COPY context.xml /usr/local/tomcat/conf
