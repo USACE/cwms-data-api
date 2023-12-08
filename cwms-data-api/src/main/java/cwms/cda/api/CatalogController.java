@@ -8,23 +8,16 @@ import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATIONS;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE2;
 import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE2;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGESIZE2;
-import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMESERIESCATEGORYLIKE2;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE2;
-import static cwms.cda.api.Controllers.UNITSYSTEM2;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 
@@ -101,23 +94,10 @@ public class CatalogController implements CrudHandler {
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are."
                     ),
-                    @OpenApiParam(name = CURSOR,
-                            deprecated = true,
-                            description = "Deprecated. Use 'page' instead."
-                    ),
+
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entires per page returned. Default 500."
-                    ),
-                    @OpenApiParam(name = PAGESIZE3,
-                            deprecated = true,
-                            type = Integer.class,
-                            description = "Deprecated. Use page-size."
-                    ),
-                    @OpenApiParam(name = UNITSYSTEM2,
-                            deprecated = true,
-                            type = UnitSystem.class,
-                            description = "Deprecated. Use unit-system."
                     ),
                     @OpenApiParam(name = UNIT_SYSTEM,
                             type = UnitSystem.class,
@@ -134,33 +114,17 @@ public class CatalogController implements CrudHandler {
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries category id"
                     ),
-                    @OpenApiParam(name = TIMESERIESCATEGORYLIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use timeseries-category-like."
-                    ),
                     @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
                                     + "timeseries group id"
-                    ),
-                    @OpenApiParam(name = TIMESERIES_GROUP_LIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use timeseries-group-like."
                     ),
                     @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " category id"
                     ),
-                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use location-category-like."
-                    ),
                     @OpenApiParam(name = LOCATION_GROUP_LIKE,
                             description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
                                     + " group id"
-                    ),
-                    @OpenApiParam(name = LOCATION_GROUP_LIKE2,
-                            deprecated = true,
-                            description = "Deprecated. Use location-group-like."
                     ),
                     @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                             + "matching against the location bounding office. "
@@ -196,12 +160,12 @@ public class CatalogController implements CrudHandler {
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
-                    PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE              },
+                    Integer.class, defaultPageSize, metrics,
                     name(CatalogController.class.getName(), GET_ONE));
 
             String unitSystem = queryParamAsClass(ctx,
-                    new String[]{UNIT_SYSTEM, UNITSYSTEM2},
+                    new String[]{UNIT_SYSTEM, },
                     String.class, UnitSystem.SI.getValue(), metrics,
                     name(CatalogController.class.getName(), GET_ONE));
 
@@ -211,16 +175,16 @@ public class CatalogController implements CrudHandler {
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
-            String tsCategoryLike = queryParamAsClass(ctx, new String[]{TIMESERIES_CATEGORY_LIKE, TIMESERIESCATEGORYLIKE2},
+            String tsCategoryLike = queryParamAsClass(ctx, new String[]{TIMESERIES_CATEGORY_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE, TIMESERIES_GROUP_LIKE2},
+            String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE, LOCATION_CATEGORY_LIKE2},
+            String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String locGroupLike = queryParamAsClass(ctx, new String[]{LOCATION_GROUP_LIKE, LOCATION_GROUP_LIKE2},
+            String locGroupLike = queryParamAsClass(ctx, new String[]{LOCATION_GROUP_LIKE },
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
             String boundingOfficeLike = queryParamAsClass(ctx, new String[]{BOUNDING_OFFICE_LIKE},
