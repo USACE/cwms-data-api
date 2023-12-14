@@ -162,3 +162,28 @@ services:
       - "traefik.http.routers.api.entryPoints=traefik"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls=true"
+#
+#  varnish:
+#    image: varnish:stable
+#    container_name: varnish
+#    volumes:
+#      - "./compose_files/varnish/default.vcl:/etc/varnish/default.vcl"
+#    ports:
+#      - "80:80"
+#    tmpfs:
+#      - /var/lib/varnish:exec
+#    environment:
+#      - VARNISH_SIZE=2G
+#      #    command: "-p default_keep=300"
+#    depends_on:
+#      data-api:
+#        condition: service_healthy
+
+#Instead of varnish can use nginx
+#  # The reverse proxy cache
+#  nginx:
+#    image: nginx:1.16.0-alpine
+#    volumes:
+#      - ./compose_files/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#    ports:
+#      - "8080:8080"
