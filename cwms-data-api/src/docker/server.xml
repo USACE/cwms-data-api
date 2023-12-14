@@ -62,9 +62,9 @@
         <!-- Access log processes all example.
              Documentation at: /docs/config/valve.html
              Note: The pattern used is equivalent to using pattern="common" -->
-        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="/dev"
+        <!--<Valve className="org.apache.catalina.valves.AccessLogValve" directory="/dev"
                prefix="stdout" suffix="" buffered="false" rotatable="false" fileDateFormat=""
-               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />-->
 
       </Host>
     </Engine>
