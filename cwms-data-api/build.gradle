@@ -246,8 +246,8 @@ task run(type: JavaExec) {
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
-    jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration"
-    jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms"
+    jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration"
+    jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms"
 }
 
 task integrationTests(type: Test) {

@@ -60,4 +60,4 @@ END
 	keytool -import -noprompt -trustcacerts -alias root -file certs/rootca.pem -keystore $KEYSTORE -storepass badpassword
 }
 
-generate_serverkey main traefik.localhost $HOSTNAME auth.localhost cwms-data.localhost
+generate_serverkey main traefik.test $HOSTNAME auth.test cwms-data.test
