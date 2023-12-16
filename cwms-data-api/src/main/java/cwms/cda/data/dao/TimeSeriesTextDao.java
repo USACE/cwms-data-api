@@ -1,23 +1,27 @@
 package cwms.cda.data.dao;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.data.dto.TextTimeSeries;
+
 import cwms.cda.data.dto.timeSeriesText.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.timeSeriesText.StandardTextCatalog;
 import cwms.cda.data.dto.timeSeriesText.StandardTextId;
 import cwms.cda.data.dto.timeSeriesText.StandardTextTimeSeriesRow;
 import cwms.cda.data.dto.timeSeriesText.StandardTextValue;
+import cwms.cda.data.dto.timeSeriesText.TextTimeSeries;
 import hec.data.ITimeSeriesDescription;
-
 import hec.data.timeSeriesText.DateDateKey;
-
+import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -25,8 +29,23 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
+
+import java.util.stream.Collectors;
+import kotlin.Pair;
+import org.apache.commons.codec.StringDecoder;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.Condition;
+import org.jooq.Cursor;
 import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Record8;
+import org.jooq.Result;
+import org.jooq.ResultQuery;
+import org.jooq.SelectJoinStep;
+import org.jooq.conf.ParamType;
 import org.jooq.exception.NoDataFoundException;
+import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultBinding;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -82,7 +101,8 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
 
-    public StandardTextCatalog getStandardTextCatalog(String pOfficeIdMask, String pStdTextIdMask) throws SQLException {
+    public StandardTextCatalog getStandardTextCatalog(String pOfficeIdMask,
+                                                      String pStdTextIdMask) throws SQLException {
 
         try (ResultSet rs = CWMS_TEXT_PACKAGE.call_CAT_STD_TEXT_F(dsl.configuration(),
                 pStdTextIdMask, pOfficeIdMask).intoResultSet()) {
@@ -93,25 +113,27 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     private static StandardTextCatalog parseStandardTextResultSet(ResultSet rs) throws SQLException {
-        OracleTypeMap.checkMetaData(rs.getMetaData(), stdTextCatalogColumnsList, "Standard Text Catalog");
+        OracleTypeMap.checkMetaData(rs.getMetaData(), stdTextCatalogColumnsList, "Standard Text "
+                + "Catalog");
         StandardTextCatalog.Builder builder = new StandardTextCatalog.Builder();
         while (rs.next()) {
-            builder.withStandardTextValue(buildStandardTextValue(
+            builder.withValue(buildStandardTextValue(
                     rs.getString(OFFICE_ID), rs.getString(STD_TEXT_ID), rs.getString(STD_TEXT)));
         }
         return builder.build();
     }
 
-    private static StandardTextValue buildStandardTextValue(String officeId, String txtId, String txt) {
-        cwms.cda.data.dto.timeSeriesText.StandardTextId id = new cwms.cda.data.dto.timeSeriesText.StandardTextId.Builder()
-                .withOfficeId(officeId)
-                .withId(txtId)
-                .build();
-        StandardTextValue standardTextValue = new StandardTextValue.Builder()
+    private static StandardTextValue buildStandardTextValue(String officeId, String txtId,
+                                                            String txt) {
+        cwms.cda.data.dto.timeSeriesText.StandardTextId id =
+                new cwms.cda.data.dto.timeSeriesText.StandardTextId.Builder()
+                        .withOfficeId(officeId)
+                        .withId(txtId)
+                        .build();
+        return  new StandardTextValue.Builder()
                 .withId(id)
                 .withStandardText(txt)
                 .build();
-        return standardTextValue;
     }
 
 
@@ -193,47 +215,55 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     private TextTimeSeries<RegularTextTimeSeriesRow> parseTimeSeriesTextResultSet(ITimeSeriesDescription timeSeriesDescription, ResultSet rs) throws SQLException {
-        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, "Text Time "
-                + "Series");
+        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, "Text Time Series");
 
-        TextTimeSeries<RegularTextTimeSeriesRow> retval = new TextTimeSeries<>(timeSeriesDescription);
+        TextTimeSeries.Builder<RegularTextTimeSeriesRow> builder = new TextTimeSeries.Builder<>();
+        builder.withId(timeSeriesDescription.getTimeSeriesId())
+                .withOfficeId(timeSeriesDescription.getOfficeId());
+
         while (rs.next()) {
-            RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
+            RegularTextTimeSeriesRow row = parseRegularRow(rs);
+            builder.withRow(row);
 
-            Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
-                    OracleTypeMap.getInstance().getGmtCalendar());
-            if (!rs.wasNull()) {
-                Date dateTime = new Date(tsDateTime.getTime());
-                builder.withDateTime(dateTime);
-            }
-
-            Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE,
-                    OracleTypeMap.getInstance().getGmtCalendar());
-            if (!rs.wasNull()) {
-                Date versionDate = new Date(tsVersionDate.getTime());
-                builder.withVersionDate(versionDate);
-            }
-            Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE,
-                    OracleTypeMap.getInstance().getGmtCalendar());
-            if (!rs.wasNull()) {
-                Date dataEntryDate = new Date(tsDataEntryDate.getTime());
-                builder.withDataEntryDate(dataEntryDate);
-            }
-            String textId = rs.getString(TEXT_ID);
-            if (!rs.wasNull()) {
-                builder.withTextId(textId);
-            }
-            Number attribute = rs.getLong(ATTRIBUTE);
-            if (!rs.wasNull()) {
-                builder.withAttribute(attribute.longValue());
-            }
-            String clobString = rs.getString(TEXT);
-            if (!rs.wasNull()) {
-                builder.withTextValue(clobString);
-            }
-            retval.add(builder.build());
         }
-        return retval;
+        return builder.build();
+    }
+
+    private static RegularTextTimeSeriesRow parseRegularRow(ResultSet rs) throws SQLException {
+        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
+
+        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
+                OracleTypeMap.getInstance().getGmtCalendar());
+        if (!rs.wasNull()) {
+            Date dateTime = new Date(tsDateTime.getTime());
+            builder.withDateTime(dateTime);
+        }
+
+        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE,
+                OracleTypeMap.getInstance().getGmtCalendar());
+        if (!rs.wasNull()) {
+            Date versionDate = new Date(tsVersionDate.getTime());
+            builder.withVersionDate(versionDate);
+        }
+        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE,
+                OracleTypeMap.getInstance().getGmtCalendar());
+        if (!rs.wasNull()) {
+            Date dataEntryDate = new Date(tsDataEntryDate.getTime());
+            builder.withDataEntryDate(dataEntryDate);
+        }
+        String textId = rs.getString(TEXT_ID);
+        if (!rs.wasNull()) {
+            builder.withTextId(textId);
+        }
+        Number attribute = rs.getLong(ATTRIBUTE);
+        if (!rs.wasNull()) {
+            builder.withAttribute(attribute.longValue());
+        }
+        String clobString = rs.getString(TEXT);
+        if (!rs.wasNull()) {
+            builder.withTextValue(clobString);
+        }
+        return builder.build();
     }
 
 
@@ -276,16 +306,16 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     public StandardTextValue retrieveStandardText(StandardTextId standardTextId) {
 
         return connectionResult(dsl, c -> {
-                CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
+            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
 
-                String stdTextClob = dbText.retrieveStdTextF(c,
-                        standardTextId.getId(),
-                        standardTextId.getOfficeId());
+            String stdTextClob = dbText.retrieveStdTextF(c,
+                    standardTextId.getId(),
+                    standardTextId.getOfficeId());
 
-                return new StandardTextValue.Builder()
-                        .withId(standardTextId)
-                        .withStandardText(stdTextClob)
-                        .build();
+            return new StandardTextValue.Builder()
+                    .withId(standardTextId)
+                    .withStandardText(stdTextClob)
+                    .build();
         });
     }
 
@@ -305,30 +335,31 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
 
-
     public void deleteTimeSeriesStandardText(
-                                             ITimeSeriesDescription timeSeriesDescription,
-                                             StandardTextId standardTextId, Date startTime,
-                                             Date endTime, Date versionDate, boolean maxVersion,
-                                             Long minAttribute, Long maxAttribute)  {
+            ITimeSeriesDescription timeSeriesDescription,
+            StandardTextId standardTextId, Date startTime,
+            Date endTime, Date versionDate, boolean maxVersion,
+            Long minAttribute, Long maxAttribute) {
 
-            String tsid = timeSeriesDescription.toString();
-            String stdTextIdMask = standardTextId.getId();
-            TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
-            String officeId = timeSeriesDescription.getOfficeId();
+        String tsid = timeSeriesDescription.toString();
+        String stdTextIdMask = standardTextId.getId();
+        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+        String officeId = timeSeriesDescription.getOfficeId();
 
-            connection(dsl, c -> {
-                    CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
-                    dbText.deleteTsStdText(c, tsid, stdTextIdMask, startTime,
-                            endTime, versionDate, timeZone, maxVersion, minAttribute,
-                            maxAttribute, officeId);
-            });
+        connection(dsl, c -> {
+            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
+            dbText.deleteTsStdText(c, tsid, stdTextIdMask, startTime,
+                    endTime, versionDate, timeZone, maxVersion, minAttribute,
+                    maxAttribute, officeId);
+        });
     }
 
 
     public TextTimeSeries<StandardTextTimeSeriesRow> retrieveTimeSeriesStandardText(
-                                                                                    ITimeSeriesDescription timeSeriesDescription, StandardTextId standardTextId, Date startTime, Date endTime,
-                                                                                    Date versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute) {
+            ITimeSeriesDescription timeSeriesDescription, StandardTextId standardTextId,
+            Date startTime, Date endTime,
+            Date versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute,
+            Long maxAttribute) {
 
         String tsid = timeSeriesDescription.toString();
         final String stdTextIdMask;
@@ -352,67 +383,71 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     private TextTimeSeries<StandardTextTimeSeriesRow> parseTimeSeriesStandardTextResultSet(
-            ITimeSeriesDescription timeSeriesDescription, ResultSet rs) throws SQLException
-    {
-        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, "Standard Text Time Series");
+            ITimeSeriesDescription timeSeriesDescription, ResultSet rs) throws SQLException {
+        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, "Standard "
+                + "Text Time Series");
 
-        TextTimeSeries<StandardTextTimeSeriesRow> retval = new TextTimeSeries<>(timeSeriesDescription);
-        while (rs.next())
-        {
-            StandardTextTimeSeriesRow row = buildStandardTextTimeSeriesRow(rs, timeSeriesDescription.getOfficeId() );
-            retval.add(row);
+        TextTimeSeries.Builder<StandardTextTimeSeriesRow> builder = new TextTimeSeries.Builder<>();
+        builder.withId(timeSeriesDescription.getTimeSeriesId());
+        builder.withOfficeId(timeSeriesDescription.getOfficeId());
+
+        while (rs.next()) {
+            StandardTextTimeSeriesRow row = buildStandardTextTimeSeriesRow(rs,
+                    timeSeriesDescription.getOfficeId());
+            builder.withRow(row);
         }
-        return retval;
+        return builder.build();
 
     }
 
-    private static StandardTextTimeSeriesRow buildStandardTextTimeSeriesRow(ResultSet rs, String officeId) throws SQLException {
+    private static StandardTextTimeSeriesRow buildStandardTextTimeSeriesRow(ResultSet rs,
+                                                                            String officeId) throws SQLException {
         StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
-        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull())
-        {
+        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
+                OracleTypeMap.getInstance().getGmtCalendar());
+        if (!rs.wasNull()) {
             Date dateTime = new Date(tsDateTime.getTime());
             builder.withDateTime(dateTime);
         }
 
         Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE);
-        if (!rs.wasNull())
-        {
+        if (!rs.wasNull()) {
             Date versionDate = new Date(tsVersionDate.getTime());
             builder.withVersionDate(versionDate);
         }
-        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull())
-        {
+        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE,
+                OracleTypeMap.getInstance().getGmtCalendar());
+        if (!rs.wasNull()) {
             Date dataEntryDate = new Date(tsDataEntryDate.getTime());
             builder.withDataEntryDate(dataEntryDate);
         }
         String stdTextId = rs.getString(STD_TEXT_ID);
         StandardTextId standardTextId = null;
-        if (!rs.wasNull())
-        {
-            standardTextId = new StandardTextId.Builder().withOfficeId(officeId).withId(stdTextId).build();
+        if (!rs.wasNull()) {
+            standardTextId =
+                    new StandardTextId.Builder().withOfficeId(officeId).withId(stdTextId).build();
             builder.withStandardTextId(standardTextId);
         }
         Number attribute = rs.getLong(ATTRIBUTE);
-        if (!rs.wasNull())
-        {
+        if (!rs.wasNull()) {
             builder.withAttribute(attribute.longValue());
         }
         String clobString = rs.getString(STD_TEXT);
-        if (!rs.wasNull() && standardTextId != null)
-        {
-            StandardTextValue standardTextValue = new StandardTextValue.Builder().withId(standardTextId).withStandardText(clobString).build();
+        if (!rs.wasNull() && standardTextId != null) {
+            StandardTextValue standardTextValue =
+                    new StandardTextValue.Builder().withId(standardTextId).withStandardText(clobString).build();
             builder.withStandardTextValue(standardTextValue);
         }
-        StandardTextTimeSeriesRow row = builder.build();
-        return row;
+        return builder.build();
     }
 
-    public void storeTimeSeriesText(TextTimeSeries<RegularTextTimeSeriesRow> textTimeSeries, boolean maxVersion, boolean replaceAll) {
+    public void storeTimeSeriesText(TextTimeSeries<RegularTextTimeSeriesRow> textTimeSeries,
+                                    boolean maxVersion, boolean replaceAll) {
 
-        NavigableMap<DateDateKey, RegularTextTimeSeriesRow> textTimeSeriesMap = textTimeSeries.getTextTimeSeriesMap();
-        Set<Map.Entry<DateDateKey, RegularTextTimeSeriesRow>> entrySet = textTimeSeriesMap.entrySet();
+        NavigableMap<DateDateKey, RegularTextTimeSeriesRow> textTimeSeriesMap =
+                textTimeSeries.getTextTimeSeriesMap();
+        Set<Map.Entry<DateDateKey, RegularTextTimeSeriesRow>> entrySet =
+                textTimeSeriesMap.entrySet();
         for (Map.Entry<DateDateKey, RegularTextTimeSeriesRow> entry : entrySet) {
             RegularTextTimeSeriesRow regularTextTimeSeriesRow = entry.getValue();
             storeRow(textTimeSeries, regularTextTimeSeriesRow, maxVersion, replaceAll);
@@ -421,7 +456,8 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     private void storeRow(TextTimeSeries<RegularTextTimeSeriesRow> textTimeSeries,
-                          RegularTextTimeSeriesRow regularTextTimeSeriesRow, boolean maxVersion, boolean replaceAll) {
+                          RegularTextTimeSeriesRow regularTextTimeSeriesRow, boolean maxVersion,
+                          boolean replaceAll) {
 
         String tsid = textTimeSeries.getId();
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
@@ -444,10 +480,159 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
                         attribute, officeId);
             } else {
                 dbText.storeTsTextId(connection, tsid, textId, dates,
-                        versionDate, timeZone, maxVersion, replaceAll, attribute,
-                        officeId);
+                        versionDate, timeZone, maxVersion, replaceAll,
+                        attribute, officeId);
             }
         });
+    }
+
+    public Collection<TextTimeSeries> retrieveFromView(String officeId, String tsId,
+                                                       Date startTime, Date endTime,
+                                                       Date versionDate, Long minAttribute,
+                                                       Long maxAttribute
+
+    ) {
+        // get jooq field by name b/c this view isn't "jooqified"
+        Field<String> officeIdField = DSL.field("OFFICE_ID", String.class);
+        Field<String> tsIdField = DSL.field("CWMS_TS_ID", String.class);
+        Field<Timestamp> dateTimeUTCField = DSL.field("DATE_TIME_UTC", Timestamp.class);
+        Field<Timestamp> versionDateUTCField = DSL.field("VERSION_DATE_UTC", Timestamp.class);
+        Field<Timestamp> dataEntryDateUTCField = DSL.field("DATA_ENTRY_DATE_UTC", Timestamp.class);
+        Field<Integer> attrField = DSL.field("ATTRIBUTE", Integer.class);
+        Field<String> stdTextIdField = DSL.field("STD_TEXT_ID", String.class);
+        Field<String> textValueField = DSL.field("TEXT_VALUE", String.class);
+
+        List<Field> fields = new ArrayList<>();
+        fields.add(officeIdField);
+        fields.add(tsIdField);
+        fields.add(dateTimeUTCField);
+        fields.add(versionDateUTCField);
+        fields.add(dataEntryDateUTCField);
+        fields.add(attrField);
+        fields.add(stdTextIdField);
+        fields.add(textValueField);
+
+        // revisit these and see what other parameters we need/want to add.
+        Condition where = DSL.noCondition();
+        if(officeId != null){
+            where = where.and(officeIdField.eq(officeId));
+        }
+
+        if(tsId != null){
+            where = where.and(tsIdField.eq(tsId));
+        }
+
+        if(startTime != null){
+            where = where.and(dateTimeUTCField.ge(new Timestamp(startTime.getTime())));
+        }
+
+        if(endTime != null){
+            where = where.and(dateTimeUTCField.le(new Timestamp(endTime.getTime())));
+        }
+
+        if(versionDate != null){
+            where = where.and(versionDateUTCField.eq(new Timestamp(versionDate.getTime())));
+        }
+
+        if(minAttribute != null){
+            where = where.and(attrField.ge(Math.toIntExact(minAttribute)));
+        }
+
+        if(maxAttribute != null){
+            where = where.and(attrField.le(Math.toIntExact(maxAttribute)));
+        }
+
+
+        ResultQuery<Record> query = dsl.select(fields)
+                .from("CWMS_20.AV_TS_TEXT")
+                .where(where)
+               ;
+
+        Map<Pair<String, String>, List<TextTimeSeriesRow>> found = query
+                .collect(Collectors.groupingBy(TimeSeriesTextDao::buildPair,
+                        LinkedHashMap::new, Collectors.mapping(this::buildRow, Collectors.toList())));
+
+        List<TextTimeSeries> retval = null;
+        if(! found.isEmpty()){
+            retval = new ArrayList<>();
+
+            for (Map.Entry<Pair<String, String>, List<TextTimeSeriesRow>> entry : found.entrySet()) {
+                Pair<String, String> officeTsId = entry.getKey();
+
+                TextTimeSeries tts = new TextTimeSeries.Builder()
+                        .withOfficeId(officeTsId.getFirst())
+                        .withId(officeTsId.getSecond())
+                        .withRows(entry.getValue())
+                        .build();
+                retval.add(tts);
+            }
+
+        }
+
+        return retval;
+    }
+
+    @NotNull
+    private static Pair<String, String> buildPair(Record r) {
+        Field<String> officeIdField = DSL.field("OFFICE_ID", String.class);
+        Field<String> tsIdField = DSL.field("CWMS_TS_ID", String.class);
+        return new Pair<>(r.get(officeIdField), r.get(tsIdField));
+    }
+
+    private TextTimeSeriesRow buildRow(Record next){
+        Field<String> officeIdField = DSL.field("OFFICE_ID", String.class);
+//        Field<String> tsIdField = DSL.field("CWMS_TS_ID", String.class);
+        Field<Timestamp> dateTimeUTCField = DSL.field("DATE_TIME_UTC", Timestamp.class);
+        Field<Timestamp> versionDateUTCField = DSL.field("VERSION_DATE_UTC", Timestamp.class);
+        Field<Timestamp> dataEntryDateUTCField = DSL.field("DATA_ENTRY_DATE_UTC", Timestamp.class);
+        Field<Integer> attributeField = DSL.field("ATTRIBUTE", Integer.class);
+        Field<String> stdTextIdField = DSL.field("STD_TEXT_ID", String.class);
+        Field<String> textValueField = DSL.field("TEXT_VALUE", String.class);
+
+        String officeId = next.get(officeIdField);
+//        String tsId = next.get(tsIdField);
+        Timestamp dateTimeUTC = next.get(dateTimeUTCField);
+        Timestamp versionDateUTC = next.get(versionDateUTCField);
+        Timestamp dataEntryDateUTC = next.get(dataEntryDateUTCField);
+        Integer attribute = next.get(attributeField);
+        String stdTextId = next.get(stdTextIdField);
+        String textValue = next.get(textValueField);
+
+        if(stdTextId == null){
+            RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
+            return builder
+                    .withDateTime(new Date(dateTimeUTC.getTime()))
+                    .withVersionDate(new Date(versionDateUTC.getTime()))
+                    .withDataEntryDate(new Date(dataEntryDateUTC.getTime()))
+                    .withAttribute(attribute)
+                    .withTextValue(textValue)
+                    .build();
+        } else {
+            StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
+
+            StandardTextId standardTextId = new StandardTextId.Builder()
+                    .withOfficeId(officeId)
+                    .withId(stdTextId)
+                    .build();
+            if (textValue == null) {
+                builder.withStandardTextId(standardTextId);
+            } else {
+                builder.withStandardTextValue(new StandardTextValue.Builder()
+                        .withId(standardTextId)
+                        .withStandardText(textValue)
+                        .build());
+            }
+
+            builder
+                    .withDateTime(new Date(dateTimeUTC.getTime()))
+                    .withVersionDate(new Date(versionDateUTC.getTime()))
+                    .withDataEntryDate(new Date(dataEntryDateUTC.getTime()))
+                .withAttribute(attribute);
+
+
+            return builder.build();
+        }
+
     }
 
 

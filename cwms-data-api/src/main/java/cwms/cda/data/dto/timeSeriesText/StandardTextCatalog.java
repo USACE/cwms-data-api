@@ -17,18 +17,18 @@ import java.util.NavigableMap;
 @JsonDeserialize(builder = StandardTextCatalog.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonIgnoreProperties("office-id")  // This does work to block office-id from the super!
+@JsonIgnoreProperties("office-id")  // This blocks office-id from the super!
 public class StandardTextCatalog extends CwmsDTO {
 
     private final NavigableMap<StandardTextId, StandardTextValue> values;
 
 
     private StandardTextCatalog(Builder builder) {
-        super(builder == null? null : getOffice(builder.values));
+        super(builder == null ? null : getOffice(builder.values));
 
-        if(builder.values != null){
+        if (builder.values != null) {
             values = new java.util.TreeMap<>(new StandardTextIdComparator());
-            for(StandardTextValue value : builder.values){
+            for (StandardTextValue value : builder.values) {
                 values.put(value.getId(), value);
             }
         } else {
@@ -43,7 +43,7 @@ public class StandardTextCatalog extends CwmsDTO {
             for (StandardTextValue value : values) {
                 if (value != null) {
                     cwms.cda.data.dto.timeSeriesText.StandardTextId id = value.getId();
-                    if (id != null && id.getOfficeId() != null){
+                    if (id != null && id.getOfficeId() != null) {
                         retval = id.getOfficeId();
                         break;
                     }
@@ -53,8 +53,8 @@ public class StandardTextCatalog extends CwmsDTO {
         return retval;
     }
 
-    public Collection<StandardTextValue> getValues(){
-        if(values == null){
+    public Collection<StandardTextValue> getValues() {
+        if (values == null) {
             return null;
         }
         return values.values();
@@ -75,15 +75,13 @@ public class StandardTextCatalog extends CwmsDTO {
         public Builder() {
         }
 
-        public Builder withStandardTextValue(StandardTextValue standardTextValue) {
 
-            if (values == null) {
-                values = new ArrayList<>();
-            }
-            values.add(standardTextValue);
-            return this;
-        }
-
+        /**
+         * Replaces the list of values.
+         *
+         * @param newValues
+         * @return
+         */
         public Builder withValues(List<StandardTextValue> newValues) {
 
             if (newValues != null) {
@@ -93,6 +91,20 @@ public class StandardTextCatalog extends CwmsDTO {
                 values = null;
             }
 
+            return this;
+        }
+
+        /**
+         * Adds a value to the list of values.
+         *
+         * @param standardTextValue
+         * @return
+         */
+        public Builder withValue(StandardTextValue standardTextValue) {
+            if (values == null) {
+                values = new ArrayList<>();
+            }
+            values.add(standardTextValue);
             return this;
         }
 
@@ -112,13 +124,15 @@ public class StandardTextCatalog extends CwmsDTO {
                             standardTextValues) {
                         StandardTextValue newStandardTextValue =
                                 new StandardTextValue.Builder().from(standardTextValue).build();
-                        withStandardTextValue(newStandardTextValue);
+                        withValue(newStandardTextValue);
                     }
                 }
             }
 
             return withValues(newValues);
         }
+
+
     }
 
 

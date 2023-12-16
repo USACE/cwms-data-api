@@ -146,6 +146,15 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
+        public Builder withAttribute(Integer attribute) {
+            if(attribute == null){
+                this.attribute = null;
+            } else {
+                this.attribute = attribute.longValue();
+            }
+            return this;
+        }
+
         public Builder withTextValue(String textValue) {
             this.textValue = textValue;
             return this;
@@ -166,7 +175,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withVersionDate(null)
                         .withDataEntryDate(null)
                         .withTextId(null)
-                        .withAttribute(null)
+                        .withAttribute((Long) null)
                         .withTextValue(null)
                         .withNewData(false);
             } else {

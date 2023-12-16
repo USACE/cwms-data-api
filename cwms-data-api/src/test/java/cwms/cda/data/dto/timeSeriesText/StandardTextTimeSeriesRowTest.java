@@ -18,6 +18,20 @@ class StandardTextTimeSeriesRowTest {
     @Test
     void testSerialize() throws JsonProcessingException, ParseException {
 
+        StandardTextTimeSeriesRow row = buildStdRow();
+        assertNotNull(row);
+
+        String json = JsonV2.buildObjectMapper().writeValueAsString(row);
+        assertNotNull(json);
+        //System.out.println(json);
+
+
+        assertTrue(json.contains("ESTIMATED"));
+        assertTrue(json.contains("420"));
+
+    }
+
+    public static StandardTextTimeSeriesRow buildStdRow() throws ParseException {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         // Parse the date string and create a Date object
@@ -28,24 +42,15 @@ class StandardTextTimeSeriesRowTest {
         builder.withVersionDate(df.parse("2023-05-02 12:05:00"));
         builder.withDataEntryDate(df.parse("2023-05-02 12:05:00"));
         builder.withAttribute(420L);
-        StandardTextId stdTxtId = new StandardTextId.Builder().withId("theId").withOfficeId("theOffice").build();
+        StandardTextId stdTxtId = new StandardTextId.Builder().withId("E").withOfficeId("CWMS").build();
         builder.withStandardTextId(stdTxtId);
         StandardTextValue stdTxtVal = new StandardTextValue.Builder()
                 .withId(stdTxtId)
-                .withStandardText("stdText").build();
+                .withStandardText("ESTIMATED").build();
         builder.withStandardTextValue(stdTxtVal);
 
         StandardTextTimeSeriesRow row = builder.build();
-        assertNotNull(row);
-
-        String json = JsonV2.buildObjectMapper().writeValueAsString(row);
-        assertNotNull(json);
-        //System.out.println(json);
-
-
-        assertTrue(json.contains("stdText"));
-        assertTrue(json.contains("420"));
-
+        return row;
     }
 
     @Test
@@ -58,11 +63,11 @@ class StandardTextTimeSeriesRowTest {
         builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
         builder.withAttribute(420L);
-        StandardTextId stdTxtId = new StandardTextId.Builder().withId("theId").withOfficeId("theOffice").build();
+        StandardTextId stdTxtId = new StandardTextId.Builder().withId("E").withOfficeId("CWMS").build();
         builder.withStandardTextId(stdTxtId);
         StandardTextValue stdTxtVal = new StandardTextValue.Builder()
                 .withId(stdTxtId)
-                .withStandardText("stdText").build();
+                .withStandardText("ESTIMATED").build();
         builder.withStandardTextValue(stdTxtVal);
 
         StandardTextTimeSeriesRow row = builder.build();
@@ -70,6 +75,7 @@ class StandardTextTimeSeriesRowTest {
 
         String json = JsonV2.buildObjectMapper().writeValueAsString(row);
         assertNotNull(json);
+        System.out.println(json);
 
         StandardTextTimeSeriesRow row2 = JsonV2.buildObjectMapper().readValue(json, StandardTextTimeSeriesRow.class);
         assertNotNull(row2);
@@ -106,11 +112,11 @@ class StandardTextTimeSeriesRowTest {
             builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
             builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
             builder.withAttribute(420L);
-            StandardTextId stdTxtId = new StandardTextId.Builder().withId("theId").withOfficeId("theOffice").build();
+            StandardTextId stdTxtId = new StandardTextId.Builder().withId("E").withOfficeId("CWMS").build();
             builder.withStandardTextId(stdTxtId);
             StandardTextValue stdTxtVal = new StandardTextValue.Builder()
                     .withId(stdTxtId)
-                    .withStandardText("stdText").build();
+                    .withStandardText("ESTIMATED").build();
             builder.withStandardTextValue(stdTxtVal);
 
         StandardTextTimeSeriesRow row = builder.build();

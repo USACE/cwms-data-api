@@ -16,31 +16,33 @@ class StandardTextValueTest {
 
         StandardTextValue standardTextValue = new StandardTextValue.Builder()
                 .withId(new StandardTextId.Builder()
-                        .withId("theId")
-                        .withOfficeId("theOffice").build())
-                .withStandardText("textValue").build();
+                        .withId("E")
+                        .withOfficeId("CWMS").build())
+                .withStandardText("ESTIMATED").build();
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(standardTextValue);
         assertNotNull(json);
-        System.out.println(json);
+
     }
 
     @Test
     void testDeserialization() throws JsonProcessingException
     {
-        String input = "{\"id\":{\"office-id\":\"theOffice\",\"id\":\"theId\"},\"standard-text\":\"textValue\"}";
+        String input = "{\"id\":{\"office-id\":\"CWMS\",\"id\":\"E\"},\"standard-text\":\"ESTIMATED\"}";
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         StandardTextValue standardTextValue = objectMapper.readValue(input, StandardTextValue.class);
         assertNotNull(standardTextValue);
         StandardTextId id = standardTextValue.getId();
         assertNotNull(id);
-        assertEquals("theOffice", id.getOfficeId());
-        assertEquals("theId", id.getId());
-        assertEquals("textValue", standardTextValue.getStandardText());
+        assertEquals("CWMS", id.getOfficeId());
+        assertEquals("E", id.getId());
+        assertEquals("ESTIMATED", standardTextValue.getStandardText());
 
 
     }
+
+
 
 }

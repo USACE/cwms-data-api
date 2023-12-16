@@ -66,16 +66,16 @@ public class StandardTextId extends CwmsDTO {
             return this;
         }
 
-        public Builder withId(String id){
+        public Builder withId(String id) {
             this.id = id;
             return this;
         }
 
-        public Builder from(StandardTextId from){
+        public Builder from(StandardTextId from) {
             String newOfficeId = null;
             String newStandardTextId = null;
 
-            if(from != null){
+            if (from != null) {
                 newOfficeId = from.getOfficeId();
                 newStandardTextId = from.getId();
             }
@@ -84,11 +84,11 @@ public class StandardTextId extends CwmsDTO {
         }
 
         // simplify building from a hec.data object.
-        public Builder from(hec.data.timeSeriesText.StandardTextId from){
+        public Builder from(hec.data.timeSeriesText.StandardTextId from) {
             String newOfficeId = null;
             String newStandardTextId = null;
 
-            if(from != null){
+            if (from != null) {
                 newOfficeId = from.getOfficeId();
                 newStandardTextId = from.getStandardTextId();
             }
@@ -97,7 +97,7 @@ public class StandardTextId extends CwmsDTO {
         }
 
 
-        public StandardTextId build(){
+        public StandardTextId build() {
             return new StandardTextId(this);
         }
 
