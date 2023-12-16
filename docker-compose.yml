@@ -13,7 +13,7 @@ services:
       - ORACLE_PWD=badSYSpassword
       - ORACLE_EDITION=enterprise
     ports:
-      - 1521
+      - "1521:1521"
     healthcheck:
       test: ["CMD","tnsping", "CWMS"]
       interval: 1m30s
@@ -93,8 +93,8 @@ services:
       - CDA_POOL_MIN_IDLE=2
       - cwms.dataapi.access.provider=MultipleAccessManager
       - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
-      - cwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration
-      - cwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms
+      - cwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration
+      - cwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms
     expose:
       - 7000
     healthcheck:
@@ -105,7 +105,7 @@ services:
       start_period: 2s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.data-api.rule=Host(`cwms-data.localhost`)"
+      - "traefik.http.routers.data-api.rule=Host(`cwms-data.test`)"
       - "traefik.http.routers.data-api.entryPoints=web-secure"
       - "traefik.http.routers.data-api.tls=true"
 
@@ -116,8 +116,8 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_FEATURES=admin-fine-grained-authz
-      - KC_HOSTNAME=auth.localhost:8444
-      - KC_HOSTNAME_URL=https://auth.localhost:8444
+      - KC_HOSTNAME=auth.test:8444
+      - KC_HOSTNAME_URL=https://auth.test:8444
       - KC_HOSTNAME_STRICT=false
       - KC_PROXY=edge
       - KC_HTTP_ENABLED=true
@@ -129,7 +129,7 @@ services:
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`auth.localhost`)"
+      - "traefik.http.routers.auth.rule=Host(`auth.test`)"
       - "traefik.http.routers.auth.entryPoints=web-secure"
       - "traefik.http.routers.auth.tls=true"
     expose:
@@ -158,7 +158,7 @@ services:
       test: traefik healthcheck --ping
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.api.rule=Host(`traefik.test`)"
       - "traefik.http.routers.api.entryPoints=traefik"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.tls=true"

@@ -3,7 +3,7 @@
 Due to the nature of the needs of this system it is not possible to just up and run `docker-compose up`, some manual setup will be required.
 
 ## Here are the following pre-steps
-1. Add `<real host ip> cwms-data.localhost auth.localhost traefik.localhost` to the /etc/hosts file  (**Warning: 127.0.0.1 doesn't work!**)
+1. Add `<real host ip> cwms-data.test auth.test traefik.test` to the /etc/hosts file  (**Warning: 127.0.0.1 doesn't work!**)
 2. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
 3. Create an environment file with appropriate references for your environment and testing.
 
@@ -36,7 +36,7 @@ The following users and permissions are available:
 
 |service|host-port|container-port|description|test urls|
 |----|--|---|--|--|
-|[traefik](./compose_files/traefik/traefik.yml)|8444|8443|entry point - web traffic|https://cwms-data.localhost:8444/cwms-data/ https://auth.localhost:8444/auth/realms/cwms https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration|
+|[traefik](./compose_files/traefik/traefik.yml)|8444|8443|entry point - web traffic|https://cwms-data.test:8444/cwms-data/ https://auth.test:8444/auth/realms/cwms https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration|
 |db||1521|oracle database|
 |[api](./cwms-data-api/src/docker/Dockerfile)||7000|tomcat CWMS Data API |
 |[auth](./compose_files/keycloak/Dockerfile)||8080|authentication-token service (keycloak)|
