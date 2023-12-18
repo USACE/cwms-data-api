@@ -16,10 +16,22 @@ WORKDIR /builddir
 COPY . /builddir/
 RUN  gradle clean prepareDockerBuild --info --no-daemon
 
-FROM tomcat:9.0.83-jdk8 as api
-#RUN DEBIAN_FRONTEND="noninteractive" \ 
-#    apt-get -y update && \
-#    apt-get -y upgrade --fix-missing
+FROM alpine:3.19.0 as tomcat_base
+RUN apk update && apk upgrade --no-cache
+RUN apk add openjdk8-jre
+
+RUN mkdir /download && \
+    cd /download && \
+    wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.84/bin/apache-tomcat-9.0.84.tar.gz && \
+    echo "85a42ab5e7e4cb1923888e96a78a0f277a870d06e76147a95457878c124001c9a317eade4ad69c249a460ffe2cbefe894022b84389cdf33038bc456e3699c8e3 *apache-tomcat-9.0.84.tar.gz" > checksum.txt && \
+    sha512sum -c checksum.txt && \
+    tar xzf apache-tomcat-*tar.gz && \
+    mv apache-tomcat-9.0.84 /usr/local/tomcat/ && \
+    cd / && \
+    rm -rf /download
+CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
+
+FROM tomcat_base as api
 
 COPY --from=builder /builddir/cwms-data-api/build/docker/cda/ /usr/local/tomcat
 COPY --from=builder /builddir/cwms-data-api/build/docker/context.xml /usr/local/tomcat/conf
