@@ -18,7 +18,7 @@ RUN  gradle clean prepareDockerBuild --info --no-daemon
 
 FROM alpine:3.19.0 as tomcat_base
 RUN apk update && apk upgrade --no-cache
-RUN apk add openjdk8-jre
+RUN apk add openjdk8-jre curl
 
 RUN mkdir /download && \
     cd /download && \
