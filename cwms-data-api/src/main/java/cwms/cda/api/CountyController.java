@@ -83,8 +83,8 @@ public class CountyController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        try (Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             CountyDao dao = new CountyDao(dsl);
             List<County> counties = dao.getCounties();
             String formatHeader = ctx.header(Header.ACCEPT);

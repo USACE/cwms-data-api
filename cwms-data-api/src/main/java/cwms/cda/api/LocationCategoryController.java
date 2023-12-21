@@ -94,8 +94,8 @@ public class LocationCategoryController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -150,8 +150,9 @@ public class LocationCategoryController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String categoryId) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -194,8 +195,9 @@ public class LocationCategoryController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
@@ -243,8 +245,9 @@ public class LocationCategoryController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String categoryId) {
-        try (Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);

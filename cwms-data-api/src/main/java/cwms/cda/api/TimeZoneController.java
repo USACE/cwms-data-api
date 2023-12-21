@@ -73,12 +73,10 @@ public class TimeZoneController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        try (Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)
-              ) {
+        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             TimeZoneDao dao = new TimeZoneDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
-
 
             switch (format) {
                 case "json": {

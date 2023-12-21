@@ -137,8 +137,9 @@ public class LocationController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationsDao locationsDao = getLocationsDao(dsl);
 
             String names = ctx.queryParam(NAMES);
@@ -225,8 +226,9 @@ public class LocationController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String name) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
@@ -267,8 +269,9 @@ public class LocationController implements CrudHandler {
     @Override
     public void create(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationsDao locationsDao = getLocationsDao(dsl);
 
             String acceptHeader = ctx.req.getContentType();
@@ -306,8 +309,9 @@ public class LocationController implements CrudHandler {
     @Override
     public void update(Context ctx, @NotNull String locationId) {
 
-        try (final Timer.Context timeContext = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationsDao locationsDao = getLocationsDao(dsl);
 
             String acceptHeader = ctx.req.getContentType();
@@ -370,8 +374,9 @@ public class LocationController implements CrudHandler {
     public void delete(Context ctx, @NotNull String locationId) {
 
         String office = ctx.queryParam(OFFICE);
-        try (Timer.Context timeContext = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context timeContext = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationsDao locationsDao = getLocationsDao(dsl);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             locationsDao.deleteLocation(locationId, office, cascadeDelete);

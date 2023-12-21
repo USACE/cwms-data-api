@@ -2,6 +2,7 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CLOB_ID;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
@@ -123,10 +124,8 @@ public class ClobController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (
-                final Timer.Context ignored = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL);) {
+                DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             Optional<String> officeOpt = Optional.ofNullable(office);
 
@@ -178,10 +177,8 @@ public class ClobController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String clobId) {
 
-        try (
-                final Timer.Context ignored = markAndTime(GET_ONE);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE);) {
+                DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
             Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
@@ -223,8 +220,9 @@ public class ClobController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
@@ -311,8 +309,8 @@ public class ClobController implements CrudHandler {
 
         boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -380,8 +378,8 @@ public class ClobController implements CrudHandler {
     public void delete(Context ctx, @NotNull String clobId) {
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             dao.delete(office, clobId);
         }

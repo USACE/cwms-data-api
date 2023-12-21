@@ -10,7 +10,7 @@ eclipse {
 
 allprojects {
     group = 'mil.army.usace.hec.cwms'
-    version = '3.1-SNAPSHOT'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
+    version = '3.1.0'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }
 
 // versions for shared dependencies
@@ -20,7 +20,7 @@ ext.JAVALIN_VERSION='4.6.7'
 
 ext.JACKSON_VERSION='2.13.3'
 ext.SWAGGER_CORE_VERSION='2.2.2'
-ext.tomcatVersion='9.0.64'
+ext.tomcatVersion='9.0.83!!'
 
 subprojects {
     apply plugin: 'java'

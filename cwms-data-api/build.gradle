@@ -19,20 +19,26 @@ dependencies {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "mil.army.usace.hec", module: "cwms-db-codegen"
     }
     implementation( "mil.army.usace.hec:cwms-db-jooq:9.8.0"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+
     }
-    implementation('mil.army.usace.hec:cwms-db-jooq-codegen:7.0.0-SNAPSHOT') {
+    implementation('mil.army.usace.hec:cwms-db-jooq-codegen_java8:23.03.16-1.0.2') { //was 7.0.0-SNAPSHOT, 23.03.16 or cwms-db-jooq-codegen_java11	23.03.16-1.0.2
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
     }
@@ -59,9 +65,11 @@ dependencies {
     }
 
     implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-xml:2.0.2' )
-    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.2' )
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.2' ){
+        exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+    }
 
-    implementation('org.jooq.pro:jooq:3.11.2') {
+    implementation('org.jooq.pro-java-8:jooq:3.18.7') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "javax.xml.bind", module: "*"
@@ -137,9 +145,6 @@ dependencies {
     tomcatLibs "com.google.flogger:flogger:0.7.4"
     tomcatLibs "com.google.flogger:flogger-system-backend:0.7.4"
 
-    testImplementation "com.github.h-thurow:tomcat8jndi:1.0.0"
-
-
     testImplementation "org.testcontainers:testcontainers:1.17.3"
     testImplementation 'org.testcontainers:database-commons:1.17.3'
     testImplementation "org.testcontainers:jdbc:1.17.3"
@@ -148,8 +153,6 @@ dependencies {
 
     testImplementation "org.apache.commons:commons-csv:1.9.0"
     testImplementation 'mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api:1.1.0'
-
-//    testImplementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
     webjars('org.webjars:swagger-ui:5.9.0') {
         transitive = false
@@ -244,10 +247,11 @@ task run(type: JavaExec) {
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
-    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
-    jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.localhost:8444/auth/realms/cwms/.well-known/openid-configuration"
-    jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.localhost:8444/auth/realms/cwms"
+    // If you have the docker-compose environment up and are trying to run 
+    // CDA from run to debug uncomment the following lines.
+    //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
+    //jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration"
+    //jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms"
 }
 
 task integrationTests(type: Test) {
@@ -274,7 +278,6 @@ task integrationTests(type: Test) {
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
-
 
 task prepareDockerBuild(type: Copy, dependsOn: war) {
     doFirst {
@@ -303,14 +306,6 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
         into "cda/webapps"
         rename(".*\\.war", "cwms-data.war")
     }
-}
-
-task dockerBuild(type: Exec, dependsOn: prepareDockerBuild) {
-    inputs.files configurations.docker.files
-
-    workingDir "$buildDir/docker"
-    executable "docker"
-    args "build", "--tag=cwms-rest-api:" + project.version, "."
 }
 
 task generateTimeSeriesSamples(type: JavaExec) {

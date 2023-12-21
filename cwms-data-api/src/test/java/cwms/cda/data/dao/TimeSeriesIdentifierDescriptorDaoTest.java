@@ -24,25 +24,24 @@
 
 package cwms.cda.data.dao;
 
-import com.google.common.flogger.FluentLogger;
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
-
+import java.io.IOException;
+import java.sql.SQLException;
+import java.time.ZoneId;
+import java.util.Optional;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.time.ZoneId;
-import java.util.Optional;
-
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Disabled   // Disabled b/c this was testing against a real database.
 class TimeSeriesIdentifierDescriptorDaoTest {
@@ -65,7 +64,7 @@ class TimeSeriesIdentifierDescriptorDaoTest {
     }
 
     @AfterEach
-    void tearDown()  {
+    void tearDown() {
         Location location = buildTestLocation();
         try {
             deleteLocation(location);
@@ -80,37 +79,38 @@ class TimeSeriesIdentifierDescriptorDaoTest {
 
         int random = (int) (Math.random() * 1000);
 
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            assertNotNull(dsl);
-            TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
+        DSLContext dsl = getDslContext(OFFICE);
 
-            int i = 0;
-            String tsId = String.format(location.getName()
-                    + ".Precip-Cumulative.Inst.15Minutes.0.TEST%d_%d", random, i);
+        assertNotNull(dsl);
+        TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
 
-            // Make sure it doesn't exist
-            Optional<TimeSeriesIdentifierDescriptor> found =
-                    dao.getTimeSeriesIdentifier(OFFICE, tsId);
-            assertFalse(found.isPresent());
+        int i = 0;
+        String tsId = String.format(location.getName()
+                + ".Precip-Cumulative.Inst.15Minutes.0.TEST%d_%d", random, i);
 
-            try {
-                TimeSeriesIdentifierDescriptor ts = new TimeSeriesIdentifierDescriptor.Builder()
-                        .withOfficeId(OFFICE)
-                        .withTimeSeriesId(tsId)
-                        .build();
+        // Make sure it doesn't exist
+        Optional<TimeSeriesIdentifierDescriptor> found =
+                dao.getTimeSeriesIdentifier(OFFICE, tsId);
+        assertFalse(found.isPresent());
 
-                boolean vers = false;
+        try {
+            TimeSeriesIdentifierDescriptor ts = new TimeSeriesIdentifierDescriptor.Builder()
+                    .withOfficeId(OFFICE)
+                    .withTimeSeriesId(tsId)
+                    .build();
 
-                // Create it
-                dao.create(ts, vers, null, null, false);
+            boolean vers = false;
 
-                // Make sure it exists
-                found = dao.getTimeSeriesIdentifier(OFFICE, tsId);
-                assertTrue(found.isPresent());
-            } finally {
-                dao.deleteAll(OFFICE, tsId);
-            }
+            // Create it
+            dao.create(ts, vers, null, null, false);
+
+            // Make sure it exists
+            found = dao.getTimeSeriesIdentifier(OFFICE, tsId);
+            assertTrue(found.isPresent());
+        } finally {
+            dao.deleteAll(OFFICE, tsId);
         }
+
 
     }
 
@@ -134,18 +134,19 @@ class TimeSeriesIdentifierDescriptorDaoTest {
 
     public void createLocation(Location location) throws SQLException, IOException {
 
-        try (DSLContext dsl = getDslContext(OFFICE)) {
+        DSLContext dsl = getDslContext(OFFICE);
 
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
-            locationsDao.storeLocation(location);
-        }
+        LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
+        locationsDao.storeLocation(location);
+
     }
 
     private void deleteLocation(Location location) throws Exception {
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
-            locationsDao.deleteLocation(location.getName(), location.getOfficeId());
-        }
+        DSLContext dsl = getDslContext(OFFICE);
+
+        LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
+        locationsDao.deleteLocation(location.getName(), location.getOfficeId());
+
     }
 
 

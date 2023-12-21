@@ -21,18 +21,17 @@ public class TimeSeriesCategoryDaoTest
 	@Test
 	void getTimeSeriesCategories() throws SQLException
 	{
-		try(DSLContext lrl = getDslContext(getConnection(), "LRL"))
-		{
-			TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(lrl);
-			List<TimeSeriesCategory> cats = dao.getTimeSeriesCategories();
-			assertNotNull(cats);
-			assertFalse(cats.isEmpty());
+		DSLContext lrl = getDslContext(getConnection(), "LRL");
 
-			// We don't have any at LRL in my test db
-			//			List<TimeSeriesCategory> cats2 = cdm.getTimeSeriesCategories("LRL");
-			//			assertNotNull(cats2);
-			//			assertFalse(cats2.isEmpty());
-		}
+		TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(lrl);
+		List<TimeSeriesCategory> cats = dao.getTimeSeriesCategories();
+		assertNotNull(cats);
+		assertFalse(cats.isEmpty());
+
+		// We don't have any at LRL in my test db
+		//			List<TimeSeriesCategory> cats2 = cdm.getTimeSeriesCategories("LRL");
+		//			assertNotNull(cats2);
+		//			assertFalse(cats2.isEmpty());
 
 	}
 

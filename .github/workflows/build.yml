@@ -34,7 +34,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       - name: Build docker image
-        run: ./gradlew dockerBuild
+        run: docker build -t cda:build-latest .
 
   release:
     if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release')
@@ -100,9 +100,9 @@ jobs:
           IMAGE_TAG: ${{env.VERSION}}
           ALT_REGISTRY: ${{secrets.ALT_REGISTRY}}
         run: |
-          ./gradlew dockerBuild
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:latest
+          docker build -t cda:build-latest .
+          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
+          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:latest
           docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
           docker push $ALT_REGISTRY/cwms/data-api:latest
       - name: Logout of ALT registry
@@ -156,16 +156,15 @@ jobs:
           IMAGE_TAG: ${{env.VERSION}}
           ALT_REGISTRY: ${{ secrets.ALT_REGISTRY }}
         run: |
-          ./gradlew :cwms-data-api:build --init-script init.gradle
-          ./gradlew dockerBuild --init-script init.gradle
+          docker build -t cda:build-latest .
 
-          docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker tag cwms-rest-api:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker tag cda:build-latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag cda:build-latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker tag cwms-rest-api:$IMAGE_TAG $ALT_REGISTRY/cwms/data-api:latest-dev
+          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
+          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:latest-dev
           docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
           docker push $ALT_REGISTRY/cwms/data-api:latest-dev
       - name: Logout of Amazon ECR
