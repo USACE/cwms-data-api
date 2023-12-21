@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.json.JsonV2;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,9 +22,10 @@ class StandardTextTimeSeriesRowTest {
         StandardTextTimeSeriesRow row = buildStdRow();
         assertNotNull(row);
 
-        String json = JsonV2.buildObjectMapper().writeValueAsString(row);
+        ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+        String json = objectMapper.writeValueAsString(row);
         assertNotNull(json);
-        //System.out.println(json);
+        System.out.println(json);
 
 
         assertTrue(json.contains("ESTIMATED"));
@@ -73,11 +75,12 @@ class StandardTextTimeSeriesRowTest {
         StandardTextTimeSeriesRow row = builder.build();
         assertNotNull(row);
 
-        String json = JsonV2.buildObjectMapper().writeValueAsString(row);
+        ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+        String json = objectMapper.writeValueAsString(row);
         assertNotNull(json);
         System.out.println(json);
 
-        StandardTextTimeSeriesRow row2 = JsonV2.buildObjectMapper().readValue(json, StandardTextTimeSeriesRow.class);
+        StandardTextTimeSeriesRow row2 = objectMapper.readValue(json, StandardTextTimeSeriesRow.class);
         assertNotNull(row2);
 
         assertEquals(row.getAttribute(), row2.getAttribute());

@@ -2,6 +2,7 @@ package cwms.cda.data.dto.timeSeriesText;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -132,10 +133,12 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
+        @JsonProperty("attribute")
         public Builder withAttribute(Long l) {
             this.attribute = l;
             return this;
         }
+
 
         public void withAttribute(Integer attribute) {
             if(attribute == null){

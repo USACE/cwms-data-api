@@ -2,6 +2,7 @@ package cwms.cda.data.dto.timeSeriesText;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -82,17 +83,22 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         RegularTextTimeSeriesRow that = (RegularTextTimeSeriesRow) o;
 
         if (isNewData() != that.isNewData()) return false;
-        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
+        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) :
+                that.getDateTime() != null)
             return false;
-        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null)
+        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) :
+                that.getVersionDate() != null)
             return false;
-        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
+        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) :
+                that.getDataEntryDate() != null)
             return false;
         if (getTextId() != null ? !getTextId().equals(that.getTextId()) : that.getTextId() != null)
             return false;
-        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
+        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) :
+                that.getAttribute() != null)
             return false;
-        return getTextValue() != null ? getTextValue().equals(that.getTextValue()) : that.getTextValue() == null;
+        return getTextValue() != null ? getTextValue().equals(that.getTextValue()) :
+                that.getTextValue() == null;
     }
 
     @Override
@@ -141,13 +147,15 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
+        @JsonProperty("attribute")
         public Builder withAttribute(Long attribute) {
             this.attribute = attribute;
             return this;
         }
 
+
         public Builder withAttribute(Integer attribute) {
-            if(attribute == null){
+            if (attribute == null) {
                 this.attribute = null;
             } else {
                 this.attribute = attribute.longValue();
