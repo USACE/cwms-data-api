@@ -19,20 +19,26 @@ dependencies {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "mil.army.usace.hec", module: "cwms-db-codegen"
     }
     implementation( "mil.army.usace.hec:cwms-db-jooq:9.8.0"){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+
     }
-    implementation('mil.army.usace.hec:cwms-db-jooq-codegen:7.0.0-SNAPSHOT') {
+    implementation('mil.army.usace.hec:cwms-db-jooq-codegen_java8:23.03.16-1.0.2') { //was 7.0.0-SNAPSHOT, 23.03.16 or cwms-db-jooq-codegen_java11	23.03.16-1.0.2
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
     }
@@ -59,9 +65,11 @@ dependencies {
     }
 
     implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-xml:2.0.2' )
-    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.2' )
+    implementation( 'mil.army.usace.hec:hec-cwms-ratings-io-jdbc:2.0.2' ){
+        exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+    }
 
-    implementation('org.jooq.pro:jooq:3.11.2') {
+    implementation('org.jooq.pro-java-8:jooq:3.18.7') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "javax.xml.bind", module: "*"

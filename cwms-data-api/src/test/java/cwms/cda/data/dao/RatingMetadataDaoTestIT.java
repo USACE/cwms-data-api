@@ -84,7 +84,8 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
 
 
     void testRetrieveMetadata(Connection c, String connectionOfficeId) {
-        try (DSLContext context = getDslContext(c, connectionOfficeId)) {
+                DSLContext context = getDslContext(c, connectionOfficeId);
+        try{
 
             String[] files = new String[]{
                     "ALBT.Stage_Stage-Corrected.Linear.USGS-NWIS.xml.gz",
@@ -211,28 +212,28 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
     void testRetrieveRatings() throws SQLException  {
         String swt = "SWT";
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
-            try (DSLContext lrl = getDslContext(c, swt)) {
-                long start = System.nanoTime();
-                RatingMetadataDao dao = new RatingMetadataDao(lrl, new MetricRegistry());
+        databaseLink.connection(c -> {
+            DSLContext lrl = getDslContext(c, swt);
+            long start = System.nanoTime();
+            RatingMetadataDao dao = new RatingMetadataDao(lrl, new MetricRegistry());
 
-                String mask = "*";
+            String mask = "*";
 
-                String office = "SWT";
-                Set<String> ratingIds = dao.getRatingIds(office, mask, 0, 100);
+            String office = "SWT";
+            Set<String> ratingIds = dao.getRatingIds(office, mask, 0, 100);
 
-                Map<cwms.cda.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> got
-                        = dao.getRatingsForIds(office, ratingIds, null, null);
+            Map<cwms.cda.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> got
+                    = dao.getRatingsForIds(office, ratingIds, null, null);
 
-                assertNotNull(got);
+            assertNotNull(got);
 
-                // count how many ratings we got
-                int count = got.values().stream().mapToInt(Set::size).sum();
+            // count how many ratings we got
+            int count = got.values().stream().mapToInt(Set::size).sum();
 
-                long end = System.nanoTime();
-                long ms = (end - start) / 1000000;
-                 logger.atInfo().log("Got:" + got.size() + " count:" + count + " ratings in " + ms + "ms");
-            }
+            long end = System.nanoTime();
+            long ms = (end - start) / 1000000;
+            logger.atInfo().log("Got:" + got.size() + " count:" + count + " ratings in " + ms + "ms");
+
         });
     }
 

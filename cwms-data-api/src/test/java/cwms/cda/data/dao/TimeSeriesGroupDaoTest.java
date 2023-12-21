@@ -19,15 +19,13 @@ public class TimeSeriesGroupDaoTest
 {
 
 	@Test
-	void getTimeSeriesGroups() throws SQLException
-	{
-		try(DSLContext lrl = getDslContext(getConnection(), "LRL"))
-		{
-			TimeSeriesGroupDao dao = new TimeSeriesGroupDao(lrl);
-			List<TimeSeriesGroup> groups = dao.getTimeSeriesGroups();
-			assertNotNull(groups);
-			assertFalse(groups.isEmpty());
-		}
+	void getTimeSeriesGroups() throws SQLException {
+		DSLContext lrl = getDslContext(getConnection(), "LRL");
+		TimeSeriesGroupDao dao = new TimeSeriesGroupDao(lrl);
+		List<TimeSeriesGroup> groups = dao.getTimeSeriesGroups();
+		assertNotNull(groups);
+		assertFalse(groups.isEmpty());
+
 
 	}
 }

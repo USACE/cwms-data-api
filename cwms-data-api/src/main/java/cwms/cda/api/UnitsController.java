@@ -72,13 +72,10 @@ public class UnitsController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (
-                final Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             UnitsDao dao = new UnitsDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
-
 
             switch (format) {
                 case "json": {

@@ -80,8 +80,8 @@ public class BasinController implements CrudHandler {
     @Override
     public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL) ) {
+            DSLContext dsl = getDslContext(ctx);
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
@@ -131,8 +131,8 @@ public class BasinController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String basinId) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);

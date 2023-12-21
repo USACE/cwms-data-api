@@ -83,8 +83,9 @@ public class StateController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        try (Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             StateDao dao = new StateDao(dsl);
             List<State> states = dao.getStates();
             String formatHeader = ctx.header(Header.ACCEPT);

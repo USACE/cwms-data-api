@@ -149,10 +149,8 @@ public class CatalogController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String dataSet) {
 
-        try (
-                final Timer.Context timeContext = markAndTime(GET_ONE);
-                DSLContext dsl = JooqDao.getDslContext(ctx)
-        ) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+                DSLContext dsl = JooqDao.getDslContext(ctx);
 
             String valDataSet =
                     ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);

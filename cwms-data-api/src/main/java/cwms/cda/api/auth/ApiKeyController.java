@@ -56,7 +56,8 @@ public class ApiKeyController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
+        try {
+            DSLContext dsl = getDslContext(ctx);
             AuthDao auth = AuthDao.getInstance(dsl);
             ApiKey sourceData = ctx.bodyAsClass(ApiKey.class);
             ApiKey key = auth.createApiKey(p, sourceData);
@@ -92,11 +93,11 @@ public class ApiKeyController implements CrudHandler {
     @Override
     public void delete(Context ctx, String keyName) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = AuthDao.getInstance(dsl);
-            auth.deleteKeyForUser(p, keyName);
-            ctx.status(HttpCode.NO_CONTENT);
-        }
+
+        DSLContext dsl = getDslContext(ctx);
+        AuthDao auth = AuthDao.getInstance(dsl);
+        auth.deleteKeyForUser(p, keyName);
+        ctx.status(HttpCode.NO_CONTENT);
     }
 
     @OpenApi(
@@ -111,11 +112,12 @@ public class ApiKeyController implements CrudHandler {
     )
     public void getAll(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = AuthDao.getInstance(dsl);
-            List<ApiKey> keys = auth.apiKeysForUser(p);
-            ctx.json(keys).status(HttpCode.OK);            
-        }
+
+        DSLContext dsl = getDslContext(ctx);
+        AuthDao auth = AuthDao.getInstance(dsl);
+        List<ApiKey> keys = auth.apiKeysForUser(p);
+        ctx.json(keys).status(HttpCode.OK);
+
     }
 
     @OpenApi(
@@ -137,19 +139,17 @@ public class ApiKeyController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String keyName) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = AuthDao.getInstance(dsl);
-            ApiKey key = auth.apiKeyForUser(p,keyName);
-            if(key != null) {
-                ctx.json(key).status(HttpCode.OK);            
-            } else {
-                CdaError msg = new CdaError(
-                        "Requested Key was not found. NOTE: api key names are case-sensitive.",
-                        true
-                    );
-                ctx.json(msg).status(HttpCode.NOT_FOUND);
-            }
-            
+        DSLContext dsl = getDslContext(ctx);
+        AuthDao auth = AuthDao.getInstance(dsl);
+        ApiKey key = auth.apiKeyForUser(p, keyName);
+        if (key != null) {
+            ctx.json(key).status(HttpCode.OK);
+        } else {
+            CdaError msg = new CdaError(
+                    "Requested Key was not found. NOTE: api key names are case-sensitive.",
+                    true
+            );
+            ctx.json(msg).status(HttpCode.NOT_FOUND);
         }
     }
 

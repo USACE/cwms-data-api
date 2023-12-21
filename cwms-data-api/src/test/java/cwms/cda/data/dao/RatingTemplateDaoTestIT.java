@@ -85,8 +85,8 @@ class RatingTemplateDaoTestIT extends DataApiTestIT {
 
 
     void testRetrieveRatingTemplate(Connection c, String connectionOfficeId) {
-        try (DSLContext context = getDslContext(c, connectionOfficeId)) {
-
+        DSLContext context = getDslContext(c, connectionOfficeId);
+        try {
             String filename = "ARBU.Elev_Stor.Linear.Production.xml.gz";
             String resource = "cwms/cda/data/dao/" + filename;
             storeRatingSet(c, resource);
