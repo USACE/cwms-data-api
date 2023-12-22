@@ -69,7 +69,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
     }
 
-    implementation('org.jooq.pro-java-8:jooq:3.18.7') {
+    implementation('org.jooq.pro-java-8:jooq:3.18.7-jdk8RC01') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "javax.xml.bind", module: "*"
