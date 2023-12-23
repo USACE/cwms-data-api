@@ -1,8 +1,9 @@
-package cwms.cda.data.dto.timeSeriesText;
+package cwms.cda.data.dto.timeseriestext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,7 +23,7 @@ class RegularTextTimeSeriesRowTest {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         // Parse the date string and create a Date object
-        Date specificDate = df.parse("2023-01-01 12:00:00");
+//        Date specificDate = df.parse("2023-01-01 12:00:00");
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
         builder.withDateTime(df.parse("2023-01-03 12:05:00"));
@@ -58,8 +59,8 @@ class RegularTextTimeSeriesRowTest {
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
         builder.withAttribute(420L);
 
-        builder.withTextId("theId");
-        builder.withTextValue("stdText");
+//        builder.withTextId("theId");
+        builder.withTextValue("my awesome text ts");
 
         RegularTextTimeSeriesRow row = builder.build();
         assertNotNull(row);
@@ -90,13 +91,13 @@ class RegularTextTimeSeriesRowTest {
         RegularTextTimeSeriesRow row2 = buildRow();
         assertNotNull(row2);
 
-        assertFalse(row == row2);
-        assertTrue(row.equals(row2));
-        assertTrue(row2.equals(row));
+        assertNotSame(row, row2);
+        assertEquals(row, row2);
+        assertEquals(row2, row);
 
     }
 
-    private static RegularTextTimeSeriesRow buildRow() throws ParseException {
+    static RegularTextTimeSeriesRow buildRow() throws ParseException {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
 
@@ -105,12 +106,9 @@ class RegularTextTimeSeriesRowTest {
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
         builder.withAttribute(420L);
 
-        builder.withTextId("theId");
-        builder.withTextValue("stdText");
+        builder.withTextValue("my awesome text ts");
 
-
-        RegularTextTimeSeriesRow row = builder.build();
-        return row;
+        return builder.build();
     }
 
 }

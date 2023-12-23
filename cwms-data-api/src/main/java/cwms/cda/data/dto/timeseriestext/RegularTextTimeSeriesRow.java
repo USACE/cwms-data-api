@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeSeriesText;
+package cwms.cda.data.dto.timeseriestext;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import hec.data.timeSeriesText.DateDateKey;
 import hec.data.timeSeriesText.TextTimeSeriesRow;
+import java.math.BigDecimal;
 import java.util.Date;
 
 @JsonDeserialize(builder = RegularTextTimeSeriesRow.Builder.class)
@@ -19,8 +20,8 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     private final Date dateTime;
     private final Date versionDate;
     private final Date dataEntryDate;
-    private final String textId;
     private final Long attribute;
+    private final String textId;
     private final String textValue;
     private final boolean newData;
 
@@ -77,26 +78,37 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         RegularTextTimeSeriesRow that = (RegularTextTimeSeriesRow) o;
 
-        if (isNewData() != that.isNewData()) return false;
+        if (isNewData() != that.isNewData()) {
+            return false;
+        }
         if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) :
-                that.getDateTime() != null)
+                that.getDateTime() != null) {
             return false;
+        }
         if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) :
-                that.getVersionDate() != null)
+                that.getVersionDate() != null) {
             return false;
+        }
         if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) :
-                that.getDataEntryDate() != null)
+                that.getDataEntryDate() != null) {
             return false;
-        if (getTextId() != null ? !getTextId().equals(that.getTextId()) : that.getTextId() != null)
+        }
+        if (getTextId() != null ? !getTextId().equals(that.getTextId()) : that.getTextId() != null) {
             return false;
+        }
         if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) :
-                that.getAttribute() != null)
+                that.getAttribute() != null) {
             return false;
+        }
         return getTextValue() != null ? getTextValue().equals(that.getTextValue()) :
                 that.getTextValue() == null;
     }
@@ -163,6 +175,15 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
+        public Builder withAttribute(BigDecimal attribute) {
+            if (attribute == null) {
+                this.attribute = null;
+            } else {
+                this.attribute = attribute.longValue();
+            }
+            return this;
+        }
+
         public Builder withTextValue(String textValue) {
             this.textValue = textValue;
             return this;
@@ -196,5 +217,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withNewData(regularTextTimeSeriesRow.newData);
             }
         }
+
+
     }
 }

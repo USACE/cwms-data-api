@@ -6,7 +6,7 @@
  *
  */
 
-package cwms.cda.data.dto.timeSeriesText;
+package cwms.cda.data.dto.timeseriestext;
 
 import java.util.Comparator;
 

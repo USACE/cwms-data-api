@@ -366,7 +366,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @param dslContext the DSLContext to use
      * @param cr the ConnectionRunnable to run with the connection
      */
-    void connection(DSLContext dslContext, ConnectionRunnable cr) {
+    protected static void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
         } catch (RuntimeException e) {
@@ -381,7 +381,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @param dslContext the DSLContext to use
      * @param var1 the ConnectionCallable to run with the connection
      */
-    <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
+    protected static <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
             return dslContext.connectionResult(var1);
         } catch (RuntimeException e) {

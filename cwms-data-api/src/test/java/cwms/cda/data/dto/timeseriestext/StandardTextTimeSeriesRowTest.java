@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeSeriesText;
+package cwms.cda.data.dto.timeseriestext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
