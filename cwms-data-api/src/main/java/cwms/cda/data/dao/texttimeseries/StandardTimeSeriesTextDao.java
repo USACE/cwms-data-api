@@ -38,6 +38,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     private static final String DATE_TIME = "DATE_TIME";
     private static final String STD_TEXT = "STD_TEXT";
     public static final String TYPE = "Standard Text Time Series";
+    public static final String CATALOG_TYPE = "Standard Text Catalog";
 
     private static List<String> timeSeriesStdTextColumnsList;
     private static List<String> stdTextCatalogColumnsList;
@@ -51,8 +52,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
     static {
-        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, STD_TEXT_ID,
-                ATTRIBUTE, STD_TEXT};
+        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, STD_TEXT_ID, ATTRIBUTE, STD_TEXT};
         Arrays.sort(array);
         timeSeriesStdTextColumnsList = Arrays.asList(array);
     }
@@ -62,19 +62,18 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public StandardTextCatalog getStandardTextCatalog(String pOfficeIdMask, String pStdTextIdMask) throws SQLException {
+    public StandardTextCatalog retrieveCatalog(String pOfficeIdMask, String pStdTextIdMask) throws SQLException {
 
         try (ResultSet rs = CWMS_TEXT_PACKAGE.call_CAT_STD_TEXT_F(dsl.configuration(),
                 pStdTextIdMask, pOfficeIdMask).intoResultSet()) {
 
-            return parseStandardTextResultSet(rs);
+            return buildCatalog(rs);
         }
 
     }
 
-    private static StandardTextCatalog parseStandardTextResultSet(ResultSet rs) throws SQLException {
-        OracleTypeMap.checkMetaData(rs.getMetaData(), stdTextCatalogColumnsList, "Standard Text "
-                + "Catalog");
+    private static StandardTextCatalog buildCatalog(ResultSet rs) throws SQLException {
+        OracleTypeMap.checkMetaData(rs.getMetaData(), stdTextCatalogColumnsList, CATALOG_TYPE);
         StandardTextCatalog.Builder builder = new StandardTextCatalog.Builder();
         while (rs.next()) {
             builder.withValue(buildStandardTextValue(
@@ -96,12 +95,12 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public StandardTextValue retrieveStandardText(StandardTextId standardTextId) {
+    public StandardTextValue retrieve(StandardTextId standardTextId) {
 
-        return connectionResult(dsl, c -> retrieveStandardText(c, standardTextId));
+        return connectionResult(dsl, c -> retrieve(c, standardTextId));
     }
 
-    private StandardTextValue retrieveStandardText(Connection c,  StandardTextId standardTextId) throws SQLException {
+    private StandardTextValue retrieve(Connection c, StandardTextId standardTextId) throws SQLException {
 
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
 
@@ -116,8 +115,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public void storeStandardText(StandardTextValue standardTextValue,
-                                  boolean failIfExists) {
+    public void store(StandardTextValue standardTextValue, boolean failIfExists) {
 
         cwms.cda.data.dto.timeseriestext.StandardTextId standardTextId = standardTextValue.getId();
         String stdTextId = standardTextId.getId();
@@ -154,7 +152,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
      *      *   </tr>
      *      * </table>
      */
-    public void deleteStandardText(StandardTextId standardTextId, DeleteRule deleteAction) {
+    public void delete(StandardTextId standardTextId, DeleteRule deleteAction) {
         String stdTextId = standardTextId.getId();
         String deleteActionString = deleteAction.toString();
         String officeId = standardTextId.getOfficeId();
@@ -202,7 +200,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public TextTimeSeries retrieveTimeSeriesStandardText(
+    public TextTimeSeries retrieveTextTimeSeries(
             String officeId, String tsId, StandardTextId standardTextId,
             Date startTime, Date endTime,
             Date versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute,
@@ -224,35 +222,34 @@ public class StandardTimeSeriesTextDao extends JooqDao {
                     stdTextIdMask, startTime, endTime, versionDate, timeZone, maxVersion,
                     retrieveText, minAttribute, maxAttribute, officeId);
 
-            return parseTimeSeriesStandardTextResultSet(officeId, tsId, retrieveTsStdTextF);
+            return buildTextTimeSeries(officeId, tsId, retrieveTsStdTextF);
         });
 
     }
 
-    private TextTimeSeries parseTimeSeriesStandardTextResultSet(String officeId, String tsId, ResultSet rs) throws SQLException {
+    private TextTimeSeries buildTextTimeSeries(String officeId, String tsId, ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, TYPE);
 
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
         builder.withId(tsId);
         builder.withOfficeId(officeId);
 
-        builder.withStdRows(parseRows(officeId, rs));
+        builder.withStdRows(buildRows(officeId, rs));
         return builder.build();
 
     }
 
     @NotNull
-    private static List<StandardTextTimeSeriesRow> parseRows(String officeId, ResultSet rs) throws SQLException {
+    private static List<StandardTextTimeSeriesRow> buildRows(String officeId, ResultSet rs) throws SQLException {
         List<StandardTextTimeSeriesRow> rows = new ArrayList<>();
         while (rs.next()) {
-            StandardTextTimeSeriesRow row = buildStandardTextTimeSeriesRow(rs, officeId);
+            StandardTextTimeSeriesRow row = buildRow(rs, officeId);
             rows.add(row);
         }
         return rows;
     }
 
-    private static StandardTextTimeSeriesRow buildStandardTextTimeSeriesRow(ResultSet rs,
-                                                                            String officeId) throws SQLException {
+    private static StandardTextTimeSeriesRow buildRow(ResultSet rs, String officeId) throws SQLException {
         StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
         Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
                 OracleTypeMap.getInstance().getGmtCalendar());
