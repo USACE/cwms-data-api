@@ -4,13 +4,18 @@ Due to the nature of the needs of this system it is not possible to just up and 
 
 ## Here are the following pre-steps
 1. Add `<real host ip> cwms-data.test auth.test traefik.test` to the /etc/hosts file  (**Warning: 127.0.0.1 doesn't work!**)
-2. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
-3. Create an environment file with appropriate references for your environment and testing.
+2. Install java.  It is needed for the keytool command used in the next step.
+3. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
+4. Create an environment file with appropriate references for your environment and testing.
 
 
 ## Starting the system
 
 run `docker-compose --env-file <env file> up -d --force-recreate`
+
+on newer docker you may need to use 'docker compose' (without the dash -).
+
+`docker compose --env-file ../cda.env up --force-recreate`
 
 The first time this is run it will take ~40 minutes while Oracle Initializes and the schema is installed. Subsequent runs will be faster.
 The force recreate is required as we are dumping our local rootca into the java keystore of the data-api image so the query to keycloak 
