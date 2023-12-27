@@ -1,12 +1,13 @@
 package cwms.cda.api;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Scanner;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
@@ -16,28 +17,27 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 @TestInstance(Lifecycle.PER_CLASS)
-public class ControllerTest
-{
+public class ControllerTest {
     protected Connection conn = null;
-    protected PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
+    protected PolicyFactory sanitizer =
+            new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
 
-    public Connection getTestConnection() throws SQLException, IOException{
-        if( conn == null ){
+    public Connection getTestConnection() throws IOException {
+        if (conn == null) {
             InputStream stream = ControllerTest.class.getResourceAsStream("/ratings_db.txt");
             assertNotNull(stream);
             this.conn = new MockConnection(
-                                    new MockFileDatabase(stream
-                                    )
-                        );
-            assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
+                    new MockFileDatabase(stream
+                    )
+            );
+            assertNotNull(this.conn, "Connection is null; something has gone wrong with the "
+                    + "fixture setup");
         }
         return conn;
     }
-    public String loadResourceAsString(String fileName)
-    {
+
+    public String loadResourceAsString(String fileName) {
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream stream = classLoader.getResourceAsStream(fileName);
         assertNotNull(stream, "Could not load the resource as stream:" + fileName);
@@ -48,24 +48,25 @@ public class ControllerTest
     }
 
     @BeforeAll
-    public void baseLineDbMocks() throws SQLException, IOException{
+    public void baseLineDbMocks() throws IOException {
         InputStream stream = ControllerTest.class.getResourceAsStream("/ratings_db.txt");
         assertNotNull(stream);
         this.conn = new MockConnection(
-                                new MockFileDatabase(stream
-                                )
-                    );
-        assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture setup");
+                new MockFileDatabase(stream
+                )
+        );
+        assertNotNull(this.conn, "Connection is null; something has gone wrong with the fixture "
+                + "setup");
     }
 
     @NotNull
     public static String buildParamStr(Map<String, String> urlParams) {
         StringBuilder sb = new StringBuilder();
         urlParams.entrySet()
-                .forEach(e->sb.append(e.getKey()).append("=").append(e.getValue()).append("&"));
+                .forEach(e -> sb.append(e.getKey()).append("=").append(e.getValue()).append("&"));
 
-        if(sb.length() > 0) {
-            sb.setLength(sb.length()-1);
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
         }
 
         return sb.toString();
