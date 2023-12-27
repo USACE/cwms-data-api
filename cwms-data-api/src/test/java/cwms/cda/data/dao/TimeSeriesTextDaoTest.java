@@ -29,13 +29,11 @@ class TimeSeriesTextDaoTest extends DaoTest {
 
         String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
 
-        Date startD = Date.from(startZDT.toInstant());
-        Date endD = Date.from(endZDT.toInstant());
         Date verD = null;
 
         TimeSeriesTextDao dao = new TimeSeriesTextDao(dsl);
         TextTimeSeries textTimeSeries = dao.retrieveFromView("SPK", tsId,
-                startD, endD, verD, null, null
+                startZDT, endZDT, null, null, null
         );
 
         assertNotNull(textTimeSeries);
