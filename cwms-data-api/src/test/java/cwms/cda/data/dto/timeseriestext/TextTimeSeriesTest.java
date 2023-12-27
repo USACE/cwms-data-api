@@ -51,7 +51,7 @@ class TextTimeSeriesTest {
         System.out.println(json);
 
         assertFalse(json.contains("ESTIMATED"));
-        assertTrue(json.contains("CWMS"));
+        assertFalse(json.contains("CWMS"));
         assertTrue(json.contains("420"));
 
     }
