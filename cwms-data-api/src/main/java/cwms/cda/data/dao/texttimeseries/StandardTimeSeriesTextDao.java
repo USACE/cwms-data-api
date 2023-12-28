@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -114,7 +116,11 @@ public class StandardTimeSeriesTextDao extends JooqDao {
                     .build();
     }
 
-
+    /**
+     * This is if you want to store a new standard text id -> value mapping.
+     * @param standardTextValue
+     * @param failIfExists
+     */
     public void store(StandardTextValue standardTextValue, boolean failIfExists) {
 
         cwms.cda.data.dto.timeseriestext.StandardTextId standardTextId = standardTextValue.getId();
@@ -125,6 +131,28 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         connection(dsl, c -> {
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
             dbText.storeStdText(c, stdTextId, stdText, failIfExists, officeId);
+        });
+    }
+
+    public void store(String officeId, String tsId, StandardTextTimeSeriesRow stdRow,
+                      boolean maxVersion, boolean replaceAll) {
+        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+
+        StandardTextId standardTextId = stdRow.getStandardTextId();
+        String textId = standardTextId.getId();
+
+        Date dateTime = stdRow.getDateTime();
+        Date versionDate = stdRow.getVersionDate();
+        Long attribute = stdRow.getAttribute();
+
+        NavigableSet<Date> dates = new TreeSet<>();
+        dates.add(dateTime);
+
+        connection(dsl, connection -> {
+            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
+            dbText.storeTsStdText(connection, tsId, textId, dates,
+                        versionDate, timeZone, maxVersion, replaceAll,
+                        attribute, officeId);
         });
     }
 
@@ -211,7 +239,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         if (standardTextId != null) {
             stdTextIdMask = standardTextId.getId();
         } else {
-            stdTextIdMask = null;
+            stdTextIdMask = "*";
         }
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
