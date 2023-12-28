@@ -122,10 +122,10 @@ public class ClobController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);) {
-                DSLContext dsl = getDslContext(ctx);
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             Optional<String> officeOpt = Optional.ofNullable(office);
 
@@ -175,10 +175,10 @@ public class ClobController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, @NotNull String clobId) {
+    public void getOne(@NotNull Context ctx, @NotNull String clobId) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ONE);) {
-                DSLContext dsl = getDslContext(ctx);
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
             Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
@@ -219,8 +219,8 @@ public class ClobController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();

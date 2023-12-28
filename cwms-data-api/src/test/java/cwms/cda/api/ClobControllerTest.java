@@ -14,7 +14,6 @@ import static org.mockito.Mockito.when;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.flogger.FluentLogger;
-
 import cwms.cda.data.dto.Clob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -26,7 +25,6 @@ import io.javalin.http.HttpResponseException;
 import io.javalin.http.util.ContextUtil;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
-import java.sql.SQLException;
 import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,7 +37,7 @@ import org.jooq.tools.jdbc.MockExecuteContext;
 import org.jooq.tools.jdbc.MockResult;
 import org.junit.jupiter.api.Test;
 
-public class ClobControllerTest extends ControllerTest{
+public class ClobControllerTest extends ControllerTest {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
 
@@ -62,7 +60,8 @@ public class ClobControllerTest extends ControllerTest{
 
         when(request.getAttribute("database")).thenReturn(getTestConnection());
 
-        assertNotNull(context.attribute("database"), "could not get the connection back as an attribute");
+        assertNotNull(context.attribute("database"), "could not get the connection back as an "
+                + "attribute");
 
         when(request.getHeader(Header.ACCEPT)).thenReturn("BAD FORMAT");
 
@@ -70,59 +69,33 @@ public class ClobControllerTest extends ControllerTest{
 
     }
 
-    /*
-    @Test
-    public void pagination_elements_returned_json(){
-        given()
-        .header("Accept","application/json;version=2").param("pageSize", 2)
-        .get("/clobs")
-        .then()
-        .statusCode(HttpServletResponse.SC_OK)
-        .body("$", hasKey("next-page"))
-        .body("page-size", equalTo(2))
-        .body("clobs.size()",is(2));
-
-    }
-
-    @Test
-    public void pagination_elements_returned_xml(){
-        given()
-        .header("Accept","application/xml;version=2").param("pageSize", 2)
-        .get("/clobs")
-        .then()
-        .statusCode(HttpServletResponse.SC_OK)
-        .body(hasXPath("/clobs/nextPage"))
-        .body("clobs.pageSize", equalTo("2"))
-        .body("clobs.clobs.children().size()",is(2))
-        ;
-    }
-    */
 
     // This is only supposed to test that when XML data is posted to create,
     // that data is forward to the method deserialize
     @Test
-    void post_to_create_passed_to_deserializeJson() throws Exception
-    {
+    void post_to_create_passed_to_deserializeJson() throws Exception {
         final String testBody = "could be anything";
 
         ClobController controller = spy(new ClobController(new MetricRegistry()));
 
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
-        HashMap<String,Object> attributes = new HashMap<>();
-        attributes.put(ContextUtil.maxRequestSizeKey,Integer.MAX_VALUE);
-        attributes.put(JsonMapperKt.JSON_MAPPER_KEY,new JavalinJackson());
+        HashMap<String, Object> attributes = new HashMap<>();
+        attributes.put(ContextUtil.maxRequestSizeKey, Integer.MAX_VALUE);
+        attributes.put(JsonMapperKt.JSON_MAPPER_KEY, new JavalinJackson());
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
 
-        Context context = ContextUtil.init(request,response,"*",new HashMap<>(), HandlerType.POST,attributes);
+        Context context = ContextUtil.init(request, response, "*", new HashMap<>(),
+                HandlerType.POST, attributes);
 
         when(request.getContentLength()).thenReturn(testBody.length());
 
         MockDataProvider provider = new MockDataProvider() {
             @Override
-            public MockResult[] execute(MockExecuteContext mockExecuteContext) throws SQLException {
-                fail();  // This test shouldn't call the database.  It just needs a DSLContext for the try/finally.
+            public MockResult[] execute(MockExecuteContext mockExecuteContext) {
+                fail();  // This test shouldn't call the database.  It just needs a DSLContext
+                // for the try/finally.
                 return null;
             }
         };
@@ -134,12 +107,15 @@ public class ClobControllerTest extends ControllerTest{
         when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
         when(request.getContentType()).thenReturn(Formats.JSONV2);
 
-        logger.atFine().log( "Test post_to_create_passed_to_deserializeJson may trigger a exception - this is fine.");
+        logger.atFine().log("Test post_to_create_passed_to_deserializeJson may trigger a "
+                + "exception - this is fine.");
         try {
             controller.create(context);
-        } catch (HttpResponseException e){
-            // It's throwing this exception bc deserialize can't parse our garbage data. That's fine.
-            logger.atFine().log( "Test post_to_create_passed_to_deserializeJson caught an HttpResponseException - this is fine.");
+        } catch (HttpResponseException e) {
+            // It's throwing this exception bc deserialize can't parse our garbage data. That's
+            // fine.
+            logger.atFine().log("Test post_to_create_passed_to_deserializeJson caught an "
+                    + "HttpResponseException - this is fine.");
         }
         // For this test, it's ok that the server throws a HttpResponseException
         // Only want to check that the controller accessed our mock dao in the expected way

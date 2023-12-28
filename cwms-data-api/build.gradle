@@ -34,7 +34,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
 
     }
-    implementation('mil.army.usace.hec:cwms-db-jooq-codegen_java8:23.03.16-1.0.2') { //was 7.0.0-SNAPSHOT, 23.03.16 or cwms-db-jooq-codegen_java11	23.03.16-1.0.2
+    implementation('mil.army.usace.hec:cwms-db-jooq-codegen_java8:23.03.16-1.0.2') { 
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -69,7 +69,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
     }
 
-    implementation('org.jooq.pro-java-8:jooq:3.18.7') {
+    implementation('org.jooq.pro-java-8:jooq:3.18.7-jdk8RC02') {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "javax.xml.bind", module: "*"
