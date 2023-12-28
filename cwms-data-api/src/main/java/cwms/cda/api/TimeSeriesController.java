@@ -5,6 +5,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.DATE_FORMAT;
@@ -179,8 +180,9 @@ public class TimeSeriesController implements CrudHandler {
         StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
-        try (final Timer.Context ignored = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
@@ -231,8 +233,9 @@ public class TimeSeriesController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
@@ -355,8 +358,9 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = ctx.queryParam(NAME);
@@ -481,8 +485,9 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
@@ -630,10 +635,12 @@ public class TimeSeriesController implements CrudHandler {
             tags = {TAG},
             method = HttpMethod.GET
     )
-    public void getRecent(Context ctx) {
+    public void getRecent(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("getRecent");
-             DSLContext dsl = getDslContext(ctx)) {
+             ){
+DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String office = ctx.queryParam(OFFICE);

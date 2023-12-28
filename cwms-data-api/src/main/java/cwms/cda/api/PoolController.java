@@ -100,8 +100,9 @@ public class PoolController implements CrudHandler {
             tags = {"Pools"})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);){
+            DSLContext dsl = getDslContext(ctx);
+
             PoolDao dao = new PoolDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -179,8 +180,9 @@ public class PoolController implements CrudHandler {
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);){
+            DSLContext dsl = getDslContext(ctx);
+
             PoolDao dao = new PoolDao(dsl);
 
             // These are required

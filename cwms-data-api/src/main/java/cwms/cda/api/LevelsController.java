@@ -116,8 +116,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -168,8 +168,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime(DELETE); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
@@ -249,8 +249,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
@@ -298,8 +298,6 @@ public class LevelsController implements CrudHandler {
 
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
-
-
                 switch (format) {
                     case "json": {
                         ctx.contentType(Formats.JSON);
@@ -368,8 +366,8 @@ public class LevelsController implements CrudHandler {
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         GET_ONE));
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
             ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
             ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
 
@@ -410,8 +408,8 @@ public class LevelsController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldLevelId) {
-        try (final Timer.Context timeContext = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -554,12 +552,9 @@ public class LevelsController implements CrudHandler {
 
     public static LocationLevel deserializeLocationLevel(String body, String format) {
         ObjectMapper om = getObjectMapperForFormat(format);
-        LocationLevel retVal;
 
         try {
-            retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
-                            .build();
-            return retVal;
+            return new LocationLevel.Builder(om.readValue(body, LocationLevel.class)).build();
         } catch (JsonProcessingException e) {
             throw new JsonFieldsException(e);
         }
@@ -663,8 +658,8 @@ public class LevelsController implements CrudHandler {
     )
     public void getLevelAsTimeSeries(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("getLevelAsTimeSeries");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime("getLevelAsTimeSeries")) {
+            DSLContext dsl = getDslContext(ctx);
             Validator<String> pathParam = ctx.pathParamAsClass(LEVEL_ID, String.class);
             if (!pathParam.hasValue()) {
                 throw new IllegalArgumentException(LEVEL_ID + " path parameter can not be null when retrieving levels as time series");

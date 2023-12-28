@@ -1,10 +1,14 @@
 package cwms.cda.api.auth;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_201;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
-
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
@@ -18,13 +22,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 import java.util.List;
-
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ApiKeyController implements CrudHandler {
@@ -56,18 +55,19 @@ public class ApiKeyController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
+        try {
+            DSLContext dsl = getDslContext(ctx);
             AuthDao auth = AuthDao.getInstance(dsl);
             ApiKey sourceData = ctx.bodyAsClass(ApiKey.class);
             ApiKey key = auth.createApiKey(p, sourceData);
-            if(key == null) {
+            if (key == null) {
                 ctx.status(HttpCode.BAD_REQUEST);
             } else {
                 ctx.json(key).status(HttpCode.CREATED);
             }
         } catch (CwmsAuthException ex) {
-            if( ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
-                ctx.json(new CdaError(ex.getMessage(),true)).status(ex.getAuthFailCode());
+            if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
+                ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
             } else {
                 throw ex;
             }
@@ -90,13 +90,14 @@ public class ApiKeyController implements CrudHandler {
         tags = {"Authorization"}
     )
     @Override
-    public void delete(Context ctx, String keyName) {
+    public void delete(@NotNull Context ctx, @NotNull String keyName) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = AuthDao.getInstance(dsl);
-            auth.deleteKeyForUser(p, keyName);
-            ctx.status(HttpCode.NO_CONTENT);
-        }
+        DSLContext dsl = getDslContext(ctx);
+
+        AuthDao auth = AuthDao.getInstance(dsl);
+        auth.deleteKeyForUser(p, keyName);
+        ctx.status(HttpCode.NO_CONTENT);
+
     }
 
     @OpenApi(
@@ -111,18 +112,18 @@ public class ApiKeyController implements CrudHandler {
     )
     public void getAll(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = AuthDao.getInstance(dsl);
-            List<ApiKey> keys = auth.apiKeysForUser(p);
-            ctx.json(keys).status(HttpCode.OK);            
-        }
+
+        DSLContext dsl = getDslContext(ctx);
+
+        AuthDao auth = AuthDao.getInstance(dsl);
+        List<ApiKey> keys = auth.apiKeysForUser(p);
+        ctx.json(keys).status(HttpCode.OK);
+
     }
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(
-                name="key-name",
-                required = true,
+            @OpenApiParam(name = "key-name", required = true,
                 description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
         },
         responses = @OpenApiResponse(
@@ -135,29 +136,28 @@ public class ApiKeyController implements CrudHandler {
         tags = {"Authorization"}
     )
     @Override
-    public void getOne(Context ctx, String keyName) {
+    public void getOne(Context ctx, @NotNull String keyName) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
-        try(DSLContext dsl = getDslContext(ctx)) {
-            AuthDao auth = AuthDao.getInstance(dsl);
-            ApiKey key = auth.apiKeyForUser(p,keyName);
-            if(key != null) {
-                ctx.json(key).status(HttpCode.OK);            
-            } else {
-                CdaError msg = new CdaError(
-                        "Requested Key was not found. NOTE: api key names are case-sensitive.",
-                        true
-                    );
-                ctx.json(msg).status(HttpCode.NOT_FOUND);
-            }
-            
+        DSLContext dsl = getDslContext(ctx);
+        AuthDao auth = AuthDao.getInstance(dsl);
+        ApiKey key = auth.apiKeyForUser(p, keyName);
+        if (key != null) {
+            ctx.json(key).status(HttpCode.OK);
+        } else {
+            CdaError msg = new CdaError(
+                    "Requested Key was not found. NOTE: api key names are case-sensitive.",
+                    true
+            );
+            ctx.json(msg).status(HttpCode.NOT_FOUND);
         }
+
     }
 
     @OpenApi(
         ignore = true // users should delete and recreate keys. There is nothing to update.
     )
     @Override
-    public void update(Context ctx, String arg1) {
+    public void update(@NotNull Context ctx, @NotNull String arg1) {
         throw new UnsupportedOperationException("Update is not implemented. Delete and create a new key.");
     }
     

@@ -99,10 +99,8 @@ public class BlobController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (
-                final Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try ( final Timer.Context timeContext = markAndTime(GET_ALL)) {
+                DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             Optional<String> officeOpt = Optional.ofNullable(office);
 
@@ -145,10 +143,8 @@ public class BlobController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String blobId) {
 
-        try (
-                final Timer.Context timeContext = markAndTime(GET_ONE);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);        ) {
+                DSLContext dsl = getDslContext(ctx);
             BlobDao dao = new BlobDao(dsl);
             String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);

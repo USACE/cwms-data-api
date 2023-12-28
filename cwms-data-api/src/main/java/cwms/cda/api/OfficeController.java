@@ -92,8 +92,9 @@ public class OfficeController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             OfficeDao dao = new OfficeDao(dsl);
             String formatParm = ctx
                 .queryParamAsClass(FORMAT, String.class)
@@ -138,9 +139,9 @@ public class OfficeController implements CrudHandler {
             }, tags = { "Offices" })
     @Override
     public void getOne(Context ctx, String officeId) {
-        try (
-                final Timer.Context timeContext = markAndTime(GET_ONE);
-                DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             OfficeDao dao = new OfficeDao(dsl);
             Optional<Office> office = dao.getOfficeById(officeId);
             if (office.isPresent()) {

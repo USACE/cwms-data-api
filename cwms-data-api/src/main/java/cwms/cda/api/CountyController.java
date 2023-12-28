@@ -24,6 +24,12 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -38,18 +44,14 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 /**
  * Handles all county CRUD methods.
- * 
+ *
  * @see CountyController
  */
 public class CountyController implements CrudHandler {
@@ -76,15 +78,16 @@ public class CountyController implements CrudHandler {
                     @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
                             description = "A list of counties.",
                             content = {
-                                    @OpenApiContent(from = County.class, isArray = true, type = Formats.JSONV2),
+                                    @OpenApiContent(from = County.class, isArray = true,
+                                            type =  Formats.JSONV2),
                             }),
             },
             tags = {"Counties"}
     )
     @Override
-    public void getAll(Context ctx) {
-        try (Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)) {
+    public void getAll(@NotNull Context ctx) {
+        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             CountyDao dao = new CountyDao(dsl);
             List<County> counties = dao.getCounties();
             String formatHeader = ctx.header(Header.ACCEPT);
@@ -98,7 +101,7 @@ public class CountyController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String county) {
+    public void getOne(Context ctx, @NotNull String county) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
@@ -110,13 +113,13 @@ public class CountyController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String county) {
+    public void update(Context ctx, @NotNull String county) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String county) {
+    public void delete(Context ctx, @NotNull String county) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 

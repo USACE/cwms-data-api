@@ -110,8 +110,8 @@ public class RatingController implements CrudHandler {
             method = HttpMethod.POST, path = "/ratings", tags = {TAG})
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime("create"); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
             RatingDao ratingDao = getRatingDao(dsl);
             String ratingSet = deserializeRatingSet(ctx);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
@@ -184,8 +184,9 @@ public class RatingController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        try (Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             Instant startTimeDate = DateUtils.parseUserDate(ctx.queryParam(BEGIN), timezone).toInstant();
             Instant endTimeDate = DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant();
@@ -252,8 +253,9 @@ public class RatingController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingDao ratingDao = getRatingDao(dsl);
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
@@ -418,8 +420,9 @@ public class RatingController implements CrudHandler {
                                    String officeId, String rating, Instant begin,
                                    Instant end) throws IOException, RatingException {
         RatingSet ratingSet;
-        try (final Timer.Context ignored = markAndTime("getRatingSet");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime("getRatingSet")){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingDao ratingDao = getRatingDao(dsl);
             ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
         }
@@ -440,8 +443,9 @@ public class RatingController implements CrudHandler {
             method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingDao ratingDao = getRatingDao(dsl);
 
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);

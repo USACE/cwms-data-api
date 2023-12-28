@@ -587,7 +587,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
         ZTSV_ARRAY locLvlValues = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
                 specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
-                "UTC", officeId);
+                "UTC", officeId, "VN");
         if (locLvlValues.isEmpty()) {
             throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);
         }
