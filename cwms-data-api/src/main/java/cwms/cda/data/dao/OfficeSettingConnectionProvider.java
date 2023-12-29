@@ -25,7 +25,7 @@ class OfficeSettingConnectionProvider extends DataSourceConnectionProvider {
 
     public static Connection getConnection(Connection conn, String office) {
         try {
-            DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
+            DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE18C);
             CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
         } catch (Exception e) {
             throw new DataAccessException("Unable to set session office id to " + office, e);
