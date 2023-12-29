@@ -29,7 +29,7 @@ select "v0" "VERSION" from (select "x"."v0", rownum "rn" from (select "CWMS_20".
 > 18.1.1
 @ rows: 1
 # This is always called in 18C dialect
-select "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION" from "CWMS_20"."AV_DB_CHANGE_LOG" order by "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION_DATE" desc fetch next ? rows only
+select "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION" from "CWMS_20"."AV_DB_CHANGE_LOG" order by "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION_DATE" desc fetch next ? rows only;
 > VERSION
 > -------
 > 18.1.1
