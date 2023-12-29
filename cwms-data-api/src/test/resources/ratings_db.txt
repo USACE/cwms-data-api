@@ -22,12 +22,19 @@
 > -----
 > 18.1.1
 @ rows: 1
-# This is always called
+# This is always called in 11G dialect
 select "v0" "VERSION" from (select "x"."v0", rownum "rn" from (select "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION" "v0" from "CWMS_20"."AV_DB_CHANGE_LOG" order by "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION_DATE" desc) "x" where rownum <= (0 + ?)) where "rn" > 0 order by "rn";
 > VERSION
 > -------
 > 18.1.1
 @ rows: 1
+# This is always called in 18C dialect
+select "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION" from "CWMS_20"."AV_DB_CHANGE_LOG" order by "CWMS_20"."AV_DB_CHANGE_LOG"."VERSION_DATE" desc fetch next ? rows only
+> VERSION
+> -------
+> 18.1.1
+@ rows: 1
+
 select count(*) from "CWMS_20"."AV_CLOB" join "CWMS_20"."AV_OFFICE" on "CWMS_20"."AV_CLOB"."OFFICE_CODE" = "CWMS_20"."AV_OFFICE"."OFFICE_CODE" where ((regexp_like("CWMS_20"."AV_CLOB"."ID", ?)) and "CWMS_20"."AV_OFFICE"."OFFICE_ID" like ?);
 > count
 > -----
