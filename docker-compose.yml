@@ -78,7 +78,7 @@ services:
       target: api
       context: .
       dockerfile: Dockerfile
-    command: bash -c "keytool -trustcacerts -importcert -alias cda_lab_root -keystore /opt/java/openjdk/jre/lib/security/cacerts -storepass changeit -file /conf/rootca.pem -noprompt || catalina.sh run"
+    command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
