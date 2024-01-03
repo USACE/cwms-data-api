@@ -261,7 +261,7 @@ public class ClobController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
-        log.atInfo().log("Getting objectmapper for format '%s'",format);
+
         if (ContentType.equivalent(Formats.XMLV2,format)) {
             JacksonXmlModule module = new JacksonXmlModule();
             module.setDefaultUseWrapper(false);
