@@ -10,7 +10,6 @@ import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +28,6 @@ class TimeSeriesTextDaoTest extends DaoTest {
 
         String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
 
-        Date verD = null;
 
         TimeSeriesTextDao dao = new TimeSeriesTextDao(dsl);
         TextTimeSeries textTimeSeries = dao.retrieveFromView("SPK", tsId,
@@ -38,10 +36,10 @@ class TimeSeriesTextDaoTest extends DaoTest {
 
         assertNotNull(textTimeSeries);
 
-        Collection<RegularTextTimeSeriesRow> regRows = textTimeSeries.getRegRows();
+        Collection<RegularTextTimeSeriesRow> regRows = textTimeSeries.getRegularTextValues();
         assertFalse(regRows.isEmpty());
 
-        Collection<StandardTextTimeSeriesRow> stdRows = textTimeSeries.getStdRows();
+        Collection<StandardTextTimeSeriesRow> stdRows = textTimeSeries.getStandardTextValues();
         assertFalse(stdRows.isEmpty());
 
 

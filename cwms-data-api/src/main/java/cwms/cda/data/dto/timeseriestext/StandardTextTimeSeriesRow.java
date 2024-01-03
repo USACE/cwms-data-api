@@ -23,26 +23,22 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
     private final Date dataEntryDate;
     private final Long attribute;
 
-    private final StandardTextId standardTextId;
-    private final StandardTextValue standardTextValue;
+    private final String officeId;
+    private final String standardTextId;
+    private final String textValue;
+
 
     private StandardTextTimeSeriesRow(Builder builder) {
+        this.officeId = builder.officeId;
         this.standardTextId = builder.standardTextId;
-        this.standardTextValue = builder.standardTextValue;
+        this.textValue = builder.textValue;
         this.dateTime = builder.dateTime;
         this.versionDate = builder.versionDate;
         this.dataEntryDate = builder.dataEntryDate;
         this.attribute = builder.attribute;
-
     }
 
-    public StandardTextId getStandardTextId() {
-        return standardTextId;
-    }
 
-    public StandardTextValue getStandardTextValue() {
-        return standardTextValue;
-    }
 
     @Override
     public <Y extends TextTimeSeriesRow> Y copy() {
@@ -73,6 +69,18 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
         return new DateDateKey(dateTime, dataEntryDate);
     }
 
+    public String getOfficeId() {
+        return officeId;
+    }
+
+    public String getStandardTextId() {
+        return standardTextId;
+    }
+
+    public String getTextValue() {
+        return textValue;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -84,22 +92,32 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
 
         StandardTextTimeSeriesRow that = (StandardTextTimeSeriesRow) o;
 
-        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null) {
+        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) :
+                that.getDateTime() != null) {
             return false;
         }
-        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null) {
+        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) :
+                that.getVersionDate() != null) {
             return false;
         }
-        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null) {
+        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) :
+                that.getDataEntryDate() != null) {
             return false;
         }
-        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null) {
+        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) :
+                that.getAttribute() != null) {
             return false;
         }
-        if (getStandardTextId() != null ? !getStandardTextId().equals(that.getStandardTextId()) : that.getStandardTextId() != null) {
+        if (getOfficeId() != null ? !getOfficeId().equals(that.getOfficeId()) :
+                that.getOfficeId() != null) {
             return false;
         }
-        return getStandardTextValue() != null ? getStandardTextValue().equals(that.getStandardTextValue()) : that.getStandardTextValue() == null;
+        if (getStandardTextId() != null ? !getStandardTextId().equals(that.getStandardTextId()) :
+                that.getStandardTextId() != null) {
+            return false;
+        }
+        return getTextValue() != null ? getTextValue().equals(that.getTextValue()) :
+                that.getTextValue() == null;
     }
 
     @Override
@@ -108,8 +126,9 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
         result = 31 * result + (getVersionDate() != null ? getVersionDate().hashCode() : 0);
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
         result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
+        result = 31 * result + (getOfficeId() != null ? getOfficeId().hashCode() : 0);
         result = 31 * result + (getStandardTextId() != null ? getStandardTextId().hashCode() : 0);
-        result = 31 * result + (getStandardTextValue() != null ? getStandardTextValue().hashCode() : 0);
+        result = 31 * result + (getTextValue() != null ? getTextValue().hashCode() : 0);
         return result;
     }
 
@@ -119,9 +138,29 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
         private Date dateTime;
         private Date versionDate;
         private Date dataEntryDate;
-        private StandardTextId standardTextId;
+        private String standardTextId;
         private Long attribute;
-        private StandardTextValue standardTextValue;
+        private String textValue;
+
+        private String officeId;
+
+        public Builder() {
+        }
+
+        public Builder withOfficeId(String officeId) {
+            this.officeId = officeId;
+            return this;
+        }
+
+        public Builder withTextValue(String textValue) {
+            this.textValue = textValue;
+            return this;
+        }
+
+        public Builder withStandardTextId(String stdTextId) {
+            this.standardTextId = stdTextId;
+            return this;
+        }
 
         public Builder withDateTime(Date dateTime) {
             this.dateTime = dateTime;
@@ -138,10 +177,6 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
-        public Builder withStandardTextId(StandardTextId standardTextId) {
-            this.standardTextId = standardTextId;
-            return this;
-        }
 
         @JsonProperty("attribute")
         public Builder withAttribute(Long l) {
@@ -166,11 +201,6 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
             }
         }
 
-        public Builder withStandardTextValue(StandardTextValue standardTextValue) {
-            // Should this try and set the standardTextId as well?
-            this.standardTextValue = standardTextValue;
-            return this;
-        }
 
         public StandardTextTimeSeriesRow.Builder from(StandardTextTimeSeriesRow stdRow) {
             if (stdRow == null) {
@@ -179,7 +209,8 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withDataEntryDate(null)
                         .withAttribute((Long) null)
                         .withStandardTextId(null)
-                        .withStandardTextValue(null)
+                        .withTextValue(null)
+                        .withOfficeId(null)
                         ;
             } else {
                 return withDateTime(stdRow.dateTime)
@@ -187,7 +218,8 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withDataEntryDate(stdRow.dataEntryDate)
                         .withAttribute(stdRow.attribute)
                         .withStandardTextId(stdRow.standardTextId)
-                        .withStandardTextValue(stdRow.standardTextValue)
+                        .withTextValue(stdRow.textValue)
+                        .withOfficeId(stdRow.officeId)
                         ;
             }
         }
@@ -195,8 +227,6 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
         public StandardTextTimeSeriesRow build() {
             return new StandardTextTimeSeriesRow(this);
         }
-
-
 
     }
 }

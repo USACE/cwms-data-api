@@ -2,7 +2,7 @@ declare
     P_TSID         varchar2(256) := 'First519402.Flow.Inst.1Hour.0.1688755420497';
     P_TEXT         clob           := 'my awesome text ts';
     P_START_TIME   timestamp        := TO_TIMESTAMP_TZ('2005-01-01 02:30:00', 'YYYY-MM-DD HH24:MI:SS');
-    P_END_TIME   timestamp          := TO_TIMESTAMP_TZ('2005-01-02 07:00:00', 'YYYY-MM-DD HH24:MI:SS');
+    P_END_TIME   timestamp          := TO_TIMESTAMP_TZ('2005-01-01 07:00:00', 'YYYY-MM-DD HH24:MI:SS');
     P_VERSION_DATE date           := null;
     P_TIME_ZONE    varchar2(8) := 'UTC';
     P_MAX_VERSION  varchar2(1) := 'T';

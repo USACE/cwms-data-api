@@ -42,8 +42,8 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     public static final String TYPE = "Standard Text Time Series";
     public static final String CATALOG_TYPE = "Standard Text Catalog";
 
-    private static List<String> timeSeriesStdTextColumnsList;
-    private static List<String> stdTextCatalogColumnsList;
+    private static final List<String> timeSeriesStdTextColumnsList;
+    private static final List<String> stdTextCatalogColumnsList;
 
 
 
@@ -64,10 +64,10 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public StandardTextCatalog retrieveCatalog(String pOfficeIdMask, String pStdTextIdMask) throws SQLException {
+    public StandardTextCatalog retrieveCatalog(String officeIdMask, String stdTextIdMask) throws SQLException {
 
         try (ResultSet rs = CWMS_TEXT_PACKAGE.call_CAT_STD_TEXT_F(dsl.configuration(),
-                pStdTextIdMask, pOfficeIdMask).intoResultSet()) {
+                stdTextIdMask, officeIdMask).intoResultSet()) {
 
             return buildCatalog(rs);
         }
@@ -103,17 +103,16 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
     private StandardTextValue retrieve(Connection c, StandardTextId standardTextId) throws SQLException {
+        CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
 
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
+        String stdTextClob = dbText.retrieveStdTextF(c,
+                standardTextId.getId(),
+                standardTextId.getOfficeId());
 
-            String stdTextClob = dbText.retrieveStdTextF(c,
-                    standardTextId.getId(),
-                    standardTextId.getOfficeId());
-
-            return new StandardTextValue.Builder()
-                    .withId(standardTextId)
-                    .withStandardText(stdTextClob)
-                    .build();
+        return new StandardTextValue.Builder()
+                .withId(standardTextId)
+                .withStandardText(stdTextClob)
+                .build();
     }
 
     /**
@@ -138,8 +137,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
                       boolean maxVersion, boolean replaceAll) {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
-        StandardTextId standardTextId = stdRow.getStandardTextId();
-        String textId = standardTextId.getId();
+        String standardTextId = stdRow.getStandardTextId();
 
         Date dateTime = stdRow.getDateTime();
         Date versionDate = stdRow.getVersionDate();
@@ -150,7 +148,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
         connection(dsl, connection -> {
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
-            dbText.storeTsStdText(connection, tsId, textId, dates,
+            dbText.storeTsStdText(connection, tsId, standardTextId, dates,
                         versionDate, timeZone, maxVersion, replaceAll,
                         attribute, officeId);
         });
@@ -219,7 +217,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     @Nullable
     private static Date getDate(Instant startTime) {
         Date startDate;
-        if(startTime != null) {
+        if (startTime != null) {
             startDate = Date.from(startTime);
         } else {
             startDate = null;
@@ -279,6 +277,8 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
     private static StandardTextTimeSeriesRow buildRow(ResultSet rs, String officeId) throws SQLException {
         StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
+        builder.withOfficeId(officeId);
+
         Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
                 OracleTypeMap.getInstance().getGmtCalendar());
         if (!rs.wasNull()) {
@@ -291,29 +291,29 @@ public class StandardTimeSeriesTextDao extends JooqDao {
             Date versionDate = new Date(tsVersionDate.getTime());
             builder.withVersionDate(versionDate);
         }
+
         Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE,
                 OracleTypeMap.getInstance().getGmtCalendar());
         if (!rs.wasNull()) {
             Date dataEntryDate = new Date(tsDataEntryDate.getTime());
             builder.withDataEntryDate(dataEntryDate);
         }
+
         String stdTextId = rs.getString(STD_TEXT_ID);
-        StandardTextId standardTextId = null;
         if (!rs.wasNull()) {
-            standardTextId =
-                    new StandardTextId.Builder().withOfficeId(officeId).withId(stdTextId).build();
-            builder.withStandardTextId(standardTextId);
+            builder.withStandardTextId(stdTextId);
         }
+
         Number attribute = rs.getLong(ATTRIBUTE);
         if (!rs.wasNull()) {
             builder.withAttribute(attribute.longValue());
         }
+
         String clobString = rs.getString(STD_TEXT);
-        if (!rs.wasNull() && standardTextId != null) {
-            StandardTextValue standardTextValue =
-                    new StandardTextValue.Builder().withId(standardTextId).withStandardText(clobString).build();
-            builder.withStandardTextValue(standardTextValue);
+        if (!rs.wasNull()) {
+            builder.withTextValue(clobString);
         }
+
         return builder.build();
     }
 

@@ -30,7 +30,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
+import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 
@@ -146,7 +146,7 @@ public final class Controllers {
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-        JavalinValidation.register(TimeSeriesTextDao.DeleteMode.class, TimeSeriesTextDao.DeleteMode::valueOf);
+        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
     }
 
     private Controllers() {

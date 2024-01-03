@@ -3,9 +3,7 @@ package cwms.cda.data.dao.texttimeseries;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.timeseriestext.RegularTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.StandardTextId;
 import cwms.cda.data.dto.timeseriestext.StandardTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.StandardTextValue;
 import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
 import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.math.BigDecimal;
@@ -30,12 +28,6 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
 
     public static final String OFFICE_ID = "OFFICE_ID";
-
-    public enum DeleteMode {
-        DELETE_ALL,
-        DELETE_STANDARD,
-        DELETE_REGULAR
-    }
 
 
     public TimeSeriesTextDao(DSLContext dsl) {
@@ -100,9 +92,9 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
     private TextTimeSeriesRow buildRow(Record next, String officeId) {
 
-        Timestamp dateTimeUTC = next.get(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC);
-        Timestamp versionDateUTC = next.get(AV_TS_TEXT.AV_TS_TEXT.VERSION_DATE_UTC);
-        Timestamp dataEntryDateUTC = next.get(AV_TS_TEXT.AV_TS_TEXT.DATA_ENTRY_DATE_UTC);
+        Timestamp dateTimeUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC);
+        Timestamp versionDateUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.VERSION_DATE_UTC);
+        Timestamp dataEntryDateUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.DATA_ENTRY_DATE_UTC);
         BigDecimal attribute = next.get(AV_TS_TEXT.AV_TS_TEXT.ATTRIBUTE);
         String stdTextId = next.get(AV_TS_TEXT.AV_TS_TEXT.STD_TEXT_ID);
         String textValue = next.get(AV_TS_TEXT.AV_TS_TEXT.TEXT_VALUE);
@@ -110,32 +102,25 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         if (stdTextId == null) {
             RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
             return builder
-                    .withDateTime(new Date(dateTimeUTC.getTime()))
-                    .withVersionDate(new Date(versionDateUTC.getTime()))
-                    .withDataEntryDate(new Date(dataEntryDateUTC.getTime()))
+                    .withDateTime(new Date(dateTimeUtc.getTime()))
+                    .withVersionDate(new Date(versionDateUtc.getTime()))
+                    .withDataEntryDate(new Date(dataEntryDateUtc.getTime()))
                     .withAttribute(attribute)
                     .withTextValue(textValue)
                     .build();
         } else {
             StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
+            builder.withOfficeId(officeId);
+            builder.withStandardTextId(stdTextId);
 
-            StandardTextId standardTextId = new StandardTextId.Builder()
-                    .withOfficeId(officeId)
-                    .withId(stdTextId)
-                    .build();
-            if (textValue == null) {
-                builder.withStandardTextId(standardTextId);
-            } else {
-                builder.withStandardTextValue(new StandardTextValue.Builder()
-                        .withId(standardTextId)
-                        .withStandardText(textValue)
-                        .build());
+            if (textValue != null) {
+                builder.withTextValue(textValue);
             }
 
             builder
-                    .withDateTime(new Date(dateTimeUTC.getTime()))
-                    .withVersionDate(new Date(versionDateUTC.getTime()))
-                    .withDataEntryDate(new Date(dataEntryDateUTC.getTime()))
+                    .withDateTime(new Date(dateTimeUtc.getTime()))
+                    .withVersionDate(new Date(versionDateUtc.getTime()))
+                    .withDataEntryDate(new Date(dataEntryDateUtc.getTime()))
                     .withAttribute(attribute);
 
 
@@ -144,25 +129,21 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
     }
 
-    public void create(TextTimeSeries tts, boolean failIfExists) {
+    public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
 
-        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStdRows();
+        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         if (stdRows != null) {
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
 
             // Is there a bulk store?
             for (StandardTextTimeSeriesRow stdRow : stdRows) {
-                StandardTextValue standardTextValue = stdRow.getStandardTextValue();
-                stdDao.store(standardTextValue, failIfExists);
+                stdDao.store(tts.getOfficeId(), tts.getId(), stdRow, maxVersion, replaceAll);
             }
         }
 
-        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegRows();
+        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
-
-            boolean maxVersion = false;
-            boolean replaceAll = false;
 
             for (RegularTextTimeSeriesRow regRow : regRows) {
                 regDao.storeRow(tts.getOfficeId(), tts.getId(), regRow, maxVersion, replaceAll);
@@ -172,21 +153,21 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
     }
 
-    public void delete(DeleteMode mode,  String officeId, String textTimeSeriesId, String textMask,
-                       ZonedDateTime start,  ZonedDateTime end, ZonedDateTime versionDate,
+    public void delete(TimeSeriesTextMode mode, String officeId, String textTimeSeriesId, String textMask,
+                       ZonedDateTime start, ZonedDateTime end, ZonedDateTime versionDate,
                        boolean maxVersion, Long minAttribute, Long maxAttribute) {
 
 
         Instant startInstant = getInstant(start);
         Instant endInstant = getInstant(end);
         Instant versionInstant = getInstant(versionDate);
-        if (Objects.equals(DeleteMode.DELETE_REGULAR, mode) || Objects.equals(DeleteMode.DELETE_ALL, mode)) {
+        if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
             regDao.delete(officeId, textTimeSeriesId, textMask,
                     startInstant, endInstant, versionInstant,
                     maxVersion, minAttribute, maxAttribute);
         }
-        if (Objects.equals(DeleteMode.DELETE_STANDARD, mode) || Objects.equals(DeleteMode.DELETE_ALL, mode)) {
+        if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
             stdDao.delete(officeId, textTimeSeriesId, textMask,
                     startInstant, endInstant, versionInstant,

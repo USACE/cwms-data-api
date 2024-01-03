@@ -2,18 +2,16 @@ package cwms.cda.data.dao.texttimeseries;
 
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.timeseriestext.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.timeseriestext.StandardTextId;
 import cwms.cda.data.dto.timeseriestext.StandardTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.StandardTextValue;
 import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
+import cwms.cda.formatters.json.JsonV2;
 import fixtures.CwmsDataApiSetupCallback;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
@@ -22,6 +20,7 @@ import java.util.Date;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -76,21 +75,14 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 startDate, endDate, versionDate,
                 maxVersion, retText, minAttr, maxAttr);
 
-        assertNotNull(tts);
-        assertEquals(0, tts.getStdRows().size());
+        Assertions.assertNotNull(tts);
+        Assertions.assertEquals(0, tts.getStandardTextValues().size());
 
         // create/store
-        StandardTextId textId = new StandardTextId.Builder()
-                .withId("A")
-                .withOfficeId("CWMS").build();
-        StandardTextValue stv = new StandardTextValue.Builder()
-                .withId(textId)
-                .build();
-
         StandardTextTimeSeriesRow row = new StandardTextTimeSeriesRow.Builder()
                 .withDateTime(startDate)
-                .withStandardTextId(textId)
-                .withStandardTextValue(stv)
+                .withOfficeId("CWMS")
+                .withStandardTextId("A")
                 .build();
         dao.store(officeId, tsId,  row, true, true);
 
@@ -99,13 +91,13 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 startDate, endDate, versionDate,
                 maxVersion, retText, minAttr, maxAttr);
 
-        assertNotNull(tts);
-        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStdRows();
-        assertFalse(stdRows.isEmpty());
-        assertEquals(1, stdRows.size());
+        Assertions.assertNotNull(tts);
+        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
+        Assertions.assertFalse(stdRows.isEmpty());
+        Assertions.assertEquals(1, stdRows.size());
 //        logger.atInfo().log("got %d rows", stdRows.size());
         StandardTextTimeSeriesRow first = stdRows.iterator().next();
-        assertEquals( "A", first.getStandardTextId().getId());
+        Assertions.assertEquals("A", first.getStandardTextId());
 
     }
 
@@ -116,12 +108,16 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
                     DSLContext dsl = getDslContext(c, "SPK");
                     StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
 
-                    testRetrieve(dao);
+                    try {
+                        testRetrieve(dao);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
         );
     }
 
-    private static void testRetrieve(StandardTimeSeriesTextDao dao) {
+    private static void testRetrieve(StandardTimeSeriesTextDao dao) throws JsonProcessingException {
         String officeId = "SPK";
         String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
 
@@ -141,18 +137,23 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 startDate, endDate, versionDate,
                 maxVersion, retText, minAttr, maxAttr);
 
-        assertNotNull(tts);
+        Assertions.assertNotNull(tts);
 
-        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStdRows();
-        assertNotNull(stdRows);
-        assertFalse(stdRows.isEmpty());
+        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
+        Assertions.assertNotNull(stdRows);
+        Assertions.assertFalse(stdRows.isEmpty());
 
         StandardTextTimeSeriesRow first = stdRows.iterator().next();
-        assertNotNull(first);
-        assertEquals("E", first.getStandardTextId());
+        Assertions.assertNotNull(first);
+        Assertions.assertEquals("E", first.getStandardTextId());
 
-        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegRows();
-        assertNull(regRows);
+        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+        Assertions.assertNull(regRows);
+
+        ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+        String json = objectMapper.writeValueAsString(tts);
+        Assertions.assertNotNull(json);
+
 
     }
 

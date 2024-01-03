@@ -35,7 +35,6 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.START;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -44,6 +43,7 @@ import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
 import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
@@ -73,6 +73,7 @@ public class TextTimeSeriesController implements CrudHandler {
     private static final String TAG = "Text-TimeSeries";
     public static final String TS_ID = "ts-id";
     public static final String TEXT_TIMESERIES_ID = "text-timeseries-id";
+    public static final String REPLACE_ALL = "replace-all";
     private final MetricRegistry metrics;
 
 
@@ -122,15 +123,15 @@ public class TextTimeSeriesController implements CrudHandler {
         String office = ctx.queryParam(OFFICE);
         String tsId = ctx.queryParam(TS_ID);
 
-        ZonedDateTime beginZdt = queryParamAsZDT(ctx, START);
-        ZonedDateTime endZdt = queryParamAsZDT(ctx, END);
-        ZonedDateTime versionZdt = queryParamAsZDT(ctx, VERSION_DATE);
+        ZonedDateTime beginZdt = queryParamAsZdt(ctx, START);
+        ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+        ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
         Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
         Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesTextDao dao = getDao(dsl);
 
@@ -152,7 +153,7 @@ public class TextTimeSeriesController implements CrudHandler {
     }
 
     @Nullable
-    private static ZonedDateTime queryParamAsZDT(Context ctx, String param, String timezone) {
+    private static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
         ZonedDateTime beginZdt = null;
         String begin = ctx.queryParam(param);
         if (begin != null) {
@@ -162,13 +163,13 @@ public class TextTimeSeriesController implements CrudHandler {
     }
 
     @Nullable
-    private static ZonedDateTime queryParamAsZDT(Context ctx, String param) {
-        return queryParamAsZDT(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+    private static ZonedDateTime queryParamAsZdt(Context ctx, String param) {
+        return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String templateId) {
+    public void getOne(@NotNull Context ctx, @NotNull String templateId) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
@@ -181,23 +182,27 @@ public class TextTimeSeriesController implements CrudHandler {
             required = true),
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                description = "Create will fail if provided ID already exists. Default: true")
-        },
+                description = "Create will fail if provided ID already exists. Default: true"),
+            @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified."),
+            @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
+                        },
         method = HttpMethod.POST,
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             String body = ctx.body();
-            TextTimeSeries deserialize = deserialize(body, formatHeader);
+            TextTimeSeries tts = deserialize(body, formatHeader);
             TimeSeriesTextDao dao = getDao(dsl);
-            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-            dao.create(deserialize, failIfExists);
+
+            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(false);
+            boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
+            dao.create(tts, maxVersion, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
         } catch (JsonProcessingException ex) {
             CdaError re = new CdaError("Failed to process create request");
@@ -207,29 +212,30 @@ public class TextTimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-        description = "Renames the requested specified level id",
+        description = "Updates a text timeseries",
         pathParams = {
-            @OpenApiParam(name = TS_ID, description = "The specified level id to be renamed"),
+            @OpenApiParam(name = TS_ID, description = "The text timeseries to be updated"),
         },
-        queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the text timeseries to be renamed"),
-            @OpenApiParam(name = TEXT_TIMESERIES_ID, description = "The new text timeseries id.")
-        },
+//        queryParams = {
+//            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+//                + "owning office of the text timeseries to be renamed"),
+//            @OpenApiParam(name = TEXT_TIMESERIES_ID, description = "The new text timeseries id.")
+//        },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
-    public void update(Context ctx, @NotNull String oldTextTimeSeriesId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)) {
-            DSLContext dsl = getDslContext(ctx);
-
-            TimeSeriesTextDao dao = getDao(dsl);
-            String newTextTimeSeriesId = ctx.queryParam(TEXT_TIMESERIES_ID);
-            String office = ctx.queryParam(OFFICE);
-         //   dao.update(oldTextTimeSeriesId, newTextTimeSeriesId, office);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-        }
+    public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+//        try (Timer.Context ignored = markAndTime(UPDATE)) {
+//            DSLContext dsl = getDslContext(ctx);
+//
+//            TimeSeriesTextDao dao = getDao(dsl);
+////            String newTextTimeSeriesId = ctx.queryParam(TEXT_TIMESERIES_ID);
+////            String office = ctx.queryParam(OFFICE);
+//         //   dao.update(oldTextTimeSeriesId, newTextTimeSeriesId, office);
+////            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+//        }
     }
 
 
@@ -243,8 +249,8 @@ public class TextTimeSeriesController implements CrudHandler {
                 + "owning office of the timeseries identifier to be deleted"),
             @OpenApiParam(name = Controllers.TEXT_MASK, required = true, description = "The standard text pattern to match. "
                     + "Use glob-style wildcard characters instead of sql-style wildcard characters for pattern matching."
-                    + "  For StandardTextTimeSeries this should be the Standard_Text_Id (such as 'E' for ESTIMATED)" ),
-                @OpenApiParam(name= Controllers.DELETE_MODE, required = true, type = TimeSeriesTextDao.DeleteMode.class ,
+                    + "  For StandardTextTimeSeries this should be the Standard_Text_Id (such as 'E' for ESTIMATED)"),
+                @OpenApiParam(name = Controllers.DELETE_MODE, required = true, type = TimeSeriesTextMode.class,
                         description = "Type of delete to perform. Options are:\n"
                                 + "DELETE_ALL\n"
                                 + " - Delete Standard and Regular text timeseries values for the specified time series.\n"
@@ -273,13 +279,13 @@ public class TextTimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             String mask = ctx.queryParam(Controllers.TEXT_MASK);
-            TimeSeriesTextDao.DeleteMode mode = ctx.queryParamAsClass(Controllers.DELETE_MODE, TimeSeriesTextDao.DeleteMode.class).get();
+            TimeSeriesTextMode mode = ctx.queryParamAsClass(Controllers.DELETE_MODE, TimeSeriesTextMode.class).get();
 
             boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(true);
 
-            ZonedDateTime beginZdt = queryParamAsZDT(ctx, START);
-            ZonedDateTime endZdt = queryParamAsZDT(ctx, END);
-            ZonedDateTime versionZdt = queryParamAsZDT(ctx, VERSION_DATE);
+            ZonedDateTime beginZdt = queryParamAsZdt(ctx, START);
+            ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+            ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
 
             Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
             Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
