@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,6 +14,7 @@ import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -209,6 +210,25 @@ public class TextTimeSeries extends CwmsDTO {
             return this;
         }
 
+        public Builder withRegRows(List<RegularTextTimeSeriesRow> rows) {
+            if (rows == null) {
+                regMap = null;
+            } else {
+                if (regMap == null) {
+                    regMap = new TreeMap<>(new DateDateComparator());
+                } else {
+                    regMap.clear();
+                }
+
+                for (RegularTextTimeSeriesRow row : rows) {
+                    if (row != null) {
+                        regMap.put(row.getDateDateKey(), row);
+                    }
+                }
+            }
+            return this;
+        }
+
 
         public Builder withStdRow(StandardTextTimeSeriesRow row) {
             if (row != null) {
@@ -234,5 +254,7 @@ public class TextTimeSeries extends CwmsDTO {
         public TextTimeSeries build() {
             return new TextTimeSeries(this);
         }
+
+
     }
 }

@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
-import cwms.cda.data.dto.timeseriestext.RegularTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.StandardTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
+import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Collection;

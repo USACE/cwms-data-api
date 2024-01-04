@@ -1,7 +1,6 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,30 +10,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.json.JsonV2;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import org.junit.jupiter.api.Test;
 
-class RegularTextTimeSeriesRowTest {
+class StandardTextTimeSeriesRowTest {
 
 
     @Test
     void testSerialize() throws JsonProcessingException, ParseException {
 
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        // Parse the date string and create a Date object
-//        Date specificDate = df.parse("2023-01-01 12:00:00");
-
-        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-        builder.withDateTime(df.parse("2023-01-03 12:05:00"));
-        builder.withVersionDate(df.parse("2023-05-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-05-02 12:05:00"));
-        builder.withAttribute(420L);
-
-        builder.withTextId("theId");
-        builder.withTextValue("stdText");
-
-        RegularTextTimeSeriesRow row = builder.build();
+        StandardTextTimeSeriesRow row = buildStdRow();
         assertNotNull(row);
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
@@ -43,9 +27,27 @@ class RegularTextTimeSeriesRowTest {
         System.out.println(json);
 
 
-        assertTrue(json.contains("stdText"));
+        assertTrue(json.contains("ESTIMATED"));
         assertTrue(json.contains("420"));
 
+    }
+
+    public static StandardTextTimeSeriesRow buildStdRow() throws ParseException {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        // Parse the date string and create a Date object
+
+        StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
+        builder.withDateTime(df.parse("2023-01-03 12:05:00"));
+        builder.withVersionDate(df.parse("2023-05-02 12:05:00"));
+        builder.withDataEntryDate(df.parse("2023-05-02 12:05:00"));
+        builder.withAttribute(420L);
+        builder.withOfficeId("CWMS");
+        builder.withStandardTextId("E");
+        builder.withTextValue("ESTIMATED");
+
+        StandardTextTimeSeriesRow row = builder.build();
+        return row;
     }
 
     @Test
@@ -53,16 +55,16 @@ class RegularTextTimeSeriesRowTest {
 
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
+        StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
         builder.withDateTime(df.parse("2023-01-01 12:05:00"));
         builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
         builder.withAttribute(420L);
+        builder.withOfficeId("CWMS");
+        builder.withStandardTextId("E");
+        builder.withTextValue("ESTIMATED");
 
-//        builder.withTextId("theId");
-        builder.withTextValue("my awesome text ts");
-
-        RegularTextTimeSeriesRow row = builder.build();
+        StandardTextTimeSeriesRow row = builder.build();
         assertNotNull(row);
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
@@ -70,25 +72,24 @@ class RegularTextTimeSeriesRowTest {
         assertNotNull(json);
         System.out.println(json);
 
-        RegularTextTimeSeriesRow row2 = objectMapper.readValue(json, RegularTextTimeSeriesRow.class);
+        StandardTextTimeSeriesRow row2 = objectMapper.readValue(json, StandardTextTimeSeriesRow.class);
         assertNotNull(row2);
 
         assertEquals(row.getAttribute(), row2.getAttribute());
         assertEquals(row.getDateTime(), row2.getDateTime());
         assertEquals(row.getDataEntryDate(), row2.getDataEntryDate());
         assertEquals(row.getVersionDate(), row2.getVersionDate());
-        assertEquals(row.getTextId(), row2.getTextId());
+        assertEquals(row.getStandardTextId(), row2.getStandardTextId());
         assertEquals(row.getTextValue(), row2.getTextValue());
-
 
     }
 
     @Test
     void testEquals() throws ParseException {
 
-        RegularTextTimeSeriesRow row = buildRow();
+        StandardTextTimeSeriesRow row = buildRow();
         assertNotNull(row);
-        RegularTextTimeSeriesRow row2 = buildRow();
+        StandardTextTimeSeriesRow row2 = buildRow();
         assertNotNull(row2);
 
         assertNotSame(row, row2);
@@ -97,18 +98,20 @@ class RegularTextTimeSeriesRowTest {
 
     }
 
-    static RegularTextTimeSeriesRow buildRow() throws ParseException {
+    private static StandardTextTimeSeriesRow buildRow() throws ParseException {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
+        StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
 
         builder.withDateTime(df.parse("2023-01-03 12:05:00"));
         builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
         builder.withAttribute(420L);
+        builder.withOfficeId("CWMS");
+        builder.withStandardTextId("E");
+        builder.withTextValue("ESTIMATED");
 
-        builder.withTextValue("my awesome text ts");
-
-        return builder.build();
+        StandardTextTimeSeriesRow row = builder.build();
+        return row;
     }
 
 }

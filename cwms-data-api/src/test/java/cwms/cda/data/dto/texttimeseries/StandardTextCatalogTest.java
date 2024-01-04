@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -80,7 +80,7 @@ class StandardTextCatalogTest {
     }
 
     @Test
-    void testOneOfEach(){
+    void testOneOfEach() throws JsonProcessingException {
         // This test is a reminder of what this class is all about.  
         // The "Standard" in StdText is b/c there is a standardized set of common text values.
         // Its sort of like a standard marker.  
@@ -139,6 +139,11 @@ class StandardTextCatalogTest {
         Collection<StandardTextValue> values = catalog.getValues();
         assertNotNull(values);
         assertEquals(18, values.size());
+
+        ObjectMapper mapper = JsonV2.buildObjectMapper();
+        String json = mapper.writeValueAsString(catalog);
+        assertNotNull(json);
+
 
     }
 

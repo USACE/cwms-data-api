@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;

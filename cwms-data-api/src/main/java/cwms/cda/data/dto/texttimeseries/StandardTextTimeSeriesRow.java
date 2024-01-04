@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -8,56 +8,41 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import hec.data.timeSeriesText.DateDateKey;
+
 import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.math.BigDecimal;
 import java.util.Date;
 
-@JsonDeserialize(builder = RegularTextTimeSeriesRow.Builder.class)
+@JsonDeserialize(builder = StandardTextTimeSeriesRow.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
+public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
 
     private final Date dateTime;
     private final Date versionDate;
     private final Date dataEntryDate;
     private final Long attribute;
-    private final String textId;
+
+    private final String officeId;
+    private final String standardTextId;
     private final String textValue;
-    private final boolean newData;
 
-    private RegularTextTimeSeriesRow(Builder builder) {
-        dateTime = builder.dateTime;
-        versionDate = builder.versionDate;
-        dataEntryDate = builder.dataEntryDate;
-        textId = builder.textId;
-        attribute = builder.attribute;
-        textValue = builder.textValue;
-        newData = builder.newData;
+
+    private StandardTextTimeSeriesRow(Builder builder) {
+        this.officeId = builder.officeId;
+        this.standardTextId = builder.standardTextId;
+        this.textValue = builder.textValue;
+        this.dateTime = builder.dateTime;
+        this.versionDate = builder.versionDate;
+        this.dataEntryDate = builder.dataEntryDate;
+        this.attribute = builder.attribute;
     }
 
-    public Date getVersionDate() {
-        return versionDate;
-    }
 
-    public String getTextId() {
-        return textId;
-    }
-
-    public Long getAttribute() {
-        return attribute;
-    }
-
-    public String getTextValue() {
-        return textValue;
-    }
-
-    public boolean isNewData() {
-        return newData;
-    }
 
     @Override
-    public RegularTextTimeSeriesRow copy() {
-        return new RegularTextTimeSeriesRow.Builder().from(this).build();
+    public <Y extends TextTimeSeriesRow> Y copy() {
+        return null;
     }
 
     @Override
@@ -70,10 +55,30 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         return dataEntryDate;
     }
 
+    public Date getVersionDate() {
+        return versionDate;
+    }
+
+    public Long getAttribute() {
+        return attribute;
+    }
+
     @JsonIgnore
     @Override
     public DateDateKey getDateDateKey() {
         return new DateDateKey(dateTime, dataEntryDate);
+    }
+
+    public String getOfficeId() {
+        return officeId;
+    }
+
+    public String getStandardTextId() {
+        return standardTextId;
+    }
+
+    public String getTextValue() {
+        return textValue;
     }
 
     @Override
@@ -85,11 +90,8 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return false;
         }
 
-        RegularTextTimeSeriesRow that = (RegularTextTimeSeriesRow) o;
+        StandardTextTimeSeriesRow that = (StandardTextTimeSeriesRow) o;
 
-        if (isNewData() != that.isNewData()) {
-            return false;
-        }
         if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) :
                 that.getDateTime() != null) {
             return false;
@@ -102,11 +104,16 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                 that.getDataEntryDate() != null) {
             return false;
         }
-        if (getTextId() != null ? !getTextId().equals(that.getTextId()) : that.getTextId() != null) {
-            return false;
-        }
         if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) :
                 that.getAttribute() != null) {
+            return false;
+        }
+        if (getOfficeId() != null ? !getOfficeId().equals(that.getOfficeId()) :
+                that.getOfficeId() != null) {
+            return false;
+        }
+        if (getStandardTextId() != null ? !getStandardTextId().equals(that.getStandardTextId()) :
+                that.getStandardTextId() != null) {
             return false;
         }
         return getTextValue() != null ? getTextValue().equals(that.getTextValue()) :
@@ -118,10 +125,10 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         int result = getDateTime() != null ? getDateTime().hashCode() : 0;
         result = 31 * result + (getVersionDate() != null ? getVersionDate().hashCode() : 0);
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
-        result = 31 * result + (getTextId() != null ? getTextId().hashCode() : 0);
         result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
+        result = 31 * result + (getOfficeId() != null ? getOfficeId().hashCode() : 0);
+        result = 31 * result + (getStandardTextId() != null ? getStandardTextId().hashCode() : 0);
         result = 31 * result + (getTextValue() != null ? getTextValue().hashCode() : 0);
-        result = 31 * result + (isNewData() ? 1 : 0);
         return result;
     }
 
@@ -131,12 +138,28 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         private Date dateTime;
         private Date versionDate;
         private Date dataEntryDate;
-        private String textId;
+        private String standardTextId;
         private Long attribute;
         private String textValue;
-        private boolean newData;
+
+        private String officeId;
 
         public Builder() {
+        }
+
+        public Builder withOfficeId(String officeId) {
+            this.officeId = officeId;
+            return this;
+        }
+
+        public Builder withTextValue(String textValue) {
+            this.textValue = textValue;
+            return this;
+        }
+
+        public Builder withStandardTextId(String stdTextId) {
+            this.standardTextId = stdTextId;
+            return this;
         }
 
         public Builder withDateTime(Date dateTime) {
@@ -154,70 +177,56 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
-        public Builder withTextId(String textId) {
-            this.textId = textId;
-            return this;
-        }
 
         @JsonProperty("attribute")
-        public Builder withAttribute(Long attribute) {
-            this.attribute = attribute;
+        public Builder withAttribute(Long l) {
+            this.attribute = l;
             return this;
         }
 
 
-        public Builder withAttribute(Integer attribute) {
+        public void withAttribute(Integer attribute) {
             if (attribute == null) {
                 this.attribute = null;
             } else {
                 this.attribute = attribute.longValue();
             }
-            return this;
         }
 
-        public Builder withAttribute(BigDecimal attribute) {
+        public void withAttribute(BigDecimal attribute) {
             if (attribute == null) {
                 this.attribute = null;
             } else {
                 this.attribute = attribute.longValue();
             }
-            return this;
         }
 
-        public Builder withTextValue(String textValue) {
-            this.textValue = textValue;
-            return this;
-        }
 
-        public Builder withNewData(boolean newData) {
-            this.newData = newData;
-            return this;
-        }
-
-        public RegularTextTimeSeriesRow build() {
-            return new RegularTextTimeSeriesRow(this);
-        }
-
-        public Builder from(RegularTextTimeSeriesRow regularTextTimeSeriesRow) {
-            if (regularTextTimeSeriesRow == null) {
+        public StandardTextTimeSeriesRow.Builder from(StandardTextTimeSeriesRow stdRow) {
+            if (stdRow == null) {
                 return withDateTime(null)
                         .withVersionDate(null)
                         .withDataEntryDate(null)
-                        .withTextId(null)
                         .withAttribute((Long) null)
+                        .withStandardTextId(null)
                         .withTextValue(null)
-                        .withNewData(false);
+                        .withOfficeId(null)
+                        ;
             } else {
-                return withDateTime(regularTextTimeSeriesRow.dateTime)
-                        .withVersionDate(regularTextTimeSeriesRow.versionDate)
-                        .withDataEntryDate(regularTextTimeSeriesRow.dataEntryDate)
-                        .withTextId(regularTextTimeSeriesRow.textId)
-                        .withAttribute(regularTextTimeSeriesRow.attribute)
-                        .withTextValue(regularTextTimeSeriesRow.textValue)
-                        .withNewData(regularTextTimeSeriesRow.newData);
+                return withDateTime(stdRow.dateTime)
+                        .withVersionDate(stdRow.versionDate)
+                        .withDataEntryDate(stdRow.dataEntryDate)
+                        .withAttribute(stdRow.attribute)
+                        .withStandardTextId(stdRow.standardTextId)
+                        .withTextValue(stdRow.textValue)
+                        .withOfficeId(stdRow.officeId)
+                        ;
             }
         }
 
+        public StandardTextTimeSeriesRow build() {
+            return new StandardTextTimeSeriesRow(this);
+        }
 
     }
 }

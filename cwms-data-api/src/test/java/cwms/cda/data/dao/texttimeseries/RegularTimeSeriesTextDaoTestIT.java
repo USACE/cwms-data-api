@@ -5,9 +5,9 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
-import cwms.cda.data.dto.timeseriestext.RegularTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.StandardTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
+import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import fixtures.CwmsDataApiSetupCallback;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;

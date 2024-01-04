@@ -3,11 +3,11 @@ package cwms.cda.data.dao.texttimeseries;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.timeseriestext.StandardTextCatalog;
-import cwms.cda.data.dto.timeseriestext.StandardTextId;
-import cwms.cda.data.dto.timeseriestext.StandardTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.StandardTextValue;
-import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
+import cwms.cda.data.dto.texttimeseries.StandardTextCatalog;
+import cwms.cda.data.dto.texttimeseries.StandardTextId;
+import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.StandardTextValue;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,8 +85,8 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
     private static StandardTextValue buildStandardTextValue(String officeId, String txtId, String txt) {
-        cwms.cda.data.dto.timeseriestext.StandardTextId id =
-                new cwms.cda.data.dto.timeseriestext.StandardTextId.Builder()
+        StandardTextId id =
+                new StandardTextId.Builder()
                         .withOfficeId(officeId)
                         .withId(txtId)
                         .build();
@@ -122,7 +122,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
      */
     public void store(StandardTextValue standardTextValue, boolean failIfExists) {
 
-        cwms.cda.data.dto.timeseriestext.StandardTextId standardTextId = standardTextValue.getId();
+        StandardTextId standardTextId = standardTextValue.getId();
         String stdTextId = standardTextId.getId();
         String stdText = standardTextValue.getStandardText();
         String officeId = standardTextId.getOfficeId();
@@ -228,10 +228,9 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
     public TextTimeSeries retrieveTextTimeSeries(
             String officeId, String tsId, StandardTextId standardTextId,
-            Date startTime, Date endTime,
-            Date versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute,
+            Instant startTime, Instant endTime, Instant versionDate,
+            boolean maxVersion, boolean retrieveText, Long minAttribute,
             Long maxAttribute) {
-
 
         final String stdTextIdMask;
         if (standardTextId != null) {
@@ -239,34 +238,37 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         } else {
             stdTextIdMask = "*";
         }
-        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
-
-
-        return connectionResult(dsl, c -> {
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
-            ResultSet retrieveTsStdTextF = dbText.retrieveTsStdTextF(c, tsId,
-                    stdTextIdMask, startTime, endTime, versionDate, timeZone, maxVersion,
-                    retrieveText, minAttribute, maxAttribute, officeId);
-
-            return buildTextTimeSeries(officeId, tsId, retrieveTsStdTextF);
-        });
+        return retrieveTextTimeSeries(officeId, tsId, stdTextIdMask, startTime, endTime, versionDate, maxVersion, retrieveText, minAttribute, maxAttribute);
 
     }
 
-    private TextTimeSeries buildTextTimeSeries(String officeId, String tsId, ResultSet rs) throws SQLException {
-        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, TYPE);
+    public TextTimeSeries retrieveTextTimeSeries(String officeId, String tsId, String stdTextIdMask, Instant startTime, Instant endTime, Instant versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute) {
 
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
         builder.withId(tsId);
         builder.withOfficeId(officeId);
 
-        builder.withStdRows(buildRows(officeId, rs));
+        List<StandardTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, stdTextIdMask, startTime, endTime, versionDate, maxVersion, retrieveText, minAttribute, maxAttribute);
+        builder.withStdRows(rows);
         return builder.build();
+    }
 
+    public List<StandardTextTimeSeriesRow> retrieveRows(String officeId, String tsId, String stdTextIdMask, Instant startTime, Instant endTime, Instant versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute) {
+        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+
+        return connectionResult(dsl, c -> {
+            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
+            ResultSet retrieveTsStdTextF = dbText.retrieveTsStdTextF(c, tsId,
+                    stdTextIdMask, getDate(startTime), getDate(endTime), getDate(versionDate), timeZone, maxVersion,
+                    retrieveText, minAttribute, maxAttribute, officeId);
+
+            return buildRows(officeId, retrieveTsStdTextF);
+        });
     }
 
     @NotNull
     private static List<StandardTextTimeSeriesRow> buildRows(String officeId, ResultSet rs) throws SQLException {
+        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, TYPE);
         List<StandardTextTimeSeriesRow> rows = new ArrayList<>();
         while (rs.next()) {
             StandardTextTimeSeriesRow row = buildRow(rs, officeId);

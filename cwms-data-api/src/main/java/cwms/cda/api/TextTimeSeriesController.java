@@ -45,7 +45,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
-import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;

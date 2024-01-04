@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -18,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 public class StandardTextValue extends CwmsDTO {
 
     private final StandardTextId id;
-
     private final String standardText;
 
     private StandardTextValue(@NotNull Builder builder) {

@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;

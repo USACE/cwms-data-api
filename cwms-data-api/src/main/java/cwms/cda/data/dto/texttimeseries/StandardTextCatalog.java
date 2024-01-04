@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.timeseriestext;
+package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -42,7 +42,7 @@ public class StandardTextCatalog extends CwmsDTO {
         if (values != null) {
             for (StandardTextValue value : values) {
                 if (value != null) {
-                    cwms.cda.data.dto.timeseriestext.StandardTextId id = value.getId();
+                    StandardTextId id = value.getId();
                     if (id != null && id.getOfficeId() != null) {
                         retval = id.getOfficeId();
                         break;

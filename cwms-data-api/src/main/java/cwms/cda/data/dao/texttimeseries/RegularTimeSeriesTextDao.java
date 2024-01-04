@@ -2,19 +2,21 @@ package cwms.cda.data.dao.texttimeseries;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.timeseriestext.RegularTextTimeSeriesRow;
-import cwms.cda.data.dto.timeseriestext.TextTimeSeries;
+import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
@@ -28,8 +30,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
 
     private static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getDefault();
     public static final String TYPE = "Text Time Series";
-    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy "
-            + "HH:mm:ss");
+    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 
     public static final String OFFICE_ID = "OFFICE_ID";
     private static final String TEXT = "TEXT";
@@ -93,7 +94,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public ResultSet retrieveTsTextF(String pTsid, String textMask,
+    private ResultSet retrieveTsTextF(String pTsid, String textMask,
                                      Date startTime, Date endTime, Date versionDate,
                                      TimeZone timeZone, boolean maxVersion,
                                      Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
@@ -112,22 +113,34 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
 
-
     public TextTimeSeries retrieveTimeSeriesText(
-            String officeId, String tsId, String textMask, Date startTime,
-            Date endTime, Date versionDate,
+            String officeId, String tsId, String textMask,
+            Instant startTime, Instant endTime, Instant versionDate,
             boolean maxVersion, Long minAttribute, Long maxAttribute) throws RuntimeException {
-        try {
 
-            TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+        List<RegularTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, textMask,
+                startTime, endTime, versionDate, maxVersion, minAttribute, maxAttribute);
 
+        TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
+        return builder.withId(tsId)
+                .withOfficeId(officeId)
+                .withRegRows(rows)
+                .build();
 
-            try (ResultSet retrieveTsTextF = retrieveTsTextF(tsId, textMask,
-                    startTime, endTime, versionDate, timeZone, maxVersion, minAttribute,
-                    maxAttribute,
-                    officeId)) {
-                return parseTimeSeriesTextResultSet(officeId, tsId, retrieveTsTextF);
-            }
+    }
+
+    public List<RegularTextTimeSeriesRow> retrieveRows(
+            String officeId, String tsId, String textMask,
+            Instant startTime, Instant endTime, Instant versionDate,
+            boolean maxVersion, Long minAttribute, Long maxAttribute)  {
+        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+        List<RegularTextTimeSeriesRow> rows = null;
+
+        try (ResultSet retrieveTsTextF = retrieveTsTextF(tsId, textMask,
+                getDate(startTime), getDate(endTime), getDate(versionDate), timeZone,
+                maxVersion, minAttribute, maxAttribute,
+                officeId)) {
+            rows = buildRows(retrieveTsTextF);
         } catch (SQLException e) {
             if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
                 throw new NoDataFoundException();
@@ -135,20 +148,18 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                 throw new RuntimeException(e);  // TODO: wrap with something else.
             }
         }
+        return rows;
     }
 
-    private TextTimeSeries parseTimeSeriesTextResultSet(String officeId, String tsId, ResultSet rs) throws SQLException {
+    @NotNull
+    private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
-
-        TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
-        builder.withId(tsId)
-                .withOfficeId(officeId);
-
+        List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
         while (rs.next()) {
             RegularTextTimeSeriesRow row = parseRegularRow(rs);
-            builder.withRegRow(row);
+            rows.add(row);
         }
-        return builder.build();
+        return rows;
     }
 
     private static RegularTextTimeSeriesRow parseRegularRow(ResultSet rs) throws SQLException {
