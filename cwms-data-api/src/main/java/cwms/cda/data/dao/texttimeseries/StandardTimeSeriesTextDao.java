@@ -1,5 +1,7 @@
 package cwms.cda.data.dao.texttimeseries;
 
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.getDate;
+
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
@@ -15,13 +17,13 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -214,16 +216,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         });
     }
 
-    @Nullable
-    private static Date getDate(Instant startTime) {
-        Date startDate;
-        if (startTime != null) {
-            startDate = Date.from(startTime);
-        } else {
-            startDate = null;
-        }
-        return startDate;
-    }
+
 
 
     public TextTimeSeries retrieveTextTimeSeries(
@@ -269,9 +262,13 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     @NotNull
     private static List<StandardTextTimeSeriesRow> buildRows(String officeId, ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, TYPE);
-        List<StandardTextTimeSeriesRow> rows = new ArrayList<>();
+        List<StandardTextTimeSeriesRow> rows = null;
         while (rs.next()) {
             StandardTextTimeSeriesRow row = buildRow(rs, officeId);
+            if (rows == null) {
+                rows = new ArrayList<>();
+            }
+
             rows.add(row);
         }
         return rows;
@@ -281,40 +278,29 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
         builder.withOfficeId(officeId);
 
-        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
-                OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull()) {
-            Date dateTime = new Date(tsDateTime.getTime());
-            builder.withDateTime(dateTime);
-        }
-
+        Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
+        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);
         Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE);
-        if (!rs.wasNull()) {
-            Date versionDate = new Date(tsVersionDate.getTime());
-            builder.withVersionDate(versionDate);
-        }
-
-        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE,
-                OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull()) {
-            Date dataEntryDate = new Date(tsDataEntryDate.getTime());
-            builder.withDataEntryDate(dataEntryDate);
-        }
-
+        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, gmtCalendar);
         String stdTextId = rs.getString(STD_TEXT_ID);
-        if (!rs.wasNull()) {
-            builder.withStandardTextId(stdTextId);
-        }
-
-        Number attribute = rs.getLong(ATTRIBUTE);
-        if (!rs.wasNull()) {
-            builder.withAttribute(attribute.longValue());
-        }
-
         String clobString = rs.getString(STD_TEXT);
-        if (!rs.wasNull()) {
-            builder.withTextValue(clobString);
+        Long attribute = rs.getLong(ATTRIBUTE);
+        if (rs.wasNull()) {
+            attribute = null;
         }
+
+        return buildRow(tsDateTime, tsVersionDate, tsDataEntryDate, attribute, clobString, officeId, stdTextId);
+    }
+
+    public static StandardTextTimeSeriesRow buildRow(Timestamp dateTimeUtc, Timestamp versionDateUtc, Timestamp dataEntryDateUtc, Long attribute, String textValue, String officeId, String stdTextId) {
+        StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder()
+        .withOfficeId(officeId)
+        .withStandardTextId(stdTextId)
+        .withTextValue(textValue)
+        .withAttribute(attribute)
+        .withDateTime(getDate(dateTimeUtc))
+        .withVersionDate(getDate(versionDateUtc))
+        .withDataEntryDate(getDate(dataEntryDateUtc));
 
         return builder.build();
     }

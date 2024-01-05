@@ -185,20 +185,22 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
         }
 
 
-        public void withAttribute(Integer attribute) {
+        public Builder withAttribute(Integer attribute) {
             if (attribute == null) {
                 this.attribute = null;
             } else {
                 this.attribute = attribute.longValue();
             }
+            return this;
         }
 
-        public void withAttribute(BigDecimal attribute) {
+        public Builder withAttribute(BigDecimal attribute) {
             if (attribute == null) {
                 this.attribute = null;
             } else {
                 this.attribute = attribute.longValue();
             }
+            return this;
         }
 
 
