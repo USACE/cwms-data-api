@@ -251,6 +251,7 @@ public final class Controllers {
         JooqDao.DeleteMethod retval = null;
 
         if (input != null) {
+            input = input.replace(' ', '_');
             retval = JooqDao.DeleteMethod.valueOf(input.toUpperCase());
         }
         return retval;
