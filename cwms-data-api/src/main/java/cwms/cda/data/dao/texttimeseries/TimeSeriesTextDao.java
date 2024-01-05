@@ -129,7 +129,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         String textValue = next.get(AV_TS_TEXT.AV_TS_TEXT.TEXT_VALUE);
 
         Long attrLong = null;
-        if(attribute != null){
+        if (attribute != null) {
             attrLong = attribute.longValue();
         }
 

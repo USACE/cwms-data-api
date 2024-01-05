@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -259,7 +259,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         });
     }
 
-    @NotNull
+    @Nullable
     private static List<StandardTextTimeSeriesRow> buildRows(String officeId, ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, TYPE);
         List<StandardTextTimeSeriesRow> rows = null;

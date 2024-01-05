@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
@@ -51,8 +51,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static List<String> timeSeriesTextColumnsList;
 
     static {
-        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, TEXT_ID,
-                ATTRIBUTE, TEXT};
+        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, TEXT_ID, ATTRIBUTE, TEXT};
         Arrays.sort(array);
         timeSeriesTextColumnsList = Arrays.asList(array);
     }
@@ -136,7 +135,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             Instant startTime, Instant endTime, Instant versionDate,
             boolean maxVersion, Long minAttribute, Long maxAttribute)  {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
-        List<RegularTextTimeSeriesRow> rows = null;
+        List<RegularTextTimeSeriesRow> rows;
 
         try (ResultSet retrieveTsTextF = retrieveTsTextF(tsId, textMask,
                 getDate(startTime), getDate(endTime), getDate(versionDate), timeZone,
@@ -153,7 +152,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         return rows;
     }
 
-    @NotNull
+    @Nullable
     private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
         List<RegularTextTimeSeriesRow> rows = null;
