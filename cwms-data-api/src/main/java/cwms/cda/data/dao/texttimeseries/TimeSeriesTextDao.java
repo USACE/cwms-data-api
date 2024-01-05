@@ -128,35 +128,20 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         String stdTextId = next.get(AV_TS_TEXT.AV_TS_TEXT.STD_TEXT_ID);
         String textValue = next.get(AV_TS_TEXT.AV_TS_TEXT.TEXT_VALUE);
 
+        Long attrLong = null;
+        if(attribute != null){
+            attrLong = attribute.longValue();
+        }
+
         if (stdTextId == null) {
-            RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-            return builder
-                    .withDateTime(new Date(dateTimeUtc.getTime()))
-                    .withVersionDate(new Date(versionDateUtc.getTime()))
-                    .withDataEntryDate(new Date(dataEntryDateUtc.getTime()))
-                    .withAttribute(attribute)
-                    .withTextValue(textValue)
-                    .build();
+            return RegularTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, null,  textValue);
         } else {
-            StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
-            builder.withOfficeId(officeId);
-            builder.withStandardTextId(stdTextId);
-
-            if (textValue != null) {
-                builder.withTextValue(textValue);
-            }
-
-            builder
-                    .withDateTime(new Date(dateTimeUtc.getTime()))
-                    .withVersionDate(new Date(versionDateUtc.getTime()))
-                    .withDataEntryDate(new Date(dataEntryDateUtc.getTime()))
-                    .withAttribute(attribute);
-
-
-            return builder.build();
+            return StandardTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, textValue, officeId, stdTextId);
         }
 
     }
+
+
 
     public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
 
@@ -216,11 +201,33 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     @Nullable
-    private static Instant getInstant(ZonedDateTime start) {
+    private static Instant getInstant(@Nullable ZonedDateTime start) {
         Instant instant = null;
         if (start != null) {
             instant = start.toInstant();
         }
         return instant;
+    }
+
+    @Nullable
+    public static Date getDate(@Nullable Instant startTime) {
+        Date startDate;
+        if (startTime != null) {
+            startDate = Date.from(startTime);
+        } else {
+            startDate = null;
+        }
+        return startDate;
+    }
+
+    @Nullable
+    public static Date getDate(@Nullable Timestamp startTime) {
+        Date startDate;
+        if (startTime != null) {
+            startDate = new Date(startTime.getTime());
+        } else {
+            startDate = null;
+        }
+        return startDate;
     }
 }

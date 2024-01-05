@@ -10,6 +10,7 @@ import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import fixtures.CwmsDataApiSetupCallback;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
@@ -46,6 +47,8 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         );
     }
 
+
+
     private void testCreate(RegularTimeSeriesTextDao dao) {
         String officeId = "SPK";
         String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
@@ -60,19 +63,20 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T08:00:00Z");
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T14:00:00Z");
+        Instant startInstant = startZDT.toInstant();
+        Instant endInstant = endZDT.toInstant();
+        Instant versionInstant = null;
 
         //  make sure it doesn't exist
 
-        Date startDate = Date.from(startZDT.toInstant());
-        Date endDate = Date.from(endZDT.toInstant());
-        Date versionDate = null;
+
         boolean maxVersion = false;
 
         Long minAttr = null;
         Long maxAttr = null;
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startDate, endDate, versionDate,
+                startInstant, endInstant, versionInstant,
                 maxVersion, minAttr, maxAttr);
 
         Assertions.assertNotNull(tts);
@@ -81,8 +85,8 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // create/store
         String testValue = "my awesome text ts";
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
-                .withDateTime(startDate)
-        .withVersionDate(versionDate)
+                .withDateTime(TimeSeriesTextDao.getDate(startInstant))
+
         .withAttribute(420L)
                 .withTextValue(testValue)
                 .build()
@@ -93,7 +97,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         // retrieve and verify
         tts = tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startDate, endDate, versionDate,
+                startInstant, endInstant, versionInstant,
                 maxVersion, minAttr, maxAttr);
 
         Assertions.assertNotNull(tts);
@@ -125,17 +129,16 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T03:00:00Z");
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T07:00:00Z");
+        Instant startInstant = startZDT.toInstant();
+        Instant endInstant = endZDT.toInstant();
 
-        Date startDate = Date.from(startZDT.toInstant());
-        Date endDate = Date.from(endZDT.toInstant());
-        Date versionDate = null;
         boolean maxVersion = false;
 
         Long minAttr = null;
         Long maxAttr = null;
 
         TextTimeSeries  tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startDate, endDate, versionDate,
+                startInstant, endInstant, null,
                 maxVersion, minAttr, maxAttr);
 
         Assertions.assertNotNull(tts);
@@ -150,6 +153,60 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         Assertions.assertNull(stdRows);
+
+    }
+
+    @Test
+    void testDelete() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {//
+                    DSLContext dsl = getDslContext(c, "SPK");
+                    RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
+
+                    testDelete(dao);
+                }
+        );
+    }
+
+    private void testDelete(RegularTimeSeriesTextDao dao) {
+        String officeId = "SPK";
+        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
+        // Structure of the test is:
+        // 1) retrieve some data and verify its there
+        // 2) delete it
+        // 3) retrieve it again and verify its gone
+
+        // Step 1: retrieve some data
+        ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T03:00:00Z");
+        ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T04:00:00Z");
+        Instant startInstant = startZDT.toInstant();
+        Instant endInstant = endZDT.toInstant();
+        Instant versionInstant = null;
+        boolean maxVersion = false;
+
+        Long minAttr = null;
+        Long maxAttr = null;
+
+        TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
+                startInstant, endInstant, null,
+                false, null, null);
+
+        Assertions.assertNotNull(tts);
+        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+        Assertions.assertNotNull(regRows);
+        Assertions.assertFalse(regRows.isEmpty());
+
+        // Step 2: delete it
+        dao.delete(officeId, tsId, "*", startInstant, endInstant, null, false, null, null);
+
+        // Step 3: retrieve it again and verify its gone
+        tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
+                startInstant, endInstant, null,
+                false, null, null);
+        Assertions.assertNotNull(tts);
+        regRows = tts.getRegularTextValues();
+        Assertions.assertNull(regRows);
 
     }
 

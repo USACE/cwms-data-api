@@ -1,5 +1,7 @@
 package cwms.cda.data.dao.texttimeseries;
 
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.getDate;
+
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
@@ -11,13 +13,13 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
@@ -154,48 +156,45 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     @NotNull
     private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
-        List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
+        List<RegularTextTimeSeriesRow> rows = null;
+
         while (rs.next()) {
-            RegularTextTimeSeriesRow row = parseRegularRow(rs);
+            RegularTextTimeSeriesRow row = buildRow(rs);
+            if (rows == null) {
+                rows = new ArrayList<>();
+            }
             rows.add(row);
         }
         return rows;
     }
 
-    private static RegularTextTimeSeriesRow parseRegularRow(ResultSet rs) throws SQLException {
+    private static RegularTextTimeSeriesRow buildRow(ResultSet rs) throws SQLException {
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
 
-        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME,
-                OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull()) {
-            Date dateTime = new Date(tsDateTime.getTime());
-            builder.withDateTime(dateTime);
+        Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
+        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);
+        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE);
+        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, gmtCalendar);
+        String textId = rs.getString(TEXT_ID);
+        String clobString = rs.getString(TEXT);
+        Long attribute = rs.getLong(ATTRIBUTE);
+        if (rs.wasNull()) {
+            attribute = null;
         }
 
-        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE,
-                OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull()) {
-            Date versionDate = new Date(tsVersionDate.getTime());
-            builder.withVersionDate(versionDate);
-        }
-        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE,
-                OracleTypeMap.getInstance().getGmtCalendar());
-        if (!rs.wasNull()) {
-            Date dataEntryDate = new Date(tsDataEntryDate.getTime());
-            builder.withDataEntryDate(dataEntryDate);
-        }
-        String textId = rs.getString(TEXT_ID);
-        if (!rs.wasNull()) {
-            builder.withTextId(textId);
-        }
-        Number attribute = rs.getLong(ATTRIBUTE);
-        if (!rs.wasNull()) {
-            builder.withAttribute(attribute.longValue());
-        }
-        String clobString = rs.getString(TEXT);
-        if (!rs.wasNull()) {
-            builder.withTextValue(clobString);
-        }
+        return buildRow(tsDateTime, tsVersionDate, tsDataEntryDate, attribute, textId, clobString);
+    }
+
+    public static RegularTextTimeSeriesRow buildRow(Timestamp dateTimeUtc, Timestamp versionDateUtc, Timestamp dataEntryDateUtc, Long attribute, String textId, String textValue) {
+        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder()
+                .withDateTime(getDate(dateTimeUtc))
+                .withVersionDate(getDate(versionDateUtc))
+                .withDataEntryDate(getDate(dataEntryDateUtc))
+                .withAttribute(attribute)
+                .withTextId(textId)
+                .withTextValue(textValue)
+                ;
+
         return builder.build();
     }
 
@@ -241,15 +240,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         });
     }
 
-    @Nullable
-    private static Date getDate(Instant startTime) {
-        Date startDate;
-        if (startTime != null) {
-            startDate = Date.from(startTime);
-        } else {
-            startDate = null;
-        }
-        return startDate;
-    }
+
 
 }
