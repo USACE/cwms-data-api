@@ -39,8 +39,6 @@ class RegularTextTimeSeriesRowTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(row);
         assertNotNull(json);
-        System.out.println(json);
-
 
         assertTrue(json.contains("stdText"));
         assertTrue(json.contains("420"));
@@ -67,7 +65,6 @@ class RegularTextTimeSeriesRowTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(row);
         assertNotNull(json);
-        System.out.println(json);
 
         RegularTextTimeSeriesRow row2 = objectMapper.readValue(json, RegularTextTimeSeriesRow.class);
         assertNotNull(row2);

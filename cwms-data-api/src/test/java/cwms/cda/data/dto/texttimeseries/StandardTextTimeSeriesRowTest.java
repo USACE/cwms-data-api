@@ -17,15 +17,12 @@ class StandardTextTimeSeriesRowTest {
 
     @Test
     void testSerialize() throws JsonProcessingException, ParseException {
-
         StandardTextTimeSeriesRow row = buildStdRow();
         assertNotNull(row);
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(row);
         assertNotNull(json);
-        System.out.println(json);
-
 
         assertTrue(json.contains("ESTIMATED"));
         assertTrue(json.contains("420"));
@@ -52,7 +49,6 @@ class StandardTextTimeSeriesRowTest {
 
     @Test
     void testRoundTrip() throws JsonProcessingException, ParseException {
-
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder();
@@ -70,7 +66,6 @@ class StandardTextTimeSeriesRowTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(row);
         assertNotNull(json);
-        System.out.println(json);
 
         StandardTextTimeSeriesRow row2 = objectMapper.readValue(json, StandardTextTimeSeriesRow.class);
         assertNotNull(row2);
@@ -86,7 +81,6 @@ class StandardTextTimeSeriesRowTest {
 
     @Test
     void testEquals() throws ParseException {
-
         StandardTextTimeSeriesRow row = buildRow();
         assertNotNull(row);
         StandardTextTimeSeriesRow row2 = buildRow();

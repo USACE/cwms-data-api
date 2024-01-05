@@ -24,7 +24,6 @@ class StandardTextCatalogTest {
         ObjectMapper mapper = JsonV2.buildObjectMapper();
         String json = mapper.writeValueAsString(catalog);
         assertNotNull(json);
-//        System.out.println(json);
 
         assertTrue(json.contains("CWMS"));
         assertTrue(json.contains("E"));

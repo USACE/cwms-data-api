@@ -25,7 +25,6 @@ class TextTimeSeriesTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(textTimeSeries);
         assertNotNull(json);
-        System.out.println(json);
 
         assertTrue(json.contains("ESTIMATED"));
         assertTrue(json.contains("CWMS"));
@@ -48,7 +47,6 @@ class TextTimeSeriesTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(textTimeSeries);
         assertNotNull(json);
-        System.out.println(json);
 
         assertFalse(json.contains("ESTIMATED"));
         assertFalse(json.contains("CWMS"));

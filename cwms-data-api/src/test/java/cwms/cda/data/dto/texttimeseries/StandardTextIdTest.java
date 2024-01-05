@@ -22,7 +22,6 @@ class StandardTextIdTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(id);
         assertNotNull(json);
-//        System.out.println(json);
     }
 
     @Test
