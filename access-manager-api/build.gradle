@@ -1,9 +1,9 @@
 dependencies {    
-    compileOnly ("io.javalin:javalin:$JAVALIN_VERSION") {
+    compileOnly (libs.javalin.core) {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"        
     }
-    compileOnly("io.swagger.core.v3:swagger-core:$SWAGGER_CORE_VERSION") {
+    compileOnly(libs.swagger.core) {
         exclude group: "jakarta.xml.bind", module: "*"
     }
 }
