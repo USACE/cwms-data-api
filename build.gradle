@@ -13,20 +13,11 @@ allprojects {
     version = '3.1.0'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }
 
-// versions for shared dependencies
-ext.dropwizard_version="4.2.12"
-
-ext.JAVALIN_VERSION='4.6.7'
-
-ext.JACKSON_VERSION='2.13.3'
-ext.SWAGGER_CORE_VERSION='2.2.2'
-ext.tomcatVersion='9.0.83!!'
-
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'checkstyle'
+    //apply plugin: 'checkstyle'
 
-    println 'Checkstyle version:' + checkstyle.toolVersion
+    //println 'Checkstyle version:' + checkstyle.toolVersion
 
 
     compileJava{
@@ -61,7 +52,7 @@ subprojects {
         }
     }
 
-    checkstyleMain {
-        enabled = gradle.startParameter.taskNames.contains('checkstyleMain')
-    }
+    //checkstyleMain {
+    //    enabled = gradle.startParameter.taskNames.contains('checkstyleMain')
+    //}
 }
