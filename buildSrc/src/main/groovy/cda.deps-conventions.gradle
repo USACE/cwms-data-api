@@ -1,0 +1,22 @@
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
+    }
+
+    mavenCentral().content {
+        // The jai_core on maven central has the pom but not the jar.
+        excludeModule("javax.media", "jai_core")
+    }
+
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2')
+    }
+
+}
+
+
+configurations.all {
+    exclude group: "org.python", module: "jython-standalone"
+}

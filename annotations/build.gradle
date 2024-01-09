@@ -1,3 +1,7 @@
+plugins {
+    id 'cda.deps-conventions'
+    id 'cda.java-conventions'
+}
 
 dependencies {    
     compileOnly(libs.google.auto.service)

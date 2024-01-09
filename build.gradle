@@ -1,58 +1,7 @@
-apply plugin: 'eclipse'
-
-eclipse {
-    classpath {
-       downloadSources=true
-       downloadJavadoc = true
-    }
+plugins {
+    id 'base'
 }
-
-
 allprojects {
     group = 'mil.army.usace.hec.cwms'
     version = '3.1.0'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
-}
-
-subprojects {
-    apply plugin: 'java'
-    //apply plugin: 'checkstyle'
-
-    //println 'Checkstyle version:' + checkstyle.toolVersion
-
-
-    compileJava{
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
-    }
-
-    repositories {
-        mavenLocal()
-        maven {
-            url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
-        }
-
-        mavenCentral().content {
-            // The jai_core on maven central has the pom but not the jar.
-            excludeModule("javax.media", "jai_core")
-        }
-
-        maven {
-            url = uri('https://repo.maven.apache.org/maven2')
-        }
-
-    }
-
-    tasks.withType(JavaCompile) {
-        options.encoding = "UTF-8"
-    }
-
-    test {
-        useJUnitPlatform() {
-            excludeTags "integration"
-        }
-    }
-
-    //checkstyleMain {
-    //    enabled = gradle.startParameter.taskNames.contains('checkstyleMain')
-    //}
 }
