@@ -33,5 +33,5 @@ test {
 }
 
 checkstyle {
-
+    toolVersion = '9.3'
 }
