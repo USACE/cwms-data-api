@@ -1,4 +1,8 @@
-apply plugin: 'war'
+plugins {
+    id 'cda.deps-conventions'
+    id 'cda.java-conventions'
+    id 'war'
+}
 
 configurations {
     info
@@ -11,6 +15,7 @@ configurations {
 configurations.implementation {
     exclude group: 'com.oracle.database.jdbc'
 }
+
 dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
@@ -140,10 +145,6 @@ dependencies {
         transitive = false
     }
 
-}
-
-configurations.all {
-    exclude group: "org.python", module: "jython-standalone"
 }
 
 task extractWebJars(type: Copy) {
