@@ -179,6 +179,19 @@ war {
 
 compileTestJava.classpath += configurations.tomcatLibs
 
+sourceSets {
+    formatList {
+        output.resourcesDir = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
+        java.destinationDirectory = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
+    }
+    main {
+        runtimeClasspath += formatList.runtimeClasspath
+    }
+    test {
+        runtimeClasspath += formatList.runtimeClasspath
+    }
+}
+
 test {
     useJUnitPlatform() {
         excludeTags "integration"
@@ -186,17 +199,7 @@ test {
     classpath += configurations.tomcatLibs
 }
 
-
 description = 'CWMS-Data-API'
-
-sourceSets {
-    main {
-        resources.srcDirs = ['src/main/resources', 'build/generated/sources/annotationProcessor/java/main']
-    }
-}
-
-compileJava.dependsOn processResources
-
 
 task generateConfig(type: Copy) {
     doFirst {
