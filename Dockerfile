@@ -1,17 +1,6 @@
-FROM gradle:6.4.1-jdk8 as cache
+FROM gradle:8.5-jdk8 as builder
 USER $USER
-WORKDIR /builddir
-ENV GRADLE_USER_HOME /cache
-COPY build.gradle /builddir/
-COPY cwms-data-api/build.gradle /builddir/cwms-data-api/
-COPY annotations/build.gradle /builddir/annotations/
-COPY access-manager-api/build.gradle /builddir/access-amanger-api/
-COPY settings.gradle /builddir/
-RUN  gradle build --info --no-daemon
-
-FROM gradle:6.4.1-jdk8 as builder
-USER $USER
-COPY --from=cache /cache /home/gradle/.gradle
+RUN --mount=type=cache,target=/home/gradle/.gradle
 WORKDIR /builddir
 COPY . /builddir/
 RUN  gradle clean prepareDockerBuild --info --no-daemon
