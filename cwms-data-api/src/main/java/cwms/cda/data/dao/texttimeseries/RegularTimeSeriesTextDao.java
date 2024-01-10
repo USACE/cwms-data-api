@@ -168,7 +168,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
     private static RegularTextTimeSeriesRow buildRow(ResultSet rs) throws SQLException {
-        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
 
         Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
         Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);

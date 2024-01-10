@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -208,6 +207,74 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         regRows = tts.getRegularTextValues();
         Assertions.assertNull(regRows);
 
+    }
+
+
+    @Test
+    void testStore() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {//
+                    DSLContext dsl = getDslContext(c, "SPK");
+                    RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
+
+                    testStore(dao);
+                }
+        );
+    }
+
+    private void testStore(RegularTimeSeriesTextDao dao){
+        String officeId = "SPK";
+        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
+        // Structure of the test is:
+        // 1) retrieve some data and verify its there
+        // 2) update it
+        // 3) retrieve it again and verify its updated
+
+        // Step 1: retrieve some data
+        ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T03:00:00Z");
+        ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T04:00:00Z");
+        Instant startInstant = startZDT.toInstant();
+        Instant endInstant = endZDT.toInstant();
+        Instant versionInstant = null;
+        boolean maxVersion = false;
+
+        Long minAttr = null;
+        Long maxAttr = null;
+
+        TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
+                startInstant, endInstant, null,
+                false, null, null);
+
+        Assertions.assertNotNull(tts);
+        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+        Assertions.assertNotNull(regRows);
+        Assertions.assertFalse(regRows.isEmpty());
+
+        RegularTextTimeSeriesRow first = regRows.iterator().next();
+        Assertions.assertNotNull(first);
+        Assertions.assertEquals("my awesome text ts", first.getTextValue());
+
+        // Step 2: update it
+        String updatedValue = "my new textValue";
+        RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
+                .from(first)
+                .withTextValue(updatedValue)
+                .build();
+
+        dao.storeRow(officeId, tsId, row, true, true);
+
+        // Step 3: retrieve it again and verify its updated
+        tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
+                startInstant, endInstant, null,
+                false, null, null);
+        Assertions.assertNotNull(tts);
+        regRows = tts.getRegularTextValues();
+        Assertions.assertNotNull(regRows);
+        Assertions.assertFalse(regRows.isEmpty());
+        first = regRows.iterator().next();
+        Assertions.assertNotNull(first);
+        Assertions.assertEquals(updatedValue, first.getTextValue());
     }
 
 }
