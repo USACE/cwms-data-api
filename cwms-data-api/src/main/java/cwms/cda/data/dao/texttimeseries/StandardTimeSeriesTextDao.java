@@ -34,7 +34,6 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE_ID = "OFFICE_ID";
-
     private static final String ATTRIBUTE = "ATTRIBUTE";
     private static final String STD_TEXT_ID = "STD_TEXT_ID";
     private static final String DATA_ENTRY_DATE = "DATA_ENTRY_DATE";
@@ -46,7 +45,6 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
     private static final List<String> timeSeriesStdTextColumnsList;
     private static final List<String> stdTextCatalogColumnsList;
-
 
 
     static {
@@ -87,12 +85,11 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
     private static StandardTextValue buildStandardTextValue(String officeId, String txtId, String txt) {
-        StandardTextId id =
-                new StandardTextId.Builder()
+        StandardTextId id = new StandardTextId.Builder()
                         .withOfficeId(officeId)
                         .withId(txtId)
                         .build();
-        return  new StandardTextValue.Builder()
+        return new StandardTextValue.Builder()
                 .withId(id)
                 .withStandardText(txt)
                 .build();
@@ -100,7 +97,6 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
 
     public StandardTextValue retrieve(StandardTextId standardTextId) {
-
         return connectionResult(dsl, c -> retrieve(c, standardTextId));
     }
 
@@ -119,11 +115,10 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
     /**
      * This is if you want to store a new standard text id -> value mapping.
-     * @param standardTextValue
-     * @param failIfExists
+     * @param standardTextValue The standard text value to store
+     * @param failIfExists true if the store should fail if the standard text id already exists
      */
     public void store(StandardTextValue standardTextValue, boolean failIfExists) {
-
         StandardTextId standardTextId = standardTextValue.getId();
         String stdTextId = standardTextId.getId();
         String stdText = standardTextValue.getStandardText();
@@ -217,8 +212,6 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-
-
     public TextTimeSeries retrieveTextTimeSeries(
             String officeId, String tsId, StandardTextId standardTextId,
             Instant startTime, Instant endTime, Instant versionDate,
@@ -232,7 +225,6 @@ public class StandardTimeSeriesTextDao extends JooqDao {
             stdTextIdMask = "*";
         }
         return retrieveTextTimeSeries(officeId, tsId, stdTextIdMask, startTime, endTime, versionDate, maxVersion, retrieveText, minAttribute, maxAttribute);
-
     }
 
     public TextTimeSeries retrieveTextTimeSeries(String officeId, String tsId, String stdTextIdMask, Instant startTime, Instant endTime, Instant versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute) {
@@ -280,7 +272,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
         Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
         Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);
-        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE);
+        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE, gmtCalendar);
         Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, gmtCalendar);
         String stdTextId = rs.getString(STD_TEXT_ID);
         String clobString = rs.getString(STD_TEXT);

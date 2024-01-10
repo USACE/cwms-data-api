@@ -236,5 +236,69 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
     }
 
+    @Test
+    void testStore() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {//
+                    DSLContext dsl = getDslContext(c, "SPK");
+                    StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
+                    testStore(dao);
+                }
+        );
+    }
+
+    private void testStore(StandardTimeSeriesTextDao dao) {
+        String officeId = "SPK";
+        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
+        // Structure of the test is:
+        // 1) retrieve some data and verify its there
+        // 2) update it
+        // 3) retrieve it again and verify its updated
+
+        ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T08:00:00-07:00[PST8PDT]");
+        ZonedDateTime endZDT = ZonedDateTime.parse("2005-02-03T08:00:00-07:00[PST8PDT]");
+        Instant startInstant = startZDT.toInstant();
+        Instant endInstant = endZDT.toInstant();
+        Instant versionInstant = null;
+
+        boolean maxVersion = false;
+        boolean retText = true;
+        Long minAttr = null;
+        Long maxAttr = null;
+
+        StandardTextId standardTextId = null;
+        TextTimeSeries tts = dao.retrieveTextTimeSeries(officeId, tsId, standardTextId,
+                startInstant, endInstant, versionInstant,
+                maxVersion, retText, minAttr, maxAttr);
+        assertNotNull(tts);
+
+        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
+        assertNotNull(stdRows);
+        Assertions.assertFalse(stdRows.isEmpty());
+
+        StandardTextTimeSeriesRow first = stdRows.iterator().next();
+        assertNotNull(first);
+        assertEquals("E", first.getStandardTextId());
+
+        // Step 2: update it
+        String updatedId = "A";
+        StandardTextTimeSeriesRow row = new StandardTextTimeSeriesRow.Builder()
+                .from(first)
+                .withStandardTextId(updatedId)
+                .build();
+        dao.store(officeId, tsId,  row, true, true);
+
+        // Step 3: retrieve it again and verify its updated
+        Assertions.assertNotNull(tts);
+        stdRows = tts.getStandardTextValues();
+        Assertions.assertNotNull(stdRows);
+        Assertions.assertFalse(stdRows.isEmpty());
+        first = stdRows.iterator().next();
+        Assertions.assertNotNull(first);
+
+        Assertions.assertEquals(updatedId, first.getTextValue());
+    }
+
 
 }
