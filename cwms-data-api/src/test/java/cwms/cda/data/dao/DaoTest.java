@@ -42,7 +42,7 @@ public class DaoTest
 
 	public static DSLContext getDslContext(Connection database, String officeId)
 	{
-		DSLContext dsl =  DSL.using(database, SQLDialect.ORACLE11G);
+		DSLContext dsl =  DSL.using(database, SQLDialect.ORACLE18C);
 		CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 		return dsl;
 	}
@@ -63,7 +63,7 @@ public class DaoTest
 		DataSource ds = new org.apache.tomcat.jdbc.pool.DataSource(poolProperties);
 
 		ConnectionProvider cp = new OfficeSettingConnectionProvider(ds, officeId);
-		DSLContext dsl =  DSL.using(cp, SQLDialect.ORACLE11G);
+		DSLContext dsl =  DSL.using(cp, SQLDialect.ORACLE18C);
 		dsl.configuration().set(new DefaultExecuteListenerProvider(JooqDao.listener));
 		return dsl;
 	}

@@ -1,6 +1,9 @@
-
-dependencies {    
-    compileOnly "com.google.auto.service:auto-service:1.0-rc6"
-    annotationProcessor "com.google.auto.service:auto-service:1.0-rc6"
+plugins {
+    id 'cda.deps-conventions'
+    id 'cda.java-conventions'
 }
 
+dependencies {    
+    compileOnly(libs.google.auto.service)
+    annotationProcessor(libs.google.auto.service)
+}
