@@ -2,6 +2,7 @@ package cwms.cda.security;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,7 +29,7 @@ public class OpenIDConfig {
     private Scopes scopes = new Scopes();
     private OAuthFlows flows = new OAuthFlows();
 
-    public OpenIDConfig(URL wellKnown) throws IOException {
+    public OpenIDConfig(URL wellKnown, String altAuthUrl) throws IOException {
         this.wellKnown = wellKnown;
         HttpURLConnection http = null;
         try
@@ -42,10 +43,10 @@ public class OpenIDConfig {
                 JsonNode node = mapper.readTree(http.getInputStream());
                 jwksUrl = new URL(node.get("jwks_uri").asText());
                 issuer = node.get("issuer").asText();
-                tokenUrl = new URL(node.get("token_endpoint").asText());
-                userInfoUrl = new URL(node.get("userinfo_endpoint").asText());
-                logoutUrl = new URL(node.get("end_session_endpoint").asText());
-                authUrl = new URL(node.get("authorization_endpoint").asText());
+                tokenUrl = substituteBase(new URL(node.get("token_endpoint").asText()),altAuthUrl);
+                userInfoUrl = substituteBase(new URL(node.get("userinfo_endpoint").asText()),altAuthUrl);
+                logoutUrl = substituteBase(new URL(node.get("end_session_endpoint").asText()),altAuthUrl);
+                authUrl = substituteBase(new URL(node.get("authorization_endpoint").asText()),altAuthUrl);
                 JsonNode scopes = node.get("scopes_supported");
                 for(JsonNode scope: scopes) {
                     this.scopes.addString(scope.asText(), "");
@@ -78,6 +79,15 @@ public class OpenIDConfig {
                 http.disconnect();
             }
         }
+    }
+
+    private URL substituteBase(URL endPoint, String altAuthUrl) throws MalformedURLException {
+        if (altAuthUrl == null) {
+            return endPoint;
+        }
+        String originalPath = endPoint.getPath();
+
+        return new URL(altAuthUrl+"/"+originalPath);
     }
 
     public URL getJwksUrl() {
