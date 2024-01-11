@@ -29,11 +29,11 @@ can be verified correctly.
 
 The following users and permissions are available:
 
-| User        | Password    | Office | Permissions    |
-| ----------- | ----------- | ------ | ------------   |
-| l2hectest   | l2hectest   | SPK    | General User   |
-| l1hectest   | l1hectest   | SPL    | No permissions |
-| m5hectest   | m5hectest   | SWT    | General User   |
+| User                  | Password    | Office | Permissions    |
+| --------------------- | ----------- | ------ | ------------   |
+| l2hectest.1234567890  | l2hectest   | SPK    | General User   |
+| l1hectest             | l1hectest   | SPL    | No permissions |
+| m5hectest             | m5hectest   | SWT    | General User   |
 
 
 ## Inventory of services
@@ -47,5 +47,3 @@ The following users and permissions are available:
 |[auth](./compose_files/keycloak/Dockerfile)||8080|authentication-token service (keycloak)|
 |db_install|||connects to db and installs CWMS schema|
 |db_webuser_ permissions|||connects to db and sets permissions |
-
-
