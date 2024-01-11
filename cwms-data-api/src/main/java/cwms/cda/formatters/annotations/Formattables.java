@@ -1,4 +1,4 @@
-package service.annotations;
+package cwms.cda.formatters.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ContentTypes {
-    public ContentType[] value();
+public @interface Formattables {
+    public FormattableWith[] value();
 }

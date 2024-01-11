@@ -26,7 +26,9 @@ package cwms.cda.formatters;
 
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.helpers.ResourceHelper;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,7 +86,7 @@ public class Formats {
     }
 
 
-    private Map<ContentType, Map<Class<CwmsDTO>, OutputFormatter>> formatters = null;
+    private Map<ContentType, Map<Class<? extends CwmsDTOBase>, OutputFormatter>> formatters = null;
 
     private static Formats formats = null;
 
@@ -107,13 +110,13 @@ public class Formats {
                 OutputFormatter formatterInstance;
                 logger.finest("Formatter class: " + typeFormatterClasses[1]);
                 formatterInstance = formatter.getDeclaredConstructor().newInstance();
-                Map<Class<CwmsDTO>, OutputFormatter> tmp = new HashMap<>();
+                Map<Class<? extends CwmsDTOBase>, OutputFormatter> tmp = new HashMap<>();
 
                 for (String clazz : typeFormatterClasses[2].split(";")) {
                     logger.finest("\tFor Class: " + clazz);
 
                     @SuppressWarnings("unchecked")
-                    Class<CwmsDTO> formatForClass = (Class<CwmsDTO>) Class.forName(clazz);
+                    Class<? extends CwmsDTOBase> formatForClass = (Class<CwmsDTOBase>) Class.forName(clazz);
                     tmp.put(formatForClass, formatterInstance);
                 }
 
@@ -148,9 +151,26 @@ public class Formats {
 
     private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
-        if (contentFormatters != null) {
+        Map<Class<? extends CwmsDTOBase>, OutputFormatter> contentFormatters = formatters.get(type);
+        if (contentFormatters != null && contentFormatters.containsKey(klass)) {
             outputFormatter = contentFormatters.get(klass);
+        } else { // not in the list, look it up.
+            FormattableWith[] annotationsByType = klass.getAnnotationsByType(FormattableWith.class);
+            for (FormattableWith fw: annotationsByType) {
+                ContentType fwCt = new ContentType(fw.contentType());
+                if (type.equals(fwCt)) {
+                    try {
+                        outputFormatter = fw.formatter()
+                                            .getDeclaredConstructor()
+                                            .newInstance();
+                        formatters.computeIfAbsent(type, k -> new HashMap<Class<? extends CwmsDTOBase>, OutputFormatter>())
+                                  .put(klass,outputFormatter);
+                    } catch (Exception ex) {
+                        logger.log(Level.SEVERE, "Unable to create formatter.", ex);
+                        return null;
+                    }
+                }
+            }
         }
         return outputFormatter;
     }

@@ -73,7 +73,6 @@ import java.util.List;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
         Office.class,
-        State.class,
         County.class,
         Location.class,
         Catalog.class,
