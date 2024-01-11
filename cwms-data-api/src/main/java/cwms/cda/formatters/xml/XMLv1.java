@@ -19,7 +19,7 @@ import cwms.cda.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.XML, dataTypes = {Office.class,Catalog.class})
+@FormatService(contentType = Formats.XML, dataTypes = {Catalog.class})
 public class XMLv1 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv1.class.getName());
     private JAXBContext context = null;

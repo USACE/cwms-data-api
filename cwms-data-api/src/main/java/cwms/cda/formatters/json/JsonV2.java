@@ -72,17 +72,11 @@ import service.annotations.FormatService;
 import java.util.List;
 
 @FormatService(contentType = Formats.JSONV2, dataTypes = {
-        Office.class,
-        County.class,
         Location.class,
         Catalog.class,
         TimeSeries.class,
-        Clob.class,
-        Clobs.class,
         Pool.class,
         Pools.class,
-        Blobs.class,
-        Blobs.class,
         SpecifiedLevel.class,
         RatingTemplate.class, RatingTemplates.class,
         RatingMetadataList.class, RatingMetadata.class,

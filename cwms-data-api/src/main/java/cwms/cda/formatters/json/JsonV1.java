@@ -31,14 +31,11 @@ import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.JSON,
 			   dataTypes = {
-				   Office.class,
 				   Location.class,
 				   Catalog.class,
 				   LocationGroup.class,
 				   LocationCategory.class,
 				   TimeSeriesCategory.class, TimeSeriesGroup.class,
-				   Clob.class,
-				   Clobs.class,
 				   TimeSeriesGroup.class,
 				   RecentValue.class
 				})

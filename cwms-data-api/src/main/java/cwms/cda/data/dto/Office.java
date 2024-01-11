@@ -7,11 +7,23 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.csv.CsvV1;
+import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.tab.TabV1;
+import cwms.cda.formatters.xml.XMLv1;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a CWMS office")
 @XmlRootElement(name="office")
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
+@FormattableWith(contentType = Formats.TAB, formatter = TabV1.class)
 public class Office implements CwmsDTOBase {
     private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**

@@ -11,7 +11,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
 import cwms.cda.data.dto.Clobs;
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
@@ -19,7 +18,7 @@ import cwms.cda.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class, Clobs.class})
+@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class})
 public class XMLv2 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv2.class.getName());
     private JAXBContext context = null;

@@ -9,7 +9,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OutputFormatter;
 import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.CSV, dataTypes = {Office.class, LocationGroup.class})
+@FormatService(contentType = Formats.CSV, dataTypes = {LocationGroup.class})
 public class CsvV1 implements OutputFormatter {
 
     @Override
