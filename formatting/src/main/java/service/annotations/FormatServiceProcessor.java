@@ -29,13 +29,13 @@ import com.google.auto.service.AutoService;
 public class FormatServiceProcessor extends AbstractProcessor{
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {            
-        
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {        
         try {
             for(TypeElement anno: annotations) {
                 Collection<? extends Element> elements = roundEnv.getElementsAnnotatedWith(anno);
                 FileObject createResource = processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", "formats.list");
                 Writer wr = createResource.openWriter();
+
                 elements.forEach( element -> {
                     FormatService fs = element.getAnnotation(FormatService.class);
                     try {
