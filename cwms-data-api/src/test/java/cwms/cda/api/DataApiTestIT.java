@@ -77,6 +77,7 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
+    protected static String createTimeseriesOffsetQuery = null;
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
     protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?)";
 
@@ -117,6 +118,13 @@ public class DataApiTestIT {
                                     .getClassLoader()
                                     .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries.sql"),"UTF-8"
                             );
+
+        createTimeseriesOffsetQuery = IOUtils.toString(
+                TimeseriesControllerTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries_offset.sql"),"UTF-8"
+        );
+
         deleteLocationQuery = IOUtils.toString(
                                 TimeseriesControllerTestIT.class
                                     .getClassLoader()
@@ -310,6 +318,23 @@ public class DataApiTestIT {
             try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery);) {
                 stmt.setString(1,office);
                 stmt.setString(2,timeseries);
+                stmt.execute();
+            } catch (SQLException ex) {
+                if (ex.getErrorCode() == 20003) {
+                    return; // TS already exists. that's find for these tests.
+                }
+                throw new RuntimeException("Unable to create timeseries",ex);
+            }
+        }, "cwms_20");
+    }
+
+    protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c)-> {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery);) {
+                stmt.setString(1, office);
+                stmt.setString(2, timeseries);
+                stmt.setInt(3, offset);
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
