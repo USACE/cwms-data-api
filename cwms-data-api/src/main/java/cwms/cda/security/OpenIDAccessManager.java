@@ -77,9 +77,10 @@ public class OpenIDAccessManager extends CdaAccessManager {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             String username = token.getBody().get("preferred_username",String.class);
             AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-            String edipi = username.substring(username.lastIndexOf(".")+1);
-            return dao.getPrincipalFromEdipi(Long.parseLong(edipi));
-        } catch (JwtException ex) {
+            String edipiStr = username.substring(username.lastIndexOf(".")+1);
+            long edipi = Long.parseLong(edipiStr);
+            return dao.getPrincipalFromEdipi(edipi);
+        } catch (NumberFormatException | JwtException ex) {
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
