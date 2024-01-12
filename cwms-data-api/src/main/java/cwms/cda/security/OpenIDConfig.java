@@ -82,7 +82,7 @@ public class OpenIDConfig {
     }
 
     private URL substituteBase(URL endPoint, String altAuthUrl) throws MalformedURLException {
-        if (altAuthUrl == null) {
+        if (altAuthUrl == null || altAuthUrl.isEmpty()) {
             return endPoint;
         }
         String originalPath = endPoint.getPath();
