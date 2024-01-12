@@ -208,7 +208,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @return
      * @throws CwmsAuthException
      */
-    private String userForEdipi(Long edipi) throws CwmsAuthException {
+    private String userForEdipi(long edipi) throws CwmsAuthException {
         try {
             return dsl.connectionResult(c-> {
                 setSessionForAuthCheck(c);
