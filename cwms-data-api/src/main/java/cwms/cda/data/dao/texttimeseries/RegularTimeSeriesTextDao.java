@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
@@ -152,16 +153,13 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         return rows;
     }
 
-    @Nullable
+    @NotNull
     private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
-        List<RegularTextTimeSeriesRow> rows = null;
+        List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
 
         while (rs.next()) {
             RegularTextTimeSeriesRow row = buildRow(rs);
-            if (rows == null) {
-                rows = new ArrayList<>();
-            }
             rows.add(row);
         }
         return rows;
@@ -210,13 +208,57 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         NavigableSet<Date> dates = new TreeSet<>();
         dates.add(dateTime);
 
+        /* the pl/sql has:
+                        procedure store_ts_text(
+                              p_tsid         in varchar2,
+                              p_text         in clob,
+                              p_start_time   in date,
+                              p_end_time     in date default null,
+                              p_version_date in date default null,
+                              p_time_zone    in varchar2 default null,
+                              p_max_version  in varchar2 default 'T',
+                              p_existing     in varchar2 default 'T',
+                              p_non_existing in varchar2 default 'F',
+                              p_replace_all  in varchar2 default 'F',
+                              p_attribute    in number default null,
+                              p_office_id    in varchar2 default null)
+
+                             Jooq names this one:   call_STORE_TS_TEXT - takes a date range. not used here.
+
+                        and also:
+                         procedure store_ts_text(
+                              p_tsid         in varchar2,
+                              p_text         in clob,
+                              p_times        in date_table_type,
+                              p_version_date in date default null,
+                              p_time_zone    in varchar2 default null,
+                              p_max_version  in varchar2 default 'T',
+                              p_replace_all  in varchar2 default 'F',
+                              p_attribute    in number default null,
+                              p_office_id    in varchar2 default null)
+
+                            Jooq names this one:   call_STORE_TS_TEXT__2  - this is what we use
+                 */
+
+        if(textId != null && textValue != null){
+            // There are two storeTs methods.  You either:
+            // 1.  store a textValue at specific times but you don't care about what the textId is.
+            // 2.  make an existing textId apply at the specified times - you don't care about the current textId to textValue.
+            // This branch is if the user is trying to specify the text_Id and the text_value.
+            // We'll have to make some choices to implement this.
+            throw new UnsupportedOperationException(String.format("TextId:\"%s\" and TextValue:\"%s\" are both specified.  This is not supported yet.", textId, textValue));
+        }
+
         connection(dsl, connection -> {
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
+
             if (textId == null) {
+                // dbText.storeTsText makes DATE_TABLE_TYPE pTimes = convertDates(dates); then calls STORE_TS_TEXT__2
                 dbText.storeTsText(connection, tsId, textValue, dates,
                         versionDate, timeZone, maxVersion, replaceAll,
                         attribute, officeId);
             } else {
+                // ends up calling STORE_TS_TEXT_ID__2
                 dbText.storeTsTextId(connection, tsId, textId, dates,
                         versionDate, timeZone, maxVersion, replaceAll,
                         attribute, officeId);

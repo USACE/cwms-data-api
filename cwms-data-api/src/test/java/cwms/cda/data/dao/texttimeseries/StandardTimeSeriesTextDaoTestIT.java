@@ -25,6 +25,7 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,25 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String LOAD_RESOURCE = "cwms/cda/data/sql/store_std_text_timeseries.sql";
     public static final String DELETE_RESOURCE = "cwms/cda/data/sql/delete_std_text_timeseries.sql";
+
+    private static final String officeId = "SPK";
+    private static final String locationId = "TsTextTestLoc";
+    private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
+
+    @BeforeAll
+    public static void create() throws Exception {
+        createLocation(locationId, true, officeId);
+
+//  /**
+//    * Cookie for specifying UTC Interval Offset for irregular time series
+//    */
+//   utc_offset_irregular CONSTANT             NUMBER := -2147483648;
+//   /**
+//    * Cookie for specifying as-yet undefined UTC Interval Offset for regular time series
+//    */
+//   utc_offset_undefined CONSTANT             NUMBER := 2147483647;
+        createTimeseries(officeId, tsId, 0);  // offset needs to be valid for 1Hour
+    }
 
     @BeforeEach
     public void load_data() throws Exception {
@@ -49,7 +69,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testCreate() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
 
                     testCreate(dao);
@@ -58,8 +78,8 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     }
 
     private void testCreate(StandardTimeSeriesTextDao dao) {
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
+
 
         // The basic structure of the test is to:
         // 1.  make sure the row doesn't exist
@@ -120,7 +140,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testRetrieve() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
 
                     try {
@@ -133,8 +153,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     }
 
     private  void testRetrieve(StandardTimeSeriesTextDao dao) throws JsonProcessingException {
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
 
         StandardTextId standardTextId = null;
         ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T08:00:00-07:00[PST8PDT]");
@@ -176,7 +195,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testDelete() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
                     testDelete(dao);
                 }
@@ -190,8 +209,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // 3) retrieve it again and verify its gone
 
         // Step 1: retrieve some data
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
 
         // The load_data script is supposed to be storing between:
         // ('2005-02-01 13:30:00',
@@ -240,7 +258,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testStore() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
                     testStore(dao);
                 }
@@ -248,8 +266,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     }
 
     private void testStore(StandardTimeSeriesTextDao dao) {
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
 
         // Structure of the test is:
         // 1) retrieve some data and verify its there
@@ -299,6 +316,5 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         Assertions.assertEquals(updatedId, first.getTextValue());
     }
-
 
 }

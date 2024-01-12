@@ -2,6 +2,8 @@ package cwms.cda.data.dao.texttimeseries;
 
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
@@ -15,30 +17,54 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    public static final String LOAD_RESOURCE = "cwms/cda/data/sql/store_reg_text_timeseries.sql";
+    public static final String DELETE_RESOURCE = "cwms/cda/data/sql/delete_reg_text_timeseries.sql";
+    public static final String EXPECTED_TEXT_VALUE = "my awesome text ts";  // must match store_reg_text_timeseries.sql
+
+    private static String officeId = "SPK";
+    private static String locationId = "TsTextTestLoc";
+    private static String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
+
     @BeforeAll
-    public static void load_data() throws Exception {
-        loadSqlDataFromResource("cwms/cda/data/sql/store_reg_text_timeseries.sql");
+    public static void create() throws Exception {
+        createLocation(locationId, true, officeId);
+
+//  /**
+//    * Cookie for specifying UTC Interval Offset for irregular time series
+//    */
+//   utc_offset_irregular CONSTANT             NUMBER := -2147483648;
+//   /**
+//    * Cookie for specifying as-yet undefined UTC Interval Offset for regular time series
+//    */
+//   utc_offset_undefined CONSTANT             NUMBER := 2147483647;
+        createTimeseries(officeId, tsId, 0);  // offset needs to be valid for 1Hour
     }
 
-    @AfterAll
-    public static void deload_data() throws Exception {
-        loadSqlDataFromResource("cwms/cda/data/sql/delete_reg_text_timeseries.sql");
+    @BeforeEach
+    public void load_data() throws Exception {
+        loadSqlDataFromResource(LOAD_RESOURCE);
+    }
+
+    @AfterEach
+    public void deload_data() throws Exception {
+        loadSqlDataFromResource(DELETE_RESOURCE);
     }
 
     @Test
     void testCreate() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+        databaseLink.connection(c -> {
+                    DSLContext dsl = getDslContext(c, officeId);
                     RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
 
                     testCreate(dao);
@@ -47,10 +73,8 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     }
 
 
-
     private void testCreate(RegularTimeSeriesTextDao dao) {
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
 
         // store script creates from 02:30:00 - 07:00:00'
         // The delete script deletes from 0:30 t- 23:00
@@ -67,8 +91,6 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Instant versionInstant = null;
 
         //  make sure it doesn't exist
-
-
         boolean maxVersion = false;
 
         Long minAttr = null;
@@ -79,31 +101,32 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 maxVersion, minAttr, maxAttr);
 
         Assertions.assertNotNull(tts);
-        Assertions.assertNull(tts.getRegularTextValues());  // finds 10,11,12,13,14 PST
+        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+        assertTrue(regRows.isEmpty());
+
 
         // create/store
-        String testValue = "my awesome text ts";
+        String testValue = EXPECTED_TEXT_VALUE;
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
                 .withDateTime(TimeSeriesTextDao.getDate(startInstant))
 
-        .withAttribute(420L)
+                .withAttribute(420L)
                 .withTextValue(testValue)
-                .build()
-        ;
+                .build();
 
         dao.storeRow(officeId, tsId, row, true, true);
 
 
         // retrieve and verify
-        tts = tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
+        tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, versionInstant,
                 maxVersion, minAttr, maxAttr);
 
         Assertions.assertNotNull(tts);
-        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
-        Assertions.assertFalse(regRows.isEmpty());
+        regRows = tts.getRegularTextValues();
+        Assertions.assertNotNull(regRows);
         Assertions.assertEquals(1, regRows.size());
-//        logger.atInfo().log("got %d rows", regRows.size());
+
         RegularTextTimeSeriesRow first = regRows.iterator().next();
         Assertions.assertEquals(testValue, first.getTextValue());
 
@@ -111,9 +134,10 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
     @Test
     void testRetrieve() throws SQLException {
+
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
 
                     testRetrieve(dao);
@@ -122,9 +146,6 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     }
 
     private static void testRetrieve(RegularTimeSeriesTextDao dao) {
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
-        String testValue = "my awesome text ts";
 
         ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T03:00:00Z");
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T07:00:00Z");
@@ -136,7 +157,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Long minAttr = null;
         Long maxAttr = null;
 
-        TextTimeSeries  tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
+        TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, null,
                 maxVersion, minAttr, maxAttr);
 
@@ -144,11 +165,11 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         Assertions.assertNotNull(regRows);
-        Assertions.assertFalse(regRows.isEmpty());
+        Assertions.assertFalse(regRows.isEmpty(), "retrieve should find the rows inserted by store_reg_text_timeseries.sql");
 
         RegularTextTimeSeriesRow first = regRows.iterator().next();
         Assertions.assertNotNull(first);
-        Assertions.assertEquals(testValue, first.getTextValue());
+        Assertions.assertEquals(EXPECTED_TEXT_VALUE, first.getTextValue());
 
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         Assertions.assertNull(stdRows);
@@ -157,9 +178,10 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
     @Test
     void testDelete() throws SQLException {
+
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
 
                     testDelete(dao);
@@ -168,8 +190,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     }
 
     private void testDelete(RegularTimeSeriesTextDao dao) {
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+
 
         // Structure of the test is:
         // 1) retrieve some data and verify its there
@@ -189,23 +210,24 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, null,
-                false, null, null);
+                maxVersion, minAttr, maxAttr);
 
         Assertions.assertNotNull(tts);
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         Assertions.assertNotNull(regRows);
-        Assertions.assertFalse(regRows.isEmpty());
+        Assertions.assertFalse(regRows.isEmpty(),"testDelete must first find the rows inserted by store_reg_text_timeseries.sql" );
 
         // Step 2: delete it
         dao.delete(officeId, tsId, "*", startInstant, endInstant, null, false, null, null);
 
         // Step 3: retrieve it again and verify its gone
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startInstant, endInstant, null,
-                false, null, null);
+                startInstant, endInstant, versionInstant,
+                maxVersion, minAttr, maxAttr);
         Assertions.assertNotNull(tts);
         regRows = tts.getRegularTextValues();
-        Assertions.assertNull(regRows);
+        assertNotNull(regRows);
+        assertTrue(regRows.isEmpty());
 
     }
 
@@ -214,7 +236,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testStore() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, "SPK");
+                    DSLContext dsl = getDslContext(c, officeId);
                     RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
 
                     testStore(dao);
@@ -222,11 +244,9 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         );
     }
 
-    private void testStore(RegularTimeSeriesTextDao dao){
-        String officeId = "SPK";
-        String tsId = "First519402.Flow.Inst.1Hour.0.1688755420497";
+    private void testStore(RegularTimeSeriesTextDao dao) {
 
-        // Structure of the test is:
+        // Structure:
         // 1) retrieve some data and verify its there
         // 2) update it
         // 3) retrieve it again and verify its updated
@@ -236,11 +256,6 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T04:00:00Z");
         Instant startInstant = startZDT.toInstant();
         Instant endInstant = endZDT.toInstant();
-        Instant versionInstant = null;
-        boolean maxVersion = false;
-
-        Long minAttr = null;
-        Long maxAttr = null;
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, null,
@@ -249,25 +264,34 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Assertions.assertNotNull(tts);
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         Assertions.assertNotNull(regRows);
-        Assertions.assertFalse(regRows.isEmpty());
+        Assertions.assertFalse(regRows.isEmpty(), "Before trying to store we should first be finding the rows inserted by store_reg_text_timeseries.sql");
+
 
         RegularTextTimeSeriesRow first = regRows.iterator().next();
         Assertions.assertNotNull(first);
-        Assertions.assertEquals("my awesome text ts", first.getTextValue());
+        Assertions.assertEquals(EXPECTED_TEXT_VALUE, first.getTextValue());
+        //fyi - first.getVersionDate() // Sat Nov 11 00:00:00 PST 1111 - -WEIRD
 
         // Step 2: update it
         String updatedValue = "my new textValue";
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
                 .from(first)
                 .withTextValue(updatedValue)
+                .withTextId(null)  // we want to update the value and we don't care what the id is.
+                .withVersionDate(null)  // I don't think we care about the 1111 CE date
+                .withAttribute((Long) null)
                 .build();
 
+        // fyi the date.toSTring is: "Fri Dec 31 19:00:00 PST 2004" or: 2004-12-31T19:00:00
+        // .000-0800  which matches up to 3am 1/1 2005 in UTC.  looks right.
+        // pl/sql default for maxVersion is true
+        // and for replaceAll its false;  But we do want it to replaceAll to update the value.
         dao.storeRow(officeId, tsId, row, true, true);
 
         // Step 3: retrieve it again and verify its updated
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, null,
-                false, null, null);
+                true, null, null);
         Assertions.assertNotNull(tts);
         regRows = tts.getRegularTextValues();
         Assertions.assertNotNull(regRows);
@@ -277,4 +301,8 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Assertions.assertEquals(updatedValue, first.getTextValue());
     }
 
+
+    // TODO: What happens when we do a retrieve for a ts that doesn't exist?
+    // TODO: test store vs create
+    // TODO: test update
 }

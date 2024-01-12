@@ -1,6 +1,6 @@
 begin
     CWMS_20.CWMS_TEXT.STORE_TS_STD_TEXT(
-            P_TSID => 'First519402.Flow.Inst.1Hour.0.1688755420497',
+            P_TSID => 'TsTextTestLoc.Flow.Inst.1Hour.0.raw',
             P_STD_TEXT_ID => 'E',
 --             P_START_TIME => TO_TIMESTAMP_TZ('2005-02-01 13:30:00-00:00','YYYY-MM-DD HH24:MI:SSTZH:TZM'),
 --             P_END_TIME => TO_TIMESTAMP_TZ('2005-02-02 17:00:00-00:00','YYYY-MM-DD HH24:MI:SSTZH:TZM'),

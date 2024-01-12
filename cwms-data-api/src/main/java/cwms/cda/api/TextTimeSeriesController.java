@@ -72,7 +72,6 @@ public class TextTimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TextTimeSeriesController.class.getName());
     private static final String TAG = "Text-TimeSeries";
     public static final String TS_ID = "ts-id";
-    public static final String TEXT_TIMESERIES_ID = "text-timeseries-id";
     public static final String REPLACE_ALL = "replace-all";
     private final MetricRegistry metrics;
 
@@ -108,7 +107,16 @@ public class TextTimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the minimum or maximum version date (depending on p_max_version) is used."),
                     @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified."),
                     @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value to delete. If not specified, no minimum value is used."),
-                    @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to delete. If not specified, no maximum value is used.")
+                    @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to delete. If not specified, no maximum value is used."),
+                    @OpenApiParam(name = "mode", required = true, type = TimeSeriesTextMode.class,
+                            description = "Type of Text TimeSeries to retrieve. Options are:\n"
+                                    + "ALL\n"
+                                    + " - Retrieve Standard and Regular text timeseries \n"
+                                    + "STANDARD\n"
+                                    + " - Retrieve Standard text time series.\n"
+                                    + "REGULAR\n"
+                                    + " - Retrieve Regular text timeseries \n"
+                    ),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -126,8 +134,10 @@ public class TextTimeSeriesController implements CrudHandler {
         ZonedDateTime beginZdt = queryParamAsZdt(ctx, START);
         ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
         ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
+        boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(false);
         Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
         Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
+        TimeSeriesTextMode mode = ctx.queryParamAsClass("mode", TimeSeriesTextMode.class).getOrDefault(TimeSeriesTextMode.ALL);
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -135,7 +145,11 @@ public class TextTimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesTextDao dao = getDao(dsl);
 
-            TextTimeSeries textTimeSeries = dao.retrieveFromView(office, tsId, beginZdt, endZdt, versionZdt, minAttr, maxAttr);
+            String textMask = "*";
+
+            TextTimeSeries textTimeSeries = dao.retrieveFromDao(mode, office, tsId, textMask,
+                    beginZdt, endZdt, versionZdt,
+                    maxVersion, minAttr, maxAttr);
 
             ctx.contentType(contentType.toString());
 
@@ -245,30 +259,47 @@ public class TextTimeSeriesController implements CrudHandler {
             @OpenApiParam(name = TS_ID, description = "The time series identifier to be deleted"),
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the timeseries identifier to be deleted"),
-            @OpenApiParam(name = Controllers.TEXT_MASK, required = true, description = "The standard text pattern to match. "
-                    + "Use glob-style wildcard characters instead of sql-style wildcard characters for pattern matching."
-                    + "  For StandardTextTimeSeries this should be the Standard_Text_Id (such as 'E' for ESTIMATED)"),
-                @OpenApiParam(name = Controllers.DELETE_MODE, required = true, type = TimeSeriesTextMode.class,
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the timeseries identifier to be deleted"),
+                @OpenApiParam(name = Controllers.TEXT_MASK, required = true, description = "The "
+                        + "standard text pattern to match. "
+                        + "Use glob-style wildcard characters instead of sql-style wildcard "
+                        + "characters for pattern matching."
+                        + "  For StandardTextTimeSeries this should be the Standard_Text_Id (such"
+                        + " as 'E' for ESTIMATED)"),
+                @OpenApiParam(name = Controllers.DELETE_MODE, required = true, type =
+                        TimeSeriesTextMode.class,
                         description = "Type of delete to perform. Options are:\n"
-                                + "DELETE_ALL\n"
-                                + " - Delete Standard and Regular text timeseries values for the specified time series.\n"
-                                + "DELETE_STANDARD\n"
-                                + " - Delete Standard text time series for the specified text timeseries.\n"
-                                + "DELETE_REGULAR\n"
-                                + " - Delete Regular text timeseries values for the specified time series.\n"
+                                + "ALL\n"
+                                + " - Delete Standard and Regular text timeseries values for the "
+                                + "specified time series.\n"
+                                + "STANDARD\n"
+                                + " - Delete Standard text time series for the specified text "
+                                + "timeseries.\n"
+                                + "REGULAR\n"
+                                + " - Delete Regular text timeseries values for the specified "
+                                + "time series.\n"
                 ),
-            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                    + "the time zone of the values of the begin and end fields (unless "
-                    + "otherwise specified). If this field is not specified, "
-                    + "the default time zone of UTC shall be used."),
-            @OpenApiParam(name = START, required = true, description = "The start of the time window"),
-            @OpenApiParam(name = END, description = "The end of the time window. If specified the text associated with all times from start to end (inclusive) is deleted."),
-            @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the minimum or maximum version date (depending on p_max_version) is used."),
-            @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified."),
-            @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value to delete. If not specified, no minimum value is used."),
-            @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to delete. If not specified, no maximum value is used.")
+                @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                        + "the time zone of the values of the begin and end fields (unless "
+                        + "otherwise specified). If this field is not specified, "
+                        + "the default time zone of UTC shall be used."),
+                @OpenApiParam(name = START, required = true, description = "The start of the time"
+                        + " window"),
+                @OpenApiParam(name = END, description = "The end of the time window. If specified"
+                        + " the text associated with all times from start to end (inclusive) is "
+                        + "deleted."),
+                @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
+                        + "series.  If not specified, the minimum or maximum version date "
+                        + "(depending on p_max_version) is used."),
+                @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to"
+                        + " use the maximum version date if p_version_date is not specified."),
+                @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description =
+                        "The minimum attribute value to delete. If not specified, no minimum "
+                                + "value is used."),
+                @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description =
+                        "The maximum attribute value to delete. If not specified, no maximum "
+                                + "value is used.")
         },
         method = HttpMethod.DELETE,
         tags = {TAG}

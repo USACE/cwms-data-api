@@ -34,26 +34,33 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         super(dsl);
     }
 
-    public TextTimeSeries retrieveFromDao(@NotNull String officeId, @NotNull String tsId,
+    public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
+            @NotNull String officeId, @NotNull String tsId,
+                                           String textMask,
                                            @Nullable ZonedDateTime startTime, @Nullable ZonedDateTime endTime,
                                            @Nullable ZonedDateTime versionDate,
+                                           boolean maxVersion,
                                            @Nullable Long minAttribute, @Nullable Long maxAttribute
     ) {
-        String stdTextMask = "*";
-        boolean maxVersion = false;
+        List<StandardTextTimeSeriesRow> stdRows = null;
+        List<RegularTextTimeSeriesRow> regRows = null;
 
-        boolean retrieveText = true;  // should this be true?
-        StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-        List<StandardTextTimeSeriesRow> stdRows = stdDao.retrieveRows(officeId, tsId, stdTextMask,
-                getInstant(startTime), getInstant(endTime), getInstant(versionDate),
-                maxVersion, retrieveText, minAttribute, maxAttribute);
-        // Do I need to build the std catalog thing?
-        // Add a flag for that or one method that builds and one that doesn't
+        if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
+            boolean retrieveText = true;  // should this be true?
+            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
+            stdRows = stdDao.retrieveRows(officeId, tsId, textMask,
+                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    maxVersion, retrieveText, minAttribute, maxAttribute);
+            // Do I need to build the std catalog thing?
+            // Add a flag for that or one method that builds and one that doesn't
+        }
 
-        RegularTimeSeriesTextDao regDao = getRegularDao();
-        List<RegularTextTimeSeriesRow> regRows = regDao.retrieveRows(officeId, tsId, stdTextMask,
-                getInstant(startTime), getInstant(endTime), getInstant(versionDate),
-                maxVersion, minAttribute, maxAttribute);
+        if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
+            RegularTimeSeriesTextDao regDao = getRegularDao();
+            regRows = regDao.retrieveRows(officeId, tsId, textMask,
+                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    maxVersion, minAttribute, maxAttribute);
+        }
 
         return new TextTimeSeries.Builder()
                 .withOfficeId(officeId)
@@ -61,7 +68,6 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
                 .withRegRows(regRows)
                 .withStdRows(stdRows)
                 .build();
-
     }
 
     public TextTimeSeries retrieveFromView(@NotNull String officeId, @NotNull String tsId,
