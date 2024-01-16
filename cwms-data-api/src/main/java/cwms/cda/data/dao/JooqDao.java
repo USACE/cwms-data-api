@@ -156,7 +156,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (ctx.family() == ORACLE) {
                     ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
                 } else {
-                    ctx.visit(field.upper().likeRegex(regex.toUpperCase()));
+                    ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
                 }
             }
         };

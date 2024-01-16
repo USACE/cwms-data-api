@@ -24,7 +24,12 @@
 
 package cwms.cda.data.dao;
 
-import cwms.cda.api.enums.Unit;
+import static java.util.stream.Collectors.toList;
+import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
+import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
+import static org.jooq.impl.DSL.asterisk;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
+
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -45,31 +50,6 @@ import hec.data.level.JDomSeasonalIntervalImpl;
 import hec.data.level.JDomSeasonalValueImpl;
 import hec.data.level.JDomSeasonalValuesImpl;
 import hec.data.location.LocationTemplate;
-import mil.army.usace.hec.metadata.Interval;
-import mil.army.usace.hec.metadata.IntervalFactory;
-import mil.army.usace.hec.metadata.constants.NumericalConstants;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jooq.Condition;
-import org.jooq.Configuration;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.SelectLimitPercentAfterOffsetStep;
-import org.jooq.conf.ParamType;
-import org.jooq.exception.DataAccessException;
-import org.jooq.types.DayToSecond;
-import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
-import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
-import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -90,12 +70,31 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.util.stream.Collectors.toList;
-import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
-import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
-import static org.jooq.impl.DSL.asterisk;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
+import mil.army.usace.hec.metadata.Interval;
+import mil.army.usace.hec.metadata.IntervalFactory;
+import mil.army.usace.hec.metadata.constants.NumericalConstants;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jooq.Condition;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.SelectLimitPercentAfterOffsetStep;
+import org.jooq.conf.ParamType;
+import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
+import org.jooq.types.DayToSecond;
+import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
+import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
 public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao {
     private static final Logger logger = Logger.getLogger(LocationLevelsDaoImpl.class.getName());
@@ -339,7 +338,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Condition whereCondition = siAndTsIdNull.or(tsIdNotNull);
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(view.OFFICE_ID.upper().eq(office.toUpperCase()));
+            whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
@@ -361,7 +360,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(asterisk())
                 .from(view)
                 .where(whereCondition)
-                .orderBy(view.OFFICE_ID.upper(), view.LOCATION_LEVEL_ID.upper(),
+                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
                         view.LEVEL_DATE
                 )
                 .offset(offset)
@@ -585,13 +584,34 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         ZoneId locationZoneId = getLocationZoneId(levelRef.getLocationRef());
         ZTSV_ARRAY specifiedTimes = buildTsvArray(start, end, interval, locationZoneId);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-        ZTSV_ARRAY locLvlValues = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
+
+        ZTSV_ARRAY locLvlValues = call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
                 specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
-                "UTC", officeId, "VN");
+                "UTC", officeId );
+
         if (locLvlValues.isEmpty()) {
             throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);
         }
         return buildTimeSeries(levelRef, interval, locLvlValues, locationZoneId);
+    }
+
+    public static ZTSV_ARRAY call_RETRIEVE_LOC_LVL_VALUES3(Configuration configuration, ZTSV_ARRAY specifiedTimes,
+                                                           String locationLevelId, String levelUnits,
+                                                           String attributeId, Number attributeValue,
+                                                           String attributeUnits, String timezoneId,
+                                                           String officeId) {
+        /*
+            Here are the options for the P_LEVEL_PRECEDENCE parameter taken from
+            https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database/browse/schema/src/cwms/cwms_level_pkg.sql#1507,1770,1775,1786,1825,1830,1841
+            N specifies results from non-virtual (normal) location levels only
+            V specifies results from virtual location levels only
+            NV specifies results from non-virtual (normal) location levels where they exist, with virtual location levels allowed where non-virtual levels don't exist
+            VN (default) specifies results from virtual location levels where they exist, with non-virtual location levels allowed where virtual levels don't exist
+         */
+        String levelPrecedence = "VN";
+        return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(configuration,
+                specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
+                timezoneId, officeId, levelPrecedence);
     }
 
     private ZoneId getLocationZoneId(LocationTemplate locationRef) {
