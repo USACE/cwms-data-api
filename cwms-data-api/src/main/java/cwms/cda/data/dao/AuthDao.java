@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import javax.sql.DataSource;
 
@@ -63,6 +62,9 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     private static final String CHECK_API_KEY =
         "select userid from cwms_20.at_api_keys where apikey = ?";
+
+    private static final String USER_FOR_EDIPI =
+        "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
 
     public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
     public static final String REMOVE_API_KEY = "delete from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
@@ -204,6 +206,49 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                 throw ex;
             }
         }
+    }
+
+    /**
+     *
+     * @param edipi
+     * @return
+     * @throws CwmsAuthException
+     */
+    private String userForEdipi(long edipi) throws CwmsAuthException {
+        try {
+            return dsl.connectionResult(c-> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement userForEdipi = c.prepareStatement(USER_FOR_EDIPI)) {
+                    userForEdipi.setLong(1, edipi);
+                    try (ResultSet rs = userForEdipi.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString(1);
+                        } else {
+                            // TODO: add user to database, queue email admins to assign groups appropriately
+                            throw new CwmsAuthException("User not in database.");
+                        }
+                    }
+                }
+            });
+        } catch (DataAccessException ex) {
+            Throwable t = ex.getCause();
+            if (t instanceof CwmsAuthException) {
+                throw (CwmsAuthException)t;
+            } else {
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Build a DataApiPrincipal from a given EDIPI value.
+     * @param edipi the Edipi value to look up.
+     * @return
+     */
+    public DataApiPrincipal getPrincipalFromEdipi(Long edipi) throws CwmsAuthException {
+        String username = userForEdipi(edipi);
+        Set<RouteRole> roles = this.getRolesForUser(username);
+        return new DataApiPrincipal(username, roles);
     }
 
     /**
