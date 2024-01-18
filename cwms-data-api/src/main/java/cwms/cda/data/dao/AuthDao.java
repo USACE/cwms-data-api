@@ -1,7 +1,20 @@
 package cwms.cda.data.dao;
 
-import static org.jooq.impl.DSL.*;
-
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.ApiServlet;
+import cwms.cda.data.dto.auth.ApiKey;
+import cwms.cda.datasource.ConnectionPreparer;
+import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.datasource.DelegatingConnectionPreparer;
+import cwms.cda.datasource.DirectUserPreparer;
+import cwms.cda.datasource.SessionOfficePreparer;
+import cwms.cda.helpers.ResourceHelper;
+import cwms.cda.security.CwmsAuthException;
+import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.Role;
+import io.javalin.core.security.RouteRole;
+import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
@@ -21,30 +34,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
 import javax.sql.DataSource;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-
-import com.google.common.flogger.FluentLogger;
-
-import cwms.cda.ApiServlet;
-import cwms.cda.data.dto.auth.ApiKey;
-import cwms.cda.datasource.ConnectionPreparer;
-import cwms.cda.datasource.ConnectionPreparingDataSource;
-import cwms.cda.datasource.DelegatingConnectionPreparer;
-import cwms.cda.datasource.DirectUserPreparer;
-import cwms.cda.datasource.SessionOfficePreparer;
-import cwms.cda.helpers.ResourceHelper;
-import cwms.cda.security.CwmsAuthException;
-import cwms.cda.security.DataApiPrincipal;
-import cwms.cda.security.Role;
-import io.javalin.core.security.RouteRole;
-import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
 
 public class AuthDao extends Dao<DataApiPrincipal>{
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -52,7 +45,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
     // At this level we just care that the user has permissions in *any* office
-    private static String RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",AuthDao.class);
+    private static final String RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",AuthDao.class);
 
     private static final String SET_API_USER_DIRECT = "begin "
         + "cwms_env.set_session_user_direct(upper(?));"
@@ -91,7 +84,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
             AuthDao.defaultOffice = defaultOffice;
             try {
                 connectionUser = dsl.connectionResult(c->c.getMetaData().getUserName());
-                dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?)", connectionUser,defaultOffice);
+                dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?); END;", connectionUser, defaultOffice);
                 hasCwmsEnvMultiOfficeAuthFix = true;
             } catch (DataAccessException ex) {
                 if( ex.getLocalizedMessage()
@@ -166,13 +159,13 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      */
     private void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
-            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE);) {
+            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
                 setApiUser.setString(1,connectionUser);
                 setApiUser.setString(2,defaultOffice);
                 setApiUser.execute();
             }
         } else {
-            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT);) {
+            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT)) {
                 setApiUser.setString(1,connectionUser);
                 setApiUser.execute();
             }
@@ -183,7 +176,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         try {
             return dsl.connectionResult(c-> {
                 setSessionForAuthCheck(c);
-                try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY);) {
+                try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY)) {
                     checkForKey.setString(1,key);
                     try (ResultSet rs = checkForKey.executeQuery()) {
                         if (rs.next()) {
@@ -215,7 +208,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         final Set<RouteRole> roles = new HashSet<>();
         dsl.connection(c->{
             setSessionForAuthCheck(c);
-            try (PreparedStatement getRoles = c.prepareStatement(RETRIEVE_GROUPS_OF_USER);) {
+            try (PreparedStatement getRoles = c.prepareStatement(RETRIEVE_GROUPS_OF_USER)) {
                 getRoles.setString(1,user);
                 try (ResultSet rs = getRoles.executeQuery()) {
                     while (rs.next()) {
@@ -236,8 +229,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * NOTE: side affect on ctx for this session.
      *
      * @param ctx javalin context if additional parameters are required.
-     * @param user username, which is ignored except a log message
-     * @param key the API key that was presented for this connection
+     * @param p User information
      */
     public static void prepareContextWithUser(Context ctx, DataApiPrincipal p) throws SQLException {
         Objects.requireNonNull(ctx, "A valid Javalin Context must be provided to this call.");
@@ -320,8 +312,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     /**
      * Return create an ApiKey for future authentication and authorization.
      * @param p Principal object, to get the username
-     * @param keyName Friendly name for this key
-     * @param expires when this key expires; can be null to never expire
+     * @param sourceData new key is created based on userId, keyname and expires info from this key.
      * @return The created ApiKey
      */
     public ApiKey createApiKey(DataApiPrincipal p, ApiKey sourceData) throws CwmsAuthException {
@@ -339,7 +330,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
             final ApiKey newKey = new ApiKey(sourceData.getUserId().toUpperCase(),sourceData.getKeyName(),key,ZonedDateTime.now(ZoneId.of("UTC")),sourceData.getExpires());
             dsl.connection(c -> {
                 setSessionForAuthCheck(c);
-                try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY);) {
+                try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
                     createKey.setString(1,newKey.getUserId());
                     createKey.setString(2,newKey.getKeyName());
                     createKey.setString(3,newKey.getApiKey());
@@ -366,10 +357,10 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @return List of all the keys, with the actual key removed (only user,name,created, and expires)
      */
     public List<ApiKey> apiKeysForUser(DataApiPrincipal p) {
-        List<ApiKey> keys = new ArrayList<ApiKey>();
+        List<ApiKey> keys = new ArrayList<>();
         dsl.connection(c -> {
             setSessionForAuthCheck(c);
-            try (PreparedStatement listKeys = c.prepareStatement(LIST_KEYS);) {
+            try (PreparedStatement listKeys = c.prepareStatement(LIST_KEYS)) {
                 listKeys.setString(1,p.getName());
                 try (ResultSet rs = listKeys.executeQuery()) {
                     while(rs.next()) {
@@ -384,7 +375,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     public ApiKey apiKeyForUser(DataApiPrincipal p, String keyName) {
         return dsl.connectionResult(c -> {
             setSessionForAuthCheck(c);
-            try (PreparedStatement singleKey = c.prepareStatement(GET_SINGLE_KEY);) {
+            try (PreparedStatement singleKey = c.prepareStatement(GET_SINGLE_KEY)) {
                 singleKey.setString(1,p.getName());
                 singleKey.setString(2,keyName);
                 try (ResultSet rs = singleKey.executeQuery()) {
@@ -415,7 +406,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     {
         dsl.connection( c -> {
             setSessionForAuthCheck(c);
-            try (PreparedStatement deleteKey = c.prepareStatement(REMOVE_API_KEY);) {
+            try (PreparedStatement deleteKey = c.prepareStatement(REMOVE_API_KEY)) {
                 deleteKey.setString(1, p.getName());
                 deleteKey.setString(2, keyName);
                 deleteKey.execute();
@@ -431,7 +422,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     /**
      * Used to avoid constant instancing of the AuthDao objects
-     * @param dslContext
+     * @param dslContext The jOOQ DSLContext
      */
     public void resetContext(DSLContext dslContext) {
         this.dsl = dslContext;
