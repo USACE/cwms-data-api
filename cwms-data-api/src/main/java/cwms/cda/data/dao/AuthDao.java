@@ -91,7 +91,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
             AuthDao.defaultOffice = defaultOffice;
             try {
                 connectionUser = dsl.connectionResult(c->c.getMetaData().getUserName());
-                dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?)", connectionUser,defaultOffice);
+                dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?); end;", connectionUser, defaultOffice);
                 hasCwmsEnvMultiOfficeAuthFix = true;
             } catch (DataAccessException ex) {
                 if( ex.getLocalizedMessage()
