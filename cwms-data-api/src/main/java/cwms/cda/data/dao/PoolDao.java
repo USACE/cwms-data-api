@@ -44,7 +44,7 @@ public class PoolDao extends JooqDao<PoolType> {
 		return dsl.select(DSL.asterisk()).from(view)
 				.where(condition)
 				.orderBy(view.DEFINITION_TYPE,
-					view.OFFICE_ID.upper(), view.PROJECT_ID.upper(), view.ATTRIBUTE, view.POOL_NAME.upper())
+						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
 				.stream()
 				.map(r -> toPool(r, true))
 				.collect(toList());
@@ -73,23 +73,23 @@ public class PoolDao extends JooqDao<PoolType> {
 		Condition condition = view.DEFINITION_TYPE.in(types);
 
 		if (projectIdMask != null) {
-			condition = condition.and(view.PROJECT_ID.upper().likeRegex(projectIdMask.toUpperCase()));
+			condition = condition.and(JooqDao.caseInsensitiveLikeRegex(view.PROJECT_ID, projectIdMask));
 		}
 
 		if (poolNameMask != null) {
-			condition = condition.and(view.POOL_NAME.upper().likeRegex(poolNameMask.toUpperCase()));
+			condition = condition.and(JooqDao.caseInsensitiveLikeRegex(view.POOL_NAME, poolNameMask));
 		}
 
 		if (bottomLevelMask != null) {
-			condition = condition.and(view.BOTTOM_LEVEL.upper().likeRegex(bottomLevelMask.toUpperCase()));
+			condition = condition.and(JooqDao.caseInsensitiveLikeRegex(view.BOTTOM_LEVEL, bottomLevelMask));
 		}
 
 		if (topLevelMask != null) {
-			condition = condition.and(view.TOP_LEVEL.upper().likeRegex(topLevelMask.toUpperCase()));
+			condition = condition.and(JooqDao.caseInsensitiveLikeRegex(view.TOP_LEVEL,topLevelMask));
 		}
 
 		if (officeIdMask != null) {
-			condition = condition.and(view.OFFICE_ID.upper().likeRegex(officeIdMask.toUpperCase()));
+			condition = condition.and(JooqDao.caseInsensitiveLikeRegex(view.OFFICE_ID, officeIdMask));
 		}
 		return condition;
 	}
@@ -205,7 +205,7 @@ public class PoolDao extends JooqDao<PoolType> {
 		List<Pool> pools = dsl.select(DSL.asterisk()).from(view)
 				.where(condition)
 				.orderBy(view.DEFINITION_TYPE,
-						view.OFFICE_ID.upper(), view.PROJECT_ID.upper(), view.ATTRIBUTE, view.POOL_NAME.upper())
+						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
 				.offset(offset)
 				.limit(pageSize)
 				.stream().map(r -> toPool(r, true)).collect(toList());
