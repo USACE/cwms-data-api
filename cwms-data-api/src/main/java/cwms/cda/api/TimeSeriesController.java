@@ -175,7 +175,7 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Create new TimeSeries, will store any data provided",
+            description = "Used to Create and save time-series data. Data to be stored must have time stamps in UTC represented as epoc milliseconds ",
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
