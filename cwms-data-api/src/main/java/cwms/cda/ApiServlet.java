@@ -24,6 +24,12 @@
 
 package cwms.cda;
 
+import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.prefixPath;
+import static io.javalin.apibuilder.ApiBuilder.sse;
+import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -35,6 +41,7 @@ import cwms.cda.api.BasinController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
+import cwms.cda.api.ClobAsyncController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
 import cwms.cda.api.LevelsController;
@@ -43,6 +50,7 @@ import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
+import cwms.cda.api.PingController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.RatingController;
 import cwms.cda.api.RatingMetadataController;
@@ -91,21 +99,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.concurrent.TimeUnit;
-import org.apache.http.entity.ContentType;
-import org.jetbrains.annotations.NotNull;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
-
-import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -117,9 +110,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
-
-import static io.javalin.apibuilder.ApiBuilder.*;
+import javax.annotation.Resource;
+import javax.management.ServiceNotFoundException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 
 /**
@@ -144,8 +149,13 @@ import static io.javalin.apibuilder.ApiBuilder.*;
         "/blobs/*",
         "/clobs/*",
         "/pools/*",
-        "/specified-levels/*"
-})
+        "/specified-levels/*",
+        "/sse/*",
+        "/ws/*",
+        "/ping/*"
+},
+        asyncSupported = true
+)
 public class ApiServlet extends HttpServlet {
 
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -176,7 +186,6 @@ public class ApiServlet extends HttpServlet {
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
-
 
 
     @Override
@@ -395,7 +404,21 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
+        cdaCrud("/ping/{ping-id}",
+                new PingController(), requiredRoles);
+
+
+        ClobAsyncController clobSSEController = new ClobAsyncController();
+
+        sse("/sse/clob", clobSSEController.getSseConsumer());
+
+        staticInstance().ws("/ws/clob", clobSSEController.getWsConsumer());
+
+
     }
+
+
 
     /**
      * This method delegates to the cdaCrud method but also adds an after filter for the specified
@@ -470,6 +493,7 @@ public class ApiServlet extends HttpServlet {
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
+
     /**
      * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
      * @param fullPath
@@ -510,7 +534,7 @@ public class ApiServlet extends HttpServlet {
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        am.getContainedManagers().forEach((manager)->{
+        am.getContainedManagers().forEach(manager -> {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
@@ -529,9 +553,7 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
-                });
+                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -543,6 +565,8 @@ public class ApiServlet extends HttpServlet {
             })
             .activateAnnotationScanningFor("cwms.cda.api");
         config.registerPlugin(new OpenApiPlugin(ops));
+
+
 
     }
 
