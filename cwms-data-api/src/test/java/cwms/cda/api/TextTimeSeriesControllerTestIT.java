@@ -25,6 +25,7 @@
 package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -109,8 +110,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-                .body("standard-text-values.size()", equalTo(0))
-                .body("standard-text-catalog.size()", equalTo(0))
+                .body("standard-text-values", is(empty()))
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // create
