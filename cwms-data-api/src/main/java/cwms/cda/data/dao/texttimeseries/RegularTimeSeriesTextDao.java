@@ -14,13 +14,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
@@ -49,7 +49,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static final int TEXT_DOES_NOT_EXIST_ERROR_CODE = 20034;
     private static final int TEXT_ID_DOES_NOT_EXIST_ERROR_CODE = 20001;
 
-    private static List<String> timeSeriesTextColumnsList;
+    private static final List<String> timeSeriesTextColumnsList;
 
     static {
         String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, TEXT_ID, ATTRIBUTE, TEXT};
@@ -99,7 +99,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private ResultSet retrieveTsTextF(String pTsid, String textMask,
                                      Date startTime, Date endTime, Date versionDate,
                                      TimeZone timeZone, boolean maxVersion,
-                                     Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
+                                     Long minAttribute, Long maxAttribute, String officeId) {
         Timestamp pStartTime = createTimestamp(startTime);
         Timestamp pEndTime = createTimestamp(endTime);
         Timestamp pVersionDate = createTimestamp(versionDate);
@@ -118,7 +118,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     public TextTimeSeries retrieveTimeSeriesText(
             String officeId, String tsId, String textMask,
             Instant startTime, Instant endTime, Instant versionDate,
-            boolean maxVersion, Long minAttribute, Long maxAttribute) throws RuntimeException {
+            boolean maxVersion, Long minAttribute, Long maxAttribute)  {
 
         List<RegularTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, textMask,
                 startTime, endTime, versionDate, maxVersion, minAttribute, maxAttribute);
@@ -126,7 +126,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
         return builder.withId(tsId)
                 .withOfficeId(officeId)
-                .withRegRows(rows)
+                .withRegularTextValues(rows)
                 .build();
 
     }
@@ -194,6 +194,15 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         return builder.build();
     }
 
+    public void storeRows(String officeId, String id, boolean maxVersion, boolean replaceAll, Collection<RegularTextTimeSeriesRow> regRows) {
+        // This could be made into a more efficient bulk store.
+        // We'd have to sort the rows by textId and textValue pairs and then build a set of all the matching dates
+        // Then for each set of dates we'd call the appropriate storeTsText or storeTsTextId method.
+
+        for (RegularTextTimeSeriesRow regRow : regRows) {
+            storeRow(officeId, id, regRow, maxVersion, replaceAll);
+        }
+    }
 
     public void storeRow(String officeId, String tsId, RegularTextTimeSeriesRow regularTextTimeSeriesRow,
                          boolean maxVersion, boolean replaceAll) {

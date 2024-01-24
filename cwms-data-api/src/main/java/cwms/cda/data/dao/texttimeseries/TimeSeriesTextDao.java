@@ -65,8 +65,8 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         return new TextTimeSeries.Builder()
                 .withOfficeId(officeId)
                 .withId(tsId)
-                .withRegRows(regRows)
-                .withStdRows(stdRows)
+                .withRegularTextValues(regRows)
+                .withStandardTextValues(stdRows)
                 .build();
     }
 
@@ -154,11 +154,24 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         if (stdRows != null) {
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
+            stdDao.storeRows(tts.getOfficeId(), tts.getId(), maxVersion, replaceAll, stdRows);
+        }
 
-            // Is there a bulk store?
-            for (StandardTextTimeSeriesRow stdRow : stdRows) {
-                stdDao.store(tts.getOfficeId(), tts.getId(), stdRow, maxVersion, replaceAll);
-            }
+        Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+        if (regRows != null) {
+            RegularTimeSeriesTextDao regDao = getRegularDao();
+            regDao.storeRows(tts.getOfficeId(), tts.getId(), maxVersion, replaceAll, regRows);
+
+        }
+
+    }
+    
+    public void store(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
+
+        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
+        if (stdRows != null) {
+            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
+            stdDao.storeRows(tts.getOfficeId(), tts.getId(), maxVersion, replaceAll, stdRows);
         }
 
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
@@ -172,6 +185,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         }
 
     }
+    
 
     public void delete(TimeSeriesTextMode mode, String officeId, String textTimeSeriesId, String textMask,
                        ZonedDateTime start, ZonedDateTime end, ZonedDateTime versionDate,

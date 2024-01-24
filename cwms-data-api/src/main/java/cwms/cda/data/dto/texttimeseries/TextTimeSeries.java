@@ -45,7 +45,14 @@ public class TextTimeSeries extends CwmsDTO {
         }
 
         if (builder.useStdCatalog) {
-            stdCatalog = buildStdCatalog(builder.stdMap);
+            if(builder.stdCat == null){
+                stdCatalog = buildStdCatalog(builder.stdMap);
+            } else {
+                stdCatalog = new LinkedHashMap<>();
+                for(StandardCatalog cat : builder.stdCat){
+                    stdCatalog.put(cat.getOfficeId(), cat);
+                }
+            }
         }
         stdMap = buildStdMap(builder.stdMap, builder.useStdCatalog);
     }
@@ -89,9 +96,10 @@ public class TextTimeSeries extends CwmsDTO {
     }
 
     public static Map<String, StandardCatalog> buildStdCatalog(Map<DateDateKey, StandardTextTimeSeriesRow> rows) {
-        Map<String, StandardCatalog> retval = new LinkedHashMap<>();
+        Map<String, StandardCatalog> retval = null;
 
-        if (rows != null) {
+        if (rows != null && !rows.isEmpty()) {
+            retval = new LinkedHashMap<>();
             for (StandardTextTimeSeriesRow row : rows.values()) {
                 String rowOfficeId = row.getOfficeId();
                 StandardCatalog catalogForOffice = retval.computeIfAbsent(rowOfficeId,
@@ -141,6 +149,7 @@ public class TextTimeSeries extends CwmsDTO {
         NavigableMap<DateDateKey, StandardTextTimeSeriesRow> stdMap = null;
 
         private boolean useStdCatalog = true;
+        private Collection<StandardCatalog> stdCat;
 
         public Builder() {
         }
@@ -191,7 +200,7 @@ public class TextTimeSeries extends CwmsDTO {
             return retval;
         }
 
-        public Builder withStdRows(Collection<StandardTextTimeSeriesRow> rows) {
+        public Builder withStandardTextValues(Collection<StandardTextTimeSeriesRow> rows) {
             if (rows == null) {
                 stdMap = null;
             } else {
@@ -210,7 +219,13 @@ public class TextTimeSeries extends CwmsDTO {
             return this;
         }
 
-        public Builder withRegRows(List<RegularTextTimeSeriesRow> rows) {
+        public Builder withStandardTextCatalog(Collection<StandardCatalog> catalog ) {
+            this.stdCat = catalog;
+            this.useStdCatalog = true;
+            return this;
+        }
+
+        public Builder withRegularTextValues(List<RegularTextTimeSeriesRow> rows) {
             if (rows == null) {
                 regMap = null;
             } else {

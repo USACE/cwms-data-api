@@ -18,13 +18,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -131,6 +131,12 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         });
     }
 
+    public void storeRows(String officeId, String tsId, boolean maxVersion, boolean replaceAll, Collection<StandardTextTimeSeriesRow> stdRows) {
+        for (StandardTextTimeSeriesRow stdRow : stdRows) {
+            store(officeId, tsId, stdRow, maxVersion, replaceAll);
+        }
+    }
+
     public void store(String officeId, String tsId, StandardTextTimeSeriesRow stdRow,
                       boolean maxVersion, boolean replaceAll) {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
@@ -144,11 +150,15 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         NavigableSet<Date> dates = new TreeSet<>();
         dates.add(dateTime);
 
+        store(officeId, tsId, standardTextId, dates, versionDate, timeZone, maxVersion, replaceAll, attribute);
+    }
+
+    private void store(String officeId, String tsId, String standardTextId, NavigableSet<Date> dates, Date versionDate, TimeZone timeZone, boolean maxVersion, boolean replaceAll, Long attribute) {
         connection(dsl, connection -> {
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
             dbText.storeTsStdText(connection, tsId, standardTextId, dates,
-                        versionDate, timeZone, maxVersion, replaceAll,
-                        attribute, officeId);
+                    versionDate, timeZone, maxVersion, replaceAll,
+                    attribute, officeId);
         });
     }
 
@@ -235,7 +245,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         builder.withOfficeId(officeId);
 
         List<StandardTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, stdTextIdMask, startTime, endTime, versionDate, maxVersion, retrieveText, minAttribute, maxAttribute);
-        builder.withStdRows(rows);
+        builder.withStandardTextValues(rows);
         return builder.build();
     }
 

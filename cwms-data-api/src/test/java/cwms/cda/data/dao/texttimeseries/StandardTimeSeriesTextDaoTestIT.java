@@ -68,12 +68,12 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     @Test
     void testCreate() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, officeId);
-                    StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, officeId);
+            StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
 
-                    testCreate(dao);
-                }
+            testCreate(dao);
+            }
         );
     }
 
@@ -175,7 +175,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         assertNotNull(stdRows);
-        Assertions.assertFalse(stdRows.isEmpty());
+        Assertions.assertFalse(stdRows.isEmpty(),"Did not find the data rows inserted by the Std Text Loader sql.");
 
         StandardTextTimeSeriesRow first = stdRows.iterator().next();
         assertNotNull(first);
@@ -292,7 +292,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         assertNotNull(stdRows);
-        Assertions.assertFalse(stdRows.isEmpty());
+        Assertions.assertFalse(stdRows.isEmpty(),"Not finding the data rows inserted by the Std Text Loader sql.");
 
         StandardTextTimeSeriesRow first = stdRows.iterator().next();
         assertNotNull(first);

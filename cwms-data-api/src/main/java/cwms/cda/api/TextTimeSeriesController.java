@@ -27,7 +27,6 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.MAX_VERSION;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
@@ -35,6 +34,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.START;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -43,8 +43,8 @@ import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
+import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -195,8 +195,6 @@ public class TextTimeSeriesController implements CrudHandler {
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                description = "Create will fail if provided ID already exists. Default: true"),
             @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified."),
             @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
                         },
@@ -228,28 +226,37 @@ public class TextTimeSeriesController implements CrudHandler {
     @OpenApi(
         description = "Updates a text timeseries",
         pathParams = {
-            @OpenApiParam(name = TS_ID, description = "The text timeseries to be updated"),
+            @OpenApiParam(name = TS_ID, description = "The id of the text timeseries to be updated"),
         },
-//        queryParams = {
-//            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-//                + "owning office of the text timeseries to be renamed"),
-//            @OpenApiParam(name = TEXT_TIMESERIES_ID, description = "The new text timeseries id.")
-//        },
+        requestBody = @OpenApiRequestBody(
+                content = {
+                        @OpenApiContent(from = TextTimeSeries.class, type = Formats.JSONV2),
+                },
+                required = true
+        ),
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-//        try (Timer.Context ignored = markAndTime(UPDATE)) {
-//            DSLContext dsl = getDslContext(ctx);
-//
-//            TimeSeriesTextDao dao = getDao(dsl);
-////            String newTextTimeSeriesId = ctx.queryParam(TEXT_TIMESERIES_ID);
-////            String office = ctx.queryParam(OFFICE);
-//         //   dao.update(oldTextTimeSeriesId, newTextTimeSeriesId, office);
-////            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-//        }
+
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
+            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(false);
+            boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String body = ctx.body();
+            TextTimeSeries tts = deserialize(body, formatHeader);
+            DSLContext dsl = getDslContext(ctx);
+
+            TimeSeriesTextDao dao = getDao(dsl);
+            dao.store(tts,maxVersion, replaceAll);
+
+        } catch (JsonProcessingException e) {
+            CdaError re = new CdaError("Failed to process create request");
+            logger.log(Level.SEVERE, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
     }
 
 

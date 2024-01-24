@@ -1,0 +1,24 @@
+{
+  "office-id": "SPK",
+  "id": "TsTextTestLoc.Flow.Inst.1Hour.0.raw",
+  "standard-text-values": [
+    {
+      "date-time": 1107270000000,
+      "version-date": -27079747200000,
+      "data-entry-date": 1706028210266,
+      "office-id": "SPK",
+      "standard-text-id": "A"
+    }
+  ],
+  "standard-text-catalog": [
+    {
+      "office-id": "SPK",
+      "entries": [
+        {
+          "id": "A",
+          "value": "NO RECORD"
+        }
+      ]
+    }
+  ]
+}
