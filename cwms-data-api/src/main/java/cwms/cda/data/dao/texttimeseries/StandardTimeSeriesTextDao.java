@@ -126,6 +126,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         String officeId = standardTextId.getOfficeId();
 
         connection(dsl, c -> {
+            setOffice(c, officeId);
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
             dbText.storeStdText(c, stdTextId, stdText, failIfExists, officeId);
         });
@@ -155,6 +156,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
     private void store(String officeId, String tsId, String standardTextId, NavigableSet<Date> dates, Date versionDate, TimeZone timeZone, boolean maxVersion, boolean replaceAll, Long attribute) {
         connection(dsl, connection -> {
+            setOffice(connection, officeId);
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
             dbText.storeTsStdText(connection, tsId, standardTextId, dates,
                     versionDate, timeZone, maxVersion, replaceAll,
@@ -192,6 +194,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         String officeId = standardTextId.getOfficeId();
 
         connection(dsl, c -> {
+            setOffice(c, officeId);
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
             dbText.deleteStdText(c, stdTextId, deleteActionString, officeId);
         });
@@ -215,6 +218,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
         connection(dsl, c -> {
+            setOffice(c, officeId);
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
             dbText.deleteTsStdText(c, tsId, stdTextIdMask, getDate(startTime),
                     getDate(endTime), getDate(versionDate), timeZone, maxVersion, minAttribute,

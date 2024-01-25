@@ -259,6 +259,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         }
 
         connection(dsl, connection -> {
+            setOffice(connection, officeId);
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
 
             if (textId == null) {
@@ -282,6 +283,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
         connection(dsl, connection -> {
+            setOffice(connection, officeId);
             CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
             dbText.deleteTsText(connection, tsId, textMask, getDate(startTime), getDate(endTime),
                     getDate(versionInstant), timeZone, maxVersion, minAttribute, maxAttribute,

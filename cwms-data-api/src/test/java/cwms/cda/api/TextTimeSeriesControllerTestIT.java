@@ -38,6 +38,7 @@ import fixtures.TestAccounts;
 import io.javalin.core.validation.JavalinValidation;
 import io.restassured.filter.log.LogDetail;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -130,7 +131,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
         //retrieve and verify
         given()
@@ -157,8 +158,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_regular() throws Exception {
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_reg.json"), StandardCharsets.UTF_8);
-        assertNotNull(tsData);
 
         JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
 
@@ -192,6 +191,10 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK));
 
         // create
+
+        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_reg.json"), StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -206,7 +209,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
-                .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+                .statusCode(is(HttpServletResponse.SC_CREATED));
 
         //retrieve and verify
         given()
@@ -225,9 +228,141 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
-                .body("regular-text-values.size()", equalTo(1))
                 .body("standard-text-catalog", nullValue())
                 .body("standard-text-values", nullValue())
+                .body("regular-text-values.size()", equalTo(1))
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+    }
+
+    @Test
+    void test_retrieve_regular() throws Exception {
+        String startStr = "2005-01-01T03:00:00Z";
+        String endStr = "2005-01-01T07:00:00Z";
+
+        // This depends onthe data loaded in the @BeforeEach
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam("ts-id", tsId)
+                .queryParam("start",startStr)
+                .queryParam("end",endStr)
+                .queryParam("max-version","false")
+                .queryParam("mode", "REGULAR")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .body("standard-text-catalog", nullValue())
+                .body("standard-text-values", nullValue())
+                .body("regular-text-values.size()", equalTo(5))
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+    }
+
+    @Test
+    void test_retrieve_standard() throws Exception {
+        String startStr = "2005-01-01T08:00:00-07:00[PST8PDT]";
+        String endStr = "2005-02-03T08:00:00-07:00[PST8PDT]";
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam("ts-id", tsId)
+                .queryParam("start",startStr)
+                .queryParam("end",endStr)
+                .queryParam("max-version","false")
+                .queryParam("mode", "STANDARD")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .body("regular-text-values", is(nullValue()))
+                .body("standard-text-values.size()", equalTo(1))
+                .body("standard-text-catalog.size()", equalTo(1))
+                .statusCode(is(HttpServletResponse.SC_OK));
+    }
+
+    @Test
+    void test_update_regular() throws Exception {
+        // retrieve and verify
+        // update
+        // retrieve and verify
+        String startStr = "2005-01-01T03:00:00Z";
+        String endStr = "2005-01-01T04:00:00Z";
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam("ts-id", tsId)
+                .queryParam("start",startStr)
+                .queryParam("end",endStr)
+                .queryParam("max-version","false")
+                .queryParam("mode", "REGULAR")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .body("standard-text-catalog", nullValue())
+                .body("standard-text-values", nullValue())
+                .body("regular-text-values.size()", equalTo(2))
+                // assert the first regular-text-value item is as expected
+                .body("regular-text-values[0].text-value", equalTo("my awesome text ts"))
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+
+        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_update_reg.json"), StandardCharsets.UTF_8);
+
+        // update
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .patch("/timeseries/text/" + tsId)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam("ts-id", tsId)
+                .queryParam("start",startStr)
+                .queryParam("end",endStr)
+                .queryParam("max-version","false")
+                .queryParam("mode", "REGULAR")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .body("standard-text-catalog", nullValue())
+                .body("standard-text-values", nullValue())
+                .body("regular-text-values.size()", equalTo(2))
+                .body("regular-text-values[0].text-value", equalTo("still great"))
                 .statusCode(is(HttpServletResponse.SC_OK));
 
     }

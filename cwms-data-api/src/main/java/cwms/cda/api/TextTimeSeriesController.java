@@ -228,6 +228,10 @@ public class TextTimeSeriesController implements CrudHandler {
         pathParams = {
             @OpenApiParam(name = TS_ID, description = "The id of the text timeseries to be updated"),
         },
+            queryParams = {
+                    @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified."),
+                    @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
+            },
         requestBody = @OpenApiRequestBody(
                 content = {
                         @OpenApiContent(from = TextTimeSeries.class, type = Formats.JSONV2),
@@ -235,6 +239,7 @@ public class TextTimeSeriesController implements CrudHandler {
                 required = true
         ),
         method = HttpMethod.PATCH,
+            path = "/timeseries/text/{ts-id}",
         tags = {TAG}
     )
     @Override
