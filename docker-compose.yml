@@ -96,6 +96,7 @@ services:
       - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
       - cwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms
+      - cwms.dataapi.access.openid.altAuthUrl=https://authc.test:8444
     expose:
       - 7000
     healthcheck:

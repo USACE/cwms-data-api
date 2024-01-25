@@ -85,9 +85,10 @@ public class OpenIDConfig {
         if (altAuthUrl == null) {
             return endPoint;
         }
+        log.atInfo().log("Changing '%s' with '%s'", endPoint.toString(), altAuthUrl);
         String originalPath = endPoint.getPath();
-
-        return new URL(altAuthUrl+"/"+originalPath);
+        log.atInfo().log("New Path = %s", altAuthUrl+originalPath);
+        return new URL(altAuthUrl+originalPath);
     }
 
     public URL getJwksUrl() {
