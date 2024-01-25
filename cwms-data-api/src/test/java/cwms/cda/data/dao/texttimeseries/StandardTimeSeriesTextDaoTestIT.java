@@ -44,14 +44,6 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     public static void create() throws Exception {
         createLocation(locationId, true, officeId);
 
-//  /**
-//    * Cookie for specifying UTC Interval Offset for irregular time series
-//    */
-//   utc_offset_irregular CONSTANT             NUMBER := -2147483648;
-//   /**
-//    * Cookie for specifying as-yet undefined UTC Interval Offset for regular time series
-//    */
-//   utc_offset_undefined CONSTANT             NUMBER := 2147483647;
         createTimeseries(officeId, tsId, 0);  // offset needs to be valid for 1Hour
     }
 
@@ -155,7 +147,6 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
     private  void testRetrieve(StandardTimeSeriesTextDao dao) throws JsonProcessingException {
 
 
-        StandardTextId standardTextId = null;
         ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T08:00:00-07:00[PST8PDT]");
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-02-03T08:00:00-07:00[PST8PDT]");
         Instant startInstant = startZDT.toInstant();
@@ -167,7 +158,7 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Long minAttr = null;
         Long maxAttr = null;
 
-        TextTimeSeries tts = dao.retrieveTextTimeSeries(officeId, tsId, standardTextId,
+        TextTimeSeries tts = dao.retrieveTextTimeSeries(officeId, tsId, "*",
                 startInstant, endInstant, versionInstant,
                 maxVersion, retText, minAttr, maxAttr);
 

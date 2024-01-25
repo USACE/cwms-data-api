@@ -28,6 +28,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.google.common.flogger.FluentLogger;
@@ -81,7 +82,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    void test_create_std() throws Exception {
+    void test_create_standard() throws Exception {
         String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_std.json"), StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
@@ -111,6 +112,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .body("standard-text-values", is(empty()))
+                .body("regular-text-values", nullValue())
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // create
@@ -149,6 +151,83 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .body("standard-text-values.size()", equalTo(1))
                 .body("standard-text-catalog.size()", equalTo(1))
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+    }
+
+    @Test
+    void test_create_regular() throws Exception {
+        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_reg.json"), StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
+
+        // The basic structure of the test is to:
+        // 1.  make sure the row doesn't exist
+        // 2.  create/store the row
+        // 3.  retrieve the row and verify it is there
+
+        // make sure it doesn't exist
+        // this will return 200 but the lists should be empty.
+        String startStr = "2005-01-01T08:00:00Z";
+        String endStr = "2005-01-01T14:00:00Z";
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam("ts-id", tsId)
+                .queryParam("start", startStr)
+                .queryParam("end", endStr)
+                .queryParam("max-version","false")
+                .queryParam("mode", "REGULAR")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .body("standard-text-values", nullValue())
+                .body("regular-text-values", is(empty()))
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // create
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+
+        //retrieve and verify
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam("ts-id", tsId)
+                .queryParam("start",startStr)
+                .queryParam("end",endStr)
+                .queryParam("max-version","false")
+                .queryParam("mode", "REGULAR")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .body("regular-text-values.size()", equalTo(1))
+                .body("standard-text-catalog", nullValue())
+                .body("standard-text-values", nullValue())
                 .statusCode(is(HttpServletResponse.SC_OK));
 
     }
