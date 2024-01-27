@@ -1,19 +1,20 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dto.Blob;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-
-import cwms.cda.data.dto.Blob;
 import java.util.function.Consumer;
 import kotlin.Triple;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
 
@@ -158,5 +159,31 @@ public class BlobDao extends JooqDao<Blob> {
             return new Blob(rOffice, rId, rDesc, rMedia, null);
         });
     }
+
+    public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
+        String pFailIfExists = getBoolean(failIfExists);
+        String pIgnoreNulls = getBoolean(ignoreNulls);
+        dsl.connection(c-> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+                getDslContext(c, blob.getOfficeId()).configuration(),
+                blob.getValue(),
+                blob.getId(),
+                blob.getMediaTypeId(),
+                blob.getDescription(),
+                pFailIfExists,
+                pIgnoreNulls,
+                blob.getOfficeId()));
+    }
+
+    @NotNull
+    public static String getBoolean(boolean failIfExists) {
+        String pFailIfExists;
+        if (failIfExists) {
+            pFailIfExists = "T";
+        } else {
+            pFailIfExists = "F";
+        }
+        return pFailIfExists;
+    }
+
 
 }
