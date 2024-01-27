@@ -50,7 +50,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import java.io.StringReader;
 import java.util.Objects;
 import java.util.Optional;
@@ -156,7 +155,6 @@ public class ClobController implements CrudHandler {
             ctx.result(result);
             ctx.contentType(contentType.toString());
             requestResultSize.update(result.length());
-
         }
     }
 
@@ -177,6 +175,7 @@ public class ClobController implements CrudHandler {
                     description = "Returns requested clob.",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Clob.class),
+                            @OpenApiContent(type = "text/plain"),
                     }
             )
             },
@@ -196,9 +195,18 @@ public class ClobController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
-            Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
+
+            Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
             if (optAc.isPresent()) {
+
+                if ("text/plain".equals(formatHeader)) {
+                    Clob clob = optAc.get();
+                    ctx.contentType("text/plain");
+                    ctx.result(clob.getValue());
+                    return;
+                }
+
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
                 Clob clob = optAc.get();

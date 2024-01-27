@@ -85,5 +85,20 @@ public class ClobControllerTestIT extends DataApiTestIT {
             .body("description", is(origDesc))
             .body("value", is(origValue));
 
+
+        given()
+                .accept("text/plain")
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .queryParam(Controllers.CLOB_ID, clobId)
+                .when()
+                .get("/clobs/ignored")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body( is(origValue))
+                ;
+
     }
 }
