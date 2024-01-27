@@ -32,9 +32,13 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javax.servlet.http.HttpServletResponse;
+import kotlin.Triple;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
@@ -97,7 +101,7 @@ public class BlobController implements CrudHandler {
             tags = {"Blob"}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
         try ( final Timer.Context timeContext = markAndTime(GET_ALL)) {
                 DSLContext dsl = getDslContext(ctx);
@@ -141,28 +145,32 @@ public class BlobController implements CrudHandler {
             tags = {"Blob"}
     )
     @Override
-    public void getOne(Context ctx, String blobId) {
+    public void getOne(@NotNull Context ctx, @NotNull String blobId) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);        ) {
-                DSLContext dsl = getDslContext(ctx);
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
             BlobDao dao = new BlobDao(dsl);
             String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);
-            Optional<Blob> optAc = dao.getByUniqueName(blobId, office);
 
-            if (optAc.isPresent()) {
-                Blob blob = optAc.get();
+            Consumer<Triple<InputStream, Long, String>> tripleConsumer = triple -> {
+                InputStream is = triple.getFirst();
+                Long size = triple.getSecond();
+                String mediaType = triple.getThird();
 
-                ctx.contentType(blob.getMediaTypeId());
-                byte[] value = blob.getValue();
-                ctx.result(value);
-
-                requestResultSize.update(value.length);
+                if (is == null) {
+                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
+                            + "blob based on given parameters"));
+                } else {
+                    requestResultSize.update(size);
+                    ctx.seekableStream(is, mediaType, size);
+                }
+            };
+            if (office.isPresent()) {
+                dao.getBlob(blobId, office.get(), tripleConsumer);
             } else {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                        + "blob based on given parameters"));
+                dao.getBlob(blobId, tripleConsumer);
             }
-
         }
     }
 
@@ -175,13 +183,13 @@ public class BlobController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String blobId) {
+    public void update(Context ctx, @NotNull String blobId) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String blobId) {
+    public void delete(Context ctx, @NotNull String blobId) {
         ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
