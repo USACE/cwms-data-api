@@ -50,9 +50,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -196,17 +198,28 @@ public class ClobController implements CrudHandler {
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
 
+            if ("text/plain".equals(formatHeader)) {
+                // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
+                // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
+
+                BiConsumer<InputStream, Long> streamConsumer = (stream, length) -> {
+                    if (stream == null) {
+                        ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
+                                + "clob based on given parameters"));
+                    } else {
+                        ctx.seekableStream(stream, "text/plain", length);
+                    }
+                };
+
+                dao.getClob(clobId, office.orElse(null), streamConsumer);
+
+                return;
+            }
+
 
             Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
+
             if (optAc.isPresent()) {
-
-                if ("text/plain".equals(formatHeader)) {
-                    Clob clob = optAc.get();
-                    ctx.contentType("text/plain");
-                    ctx.result(clob.getValue());
-                    return;
-                }
-
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
                 Clob clob = optAc.get();

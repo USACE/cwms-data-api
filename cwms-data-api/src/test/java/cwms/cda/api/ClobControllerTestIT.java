@@ -100,5 +100,21 @@ public class ClobControllerTestIT extends DataApiTestIT {
                 .body( is(origValue))
                 ;
 
+        // We can now do Range requests!
+        given()
+                .accept("text/plain")
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .queryParam(Controllers.CLOB_ID, clobId)
+                .header("Range"," bytes=3-")
+                .when()
+                .get("/clobs/ignored")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is("t value"))
+        ;
+
     }
 }
