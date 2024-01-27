@@ -164,6 +164,14 @@ public class ClobController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                    @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                            + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                            + "When using this query parameter a valid path parameter must still be provided for the request"
+                            + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
+                            + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                            + "deny the request even though you are specifying this override. \"ignored\" is suggested." )
             },
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "Returns requested clob.",
@@ -178,13 +186,19 @@ public class ClobController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String clobId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                clobId = idQueryParam;
+            }
+            String formatHeader = ctx.header(Header.ACCEPT);
+
             DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
             Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
             if (optAc.isPresent()) {
-                String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
                 Clob clob = optAc.get();
@@ -198,8 +212,6 @@ public class ClobController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                         + "clob based on given parameters"));
             }
-
-
         }
     }
 
