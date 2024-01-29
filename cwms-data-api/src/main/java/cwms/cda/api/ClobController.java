@@ -67,6 +67,7 @@ public class ClobController implements CrudHandler {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 20;
     public static final String TAG = "Clob";
+    public static final String TEXT_PLAIN = "text/plain";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -177,7 +178,7 @@ public class ClobController implements CrudHandler {
                     description = "Returns requested clob.",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Clob.class),
-                            @OpenApiContent(type = "text/plain"),
+                            @OpenApiContent(type = TEXT_PLAIN),
                     }
             )
             },
@@ -198,7 +199,7 @@ public class ClobController implements CrudHandler {
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
 
-            if ("text/plain".equals(formatHeader)) {
+            if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
                 // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
 
@@ -207,31 +208,28 @@ public class ClobController implements CrudHandler {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                                 + "clob based on given parameters"));
                     } else {
-                        ctx.seekableStream(stream, "text/plain", length);
+                        ctx.seekableStream(stream, TEXT_PLAIN, length);
                     }
                 };
 
                 dao.getClob(clobId, office.orElse(null), streamConsumer);
-
-                return;
-            }
-
-
-            Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
-
-            if (optAc.isPresent()) {
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-
-                Clob clob = optAc.get();
-                String result = Formats.format(contentType, clob);
-
-                ctx.contentType(contentType.toString());
-                ctx.result(result);
-
-                requestResultSize.update(result.length());
             } else {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                        + "clob based on given parameters"));
+                Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
+
+                if (optAc.isPresent()) {
+                    ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+
+                    Clob clob = optAc.get();
+                    String result = Formats.format(contentType, clob);
+
+                    ctx.contentType(contentType.toString());
+                    ctx.result(result);
+
+                    requestResultSize.update(result.length());
+                } else {
+                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
+                            + "clob based on given parameters"));
+                }
             }
         }
     }
