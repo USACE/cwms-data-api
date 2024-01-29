@@ -60,6 +60,15 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     public void getBlob(String id, String office, Consumer<Triple<InputStream, Long, String>> consumer) {
+        // Not using jOOQ here because we want the java.sql.Blob and not an automatic field binding.  We want
+        // blob so that we can pull out a stream to the data and pass that to javalin.
+        // If the request included Content-Ranges Javalin can have the stream skip to the correct
+        // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
+        // response should let CDA return a huge blob to the client without ever holding the entire byte[]
+        // in memory.
+        // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
+        // what we want javalin to do with the stream as a consumer.
+        //
 
         dsl.connection(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_WITH_OFFICE)) {
