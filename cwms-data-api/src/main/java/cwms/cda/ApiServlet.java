@@ -29,6 +29,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.sse;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static io.javalin.apibuilder.ApiBuilder.ws;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -40,8 +41,8 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
-import cwms.cda.api.ClobController;
 import cwms.cda.api.ClobAsyncController;
+import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
 import cwms.cda.api.LevelsController;
@@ -74,7 +75,6 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.Role;
@@ -91,6 +91,7 @@ import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
+import io.javalin.http.staticfiles.Location;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
@@ -105,6 +106,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -121,7 +123,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+import oracle.jdbc.pool.OracleDataSource;
 import org.apache.http.entity.ContentType;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.log.StdErrLog;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.webapp.WebAppContext;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -177,20 +187,27 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
-    private MetricRegistry metrics;
+    private MetricRegistry metrics = new MetricRegistry();
     private Meter totalRequests;
 
     private static final long serialVersionUID = 1L;
 
-    JavalinServlet javalin = null;
+    JavalinServlet javalinServlet = null;
+    public Javalin javalin = null;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
 
 
+    public ApiServlet() {
+        super();
+    }
+
     @Override
     public void destroy() {
-        javalin.destroy();
+        if(javalinServlet != null) {
+            javalinServlet.destroy();
+        }
     }
 
     @Override
@@ -198,32 +215,81 @@ public class ApiServlet extends HttpServlet {
         logger.atInfo().log("Initializing CWMS Data API Version:  " + obtainFullVersion(config));
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
+
+        if(metrics == null){
+            metrics = new MetricRegistry();
+            config.getServletContext().setAttribute(MetricsServlet.METRICS_REGISTRY, metrics);
+        }
+
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
         super.init(config);
     }
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
-    public void init() {
+    public void init() throws ServletException {
+        super.init();
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+
+        javalin = createJavalin();
+
+        javalinServlet = javalin.javalinServlet();
+
+    }
+
+    public Javalin createJavalin() {
+
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
-        String context = this.getServletContext().getContextPath();
-        javalin = Javalin.createStandalone(config -> {
+
+        List<String> externalRootDir = getExternalRootDirs();
+
+        return Javalin.create(config -> {
                     config.defaultContentType = "application/json";
-                    config.contextPath = context;
+                    config.contextPath = "/cwms-data";//this.getServletContext().getContextPath();
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
+
+                    for (String dir : externalRootDir) {
+                        config.addStaticFiles(staticFiles -> {
+                            staticFiles.hostedPath = "/";                   // change to host files on a subpath, like '/assets'
+                            staticFiles.directory = dir;                    // the directory where your files are located
+                            staticFiles.location = Location.EXTERNAL;      // Location.CLASSPATH (jar) or Location.EXTERNAL (file system)
+                        });
+                    }
+
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
+                .wsBefore(wsConfig -> {  ////// #1
+                    logger.atInfo().log("#1--wsBefore");  // This actually happens when the server starts -before any ws requests.
+                    wsConfig.onConnect(wsConnectHandler -> {
+                        logger.atInfo().log("#2--onConnect");  ///// #2  This happens once a ws connection is made.
+                        wsConnectHandler.attribute(OFFICE_ID, "SPK");
+                        wsConnectHandler.attribute(DATA_SOURCE, cwms);
+                        wsConnectHandler.attribute(RAW_DATA_SOURCE,cwms);
+                    });
+                })
+                .wsBefore("/ws/clob", wsConfig -> {
+                                        logger.atInfo().log("#3--wsBefore /ws/clob");  // This also happens at start, after #1
+                                        wsConfig.onConnect(wsConnectHandler -> {
+                                            logger.atInfo().log("#4--wsBefore /ws/clob onConnect"); //// #4 this happens when a ws connection is made, shows up after #2
+                                        });
+                })
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
+
+                    //// We don't hit the protected void service(HttpServletRequest req, HttpServletResponse resp) method when run from main so setting attributes here for Jetty ws test.
+                    ctx.attribute(OFFICE_ID, "SPK");
+                    ctx.attribute(DATA_SOURCE, cwms);
+                    ctx.attribute(RAW_DATA_SOURCE,cwms);
+                    ////
+
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
@@ -312,14 +378,32 @@ public class ApiServlet extends HttpServlet {
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
                 })
+                .routes(this::configureRoutes);
+    }
 
-                .routes(this::configureRoutes)
-                .javalinServlet();
+    private List<String> getExternalRootDirs() {
+        List<String> externalRootDir = new ArrayList<>();
+
+        for (int i = 1; i < 100; i++) {
+            String key = "cwms.dataapi.external.root.dir." + i;
+            String dir = System.getProperty(key);
+            if (dir != null) {
+                externalRootDir.add(dir);
+            } else {
+                break;
+            }
+        }
+
+        return externalRootDir;
     }
 
     private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
         String relativeWARPath = "/META-INF/MANIFEST.MF";
         String absoluteDiskPath = servletConfig.getServletContext().getRealPath(relativeWARPath);
+        if(absoluteDiskPath == null) {
+            return "servlet context getRealPath returned null";
+        }
+        logger.atInfo().log("Absolute path to manifest is: %s", absoluteDiskPath);
         Path path = Paths.get(absoluteDiskPath);
 
         try (InputStream inputStream = Files.newInputStream(path)) {
@@ -344,9 +428,20 @@ public class ApiServlet extends HttpServlet {
 
         RouteRole[] requiredRoles = {new Role(CWMS_USERS_ROLE)};
 
-        get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
-                .contentType(Formats.PLAIN));
-        // Even view on this one requires authorization
+        String welcomeHtml = "<html><head><title>CWMS Data API</title></head><body>"
+                + "<h1>CWMS Data API</h1>"
+                + "<p>Welcome to the CWMS Data API.  You might be interested in: "
+                + "<ul>"
+                + "<li><a href=\"swagger-ui.html\">Swagger UI</a></li>"
+                + "<li><a href=\"swagger-docs\">Swagger Docs</a></li>"
+                + "<li><a href=\"offices\">Offices</a></li>"
+                + "<li><a href=\"ws_demo.html\">websocket clob demo</a></li>"
+                + "<li><a href=\"sse_demo.html\">sse clob demo</a></li>"
+                + "</ul>"
+                + "</body></html>";
+
+        get("/", ctx -> ctx.result(welcomeHtml)
+                .contentType("text/html"));
         crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
         cdaCrudCache("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
@@ -404,17 +499,17 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-
         cdaCrud("/ping/{ping-id}",
                 new PingController(), requiredRoles);
-
 
         ClobAsyncController clobSSEController = new ClobAsyncController();
 
         sse("/sse/clob", clobSSEController.getSseConsumer());
 
-        staticInstance().ws("/ws/clob", clobSSEController.getWsConsumer());
+        String wsPath = "/ws/clob";
+        logger.atInfo().log("registering:" + wsPath);
 
+        ws(wsPath, clobSSEController.getWsConsumer(), new RouteRole[0]);
 
     }
 
@@ -564,9 +659,8 @@ public class ApiServlet extends HttpServlet {
                 doc.json("404", CdaError.class);
             })
             .activateAnnotationScanningFor("cwms.cda.api");
+
         config.registerPlugin(new OpenApiPlugin(ops));
-
-
 
     }
 
@@ -618,7 +712,7 @@ public class ApiServlet extends HttpServlet {
             //logger.atInfo().log("Connection user name is: %s")
             req.setAttribute(DATA_SOURCE, cwms);
             req.setAttribute(RAW_DATA_SOURCE,cwms);
-            javalin.service(req, resp);
+            javalinServlet.service(req, resp);
         } catch (Exception ex) {
             CdaError re = new CdaError("Major Database Issue");
             logger.atSevere().withCause(ex).log(re + " for url " + req.getRequestURI());
@@ -639,4 +733,61 @@ public class ApiServlet extends HttpServlet {
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
 
+    public static void main(String[] args) throws ServletException, SQLException {
+        Log.getLog().setDebugEnabled(false);
+        ApiServlet servlet = new ApiServlet();
+        servlet.setDataSource(buildDataSource());  // running from main doesn't do @Resource injection
+        servlet.init();
+
+        servlet.javalin.start(7000);
+    }
+
+    private static void manualJetty() throws Exception {
+        Log.setLog(new StdErrLog());
+        Log.getLog().setDebugEnabled(false);
+
+        Server server = new Server(new QueuedThreadPool(100, 10, 120));
+        ServerConnector connector = new ServerConnector(server);
+        connector.setPort(7000);
+        server.setConnectors(new Connector[] { connector });
+
+        String webAppFolderPath = "J:\\Workspaces\\git\\cwms-radar-api\\cwms-data-api\\build\\libs\\cwms-data-api-3.1.0.war" ;
+        org.eclipse.jetty.server.Handler webAppHandler = new WebAppContext(webAppFolderPath, "/cwms-data");
+        server.setHandler(webAppHandler);
+
+
+        server.start();
+    }
+
+    private static DataSource buildDataSource() throws SQLException {
+        OracleDataSource ods = new OracleDataSource();
+
+        String cdaJdbcUrl = System.getenv("CDA_JDBC_URL");
+        if (cdaJdbcUrl == null){
+            cdaJdbcUrl = System.getProperty("CDA_JDBC_URL");
+        }
+        System.out.println("Connecting to: " + cdaJdbcUrl);
+        ods.setURL(cdaJdbcUrl);
+
+        String username = System.getenv("CDA_JDBC_USERNAME");
+        if(username == null){
+            username = System.getProperty("CDA_JDBC_USERNAME");
+        }
+        ods.setUser(username);
+
+        String password = System.getenv("CDA_JDBC_PASSWORD");
+        if(password == null){
+            password = System.getProperty("CDA_JDBC_PASSWORD");
+        }
+        ods.setPassword(password);
+
+
+
+        return ods;
+    }
+
+
+    public void setDataSource(DataSource dataSource) {
+        this.cwms = dataSource;
+    }
 }
