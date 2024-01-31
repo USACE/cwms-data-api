@@ -106,10 +106,12 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      */
     public static AuthDao getInstance(DSLContext dsl, String defaultOffice) {
         AuthDao dao = instance.get();
-        if (dao == null)
+        if (dao == null )
         {
-            dao = new AuthDao(dsl,defaultOffice);
-            instance.set(dao);
+            if(dsl != null) {
+                dao = new AuthDao(dsl, defaultOffice);
+                instance.set(dao);
+            }
         } else {
             dao.resetContext(dsl);
         }
