@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>WebsSockets</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="ISO-8859-1">
+    <title>Html5 WebSockets Example</title>
+    <script type="text/javascript" src="js/ws_demo.js" charset="utf-8"></script>
+    <style>
+        .block{
+            display:block;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-<body>
-<div id="chatControls">
-    <input id="message" placeholder="Type your message">
-    <button id="send">Send</button>
-</div>
-<ul id="userlist"> <!-- Built by JS --> </ul>
-<div id="chat">    <!-- Built by JS --> </div>
-<script src="js/ws_demo.js"></script>
+<body onload="init()">
+<h3>Html5 WebSockets Example.</h3>
+<div id="message" class="block"></div>
+<p class="block">Please input some text to Send : <input type="text" id="text" onfocus="selectAll()"/></p>
+<button id="connect" onclick="connect()">Connect</button>
+<button id="sendText" onclick="sendText()">Send Text</button>
+<button id="sendJSONObject" onclick="sendJSONOjbect()">Send JSON Object</button>
+<button id="disconnect" onclick="disconnect()">DisConnect</button>
 </body>
 </html>
