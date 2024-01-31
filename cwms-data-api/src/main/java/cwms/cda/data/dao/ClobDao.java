@@ -9,6 +9,7 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -197,12 +198,7 @@ public class ClobDao extends JooqDao<Clob> {
 
     public void create(Clob clob, boolean failIfExists) {
 
-        String pFailIfExists;
-        if (failIfExists) {
-            pFailIfExists = "T";
-        } else {
-            pFailIfExists = "F";
-        }
+        String pFailIfExists = getBoolean(failIfExists);
         dsl.connection(c->{
             CWMS_TEXT_PACKAGE.call_STORE_TEXT(
                 getDslContext(c, clob.getOfficeId()).configuration(),
@@ -212,6 +208,17 @@ public class ClobDao extends JooqDao<Clob> {
                 pFailIfExists,
                 clob.getOfficeId());
         });
+    }
+
+    @NotNull
+    public static String getBoolean(boolean failIfExists) {
+        String pFailIfExists;
+        if (failIfExists) {
+            pFailIfExists = "T";
+        } else {
+            pFailIfExists = "F";
+        }
+        return pFailIfExists;
     }
 
     public void delete(String officeId, String id) {
@@ -224,12 +231,7 @@ public class ClobDao extends JooqDao<Clob> {
 
     public void update(Clob clob, boolean ignoreNulls) {
 
-        String p_ignore_nulls;
-        if (ignoreNulls){
-            p_ignore_nulls = "T";
-        } else {
-            p_ignore_nulls = "F";
-        }
+        String p_ignore_nulls = getBoolean(ignoreNulls);
 
         // Note: when p_ignore_nulls == 'T' and the value or description is "" (not null)
         // the field is not updated.
