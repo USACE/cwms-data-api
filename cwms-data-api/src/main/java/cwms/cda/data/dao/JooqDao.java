@@ -98,7 +98,9 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = getDslContext(database, officeId);
         }
 
-        retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
+        if(retVal != null) {
+            retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
+        }
 
         return retVal;
     }
@@ -109,7 +111,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.VERSION);
             connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
             connection.setClientInfo("OCSID.ACTION", ctx.method());
-            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
+     //       connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
         } catch (SQLClientInfoException ex) {
             logger.atWarning()
                     .withCause(ex)
@@ -118,10 +120,14 @@ public abstract class JooqDao<T> extends Dao<T> {
         return connection;
     }
 
-    public static DSLContext getDslContext(Connection database, String officeId) {
-        DSLContext dsl = DSL.using(database, SQLDialect.ORACLE18C);
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-
+    public static DSLContext getDslContext(Connection connection, String officeId) {
+        DSLContext dsl = null;
+        if(connection != null) {
+            dsl = DSL.using(connection, SQLDialect.ORACLE18C);
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+        } else {
+            logger.atWarning().log("Cannot build DSLContext from null Connection.");
+        }
         return dsl;
     }
 
