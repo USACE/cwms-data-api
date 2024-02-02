@@ -25,8 +25,9 @@ function init(){
 function connect(){
     try{
 
-        var clobId = "/TIME SERIES TEXT/6261044";
-        webSocket = new WebSocket("ws://localhost:7000/cwms-data/ws/clob"   + "?id=" + encodeURI(clobId) + "&office=SPK");
+        // var clobId = "/TIME SERIES TEXT/6261044";
+        var clobId = "/TIME SERIES TEXT/1952044"
+        webSocket = new WebSocket("ws://localhost:7000/cwms-data/ws/clob2"   + "?id=" + encodeURI(clobId) + "&office=SPK");
         messageDiv.innerHTML = "<p>Socket status:" + websocketReadyStateArray[webSocket.readyState] + "</p>";
         webSocket.onopen = function(){
             messageDiv.innerHTML += "<p>Socket status:" + websocketReadyStateArray[webSocket.readyState] + "</p>";

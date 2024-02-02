@@ -506,10 +506,9 @@ public class ApiServlet extends HttpServlet {
 
         sse("/sse/clob", clobSSEController.getSseConsumer());
 
-        String wsPath = "/ws/clob";
-        logger.atInfo().log("registering:" + wsPath);
 
-        ws(wsPath, clobSSEController.getWsConsumer(), new RouteRole[0]);
+        ws("/ws/clob", clobSSEController.getWsConsumer(), new RouteRole[0]);
+        ws("/ws/clob2", clobSSEController.getWsConsumer2(), new RouteRole[0]);
 
     }
 

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="ISO-8859-1">
+    <title>Html5 WebSockets Example</title>
+    <script type="text/javascript" src="js/ws_demo2.js" charset="utf-8"></script>
+    <style>
+        .block{
+            display:block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body onload="init()">
+<h3>Html5 WebSockets Example.</h3>
+<div id="message" class="block"></div>
+<p class="block">Please input some text to Send : <input type="text" id="text" onfocus="selectAll()"/></p>
+<button id="connect" onclick="connect()">Connect</button>
+<button id="sendText" onclick="sendText()">Send Text</button>
+<button id="sendJSONObject" onclick="sendJSONOjbect()">Send JSON Object</button>
+<button id="disconnect" onclick="disconnect()">DisConnect</button>
+</body>
+</html>

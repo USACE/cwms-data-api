@@ -12,7 +12,7 @@
         var clobId = "/TIME SERIES TEXT/6261044";
         console.log("clobId: " + clobId + " encodeURIComponent: " + encodeURIComponent(clobId) + " encodeURI: " + encodeURI(clobId));
         var source = new EventSource("http://localhost:7000/cwms-data/sse/clob"
-             + "?id=" + encodeURI(clobId) + "&officeId=SPK"
+             + "?id=" + encodeURI(clobId) + "&office=SPK"
         );
         source.onmessage = function (event) {
             document.getElementById("result").innerHTML += event.data + "<br>";

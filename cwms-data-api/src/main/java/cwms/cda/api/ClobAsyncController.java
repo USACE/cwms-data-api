@@ -8,6 +8,8 @@ import io.javalin.http.sse.SseClient;
 import io.javalin.websocket.WsConfig;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.Clob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javax.sql.DataSource;
+import org.eclipse.jetty.server.Request;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -32,13 +35,17 @@ public class ClobAsyncController  {
         return this::acceptWs;
     }
 
+    public Consumer<WsConfig> getWsConsumer2() {
+        return this::acceptWs2;
+    }
+
     private void acceptWs(WsConfig ws) {
 
         ws.onConnect(ctx -> {
             logger.atInfo().log("#5--controller ws onConnect"); //#5 happens after #4
 
             String clobId = ctx.queryParam("id");
-            String officeId= ctx.queryParam("officeId");
+            String officeId= ctx.queryParam(Controllers.OFFICE);
 
             Map<String, Object> servletAttributes = ctx.getUpgradeReq$javalin().getServletAttributes();
 
@@ -128,9 +135,101 @@ public class ClobAsyncController  {
 
     }
 
+
+    private void acceptWs2(WsConfig ws) {
+
+        // The goal here is to demo a different way the ws stuff can work.
+        // Don't stream data to the client over the WS.
+        // Just send some progress messages
+        // Then tell the client where to get their data.
+
+        ws.onConnect(ctx -> {
+            logger.atInfo().log("#5--controller ws onConnect"); //#5 happens after #4
+
+            String clobId = ctx.queryParam("id");
+            String officeId= ctx.queryParam(Controllers.OFFICE);
+
+            // fyi
+            //ctx.matchedPath();  // /ws/clob2
+            // ctx.host() // localhost
+            // ctx.attributeMap() // has
+            // "office_id" -> "SPK"
+            //"javalin-ws-upgrade-context" -> {Context@5279} io.javalin.http.Context@1c4864d0
+            //"org.eclipse.jetty.server.HttpConnection.UPGRADE" -> {WebSocketServerConnection@5136} "WebSocketServerConnection@640a1e6a::SocketChannelEndPoint@6f366275{l=/127.0.0.1:7000,r=/127.0.0.1:55394,OPEN,fill=-,flush=-,to=217631/300000}{io=0/0,kio=0,kro=1}->WebSocketServerConnection@640a1e6a[s=ConnectionState@269ef16b[OPENING],f=Flusher@2fc69888[IDLE][queueSize=0,aggregateSize=-1,terminated=null],g=Generator[SERVER,validating,+rsv1],p=Parser@7d140ac8[ExtensionStack,s=START,c=0,len=0,f=null]]"
+            //"javalin-ws-upgrade-allowed" -> {Boolean@5282} true
+            //"jetty-target" -> "/ws/clob2"
+            //"javalin-ws-upgrade-http-session" -> null
+            //"jetty-request" -> {Request@5287} "Request[GET //localhost:7000/cwms-data/ws/clob2?id=/TIME%20SERIES%20TEXT/6261044&officeId=SPK]@3ab35135"
+            //"data_source" -> {OracleDataSource@5289}
+
+            Request req = ctx.attribute("jetty-request");
+            String requestURI = req.getRequestURI();
+
+
+            new Thread(() -> {
+
+                // Pretend we are starting to do something
+                ctx.send('{' +
+                        "  \"status\": \"in progress\"," +
+                        "  \"message\": \"Starting to fetch.\"" +
+                        '}');
+
+                // give it some fake time to work on it.
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // progress message
+                ctx.send('{' +
+                        "  \"status\": \"in progress\"," +
+                        "  \"message\": \"Your clob is being prepared.\"" +
+                        '}');
+
+                // still thinking.
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // uri encode the clobId
+                String encodedClobId;
+                try {
+                    encodedClobId = URLEncoder.encode(clobId, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Now we're done
+                // url should look like: http://localhost:7000/cwms-data/clobs/ignored?office=SPK&clob-id=%2FTIME%20SERIES%20TEXT%2F6261044
+                String link = "http://localhost:7000/cwms-data/clobs/ignored"
+                        + "?"
+                        + Controllers.OFFICE + "=" + officeId + "&"
+                        + Controllers.CLOB_ID + "=" + encodedClobId ;
+
+                ctx.send('{' +
+                        "  \"status\": \"done\"," +
+                        "  \"message\": \"" + link + "\"" +
+                        '}');
+            }).start();
+        });
+        ws.onClose(ctx -> {
+            logger.atInfo().log("ws onClose");
+        });
+        ws.onMessage(ctx -> {
+            logger.atInfo().log("ws onMessage");
+        });
+        ws.onError(ctx -> {
+            logger.atInfo().log("ws onError");
+        });
+
+    }
+
     public void accept(SseClient client) {
         String clobId = client.ctx.queryParam("id");
-        String officeId= client.ctx.queryParam("officeId");
+        String officeId= client.ctx.queryParam(Controllers.OFFICE);
 
         logger.atInfo().log("got an sse clob request for:" + clobId );
 
