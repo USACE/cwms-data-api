@@ -170,7 +170,8 @@ public class ClobAsyncController  {
 
                 // Pretend we are starting to do something
                 ctx.send('{' +
-                        "  \"status\": \"in progress\"," +
+                        "  \"time\": \"" + getNowStr()  + "\"," +
+                        "  \"progress\": \"0\"," +
                         "  \"message\": \"Starting to fetch.\"" +
                         '}');
 
@@ -183,8 +184,9 @@ public class ClobAsyncController  {
 
                 // progress message
                 ctx.send('{' +
-                        "  \"status\": \"in progress\"," +
-                        "  \"message\": \"Your clob is being prepared.\"" +
+                        "  \"time\": \"" + getNowStr()  + "\"," +
+                        "  \"progress\": \"50\"," +
+                        "  \"message\": \"Processing.\"" +
                         '}');
 
                 // still thinking.
@@ -210,8 +212,10 @@ public class ClobAsyncController  {
                         + Controllers.CLOB_ID + "=" + encodedClobId ;
 
                 ctx.send('{' +
-                        "  \"status\": \"done\"," +
-                        "  \"message\": \"" + link + "\"" +
+                        "  \"time\": \"" + getNowStr()  + "\"," +
+                        "  \"progress\": \"100\"," +
+                        "  \"message\": \"Done.\"," +
+                        "  \"link\": \"" + link + "\"" +
                         '}');
             }).start();
         });
