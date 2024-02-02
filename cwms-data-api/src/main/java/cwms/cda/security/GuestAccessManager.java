@@ -24,7 +24,9 @@ public class GuestAccessManager extends CdaAccessManager{
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         init(ctx);
-        authDao.prepareGuestContext(ctx);
+        if (authDao != null){
+            authDao.prepareGuestContext(ctx);
+        }
         handler.handle(ctx);
     }
 

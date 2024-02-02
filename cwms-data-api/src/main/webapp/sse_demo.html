@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Getting server updates</h1>
+<div id="result"></div>
+
+<script>
+    // document.cookie = "Authorization=apikey sessionkeyfortesting";
+
+    if (typeof (EventSource) !== "undefined") {
+        var clobId = "/TIME SERIES TEXT/6261044";
+        console.log("clobId: " + clobId + " encodeURIComponent: " + encodeURIComponent(clobId) + " encodeURI: " + encodeURI(clobId));
+        var source = new EventSource("http://localhost:7000/cwms-data/sse/clob"
+             + "?id=" + encodeURI(clobId) + "&office=SPK"
+        );
+        source.onmessage = function (event) {
+            document.getElementById("result").innerHTML += event.data + "<br>";
+        };
+        source.addEventListener("close", function (event) {
+            // server asked us to close.
+            console.log("server asked us to close");
+           source.close()
+        });
+
+    } else {
+        document.getElementById("result").innerHTML = "Sorry, your browser does not support server-sent events...";
+    }
+</script>
+
+</body>
+</html>

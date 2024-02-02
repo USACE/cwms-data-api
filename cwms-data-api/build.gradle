@@ -10,10 +10,11 @@ configurations {
     docker
     baseLibs
     tomcatLibs
+    jettyLibs
 }
 
 configurations.implementation {
-    exclude group: 'com.oracle.database.jdbc'
+//    exclude group: 'com.oracle.database.jdbc'
 }
 
 dependencies {
@@ -39,7 +40,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
 
     }
-    implementation(libs.cwms.db.jooq.codegen) { 
+    implementation(libs.cwms.db.jooq.codegen) {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -85,13 +86,13 @@ dependencies {
     implementation(libs.geojson.jackson)
 
     implementation(libs.javalin.core) {
-        exclude group: "org.eclipse.jetty"
-        exclude group: "org.eclipse.jetty.websocket"
+//        exclude group: "org.eclipse.jetty"
+//        exclude group: "org.eclipse.jetty.websocket"
     }
     implementation(libs.javalin.openapi) {
-        //exclude group: "org.eclipse.jetty"
-        exclude group: "org.eclipse.jetty.websocket"
-        exclude group: "jakarta.xml.bind", module: "*"
+//        //exclude group: "org.eclipse.jetty"
+//        exclude group: "org.eclipse.jetty.websocket"
+//        exclude group: "jakarta.xml.bind", module: "*"
     }
     implementation(libs.swagger.core) {
         exclude group: "jakarta.xml.bind", module: "*"
@@ -123,8 +124,11 @@ dependencies {
 
     baseLibs(libs.oracle.jdbc.driver)
 
-    compileOnly(libs.oracle.jdbc.driver)
-    testRuntimeOnly(libs.oracle.jdbc.driver)
+    baseLibs 'com.oracle.database.jdbc:ojdbc8:21.9.0.0'
+    implementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
+    testImplementation 'com.oracle.database.jdbc:ojdbc8:19.3.0.0'
+    implementation(libs.oracle.jdbc.driver)
+    testImplementation(libs.oracle.jdbc.driver)
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.rest.assured)
@@ -135,8 +139,13 @@ dependencies {
     tomcatLibs(libs.google.flogger.api)
     tomcatLibs(libs.google.flogger.backend)
 
+    jettyLibs('org.eclipse.jetty:jetty-util:9.4.48.v20220622')
+    jettyLibs('org.eclipse.jetty:jetty-server:9.4.48.v20220622')
+    jettyLibs( 'org.eclipse.jetty:jetty-servlets:9.4.48.v20220622')
+    jettyLibs(libs.google.flogger.api)
+    jettyLibs(libs.google.flogger.backend)
+
     testImplementation(libs.bundles.testcontainers)
-    
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
@@ -187,6 +196,9 @@ sourceSets {
     }
     main {
         runtimeClasspath += formatList.runtimeClasspath
+        resources {
+            srcDir 'src/main/webapp'  // I don't think this did what I wanted.
+        }
     }
     test {
         runtimeClasspath += formatList.runtimeClasspath
@@ -194,6 +206,10 @@ sourceSets {
 }
 
 test {
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
+
     useJUnitPlatform() {
         excludeTags "integration"
     }
@@ -224,6 +240,7 @@ task run(type: JavaExec) {
     classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs
     classpath += sourceSets.test.output // to get the fixture
+    classpath += sourceSets.main.runtimeClasspath
 
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
@@ -235,15 +252,37 @@ task run(type: JavaExec) {
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    // If you have the docker-compose environment up and are trying to run 
+    // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
     //jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration"
     //jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms"
 }
 
+task runApiServlet(type: JavaExec) {
+    dependsOn generateConfig
+
+    classpath += configurations.baseLibs
+    classpath += configurations.jettyLibs
+
+    classpath += sourceSets.test.output
+    classpath += sourceSets.main.runtimeClasspath
+
+    mainClass = "cwms.cda.ApiServlet"
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
+
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+
+    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dcwms.dataapi.default.office=SPK"
+    jvmArgs += "-Dcwms.dataapi.external.root.dir.1=$buildDir\\..\\src\\main\\webapp"
+    jvmArgs += "-Dcwms.dataapi.external.root.dir.2=$buildDir\\extra"
+}
+
 task integrationTests(type: Test) {
-    dependsOn test
+//    dependsOn test
     dependsOn generateConfig
     dependsOn war
 
