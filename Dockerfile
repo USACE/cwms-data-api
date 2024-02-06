@@ -41,5 +41,5 @@ ENV CDA_POOL_MIN_IDLE "5"
 ENV cwms.dataapi.access.openid.altAuthUrl "identityc-test.cwbi.us"
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
 # reset to "a" on version changes.
-ENV IMAGE_MARKER="e"
+ENV IMAGE_MARKER="h"
 EXPOSE 7000
