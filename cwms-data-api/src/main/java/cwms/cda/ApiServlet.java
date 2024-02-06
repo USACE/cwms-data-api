@@ -436,6 +436,7 @@ public class ApiServlet extends HttpServlet {
                 + "<li><a href=\"swagger-docs\">Swagger Docs</a></li>"
                 + "<li><a href=\"offices\">Offices</a></li>"
                 + "<li><a href=\"ws_demo.html\">websocket clob demo</a></li>"
+                + "<li><a href=\"ws_demo2.html\">better websocket clob demo</a></li>"
                 + "<li><a href=\"sse_demo.html\">sse clob demo</a></li>"
                 + "</ul>"
                 + "</body></html>";
