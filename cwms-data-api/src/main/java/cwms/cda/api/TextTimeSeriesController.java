@@ -141,7 +141,7 @@ public class TextTimeSeriesController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
+        try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesTextDao dao = getDao(dsl);
 
@@ -279,7 +279,7 @@ public class TextTimeSeriesController implements CrudHandler {
                         + "characters for pattern matching."
                         + "  For StandardTextTimeSeries this should be the Standard_Text_Id (such"
                         + " as 'E' for ESTIMATED)"),
-                @OpenApiParam(name = Controllers.DELETE_MODE, required = true, type =
+                @OpenApiParam(name = "mode", required = true, type =
                         TimeSeriesTextMode.class,
                         description = "Type of delete to perform. Options are:\n"
                                 + "ALL\n"
@@ -321,8 +321,10 @@ public class TextTimeSeriesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
+
             String mask = ctx.queryParam(Controllers.TEXT_MASK);
-            TimeSeriesTextMode mode = ctx.queryParamAsClass(Controllers.DELETE_MODE, TimeSeriesTextMode.class).get();
+
+            TimeSeriesTextMode mode = ctx.queryParamAsClass("mode", TimeSeriesTextMode.class).get();
 
             boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(true);
 
