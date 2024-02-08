@@ -31,6 +31,7 @@ import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
@@ -182,6 +183,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildNullArgument(input);
         } else if (isInvalidItem(input)) {
             retVal = buildInvalidItem(input);
+        } else if (isCantSetSessionNoPermissions(input)) {
+            retVal = buildNotAuthorizedForOffice(input);
         }
 
         return retVal;
@@ -230,7 +233,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = matches(sqlException, codes, segments);
         }
         return retVal;
-    }
+    }    
 
     public static boolean isInvalidItem(RuntimeException input) {
         boolean retVal = false;
@@ -266,6 +269,34 @@ public abstract class JooqDao<T> extends Dao<T> {
                 exception = new NotFoundException(parts[0]);
             }
         }
+        return exception;
+    }
+
+    public static boolean isCantSetSessionNoPermissions(RuntimeException input) {
+        boolean retVal = false;
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+
+            List<Integer> codes = Arrays.asList(20998);
+            List<String> segments = Arrays.asList("does not have any assigned privileges");
+
+            retVal = matches(sqlException, codes, segments);
+        }
+        return retVal;
+    }
+
+    @NotNull
+    static CwmsAuthException buildNotAuthorizedForOffice(RuntimeException input) {
+        // The cause can be kinda long and include all the line numbers from the pl/sql.
+
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        CwmsAuthException exception = new CwmsAuthException("User not authorized for this office.", cause);
         return exception;
     }
 
