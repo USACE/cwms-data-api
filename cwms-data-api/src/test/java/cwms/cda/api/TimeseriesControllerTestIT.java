@@ -13,6 +13,7 @@ import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,7 @@ import static org.hamcrest.Matchers.nullValue;
 @Tag("integration")
 public class TimeseriesControllerTestIT extends DataApiTestIT {
 
-    @Test
+    @RepeatedTest(value = 5000)
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 

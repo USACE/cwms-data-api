@@ -72,7 +72,7 @@ public class TomcatServer {
             File existingCda = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),contextName);
             ExpandWar.delete(existingCda);
             ExpandWar.delete(new File(existingCda.getAbsolutePath()+".war"));
-            ExpandWar.copy(cda, new File(tomcatInstance.getHost().getAppBaseFile(),"cwms-data.war"));
+            ExpandWar.copy(cda, new File(tomcatInstance.getHost().getAppBaseFile(),contextName + ".war"));
         } catch( Exception ex) {
             throw new Exception("Unable to setup war",ex);
         }

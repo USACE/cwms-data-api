@@ -229,12 +229,13 @@ task run(type: JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
 
-    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/cwms-data"
+    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/spk-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+    jvmArgs += "-DwarContext=/spk-data"
     // If you have the docker-compose environment up and are trying to run 
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
