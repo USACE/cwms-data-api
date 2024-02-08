@@ -20,7 +20,20 @@ public class ConnectionPreparingDataSource extends DelegatingDataSource {
     @Override
     public Connection getConnection() throws SQLException {
         Connection connection = getDelegate().getConnection();
-        return getPreparer().prepare(connection);
+
+        try{
+            return getPreparer().prepare(connection);
+        } catch (Exception e) {
+            try {
+                // If there was some problem preparing the connection
+                // we close the connection in order to return it to
+                // the pool it probably came from.
+                connection.close();
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
+            }
+            throw e;
+        }
     }
 
     /**
