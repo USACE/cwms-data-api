@@ -215,7 +215,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         try {
             Timestamp date;
             if (zonedDateTime != null) {
-                date = Timestamp.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant());
+                date = Timestamp.from(zonedDateTime.toInstant());
             } else {
                 date = null;
             }
@@ -226,7 +226,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         cascade = "T";
                     }
                     CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
-                            locationLevelName, date, null, null,
+                            locationLevelName, date, "UTC", null,
                             null, null, cascade, officeId, "VN");
                 });
             } else {
