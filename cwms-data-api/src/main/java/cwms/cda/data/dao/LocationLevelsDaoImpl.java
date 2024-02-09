@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import static java.util.stream.Collectors.toList;
-import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
-import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
-import static org.jooq.impl.DSL.asterisk;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
-
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -50,26 +44,6 @@ import hec.data.level.JDomSeasonalIntervalImpl;
 import hec.data.level.JDomSeasonalValueImpl;
 import hec.data.level.JDomSeasonalValuesImpl;
 import hec.data.location.LocationTemplate;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.MathContext;
-import java.math.RoundingMode;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
@@ -95,6 +69,33 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.util.stream.Collectors.toList;
+import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
+import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
+import static org.jooq.impl.DSL.asterisk;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
 
 public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao {
     private static final Logger logger = Logger.getLogger(LocationLevelsDaoImpl.class.getName());
@@ -132,6 +133,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues =
                     getSeasonalValues(locationLevel);
             connection(dsl, c -> {
+                setOffice(c, locationLevel.getOfficeId());
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(),
                         locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(),
