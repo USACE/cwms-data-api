@@ -43,5 +43,5 @@ ENV cwms.dataapi.access.openid.wellKnownUrl ""
 ENV cwms.dataapi.access.openid.issuer ""
 ENV cwms.dataapi.access.openid.timeout "604800"
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
-ENV IMAGE_MARKER="d"
+ENV IMAGE_MARKER="a"
 EXPOSE 7000
