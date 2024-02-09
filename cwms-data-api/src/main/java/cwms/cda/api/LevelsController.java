@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -347,6 +347,11 @@ public class LevelsController implements CrudHandler {
                             + "office of the Location Level to be returned"),
                     @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                             + "the effective date of Location Level to be returned"),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                            + "the values of the effective date field (unless otherwise "
+                            + "specified), as well as the time zone of any times in the response."
+                            + " If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
                     @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
                             + "the values retrieved.")
             },
@@ -365,11 +370,12 @@ public class LevelsController implements CrudHandler {
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         GET_ONE));
+        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
+                .getOrDefault("UTC");
 
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
+            ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone);
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
