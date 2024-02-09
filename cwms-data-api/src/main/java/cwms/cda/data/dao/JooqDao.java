@@ -89,7 +89,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (dataSource != null) {
             DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
                     setClientInfo(ctx, connection), dataSource);
-            retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE11G);
+            retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
         } else {
             // Some tests still use this method
             logger.atFine().withStackTrace(StackSize.FULL)
@@ -119,7 +119,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     public static DSLContext getDslContext(Connection database, String officeId) {
-        DSLContext dsl = DSL.using(database, SQLDialect.ORACLE11G);
+        DSLContext dsl = DSL.using(database, SQLDialect.ORACLE18C);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 
         return dsl;
@@ -156,7 +156,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (ctx.family() == ORACLE) {
                     ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
                 } else {
-                    ctx.visit(field.upper().likeRegex(regex.toUpperCase()));
+                    ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
                 }
             }
         };

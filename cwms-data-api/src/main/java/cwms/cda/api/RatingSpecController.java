@@ -122,8 +122,9 @@ public class RatingSpecController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
             RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office,
                     ratingIdMask);
@@ -170,8 +171,9 @@ public class RatingSpecController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
 
             Optional<RatingSpec> template = ratingSpecDao.retrieveRatingSpec(office, ratingId);
@@ -214,8 +216,9 @@ public class RatingSpecController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
             String body = ctx.body();
@@ -274,8 +277,9 @@ public class RatingSpecController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String office = ctx.queryParam(OFFICE);
             RatingSpecDao ratingDao = getRatingSpecDao(dsl);
             JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();

@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACTIVE;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
@@ -142,8 +143,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         int pageSize =
                 ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
             String idRegex = ctx.queryParam(TIMESERIES_ID_REGEX);
@@ -193,8 +195,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String timeseriesId) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -240,8 +243,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
@@ -320,8 +323,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         }
         
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
 
             if (foundUpdateKeys.isEmpty()) {
@@ -358,8 +362,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             dao.delete(office, timeseriesId, method);

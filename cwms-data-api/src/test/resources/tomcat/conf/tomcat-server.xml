@@ -17,7 +17,7 @@
 -->
 <!--
 -->
-<Server port="8005" shutdown="SHUTDOWN">
+<Server port="-1" shutdown="SHUTDOWN">
     <Listener className="org.apache.catalina.startup.VersionLoggerListener"/>
     <!--
     APR library loader. Documentation at /docs/apr.html
@@ -38,22 +38,26 @@
 
     -->
     <Service name="Catalina">
-    <Engine name="Catalina" defaultHost="localhost">
-
-        <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
-        <!--
-        SingleSignOn valve, share authentication between web applications
-                 Documentation at: /docs/config/valve.html
-        -->
-            <!--<Valve className="fixtures.TestAuthValve"/>-->
-            <Valve className="org.apache.catalina.authenticator.SingleSignOn"/>
-    <!--
-     Access log processes all example.
-                 Documentation at: /docs/config/valve.html
-                 Note: The pattern used is equivalent to using pattern="common"
-    -->
-            <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" prefix="localhost_access_log" suffix=".txt" pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
-        </Host>
-    </Engine>
+        <Engine name="Catalina" defaultHost="localhost">
+            <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+                <!--
+                SingleSignOn valve, share authentication between web applications
+                        Documentation at: /docs/config/valve.html
+                -->
+                <!--<Valve className="fixtures.TestAuthValve"/>-->
+                <Valve className="org.apache.catalina.authenticator.SingleSignOn"/>
+                <Valve className="org.apache.catalina.valves.ErrorReportValve"
+                    showReport="false" 
+                    showServerInfo="false" />
+                <!--
+                Access log processes all example.
+                            Documentation at: /docs/config/valve.html
+                            Note: The pattern used is equivalent to using pattern="common"
+                -->
+                <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" 
+                       prefix="localhost_access_log" suffix=".txt"
+                       pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
+            </Host>
+        </Engine>
     </Service>
 </Server>

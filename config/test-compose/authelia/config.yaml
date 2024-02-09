@@ -7,7 +7,7 @@ log:
   level: debug
 session:
   name: cwms_session
-  domain: cwms.localhost
+  domain: cwms.test
   same_site: lax
   secret: unsecure_session_secret
   expiration: 1h
@@ -20,7 +20,7 @@ storage:
 access_control:
   default_policy: deny
   rules:
-    - domain: "*.localhost"
+    - domain: "*.test"
       policy: one_factor
 notifier:
   disable_startup_check: false
@@ -104,7 +104,7 @@ identity_providers:
         - revocation
         - introspection
       allowed_origins:
-        - https://cwms-data.localhost
+        - https://cwms-data.test
         - htpps://auth.location
       allowed_origins_from_client_redirect_uris: false
     clients:

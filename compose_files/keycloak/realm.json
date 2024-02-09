@@ -662,7 +662,7 @@
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "cwms-data.localhost"
+        "cwms-data.test"
       ],
       "webOrigins": [
         "*"

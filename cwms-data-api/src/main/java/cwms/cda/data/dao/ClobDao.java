@@ -3,12 +3,18 @@ package cwms.cda.data.dao;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import java.io.InputStream;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.function.BiConsumer;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -27,7 +33,11 @@ import usace.cwms.db.jooq.codegen.tables.AV_CLOB;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
 public class ClobDao extends JooqDao<Clob> {
-    private static final Logger logger = Logger.getLogger(ClobDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    public static final String SELECT_CLOB_QUERY = "select cwms_20.AV_CLOB.VALUE "
+            + "from cwms_20.av_clob join cwms_20.av_office "
+            + "on av_clob.office_code = av_office.office_code "
+            + "where av_office.office_id = ? and av_clob.id = ?";
 
     public ClobDao(DSLContext dsl) {
         super(dsl);
@@ -107,17 +117,17 @@ public class ClobDao extends JooqDao<Clob> {
                     dsl.select(count(asterisk()))
                             .from(v_clob)
                             .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-                            .where(v_clob.ID.upper().likeRegex(like.toUpperCase()))
-                            .and(v_office.OFFICE_ID.upper().like(office.isPresent() ?
+                            .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID, like))
+                            .and(DSL.upper(v_office.OFFICE_ID).like(office.isPresent() ?
                                     office.get().toUpperCase() : "%"));
 
             total = count.fetchOne().value1();
         } else {
             final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
 
-            logger.fine(() -> "decoded cursor: " + String.join("||", parts));
+            logger.atFine().log( "decoded cursor: " + String.join("||", parts));
             for (String p : parts) {
-                logger.finest(p);
+                logger.atFinest().log(p);
             }
 
             if (parts.length > 1) {
@@ -138,14 +148,14 @@ public class ClobDao extends JooqDao<Clob> {
                 .from(v_clob)
                 //.innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
                 .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-                .where(v_clob.ID.upper().likeRegex(like.toUpperCase()))
-                .and(v_clob.ID.upper().greaterThan(clobCursor))
+                .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID,like))
+                .and(DSL.upper(v_clob.ID).greaterThan(clobCursor))
                 .orderBy(v_clob.ID).limit(pageSize);
 
 
         Clobs.Builder builder = new Clobs.Builder(clobCursor, pageSize, total);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED) );
+        logger.atFine().log(query.getSQL(ParamType.INLINED) );
 
         query.fetch().forEach(row -> {
             usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(v_clob);
@@ -167,9 +177,9 @@ public class ClobDao extends JooqDao<Clob> {
         AV_CLOB ac = AV_CLOB.AV_CLOB;
         AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = ac.ID.upper().like(idLike.toUpperCase());
+        Condition cond = DSL.upper(ac.ID).like(idLike.toUpperCase());
         if (office != null && !office.isEmpty()) {
-            cond = cond.and(ao.OFFICE_ID.upper().eq(office.toUpperCase()));
+            cond = cond.and(DSL.upper(ao.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         RecordMapper<Record, Clob> mapper = joinRecord ->
@@ -197,12 +207,7 @@ public class ClobDao extends JooqDao<Clob> {
 
     public void create(Clob clob, boolean failIfExists) {
 
-        String pFailIfExists;
-        if (failIfExists) {
-            pFailIfExists = "T";
-        } else {
-            pFailIfExists = "F";
-        }
+        String pFailIfExists = getBoolean(failIfExists);
         dsl.connection(c->{
             CWMS_TEXT_PACKAGE.call_STORE_TEXT(
                 getDslContext(c, clob.getOfficeId()).configuration(),
@@ -212,6 +217,17 @@ public class ClobDao extends JooqDao<Clob> {
                 pFailIfExists,
                 clob.getOfficeId());
         });
+    }
+
+    @NotNull
+    public static String getBoolean(boolean failIfExists) {
+        String pFailIfExists;
+        if (failIfExists) {
+            pFailIfExists = "T";
+        } else {
+            pFailIfExists = "F";
+        }
+        return pFailIfExists;
     }
 
     public void delete(String officeId, String id) {
@@ -224,12 +240,7 @@ public class ClobDao extends JooqDao<Clob> {
 
     public void update(Clob clob, boolean ignoreNulls) {
 
-        String p_ignore_nulls;
-        if (ignoreNulls){
-            p_ignore_nulls = "T";
-        } else {
-            p_ignore_nulls = "F";
-        }
+        String p_ignore_nulls = getBoolean(ignoreNulls);
 
         // Note: when p_ignore_nulls == 'T' and the value or description is "" (not null)
         // the field is not updated.
@@ -247,5 +258,43 @@ public class ClobDao extends JooqDao<Clob> {
                 clob.getOfficeId()
             )
         );
+    }
+
+    /**
+     *
+     * @param clobId the id to search for
+     * @param officeId the office
+     * @param clobConsumer a consumer that should be handed the input stream and the length of the stream.
+     */
+    public void getClob(String clobId, String officeId, BiConsumer<InputStream, Long> clobConsumer) {
+        // Not using jOOQ here because we want the java.sql.Clob and not an automatic field binding.  We want
+        // clob so that we can pull out a stream to the data and pass that to javalin.
+        // If the request included Content-Ranges Javalin can have the stream skip to the correct
+        // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
+        // response should let CDA return a huge (2Gb) clob to the client without ever holding the entire String
+        // in memory.
+        // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
+        // what we want javalin to do with the stream as a consumer.
+        //
+
+        dsl.connection(connection -> {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_CLOB_QUERY)) {
+                preparedStatement.setString(1, officeId);
+                preparedStatement.setString(2, clobId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        java.sql.Clob clob = resultSet.getClob("VALUE");
+                        if (clob != null) {
+                            clobConsumer.accept(clob.getAsciiStream(), clob.length());
+                        } else {
+                            clobConsumer.accept(null, 0L);
+                        }
+                    } else {
+                        throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
+                    }
+                }
+            }
+        });
     }
 }

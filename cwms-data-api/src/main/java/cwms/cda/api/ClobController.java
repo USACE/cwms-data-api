@@ -2,6 +2,7 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CLOB_ID;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
@@ -49,10 +50,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -65,6 +67,7 @@ public class ClobController implements CrudHandler {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 20;
     public static final String TAG = "Clob";
+    public static final String TEXT_PLAIN = "text/plain";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -121,12 +124,10 @@ public class ClobController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        try (
-                final Timer.Context ignored = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             Optional<String> officeOpt = Optional.ofNullable(office);
 
@@ -157,7 +158,6 @@ public class ClobController implements CrudHandler {
             ctx.result(result);
             ctx.contentType(contentType.toString());
             requestResultSize.update(result.length());
-
         }
     }
 
@@ -165,44 +165,72 @@ public class ClobController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                    @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                            + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                            + "When using this query parameter a valid path parameter must still be provided for the request"
+                            + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
+                            + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                            + "deny the request even though you are specifying this override. \"ignored\" is suggested." )
             },
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "Returns requested clob.",
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Clob.class),
+                            @OpenApiContent(type = TEXT_PLAIN),
                     }
             )
             },
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, @NotNull String clobId) {
+    public void getOne(@NotNull Context ctx, @NotNull String clobId) {
 
-        try (
-                final Timer.Context ignored = markAndTime(GET_ONE);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                clobId = idQueryParam;
+            }
+            String formatHeader = ctx.header(Header.ACCEPT);
+
+            DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
-            Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
-            if (optAc.isPresent()) {
-                String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            if (TEXT_PLAIN.equals(formatHeader)) {
+                // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
+                // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
 
-                Clob clob = optAc.get();
-                String result = Formats.format(contentType, clob);
+                BiConsumer<InputStream, Long> streamConsumer = (stream, length) -> {
+                    if (stream == null) {
+                        ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
+                                + "clob based on given parameters"));
+                    } else {
+                        ctx.seekableStream(stream, TEXT_PLAIN, length);
+                    }
+                };
 
-                ctx.contentType(contentType.toString());
-                ctx.result(result);
-
-                requestResultSize.update(result.length());
+                dao.getClob(clobId, office.orElse(null), streamConsumer);
             } else {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                        + "clob based on given parameters"));
+                Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
+
+                if (optAc.isPresent()) {
+                    ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+
+                    Clob clob = optAc.get();
+                    String result = Formats.format(contentType, clob);
+
+                    ctx.contentType(contentType.toString());
+                    ctx.result(result);
+
+                    requestResultSize.update(result.length());
+                } else {
+                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
+                            + "clob based on given parameters"));
+                }
             }
-
-
         }
     }
 
@@ -222,9 +250,10 @@ public class ClobController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+    public void create(@NotNull Context ctx) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
@@ -263,7 +292,7 @@ public class ClobController implements CrudHandler {
 
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
-        log.atInfo().log("Getting objectmapper for format '%s'",format);
+
         if (ContentType.equivalent(Formats.XMLV2,format)) {
             JacksonXmlModule module = new JacksonXmlModule();
             module.setDefaultUseWrapper(false);
@@ -311,8 +340,8 @@ public class ClobController implements CrudHandler {
 
         boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -380,8 +409,8 @@ public class ClobController implements CrudHandler {
     public void delete(Context ctx, @NotNull String clobId) {
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             dao.delete(office, clobId);
         }

@@ -1,6 +1,6 @@
 {
     "fields": [
-        {"name": "location", "type": "object"}
+        {"name": "location"}
 
     ],
     "records": [

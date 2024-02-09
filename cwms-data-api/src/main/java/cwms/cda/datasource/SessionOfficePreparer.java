@@ -22,7 +22,8 @@ public class SessionOfficePreparer implements ConnectionPreparer {
     public Connection prepare(Connection conn) {
 
         if(office != null && !office.isEmpty()) {
-            try (DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);) {
+            DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE18C);
+            try {
                 logger.fine("Setting office to: " + office);
                 CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
             } catch (Exception e) {

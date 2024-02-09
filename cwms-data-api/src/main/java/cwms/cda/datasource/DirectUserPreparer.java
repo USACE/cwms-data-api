@@ -18,7 +18,7 @@ public class DirectUserPreparer implements ConnectionPreparer {
     @Override
     public Connection prepare(Connection conn) {
         if (user != null) {
-            try (DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
+            try (
                 PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
                 ) {                
                 setApiUser.setString(1,user);

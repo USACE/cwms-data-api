@@ -128,8 +128,9 @@ public class RatingMetadataController implements CrudHandler {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingMetadataDao dao = getDao(dsl);
 
             RatingMetadataList metadataList = dao.retrieve(cursor, pageSize, office,

@@ -1,14 +1,33 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dto.Blob;
+import java.io.InputStream;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-
-import cwms.cda.data.dto.Blob;
+import java.util.function.Consumer;
+import kotlin.Triple;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
+
+    public static final String BLOB_WITH_OFFICE = "SELECT CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, AT_BLOB.VALUE \n"
+            + "FROM CWMS_20.AT_BLOB \n"
+            + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
+            + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
+            + "WHERE ID = ? and CWMS_OFFICE.OFFICE_ID = ?";
+    public static final String BLOB_QUERY = "SELECT CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, AT_BLOB.VALUE \n"
+            + "FROM CWMS_20.AT_BLOB \n"
+            + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
+            + "WHERE ID = ?";
+
     public BlobDao(DSLContext dsl) {
         super(dsl);
     }
@@ -38,6 +57,60 @@ public class BlobDao extends JooqDao<Blob> {
         });
 
         return Optional.ofNullable(retVal);
+    }
+
+    public void getBlob(String id, String office, Consumer<Triple<InputStream, Long, String>> consumer) {
+        // Not using jOOQ here because we want the java.sql.Blob and not an automatic field binding.  We want
+        // blob so that we can pull out a stream to the data and pass that to javalin.
+        // If the request included Content-Ranges Javalin can have the stream skip to the correct
+        // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
+        // response should let CDA return a huge blob to the client without ever holding the entire byte[]
+        // in memory.
+        // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
+        // what we want javalin to do with the stream as a consumer.
+        //
+
+        dsl.connection(connection -> {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_WITH_OFFICE)) {
+                preparedStatement.setString(1, id);
+                preparedStatement.setString(2, office);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        handleResultSet(resultSet, consumer);
+                    } else {
+                        throw new NotFoundException("Unable to find blob with id " + id + " in office " + office);
+                    }
+                }
+            }
+        });
+    }
+
+    public void getBlob(String id, Consumer<Triple<InputStream, Long, String>> consumer) {
+
+        dsl.connection(connection -> {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_QUERY)) {
+                preparedStatement.setString(1, id);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        handleResultSet(resultSet, consumer);
+                    } else {
+                        throw new NotFoundException("Unable to find blob with id " + id );
+                    }
+                }
+            }
+        });
+    }
+
+    private static void handleResultSet(ResultSet resultSet, Consumer<Triple<InputStream, Long, String>> consumer) throws SQLException {
+        String mediaType = resultSet.getString("MEDIA_TYPE_ID");
+        java.sql.Blob blob = resultSet.getBlob("VALUE");
+        if (blob != null) {
+            consumer.accept(new Triple<>(blob.getBinaryStream(), blob.length(), mediaType));
+        } else {
+            consumer.accept(new Triple<>(null, 0L, null));
+        }
     }
 
 
@@ -95,5 +168,31 @@ public class BlobDao extends JooqDao<Blob> {
             return new Blob(rOffice, rId, rDesc, rMedia, null);
         });
     }
+
+    public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
+        String pFailIfExists = getBoolean(failIfExists);
+        String pIgnoreNulls = getBoolean(ignoreNulls);
+        dsl.connection(c-> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+                getDslContext(c, blob.getOfficeId()).configuration(),
+                blob.getValue(),
+                blob.getId(),
+                blob.getMediaTypeId(),
+                blob.getDescription(),
+                pFailIfExists,
+                pIgnoreNulls,
+                blob.getOfficeId()));
+    }
+
+    @NotNull
+    public static String getBoolean(boolean failIfExists) {
+        String pFailIfExists;
+        if (failIfExists) {
+            pFailIfExists = "T";
+        } else {
+            pFailIfExists = "F";
+        }
+        return pFailIfExists;
+    }
+
 
 }

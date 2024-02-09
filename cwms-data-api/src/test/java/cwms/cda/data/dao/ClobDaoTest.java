@@ -9,10 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.flogger.FluentLogger;
-
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dto.Clob;
-
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -28,19 +26,19 @@ class ClobDaoTest {
 
     @AfterAll
     static void tearDown() throws SQLException {
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(OFFICE);
+        ClobDao dao = new ClobDao(dsl);
 
-            List<Clob> found = dao.getClobsLike(OFFICE, "TEST/TEST%");
-            logger.atFine().log("Found: " + found.size());
+        List<Clob> found = dao.getClobsLike(OFFICE, "TEST/TEST%");
+        logger.atFine().log("Found: " + found.size());
 
-            for (Clob clob : found) {
-                dao.delete(clob.getOfficeId(), clob.getId());
-            }
-
-            found = dao.getClobsLike(OFFICE, "TEST/TEST%");
-            logger.atFine().log("After delete found: " + found.size());
+        for (Clob clob : found) {
+            dao.delete(clob.getOfficeId(), clob.getId());
         }
+
+        found = dao.getClobsLike(OFFICE, "TEST/TEST%");
+        logger.atFine().log("After delete found: " + found.size());
+
     }
 
     @Test
@@ -48,13 +46,13 @@ class ClobDaoTest {
 
         long millis = System.currentTimeMillis();
 
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
-            // FWIW the id field gets made into a capital ID in the database.
-            String id = "TEST/TEST_ID_" + millis;
-            Clob clob = new Clob(OFFICE, id, "test description", "test value");
-            assertDoesNotThrow(()->dao.create(clob, true));
-        }
+        DSLContext dsl = getDslContext(OFFICE);
+        ClobDao dao = new ClobDao(dsl);
+        // FWIW the id field gets made into a capital ID in the database.
+        String id = "TEST/TEST_ID_" + millis;
+        Clob clob = new Clob(OFFICE, id, "test description", "test value");
+        assertDoesNotThrow(() -> dao.create(clob, true));
+
 
     }
 
@@ -64,17 +62,18 @@ class ClobDaoTest {
         long millis = System.currentTimeMillis();
         // create once
         String id = "TEST/TEST_ID_" + millis;
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
-            Clob clob = new Clob(OFFICE, id, "test description", "test value");
-            dao.create(clob, true);
-        }
+        DSLContext dsl = getDslContext(OFFICE);
+
+        ClobDao dao = new ClobDao(dsl);
+        Clob clob = new Clob(OFFICE, id, "test description", "test value");
+        dao.create(clob, true);
+
 
         // try to create again and fail if it doesn't throw AlreadyExists
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
+        try {
+//            ClobDao dao = new ClobDao(dsl);
 
-            Clob clob = new Clob(OFFICE, id, "test description", "test value");
+            clob = new Clob(OFFICE, id, "test description", "test value");
             dao.create(clob, true);
             fail();
         } catch (AlreadyExists e) {
@@ -88,12 +87,13 @@ class ClobDaoTest {
     void test_get() throws SQLException {
 
         String id = "TEST/TEST_ID_NOT_PRESENT";
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(OFFICE);
 
-            Optional<Clob> found = dao.getByUniqueName(id, Optional.of(OFFICE));
-            assertFalse(found.isPresent());
-        }
+        ClobDao dao = new ClobDao(dsl);
+
+        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(OFFICE));
+        assertFalse(found.isPresent());
+
 
     }
 
@@ -103,21 +103,22 @@ class ClobDaoTest {
         long millis = System.currentTimeMillis();
         String id = "TEST/TEST_ID_" + millis;
 
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(OFFICE);
 
-            // try and fail to find it
-            Optional<Clob> found = dao.getByUniqueName(id, Optional.of(OFFICE));
-            assertFalse(found.isPresent());
+        ClobDao dao = new ClobDao(dsl);
 
-            // create it
-            Clob clob = new Clob(OFFICE, id, "test description", "test value");
-            dao.create(clob, true);
+        // try and fail to find it
+        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(OFFICE));
+        assertFalse(found.isPresent());
 
-            // try and find it
-            found = dao.getByUniqueName(id, Optional.of(OFFICE));
-            assertTrue(found.isPresent());
-        }
+        // create it
+        Clob clob = new Clob(OFFICE, id, "test description", "test value");
+        dao.create(clob, true);
+
+        // try and find it
+        found = dao.getByUniqueName(id, Optional.of(OFFICE));
+        assertTrue(found.isPresent());
+
 
     }
 
@@ -128,28 +129,29 @@ class ClobDaoTest {
         String id = "TEST/TEST_ID_" + millis;
 
         String office = OFFICE;
-        try (DSLContext dsl = getDslContext(office)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(office);
 
-            // try and fail to find it
-            Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
-            assertFalse(found.isPresent());
+        ClobDao dao = new ClobDao(dsl);
 
-            // create it
-            Clob clob = new Clob(office, id, "test description", "test value");
-            dao.create(clob, true);
+        // try and fail to find it
+        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
+        assertFalse(found.isPresent());
 
-            // try and find it
-            found = dao.getByUniqueName(id, Optional.of(office));
-            assertTrue(found.isPresent());
+        // create it
+        Clob clob = new Clob(office, id, "test description", "test value");
+        dao.create(clob, true);
 
-            // delete it
-            dao.delete(office, id);
+        // try and find it
+        found = dao.getByUniqueName(id, Optional.of(office));
+        assertTrue(found.isPresent());
 
-            // try and fail to find it
-            found = dao.getByUniqueName(id, Optional.of(office));
-            assertFalse(found.isPresent());
-        }
+        // delete it
+        dao.delete(office, id);
+
+        // try and fail to find it
+        found = dao.getByUniqueName(id, Optional.of(office));
+        assertFalse(found.isPresent());
+
 
     }
 
@@ -158,14 +160,14 @@ class ClobDaoTest {
     void test_delete_doesnt_exist() throws SQLException {
 
         String id = "TEST/TEST_ID_NOT_PRESENT";
-        try (DSLContext dsl = getDslContext(OFFICE)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(OFFICE);
+
+        ClobDao dao = new ClobDao(dsl);
 
 
-            assertDoesNotThrow(()->dao.delete(OFFICE, id));
-            // This should be fine - no exceptions, no error.
+        assertDoesNotThrow(() -> dao.delete(OFFICE, id));
+        // This should be fine - no exceptions, no error.
 
-        }
 
     }
 
@@ -176,16 +178,16 @@ class ClobDaoTest {
         String id = "TEST/TEST_ID_" + millis;
 
         String office = OFFICE;
-        try (DSLContext dsl = getDslContext(office)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(office);
+        ClobDao dao = new ClobDao(dsl);
 
-            // create it
-            Clob clob = new Clob(office, id, "test description", "test value");
-            dao.create(clob, true);
+        // create it
+        Clob clob = new Clob(office, id, "test description", "test value");
+        dao.create(clob, true);
 
-            assertDoesNotThrow(()->dao.delete(office, id));
-            assertDoesNotThrow(()->dao.delete(office, id));
-        }
+        assertDoesNotThrow(() -> dao.delete(office, id));
+        assertDoesNotThrow(() -> dao.delete(office, id));
+
 
     }
 
@@ -196,27 +198,27 @@ class ClobDaoTest {
         String id = "TEST/TEST_ID_" + millis;
 
         String office = OFFICE;
-        try (DSLContext dsl = getDslContext(office)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(office);
+        ClobDao dao = new ClobDao(dsl);
 
-            // create it
-            Clob clob = new Clob(office, id, "test description", "test value");
-            dao.create(clob, true);
+        // create it
+        Clob clob = new Clob(office, id, "test description", "test value");
+        dao.create(clob, true);
 
-            // update it
-            clob = new Clob(office, id, "NEW description", "NEW value");
+        // update it
+        clob = new Clob(office, id, "NEW description", "NEW value");
 
-            dao.update(clob, false);
+        dao.update(clob, false);
 
-            // find it
-            Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
-            assertTrue(found.isPresent());
-            Clob foundClob = found.get();
-            assertEquals("NEW description", foundClob.getDescription());
-            assertEquals("NEW value", foundClob.getValue());
+        // find it
+        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
+        assertTrue(found.isPresent());
+        Clob foundClob = found.get();
+        assertEquals("NEW description", foundClob.getDescription());
+        assertEquals("NEW value", foundClob.getValue());
 
-            dao.delete(office, id);
-        }
+        dao.delete(office, id);
+
 
     }
 
@@ -227,78 +229,76 @@ class ClobDaoTest {
         String id = "TEST/TEST_ID_" + millis;
 
         String office = OFFICE;
-        try (DSLContext dsl = getDslContext(office)) {
-            ClobDao dao = new ClobDao(dsl);
+        DSLContext dsl = getDslContext(office);
+        ClobDao dao = new ClobDao(dsl);
 
-            // create it
-            String origDesc = "test description";
-            Clob clob = new Clob(office, id, origDesc, "test value");
-            dao.create(clob, true);
+        // create it
+        String origDesc = "test description";
+        Clob clob = new Clob(office, id, origDesc, "test value");
+        dao.create(clob, true);
 
-            // update it with null desc and a new Value
-            String newValue = "NEW value";
-            clob = new Clob(office, id, null, newValue);
+        // update it with null desc and a new Value
+        String newValue = "NEW value";
+        clob = new Clob(office, id, null, newValue);
+        dao.update(clob, false);
+
+        // find it
+        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
+        assertTrue(found.isPresent());
+        Clob foundClob = found.get();
+        assertNull(foundClob.getDescription());
+        assertEquals(newValue, foundClob.getValue());
+
+        try {
+            // try to update it with null "value"
+            String newDescription = "NEW Description";
+            clob = new Clob(office, id, newDescription, null);
             dao.update(clob, false);
-
-            // find it
-            Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
-            assertTrue(found.isPresent());
-            Clob foundClob = found.get();
-            assertNull(foundClob.getDescription());
-            assertEquals(newValue, foundClob.getValue());
-
-            try {
-                // try to update it with null "value"
-                String newDescription = "NEW Description";
-                clob = new Clob(office, id, newDescription, null);
-                dao.update(clob, false);
-                fail();
-            } catch (IllegalArgumentException e) {
-                // expected
-                String message = e.getMessage();
-                assertTrue(message.contains("ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not "
-                        + "allowed to be null"));
-            }
-
-            // find it again
-            found = dao.getByUniqueName(id, Optional.of(office));
-            assertTrue(found.isPresent());
-            foundClob = found.get();
-            assertNull(foundClob.getDescription());
-            assertEquals(newValue, foundClob.getValue());
-
-            try {
-                // update value with empty (are these treated same as null?)
-                clob = new Clob(office, id, origDesc, "");
-                dao.update(clob, false);
-                fail();
-            } catch (IllegalArgumentException e) {
-                // expected
-                String message = e.getMessage();
-                assertTrue(message.contains("ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not "
-                        + "allowed to be null"));
-            }
-
-            found = dao.getByUniqueName(id, Optional.of(office));
-            assertTrue(found.isPresent());
-            foundClob = found.get();
-            assertEquals(newValue, foundClob.getValue());
-            assertNull(foundClob.getDescription());
-
-            // update it with space
-            clob = new Clob(office, id, " ", " ");
-            dao.update(clob, false);
-
-            found = dao.getByUniqueName(id, Optional.of(office));
-            assertTrue(found.isPresent());
-            foundClob = found.get();
-            // empty is apparently treated the same as null, too bad.  Space is not.
-            assertEquals(" ", foundClob.getValue());
-            assertEquals(" ", foundClob.getDescription());
-
-            dao.delete(office, id);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+            String message = e.getMessage();
+            assertTrue(message.contains("ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not "
+                    + "allowed to be null"));
         }
 
+        // find it again
+        found = dao.getByUniqueName(id, Optional.of(office));
+        assertTrue(found.isPresent());
+        foundClob = found.get();
+        assertNull(foundClob.getDescription());
+        assertEquals(newValue, foundClob.getValue());
+
+        try {
+            // update value with empty (are these treated same as null?)
+            clob = new Clob(office, id, origDesc, "");
+            dao.update(clob, false);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+            String message = e.getMessage();
+            assertTrue(message.contains("ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not "
+                    + "allowed to be null"));
+        }
+
+        found = dao.getByUniqueName(id, Optional.of(office));
+        assertTrue(found.isPresent());
+        foundClob = found.get();
+        assertEquals(newValue, foundClob.getValue());
+        assertNull(foundClob.getDescription());
+
+        // update it with space
+        clob = new Clob(office, id, " ", " ");
+        dao.update(clob, false);
+
+        found = dao.getByUniqueName(id, Optional.of(office));
+        assertTrue(found.isPresent());
+        foundClob = found.get();
+        // empty is apparently treated the same as null, too bad.  Space is not.
+        assertEquals(" ", foundClob.getValue());
+        assertEquals(" ", foundClob.getDescription());
+
+        dao.delete(office, id);
     }
 
 
