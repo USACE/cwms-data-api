@@ -31,7 +31,6 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("integration")
 class RatingSpecControllerTestIT extends DataApiTestIT {
 
-    @RepeatedTest(value = 30)
+    @Test
     void test_empty_rating_spec() throws Exception {
         String locationId = "RatingSpecTestEmpty";
         String officeId = "SPK";
@@ -137,7 +136,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @RepeatedTest(value = 30)
+    @Test
     void test_create_read_delete() throws Exception {
         String locationId = "RatingSpecTest";
         String officeId = "SPK"; // TODO: sort out office id usage

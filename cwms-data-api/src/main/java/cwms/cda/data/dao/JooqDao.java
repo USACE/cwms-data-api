@@ -47,6 +47,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -296,7 +297,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        CwmsAuthException exception = new CwmsAuthException("User not authorized for this office.", cause);
+        CwmsAuthException exception = new CwmsAuthException("User not authorized for this office.", cause,
+                                            HttpServletResponse.SC_UNAUTHORIZED, false);
         return exception;
     }
 
