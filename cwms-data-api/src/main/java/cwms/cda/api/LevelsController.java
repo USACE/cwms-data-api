@@ -49,7 +49,6 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import cwms.cda.helpers.DateUtils;
 import hec.data.level.JDomLocationLevelRef;
 import io.javalin.apibuilder.CrudHandler;
@@ -160,7 +159,11 @@ public class LevelsController implements CrudHandler {
                             + " from all offices."),
                     @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
                             + "effective date of the level to be deleted. If not provided will "
-                            + "delete all data and reference to the location level.")
+                            + "delete all data and reference to the location level."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                            + "the value of the effective date field (unless otherwise "
+                            + "specified).If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
                     },
             method = HttpMethod.DELETE,
             path = "/levels",
@@ -174,10 +177,11 @@ public class LevelsController implements CrudHandler {
             String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
                     name(LevelsController.class.getName(), DELETE));
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
+                    .getOrDefault("UTC");
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam(CASCADE_DELETE));
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = dateString != null
-                    ? zonedDateTimeAdapter.unmarshal(dateString) : null;
+            ZonedDateTime unmarshalledDateTime = dateString != null ?
+                    DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(levelId + " Deleted");
@@ -637,7 +641,7 @@ public class LevelsController implements CrudHandler {
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
+                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
                             + "the values retrieved."),
             },
             responses = {
