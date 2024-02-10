@@ -213,17 +213,21 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
                                     String officeId, Boolean cascadeDelete) {
         try {
-            Date date;
+            Timestamp date;
             if (zonedDateTime != null) {
-                date = Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant());
+                date = Timestamp.from(zonedDateTime.toInstant());
             } else {
                 date = null;
             }
             if (date != null) {
                 connection(dsl, c -> {
-                    CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                    levelJooq.deleteLocationLevel(c, locationLevelName, date, null,
-                            null, null, cascadeDelete, officeId);
+                    String cascade = "F";
+                    if (cascadeDelete != null && cascadeDelete) {
+                        cascade = "T";
+                    }
+                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
+                            locationLevelName, date, "UTC", null,
+                            null, null, cascade, officeId, "VN");
                 });
             } else {
                 Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)

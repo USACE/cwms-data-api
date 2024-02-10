@@ -39,7 +39,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.JsonFieldsException;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
@@ -49,7 +48,6 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import cwms.cda.helpers.DateUtils;
 import hec.data.level.JDomLocationLevelRef;
 import io.javalin.apibuilder.CrudHandler;
@@ -74,16 +72,12 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public class LevelsController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
-
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -160,7 +154,11 @@ public class LevelsController implements CrudHandler {
                             + " from all offices."),
                     @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
                             + "effective date of the level to be deleted. If not provided will "
-                            + "delete all data and reference to the location level.")
+                            + "delete all data and reference to the location level."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                            + "the value of the effective date field (unless otherwise "
+                            + "specified).If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
                     },
             method = HttpMethod.DELETE,
             path = "/levels",
@@ -174,17 +172,14 @@ public class LevelsController implements CrudHandler {
             String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
                     name(LevelsController.class.getName(), DELETE));
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
+                    .getOrDefault("UTC");
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam(CASCADE_DELETE));
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = dateString != null
-                    ? zonedDateTimeAdapter.unmarshal(dateString) : null;
+            ZonedDateTime unmarshalledDateTime = dateString != null ?
+                    DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(levelId + " Deleted");
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Failed to delete location level");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -382,13 +377,6 @@ public class LevelsController implements CrudHandler {
                     units, unmarshalledDateTime, office);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (NotFoundException e) {
-            throw e;
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Failed to retrieve Location Level request: "
-                    + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -458,10 +446,7 @@ public class LevelsController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
             }
         } catch (JsonProcessingException ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            throw new FormattingException("Failed to format location level update request", ex);
         }
     }
 
@@ -637,7 +622,7 @@ public class LevelsController implements CrudHandler {
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
+                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
                             + "the values retrieved."),
             },
             responses = {
