@@ -29,7 +29,6 @@ import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.MAX_VERSION;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -77,9 +76,7 @@ public class TextTimeSeriesController implements CrudHandler {
     public static final String MODE = "mode";
     private final MetricRegistry metrics;
 
-    public static final boolean DEFAULT_CREATE_MAX_VERSION = false;
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
-    public static final boolean DEFAULT_UPDATE_MAX_VERSION = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = false;
 
 
@@ -216,7 +213,7 @@ public class TextTimeSeriesController implements CrudHandler {
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if version-date is not specified. Default is " + DEFAULT_CREATE_MAX_VERSION),
+
             @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to replace any and all existing text with the specified text. Default is " + DEFAULT_CREATE_REPLACE_ALL)
                         },
         method = HttpMethod.POST,
@@ -234,7 +231,8 @@ public class TextTimeSeriesController implements CrudHandler {
             TextTimeSeries tts = deserialize(body, formatHeader);
             TimeSeriesTextDao dao = getDao(dsl);
 
-            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(DEFAULT_CREATE_MAX_VERSION);
+            boolean maxVersion = true;
+
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_CREATE_REPLACE_ALL);
             dao.create(tts, maxVersion, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
@@ -251,7 +249,7 @@ public class TextTimeSeriesController implements CrudHandler {
             @OpenApiParam(name = "timeseries", description = "The id of the text timeseries to be updated"),
         },
             queryParams = {
-                    @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified. Default is:" + DEFAULT_UPDATE_MAX_VERSION),
+
                     @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to replace any and all existing text with the specified text. Default is:" + DEFAULT_UPDATE_REPLACE_ALL)
             },
         requestBody = @OpenApiRequestBody(
@@ -268,7 +266,7 @@ public class TextTimeSeriesController implements CrudHandler {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
 
-            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(DEFAULT_UPDATE_MAX_VERSION);
+            boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
