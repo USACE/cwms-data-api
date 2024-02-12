@@ -6,6 +6,7 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -194,18 +195,32 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         return builder.build();
     }
 
-    public void storeRows(String officeId, String id, boolean maxVersion, boolean replaceAll, Collection<RegularTextTimeSeriesRow> regRows) {
+    public void storeRows(String officeId, String id, boolean maxVersion, boolean replaceAll,
+                          Collection<RegularTextTimeSeriesRow> regRows) {
         // This could be made into a more efficient bulk store.
         // We'd have to sort the rows by textId and textValue pairs and then build a set of all the matching dates
         // Then for each set of dates we'd call the appropriate storeTsText or storeTsTextId method.
 
-        for (RegularTextTimeSeriesRow regRow : regRows) {
-            storeRow(officeId, id, regRow, maxVersion, replaceAll);
-        }
+        connection(dsl, connection -> {
+            setOffice(connection, officeId);
+            for (RegularTextTimeSeriesRow regRow : regRows) {
+                storeRow(connection, officeId, id, regRow, maxVersion, replaceAll);
+            }
+        });
     }
 
     public void storeRow(String officeId, String tsId, RegularTextTimeSeriesRow regularTextTimeSeriesRow,
                          boolean maxVersion, boolean replaceAll) {
+        connection(dsl, connection -> {
+            setOffice(connection, officeId);
+            storeRow(connection, officeId, tsId, regularTextTimeSeriesRow, maxVersion, replaceAll);
+        });
+    }
+
+    private void storeRow(Connection connection, String officeId, String tsId,
+                          RegularTextTimeSeriesRow regularTextTimeSeriesRow,
+                          boolean maxVersion, boolean replaceAll) throws SQLException {
+
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
         String textId = regularTextTimeSeriesRow.getTextId();
@@ -218,36 +233,36 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         dates.add(dateTime);
 
         /* the pl/sql has:
-                        procedure store_ts_text(
-                              p_tsid         in varchar2,
-                              p_text         in clob,
-                              p_start_time   in date,
-                              p_end_time     in date default null,
-                              p_version_date in date default null,
-                              p_time_zone    in varchar2 default null,
-                              p_max_version  in varchar2 default 'T',
-                              p_existing     in varchar2 default 'T',
-                              p_non_existing in varchar2 default 'F',
-                              p_replace_all  in varchar2 default 'F',
-                              p_attribute    in number default null,
-                              p_office_id    in varchar2 default null)
+            procedure store_ts_text(
+                  p_tsid         in varchar2,
+                  p_text         in clob,
+                  p_start_time   in date,
+                  p_end_time     in date default null,
+                  p_version_date in date default null,
+                  p_time_zone    in varchar2 default null,
+                  p_max_version  in varchar2 default 'T',
+                  p_existing     in varchar2 default 'T',
+                  p_non_existing in varchar2 default 'F',
+                  p_replace_all  in varchar2 default 'F',
+                  p_attribute    in number default null,
+                  p_office_id    in varchar2 default null)
 
-                             Jooq names this one:   call_STORE_TS_TEXT - takes a date range. not used here.
+             Jooq names this one:   call_STORE_TS_TEXT - takes a date range. not used here.
 
-                        and also:
-                         procedure store_ts_text(
-                              p_tsid         in varchar2,
-                              p_text         in clob,
-                              p_times        in date_table_type,
-                              p_version_date in date default null,
-                              p_time_zone    in varchar2 default null,
-                              p_max_version  in varchar2 default 'T',
-                              p_replace_all  in varchar2 default 'F',
-                              p_attribute    in number default null,
-                              p_office_id    in varchar2 default null)
+            and also:
+                 procedure store_ts_text(
+                      p_tsid         in varchar2,
+                      p_text         in clob,
+                      p_times        in date_table_type,
+                      p_version_date in date default null,
+                      p_time_zone    in varchar2 default null,
+                      p_max_version  in varchar2 default 'T',
+                      p_replace_all  in varchar2 default 'F',
+                      p_attribute    in number default null,
+                      p_office_id    in varchar2 default null)
 
-                            Jooq names this one:   call_STORE_TS_TEXT__2  - this is what we use
-                 */
+            Jooq names this one:   call_STORE_TS_TEXT__2  - this is what we use
+         */
 
         if(textId != null && textValue != null){
             // There are two storeTs methods.  You either:
@@ -255,25 +270,23 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             // 2.  make an existing textId apply at the specified times - you don't care about the current textId to textValue.
             // This branch is if the user is trying to specify the text_Id and the text_value.
             // We'll have to make some choices to implement this.
-            throw new UnsupportedOperationException(String.format("TextId:\"%s\" and TextValue:\"%s\" are both specified.  This is not supported yet.", textId, textValue));
+            throw new UnsupportedOperationException(String.format("TextId:\"%s\" and TextValue:\"%s\" are both specified.  "
+                    + "This is not supported yet.", textId, textValue));
         }
 
-        connection(dsl, connection -> {
-            setOffice(connection, officeId);
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
+        CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
 
-            if (textId == null) {
-                // dbText.storeTsText makes DATE_TABLE_TYPE pTimes = convertDates(dates); then calls STORE_TS_TEXT__2
-                dbText.storeTsText(connection, tsId, textValue, dates,
-                        versionDate, timeZone, maxVersion, replaceAll,
-                        attribute, officeId);
-            } else {
-                // ends up calling STORE_TS_TEXT_ID__2
-                dbText.storeTsTextId(connection, tsId, textId, dates,
-                        versionDate, timeZone, maxVersion, replaceAll,
-                        attribute, officeId);
-            }
-        });
+        if (textId == null) {
+            // dbText.storeTsText makes DATE_TABLE_TYPE pTimes = convertDates(dates); then calls STORE_TS_TEXT__2
+            dbText.storeTsText(connection, tsId, textValue, dates,
+                    versionDate, timeZone, maxVersion, replaceAll,
+                    attribute, officeId);
+        } else {
+            // ends up calling STORE_TS_TEXT_ID__2
+            dbText.storeTsTextId(connection, tsId, textId, dates,
+                    versionDate, timeZone, maxVersion, replaceAll,
+                    attribute, officeId);
+        }
     }
 
 
@@ -290,7 +303,5 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                     officeId);
         });
     }
-
-
 
 }

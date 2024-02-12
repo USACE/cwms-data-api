@@ -120,26 +120,38 @@ public class StandardTimeSeriesTextDao extends JooqDao {
      * @param failIfExists true if the store should fail if the standard text id already exists
      */
     public void store(StandardTextValue standardTextValue, boolean failIfExists) {
+
+        connection(dsl, c -> store(c, standardTextValue, failIfExists));
+    }
+
+    private void store(Connection c, StandardTextValue standardTextValue, boolean failIfExists) throws SQLException {
         StandardTextId standardTextId = standardTextValue.getId();
         String stdTextId = standardTextId.getId();
         String stdText = standardTextValue.getStandardText();
         String officeId = standardTextId.getOfficeId();
-
-        connection(dsl, c -> {
-            setOffice(c, officeId);
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
-            dbText.storeStdText(c, stdTextId, stdText, failIfExists, officeId);
-        });
+        setOffice(c, officeId);
+        CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
+        dbText.storeStdText(c, stdTextId, stdText, failIfExists, officeId);
     }
 
     public void storeRows(String officeId, String tsId, boolean maxVersion, boolean replaceAll, Collection<StandardTextTimeSeriesRow> stdRows) {
-        for (StandardTextTimeSeriesRow stdRow : stdRows) {
-            store(officeId, tsId, stdRow, maxVersion, replaceAll);
-        }
+        connection(dsl, connection -> {
+            setOffice(connection, officeId);
+            for (StandardTextTimeSeriesRow stdRow : stdRows) {
+                store(officeId, tsId, stdRow, maxVersion, replaceAll);
+            }
+        });
     }
 
     public void store(String officeId, String tsId, StandardTextTimeSeriesRow stdRow,
                       boolean maxVersion, boolean replaceAll) {
+        connection(dsl, connection -> {
+            setOffice(connection, officeId);
+            store(connection, officeId, tsId, stdRow, maxVersion, replaceAll);
+        });
+    }
+
+    private void store(Connection connection, String officeId, String tsId, StandardTextTimeSeriesRow stdRow, boolean maxVersion, boolean replaceAll) throws SQLException {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
         String standardTextId = stdRow.getStandardTextId();
@@ -151,17 +163,10 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         NavigableSet<Date> dates = new TreeSet<>();
         dates.add(dateTime);
 
-        store(officeId, tsId, standardTextId, dates, versionDate, timeZone, maxVersion, replaceAll, attribute);
-    }
-
-    private void store(String officeId, String tsId, String standardTextId, NavigableSet<Date> dates, Date versionDate, TimeZone timeZone, boolean maxVersion, boolean replaceAll, Long attribute) {
-        connection(dsl, connection -> {
-            setOffice(connection, officeId);
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
-            dbText.storeTsStdText(connection, tsId, standardTextId, dates,
-                    versionDate, timeZone, maxVersion, replaceAll,
-                    attribute, officeId);
-        });
+        CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
+        dbText.storeTsStdText(connection, tsId, standardTextId, dates,
+                versionDate, timeZone, maxVersion, replaceAll,
+                attribute, officeId);
     }
 
     /**
