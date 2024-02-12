@@ -79,10 +79,9 @@ public class TextTimeSeriesController implements CrudHandler {
 
     public static final boolean DEFAULT_CREATE_MAX_VERSION = false;
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
-    public static final boolean DEFAULT_GETALL_MAX_VERSION = false;
     public static final boolean DEFAULT_UPDATE_MAX_VERSION = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = false;
-    public static final boolean DEFAULT_DELETE_MAX_VERSION = true;
+
 
 
 
@@ -113,8 +112,8 @@ public class TextTimeSeriesController implements CrudHandler {
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                     @OpenApiParam(name = END, description = "The end of the time window. If specified the text associated with all times from start to end (inclusive) is returned."),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the minimum or maximum version date (depending on p_max_version) is used."),
-                    @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified. Default is:" + DEFAULT_GETALL_MAX_VERSION),
+                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the maximum version date is used."),
+
                     @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value to delete. If not specified, no minimum value is used."),
                     @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to delete. If not specified, no maximum value is used."),
                     @OpenApiParam(name = MODE, required = true, type = TimeSeriesTextMode.class,
@@ -144,7 +143,8 @@ public class TextTimeSeriesController implements CrudHandler {
         ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
         ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
         ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
-        boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(DEFAULT_GETALL_MAX_VERSION);
+        boolean maxVersion = versionZdt == null;
+
         Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
         Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
         TimeSeriesTextMode mode = ctx.queryParamAsClass(MODE, TimeSeriesTextMode.class).getOrDefault(TimeSeriesTextMode.ALL);
@@ -254,7 +254,7 @@ public class TextTimeSeriesController implements CrudHandler {
             @OpenApiParam(name = NAME, description = "The id of the text timeseries to be updated"),
         },
             queryParams = {
-                    @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified."),
+                    @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to use the maximum version date if p_version_date is not specified. Default is:" + DEFAULT_UPDATE_MAX_VERSION),
                     @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to replace any and all existing text with the specified text. Default is:" + DEFAULT_UPDATE_REPLACE_ALL)
             },
         requestBody = @OpenApiRequestBody(
@@ -329,8 +329,7 @@ public class TextTimeSeriesController implements CrudHandler {
                         + " the text associated with all times from start to end (inclusive) is "
                         + "deleted."),
                 @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
-                        + "series.  If not specified, the minimum or maximum version date "
-                        + "(depending on p_max_version) is used."),
+                        + "series.  If not specified, maximum version date is used."),
                 @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description =
                         "The minimum attribute value to delete. If not specified, no minimum "
                                 + "value is used."),
