@@ -37,6 +37,7 @@ import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.javalin.core.validation.JavalinValidation;
 import io.restassured.filter.log.LogDetail;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
@@ -85,7 +86,9 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_standard() throws Exception {
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_std.json"), StandardCharsets.UTF_8);
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_std.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
         JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
@@ -101,8 +104,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .queryParam("office", OFFICE)
-            .queryParam("ts-id", tsId)
-            .queryParam("start","2005-02-01T15:00:00Z")
+            .queryParam("name", tsId)
+            .queryParam("begin","2005-02-01T15:00:00Z")
             .queryParam("end","2005-02-01T23:00:00Z")
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
@@ -139,8 +142,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start","2005-02-01T15:00:00Z")
+                .queryParam("name", tsId)
+                .queryParam("begin","2005-02-01T15:00:00Z")
                 .queryParam("end","2005-02-01T23:00:00Z")
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
@@ -175,8 +178,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start", startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin", startStr)
                 .queryParam("end", endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", REGULAR)
@@ -192,7 +195,9 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK));
 
         // create
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_reg.json"), StandardCharsets.UTF_8);
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_reg.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -216,8 +221,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", REGULAR)
@@ -246,8 +251,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", REGULAR)
@@ -274,8 +279,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
@@ -305,8 +310,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", REGULAR)
@@ -324,7 +329,9 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
 
         //2) update
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_update_reg.json"), StandardCharsets.UTF_8);
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_update_reg.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
@@ -349,8 +356,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", REGULAR)
@@ -383,8 +390,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
@@ -403,7 +410,9 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
 
         //2) update
-        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_update_std.json"), StandardCharsets.UTF_8);
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_update_std.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
@@ -426,8 +435,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
@@ -462,8 +471,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start", startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin", startStr)
                 .queryParam("end", endStr)
                 .queryParam("max-version", "false")
                 .queryParam("mode", REGULAR)
@@ -504,8 +513,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start", startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin", startStr)
                 .queryParam("end", endStr)
                 .queryParam("max-version", "false")
                 .queryParam("mode", REGULAR)
@@ -539,8 +548,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
@@ -579,8 +588,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam("office", OFFICE)
-                .queryParam("ts-id", tsId)
-                .queryParam("start",startStr)
+                .queryParam("name", tsId)
+                .queryParam("begin",startStr)
                 .queryParam("end",endStr)
                 .queryParam("max-version","false")
                 .queryParam("mode", STANDARD)
