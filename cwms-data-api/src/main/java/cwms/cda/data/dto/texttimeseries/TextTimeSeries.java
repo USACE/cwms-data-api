@@ -29,7 +29,10 @@ public class TextTimeSeries extends CwmsDTO {
 // https://bitbucket.hecdev.net/projects/SC/repos/hec-monolith/browse/hec-monolith/src/main/java/hec/data/timeSeriesText/TextTimeSeries.java
 //    private ITimeSeriesDescription _timeSeriesDescription;
     
-    private final String id;
+    private final String name;
+    private final Long intervalOffset;
+
+    private final String timeZone;
 
     private final NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regularMap;
     private final NavigableMap<DateDateKey, StandardTextTimeSeriesRow> stdMap;
@@ -37,7 +40,10 @@ public class TextTimeSeries extends CwmsDTO {
 
     private TextTimeSeries(Builder builder) {
         super(builder.officeId);
-        id = builder.id;
+        name = builder.name;
+        intervalOffset = builder.intervalOffset;
+        timeZone = builder.timeZone;
+
         if (builder.regMap == null) {
             regularMap = null;
         } else {
@@ -57,8 +63,16 @@ public class TextTimeSeries extends CwmsDTO {
         stdMap = buildStdMap(builder.stdMap, builder.useStdCatalog);
     }
 
-    public String getId() {
-        return id;
+    public String getName() {
+        return name;
+    }
+
+    public Long getIntervalOffset() {
+        return intervalOffset;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
     }
 
     @Override
@@ -142,9 +156,13 @@ public class TextTimeSeries extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private String id;
+        private String name;
 
         private String officeId;
+
+        public Long intervalOffset;
+
+        public String timeZone;
         NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regMap = null;
         NavigableMap<DateDateKey, StandardTextTimeSeriesRow> stdMap = null;
 
@@ -154,13 +172,23 @@ public class TextTimeSeries extends CwmsDTO {
         public Builder() {
         }
 
-        public Builder withId(String tsid) {
-            this.id = tsid;
+        public Builder withName(String tsid) {
+            this.name = tsid;
             return this;
         }
 
         public Builder withOfficeId(String officeId) {
             this.officeId = officeId;
+            return this;
+        }
+
+        public Builder withIntervalOffset(Long intervalOffset) {
+            this.intervalOffset = intervalOffset;
+            return this;
+        }
+
+        public Builder withTimeZone(String timeZone) {
+            this.timeZone = timeZone;
             return this;
         }
 

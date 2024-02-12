@@ -125,7 +125,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                 startTime, endTime, versionDate, maxVersion, minAttribute, maxAttribute);
 
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
-        return builder.withId(tsId)
+        return builder.withName(tsId)
                 .withOfficeId(officeId)
                 .withRegularTextValues(rows)
                 .build();

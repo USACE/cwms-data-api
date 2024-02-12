@@ -250,7 +250,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     public TextTimeSeries retrieveTextTimeSeries(String officeId, String tsId, String stdTextIdMask, Instant startTime, Instant endTime, Instant versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute) {
 
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
-        builder.withId(tsId);
+        builder.withName(tsId);
         builder.withOfficeId(officeId);
 
         List<StandardTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, stdTextIdMask, startTime, endTime, versionDate, maxVersion, retrieveText, minAttribute, maxAttribute);

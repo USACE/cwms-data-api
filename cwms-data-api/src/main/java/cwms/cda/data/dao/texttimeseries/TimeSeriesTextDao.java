@@ -64,7 +64,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
         return new TextTimeSeries.Builder()
                 .withOfficeId(officeId)
-                .withId(tsId)
+                .withName(tsId)
                 .withRegularTextValues(regRows)
                 .withStandardTextValues(stdRows)
                 .build();
@@ -119,7 +119,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
         return new TextTimeSeries.Builder()
                 .withOfficeId(officeId)
-                .withId(tsId)
+                .withName(tsId)
                 .withRows(rows)
                 .build();
     }
@@ -154,13 +154,13 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         if (stdRows != null) {
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-            stdDao.storeRows(tts.getOfficeId(), tts.getId(), maxVersion, replaceAll, stdRows);
+            stdDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, stdRows);
         }
 
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
-            regDao.storeRows(tts.getOfficeId(), tts.getId(), maxVersion, replaceAll, regRows);
+            regDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, regRows);
 
         }
 
@@ -171,7 +171,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
         if (stdRows != null) {
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-            stdDao.storeRows(tts.getOfficeId(), tts.getId(), maxVersion, replaceAll, stdRows);
+            stdDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, stdRows);
         }
 
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
@@ -179,7 +179,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
             RegularTimeSeriesTextDao regDao = getRegularDao();
 
             for (RegularTextTimeSeriesRow regRow : regRows) {
-                regDao.storeRow(tts.getOfficeId(), tts.getId(), regRow, maxVersion, replaceAll);
+                regDao.storeRow(tts.getOfficeId(), tts.getName(), regRow, maxVersion, replaceAll);
             }
 
         }

@@ -22,7 +22,7 @@ class TextTimeSeriesTest {
 
         TextTimeSeries textTimeSeries = new TextTimeSeries.Builder()
                 .withOfficeId("SPK")
-                        .withId("First519402.Flow.Inst.1Hour.0.1688755420497")
+                        .withName("First519402.Flow.Inst.1Hour.0.1688755420497")
                                 .withStdRow(row).build();
 
 
@@ -44,7 +44,7 @@ class TextTimeSeriesTest {
 
         TextTimeSeries textTimeSeries = new TextTimeSeries.Builder()
                 .withOfficeId("SPK")
-                .withId("First519402.Flow.Inst.1Hour.0.1688755420497")
+                .withName("First519402.Flow.Inst.1Hour.0.1688755420497")
                 .withRow(row).build();
 
 
