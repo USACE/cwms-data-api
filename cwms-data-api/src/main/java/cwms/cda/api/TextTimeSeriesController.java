@@ -331,8 +331,6 @@ public class TextTimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                         + "series.  If not specified, the minimum or maximum version date "
                         + "(depending on p_max_version) is used."),
-                @OpenApiParam(name = MAX_VERSION, type = Boolean.class, description = "Whether to"
-                        + " use the maximum version date if p_version_date is not specified. Default is:" + DEFAULT_DELETE_MAX_VERSION),
                 @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description =
                         "The minimum attribute value to delete. If not specified, no minimum "
                                 + "value is used."),
@@ -359,14 +357,14 @@ public class TextTimeSeriesController implements CrudHandler {
 
             TimeSeriesTextMode mode = ctx.queryParamAsClass(MODE, TimeSeriesTextMode.class).get();
 
-            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(DEFAULT_DELETE_MAX_VERSION);
-
             ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
             if(beginZdt == null){
                 throw new IllegalArgumentException(BEGIN + " is a required parameter");
             }
             ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
             ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
+
+            boolean maxVersion = versionZdt == null;
 
             Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
             Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
