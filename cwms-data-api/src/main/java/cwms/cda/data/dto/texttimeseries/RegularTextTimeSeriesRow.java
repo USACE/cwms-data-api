@@ -23,7 +23,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     private final Long attribute;
     private final String textId;
     private final String textValue;
-    private final boolean newData;
+
 
     private RegularTextTimeSeriesRow(Builder builder) {
         dateTime = builder.dateTime;
@@ -32,7 +32,6 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         textId = builder.textId;
         attribute = builder.attribute;
         textValue = builder.textValue;
-        newData = builder.newData;
     }
 
     public Date getVersionDate() {
@@ -51,9 +50,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         return textValue;
     }
 
-    public boolean isNewData() {
-        return newData;
-    }
+
 
     @Override
     public RegularTextTimeSeriesRow copy() {
@@ -87,9 +84,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
 
         RegularTextTimeSeriesRow that = (RegularTextTimeSeriesRow) o;
 
-        if (isNewData() != that.isNewData()) {
-            return false;
-        }
+
         if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) :
                 that.getDateTime() != null) {
             return false;
@@ -121,7 +116,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         result = 31 * result + (getTextId() != null ? getTextId().hashCode() : 0);
         result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
         result = 31 * result + (getTextValue() != null ? getTextValue().hashCode() : 0);
-        result = 31 * result + (isNewData() ? 1 : 0);
+
         return result;
     }
 
@@ -134,7 +129,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         private String textId;
         private Long attribute;
         private String textValue;
-        private boolean newData;
+
 
         public Builder() {
         }
@@ -189,10 +184,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
-        public Builder withNewData(boolean newData) {
-            this.newData = newData;
-            return this;
-        }
+
 
         public RegularTextTimeSeriesRow build() {
             return new RegularTextTimeSeriesRow(this);
@@ -206,7 +198,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withTextId(null)
                         .withAttribute((Long) null)
                         .withTextValue(null)
-                        .withNewData(false);
+                        ;
             } else {
                 return withDateTime(regularTextTimeSeriesRow.dateTime)
                         .withVersionDate(regularTextTimeSeriesRow.versionDate)
@@ -214,7 +206,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withTextId(regularTextTimeSeriesRow.textId)
                         .withAttribute(regularTextTimeSeriesRow.attribute)
                         .withTextValue(regularTextTimeSeriesRow.textValue)
-                        .withNewData(regularTextTimeSeriesRow.newData);
+                        ;
             }
         }
 
