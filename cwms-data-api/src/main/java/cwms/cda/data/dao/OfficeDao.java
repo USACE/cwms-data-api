@@ -5,11 +5,9 @@ import static org.jooq.impl.DSL.upper;
 import cwms.cda.data.dto.Office;
 import java.util.List;
 import java.util.Optional;
-
 import org.jooq.DSLContext;
 import org.jooq.Record4;
 import org.jooq.Table;
-
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
@@ -76,7 +74,7 @@ public class OfficeDao extends JooqDao<Office> {
                 view.OFFICE_TYPE.as("type"),
                 view.REPORT_TO_OFFICE_ID.as("reportsTo"))
                 .from(view)
-                .where(view.OFFICE_ID.upper().eq(upper(officeId)))
+                .where(upper(view.OFFICE_ID).eq(upper(officeId)))
                 .fetchOne();
         return fetchOne != null
                 ? Optional.of(fetchOne.into(Office.class))

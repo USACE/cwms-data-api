@@ -286,7 +286,12 @@ public class ApiServlet extends HttpServlet {
                 .exception(CwmsAuthException.class, (e,ctx) -> {
                     CdaError re;
                     switch (e.getAuthFailCode()) {
-                        case 401: re = new CdaError("Invalid user",true); break;
+                        case 401:
+                        {
+                            String msg = e.suppressMessage() == false ? e.getLocalizedMessage() : "Invalid User";
+                            re = new CdaError(msg,true);
+                            break;
+                        }
                         case 403: re = new CdaError("Not Authorized",true); break;
                         default: re = new CdaError("Unknown auth error.");
                     }

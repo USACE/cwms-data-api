@@ -77,6 +77,7 @@ import org.jooq.SelectSeekStep3;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -418,12 +419,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation) {
         if (cursorOffice != null) {
-            Condition officeEqualCur = AV_LOC2.AV_LOC2.DB_OFFICE_ID.upper().eq(cursorOffice.toUpperCase());
-            Condition curOfficeLocationIdGreater = AV_LOC2.AV_LOC2.LOCATION_ID.upper().gt(cursorLocation);
-            Condition officeGreaterThanCur = AV_LOC2.AV_LOC2.DB_OFFICE_ID.upper().gt(cursorOffice.toUpperCase());
+            Condition officeEqualCur = DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).eq(cursorOffice.toUpperCase());
+            Condition curOfficeLocationIdGreater = DSL.upper(AV_LOC2.AV_LOC2.LOCATION_ID).gt(cursorLocation);
+            Condition officeGreaterThanCur = DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).gt(cursorOffice.toUpperCase());
             condition = condition.and(officeEqualCur).and(curOfficeLocationIdGreater).or(officeGreaterThanCur);
         } else {
-            condition = condition.and(AV_LOC2.AV_LOC2.LOCATION_ID.upper().gt(cursorLocation));
+            condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.LOCATION_ID).gt(cursorLocation));
         }
         return condition;
     }
@@ -439,7 +440,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             condition = condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull());
         }
         if (office != null) {
-            condition = condition.and(AV_LOC2.AV_LOC2.DB_OFFICE_ID.upper().eq(office.toUpperCase()));
+            condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).eq(office.toUpperCase()));
         }
         if (categoryLike != null) {
             condition = condition.and(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike));

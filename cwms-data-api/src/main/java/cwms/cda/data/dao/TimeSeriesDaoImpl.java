@@ -390,7 +390,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             Condition condition = caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.CWMS_TS_ID, idLike)
                     .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
             if (searchOffice != null) {
-                condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(searchOffice.toUpperCase()));
+                condition = condition.and(DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).eq(searchOffice.toUpperCase()));
             }
 
             if (locCategoryLike != null) {
@@ -463,7 +463,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.CWMS_TS_ID, idLike));
 
         if (searchOffice != null) {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(office.toUpperCase()));
+            primaryDataQuery.addConditions(DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (locCategoryLike != null) {
@@ -487,16 +487,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         if (curOffice != null) {
-            Condition officeEqualCur = AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().eq(curOffice.toUpperCase());
-            Condition curOfficeTsIdGreater = AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor);
-            Condition officeGreaterThanCur = AV_CWMS_TS_ID2.DB_OFFICE_ID.upper().gt(curOffice.toUpperCase());
+            Condition officeEqualCur = DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).eq(curOffice.toUpperCase());
+            Condition curOfficeTsIdGreater = DSL.upper(AV_CWMS_TS_ID2.CWMS_TS_ID).gt(tsCursor);
+            Condition officeGreaterThanCur = DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).gt(curOffice.toUpperCase());
             primaryDataQuery.addConditions(Operator.AND,
                     officeEqualCur.and(curOfficeTsIdGreater).or(officeGreaterThanCur));
         } else {
-            primaryDataQuery.addConditions(AV_CWMS_TS_ID2.CWMS_TS_ID.upper().gt(tsCursor));
+            primaryDataQuery.addConditions(DSL.upper(AV_CWMS_TS_ID2.CWMS_TS_ID).gt(tsCursor));
         }
 
-        primaryDataQuery.addOrderBy(AV_CWMS_TS_ID2.DB_OFFICE_ID.upper(), AV_CWMS_TS_ID2.CWMS_TS_ID.upper());
+        primaryDataQuery.addOrderBy(DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID), DSL.upper(AV_CWMS_TS_ID2.CWMS_TS_ID));
         Table<?> dataTable = primaryDataQuery.asTable("data");
         SelectQuery<?> limitQuery = dsl.selectQuery();
         limitQuery.addSelect(dataTable.fields());

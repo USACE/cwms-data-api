@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.is;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.data.dto.Clob;
+import cwms.cda.data.dto.Blob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
@@ -16,84 +16,82 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-public class ClobControllerTestIT extends DataApiTestIT {
+public class BlobControllerTestIT extends DataApiTestIT {
 
     public static final String SPK = "SPK";
 
     @Test
     void test_getOne_not_found() throws UnsupportedEncodingException {
-        String clobId = "TEST";
-        String urlencoded = java.net.URLEncoder.encode(clobId, "UTF-8");
+        String blobId = "TEST";
+        String urlencoded = java.net.URLEncoder.encode(blobId, "UTF-8");
 
         given()
         .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/clobs/" + urlencoded)
+            .get("/blobs/" + urlencoded)
         .then()
         .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
+
     @Test
     void test_create_getOne() throws JsonProcessingException {
-        String clobId = "TEST/TEST_CLOBIT2";
+        String blobId = "TEST_BLOBIT2";
 
         String origDesc = "test description";
         String origValue = "test value";
-        Clob clob = new Clob(SPK, clobId, origDesc, origValue);
+        byte[] origBytes = origValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
         ObjectMapper om = JsonV2.buildObjectMapper();
-        String serializedClob = om.writeValueAsString(clob);
+        String serializedBlob = om.writeValueAsString(blob);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .body(serializedClob)
+            .body(serializedBlob)
             .header("Authorization",user.toHeaderValue())
             .queryParam("office",SPK)
             .queryParam("fail-if-exists",false)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/clobs/")
+            .post("/blobs/")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        /* There is an issue with how javalin handles / in the path that are actually part
-        of the object name (NOTE: good candidate for actually having a GUID or other "code"
-        as part of the path and the actual name as a query parameter.
-        */
+//        /* There is an issue with how javalin handles / in the path that are actually part
+//        of the object name (NOTE: good candidate for actually having a GUID or other "code"
+//        as part of the path and the actual name as a query parameter.
+//        */
 
         given()
             .accept(Formats.JSONV2)
             .log().ifValidationFails(LogDetail.ALL,true)
             .queryParam(Controllers.OFFICE, SPK)
-            .queryParam(Controllers.CLOB_ID, clobId)
         .when()
-            .get("/clobs/ignored")
+            .get("/blobs/" + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", is(SPK))
-            .body("id", is(clobId))
-            .body("description", is(origDesc))
-            .body("value", is(origValue));
+            .body( is(origValue));
 
 
         given()
-                .accept("text/plain")
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .queryParam(Controllers.OFFICE, SPK)
-                .queryParam(Controllers.CLOB_ID, clobId)
                 .when()
-                .get("/clobs/ignored")
+                .get("/blobs/" + blobId)
                 .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
@@ -103,13 +101,11 @@ public class ClobControllerTestIT extends DataApiTestIT {
 
         // We can now do Range requests!
         given()
-                .accept("text/plain")
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .queryParam(Controllers.OFFICE, SPK)
-                .queryParam(Controllers.CLOB_ID, clobId)
                 .header("Range"," bytes=3-")
                 .when()
-                .get("/clobs/ignored")
+                .get("/blobs/" + blobId)
                 .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()

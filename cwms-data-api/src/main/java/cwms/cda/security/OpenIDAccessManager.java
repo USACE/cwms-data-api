@@ -29,7 +29,7 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
-
+import cwms.cda.data.dao.JooqDao;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -52,9 +52,9 @@ public class OpenIDAccessManager extends CdaAccessManager {
     private DataSource dataSource = null;
 
 
-    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout) {
+    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout, String authUrl) {
         try {
-            config = new OpenIDConfig(new URL(wellKnownUrl));
+            config = new OpenIDConfig(new URL(wellKnownUrl), authUrl);
             jwtParser = Jwts.parserBuilder()
                         .requireIssuer(issuer)
                         .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),realmKeyTimeout))
@@ -72,15 +72,15 @@ public class OpenIDAccessManager extends CdaAccessManager {
         handler.handle(ctx);
     }
 
-
-
     private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             String username = token.getBody().get("preferred_username",String.class);
-            // TODO: get roles from JWT and DB
-            return new DataApiPrincipal(username, new HashSet<RouteRole>());
-        } catch (JwtException ex) {
+            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
+            String edipiStr = username.substring(username.lastIndexOf(".")+1);
+            long edipi = Long.parseLong(edipiStr);
+            return dao.getPrincipalFromEdipi(edipi);
+        } catch (NumberFormatException | JwtException ex) {
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }
     }

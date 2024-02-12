@@ -1,11 +1,8 @@
 package cwms.cda.data.dto;
 
-import org.checkerframework.checker.units.qual.s;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
 import cwms.cda.api.errors.FieldException;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -16,6 +13,10 @@ public class Blob extends CwmsDTO
 	private String description;
 	private String mediaTypeId;
 	private byte[] value;
+
+	private Blob() {
+		super(null);
+	}
 
 	public Blob(String office, String id, String description, String type, byte[] value)
 	{
@@ -48,9 +49,7 @@ public class Blob extends CwmsDTO
 
 	@Override
 	public String toString(){
-		StringBuilder builder = new StringBuilder();
-		builder.append(getOfficeId()).append("/").append(id).append(";description=").append(description);
-		return builder.toString();
+        return getOfficeId() + "/" + id + ";description=" + description;
 	}
 
 	@Override
