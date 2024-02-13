@@ -17,7 +17,7 @@ class BlobTest {
         ObjectMapper om = JsonV2.buildObjectMapper();
 
         String serializedBlob = om.writeValueAsString(blob);
-        System.out.println(serializedBlob);
+
         assertNotNull(serializedBlob);
 
         Blob blob2 = om.readValue(serializedBlob, Blob.class);

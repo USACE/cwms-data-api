@@ -98,6 +98,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         Assertions.assertNotNull(tts);
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+        Assertions.assertNotNull(regRows);
         assertTrue(regRows.isEmpty());
 
 
@@ -350,10 +351,11 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
             Long minAttr = null;
             Long maxAttr = null;
 
-            DataAccessException thrown = assertThrows(DataAccessException.class, () -> {
-                String badFId = tsId.replace(".raw", ".asdfasdf");
+            String badFId = tsId.replace(".raw", ".asdfasdf");
 
-                TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, badFId, "*",
+            DataAccessException thrown = assertThrows(DataAccessException.class, () -> {
+
+                dao.retrieveTimeSeriesText(officeId, badFId, "*",
                         startInstant, endInstant, null,
                         maxVersion, minAttr, maxAttr);
             });
@@ -361,14 +363,14 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
             Throwable cause = thrown.getCause();
             assertInstanceOf(SQLException.class, cause);
             String message = cause.getMessage();
-            System.out.println(message);
+
             assertTrue(message.contains("TS_ID_NOT_FOUND"));
         });
     }
 
 
     @Test
-    void testBadStore() throws SQLException {
+    void testBadStore() {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         assertThrows(IllegalArgumentException.class, () -> {
             databaseLink.connection(c -> {

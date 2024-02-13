@@ -36,8 +36,6 @@ class TextTimeSeriesTest {
         String json = objectMapper.writeValueAsString(textTimeSeries);
         assertNotNull(json);
 
-        System.out.println(json);
-
         assertTrue(json.contains("ESTIMATED"));
         assertTrue(json.contains("CWMS"));
         assertTrue(json.contains("420"));
@@ -164,6 +162,7 @@ class TextTimeSeriesTest {
         assertFalse(catalogs.isEmpty());
 
         Collection<StandardTextTimeSeriesRow> stdRows = textTimeSeries.getStandardTextValues();
+        assertNotNull(stdRows);
         StandardTextTimeSeriesRow firstRow = stdRows.iterator().next();
 
         assertNotNull(firstRow);
@@ -183,6 +182,7 @@ class TextTimeSeriesTest {
 
 
         stdRows = textTimeSeries.getStandardTextValues();
+        assertNotNull(stdRows);
         firstRow = stdRows.iterator().next();
 
         assertNotNull(firstRow);
