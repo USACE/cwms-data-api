@@ -270,7 +270,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             // 2.  make an existing textId apply at the specified times - you don't care about the current textId to textValue.
             // This branch is if the user is trying to specify the text_Id and the text_value.
             // We'll have to make some choices to implement this.
-            throw new UnsupportedOperationException(String.format("TextId:\"%s\" and TextValue:\"%s\" are both specified.  "
+            throw new IllegalArgumentException(String.format("TextId:\"%s\" and TextValue:\"%s\" are both specified.  "
                     + "This is not supported yet.", textId, textValue));
         }
 
