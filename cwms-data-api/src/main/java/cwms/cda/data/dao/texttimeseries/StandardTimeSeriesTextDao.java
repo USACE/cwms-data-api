@@ -138,7 +138,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         connection(dsl, connection -> {
             setOffice(connection, officeId);
             for (StandardTextTimeSeriesRow stdRow : stdRows) {
-                store(officeId, tsId, stdRow, maxVersion, replaceAll);
+                store(connection, officeId, tsId, stdRow, maxVersion, replaceAll);
             }
         });
     }
