@@ -366,4 +366,26 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         });
     }
 
+
+    @Test
+    void testBadStore() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        assertThrows(IllegalArgumentException.class, () -> {
+            databaseLink.connection(c -> {
+                DSLContext dsl = getDslContext(c, officeId);
+                RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
+
+                RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
+                        .withTextValue("my new textValue")
+                        .withTextId("we want this id")
+                        .withDateTime(TimeSeriesTextDao.getDate(Instant.now()))
+                        .withVersionDate(null)
+                        .withAttribute((Long) null)
+                        .build();
+
+                dao.storeRow(officeId, tsId, row, true, true);
+            });
+        });
+    }
+
 }
