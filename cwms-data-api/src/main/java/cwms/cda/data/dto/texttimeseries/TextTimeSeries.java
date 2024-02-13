@@ -19,24 +19,23 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+import org.jetbrains.annotations.Nullable;
 
 
 @JsonDeserialize(builder = TextTimeSeries.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class TextTimeSeries extends CwmsDTO {
-//  This Monolith version of this class has:
-// https://bitbucket.hecdev.net/projects/SC/repos/hec-monolith/browse/hec-monolith/src/main/java/hec/data/timeSeriesText/TextTimeSeries.java
-//    private ITimeSeriesDescription _timeSeriesDescription;
-    
+
     private final String name;
     private final Long intervalOffset;
-
     private final String timeZone;
 
     private final NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regularMap;
+
     private final NavigableMap<DateDateKey, StandardTextTimeSeriesRow> stdMap;
-    private Map<String, StandardCatalog> stdCatalog = null;
+
+    private final Map<String, StandardCatalog> stdCatalog;
 
     private TextTimeSeries(Builder builder) {
         super(builder.officeId);
@@ -50,17 +49,13 @@ public class TextTimeSeries extends CwmsDTO {
             regularMap = new TreeMap<>(builder.regMap);
         }
 
-        if (builder.useStdCatalog) {
-            if(builder.stdCat == null){
-                stdCatalog = buildStdCatalog(builder.stdMap);
-            } else {
-                stdCatalog = new LinkedHashMap<>();
-                for(StandardCatalog cat : builder.stdCat){
-                    stdCatalog.put(cat.getOfficeId(), cat);
-                }
-            }
+        if (builder.stdMap == null) {
+            stdMap = null;
+        } else {
+            stdMap = new TreeMap<>(builder.stdMap);
         }
-        stdMap = buildStdMap(builder.stdMap, builder.useStdCatalog);
+
+        stdCatalog = builder.stdCatalog;
     }
 
     public String getName() {
@@ -81,10 +76,15 @@ public class TextTimeSeries extends CwmsDTO {
     }
 
     @JsonIgnore
+    @Nullable
     public NavigableMap<DateDateKey, RegularTextTimeSeriesRow> getTextTimeSeriesMap() {
+        if (regularMap == null) {
+            return null;
+        }
         return Collections.unmodifiableNavigableMap(regularMap);
     }
 
+    @Nullable
     public Collection<RegularTextTimeSeriesRow> getRegularTextValues() {
         if (regularMap == null) {
             return null;
@@ -93,6 +93,7 @@ public class TextTimeSeries extends CwmsDTO {
         }
     }
 
+    @Nullable
     public Collection<StandardTextTimeSeriesRow> getStandardTextValues() {
         if (stdMap == null) {
             return null;
@@ -101,6 +102,7 @@ public class TextTimeSeries extends CwmsDTO {
         }
     }
 
+    @Nullable
     public Collection<StandardCatalog> getStandardTextCatalog() {
         if (stdCatalog == null) {
             return null;
@@ -109,49 +111,7 @@ public class TextTimeSeries extends CwmsDTO {
         }
     }
 
-    public static Map<String, StandardCatalog> buildStdCatalog(Map<DateDateKey, StandardTextTimeSeriesRow> rows) {
-        Map<String, StandardCatalog> retval = null;
 
-        if (rows != null && !rows.isEmpty()) {
-            retval = new LinkedHashMap<>();
-            for (StandardTextTimeSeriesRow row : rows.values()) {
-                String rowOfficeId = row.getOfficeId();
-                StandardCatalog catalogForOffice = retval.computeIfAbsent(rowOfficeId,
-                        k -> new StandardCatalog(rowOfficeId));
-                catalogForOffice.addValue(row.getStandardTextId(), row.getTextValue());
-            }
-        }
-
-        return retval;
-    }
-
-    public static NavigableMap<DateDateKey, StandardTextTimeSeriesRow> buildStdMap(Map<DateDateKey, StandardTextTimeSeriesRow> rows, boolean useStdCatalog) {
-        NavigableMap<DateDateKey, StandardTextTimeSeriesRow> retval = null;
-
-        if (!useStdCatalog) {
-            if (rows != null) {
-                retval = new TreeMap<>(rows);
-            }
-        } else {
-            if (rows != null) {
-                retval = new TreeMap<>();
-                Set<Map.Entry<DateDateKey, StandardTextTimeSeriesRow>> entries = rows.entrySet();
-                for (Map.Entry<DateDateKey, StandardTextTimeSeriesRow> entry : entries) {
-                    DateDateKey key = entry.getKey();
-                    StandardTextTimeSeriesRow row = entry.getValue();
-
-                    StandardTextTimeSeriesRow row2 = new StandardTextTimeSeriesRow.Builder()
-                            .from(row)
-                            .withTextValue(null)
-                            .build();
-
-                    retval.put(key, row2);
-                }
-            }
-        }
-
-        return retval;
-    }
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -160,14 +120,14 @@ public class TextTimeSeries extends CwmsDTO {
 
         private String officeId;
 
-        public Long intervalOffset;
+        private Long intervalOffset;
 
-        public String timeZone;
+        private String timeZone;
         NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regMap = null;
         NavigableMap<DateDateKey, StandardTextTimeSeriesRow> stdMap = null;
 
         private boolean useStdCatalog = true;
-        private Collection<StandardCatalog> stdCat;
+        private Map<String, StandardCatalog> stdCatalog;
 
         public Builder() {
         }
@@ -247,9 +207,24 @@ public class TextTimeSeries extends CwmsDTO {
             return this;
         }
 
+
         public Builder withStandardTextCatalog(Collection<StandardCatalog> catalog ) {
-            this.stdCat = catalog;
+            this.stdCatalog = new LinkedHashMap<>();
+            for(StandardCatalog cat : catalog){
+                this.stdCatalog.put(cat.getOfficeId(), cat);
+            }
+
             this.useStdCatalog = true;
+            return this;
+        }
+
+        public Builder useStandardTextCatalog(boolean useStdCatalog) {
+            this.useStdCatalog = useStdCatalog;
+
+            if(!useStdCatalog) {
+                stdCatalog = null;
+            }
+
             return this;
         }
 
@@ -293,11 +268,62 @@ public class TextTimeSeries extends CwmsDTO {
             return this;
         }
 
+        private static Map<String, StandardCatalog> buildStdCatalog(Map<DateDateKey, StandardTextTimeSeriesRow> rows) {
+            Map<String, StandardCatalog> retval = null;
 
-        public TextTimeSeries build() {
-            return new TextTimeSeries(this);
+            if (rows != null && !rows.isEmpty()) {
+                retval = new LinkedHashMap<>();
+                for (StandardTextTimeSeriesRow row : rows.values()) {
+                    String rowOfficeId = row.getOfficeId();
+                    StandardCatalog catalogForOffice = retval.computeIfAbsent(rowOfficeId,
+                            k -> new StandardCatalog(rowOfficeId));
+
+                    catalogForOffice.addValue(row.getStandardTextId(), row.getTextValue());
+                }
+            }
+
+            return retval;
         }
 
+        private static NavigableMap<DateDateKey, StandardTextTimeSeriesRow> buildStdMap(Map<DateDateKey, StandardTextTimeSeriesRow> rows, boolean useStdCatalog) {
+            NavigableMap<DateDateKey, StandardTextTimeSeriesRow> retval = null;
 
+            if (!useStdCatalog) {
+                if (rows != null) {
+                    retval = new TreeMap<>(rows);
+                }
+            } else {
+                if (rows != null) {
+                    retval = new TreeMap<>();
+                    Set<Map.Entry<DateDateKey, StandardTextTimeSeriesRow>> entries = rows.entrySet();
+                    for (Map.Entry<DateDateKey, StandardTextTimeSeriesRow> entry : entries) {
+                        DateDateKey key = entry.getKey();
+                        StandardTextTimeSeriesRow row = entry.getValue();
+
+                        StandardTextTimeSeriesRow row2 = new StandardTextTimeSeriesRow.Builder()
+                                .from(row)
+                                .withTextValue(null)
+                                .build();
+
+                        retval.put(key, row2);
+                    }
+                }
+            }
+
+            return retval;
+        }
+
+        public TextTimeSeries build() {
+
+            if (useStdCatalog) {
+               stdCatalog = buildStdCatalog(stdMap);
+            } else {
+               stdCatalog = null;
+            }
+
+            stdMap = buildStdMap(stdMap, useStdCatalog);
+
+            return new TextTimeSeries(this);
+        }
     }
 }
