@@ -1,46 +1,41 @@
 {
   "office-id": "SPK",
-  "id": "TsTextTestLoc.Flow.Inst.1Hour.0.raw",
+  "name": "TsTextTestLoc.Flow.Inst.1Hour.0.raw",
   "regular-text-values": [
     {
       "date-time": 1104548400000,
       "version-date": -27079718400000,
       "data-entry-date": 1706028410476,
       "text-id": "/TIME SERIES TEXT/1978044",
-      "text-value": "my awesome text ts",
-      "new-data": false
+      "text-value": "my awesome text ts"
     },
     {
       "date-time": 1104552000000,
       "version-date": -27079718400000,
       "data-entry-date": 1706028410476,
       "text-id": "/TIME SERIES TEXT/1978044",
-      "text-value": "my awesome text ts",
-      "new-data": false
+      "text-value": "my awesome text ts"
     },
     {
       "date-time": 1104555600000,
       "version-date": -27079718400000,
       "data-entry-date": 1706028410476,
       "text-id": "/TIME SERIES TEXT/1978044",
-      "text-value": "my awesome text ts",
-      "new-data": false
+      "text-value": "my awesome text ts"
     },
     {
       "date-time": 1104559200000,
       "version-date": -27079718400000,
       "data-entry-date": 1706028410476,
       "text-id": "/TIME SERIES TEXT/1978044",
-      "text-value": "my awesome text ts",
-      "new-data": false
+      "text-value": "my awesome text ts"
     },
     {
       "date-time": 1104562800000,
       "version-date": -27079718400000,
       "data-entry-date": 1706028410476,
       "text-id": "/TIME SERIES TEXT/1978044",
-      "text-value": "my awesome text ts",
-      "new-data": false
+      "text-value": "my awesome text ts"
     }
   ]
 }
