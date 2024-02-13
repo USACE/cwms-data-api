@@ -232,7 +232,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public TextTimeSeries retrieveTextTimeSeries(
+    protected TextTimeSeries retrieveTextTimeSeries(
             String officeId, String tsId, StandardTextId standardTextId,
             Instant startTime, Instant endTime, Instant versionDate,
             boolean maxVersion, boolean retrieveText, Long minAttribute,

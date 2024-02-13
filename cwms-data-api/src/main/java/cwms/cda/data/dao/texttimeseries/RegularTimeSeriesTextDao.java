@@ -116,7 +116,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
 
-    public TextTimeSeries retrieveTimeSeriesText(
+    protected TextTimeSeries retrieveTimeSeriesText(
             String officeId, String tsId, String textMask,
             Instant startTime, Instant endTime, Instant versionDate,
             boolean maxVersion, Long minAttribute, Long maxAttribute)  {
