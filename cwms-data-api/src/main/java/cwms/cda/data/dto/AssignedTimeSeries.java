@@ -27,56 +27,55 @@ package cwms.cda.data.dto;
 import cwms.cda.api.errors.FieldException;
 import java.math.BigDecimal;
 
-public class AssignedTimeSeries implements CwmsDTOBase
-{
-	private String timeseriesId;
-	private BigDecimal tsCode;
+public class AssignedTimeSeries implements CwmsDTOBase {
+    private String officeId;
+    private String timeseriesId;
+    private BigDecimal tsCode;
+    private String aliasId;
+    private String refTsId;
+    private Integer attribute;
 
-	private String aliasId;
-	private String refTsId;
-	private Integer attribute;
+    public AssignedTimeSeries() {
 
-	public AssignedTimeSeries() {
-
-	}
+    }
 
 
-	public AssignedTimeSeries(String timeseriesId, BigDecimal tsCode, String aliasId, String refTsId, Integer attr)
-	{
-		this.timeseriesId = timeseriesId;
-		this.tsCode = tsCode;
-		this.aliasId = aliasId;
-		this.refTsId = refTsId;
-		this.attribute = attr;
-	}
+    public AssignedTimeSeries(String officeId, String timeseriesId, BigDecimal tsCode,
+                              String aliasId, String refTsId, Integer attr) {
+        this.officeId = officeId;
+        this.timeseriesId = timeseriesId;
+        this.tsCode = tsCode;
+        this.aliasId = aliasId;
+        this.refTsId = refTsId;
+        this.attribute = attr;
+    }
 
-	public String getTimeseriesId()
-	{
-		return timeseriesId;
-	}
+    public String getOfficeId() {
+        return officeId;
+    }
 
-	public BigDecimal getTsCode()
-	{
-		return tsCode;
-	}
+    public String getTimeseriesId() {
+        return timeseriesId;
+    }
 
-	public String getAliasId()
-	{
-		return aliasId;
-	}
+    public BigDecimal getTsCode() {
+        return tsCode;
+    }
 
-	public String getRefTsId()
-	{
-		return refTsId;
-	}
+    public String getAliasId() {
+        return aliasId;
+    }
 
-	public Integer getAttribute()
-	{
-		return attribute;
-	}
+    public String getRefTsId() {
+        return refTsId;
+    }
 
-	@Override
-	public void validate() throws FieldException {
+    public Integer getAttribute() {
+        return attribute;
+    }
 
-	}
+    @Override
+    public void validate() throws FieldException {
+
+    }
 }

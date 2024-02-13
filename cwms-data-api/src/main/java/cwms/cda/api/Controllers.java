@@ -47,8 +47,7 @@ public final class Controllers {
     public static final String PAGE_SIZE = "page-size";
 
     // IF the constant has a number at the end its a deprecated variant
-    public static final String PAGESIZE2 = "pagesize"; // deprecated
-    public static final String PAGESIZE3 = "pageSize"; // deprecated
+
     public static final String SIZE = "size";
 
     public static final String OFFICE = "office";
@@ -60,14 +59,19 @@ public final class Controllers {
     public static final String LIKE = "like";
 
     public static final String UNIT_SYSTEM = "unit-system";
-    public static final String UNITSYSTEM2 = "unitSystem"; // deprecated
+
     public static final String TIMESERIES_CATEGORY_LIKE = "timeseries-category-like";
-    public static final String TIMESERIESCATEGORYLIKE2 = "timeseriesCategoryLike"; // deprecated
+
+    public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
+    public static final String LOCATION_GROUP_LIKE = "location-group-like";
+
+
+
+
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
     public static final String INCLUDE_VALUES = "include-values";
-    public static final String INCLUDE_VALUES2 = "includeValues"; // deprecated
     public static final String FAIL_IF_EXISTS = "fail-if-exists";
     public static final String IGNORE_NULLS = "ignore-nulls";
     public static final String EFFECTIVE_DATE = "effective-date";
@@ -116,7 +120,6 @@ public final class Controllers {
     public static final String TS_IDS = "ts-ids";
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
     public static final String INCLUDE_ASSIGNED = "include-assigned";
-    public static final String INCLUDE_ASSIGNED2 = "includeAssigned"; // deprecated
     public static final String ANY_MASK = "*";
     public static final String ID_MASK = "id-mask";
     public static final String NAME_MASK = "name-mask";
@@ -127,7 +130,14 @@ public final class Controllers {
     public static final String POOL_ID = "pool-id";
     public static final String PROJECT_ID = "project-id";
     public static final String NOT_SUPPORTED_YET = "Not supported yet.";
-    static final String SPECIFIED_LEVEL_ID = "specified-level-id";
+    public static final String BOUNDING_OFFICE_LIKE = "bounding-office-like";
+    public static final String SPECIFIED_LEVEL_ID = "specified-level-id";
+    public static final String HAS_DATA = "has-data";
+    public static final String STATUS_200 = "200";
+    public static final String STATUS_201 = "201";
+    public static final String STATUS_404 = "404";
+    public static final String STATUS_501 = "501";
+    public static final String STATUS_400 = "400";
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);

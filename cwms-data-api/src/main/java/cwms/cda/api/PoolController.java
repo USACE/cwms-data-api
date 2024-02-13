@@ -14,13 +14,14 @@ import static cwms.cda.api.Controllers.NAME_MASK;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGESIZE2;
-import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.POOL_ID;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TOP_MASK;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -83,32 +84,25 @@ public class PoolController implements CrudHandler {
                             + " in the request you are. This is an opaque value, and can be"
                             + " obtained from the 'next-page' value in the response."
             ),
-            @OpenApiParam(name = CURSOR,
-                    deprecated = true,
-                    description = "Deprecated. Use '" + PAGE + "' instead."
-            ),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description =
                             "How many entries per page returned. Default " + defaultPageSize + "."
-            ),
-            @OpenApiParam(name = PAGESIZE3,
-                    deprecated = true,
-                    type = Integer.class,
-                    description = "Deprecated. Use '" + PAGE_SIZE + "' instead."),},
+            ),},
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSONV2, from = Pools.class)}),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of"
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of"
                             + " inputs provided the pools were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not"
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not"
                             + " implemented")},
             description = "Returns Pools Data",
             tags = {"Pools"})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);){
+            DSLContext dsl = getDslContext(ctx);
+
             PoolDao dao = new PoolDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -131,8 +125,8 @@ public class PoolController implements CrudHandler {
                     String.class, "", metrics, name(PoolController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
-                PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE},
+                    Integer.class, defaultPageSize, metrics,
                     name(PoolController.class.getName(), GET_ALL));
 
             Pools pools = dao.retrievePools(cursor, pageSize, projectIdMask, nameMask, bottomMask,
@@ -174,20 +168,21 @@ public class PoolController implements CrudHandler {
 
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = Pool.class, type = Formats.JSONV2)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the Location Category was not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE);){
+            DSLContext dsl = getDslContext(ctx);
+
             PoolDao dao = new PoolDao(dsl);
 
             // These are required

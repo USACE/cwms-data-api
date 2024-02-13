@@ -14,7 +14,7 @@ import usace.cwms.db.dao.ifc.env.CwmsDbEnv;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
-import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LOG;;
+import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LOG;
 
 public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
@@ -28,13 +28,13 @@ public abstract class Dao<T> {
     public Dao(DSLContext dsl) {
         this.dsl = dsl;
         String version = dsl.connectionResult(c-> {
-            return DSL.using(c,SQLDialect.ORACLE11G).select(AV_DB_CHANGE_LOG.VERSION)
+            return DSL.using(c,SQLDialect.ORACLE18C).select(AV_DB_CHANGE_LOG.VERSION)
                 .from(AV_DB_CHANGE_LOG)
                 .orderBy(AV_DB_CHANGE_LOG.VERSION_DATE.desc())
                 .limit(1)
                 .fetchOne().component1();
         });
-        String parts[] = version.split("\\.");
+        String[] parts = version.split("\\.");
         cwmsDbVersion =
             Integer.parseInt(parts[0])*10000
             +Integer.parseInt(parts[1])*100

@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACTIVE;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
@@ -39,6 +40,9 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.SNAP_BACKWARD;
 import static cwms.cda.api.Controllers.SNAP_FORWARD;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
 import static cwms.cda.api.Controllers.TIMESERIES_ID_REGEX;
 import static cwms.cda.api.Controllers.UPDATE;
@@ -81,7 +85,7 @@ import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(TimeSeriesIdentifierDescriptorController.class.getName());
-    public static final String TAG = "TimeSeries Identifier-Beta";
+    public static final String TAG = "TimeSeries Identifier";
 
     private static final int DEFAULT_PAGE_SIZE = 500;
 
@@ -124,13 +128,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     description = "How many entries per page returned. "
                             + "Default " + DEFAULT_PAGE_SIZE + "."
             )},
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
                             @OpenApiContent(type = Formats.JSONV2, from = TimeSeriesIdentifierDescriptors.class)
                     }),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the time series identifier descriptors were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")}, description = "Returns CWMS timeseries identifier descriptor"
             + "Data", tags = {TAG})
     @Override
@@ -139,8 +143,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         int pageSize =
                 ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
             String idRegex = ctx.queryParam(TIMESERIES_ID_REGEX);
@@ -176,22 +181,23 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = TimeSeriesIdentifierDescriptor.class, type =
                                             Formats.JSONV2)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries identifier descriptor was not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor", tags = {TAG})
     @Override
     public void getOne(Context ctx, @NotNull String timeseriesId) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -237,8 +243,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
@@ -317,8 +323,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         }
         
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
 
             if (foundUpdateKeys.isEmpty()) {
@@ -355,8 +362,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             dao.delete(office, timeseriesId, method);

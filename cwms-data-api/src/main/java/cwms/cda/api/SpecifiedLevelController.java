@@ -87,7 +87,7 @@ public class SpecifiedLevelController implements CrudHandler {
                             + "specified, all specified levels shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from =
                                             SpecifiedLevel.class)
@@ -102,8 +102,9 @@ public class SpecifiedLevelController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             SpecifiedLevelDao dao = getDao(dsl);
             List<SpecifiedLevel> levels = dao.getSpecifiedLevels(office, templateIdMask);
 
@@ -145,8 +146,9 @@ public class SpecifiedLevelController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             String body = ctx.body();
@@ -177,8 +179,9 @@ public class SpecifiedLevelController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, @NotNull String oldSpecifiedLevelId) {
-        try (Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             SpecifiedLevelDao dao = getDao(dsl);
             String newSpecifiedLevelId = ctx.queryParam(SPECIFIED_LEVEL_ID);
             String office = ctx.queryParam(OFFICE);
@@ -203,8 +206,9 @@ public class SpecifiedLevelController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, String specifiedLevelId) {
-        try (Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             SpecifiedLevelDao dao = getDao(dsl);
             String office = ctx.queryParam(OFFICE);
             dao.delete(specifiedLevelId, office);

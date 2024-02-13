@@ -56,6 +56,7 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.UnitsController;
+import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
@@ -77,6 +78,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
+import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
@@ -89,6 +91,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import java.util.concurrent.TimeUnit;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -104,12 +107,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.Manifest;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
@@ -119,6 +127,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
  *
  */
 @WebServlet(urlPatterns = { "/catalog/*",
+        "/auth/*",
         "/swagger-docs",
         "/timeseries/*",
         "/offices/*",
@@ -152,8 +161,10 @@ public class ApiServlet extends HttpServlet {
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
     public static final String VERSION = "3.0";
+    public static final String APPLICATION_TITLE = "CWMS Data API";
     public static final String PROVIDER_KEY_OLD = "radar.access.provider";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
+    public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
     private MetricRegistry metrics;
@@ -175,6 +186,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+        logger.atInfo().log("Initializing CWMS Data API Version:  " + obtainFullVersion(config));
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
@@ -184,7 +196,6 @@ public class ApiServlet extends HttpServlet {
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
     public void init() {
-        logger.atInfo().log("Initializing API");
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         ObjectMapper om = new ObjectMapper();
@@ -197,8 +208,7 @@ public class ApiServlet extends HttpServlet {
                     config.defaultContentType = "application/json";
                     config.contextPath = context;
                     getOpenApiOptions(config);
-                    //config.registerPlugin(new OpenApiPlugin());
-                    //config.enableDevLogging();
+                    config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
                 })
                 .attribute("PolicyFactory", sanitizer)
@@ -272,11 +282,22 @@ public class ApiServlet extends HttpServlet {
                 .exception(CwmsAuthException.class, (e,ctx) -> {
                     CdaError re;
                     switch (e.getAuthFailCode()) {
-                        case 401: re = new CdaError("Invalid user",true); break;
+                        case 401:
+                        {
+                            String msg = e.suppressMessage() == false ? e.getLocalizedMessage() : "Invalid User";
+                            re = new CdaError(msg,true);
+                            break;
+                        }
                         case 403: re = new CdaError("Not Authorized",true); break;
                         default: re = new CdaError("Unknown auth error.");
                     }
-                    logger.atInfo().withCause(e).log(e.getMessage());
+
+                    if (logger.atFine().isEnabled()) {
+                        logger.atFine().withCause(e).log(e.getMessage());
+                    } else {
+                        logger.atInfo().log(e.getMessage());
+                    }
+
                     ctx.status(e.getAuthFailCode()).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
@@ -289,21 +310,31 @@ public class ApiServlet extends HttpServlet {
                 })
 
                 .routes(this::configureRoutes)
-                .javalinServlet();        
+                .javalinServlet();
+    }
+
+    private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
+        String relativeWARPath = "/META-INF/MANIFEST.MF";
+        String absoluteDiskPath = servletConfig.getServletContext().getRealPath(relativeWARPath);
+        Path path = Paths.get(absoluteDiskPath);
+
+        try (InputStream inputStream = Files.newInputStream(path)) {
+            Manifest manifest = new Manifest(inputStream);
+            return manifest.getMainAttributes().getValue("build-version");
+        } catch (IOException e) {
+            throw new ServletException("Error obtaining servlet version", e);
+        }
     }
 
     private CdaAccessManager buildAccessManager(String provider) {
-        try {            
-            AccessManagers ams = new AccessManagers();       
+        try {
+            AccessManagers ams = new AccessManagers();
             return ams.get(provider);
         } catch (ServiceNotFoundException err) {
             throw new RuntimeException("Unable to initialize access manager",err);
         }
-        
+
     }
-
-
-
 
     protected void configureRoutes() {
 
@@ -311,59 +342,106 @@ public class ApiServlet extends HttpServlet {
 
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
-        cdaCrud("/location/category/{category-id}",
-                new LocationCategoryController(metrics), requiredRoles);
-        cdaCrud("/location/group/{group-id}",
-                new LocationGroupController(metrics), requiredRoles);
-        cdaCrud("/locations/{location-id}",
-                new LocationController(metrics), requiredRoles);
-        cdaCrud("/states/{state}",
-                new StateController(metrics), requiredRoles);
-        cdaCrud("/counties/{county}",
-                new CountyController(metrics), requiredRoles);
-        cdaCrud("/offices/{office}",
-                new OfficeController(metrics), requiredRoles);
-        cdaCrud("/units/{unit-id}",
-                new UnitsController(metrics), requiredRoles);
-        cdaCrud("/parameters/{param-id}",
-                new ParametersController(metrics), requiredRoles);
-        cdaCrud("/timezones/{zone}",
-                new TimeZoneController(metrics), requiredRoles);
+        // Even view on this one requires authorization
+        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
+        cdaCrudCache("/location/category/{category-id}",
+                new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/location/group/{group-id}",
+                new LocationGroupController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/locations/{location-id}",
+                new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/states/{state}",
+                new StateController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/counties/{county}",
+                new CountyController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/offices/{office}",
+                new OfficeController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/units/{unit-id}",
+                new UnitsController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/parameters/{param-id}",
+                new ParametersController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
+        cdaCrudCache("/timezones/{zone}",
+                new TimeZoneController(metrics), requiredRoles,60, TimeUnit.MINUTES);
         LevelsController levelsController = new LevelsController(metrics);
-        cdaCrud("/levels/{" + Controllers.LEVEL_ID + "}",
-                levelsController, requiredRoles);
-        get("/levels/{" + Controllers.LEVEL_ID + "}/timeseries", levelsController::getLevelAsTimeSeries);
+        cdaCrudCache("/levels/{" + Controllers.LEVEL_ID + "}",
+                levelsController, requiredRoles,5, TimeUnit.MINUTES);
+        String levelTsPath = "/levels/{" + Controllers.LEVEL_ID + "}/timeseries";
+        get(levelTsPath, levelsController::getLevelAsTimeSeries);
+        addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        get("/timeseries/recent/{group-id}", tsController::getRecent);
-        cdaCrud("/timeseries/category/{category-id}",
-                new TimeSeriesCategoryController(metrics), requiredRoles);
-        cdaCrud("/timeseries/identifier-descriptor/{timeseries-id}",
-                new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles);
-        cdaCrud("/timeseries/group/{group-id}",
-                new TimeSeriesGroupController(metrics), requiredRoles);
-        cdaCrud("/timeseries/{timeseries}", tsController, requiredRoles);
-        cdaCrud("/ratings/template/{template-id}",
-                new RatingTemplateController(metrics), requiredRoles);
-        cdaCrud("/ratings/spec/{rating-id}",
-                new RatingSpecController(metrics), requiredRoles);
-        cdaCrud("/ratings/metadata/{rating-id}",
-                new RatingMetadataController(metrics), requiredRoles);
-        cdaCrud("/ratings/{rating-id}",
-                new RatingController(metrics), requiredRoles);
-        cdaCrud("/catalog/{dataset}",
-                new CatalogController(metrics), requiredRoles);
-        cdaCrud("/basins/{basin-id}",
-                new BasinController(metrics), requiredRoles);
-        cdaCrud("/blobs/{blob-id}",
-                new BlobController(metrics), requiredRoles);
-        cdaCrud("/clobs/{clob-id}",
-                new ClobController(metrics), requiredRoles);
-        cdaCrud("/pools/{pool-id}",
-                new PoolController(metrics), requiredRoles);
-        cdaCrud("/specified-levels/{specified-level-id}",
-                new SpecifiedLevelController(metrics), requiredRoles);
+        String recentPath = "/timeseries/recent/{group-id}";
+        get(recentPath, tsController::getRecent);
+        addCacheControl(recentPath, 5, TimeUnit.MINUTES);
+
+        cdaCrudCache("/timeseries/category/{category-id}",
+                new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
+                new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/group/{group-id}",
+                new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/{timeseries}", tsController, requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/template/{template-id}",
+                new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/spec/{rating-id}",
+                new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/metadata/{rating-id}",
+                new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/{rating-id}",
+                new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/catalog/{dataset}",
+                new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/basins/{basin-id}",
+                new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/blobs/{blob-id}",
+                new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/clobs/{clob-id}",
+                new ClobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/pools/{pool-id}",
+                new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/specified-levels/{specified-level-id}",
+                new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
     }
 
+    /**
+     * This method delegates to the cdaCrud method but also adds an after filter for the specified
+     * path.  If the request was a GET request and the response does not already include
+     * Cache-Control then the filter will add the Cache-Control max-age header with the specified
+     * number of seconds.
+     * Controllers can include their own Cache-Control headers via:
+     *  "ctx.header(Header.CACHE_CONTROL, " public, max-age=" + 60);"
+     * This method lets the ApiServlet configure a default max-age for controllers that don't or
+     * forget to set their own.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param roles the required these roles are present to access post, patch
+     * @param duration the number of TimeUnit to cache GET responses.
+     * @param timeUnit the TimeUnit to use for duration.
+     */
+    public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler,
+                                    @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
+        cdaCrud(path, crudHandler, roles);
+
+        // path like /offices/{office} will match /offices/SWT getOne style url
+        addCacheControl(path, duration, timeUnit);
+
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+        // path like "/offices/" matches /offices getAll style url
+        addCacheControl(pathWithoutResource, duration, timeUnit);
+    }
+
+    private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
+        if(timeUnit != null && duration > 0) {
+            staticInstance().after(path, ctx -> {
+                String method = ctx.req.getMethod();  // "GET"
+                if (ctx.status() == HttpServletResponse.SC_OK
+                        && "GET".equals(method)
+                        && (!ctx.res.containsHeader(Header.CACHE_CONTROL))) {
+                    // only set the cache control header if it is not already set.
+                    ctx.header(Header.CACHE_CONTROL, "max-age=" + timeUnit.toSeconds(duration));
+                }
+            });
+        }
+    }
 
     /**
      * This method is very similar to the ApiBuilder.crud method but the specified roles
@@ -377,27 +455,7 @@ public class ApiServlet extends HttpServlet {
     public static void cdaCrud(@NotNull String path, @NotNull CrudHandler crudHandler,
                                  @NotNull RouteRole... roles) {
         String fullPath = prefixPath(path);
-        String[] subPaths = Arrays.stream(fullPath.split("/"))
-                .filter(it -> !it.isEmpty()).toArray(String[]::new);
-        if (subPaths.length < 2) {
-            throw new IllegalArgumentException("CrudHandler requires a path like "
-                    + "'/resource/{resource-id}'");
-        }
-        String resourceId = subPaths[subPaths.length - 1];
-        if (!(
-                (resourceId.startsWith("{") && resourceId.endsWith("}"))
-                ||
-                (resourceId.startsWith("<") && resourceId.endsWith(">"))
-            )) {
-            throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
-                    + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>'");
-        }
-        String resourceBase = subPaths[subPaths.length - 2];
-        if (resourceBase.startsWith("{") || resourceBase.startsWith("<")
-                || resourceBase.endsWith("}") || resourceBase.endsWith(">")) {
-            throw new IllegalArgumentException("CrudHandler requires a resource base at the "
-                    + "beginning of the provided path, e.g. '/users/{user-id}'");
-        }
+        String resourceId = getResourceId(fullPath);
 
         //noinspection KotlinInternalInJava
         Map<CrudFunction, Handler> crudFunctions =
@@ -406,22 +464,53 @@ public class ApiServlet extends HttpServlet {
         Javalin instance = staticInstance();
         // getOne and getAll are assumed not to need authorization
         instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
-        instance.get(fullPath.replace(resourceId, ""),
+        String pathWithoutResource = fullPath.replace(resourceId, "");
+        instance.get(pathWithoutResource,
                 crudFunctions.get(CrudFunction.GET_ALL));
 
         // create, update and delete need authorization.
-        instance.post(fullPath.replace(resourceId, ""),
+        instance.post(pathWithoutResource,
                 crudFunctions.get(CrudFunction.CREATE), roles);
         instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
+    /**
+     * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
+     * @param fullPath
+     * @return
+     */
+    @NotNull
+    public static String getResourceId(String fullPath) {
+        String[] subPaths = Arrays.stream(fullPath.split("/"))
+                .filter(it -> !it.isEmpty()).toArray(String[]::new);
+        if (subPaths.length < 2) {
+            throw new IllegalArgumentException("CrudHandler requires a path like "
+                    + "'/resource/{resource-id}' given: " + fullPath);
+        }
+        String resourceId = subPaths[subPaths.length - 1];
+        if (!(
+                (resourceId.startsWith("{") && resourceId.endsWith("}"))
+                ||
+                (resourceId.startsWith("<") && resourceId.endsWith(">"))
+            )) {
+            throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
+                    + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>' given: " + fullPath);
+        }
+        String resourceBase = subPaths[subPaths.length - 2];
+        if (resourceBase.startsWith("{") || resourceBase.startsWith("<")
+                || resourceBase.endsWith("}") || resourceBase.endsWith(">")) {
+            throw new IllegalArgumentException("CrudHandler requires a resource base at the "
+                    + "beginning of the provided path, e.g. '/users/{user-id}' given: " + fullPath);
+        }
+        return resourceId;
+    }
+
     private void getOpenApiOptions(JavalinConfig config) {
-        Info applicationInfo = new Info().title("CWMS Data API").version(VERSION)
+        Info applicationInfo = new Info().title(APPLICATION_TITLE).version(VERSION)
                 .description("CWMS REST API for Data Retrieval");
 
         String provider = getAccessManagerName();
-        logger.atInfo().log("Using access provider:" + provider);
 
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
@@ -430,13 +519,11 @@ public class ApiServlet extends HttpServlet {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
-
                 req.addList(manager.getName());
                 secReqs.add(req);
             }
-
         });
-        
+
         config.accessManager(am);
 
         OpenApiOptions ops =
@@ -461,14 +548,17 @@ public class ApiServlet extends HttpServlet {
             })
             .activateAnnotationScanningFor("cwms.cda.api");
         config.registerPlugin(new OpenApiPlugin(ops));
-        
+
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
         /* clear the lock icon from the GET handlers to reduce user confusion */
-        Operation op = path.getGet();
         logger.atFinest().log("setting security constraints for " + key);
-        setSecurity(path.getGet(), new ArrayList<>());
+        if (key.contains("/auth/")) {
+            setSecurity(path.getGet(), secReqs);
+        } else {
+            setSecurity(path.getGet(), new ArrayList<>());
+        }
         setSecurity(path.getDelete(),secReqs);
         setSecurity(path.getPost(), secReqs);
         setSecurity(path.getPut(), secReqs);
@@ -527,7 +617,7 @@ public class ApiServlet extends HttpServlet {
         if (office.isEmpty() || office.equalsIgnoreCase("cwms")) {
             office = "HQ";
         }
-        return office.toUpperCase();
+        return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
 
 }

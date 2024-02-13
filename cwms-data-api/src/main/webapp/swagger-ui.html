@@ -39,18 +39,15 @@
                 // Begin Swagger UI call region
                 const ui = SwaggerUIBundle({
                     url: "./swagger-docs",
-                    //basePath: "/cwms-data",
                     dom_id: "#swagger-ui",
                     configUrl: "./swagger-config.yaml",
                     deepLinking: false,
                     presets: [
-                        SwaggerUIBundle.presets.apis,
-                        SwaggerUIStandalonePreset
+                        SwaggerUIBundle.presets.apis
                     ],
                     plugins: [
                         SwaggerUIBundle.plugins.DownloadUrl
-                    ],
-                    layout: "StandaloneLayout"
+                    ]
                 }
                 );
                 // End Swagger UI call region

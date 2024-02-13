@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import com.google.common.flogger.FluentLogger;
+
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
@@ -27,6 +29,8 @@ import io.restassured.path.json.config.JsonPathConfig;
 
 @SuppressWarnings("rawtypes")
 public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
+
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static TomcatServer cdaInstance;
     private static CwmsDatabaseContainer<?> cwmsDb;
@@ -38,26 +42,20 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-
-        System.out.println("After all called");
-        if( cdaInstance != null ){
+        if (cdaInstance != null) {
             // test-containers will handle stopping everything
         }
-
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void beforeAll(ExtensionContext context) throws Exception {
-        System.out.println("Before all called");
-        System.out.println(context.getDisplayName());
-        if( cdaInstance == null ){
-            
+    public void beforeAll(ExtensionContext context) throws Exception {        
+        if (cdaInstance == null ) {
             cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
                             .withVolumeName(ORACLE_VOLUME)
-                            .withSchemaImage(CWMS_DB_IMAGE);                            
+                            .withSchemaImage(CWMS_DB_IMAGE);
             cwmsDb.start();
 
             this.loadDefaultData(cwmsDb);
@@ -73,31 +71,28 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty("CDA_JDBC_USERNAME", user);
             System.setProperty("CDA_JDBC_PASSWORD", pw);
 
+            logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
-            //catalinaBaseDir = Files.createTempDirectory("", "integration-test");
-            System.out.println("warFile property:" + System.getProperty("warFile"));            
-            
-            cdaInstance = new TomcatServer("build/tomcat", 
+            cdaInstance = new TomcatServer("build/tomcat",
                                              System.getProperty("warFile"),
                                              0,
                                              System.getProperty("warContext"));
             cdaInstance.start();
-            System.out.println("Tomcat Listing on " + cdaInstance.getPort());
+            logger.atInfo().log("Tomcat Listing on " + cdaInstance.getPort());
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = "/cwms-data";
-            RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
             // we only use doubles
             RestAssured.config()
                        .jsonConfig(
                             JsonConfig.jsonConfig()
                                       .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
         }
-    }    
+    }
 
     private void loadTimeSeriesData(CwmsDatabaseContainer<?> cwmsDb2) {
         String csv = this.loadResourceAsString("/cwms/cda/data/timeseries.csv");
-        StringReader reader = new StringReader(csv);        
+        StringReader reader = new StringReader(csv);
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
             cwmsDb2.connection( (c) -> {
@@ -108,8 +103,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save timeseries list to db",e);
         }
-        
-        
+
+
     }
 
     private void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
@@ -122,11 +117,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             } else if( user.equalsIgnoreCase("user")) {
                 user = cwmsDb.getUsername();
             }
-            System.out.println(String.format("Running %s as %s %s",data,user,cwmsDb.getPassword()));
+            logger.atInfo().log(String.format("Running %s as %s %s",data,user,cwmsDb.getPassword()));
             cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()
                                                                     .replace("&password.",cwmsDb.getPassword())), user);
         }
-
     }
 
     private ArrayList<String> getDefaultList() {
@@ -139,7 +133,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                 list.add(line);
             }
         } catch ( IOException err ){
-            System.err.println("Failed to load default data" + err.getLocalizedMessage());
+            logger.atWarning().withCause(err).log("Failed to load default data");
         }
         return list;
     }
@@ -152,19 +146,19 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         return cdaInstance.getPort();
     }
 
-    public static CwmsDatabaseContainer getDatabaseLink() {
+    public static CwmsDatabaseContainer<?> getDatabaseLink() {
         return cwmsDb;
     }
 
-    private String loadResourceAsString(String fileName) {        
+    private String loadResourceAsString(String fileName) {
         try {
             return IOUtils.toString(
                         getClass().getResourceAsStream(fileName),
                         "UTF-8"
                     );
-        } catch (IOException e) {            
+        } catch (IOException e) {
            throw new RuntimeException("Unable to load resource: " + fileName,e);
-        }        
+        }
     }
 
     public static Manager getTestSessionManager() {

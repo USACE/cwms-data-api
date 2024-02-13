@@ -102,7 +102,7 @@ public class RatingTemplateController implements CrudHandler {
                     ),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = RatingTemplates.class, type =
                                             Formats.JSONV2),
@@ -121,8 +121,9 @@ public class RatingTemplateController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingTemplateDao ratingTemplateDao = getRatingTemplateDao(dsl);
             RatingTemplates ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(cursor,
                     pageSize, office,
@@ -159,7 +160,7 @@ public class RatingTemplateController implements CrudHandler {
                             + "information from all offices shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(isArray = true, from = RatingTemplate.class,
                                             type = Formats.JSONV2),
@@ -174,8 +175,9 @@ public class RatingTemplateController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingTemplateDao ratingSetDao = getRatingTemplateDao(dsl);
 
             Optional<RatingTemplate> template = ratingSetDao.retrieveRatingTemplate(office,
@@ -214,8 +216,9 @@ public class RatingTemplateController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
             String body = ctx.body();
@@ -275,8 +278,9 @@ public class RatingTemplateController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, String ratingTemplateId) {
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String office = ctx.queryParam(OFFICE);
             RatingTemplateDao ratingDao = new RatingTemplateDao(dsl);
             JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();

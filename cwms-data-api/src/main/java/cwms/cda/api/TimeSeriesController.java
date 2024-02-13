@@ -5,6 +5,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.DATE_FORMAT;
@@ -23,12 +24,14 @@ import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
 import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGESIZE2;
-import static cwms.cda.api.Controllers.PAGESIZE3;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_RULE;
 import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
@@ -108,6 +111,48 @@ public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
 
     public static final String TAG = "TimeSeries";
+    public static final String STORE_RULE_DESC = "The business rule to use "
+            + "when merging the incoming with existing data\n"
+            + "<table  border=\"1\" summary=\"\">\n"
+            + "<tr><td colspan=2>Store Rules</td></tr>\n"
+            + "<tr>\n"
+            + "    <td>Delete Insert</td>\n"
+            + "    <td>All existing data in the time window will be deleted and then replaced with the new dataset.</td>\n"
+            + "</tr>\n"
+            + "<tr>\n"
+            + "    <td>Replace All</td>\n"
+            + "    <td>\n"
+            + "        <ul>\n"
+            + "            <li>When the new dataset's date/time exactly matches the date/time of an existing data value, the new data value will replace the existing data.</li>\n"
+            + "        <li>When the new dataset's data/time does not match an existing data/time (i.e., a new data/time - data value pair) then an insert to the database will occur.</li>\n"
+            + "            <li>When there's an existing \"data/time - data value pair\" without a corresponding date/time value pair, no change will happen to the existing date/time value pair.</li>\n"
+            + "        </ul>\n"
+            + "    </td>\n"
+            + "</tr>\n"
+            + "<tr>\n"
+            + "    <td>Replace With Non Missing</td>\n"
+            + "    <td>\n"
+            + "        <ul>\n"
+            + "            <li>New data is always inserted, i.e., an existing date/time-value pair does not already exist for the record.</li>\n"
+            + "            <li>If date/time-value pair does exist, then only non-missing value will replace the existing data value*.</li>\n"
+            + "        </ul>\n"
+            + "    </td>\n"
+            + "<tr>\n"
+            + "    <td>Replace Missing Values Only</td>\n"
+            + "    <td>\n"
+            + "        <ul>\n"
+            + "            <li>New data is always inserted, i.e., an existing date/time-value pair does not already exist for the record.</li>\n"
+            + "            <li>If date/time-value pair does exist, then only replace an existing data/time-value pair whose missing flag was set.</li>\n"
+            + "        </ul>\n"
+            + "    </td>\n"
+            + "<tr>\n"
+            + "    <td>Do Not Replace</td>\n"
+            + "    <td>\n"
+            + "        Only inserts new data values if an existing date/time-value pair does not already exist.\n"
+            + "        Note: an existing date/time-value pair whose missing value quality bit is set will NOT be overwritten.\n"
+            + "    </td>\n"
+            + "</tr>\n"
+            + "</table>";
 
     private final MetricRegistry metrics;
 
@@ -130,7 +175,7 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Create new TimeSeries, will store any data provided",
+            description = "Used to create and save time-series data. Data to be stored must have time stamps in UTC represented as epoch milliseconds ",
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -152,8 +197,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                             + "timeseries should be created as Local Regular Time Series. "
                             + "'True' or 'False', default is 'False'"),
-                    @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
-                            + "when merging the incoming with existing data", type = StoreRule.class),
+                    @OpenApiParam(name = STORE_RULE, type = StoreRule.class,  description = STORE_RULE_DESC),
                     @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
                             "A flag to ignore the protected data quality when storing data. "
                                     + "'True' or 'False'")
@@ -177,8 +221,9 @@ public class TimeSeriesController implements CrudHandler {
         StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
-        try (final Timer.Context ignored = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
@@ -229,8 +274,9 @@ public class TimeSeriesController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
@@ -239,8 +285,7 @@ public class TimeSeriesController implements CrudHandler {
             Timestamp endTimeDate = Timestamp.from(DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant());
             String versionDateParam = ctx.queryParam(VERSION_DATE);
             Timestamp versionDate = null;
-            if(versionDateParam != null)
-            {
+            if (versionDateParam != null) {
                 versionDate = Timestamp.from(DateUtils.parseUserDate(versionDateParam, timezone).toInstant());
             }
 
@@ -324,23 +369,13 @@ public class TimeSeriesController implements CrudHandler {
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = CURSOR,
-                            deprecated = true,
-                            description = "Deprecated. Use 'page' instead."
-                    ),
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
-                            description =
-                                    "How many entries per page returned. "
+                            description = "How many entries per page returned. "
                                             + "Default " + defaultPageSize + "."
-                    ),
-                    @OpenApiParam(name = PAGESIZE3,
-                            deprecated = true,
-                            type = Integer.class,
-                            description = "Deprecated. Please use page-size instead."
                     )
             },
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of elements of the data set you've selected.",
                     content = {
                             @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -350,10 +385,10 @@ public class TimeSeriesController implements CrudHandler {
                             @OpenApiContent(from = TimeSeries.class, type = ""),
                     }
             ),
-                    @OpenApiResponse(status = "400", description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a timeseries."),
-                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
             method = HttpMethod.GET,
@@ -361,10 +396,11 @@ public class TimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = ctx.queryParam(NAME);
@@ -380,8 +416,8 @@ public class TimeSeriesController implements CrudHandler {
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE, PAGESIZE3,
-                    PAGESIZE2}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE  },
+                    Integer.class, defaultPageSize, metrics,
                     name(TimeSeriesController.class.getName(), GET_ALL));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
@@ -477,8 +513,7 @@ public class TimeSeriesController implements CrudHandler {
                             + "of UTC shall be used.\r\nIgnored if version-date was specified with "
                             + "offset and timezone."),
                     @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
-                    @OpenApiParam(name = STORE_RULE,  description = "The business rule to use "
-                            + "when merging the incoming with existing data", type = StoreRule.class),
+                    @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
                     @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
                             "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\"")
             },
@@ -489,8 +524,9 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
@@ -619,18 +655,20 @@ public class TimeSeriesController implements CrudHandler {
         return result.toString();
     }
 
-    @OpenApi(queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
-                    + "timeseries group(s) whose data is to be included in the response. If this "
-                    + "field is not specified, matching timeseries groups information from all "
-                    + "offices shall be returned."),},
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
+                            + "timeseries group(s) whose data is to be included in the response. "
+                            + "If this field is not specified, matching timeseries groups "
+                            + "information from all offices shall be returned."),
+               },
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(isArray = true, from = Tsv.class, type = Formats.JSON)}
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries group(s) were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")
             },
             path = "/timeseries/recent",
@@ -638,10 +676,11 @@ public class TimeSeriesController implements CrudHandler {
             tags = {TAG},
             method = HttpMethod.GET
     )
-    public void getRecent(Context ctx) {
+    public void getRecent(@NotNull Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime("getRecent");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime("getRecent")) {
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String office = ctx.queryParam(OFFICE);

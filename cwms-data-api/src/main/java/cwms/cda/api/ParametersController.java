@@ -6,6 +6,7 @@ import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -62,16 +63,14 @@ public class ParametersController implements CrudHandler {
                             + "(default)")
             },
             responses = {
-                    @OpenApiResponse(status = "200")
+                    @OpenApiResponse(status = STATUS_200)
             },
             tags = {"Parameters"}
     )
     @Override
     public void getAll(Context ctx) {
-        try (
-                final Timer.Context timeContext = markAndTime(GET_ALL);
-                DSLContext dsl = getDslContext(ctx)
-        ) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL);) {
+            DSLContext dsl = getDslContext(ctx);
             ParameterDao dao = new ParameterDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
 

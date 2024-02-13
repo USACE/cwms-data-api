@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.rating.AbstractRatingMetadata;
@@ -42,7 +43,7 @@ import org.junit.jupiter.api.Test;
 //@Disabled("Needs larger rework for auth system changes.")
 @Tag("integration")
 class RatingMetadataDaoTestIT extends DataApiTestIT {
-
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 // This is how it can be run from an integration test using docker etc.
 // It takes 8 minutes or so to run it this way.
     @BeforeAll
@@ -83,7 +84,8 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
 
 
     void testRetrieveMetadata(Connection c, String connectionOfficeId) {
-        try (DSLContext context = getDslContext(c, connectionOfficeId)) {
+                DSLContext context = getDslContext(c, connectionOfficeId);
+        try{
 
             String[] files = new String[]{
                     "ALBT.Stage_Stage-Corrected.Linear.USGS-NWIS.xml.gz",
@@ -103,7 +105,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
             storeRatings(c, files);
 
             long end = System.currentTimeMillis();
-            System.out.println("Store Ratings took " + (end - start) + "ms");
+            logger.atInfo().log("Store Ratings took " + (end - start) + "ms");
 
             String officeId = "SWT";
             RatingMetadataDao dao = new RatingMetadataDao(context, new MetricRegistry());
@@ -114,7 +116,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
             RatingMetadataList firstPage = dao.retrieve(null, 50, officeId, "ALBT[.]Stage.*", null, null);
             assertNotNull(firstPage);
 
-            System.out.println("First Page size: " + firstPage.getSize());
+             logger.atInfo().log("First Page size: " + firstPage.getSize());
 
             assertTrue(firstPage.getSize() >= 5 && firstPage.getSize() <= 50);
 
@@ -202,7 +204,7 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
 
         IRatingSpecification ratingSpecification = ratingSet.getRatingSpecification();
 
-        System.out.println("Got " + ratings.length + " ratings");
+         logger.atInfo().log("Got " + ratings.length + " ratings");
     }
 
 
@@ -210,28 +212,28 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
     void testRetrieveRatings() throws SQLException  {
         String swt = "SWT";
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
-            try (DSLContext lrl = getDslContext(c, swt)) {
-                long start = System.nanoTime();
-                RatingMetadataDao dao = new RatingMetadataDao(lrl, new MetricRegistry());
+        databaseLink.connection(c -> {
+            DSLContext lrl = getDslContext(c, swt);
+            long start = System.nanoTime();
+            RatingMetadataDao dao = new RatingMetadataDao(lrl, new MetricRegistry());
 
-                String mask = "*";
+            String mask = "*";
 
-                String office = "SWT";
-                Set<String> ratingIds = dao.getRatingIds(office, mask, 0, 100);
+            String office = "SWT";
+            Set<String> ratingIds = dao.getRatingIds(office, mask, 0, 100);
 
-                Map<cwms.cda.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> got
-                        = dao.getRatingsForIds(office, ratingIds, null, null);
+            Map<cwms.cda.data.dto.rating.RatingSpec, Set<AbstractRatingMetadata>> got
+                    = dao.getRatingsForIds(office, ratingIds, null, null);
 
-                assertNotNull(got);
+            assertNotNull(got);
 
-                // count how many ratings we got
-                int count = got.values().stream().mapToInt(Set::size).sum();
+            // count how many ratings we got
+            int count = got.values().stream().mapToInt(Set::size).sum();
 
-                long end = System.nanoTime();
-                long ms = (end - start) / 1000000;
-                System.out.println("Got:" + got.size() + " count:" + count + " ratings in " + ms + "ms");
-            }
+            long end = System.nanoTime();
+            long ms = (end - start) / 1000000;
+            logger.atInfo().log("Got:" + got.size() + " count:" + count + " ratings in " + ms + "ms");
+
         });
     }
 

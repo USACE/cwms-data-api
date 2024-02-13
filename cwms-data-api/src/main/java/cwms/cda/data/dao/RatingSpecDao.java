@@ -62,7 +62,6 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         super(dsl);
     }
 
-
     public Collection<RatingSpec> retrieveRatingSpecs(String office, String specIdMask) {
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
@@ -98,7 +97,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .where(condition)
                 .fetchSize(1000);
 
-        //	logger.info(() -> query.getSQL(ParamType.INLINED));
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -155,7 +154,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
     @NotNull
     public Set<RatingSpec> getRatingSpecs(String office, String specIdMask, int firstRow,
                                           int pageSize) {
-        Set<RatingSpec> retval;
+        Set<RatingSpec> retVal;
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
@@ -192,7 +191,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .limit(pageSize)
                 .offset(firstRow);
 
-        logger.info(() -> query.getSQL(ParamType.INLINED));
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -209,18 +208,18 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             });
         }
 
-        retval = map.entrySet().stream()
+        retVal = map.entrySet().stream()
                 .map(entry -> new RatingSpec.Builder()
                         .fromRatingSpec(entry.getKey())
                         .withEffectiveDates(entry.getValue())
                         .build())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        return retval;
+        return retVal;
     }
 
 
     public Optional<RatingSpec> retrieveRatingSpec(String office, String specId) {
-        Set<RatingSpec> retval;
+        Set<RatingSpec> retVal;
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
@@ -252,7 +251,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
                 .fetchSize(1000);
 
-        //		logger.info(() -> query.getSQL(ParamType.INLINED));
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -269,7 +268,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             });
         }
 
-        retval = map.entrySet().stream()
+        retVal = map.entrySet().stream()
                 .map(entry -> new RatingSpec.Builder()
                         .fromRatingSpec(entry.getKey())
                         .withEffectiveDates(entry.getValue())
@@ -277,11 +276,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // There should only be one key in the map
-        if (retval.size() > 1) {
+        if (retVal.size() > 1) {
             throw new IllegalStateException("More than one rating spec found for id: " + specId);
         }
 
-        return retval.stream().findFirst();
+        return retVal.stream().findFirst();
     }
 
     public static ZonedDateTime toZdt(final Timestamp time) {
@@ -293,7 +292,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
     }
 
     public static RatingSpec buildRatingSpec(Record rec) {
-        RatingSpec retval = null;
+        RatingSpec retVal = null;
 
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
 
@@ -319,7 +318,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
             String dateMethods = rec.get(specView.DATE_METHODS);
 
-            retval = new RatingSpec.Builder()
+            retVal = new RatingSpec.Builder()
                     .withOfficeId(officeId)
                     .withRatingId(ratingId)
                     .withTemplateId(templateId)
@@ -337,7 +336,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     .build();
         }
 
-        return retval;
+        return retVal;
     }
 
 
@@ -364,17 +363,15 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 deleteAction,
                 office)
         );
-        
     }
 
     public void create(String xml, boolean failIfExists) {
         final String office = RatingDao.extractOfficeFromXml(xml);
-        dsl.connection(c -> 
+        dsl.connection(c ->
             CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
                 getDslContext(c,office).configuration(),
                 xml,
                 OracleTypeMap.formatBool(failIfExists))
         );
-        
     }
 }

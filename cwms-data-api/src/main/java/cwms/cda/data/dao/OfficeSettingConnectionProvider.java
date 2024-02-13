@@ -1,6 +1,7 @@
 package cwms.cda.data.dao;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -20,18 +21,21 @@ class OfficeSettingConnectionProvider extends DataSourceConnectionProvider {
     @Override
     public Connection acquire() throws DataAccessException {
         Connection conn = super.acquire();
-        return getConnection(conn, officeId);
-    }
-
-    public static Connection getConnection(Connection conn, String office) {
         try {
-            DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE11G);
-            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
+            DSLContext dsl = DSL.using(conn, SQLDialect.ORACLE18C);
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+            return conn;
         } catch (Exception e) {
-            throw new DataAccessException("Unable to set session office id to " + office, e);
+            try {
+                conn.close();
+            } catch (SQLException ex) {
+                e.addSuppressed(new DataAccessException("Trying to set the session office id to " + officeId + " caused an exception."
+                        + " Attempting to close the connection used in order to return it to the pool also triggered an exception.", ex));
+            }
+            throw e;
         }
-        return conn;
     }
 
-    // Override release to clear session settings if necessary.
+
+
 }

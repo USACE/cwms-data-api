@@ -110,8 +110,8 @@ public class RatingController implements CrudHandler {
             method = HttpMethod.POST, path = "/ratings", tags = {TAG})
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime("create"); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
             RatingDao ratingDao = getRatingDao(dsl);
             String ratingSet = deserializeRatingSet(ctx);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
@@ -184,8 +184,9 @@ public class RatingController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        try (Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             Instant startTimeDate = DateUtils.parseUserDate(ctx.queryParam(BEGIN), timezone).toInstant();
             Instant endTimeDate = DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant();
@@ -238,22 +239,23 @@ public class RatingController implements CrudHandler {
                     + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
                     + "xml\r\n4.    json (default)")},
             responses = {
-                @OpenApiResponse(status = "200", content = {
+                @OpenApiResponse(status = STATUS_200, content = {
                         @OpenApiContent(type = Formats.JSON),
                         @OpenApiContent(type = Formats.XML),
                         @OpenApiContent(type = Formats.TAB),
                         @OpenApiContent(type = Formats.CSV)
                 }),
-                @OpenApiResponse(status = "404", description = "The provided combination of "
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a rating table."),
-                @OpenApiResponse(status = "501", description = "Requested format is not "
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")},
             tags = {TAG})
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingDao ratingDao = getRatingDao(dsl);
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
@@ -327,7 +329,7 @@ public class RatingController implements CrudHandler {
                             type = RatingSet.DatabaseLoadMethod.class),
             },
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSONV2),
                             @OpenApiContent(type = Formats.XMLV2)})},
             description = "Returns CWMS Rating Data",
@@ -418,8 +420,9 @@ public class RatingController implements CrudHandler {
                                    String officeId, String rating, Instant begin,
                                    Instant end) throws IOException, RatingException {
         RatingSet ratingSet;
-        try (final Timer.Context ignored = markAndTime("getRatingSet");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime("getRatingSet")){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingDao ratingDao = getRatingDao(dsl);
             ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
         }
@@ -440,8 +443,9 @@ public class RatingController implements CrudHandler {
             method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
-        try (final Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingDao ratingDao = getRatingDao(dsl);
 
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);

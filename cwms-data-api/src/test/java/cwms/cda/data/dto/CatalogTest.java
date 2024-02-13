@@ -29,10 +29,11 @@ class CatalogTest
 
 
 	@Test
-	void test_catalog_page_round_trip() throws Exception {
+	void test_catalog_page_round_trip() {
 		final CatalogPage page = new CatalogPage("SPK/a", 
 											null,
 											".*",
+											null,
 											null,
 											null,
 											null,

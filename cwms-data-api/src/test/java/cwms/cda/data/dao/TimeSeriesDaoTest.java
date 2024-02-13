@@ -118,8 +118,9 @@ public class TimeSeriesDaoTest
 	{
 
 		String officeId = "LRL";
-		try(Connection connection = getConnection(); DSLContext lrl = getDslContext(connection, officeId))
+		try(Connection connection = getConnection())
 		{
+			DSLContext lrl = getDslContext(connection, officeId);
 			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
 
 			//			String tsId858 = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST858";
@@ -147,8 +148,9 @@ public class TimeSeriesDaoTest
 	{
 
 		String officeId = "LRL";
-		try(Connection connection = getConnection(); DSLContext lrl = getDslContext(connection, officeId))
+		try(Connection connection = getConnection())
 		{
+			DSLContext lrl = getDslContext(connection, officeId);
 			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
 
 			Calendar instance = Calendar.getInstance();
@@ -272,7 +274,7 @@ public class TimeSeriesDaoTest
 		JooqCwmsDatabaseVersionInfoFactory fac = new JooqCwmsDatabaseVersionInfoFactory();
 
 		String officeId = "LRL";
-		try(Connection connection = getConnection(); DSLContext lrl = getDslContext(connection, officeId))
+		try(Connection connection = getConnection())
 		{
 			CwmsDatabaseVersionInfo info = fac.retrieveVersionInfo(connection);
 			assertNotNull(info);
@@ -280,10 +282,6 @@ public class TimeSeriesDaoTest
 			assertFalse(info.getApplication().isEmpty());
 			assertFalse(info.getDescription().isEmpty());
 			assertFalse(info.getVersion().isEmpty());
-//			System.out.println(
-//					"t:" + info.getTitle() + " a:" + info.getApplication() + " d:" + info.getDescription() + " v:" + info.getVersion());
 		}
-
 	}
-
 }

@@ -44,8 +44,6 @@ public class GuestAccessManager extends CdaAccessManager{
     }
     
     private void init(Context ctx) {
-        if (authDao == null) {
-            authDao = new AuthDao(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-        }
+        authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
     }
 }

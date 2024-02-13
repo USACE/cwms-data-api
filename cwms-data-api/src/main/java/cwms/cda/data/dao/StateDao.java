@@ -38,9 +38,9 @@ public class StateDao extends JooqDao<State> {
 
     /**
      * Returns all states in CDA.
-     * 
+     *
      * @return a list of states
-     * 
+     *
      * @see List
      */
     public List<State> getStates() {

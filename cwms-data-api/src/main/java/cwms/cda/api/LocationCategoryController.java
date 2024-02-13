@@ -53,12 +53,13 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationCategoryController implements CrudHandler {
     public static final Logger logger =
             Logger.getLogger(LocationCategoryController.class.getName());
-    private static final String TAG = "Location Categories-Beta";
+    private static final String TAG = "Location Categories";
 
     private final MetricRegistry metrics;
 
@@ -80,7 +81,7 @@ public class LocationCategoryController implements CrudHandler {
                     + "location category(ies) whose data is to be included in the response. If "
                     + "this field is not specified, matching location category information from "
                     + "all offices shall be returned."),},
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
                             @OpenApiContent(isArray = true, from = LocationCategory.class, type =
                                     Formats.JSON)
@@ -93,8 +94,8 @@ public class LocationCategoryController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -137,7 +138,7 @@ public class LocationCategoryController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = LocationCategory.class, type =
                                             Formats.JSON)
@@ -147,10 +148,11 @@ public class LocationCategoryController implements CrudHandler {
             description = "Retrieves requested Location Category",
             tags = {TAG})
     @Override
-    public void getOne(Context ctx, String categoryId) {
+    public void getOne(Context ctx, @NotNull String categoryId) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -193,8 +195,9 @@ public class LocationCategoryController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
@@ -222,7 +225,7 @@ public class LocationCategoryController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String categoryId) {
+    public void update(Context ctx, @NotNull String categoryId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
@@ -241,9 +244,10 @@ public class LocationCategoryController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String categoryId) {
-        try (Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+    public void delete(Context ctx, @NotNull String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);

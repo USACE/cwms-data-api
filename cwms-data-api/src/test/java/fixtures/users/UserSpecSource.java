@@ -9,7 +9,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 
-import fixtures.CwmsDataApiSetupCallback;
+import com.google.common.flogger.FluentLogger;
+
 import fixtures.TestAccounts;
 import fixtures.users.annotation.AuthType;
 import fixtures.users.annotation.AuthType.UserType;
@@ -17,6 +18,8 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 
 public class UserSpecSource implements ArgumentsProvider {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
     /**
      * Get restassured request spec for
      * setting appropriate credentials
@@ -49,7 +52,7 @@ public class UserSpecSource implements ArgumentsProvider {
         if(user.equals(TestAccounts.KeyUser.GUEST)) {
             return Arguments.of("NONE",TestAccounts.KeyUser.GUEST,new RequestSpecBuilder().build());
         } else {
-            throw new IllegalStateException("Valid user not provided.");
+            return cwmsAaaUser(user);
         }
     }
 
@@ -105,13 +108,13 @@ public class UserSpecSource implements ArgumentsProvider {
             if(uts != null) {
                 for(UserType ut: uts) {
                     if( ut.equals(UserType.GUEST_AND_PRIVS)) {
-                        System.out.println("Adding GUEST users");
+                        logger.atFine().log("Adding GUEST users");
                         args.addAll(userSpecsValidPrivsWithGuest());
                     } else if (ut.equals(UserType.NO_PRIVS)) {
-                        System.out.println("Adding no priv users");
+                        logger.atFine().log("Adding no priv users");
                         args.addAll(usersNoPrivs());
                     } else if (ut.equals(UserType.PRIVS)) {
-                        System.out.println("Adding users with privs");
+                        logger.atFine().log("Adding users with privs");
                         args.addAll(userSpecsValidPrivs());
                     }
                 }

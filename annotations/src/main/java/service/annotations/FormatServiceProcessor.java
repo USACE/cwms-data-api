@@ -32,19 +32,12 @@ public class FormatServiceProcessor extends AbstractProcessor{
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {            
         
         try {
-            
-        
-            System.out.println("Processing annotations***************");
-            System.err.println("Processing annotations");
-            for(TypeElement anno: annotations){
-                System.out.println(anno.toString());
+            for(TypeElement anno: annotations) {
                 Collection<? extends Element> elements = roundEnv.getElementsAnnotatedWith(anno);
                 FileObject createResource = processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", "formats.list");
                 Writer wr = createResource.openWriter();
                 elements.forEach( element -> {
-                    System.out.println(element.toString());
                     FormatService fs = element.getAnnotation(FormatService.class);
-                    System.out.println(fs.contentType());
                     try {
                         wr.write(fs.contentType()+":");
                         wr.write(element.asType().toString()+":");                        
@@ -53,7 +46,6 @@ public class FormatServiceProcessor extends AbstractProcessor{
                     }
                     List<? extends AnnotationMirror> mirrors = element.getAnnotationMirrors();
                     for(AnnotationMirror mirror: mirrors){
-                        System.out.println("\t"+mirror.toString());
                         Map<? extends ExecutableElement, ?extends AnnotationValue> ev = mirror.getElementValues();
                         for(Map.Entry<? extends ExecutableElement, ?extends AnnotationValue> entry: ev.entrySet()){
                             String key = entry.getKey().getSimpleName().toString();
@@ -63,7 +55,6 @@ public class FormatServiceProcessor extends AbstractProcessor{
                                     @SuppressWarnings("unchecked")
                                     List<? extends AnnotationValue> typeMirrors= (List<? extends AnnotationValue>) value;
                                     typeMirrors.forEach( tm -> {
-                                        System.out.println("\t"+ tm.getValue().toString());
                                         try {
                                             wr.write( tm.getValue().toString() + ";");
                                         } catch (IOException e) {

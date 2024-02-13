@@ -98,7 +98,7 @@ public class Formats {
             String[] typeFormatterClasses = line.split(":");
 
             ContentType type = new ContentType(typeFormatterClasses[0]);
-            logger.finest("Adding links for content-type: " + type);
+            logger.finest(() -> "Adding links for content-type: " + type);
 
             try {
                 @SuppressWarnings("unchecked")
@@ -158,7 +158,7 @@ public class Formats {
     private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
         for (ContentType key : formatters.keySet()) {
-            logger.finest(key.toString());
+            logger.finest(() -> key.toString());
         }
 
         OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
@@ -236,15 +236,15 @@ public class Formats {
 
 
     public static ContentType parseQueryParam(String queryParam) {
-        ContentType retval = null;
+        ContentType retVal = null;
         if (queryParam != null && !queryParam.isEmpty()) {
             String val = typeMap.get(queryParam);
             if (val != null) {
-                retval = new ContentType(val);
+                retVal = new ContentType(val);
             }
         }
 
-        return retval;
+        return retVal;
     }
 
 
@@ -260,9 +260,9 @@ public class Formats {
             }
             Collections.sort(contentTypes);
         }
-        logger.finest("have " + contentTypes.size());
+        logger.finest(() -> "have " + contentTypes.size());
         for (ContentType ct : contentTypes) {
-            logger.finest("checking " + ct.toString());
+            logger.finest(() -> "checking " + ct.toString());
             if (contentTypeList.contains(ct)) {
                 return ct;
             }

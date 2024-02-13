@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.JsonFieldsException;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
@@ -49,7 +48,6 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import cwms.cda.helpers.DateUtils;
 import hec.data.level.JDomLocationLevelRef;
 import io.javalin.apibuilder.CrudHandler;
@@ -74,16 +72,12 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public class LevelsController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(LevelsController.class.getName());
-
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -116,8 +110,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("create");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -158,12 +152,13 @@ public class LevelsController implements CrudHandler {
                             + "the location level whose data is to be deleted. If this field is "
                             + "not specified, matching location level information will be deleted"
                             + " from all offices."),
-
-                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
-                            + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
                             + "effective date of the level to be deleted. If not provided will "
-                            + "delete all data and reference to the location level.")
+                            + "delete all data and reference to the location level."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                            + "the value of the effective date field (unless otherwise "
+                            + "specified).If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
                     },
             method = HttpMethod.DELETE,
             path = "/levels",
@@ -171,30 +166,25 @@ public class LevelsController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime(DELETE); DSLContext dsl =
-                getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
                     name(LevelsController.class.getName(), DELETE));
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
+                    .getOrDefault("UTC");
             Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam(CASCADE_DELETE));
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = dateString != null
-                    ? zonedDateTimeAdapter.unmarshal(dateString) : null;
+            ZonedDateTime unmarshalledDateTime = dateString != null ?
+                    DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(levelId + " Deleted");
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Failed to delete location level");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = NAME, deprecated = true, description = "Deprecated, use "
-                            + LEVEL_ID_MASK + ". "),
                     @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
                             + "the location level(s) whose data is to be included in the response. "
                             + "Uses * for all."),
@@ -243,7 +233,7 @@ public class LevelsController implements CrudHandler {
                     @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
                             + "many entries per page returned. Default " + defaultPageSize + ".")},
             responses = {
-                    @OpenApiResponse(status = "200", content = {
+                    @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(type = Formats.JSON),
                             @OpenApiContent(type = ""),
                             @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
@@ -254,8 +244,8 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
@@ -303,8 +293,6 @@ public class LevelsController implements CrudHandler {
 
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
-
-
                 switch (format) {
                     case "json": {
                         ctx.contentType(Formats.JSON);
@@ -352,15 +340,18 @@ public class LevelsController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "office of the Location Level to be returned"),
-                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
-                            + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                             + "the effective date of Location Level to be returned"),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                            + "the values of the effective date field (unless otherwise "
+                            + "specified), as well as the time zone of any times in the response."
+                            + " If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
                     @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
                             + "the values retrieved.")
             },
             responses = {
-                    @OpenApiResponse(status = "200",content = {
+                    @OpenApiResponse(status = STATUS_200,content = {
                             @OpenApiContent(from = LocationLevel.class, type = Formats.JSONV2),
                     })
             },
@@ -374,24 +365,18 @@ public class LevelsController implements CrudHandler {
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         GET_ONE));
+        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
+                .getOrDefault("UTC");
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
-            ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
-            ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
+            ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone);
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
                     units, unmarshalledDateTime, office);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (NotFoundException e) {
-            throw e;
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Failed to retrieve Location Level request: "
-                    + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -401,8 +386,6 @@ public class LevelsController implements CrudHandler {
                             + "location level id of the Location Level to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = DATE, deprecated = true, description = "Deprecated, use "
-                            + EFFECTIVE_DATE),
                     @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies "
                             + "the effective date of Location Level that will be updated")
             },
@@ -419,8 +402,8 @@ public class LevelsController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldLevelId) {
-        try (final Timer.Context timeContext = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -463,10 +446,7 @@ public class LevelsController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
             }
         } catch (JsonProcessingException ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            throw new FormattingException("Failed to format location level update request", ex);
         }
     }
 
@@ -563,12 +543,9 @@ public class LevelsController implements CrudHandler {
 
     public static LocationLevel deserializeLocationLevel(String body, String format) {
         ObjectMapper om = getObjectMapperForFormat(format);
-        LocationLevel retVal;
 
         try {
-            retVal = new LocationLevel.Builder(om.readValue(body, LocationLevel.class))
-                            .build();
-            return retVal;
+            return new LocationLevel.Builder(om.readValue(body, LocationLevel.class)).build();
         } catch (JsonProcessingException e) {
             throw new JsonFieldsException(e);
         }
@@ -645,11 +622,11 @@ public class LevelsController implements CrudHandler {
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
-                    @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
+                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
                             + "the values retrieved."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             description = "A CWMS Time Series representation of the specified location level.",
                             content = {
                                     @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -659,10 +636,10 @@ public class LevelsController implements CrudHandler {
                                     @OpenApiContent(from = TimeSeries.class, type = ""),
                             }
                     ),
-                    @OpenApiResponse(status = "400", description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = "404", description = "The provided combination of "
+                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a timeseries."),
-                    @OpenApiResponse(status = "501", description = "Requested format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
             description = "Retrieves requested Location Level",
@@ -672,8 +649,8 @@ public class LevelsController implements CrudHandler {
     )
     public void getLevelAsTimeSeries(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("getLevelAsTimeSeries");
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime("getLevelAsTimeSeries")) {
+            DSLContext dsl = getDslContext(ctx);
             Validator<String> pathParam = ctx.pathParamAsClass(LEVEL_ID, String.class);
             if (!pathParam.hasValue()) {
                 throw new IllegalArgumentException(LEVEL_ID + " path parameter can not be null when retrieving levels as time series");

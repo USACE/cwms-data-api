@@ -26,27 +26,27 @@ package cwms.cda.data.dao;
 
 public enum DeleteRule
 {
-	// Not obvious which of the constants in CWMS_UTIL_PACKAGE are Delete rule and which aren't.
-	DELETE_INSERT("DELETE INSERT"),
-	DELETE_ALL("DELETE ALL"),
-	DELETE_DATA("DELETE DATA"),
-	DELETE_KEY("DELETE KEY"),
-	DELETE_LOC("DELETE LOC"),
-	DELETE_LOC_CASCADE("DELETE LOC CASCADE"),
-	DELETE_TS_ID("DELETE TS ID"),
-	DELETE_TS_DATA("DELETE TS DATA"),
-	DELETE_TS_CASCADE("DELETE TS CASCADE")
-	;
+    // Not obvious which of the constants in CWMS_UTIL_PACKAGE are Delete rule and which aren't.
+    DELETE_INSERT("DELETE INSERT"),
+    DELETE_ALL("DELETE ALL"),
+    DELETE_DATA("DELETE DATA"),
+    DELETE_KEY("DELETE KEY"),
+    DELETE_LOC("DELETE LOC"),
+    DELETE_LOC_CASCADE("DELETE LOC CASCADE"),
+    DELETE_TS_ID("DELETE TS ID"),
+    DELETE_TS_DATA("DELETE TS DATA"),
+    DELETE_TS_CASCADE("DELETE TS CASCADE")
+    ;
 
-	private final String rule;
+    private final String rule;
 
-	DeleteRule(String rule)
-	{
-		this.rule = rule;
-	}
+    DeleteRule(String rule)
+    {
+        this.rule = rule;
+    }
 
-	public String getRule()
-	{
-		return rule;
-	}
+    public String getRule()
+    {
+        return rule;
+    }
 }

@@ -10,6 +10,7 @@ import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.RestAssured;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
 import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -27,7 +29,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        
+
         String tsData = IOUtils.toString(
             this.getClass()
                 .getResourceAsStream("/cwms/cda/api/lrl/pseudo_reg_1hour.json"),"UTF-8"
@@ -44,7 +46,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
             // inserting the time series
             given()
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
@@ -55,14 +57,14 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .post("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-            
+    
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -76,12 +78,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .get("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values[1][1]",closeTo(600.0,0.0001))
                 .body("values[0][1]",closeTo(500.0,0.0001))
-                
+    
                 ;
         } catch( SQLException ex) {
             throw new RuntimeException("Unable to create location for TS",ex);
@@ -91,13 +93,13 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     public void test_lrl_1day() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        
+    
         String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset.json"),"UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
-        
+    
         try {
             createLocation(location,true,officeId);
 
@@ -105,7 +107,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
             // inserting the time series
             given()
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
@@ -116,14 +118,14 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .post("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-            
+    
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -137,13 +139,10 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .get("/timeseries/")
             .then()
-                .log().body().log().everything(true)
+                .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]",closeTo(35,0.0001))
-                
-                
-                ;
+                .body("values[0][1]",closeTo(35,0.0001));
         } catch( SQLException ex) {
             throw new RuntimeException("Unable to create location for TS",ex);
         }
@@ -164,7 +163,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // inserting the time series
         given()
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .body(tsData)
@@ -175,13 +174,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/timeseries/")
         .then()
-            .log().body().log().everything(true)
-        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
         given()
-            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .header("Authorization",user.toHeaderValue())
             .queryParam("office",officeId)
@@ -195,14 +193,13 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .delete("/timeseries/" + ts.get("name").asText())
         .then()
-            .log().body().log().everything(true)
-        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // get it back
         given()
-            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-            .log().everything(true)
+            .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .body(tsData)
             .header("Authorization",user.toHeaderValue())
@@ -216,9 +213,43 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/timeseries/")
         .then()
-            .log().body().log().everything(true)
-        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("values[0][1]",nullValue());
+    }
+
+    @Test
+    public void test_no_office_permissions() throws Exception
+    {
+        ObjectMapper mapper = new ObjectMapper();
+
+        String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/no_office_perms.json"),"UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location,true,officeId);
+
+        KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED))
+            .body("message", is("User not authorized for this office."));
     }
 }

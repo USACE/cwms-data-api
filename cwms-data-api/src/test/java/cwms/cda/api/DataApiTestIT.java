@@ -78,10 +78,10 @@ public class DataApiTestIT {
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected static String removeApiKey = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?)";
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
-	private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
+    private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
 
 
     /**
@@ -215,9 +215,8 @@ public class DataApiTestIT {
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(removeApiKey);) {
+                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys);) {
                         stmt.setString(1,user.getName());
-                        stmt.setString(2,user.getName()+"TestKey");
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to delete api key",ex);
@@ -271,7 +270,7 @@ public class DataApiTestIT {
             } catch (SQLException ex) {
                 throw new RuntimeException("Unable to create location",ex);
             }
-        }, db.getPdUser());
+        }, "cwms_20");
     }
 
     /**
@@ -318,7 +317,7 @@ public class DataApiTestIT {
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
-        }, db.getPdUser());
+        }, "cwms_20");
     }
 
     /**
@@ -369,7 +368,7 @@ public class DataApiTestIT {
      * Get context, setting a specific session office.
      */
     protected static DSLContext dslContext(Connection connection, String officeId) {
-        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE11G);
+        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
         return dsl;
     }
@@ -378,7 +377,7 @@ public class DataApiTestIT {
      * Get context without setting office
      */
     protected static DSLContext dslContext(Connection connection) {
-        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE11G);
+        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
         return dsl;
     }
 
@@ -397,68 +396,68 @@ public class DataApiTestIT {
      * be deleted in cases of test failure.
      * @param group
      */
-	protected void registerGroup(LocationGroup group) {
-		if (!groupsCreated.contains(group)) {
-			groupsCreated.add(group);
-		}
-	}
+    protected void registerGroup(LocationGroup group) {
+        if (!groupsCreated.contains(group)) {
+            groupsCreated.add(group);
+        }
+    }
 
     /**
      * Let the infrastructure know a category is getting created so it can
      * be deleted in cases of test failure.
      * @param category
      */
-	protected void registerCategory(LocationCategory category) {
-		if (!categoriesCreated.contains(category)) {
-			categoriesCreated.add(category);
-		}
-	}
+    protected void registerCategory(LocationCategory category) {
+        if (!categoriesCreated.contains(category)) {
+            categoriesCreated.add(category);
+        }
+    }
 
     @AfterEach
-	public void cleanupLocationGroups() throws Exception {
+    public void cleanupLocationGroups() throws Exception {
         if (this.groupsCreated.isEmpty()) {
             logger.atInfo().log("No groups to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up groups test did not remove.");
-		CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
-		cwmsDb.connection( c-> {
-			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
-				for (LocationGroup g: groupsCreated) {
-					delGroup.clearParameters();
-					delGroup.setString(1,g.getId());
-					delGroup.setString(2,g.getOfficeId());
-					delGroup.executeUpdate();
-				};
-			} catch (SQLException ex) {
-				if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
-					throw new RuntimeException("Failed to remove group in test cleanup/", ex);
-				} // otherwise we don't get it was successfully deleted in the test
-			}
-		});
-	}
+        CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        cwmsDb.connection( c-> {
+            try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
+                for (LocationGroup g: groupsCreated) {
+                    delGroup.clearParameters();
+                    delGroup.setString(1,g.getId());
+                    delGroup.setString(2,g.getOfficeId());
+                    delGroup.executeUpdate();
+                };
+            } catch (SQLException ex) {
+                if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
+                    throw new RuntimeException("Failed to remove group in test cleanup/", ex);
+                } // otherwise we don't get it was successfully deleted in the test
+            }
+        });
+    }
 
     @AfterEach
-	public void cleanupLocationCategories() throws Exception {
+    public void cleanupLocationCategories() throws Exception {
         if (this.categoriesCreated.isEmpty()) {
             logger.atInfo().log("No location categories to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up location categories that tests did not remove.");
-		CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
-		cwmsDb.connection( c-> {
-			try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_cat(?,'T',?); end;")) {
-				for (LocationCategory cat: categoriesCreated) {
-					delGroup.clearParameters();
-					delGroup.setString(1,cat.getId());
-					delGroup.setString(2,cat.getOfficeId());
-					delGroup.executeUpdate();
-				};
-			} catch (SQLException ex) {
-				if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
-					throw new RuntimeException("Failed to remove group in test cleanup/", ex);
-				} // otherwise we don't get it was successfully deleted in the test
-			}
-		});
-	}
+        CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        cwmsDb.connection( c-> {
+            try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_cat(?,'T',?); end;")) {
+                for (LocationCategory cat: categoriesCreated) {
+                    delGroup.clearParameters();
+                    delGroup.setString(1,cat.getId());
+                    delGroup.setString(2,cat.getOfficeId());
+                    delGroup.executeUpdate();
+                };
+            } catch (SQLException ex) {
+                if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
+                    throw new RuntimeException("Failed to remove group in test cleanup/", ex);
+                } // otherwise we don't get it was successfully deleted in the test
+            }
+        });
+    }
 }

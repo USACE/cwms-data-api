@@ -24,86 +24,84 @@
 
 package cwms.cda.data.dao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.json.JsonV2;
-
+import java.io.IOException;
+import java.sql.SQLException;
+import java.time.ZoneId;
 import org.geojson.FeatureCollection;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.time.ZoneId;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @Disabled
-class LocationsDaoTest extends DaoTest
-{
+class LocationsDaoTest extends DaoTest {
     private static final String OFFICE_ID = "LRL";
 
     @Test
-    void testStoreLocation() throws Exception
-    {
-        try
-        {
+    void testStoreLocation() throws Exception {
+        try {
             Location location = buildTestLocation();
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
+            LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
+                    OFFICE_ID));
             locationsDao.storeLocation(location);
-            Location retrievedLocation = locationsDao.getLocation(location.getName(), UnitSystem.EN.getValue(), OFFICE_ID);
+            Location retrievedLocation = locationsDao.getLocation(location.getName(),
+                    UnitSystem.EN.getValue(), OFFICE_ID);
             assertEquals(location, retrievedLocation);
-        }
-        finally
-        {
+        } finally {
             cleanUpRoutine();
         }
     }
 
     @Test
-    void testDeleteLocation() throws Exception
-    {
+    void testDeleteLocation() throws Exception {
         Location location = buildTestLocation();
-        LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
+        LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
+                OFFICE_ID));
         locationsDao.storeLocation(location);
         locationsDao.deleteLocation(location.getName(), location.getOfficeId());
-        assertThrows(IOException.class, () -> locationsDao.getLocation(location.getName(), UnitSystem.EN.getValue(), OFFICE_ID));
+        assertThrows(IOException.class, () -> locationsDao.getLocation(location.getName(),
+                UnitSystem.EN.getValue(), OFFICE_ID));
     }
 
     @Test
-    void testRenameLocation() throws Exception
-    {
+    void testRenameLocation() throws Exception {
         Location location = buildTestLocation();
-        Location renamedLocation = new Location.Builder(location).withName("RENAMED_TEST_LOCATION2").build();
-        LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
-        try
-        {
+        Location renamedLocation = new Location.Builder(location).withName(
+                "RENAMED_TEST_LOCATION2").build();
+        LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
+                OFFICE_ID));
+        try {
             locationsDao.storeLocation(location);
             locationsDao.renameLocation(location.getName(), renamedLocation);
-            assertThrows(IOException.class, () -> locationsDao.getLocation(location.getName(), UnitSystem.EN.getValue(), OFFICE_ID));
-            assertNotNull(locationsDao.getLocation(renamedLocation.getName(), UnitSystem.EN.getValue(), OFFICE_ID));
-        }
-        finally
-        {
+            assertThrows(IOException.class, () -> locationsDao.getLocation(location.getName(),
+                    UnitSystem.EN.getValue(), OFFICE_ID));
+            assertNotNull(locationsDao.getLocation(renamedLocation.getName(),
+                    UnitSystem.EN.getValue(), OFFICE_ID));
+        } finally {
             locationsDao.deleteLocation(renamedLocation.getName(), location.getOfficeId());
             cleanUpRoutine();
         }
     }
 
-    private void cleanUpRoutine() throws Exception
-    {
+    private void cleanUpRoutine() throws Exception {
         Location location = buildTestLocation();
-        LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
+        LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
+                OFFICE_ID));
         locationsDao.deleteLocation(location.getName(), location.getOfficeId());
     }
 
     private Location buildTestLocation() {
-        return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"), 50.0, 50.0, "NVGD29", "LRL")
+        return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"), 50.0, 50.0,
+                "NVGD29", "LRL")
                 .withElevation(10.0)
                 .withCountyName("Sacramento")
                 .withNation(Nation.US)
@@ -117,44 +115,41 @@ class LocationsDaoTest extends DaoTest
                 .build();
     }
 
-	@Test
-	void getLocationsGeoJson() throws SQLException, JsonProcessingException
-	{
-		try(DSLContext lrl = getDslContext(getConnection(), "LRL"))
-		{
-			LocationsDao dao = new LocationsDaoImpl(lrl);
-			final String names = null;
+    @Test
+    void getLocationsGeoJson() throws SQLException, JsonProcessingException {
+        DSLContext lrl = getDslContext(getConnection(), "LRL");
 
-			final String units = "EN";
-			final String datum = null;
-			final String office = "LRL";
-			FeatureCollection fc = dao.buildFeatureCollection(names, units, office);
-			assertNotNull(fc);
-			ObjectMapper mapper = JsonV2.buildObjectMapper();
-			String json =  mapper.writeValueAsString(fc);
-			assertNotNull(json);
-		}
+        LocationsDao dao = new LocationsDaoImpl(lrl);
+        final String names = null;
 
-	}
+        final String units = "EN";
+        final String datum = null;
+        final String office = "LRL";
+        FeatureCollection fc = dao.buildFeatureCollection(names, units, office);
+        assertNotNull(fc);
+        ObjectMapper mapper = JsonV2.buildObjectMapper();
+        String json = mapper.writeValueAsString(fc);
+        assertNotNull(json);
 
-	@Test
-	void getLocationsGeoJsonWithNames() throws SQLException, JsonProcessingException
-	{
-		try(DSLContext lrl = getDslContext(getConnection(), "LRL"))
-		{
-			LocationsDao dao = new LocationsDaoImpl(lrl);
-			final String names = "Highbridge|Brookville";
-			final String format = "geojson";
-			final String units = "EN";
-			final String datum = null;
-			final String office = "LRL";
 
-			FeatureCollection fc = dao.buildFeatureCollection(names, units, office);
-			assertNotNull(fc);
-			ObjectMapper mapper = JsonV2.buildObjectMapper();
-			String json =  mapper.writeValueAsString(fc);
-			assertNotNull(json);
-		}
-	}
+    }
+
+    @Test
+    void getLocationsGeoJsonWithNames() throws SQLException, JsonProcessingException {
+        DSLContext lrl = getDslContext(getConnection(), "LRL");
+        LocationsDao dao = new LocationsDaoImpl(lrl);
+        final String names = "Highbridge|Brookville";
+        final String format = "geojson";
+        final String units = "EN";
+        final String datum = null;
+        final String office = "LRL";
+
+        FeatureCollection fc = dao.buildFeatureCollection(names, units, office);
+        assertNotNull(fc);
+        ObjectMapper mapper = JsonV2.buildObjectMapper();
+        String json = mapper.writeValueAsString(fc);
+        assertNotNull(json);
+    }
+
 
 }

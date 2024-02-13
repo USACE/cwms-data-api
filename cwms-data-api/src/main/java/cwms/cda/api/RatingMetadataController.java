@@ -12,6 +12,7 @@ import static cwms.cda.api.Controllers.RATING_ID_MASK;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.START;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
 
 import com.codahale.metrics.Histogram;
@@ -93,7 +94,7 @@ public class RatingMetadataController implements CrudHandler {
                     ),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from =
                                             RatingMetadataList.class)
@@ -127,8 +128,9 @@ public class RatingMetadataController implements CrudHandler {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingMetadataDao dao = getDao(dsl);
 
             RatingMetadataList metadataList = dao.retrieve(cursor, pageSize, office,

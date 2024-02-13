@@ -24,8 +24,8 @@
 
 package cwms.cda.api;
 
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -48,72 +48,75 @@ import static org.hamcrest.Matchers.is;
 class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
 {
 
-	@Test
-	void test_create_read_delete() throws Exception {
-		String officeId = "SPK";
-		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-		TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
-		ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
-		String xml = Formats.format(contentType, cat);
-		//Create Category
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.body(xml)
-			.header("Authorization", user.toHeaderValue())
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("/timeseries/category")
-			.then()
-			.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED));
-		//Read
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.queryParam(OFFICE, officeId)
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/timeseries/category/" + cat.getId())
-			.then()
-			.assertThat()
-			.log().body().log().everything(true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.body("office-id", equalTo(cat.getOfficeId()))
-			.body("id", equalTo(cat.getId()))
-			.body("description", equalTo(cat.getDescription()));
-		//Delete
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, officeId)
-			.queryParam(CASCADE_DELETE, "true")
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("/timeseries/category/" + cat.getId())
-			.then()
-			.assertThat()
-			.log().body().log().everything(true)
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    @Test
+    void test_create_read_delete() throws Exception {
+        String officeId = "SPK";
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
+        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        String xml = Formats.format(contentType, cat);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(xml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/category")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Read
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/category/" + cat.getId())
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(cat.getOfficeId()))
+            .body("id", equalTo(cat.getId()))
+            .body("description", equalTo(cat.getDescription()));
+        //Delete
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/category/" + cat.getId())
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
-		//Read Empty
-		given()
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.queryParam("office", officeId)
-			.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/timeseries/category/" + cat.getId())
-			.then()
-			.assertThat()
-			.log().body().log().everything(true)
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
-	}
-
-
+        //Read Empty
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/category/" + cat.getId())
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
 }

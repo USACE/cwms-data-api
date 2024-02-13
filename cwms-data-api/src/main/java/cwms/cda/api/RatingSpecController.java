@@ -88,7 +88,8 @@ public class RatingSpecController implements CrudHandler {
                             + "the Rating Specs whose data is to be included in the response. If "
                             + "this field is not specified, matching rating information from all "
                             + "offices shall be returned."),
-                    @OpenApiParam(name = "rating-id-mask", description = "RegExp that specifies "
+                    @OpenApiParam(name = RATING_ID_MASK, description = "Posix "
+                            + "<a href=\"regexp.html\">regular expression</a>  that specifies "
                             + "the rating IDs to be included in the response. If this field is "
                             + "not specified, all Rating Specs shall be returned."),
                     @OpenApiParam(name = PAGE,
@@ -103,7 +104,7 @@ public class RatingSpecController implements CrudHandler {
                     ),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
                             }
@@ -117,12 +118,13 @@ public class RatingSpecController implements CrudHandler {
                 ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         String office = ctx.queryParam(OFFICE);
-        String ratingIdMask = ctx.queryParam("rating-id-mask");
+        String ratingIdMask = ctx.queryParam(RATING_ID_MASK);
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
             RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office,
                     ratingIdMask);
@@ -154,7 +156,7 @@ public class RatingSpecController implements CrudHandler {
                             + "information from all offices shall be returned."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = RatingSpec.class, type = Formats.JSONV2),
                             }
@@ -169,8 +171,9 @@ public class RatingSpecController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
 
             Optional<RatingSpec> template = ratingSpecDao.retrieveRatingSpec(office, ratingId);
@@ -213,8 +216,9 @@ public class RatingSpecController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
             String body = ctx.body();
@@ -273,8 +277,9 @@ public class RatingSpecController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        try (final Timer.Context ignored = markAndTime(DELETE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String office = ctx.queryParam(OFFICE);
             RatingSpecDao ratingDao = getRatingSpecDao(dsl);
             JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();

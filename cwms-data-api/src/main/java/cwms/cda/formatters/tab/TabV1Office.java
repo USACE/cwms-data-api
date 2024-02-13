@@ -2,7 +2,6 @@ package cwms.cda.formatters.tab;
 
 import java.util.List;
 
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.Formats;
@@ -18,7 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
     "CHL	Coastal and Hydraulics Laboratory	Field Operating Activity	ERD\r\nNAB	Baltimore District	District	NAD"+
     "NAD	North Atlantic Division	Division Headquarters	HQ"
 )
-public class TabV1Office implements OutputFormatter{
+public class TabV1Office implements OutputFormatter {
 
     public String Office;
     public String longName;
@@ -47,13 +46,13 @@ public class TabV1Office implements OutputFormatter{
         List<Office> offices = (List<Office>)dtoList;
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
-        for( Office office: offices){
+        for (Office office: offices) {
             builder.append(officeRow(office)).append("\r\n");
         }
         return builder.toString();
     }
 
-    private String getOfficeTabHeader(){
+    private String getOfficeTabHeader() {
         return "#Office Name	Long Name	Office Type	Reports To Office";
     }
 

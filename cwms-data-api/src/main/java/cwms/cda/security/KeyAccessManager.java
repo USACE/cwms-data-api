@@ -2,7 +2,6 @@ package cwms.cda.security;
 
 import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import io.javalin.core.security.RouteRole;
@@ -13,22 +12,17 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
-import java.util.HashMap;
-import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class KeyAccessManager extends CdaAccessManager {
-    private static final Logger logger = Logger.getLogger(KeyAccessManager.class.getName());
     private static final String AUTH_HEADER = "Authorization";
 
-    private AuthDao authDao;
+    private static AuthDao authDao;
 
 
     @Override
     public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        init(ctx);        
+        init(ctx);
         String key = getApiKey(ctx);
         DataApiPrincipal p = authDao.getByApiKey(key);
         AuthDao.isAuthorized(ctx, p, routeRoles);
@@ -37,9 +31,7 @@ public class KeyAccessManager extends CdaAccessManager {
     }
 
     private void init(Context ctx) {
-        if (authDao == null) {
-            authDao = new AuthDao(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-        }
+        authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
     }
 
     private String getApiKey(Context ctx) {
@@ -59,8 +51,10 @@ public class KeyAccessManager extends CdaAccessManager {
     @Override
     public SecurityScheme getScheme() {
         return new SecurityScheme()
+                    .scheme("apikey")
                     .type(Type.APIKEY)
                     .in(In.HEADER)
+                    .description("Key value as generated from the /auth/keys endpoint. NOTE: you MUST manually prefix your key with 'apikey ' (without the single quotes).")
                     .name("Authorization");
     }
 
@@ -75,6 +69,6 @@ public class KeyAccessManager extends CdaAccessManager {
         if (header == null) {
             return false;
         }
-        return header.trim().startsWith("apikey");
+        return header.trim().toLowerCase().startsWith("apikey");
     }
 }

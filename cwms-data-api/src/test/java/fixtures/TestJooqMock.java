@@ -15,13 +15,12 @@ public class TestJooqMock {
 
     @Test
     public void test_json_mock_result() throws Exception {
-        DSLContext dsl = DSL.using(SQLDialect.ORACLE12C);
+        DSLContext dsl = DSL.using(SQLDialect.ORACLE18C);
         InputStream is = TestJooqMock.class.getResourceAsStream("/mock_location_test.json");
         Scanner scanner = new Scanner(is);
         String contents = scanner.useDelimiter("\\A").next();
         scanner.close();
         Result<Record> record = dsl.fetchFromJSON(contents);
         MockResult result = new MockResult(1,record);
-        System.out.println(result.toString());
     }
 }

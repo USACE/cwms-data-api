@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import cwms.cda.api.enums.Unit;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -56,7 +55,9 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
+import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
 import usace.cwms.db.dao.ifc.level.CwmsDbLevel;
 import usace.cwms.db.dao.ifc.level.LocationLevelPojo;
@@ -132,6 +133,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> seasonalValues =
                     getSeasonalValues(locationLevel);
             connection(dsl, c -> {
+                setOffice(c, locationLevel.getOfficeId());
                 CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
                 levelJooq.storeLocationLevel(c, locationLevel.getLocationLevelId(),
                         locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(),
@@ -149,13 +151,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private static List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> getSeasonalValues(LocationLevel locationLevel) {
-        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> retval = Collections.emptyList();
+        List<usace.cwms.db.dao.ifc.level.SeasonalValueBean> retVal = Collections.emptyList();
 
         if (locationLevel != null) {
-            retval = buildSeasonalValues(locationLevel.getSeasonalValues());
+            retVal = buildSeasonalValues(locationLevel.getSeasonalValues());
         }
 
-        return retval;
+        return retVal;
     }
 
     @Nullable
@@ -211,17 +213,21 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
                                     String officeId, Boolean cascadeDelete) {
         try {
-            Date date;
+            Timestamp date;
             if (zonedDateTime != null) {
-                date = Date.from(zonedDateTime.toLocalDateTime().atZone(zonedDateTime.getZone()).toInstant());
+                date = Timestamp.from(zonedDateTime.toInstant());
             } else {
                 date = null;
             }
             if (date != null) {
                 connection(dsl, c -> {
-                    CwmsDbLevel levelJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLevel.class, c);
-                    levelJooq.deleteLocationLevel(c, locationLevelName, date, null,
-                            null, null, cascadeDelete, officeId);
+                    String cascade = "F";
+                    if (cascadeDelete != null && cascadeDelete) {
+                        cascade = "T";
+                    }
+                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
+                            locationLevelName, date, "UTC", null,
+                            null, null, cascade, officeId, "VN");
                 });
             } else {
                 Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
@@ -236,7 +242,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
 
         } catch (DataAccessException ex) {
-            //logger.log(Level.SEVERE, "Failed to delete Location Level", ex);
             throw new RuntimeException("Failed to delete Location Level ", ex);
         }
     }
@@ -315,7 +320,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Integer total = null;
         int offset = 0;
 
-
         if (cursor != null && !cursor.isEmpty()) {
             String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
 
@@ -340,7 +344,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Condition whereCondition = siAndTsIdNull.or(tsIdNotNull);
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(view.OFFICE_ID.upper().eq(office.toUpperCase()));
+            whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
@@ -362,13 +366,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(asterisk())
                 .from(view)
                 .where(whereCondition)
-                .orderBy(view.OFFICE_ID.upper(), view.LOCATION_LEVEL_ID.upper(),
+                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
                         view.LEVEL_DATE
                 )
                 .offset(offset)
                 .limit(pageSize);
 
-        //logger.log(Level.INFO, "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+        logger.fine(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
 
         List<LocationLevel> levels = query
                 .stream()
@@ -586,13 +590,34 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         ZoneId locationZoneId = getLocationZoneId(levelRef.getLocationRef());
         ZTSV_ARRAY specifiedTimes = buildTsvArray(start, end, interval, locationZoneId);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-        ZTSV_ARRAY locLvlValues = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
+
+        ZTSV_ARRAY locLvlValues = call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
                 specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
-                "UTC", officeId);
+                "UTC", officeId );
+
         if (locLvlValues.isEmpty()) {
             throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);
         }
         return buildTimeSeries(levelRef, interval, locLvlValues, locationZoneId);
+    }
+
+    public static ZTSV_ARRAY call_RETRIEVE_LOC_LVL_VALUES3(Configuration configuration, ZTSV_ARRAY specifiedTimes,
+                                                           String locationLevelId, String levelUnits,
+                                                           String attributeId, Number attributeValue,
+                                                           String attributeUnits, String timezoneId,
+                                                           String officeId) {
+        /*
+            Here are the options for the P_LEVEL_PRECEDENCE parameter taken from
+            https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database/browse/schema/src/cwms/cwms_level_pkg.sql#1507,1770,1775,1786,1825,1830,1841
+            N specifies results from non-virtual (normal) location levels only
+            V specifies results from virtual location levels only
+            NV specifies results from non-virtual (normal) location levels where they exist, with virtual location levels allowed where non-virtual levels don't exist
+            VN (default) specifies results from virtual location levels where they exist, with non-virtual location levels allowed where virtual levels don't exist
+         */
+        String levelPrecedence = "VN";
+        return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(configuration,
+                specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
+                timezoneId, officeId, levelPrecedence);
     }
 
     private ZoneId getLocationZoneId(LocationTemplate locationRef) {
@@ -634,7 +659,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private ZTSV_ARRAY buildTsvArray(Instant start, Instant end, Interval interval, ZoneId locationTimeZone) {
-        ZTSV_ARRAY retval = new ZTSV_ARRAY();
+        ZTSV_ARRAY retVal = new ZTSV_ARRAY();
         Interval iterateInterval = interval;
         if (interval.isIrregular()) {
             iterateInterval = IntervalFactory.findAny(isRegular().and(equalsName(interval.getInterval())))
@@ -644,12 +669,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
             Instant time = start;
             while (time.isBefore(end) || time.equals(end)) {
-                retval.add(new ZTSV_TYPE(Timestamp.from(time), null, null));
+                retVal.add(new ZTSV_TYPE(Timestamp.from(time), null, null));
                 time = iterateInterval.getNextIntervalTime(time, locationTimeZone);
             }
         } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
             throw new IllegalArgumentException("Error building time series intervals for interval id: " + interval, ex);
         }
-        return retval;
+        return retVal;
     }
 }

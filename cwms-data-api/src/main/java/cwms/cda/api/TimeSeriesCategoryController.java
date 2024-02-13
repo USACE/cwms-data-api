@@ -53,12 +53,13 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesCategoryController implements CrudHandler {
     public static final Logger logger =
             Logger.getLogger(TimeSeriesCategoryController.class.getName());
-    public static final String TAG = "TimeSeries Categories-Beta";
+    public static final String TAG = "TimeSeries Categories";
 
     private final MetricRegistry metrics;
 
@@ -80,19 +81,20 @@ public class TimeSeriesCategoryController implements CrudHandler {
                     + "timeseries category(ies) whose data is to be included in the response. If "
                     + "this field is not specified, matching timeseries category information from"
                     + " all offices shall be returned."),},
-            responses = {@OpenApiResponse(status = "200",
+            responses = {@OpenApiResponse(status = STATUS_200,
                     content = {@OpenApiContent(isArray = true, from = TimeSeriesCategory.class,
                             type = Formats.JSON)
                     }),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the categories were not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")}, description = "Returns CWMS timeseries category "
             + "Data", tags = {TAG})
     @Override
     public void getAll(Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -122,21 +124,22 @@ public class TimeSeriesCategoryController implements CrudHandler {
                             + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = "200",
+                    @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = TimeSeriesCategory.class, type =
                                             Formats.JSON)
                             }
                     ),
-                    @OpenApiResponse(status = "404", description = "Based on the combination of "
+                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the timeseries category was not found."),
-                    @OpenApiResponse(status = "501", description = "request format is not "
+                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries category", tags = {TAG})
     @Override
-    public void getOne(Context ctx, String categoryId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);
-             DSLContext dsl = getDslContext(ctx)) {
+    public void getOne(Context ctx, @NotNull String categoryId) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
 
@@ -177,8 +180,9 @@ public class TimeSeriesCategoryController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE);
-             DSLContext dsl = getDslContext(ctx)) {
+        try (Timer.Context ignored = markAndTime(CREATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
@@ -207,7 +211,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String locationCode) {
+    public void update(@NotNull Context ctx, @NotNull String locationCode) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
@@ -226,9 +230,10 @@ public class TimeSeriesCategoryController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String categoryId) {
-        try (Timer.Context ignored = markAndTime(UPDATE);
-             DSLContext dsl = getDslContext(ctx)) {
+    public void delete(Context ctx, @NotNull String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)){
+            DSLContext dsl = getDslContext(ctx);
+
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
             String office = ctx.queryParam(OFFICE);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);

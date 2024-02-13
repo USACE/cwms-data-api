@@ -40,7 +40,6 @@ class TimeseriesCatalogEntryTest
 		assertThat(path.getLong("catalog.entries.entry.interval-offset"), equalTo(-2147483648L));
 		assertThat(path.getString("catalog.entries.entry.time-zone"), equalTo("US/Central"));
 		Object tmp = path.get("catalog.entries.entry.extents");
-		System.out.println(tmp.toString());
 		assertThat(path.getString("catalog.entries.entry.extents.extents.earliest-time"), equalTo("2017-07-27T05:00:00Z"));
 		assertThat(path.getString("catalog.entries.entry.extents.extents.latest-time"), equalTo("2017-11-24T22:30:00Z"));
 
@@ -68,6 +67,37 @@ class TimeseriesCatalogEntryTest
 		assertThat(path.getString("entries[0].extents[0].earliest-time"), equalTo("2017-07-27T05:00:00Z"));
 		assertThat(path.getString("entries[0].extents[0].latest-time"), equalTo("2017-11-24T22:30:00Z"));
 
+	}
+
+	@Test
+	void test_json_serialization_no_cursor(){
+		CatalogEntry entry = buildEntry();
+		Catalog cat = new Catalog(null, 1, 10,
+				new ArrayList<CatalogEntry>(){{add(entry);}});
+
+		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+		String json = Formats.format(contentType, cat);
+
+		assertNotNull(json);
+		assertFalse(json.isEmpty());
+
+		assertFalse(json.contains("cursor"));
+	}
+
+	@Test
+	void test_xml_serialization_no_cursor() {
+		CatalogEntry entry = buildEntry();
+		Catalog cat = new Catalog(null, 1, 10,
+				new ArrayList<CatalogEntry>() {{
+					add(entry);
+				}});
+
+		ContentType contentType = Formats.parseHeader(Formats.XML);
+		String xml = Formats.format(contentType, cat);
+
+		assertNotNull(xml);
+		assertFalse(xml.isEmpty());
+		assertFalse(xml.contains("cursor"));
 	}
 
 
