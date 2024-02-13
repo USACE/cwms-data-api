@@ -33,6 +33,7 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
@@ -74,12 +75,11 @@ public class TextTimeSeriesController implements CrudHandler {
 
     public static final String REPLACE_ALL = "replace-all";
     public static final String MODE = "mode";
+
     private final MetricRegistry metrics;
 
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = false;
-
-
 
 
     public TextTimeSeriesController(MetricRegistry metrics) {
@@ -246,7 +246,7 @@ public class TextTimeSeriesController implements CrudHandler {
     @OpenApi(
         description = "Updates a text timeseries",
         pathParams = {
-            @OpenApiParam(name = "timeseries", description = "The id of the text timeseries to be updated"),
+            @OpenApiParam(name = TIMESERIES, description = "The id of the text timeseries to be updated"),
         },
             queryParams = {
 
@@ -289,7 +289,7 @@ public class TextTimeSeriesController implements CrudHandler {
     @OpenApi(
         description = "Deletes requested text timeseries id",
         pathParams = {
-            @OpenApiParam(name = "timeseries", description = "The time series identifier to be deleted"),
+            @OpenApiParam(name = TIMESERIES, description = "The time series identifier to be deleted"),
         },
         queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
