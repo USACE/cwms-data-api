@@ -1,0 +1,38 @@
+{
+  "office-id": "SPK",
+  "name": "TsBinTestLoc.Flow.Inst.1Hour.0.raw",
+  "interval-offset": 0,
+  "time-zone": "PST",
+  "binary-values": [
+    {
+      "date-time": 3333333333,
+      "version-date": 1111111111,
+      "data-entry-date": 2222222222,
+      "binary-id": "binaryId",
+      "attribute": 1,
+      "media-type": "mediaType",
+      "file-extension": ".bin",
+      "binary-value": "YmluYXJ5RGF0YQ=="
+    },
+    {
+      "date-time": 3333333334,
+      "version-date": 1111111111,
+      "data-entry-date": 2222222222,
+      "binary-id": "binaryId",
+      "attribute": 2,
+      "media-type": "mediaType",
+      "file-extension": ".bin",
+      "binary-value": "YmluYXJ5RGF0YQ=="
+    },
+    {
+      "date-time": 3333333335,
+      "version-date": 1111111111,
+      "data-entry-date": 2222222222,
+      "binary-id": "binaryId",
+      "attribute": 3,
+      "media-type": "mediaType",
+      "file-extension": ".bin",
+      "binary-value": "YmluYXJ5RGF0YQ=="
+    }
+  ]
+}

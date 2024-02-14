@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BasinController;
+import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
@@ -373,6 +374,8 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        cdaCrudCache("/timeseries/binary/{timeseries}",
+                new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",

@@ -2,65 +2,69 @@ package cwms.cda.data.dao.binarytimeseries;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.Nullable;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
-
-    public static final String OFFICE_ID = "OFFICE_ID";
+    private static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getDefault();
+    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 
 
     public TimeSeriesBinaryDao(DSLContext dsl) {
         super(dsl);
     }
 
-//    @Nullable
-//    public static Date getDate(@Nullable Instant startTime) {
-//        Date startDate;
-//        if (startTime != null) {
-//            startDate = Date.from(startTime);
-//        } else {
-//            startDate = null;
-//        }
-//        return startDate;
-//    }
-//
-//    @Nullable
-//    public static Date getDate(@Nullable Timestamp startTime) {
-//        Date startDate;
-//        if (startTime != null) {
-//            startDate = new Date(startTime.getTime());
-//        } else {
-//            startDate = null;
-//        }
-//        return startDate;
-//    }
-//
-//    @Nullable
-//    private Timestamp getTimestamp(Instant startTime) {
-//        Timestamp retval = null;
-//
-//        if(startTime != null){
-//            retval = Timestamp.from(startTime);
-//        }
-//
-//        return retval;
-//    }
+    public Timestamp createTimestamp(Date date) {
+        Timestamp retval = null;
+        if (date != null) {
+            long time = date.getTime();
+            retval = createTimestamp(time);
+        }
+        return retval;
+    }
+
+    public Timestamp createTimestamp(long date) {
+
+        if (logger.atFinest().isEnabled()) {
+            TimeZone defaultTimeZone = DEFAULT_TIME_ZONE;
+            String defaultTimeZoneDisplayName =
+                    " " + defaultTimeZone.getDisplayName(defaultTimeZone.inDaylightTime(new Date(date)), TimeZone.SHORT);
+            TimeZone gmtTimeZone = OracleTypeMap.GMT_TIME_ZONE;
+            Date convertedDate = new Date(date);
+            String utcTimeZoneDisplayName =
+                    " " + gmtTimeZone.getDisplayName(gmtTimeZone.inDaylightTime(convertedDate),
+                            TimeZone.SHORT);
+            logger.atFinest().log("Storing date: " + dateTimeFormatter.format(date) + defaultTimeZoneDisplayName
+                    + " converted to UTC date: " + dateTimeFormatter.format(convertedDate) + utcTimeZoneDisplayName);
+        }
+        return new Timestamp(date);
+    }
+
+    public String createTimeZoneId(TimeZone timeZone) {
+        String retval = null;
+        if (timeZone != null) {
+            retval = timeZone.getID();
+        }
+        return retval;
+    }
 
     public void delete(String officeId, String tsId, String binaryTypeMask,
                        ZonedDateTime startTime, ZonedDateTime endTime, ZonedDateTime versionInstant, boolean maxVersion,
@@ -89,118 +93,135 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     }
 
 
-    /**
-     *
-     * @param officeId
-     * @param tsId
-     * @param binaryData
-     * @param binaryType
-     * @param startTime
-     * @param endTime
-     * @param versionInstant
-     * @param maxVersion  default is T
-     * @param storeExisting  default is T
-     * @param storeNonExisting default is F
-     * @param replaceAll default is F
-     * @param attribute
-     */
+
     public void store(String officeId, String tsId, byte[] binaryData, String binaryType, Instant startTime, Instant endTime, Instant versionInstant,
                       boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Long attribute) {
 
-        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
+        Timestamp startStamp = startTime == null ? null : Timestamp.from(startTime);
+        Timestamp endStamp = endTime == null ? null : Timestamp.from(endTime);
+        Timestamp verStamp = versionInstant == null ? null : Timestamp.from(versionInstant);
+        store(dsl.configuration(), officeId, tsId, binaryData, binaryType, startStamp, endStamp, verStamp, OracleTypeMap.GMT_TIME_ZONE, maxVersion, storeExisting, storeNonExisting, replaceAll, attribute);
+    }
 
+    /**
+     * Store binary data to a time series. The binary data can be:
+     * <ul>
+     *   <li>associated with a "normal" time series with numeric values and quality codes</li>
+     *   <li>associated with a text time series (base parameter = "Text")</li>
+     *   <li>the contents of a binary time series (base parameter = "Binary") that contains images, documents, etc...</li>
+     * </ul>
+     * Unlike a "normal" time series, which can have only one value/quality pair at any time/version date combination,
+     * binary and text time series can have multiple entries at each time/version date combination.  Entries are retrieved
+     * in the order they are stored.
+     *
+     * @param configuration
+     * @param officeId The office that owns the time series. If not specified or NULL, the session user's default office is used.
+     * @param tsId The time series identifier
+     * @param binaryData The binary data to store.
+     * @param binaryType The data type expressed as either an internet media type (e.g. 'application/pdf') or a file extension (e.g. '.pdf')
+     * @param startStamp The first (or only) time for the binary data
+     * @param endStamp The last time for the binary data. If specified the binary data is associated with all times from p_start_time to p_end_time (inclusive). Times must already exist for irregular time series.
+     * @param verStamp The version date for the time series.  If not specified or NULL, the minimum or maximum version date (depending on p_max_version) is used.
+     * @param timeZone The time zone for p_start_time, p_end_time, and p_version_date. If not specified or NULL, the local time zone of the time series' location is used.
+     * @param maxVersion A flag specifying whether to use the maximum version date if p_version_date is not specified or NULL.
+     * @param storeExisting  A flag specifying whether to store the binary data for times that already exist in the specified time series. Used only for regular time series.
+     * @param storeNonExisting A flag specifying whether to store the binary data for times that don't already exist in the specified time series. Used only for regular time series.
+     * @param replaceAll A flag specifying whether to replace any and all existing text with the specified text
+     * @param attribute  A numeric attribute that can be used for sorting or other purposes
+     */
+    private static void store(Configuration configuration, String officeId, String tsId, 
+                              byte[] binaryData, String binaryType, 
+                              Timestamp startStamp, Timestamp endStamp, Timestamp verStamp, TimeZone timeZone, 
+                              boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, 
+                              Long attribute) {
         CWMS_TEXT_PACKAGE.call_STORE_TS_BINARY(
-                dsl.configuration(),
-                tsId,
-                binaryData,
-                binaryType,
-                startTime == null ? null : Timestamp.from(startTime),
-                endTime == null ? null : Timestamp.from(endTime),
-                versionInstant == null ? null : Timestamp.from(versionInstant),
-                timeZone.getID(),
-                maxVersion? "T":"F", storeExisting?"T":"F", storeNonExisting? "T":"F", replaceAll? "T":"F", attribute, officeId) ;
+                configuration, tsId,
+                binaryData, binaryType,
+                startStamp, endStamp, verStamp, timeZone.getID(),
+                maxVersion ? "T" : "F", storeExisting ? "T" : "F", storeNonExisting ? "T" : "F", replaceAll ? "T" : "F", 
+                attribute, officeId) ;
     }
 
-    public static class BinaryRecord {
-        private final Date dateTime;
-        private final Date versionDate;
-
-        private final Date dataEntryDate;
-        private final String binaryId;
-        private final Long attribute;
-        private final String mediaType;
-        private final String fileExtension;
-        private final byte[] binaryData;
-
-
-        public BinaryRecord(Date dateTime, Date versionDate, Date dataEntryDate, String binaryId, Long attribute, String mediaType, String fileExtension, byte[] binaryData) {
-            this.dateTime = dateTime;
-            this.versionDate = versionDate;
-            this.dataEntryDate = dataEntryDate;
-            this.binaryId = binaryId;
-            this.attribute = attribute;
-            this.mediaType = mediaType;
-            this.fileExtension = fileExtension;
-            this.binaryData = binaryData;
-        }
-
-        public Date getDateTime() {
-            return dateTime;
-        }
-
-        public Date getVersionDate() {
-            return versionDate;
-        }
-
-        public Date getDataEntryDate() {
-            return dataEntryDate;
-        }
-
-        public String getBinaryId() {
-            return binaryId;
-        }
-
-        public Long getAttribute() {
-            return attribute;
-        }
-
-        public String getMediaType() {
-            return mediaType;
-        }
-
-        public String getFileExtension() {
-            return fileExtension;
-        }
-
-        public byte[] getBinaryData() {
-            return binaryData;
-        }
+    /**
+     * Stores existing time series binary data to a time series. The binary data can be:
+     * <ul>
+     *   <li>associated with a "normal" time series with numeric values and quality codes</li>
+     *   <li>associated with a text time series (base parameter = "Text")</li>
+     *   <li>the contents of a binary time series (base parameter = "Binary") that contains images, documents, etc...</li>
+     * </ul>
+     * Unlike a "normal" time series, which can have only one value/quality pair at any time/version date combination,
+     * binary and text time series can have multiple entries at each time/version date combination.  Entries are retrieved
+     * in the order they are stored.
+     *
+     * @param officeId    The office that owns the time series. If not specified or NULL, the session user's default office is used.
+     * @param tsId         The time series identifier
+     * @param binaryId    The unique identifier for the existing time series binary data as retrieved in retrieve_ts_binary.
+     * @param startStamp   The first (or only) time for the binary data
+     * @param endStamp     The last time for the binary data. If specified the binary data is associated with all times from p_start_time to p_end_time (inclusive). Times must already exist for irregular time series.
+     * @param verStamp The version date for the time series.  If not specified or NULL, the minimum or maximum version date (depending on p_max_version) is used.
+     * @param timeZone    The time zone for p_start_time, p_end_time, and p_version_date. If not specified or NULL, the local time zone of the time series' location is used.
+     * @param maxVersion  A flag specifying whether to use the maximum version date if p_version_date is not specified or NULL.
+     * @param storeExisting     A flag specifying whether to store the binary data for times that already exist in the specified time series. Used only for regular time series.
+     * @param storeNonExisting A flag specifying whether to store the binary data for times that don't already exist in the specified time series. Used only for regular time series.
+     * @param replaceAll  A flag specifying whether to replace any and all existing text with the specified text
+     * @param attribute    A numeric attribute that can be used for sorting or other purposes
+     */
+    private static void store(Configuration configuration, String officeId, String tsId,
+                              String binaryId, 
+                              Timestamp startStamp, Timestamp endStamp, Timestamp verStamp, TimeZone timeZone,
+                              boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll,
+                              Long attribute) {
+        CWMS_TEXT_PACKAGE.call_STORE_TS_BINARY_ID(
+                configuration, tsId,
+                binaryId, 
+                startStamp, endStamp, verStamp, timeZone.getID(),
+                maxVersion ? "T" : "F", storeExisting ? "T" : "F", storeNonExisting ? "T" : "F", replaceAll ? "T" : "F",
+                attribute, officeId) ;
     }
 
-    public List<BinaryRecord> retrieve(String officeId, String tsId, String mask,
-                                       Instant startTime, Instant endTime, Instant versionInstant,
-                                       boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
+    public BinaryTimeSeries retrieve(String officeId, String tsId, String mask,
+                                     Instant startTime, Instant endTime, Instant versionInstant,
+                                     boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
+        List<BinaryTimeSeriesRow> binRows = retrieveRows(officeId, tsId, mask, startTime, endTime, versionInstant, maxVersion, retrieveBinary, minAttribute, maxAttribute);
+
+        return new BinaryTimeSeries.Builder()
+                .withOfficeId(officeId)
+                .withBinaryValues(binRows)
+                .build();
+    }
+
+    public List<BinaryTimeSeriesRow> retrieveRows(String officeId, String tsId, String mask,
+                                                  Instant startTime, Instant endTime, Instant versionInstant,
+                                                  boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
 
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
-
-        RecordMapper<? super Record, BinaryRecord> mapper = new RecordMapper<Record, BinaryRecord>() {
+        RecordMapper<? super Record, BinaryTimeSeriesRow> mapper = new RecordMapper<Record, BinaryTimeSeriesRow>() {
             @Override
-            public @Nullable BinaryRecord map(Record record) {
-                for (Field<?> field : record.fields()) {
-                    logger.atInfo().log("Field: %s name:%s", field, field.getName());
-                }
+            public @Nullable BinaryTimeSeriesRow map(Record rowRecord) {
 
-                Date dateTime = record.get("DATE_TIME", Date.class);
-                Date versionDate = record.get("VERSION_DATE", Date.class);
-                Timestamp dataEntryDate = record.get("DATA_ENTRY_DATE", Timestamp.class);
-                String binaryId = record.get("ID", String.class);
-                BigDecimal attribute = record.get("ATTRIBUTE", BigDecimal.class);
-                String mediaType = record.get("MEDIA_TYPE_ID", String.class);
-                String fileExtension = record.get("FILE_EXT", String.class);
-                byte[] binaryData = record.get("VALUE", byte[].class);
-                return new BinaryRecord(dateTime, versionDate, dataEntryDate, binaryId, attribute.longValueExact(), mediaType, fileExtension, binaryData);
+                // Is there some way to know the names and types of the fields in the record?
+
+                Date dateTime = rowRecord.get("DATE_TIME", Date.class);
+                Date versionDate = rowRecord.get("VERSION_DATE", Date.class);
+                Timestamp dataEntryDate = rowRecord.get("DATA_ENTRY_DATE", Timestamp.class);
+                String binaryId = rowRecord.get("ID", String.class);
+                BigDecimal attribute = rowRecord.get("ATTRIBUTE", BigDecimal.class);
+                String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
+                String fileExtension = rowRecord.get("FILE_EXT", String.class);
+                byte[] binaryData = rowRecord.get("VALUE", byte[].class);
+
+                return new BinaryTimeSeriesRow.Builder()
+                        .withDateTime(dateTime)
+                        .withDataEntryDate(dataEntryDate)
+                        .withVersionDate(versionDate)
+                        .withBinaryId(binaryId)
+                        .withAttribute(attribute.longValueExact())
+                        .withMediaType(mediaType)
+                        .withFileExtension(fileExtension)
+                        .withBinaryValue(binaryData)
+                        .build();
             }
         };
 
@@ -212,7 +233,41 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                         timeZone.getID(),
                         maxVersion?"T": "F", retrieveBinary?"T": "F", minAttribute, maxAttribute, officeId)
                 .map(mapper);
+    }
+
+    public void store(BinaryTimeSeries tts, boolean maxVersion,  boolean replaceAll) {
+        store(tts, maxVersion, true, true, replaceAll);
+    }
+
+    public void store(BinaryTimeSeries tts, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+
+        dsl.connection(connection -> {
+            setOffice(connection, tts.getOfficeId());
+            DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
+            dsl.transaction((Configuration trx) -> {
+                        Configuration config = trx.dsl().configuration();
+                        for (BinaryTimeSeriesRow binRecord : tts.getBinaryValues()) {
+                            String officeId = tts.getOfficeId();
+                            String tsId = tts.getName();
+                            storeRecord(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
+                        }
+                    }
+                    // Implicit commit executed here
+            );
+        });
 
     }
 
+    private void storeRecord(Configuration configuration, String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+        if(binRecord.getBinaryId() != null){
+            // If a binaryId is present then lets use that b/c it seems like it would be more efficient.
+            store(configuration, officeId, tsId, binRecord.getBinaryId(),
+                    createTimestamp(binRecord.getDateTime()), null, createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
+        } else {
+            store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
+                    createTimestamp(binRecord.getDateTime()), null, createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
+        }
+    }
 }
