@@ -9,6 +9,7 @@ begin
     
 
     cwms_sec.add_cwms_user('l2hectest',NULL,'SPK');
+    cwms_sec.update_edipi('l2hectest',1234567890);
     cwms_sec.add_user_to_group('l2hectest','All Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest','CWMS Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest','TS ID Creator','SPK');
