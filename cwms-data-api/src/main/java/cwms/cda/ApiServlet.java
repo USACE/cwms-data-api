@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
+import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -94,7 +95,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.concurrent.TimeUnit;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -120,6 +120,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
@@ -378,6 +379,8 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        cdaCrudCache("/timeseries/text/standard-text/{standard-text-id}",
+                new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/timeseries/text/{timeseries}",
                 new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/binary/{timeseries}",
