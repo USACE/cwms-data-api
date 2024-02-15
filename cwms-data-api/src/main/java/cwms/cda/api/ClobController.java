@@ -163,6 +163,11 @@ public class ClobController implements CrudHandler {
 
 
     @OpenApi(
+            description = "Get a single clob.  "
+                    + "If the accept header is set to " + TEXT_PLAIN + ", the raw value is returned as the response body. "
+                    + "Responses to " + TEXT_PLAIN + " requests are streamed and support the Range header.  "
+                    + "When the accept header is set to "+ Formats.JSONV2 + " the clob will be returned as a serialized Clob "
+                    + "object with fields for office-id, id, description and value.",
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
                     @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "

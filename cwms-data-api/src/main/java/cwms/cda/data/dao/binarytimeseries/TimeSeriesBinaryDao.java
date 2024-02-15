@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -94,9 +95,8 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
 
 
-    public void store(String officeId, String tsId, byte[] binaryData, String binaryType, Instant startTime, Instant endTime, Instant versionInstant,
+    void store(String officeId, String tsId, byte[] binaryData, String binaryType, Instant startTime, Instant endTime, Instant versionInstant,
                       boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Long attribute) {
-
 
         Timestamp startStamp = startTime == null ? null : Timestamp.from(startTime);
         Timestamp endStamp = endTime == null ? null : Timestamp.from(endTime);
@@ -187,6 +187,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
         return new BinaryTimeSeries.Builder()
                 .withOfficeId(officeId)
+                .withName(tsId)
                 .withBinaryValues(binRows)
                 .build();
     }
@@ -208,8 +209,8 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 Timestamp dataEntryDate = rowRecord.get("DATA_ENTRY_DATE", Timestamp.class);
                 String binaryId = rowRecord.get("ID", String.class);
                 BigDecimal attribute = rowRecord.get("ATTRIBUTE", BigDecimal.class);
-                String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
                 String fileExtension = rowRecord.get("FILE_EXT", String.class);
+                String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
                 byte[] binaryData = rowRecord.get("VALUE", byte[].class);
 
                 return new BinaryTimeSeriesRow.Builder()
@@ -217,7 +218,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                         .withDataEntryDate(dataEntryDate)
                         .withVersionDate(versionDate)
                         .withBinaryId(binaryId)
-                        .withAttribute(attribute.longValueExact())
+                        .withAttribute(attribute==null?null:attribute.longValueExact())
                         .withMediaType(mediaType)
                         .withFileExtension(fileExtension)
                         .withBinaryValue(binaryData)
@@ -241,33 +242,82 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
     public void store(BinaryTimeSeries tts, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
 
+        if(hasRowWithIdAndValue(tts)){
+            throw new IllegalArgumentException("The provided BinaryTimeSeries has an entry with a non-null binary-id and "
+                    + "also a non-null binary-value.  For storage and creation either specify the id or the the value but not both.");
+        }
+
+        storeRows(tts.getOfficeId(), tts.getName(), tts.getBinaryValues(), maxVersion, storeExisting, storeNonExisting, replaceAll);
+    }
+
+    private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
+                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
         dsl.connection(connection -> {
-            setOffice(connection, tts.getOfficeId());
+            setOffice(connection, officeId);
             DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
             dsl.transaction((Configuration trx) -> {
                         Configuration config = trx.dsl().configuration();
-                        for (BinaryTimeSeriesRow binRecord : tts.getBinaryValues()) {
-                            String officeId = tts.getOfficeId();
-                            String tsId = tts.getName();
-                            storeRecord(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
+                        for (BinaryTimeSeriesRow binRecord : rows) {
+                            storeRow(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
                         }
                     }
                     // Implicit commit executed here
             );
         });
-
     }
 
-    private void storeRecord(Configuration configuration, String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+    private void storeRow(String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+        dsl.connection(connection -> {
+            setOffice(connection, officeId);
+            DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
+            storeRow(dsl.configuration(), officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
+        });
+    }
+
+    private void storeRow(Configuration configuration, String officeId, String tsId,
+                          BinaryTimeSeriesRow binRecord,
+                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+
+        if(hasIdAndValue(binRecord)){
+            throw new IllegalArgumentException("BinaryTimeSeriesRow cannot have both a binaryId and a binaryValue");
+        }
+
         if(binRecord.getBinaryId() != null){
-            // If a binaryId is present then lets use that b/c it seems like it would be more efficient.
             store(configuration, officeId, tsId, binRecord.getBinaryId(),
-                    createTimestamp(binRecord.getDateTime()), null, createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
         } else {
             store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                    createTimestamp(binRecord.getDateTime()), null, createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
         }
+    }
+
+    private boolean hasRowWithIdAndValue(BinaryTimeSeries bts){
+        boolean hasBoth = false;
+
+        if(bts != null) {
+            Collection<BinaryTimeSeriesRow> rows = bts.getBinaryValues();
+            hasBoth = hasRowWithIdAndValue(rows);
+        }
+
+        return hasBoth;
+    }
+
+    private boolean hasRowWithIdAndValue(Collection<BinaryTimeSeriesRow> rows) {
+        boolean hasBoth = false;
+        if (rows != null) {
+            for (BinaryTimeSeriesRow binRecord : rows) {
+                if (hasIdAndValue(binRecord)) {
+                    hasBoth = true;
+                    break;
+                }
+            }
+        }
+        return hasBoth;
+    }
+
+    private boolean hasIdAndValue(BinaryTimeSeriesRow row) {
+        return row != null && row.getBinaryId() != null && row.getBinaryValue() != null;
     }
 }
