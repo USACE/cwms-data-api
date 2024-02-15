@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,6 @@
 
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -33,6 +31,8 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 
 public final class Controllers {
@@ -123,6 +123,7 @@ public final class Controllers {
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
     public static final String ID_MASK = "id-mask";
+    public static final String OFFICE_MASK = "office-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
