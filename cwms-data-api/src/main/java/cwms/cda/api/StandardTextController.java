@@ -78,7 +78,7 @@ public class StandardTextController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Specifies the office filter of the"
                             + "standard text."),
-                    @OpenApiParam(name = NAME_MASK, description = "Specifies the text id filter of the "
+                    @OpenApiParam(name = "standard-text-id-mask", description = "Specifies the text id filter of the "
                             + "standard text")
             },
             responses = {
@@ -117,11 +117,12 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(
             description = "Retrieve a single Standard Text value",
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "Specifies the text id of the standard text to retrieve"),
+                    @OpenApiParam(name = "standard-text-id", description = "Specifies the text id of the " +
+                            "standard text to retrieve. Default includes all text ids"),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of the"
-                            + "standard text.")
+                            + "standard text. Default includes all offices")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -183,6 +184,7 @@ public class StandardTextController implements CrudHandler {
         }
     }
 
+    @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
@@ -192,7 +194,8 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(
             description = "Delete a single Standard Text value",
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "Specifies the text id of the standard text to delete"),
+                    @OpenApiParam(name = "standard-text-id", description = "Specifies the text id of the standard " +
+                            "text to delete"),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of the"
