@@ -44,12 +44,10 @@ public final class StandardTextDao extends JooqDao<StandardTextId> {
     }
 
     public StandardTextCatalog retreiveStandardTextCatalog(String standardTextIdMask, String officeIdMask) {
-
-
         AV_STD_TEXT view = AV_STD_TEXT.AV_STD_TEXT;
         List<StandardTextValue> textValues = dsl.select(view.OFFICE_ID, view.STD_TEXT_ID, view.LONG_TEXT)
                 .from(view)
-                .where(JooqDao.caseInsensitiveLikeRegexNullTrue(view.OFFICE_ID,officeIdMask))
+                .where(JooqDao.caseInsensitiveLikeRegexNullTrue(view.OFFICE_ID, officeIdMask))
                 .and(JooqDao.caseInsensitiveLikeRegexNullTrue(view.STD_TEXT_ID, standardTextIdMask))
                 .stream()
                 .map(r -> new StandardTextValue.Builder()
@@ -66,9 +64,9 @@ public final class StandardTextDao extends JooqDao<StandardTextId> {
     }
 
     public void deleteStandardText(String stdTextId, String officeId, String deleteAction) {
-        connection(dsl, c-> {
+        connection(dsl, c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
-            CWMS_TEXT_PACKAGE.call_DELETE_STD_TEXT(configuration,stdTextId, deleteAction, officeId);
+            CWMS_TEXT_PACKAGE.call_DELETE_STD_TEXT(configuration, stdTextId, deleteAction, officeId);
         });
     }
 
@@ -91,7 +89,7 @@ public final class StandardTextDao extends JooqDao<StandardTextId> {
 
     public void storeStandardText(String stdTextId, String stdTextValue, String officeId, boolean failIfExists) {
         String failIfExistsString = OracleTypeMap.formatBool(failIfExists);
-        connection(dsl, c-> {
+        connection(dsl, c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
             CWMS_TEXT_PACKAGE.call_STORE_STD_TEXT(configuration, stdTextId, stdTextValue, failIfExistsString, officeId);
         });
