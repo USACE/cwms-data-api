@@ -144,6 +144,8 @@ public final class Controllers {
     public static final String DELETE_MODE = "delete-mode";
     public static final String MIN_ATTRIBUTE = "min-attribute";
     public static final String MAX_ATTRIBUTE = "max-attribute";
+    public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
+    public static final String STANDARD_TEXT_ID = "standard-text-id";
 
 
     static {

@@ -55,7 +55,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class StandardTextController implements CrudHandler {
-    private static final String TAG = "Standard-Text";
+    private static final String TAG = TextTimeSeriesController.TAG;
     private final MetricRegistry metrics;
 
     public StandardTextController(MetricRegistry metrics) {
@@ -78,7 +78,7 @@ public class StandardTextController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Specifies the office filter of the"
                             + "standard text."),
-                    @OpenApiParam(name = "standard-text-id-mask", description = "Specifies the text id filter of the "
+                    @OpenApiParam(name = STANDARD_TEXT_ID_MASK, description = "Specifies the text id filter of the "
                             + "standard text")
             },
             responses = {
@@ -117,7 +117,7 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(
             description = "Retrieve a single Standard Text value",
             pathParams = {
-                    @OpenApiParam(name = "standard-text-id", description = "Specifies the text id of the " +
+                    @OpenApiParam(name = STANDARD_TEXT_ID, description = "Specifies the text id of the " +
                             "standard text to retrieve. Default includes all text ids"),
             },
             queryParams = {
@@ -194,7 +194,7 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(
             description = "Delete a single Standard Text value",
             pathParams = {
-                    @OpenApiParam(name = "standard-text-id", description = "Specifies the text id of the standard " +
+                    @OpenApiParam(name = STANDARD_TEXT_ID, description = "Specifies the text id of the standard " +
                             "text to delete"),
             },
             queryParams = {
