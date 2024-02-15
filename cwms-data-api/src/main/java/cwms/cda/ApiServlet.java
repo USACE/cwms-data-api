@@ -379,7 +379,7 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
-        cdaCrudCache("/timeseries/text/standard-text/{standard-text-id}",
+        cdaCrudCache("/timeseries/text/standard-text-id/{" + Controllers.STANDARD_TEXT_ID + "}",
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/timeseries/text/{timeseries}",
                 new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
