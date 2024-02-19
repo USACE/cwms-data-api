@@ -377,8 +377,10 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        String contextPath = getServletConfig().getServletContext().getContextPath();  // like: /cwms-data or /spk-data
+
         cdaCrudCache("/timeseries/text/{timeseries}",
-                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new TextTimeSeriesController(metrics, contextPath), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
