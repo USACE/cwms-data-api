@@ -10,6 +10,9 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Configuration;
@@ -21,10 +24,16 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
     public static final String OFFICE_ID = "OFFICE_ID";
+    private String clobTemplate = "/clob/ignored?clob-id={clob-id}&office-id={office}";
 
 
     public TimeSeriesTextDao(DSLContext dsl) {
         super(dsl);
+    }
+
+    public TimeSeriesTextDao(DSLContext dsl, String clobTemplate) {
+        super(dsl);
+        this.clobTemplate = clobTemplate;
     }
 
     public TextTimeSeries retrieveFromDao(
@@ -124,7 +133,13 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
 
     @NotNull
-    private RegularTimeSeriesTextDao getRegularDao() {
+    private RegularTimeSeriesTextDao getRegularDao(Function <String,String> idToUrl){
+
+        return new RegularTimeSeriesTextDao(dsl, idToUrl);
+    }
+
+    @NotNull
+    private RegularTimeSeriesTextDao getRegularDao(){
         return new RegularTimeSeriesTextDao(dsl);
     }
 
