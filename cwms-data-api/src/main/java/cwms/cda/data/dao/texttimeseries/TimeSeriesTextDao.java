@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,10 +29,16 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
 
     public static final String OFFICE_ID = "OFFICE_ID";
+    private String clobTemplate = "/clob/ignored?clob-id={clob-id}&office-id={office}";
 
 
     public TimeSeriesTextDao(DSLContext dsl) {
         super(dsl);
+    }
+
+    public TimeSeriesTextDao(DSLContext dsl, String clobTemplate) {
+        super(dsl);
+        this.clobTemplate = clobTemplate;
     }
 
     public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
@@ -57,6 +64,43 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
         if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
+            regRows = regDao.retrieveRows(officeId, tsId, textMask,
+                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    maxVersion, minAttribute, maxAttribute);
+        }
+
+        return new TextTimeSeries.Builder()
+                .withOfficeId(officeId)
+                .withName(tsId)
+                .withRegularTextValues(regRows)
+                .withStandardTextValues(stdRows)
+                .build();
+    }
+
+    public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
+                                          @NotNull String officeId, @NotNull String tsId,
+                                          String textMask,
+                                          @Nullable ZonedDateTime startTime, @Nullable ZonedDateTime endTime,
+                                          @Nullable ZonedDateTime versionDate,
+                                          boolean maxVersion,
+                                          @Nullable Long minAttribute, @Nullable Long maxAttribute,
+                                          @Nullable Function<String,String> idToUrl
+    ) {
+        List<StandardTextTimeSeriesRow> stdRows = null;
+        List<RegularTextTimeSeriesRow> regRows = null;
+
+        if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
+            boolean retrieveText = true;  // should this be true?
+            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
+            stdRows = stdDao.retrieveRows(officeId, tsId, textMask,
+                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    maxVersion, retrieveText, minAttribute, maxAttribute);
+            // Do I need to build the std catalog thing?
+            // Add a flag for that or one method that builds and one that doesn't
+        }
+
+        if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
+            RegularTimeSeriesTextDao regDao = getRegularDao(idToUrl);
             regRows = regDao.retrieveRows(officeId, tsId, textMask,
                     getInstant(startTime), getInstant(endTime), getInstant(versionDate),
                     maxVersion, minAttribute, maxAttribute);
@@ -140,7 +184,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         }
 
         if (stdTextId == null) {
-            return RegularTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, null,  textValue);
+            return RegularTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, null,  textValue, null);
         } else {
             return StandardTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, textValue, officeId, stdTextId);
         }
@@ -216,7 +260,13 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     @NotNull
-    private RegularTimeSeriesTextDao getRegularDao() {
+    private RegularTimeSeriesTextDao getRegularDao(Function <String,String> idToUrl){
+
+        return new RegularTimeSeriesTextDao(dsl, idToUrl);
+    }
+
+    @NotNull
+    private RegularTimeSeriesTextDao getRegularDao(){
         return new RegularTimeSeriesTextDao(dsl);
     }
 
