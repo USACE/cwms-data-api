@@ -52,6 +52,8 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -62,6 +64,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.ZonedDateTime;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -80,15 +83,21 @@ public class TextTimeSeriesController implements CrudHandler {
 
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
+    private final String contextPath;
 
+    public static final String CONTEXT_TOKEN = "{context-path}";
+    public static final String OFFICE_TOKEN = "{office}";
+    public static final String CLOB_TOKEN = "{clob-id}";
+    public final static String clobTemplate = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
 
-    public TextTimeSeriesController(MetricRegistry metrics) {
+    public TextTimeSeriesController(MetricRegistry metrics, String contextPath) {
         this.metrics = metrics;
+        this.contextPath = contextPath;  // like /spk-data
     }
 
     @NotNull
     protected TimeSeriesTextDao getDao(DSLContext dsl) {
-        return new TimeSeriesTextDao(dsl);
+        return new TimeSeriesTextDao(dsl, clobTemplate );
     }
 
 
@@ -144,9 +153,19 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String textMask = "*";
 
+//            String contextPath = this.contextPath;
+//            String protocol = ctx.protocol();// HTTP/1.1
+//            String host = ctx.host();// localhost:7000
+//            String requestURI = ctx.req.getRequestURI();// /spk-data/timeseries/text
+//            String pathInfo = ctx.req.getPathInfo();// "/text"
+//            String servletPath = ctx.req.getServletPath();// "/timeseries"
+
+            String requestTemplate = ReplaceUtils.replace(clobTemplate, CONTEXT_TOKEN, contextPath, false);
+            requestTemplate = ReplaceUtils.replace(requestTemplate, OFFICE_TOKEN, office);
+            Function<String, String> idToUrl = ReplaceUtils.replace(requestTemplate, CLOB_TOKEN);
             TextTimeSeries textTimeSeries = dao.retrieveFromDao( office, tsId, textMask,
                     beginZdt, endZdt, versionZdt,
-                    maxVersion, minAttr, maxAttr);
+                    maxVersion, minAttr, maxAttr, idToUrl);
 
             ctx.contentType(contentType.toString());
 

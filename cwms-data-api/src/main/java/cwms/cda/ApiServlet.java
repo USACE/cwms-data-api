@@ -388,12 +388,14 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        String contextPath = getServletConfig().getServletContext().getContextPath();  // like: /cwms-data or /spk-data
+
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/timeseries/text/{timeseries}",
-                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new TextTimeSeriesController(metrics, contextPath), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/binary/{timeseries}",
-                new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new BinaryTimeSeriesController(metrics, contextPath), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
