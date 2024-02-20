@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -84,7 +84,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
                                           @Nullable ZonedDateTime versionDate,
                                           boolean maxVersion,
                                           @Nullable Long minAttribute, @Nullable Long maxAttribute,
-                                          @Nullable Function<String,String> idToUrl
+                                          @Nullable UnaryOperator<String> idToUrl
     ) {
         List<StandardTextTimeSeriesRow> stdRows = null;
         List<RegularTextTimeSeriesRow> regRows = null;
@@ -260,9 +260,9 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     @NotNull
-    private RegularTimeSeriesTextDao getRegularDao(Function <String,String> idToUrl){
+    private RegularTimeSeriesTextDao getRegularDao(UnaryOperator<String> idToUrl){
 
-        return new RegularTimeSeriesTextDao(dsl, idToUrl);
+        return new RegularTimeSeriesTextDao(dsl, idToUrl, RegularTimeSeriesTextDao.lengthPredicate());
     }
 
     @NotNull

@@ -23,8 +23,10 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
-import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
@@ -54,9 +56,10 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static final int TEXT_ID_DOES_NOT_EXIST_ERROR_CODE = 20001;
 
     private static final List<String> timeSeriesTextColumnsList;
+    private Predicate<ResultSet> whenToBuildUrl;
 
-    private Function<String, String> clobUrlMapper;
-    private static final long LENGTH_THRESHOLD_FOR_URL_MAPPING = 5L;  // should be at least as long as the url would be.
+    private UnaryOperator<String>howToBuildUrl;
+    private static final long LENGTH_THRESHOLD_FOR_URL_MAPPING = 255L;
 
     static {
         String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, TEXT_ID, ATTRIBUTE, TEXT};
@@ -68,9 +71,24 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         super(dsl);
     }
 
-    public RegularTimeSeriesTextDao(DSLContext dsl, Function<String, String> clobUrlMapper) {
+    public RegularTimeSeriesTextDao(DSLContext dsl, @Nullable UnaryOperator<String> howToBuildUrl)
+    {
+        this(dsl, howToBuildUrl, lengthPredicate());
+    }
+
+    /**
+     *
+     * @param dsl The jOOQ DSLContext to use.
+     * @param howToBuildUrl A caller provided function that will be called with the clob-id and is to return a URL to the clob-value.
+     *                      If null, the URL will not be built.  The ReplaceUtils class contains helpful methods to build this operator.
+     * @param whenToBuildUrl A caller provided predicate that will be called with the ResultSet and
+     *                       is to return true if the URL should be built using howToBuildUrl.  If null, the URL will not be built.
+     *                       The methods lengthPredicate, yesPredicate, and noPredicate are provided for convenience.
+     */
+    public RegularTimeSeriesTextDao(DSLContext dsl, @Nullable UnaryOperator<String> howToBuildUrl, @Nullable Predicate<ResultSet> whenToBuildUrl) {
         super(dsl);
-        this.clobUrlMapper = clobUrlMapper;
+        this.howToBuildUrl = howToBuildUrl;
+        this.whenToBuildUrl = whenToBuildUrl;
     }
 
     public Timestamp createTimestamp(Date date) {
@@ -147,7 +165,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                 stmt.execute();
                 ResultSet rs = (ResultSet) stmt.getObject(1);
 
-                return buildRows(rs, clobUrlMapper);
+                return buildRows(rs, howToBuildUrl, whenToBuildUrl);
             } catch (SQLException e) {
                 if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
                     throw new NoDataFoundException();
@@ -201,20 +219,18 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
     @NotNull
-    private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs, Function<String, String> mapper) throws SQLException {
+    private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs, UnaryOperator<String> howToBuildUrl, Predicate<ResultSet> whenToBuildUrl) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
         List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
 
-        Function<ResultSet, Boolean> lengthCheck = buildLengthCheck(LENGTH_THRESHOLD_FOR_URL_MAPPING);
-
         while (rs.next()) {
-            RegularTextTimeSeriesRow row = buildRow(rs, mapper, lengthCheck);
+            RegularTextTimeSeriesRow row = buildRow(rs, howToBuildUrl, whenToBuildUrl);
             rows.add(row);
         }
         return rows;
     }
 
-    private static RegularTextTimeSeriesRow buildRow(ResultSet rs, Function<String, String> mapper, Function<ResultSet, Boolean> shouldBuildUrl) throws SQLException {
+    private static RegularTextTimeSeriesRow buildRow(ResultSet rs, @Nullable UnaryOperator<String> mapper, @Nullable Predicate<ResultSet> shouldBuildUrl) throws SQLException {
 
         Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
         Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);
@@ -225,7 +241,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         String valueUrl = null;
 
 
-        if( shouldBuildUrl != null && shouldBuildUrl.apply(rs)){
+        if( shouldBuildUrl != null && shouldBuildUrl.test(rs)){
             valueUrl = getTextValueUrl(rs, mapper);
         }
 
@@ -241,30 +257,15 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         return buildRow(tsDateTime, tsVersionDate, tsDataEntryDate, attribute, textId, clobString, valueUrl);
     }
 
-    private static Function<ResultSet, Boolean> buildLengthCheck(long lengthThreshold) {
-        return rs -> {
-            try {
-                Clob clob = rs.getClob(TEXT);
-                String textId = rs.getString(TEXT_ID);
-
-                return (textId != null && ! textId.isEmpty() &&
-                        clob != null && clob.length() > LENGTH_THRESHOLD_FOR_URL_MAPPING);
-            } catch (SQLException e) {
-                logger.atWarning().withCause(e).log("Error checking CLOB length");
-                return false;
-            }
-        };
-    }
-
-    private static String getTextValueUrl(ResultSet rs, Function<String, String> mapper) {
+    private static String getTextValueUrl(ResultSet rs, @Nullable UnaryOperator<String> howToBuildUrl) {
         String url = null;
 
         try {
-            if(mapper != null && rs != null) {
+            if(howToBuildUrl != null && rs != null) {
                 String textId = rs.getString(TEXT_ID);
 
                 if (textId != null && ! textId.isEmpty()) {
-                    url = mapper.apply(textId);
+                    url = howToBuildUrl.apply(textId);
                 }
             }
         } catch (SQLException e) {
@@ -272,6 +273,32 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         }
 
         return url;
+    }
+
+    public static Predicate<ResultSet> lengthPredicate() {
+        return lengthPredicate(LENGTH_THRESHOLD_FOR_URL_MAPPING);
+    }
+
+    public static Predicate<ResultSet> lengthPredicate(long lengthThreshold) {
+        return rs -> {
+            try {
+                Clob clob = rs.getClob(TEXT);
+                String textId = rs.getString(TEXT_ID);
+
+                return (textId != null && !textId.isEmpty() &&
+                        clob != null && clob.length() > lengthThreshold);
+            } catch (SQLException e) {
+                logger.atWarning().withCause(e).log("Error checking CLOB length");
+                return false;
+            }
+        };
+    }
+
+    public static Predicate<ResultSet> yesPredicate() {
+        return rs -> true;
+    }
+    public static Predicate<ResultSet> noPredicate() {
+        return rs -> false;
     }
 
     public static RegularTextTimeSeriesRow buildRow(Timestamp dateTimeUtc, Timestamp versionDateUtc, Timestamp dataEntryDateUtc, Long attribute, String textId, String textValue, String url) {
