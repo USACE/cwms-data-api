@@ -120,8 +120,17 @@ public abstract class JooqDao<T> extends Dao<T> {
         return connection;
     }
 
-    public static DSLContext getDslContext(Connection database, String officeId) {
-        DSLContext dsl = DSL.using(database, SQLDialect.ORACLE18C);
+    public static DSLContext getDslContext(Connection connection, String officeId) {
+        // Because this dsl is constructed with a connection, jOOQ will reuse the provided
+        // connection and not get new connections from a DataSource.  See:
+        //   https://www.jooq.org/doc/latest/manual/sql-building/dsl-context/connection-vs-datasource/
+        // This also means
+        // that jOOQ will not automatically return the connection to the pool for each statement.
+        // So it is safe for us to set the session office id.
+        // Everything that uses the returned dsl after this method will reuse this connection.
+        // This method should probably be called from within a connection{  } block and jOOQ
+        // code within the block should use the returned DSLContext or the connection.
+        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
 
         return dsl;

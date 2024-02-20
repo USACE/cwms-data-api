@@ -25,16 +25,12 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
-
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -46,7 +42,7 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
-
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
@@ -58,9 +54,9 @@ import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 /**
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
@@ -88,7 +84,7 @@ public class DataApiTestIT {
     /**
      * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
      * can be an anonymous function if more detail is required.
-     * @param resource
+     * @param resource Resource path to SQL file.  Example: "cwms/cda/data/sql/create_location.sql"
      * @throws Exception
      */
     protected static void loadSqlDataFromResource(String resource) throws Exception {
@@ -98,7 +94,7 @@ public class DataApiTestIT {
                     .getResourceAsStream(resource),"UTF-8");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(sql);) {
+            try(PreparedStatement stmt = c.prepareStatement(sql)) {
                 stmt.execute();
             } catch (SQLException ex) {
                 throw new RuntimeException("Unable to process SQL",ex);
@@ -146,7 +142,7 @@ public class DataApiTestIT {
                     continue;
                 }
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
+                    try(PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
                         stmt.setString(1,user.getName());
                         stmt.setString(2,user.getName()+"TestKey");
                         stmt.setString(3,user.getApikey());
@@ -194,7 +190,7 @@ public class DataApiTestIT {
                 Location location = it.next();
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
+                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery)) {
                         stmt.setString(1,location.getName());
                         stmt.setString(2,location.getOfficeId());
                         stmt.execute();
@@ -223,7 +219,7 @@ public class DataApiTestIT {
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys);) {
+                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys)) {
                         stmt.setString(1,user.getName());
                         stmt.execute();
                     } catch (SQLException ex) {
@@ -264,7 +260,7 @@ public class DataApiTestIT {
         }
 
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery);) {
+            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
                 stmt.setString(1,location);
                 stmt.setString(2,active ? "T" : "F");
                 stmt.setString(3,office);
@@ -315,7 +311,7 @@ public class DataApiTestIT {
     protected static void createTimeseries(String office, String timeseries) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery);) {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
                 stmt.setString(1,office);
                 stmt.setString(2,timeseries);
                 stmt.execute();
@@ -327,6 +323,7 @@ public class DataApiTestIT {
             }
         }, "cwms_20");
     }
+
 
     protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -356,7 +353,7 @@ public class DataApiTestIT {
     protected static void addUserToGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
-            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;");) {
+            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;")) {
                 stmt.setString(1,user);
                 stmt.setString(2,group);
                 stmt.setString(3,office);
@@ -378,7 +375,7 @@ public class DataApiTestIT {
     protected static void removeUserFromGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
-            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;");) {
+            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;")) {
                 stmt.setString(1,user);
                 stmt.setString(2,group);
                 stmt.setString(3,office);
@@ -453,7 +450,7 @@ public class DataApiTestIT {
                     delGroup.setString(1,g.getId());
                     delGroup.setString(2,g.getOfficeId());
                     delGroup.executeUpdate();
-                };
+                }
             } catch (SQLException ex) {
                 if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
                     throw new RuntimeException("Failed to remove group in test cleanup/", ex);
@@ -477,7 +474,7 @@ public class DataApiTestIT {
                     delGroup.setString(1,cat.getId());
                     delGroup.setString(2,cat.getOfficeId());
                     delGroup.executeUpdate();
-                };
+                }
             } catch (SQLException ex) {
                 if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
                     throw new RuntimeException("Failed to remove group in test cleanup/", ex);
