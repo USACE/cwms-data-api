@@ -176,7 +176,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     @Override
     public void deleteLocation(String locationName, String officeId, boolean cascadeDelete) {
-        dsl.connection(c -> {
+        connection(dsl, c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
             if (cascadeDelete) {
                 CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC_CASCADE.getRule(), officeId);

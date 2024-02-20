@@ -182,7 +182,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 DSL.val(units, String.class);
 
         // another call to get the interval
-        Field<BigDecimal> ival = CWMS_TS_PACKAGE.call_GET_INTERVAL(validTs.field("tsid", String.class));
+        Field<BigDecimal> ival = CWMS_TS_PACKAGE.call_GET_TS_INTERVAL__2(validTs.field("tsid", String.class));
 
         // put all those columns together as "valid"
         CommonTableExpression<Record7<BigDecimal, String, String, String, String, BigDecimal,

@@ -6,6 +6,8 @@
 
 - Copyright 2012-2019 U.S. Federal Government (in countries where recognized)
 -                     Michael A Neilson (michael.a.neilson@usace.army.mil)
+- Copyright 2020-2024 Resource Management Associates
+-                     Ryan D Ripken (ryan@rmanet.com)
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 
 ## Note for U.S. Federal Employees
