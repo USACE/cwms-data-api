@@ -218,6 +218,7 @@ task generateConfig(type: Copy) {
 }
 
 task run(type: JavaExec) {
+    group "application"
     dependsOn generateConfig
     dependsOn war
 

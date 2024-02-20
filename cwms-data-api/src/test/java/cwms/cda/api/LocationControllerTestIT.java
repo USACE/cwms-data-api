@@ -142,4 +142,27 @@ public class LocationControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
+
+    @Test
+    public void test_delete_location_that_does_not_exist() throws Exception
+    {
+        final String officeId = "SPK";
+        final String locationName = "I do not exit";
+        final KeyUser user = KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/{loc}", locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
 }
