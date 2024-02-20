@@ -28,7 +28,7 @@ public class DateDateComparator implements Comparator<DateDateKey>
               Date d2 = o2.getDateTime();
               compareTo = compare(d1, d2);
 
-              if(compareTo != 0)
+              if(compareTo == 0)
               {
                   Date dataEntryDate1 = o1.getDataEntryDate();
                   Date dataEntryDate2 = o2.getDataEntryDate();

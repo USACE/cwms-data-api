@@ -2,8 +2,8 @@ package cwms.cda.data.dao.binarytimeseries;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -18,8 +18,6 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
@@ -59,13 +57,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         return new Timestamp(date);
     }
 
-    public String createTimeZoneId(TimeZone timeZone) {
-        String retval = null;
-        if (timeZone != null) {
-            retval = timeZone.getID();
-        }
-        return retval;
-    }
 
     public void delete(String officeId, String tsId, String binaryTypeMask,
                        ZonedDateTime startTime, ZonedDateTime endTime, ZonedDateTime versionInstant, boolean maxVersion,
@@ -82,14 +73,19 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                        Long minAttribute, Long maxAttribute) {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
-        CWMS_TEXT_PACKAGE.call_DELETE_TS_BINARY(
-                dsl.configuration(),
-                tsId, binaryTypeMask,
-                startTime == null ? null : Timestamp.from(startTime),
-                endTime == null ? null : Timestamp.from(endTime),
-                versionInstant == null ? null : Timestamp.from(versionInstant),
-                timeZone.getID(),
-                maxVersion ? "T" : "F", minAttribute, maxAttribute, officeId);
+        connection(dsl, connection -> {
+            Configuration configuration = getDslContext(connection, officeId).configuration();
+            CWMS_TEXT_PACKAGE.call_DELETE_TS_BINARY(
+                    configuration,
+                    tsId, binaryTypeMask,
+                    startTime == null ? null : Timestamp.from(startTime),
+                    endTime == null ? null : Timestamp.from(endTime),
+                    versionInstant == null ? null : Timestamp.from(versionInstant),
+                    timeZone.getID(),
+                    maxVersion ? "T" : "F", minAttribute, maxAttribute, officeId);
+        });
+
+
 
     }
 
@@ -115,7 +111,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
      * binary and text time series can have multiple entries at each time/version date combination.  Entries are retrieved
      * in the order they are stored.
      *
-     * @param configuration
+     * @param configuration The database configuration to use.  It is assumed that the setOffice call has already been made.
      * @param officeId The office that owns the time series. If not specified or NULL, the session user's default office is used.
      * @param tsId The time series identifier
      * @param binaryData The binary data to store.
@@ -135,11 +131,12 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                               Timestamp startStamp, Timestamp endStamp, Timestamp verStamp, TimeZone timeZone, 
                               boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, 
                               Long attribute) {
+
         CWMS_TEXT_PACKAGE.call_STORE_TS_BINARY(
                 configuration, tsId,
                 binaryData, binaryType,
                 startStamp, endStamp, verStamp, timeZone.getID(),
-                maxVersion ? "T" : "F", storeExisting ? "T" : "F", storeNonExisting ? "T" : "F", replaceAll ? "T" : "F", 
+                maxVersion ? "T" : "F", storeExisting ? "T" : "F", storeNonExisting ? "T" : "F", replaceAll ? "T" : "F",
                 attribute, officeId) ;
     }
 
@@ -154,6 +151,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
      * binary and text time series can have multiple entries at each time/version date combination.  Entries are retrieved
      * in the order they are stored.
      *
+     * @param configuration The database configuration to use.  It is assumed that the setOffice call has already been made.
      * @param officeId    The office that owns the time series. If not specified or NULL, the session user's default office is used.
      * @param tsId         The time series identifier
      * @param binaryId    The unique identifier for the existing time series binary data as retrieved in retrieve_ts_binary.
@@ -253,9 +251,8 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
                           boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
         dsl.connection(connection -> {
-            setOffice(connection, officeId);
-            DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
-            dsl.transaction((Configuration trx) -> {
+            DSLContext connDsl = getDslContext(connection, officeId);
+            connDsl.transaction((Configuration trx) -> {
                         Configuration config = trx.dsl().configuration();
                         for (BinaryTimeSeriesRow binRecord : rows) {
                             storeRow(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
@@ -268,9 +265,8 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
     private void storeRow(String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
         dsl.connection(connection -> {
-            setOffice(connection, officeId);
-            DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
-            storeRow(dsl.configuration(), officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
+            DSLContext connDsl = getDslContext(connection, officeId);
+            storeRow(connDsl.configuration(), officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
         });
     }
 
