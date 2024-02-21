@@ -46,6 +46,7 @@ import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.rating.ExpressionRating;
 import cwms.cda.data.dto.rating.RatingMetadata;
 import cwms.cda.data.dto.rating.RatingMetadataList;
@@ -87,7 +88,8 @@ import java.util.List;
         RatingSpec.class, RatingSpecs.class,
         LocationLevel.class, LocationLevels.class,
         TimeSeriesIdentifierDescriptor.class, TimeSeriesIdentifierDescriptors.class,
-        TextTimeSeries.class
+        TextTimeSeries.class,
+        BinaryTimeSeries.class
 })
 /**
  * Formatter for CDA generated JSON.

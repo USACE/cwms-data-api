@@ -144,6 +144,7 @@ public final class Controllers {
     public static final String MIN_ATTRIBUTE = "min-attribute";
     public static final String MAX_ATTRIBUTE = "max-attribute";
 
+
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
