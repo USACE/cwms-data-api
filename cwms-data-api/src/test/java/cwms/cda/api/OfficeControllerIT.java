@@ -25,10 +25,13 @@
 package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.withArgs;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
+
+import java.util.Arrays;
 
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -59,7 +62,8 @@ public class OfficeControllerIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .header(Header.ETAG, not(isEmptyOrNullString()))
                 .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
-                .body("[0].name", CoreMatchers.equalTo("CPC"))
+                .rootPath("find {it.name == '%s'}", withArgs("CPC"))
+                .body("longname", CoreMatchers.equalTo("Central Processing Center"))
                 ;
     }
 
