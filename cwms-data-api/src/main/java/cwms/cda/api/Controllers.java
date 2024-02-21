@@ -141,6 +141,11 @@ public final class Controllers {
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
 
+    public static final String MIN_ATTRIBUTE = "min-attribute";
+    public static final String MAX_ATTRIBUTE = "max-attribute";
+
+
+
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
     }
