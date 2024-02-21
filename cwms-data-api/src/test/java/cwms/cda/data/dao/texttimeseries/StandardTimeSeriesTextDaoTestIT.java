@@ -65,7 +65,8 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
             StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
 
             testCreate(dao);
-            }
+            },
+            CwmsDataApiSetupCallback.getWebUser()
         );
     }
 
@@ -140,7 +141,8 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }
-                }
+                },
+                CwmsDataApiSetupCallback.getWebUser()
         );
     }
 
@@ -252,7 +254,8 @@ class StandardTimeSeriesTextDaoTestIT extends DataApiTestIT {
                     DSLContext dsl = getDslContext(c, officeId);
                     StandardTimeSeriesTextDao dao = new StandardTimeSeriesTextDao(dsl);
                     testStore(dao);
-                }
+                },
+                CwmsDataApiSetupCallback.getWebUser()
         );
     }
 

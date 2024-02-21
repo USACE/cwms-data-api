@@ -40,7 +40,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.image",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16"));
 
 
-    private String webUser = null;
+    private static String webUser = null;
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -175,4 +175,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         return cdaInstance.getSsoValve();
     }
 
+    public static String getWebUser() {
+        if (webUser == null) {
+            throw new IllegalStateException("This method should not be called before CwmsDataAPiSetupCallback::beforeAll.");
+        }
+        return webUser;
+    }
 }

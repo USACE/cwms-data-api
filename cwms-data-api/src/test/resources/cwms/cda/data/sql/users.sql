@@ -5,9 +5,11 @@ begin
     when dup_val_on_index then null; -- user already exists
   end;
   
+  cwms_sec.add_user_to_group('&webuser','All Users', 'HQ');
   cwms_sec.add_user_to_group('&webuser','CWMS Users', 'HQ');
   cwms_sec.add_user_to_group('&webuser','CWMS PD Users', 'HQ');
   cwms_sec.add_user_to_group('&webuser','CWMS DBA Users', 'HQ');
+  cwms_sec.add_user_to_group('&webuser','All Users', 'SPK');
   cwms_sec.add_user_to_group('&webuser','CWMS Users', 'SPK');
   cwms_sec.add_user_to_group('&webuser','CWMS PD Users', 'SPK');
   cwms_sec.add_user_to_group('&webuser','CWMS DBA Users', 'SPK');
