@@ -56,6 +56,9 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(description = "The units of the time series data",required = true)
     String units;
 
+    @Schema(description = "The version date of the time series trace")
+    Timestamp versionDate;
+
     @XmlJavaTypeAdapter(DurationAdapter.class)
     @JsonFormat(shape = Shape.STRING)
     @Schema(
@@ -118,19 +121,20 @@ public class TimeSeries extends CwmsDTOPaginated {
     private TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
-        this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null);
+        this(page, pageSize, total, name, officeId, begin, end, null, units, interval, null, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info){
-        this(page, pageSize, total, name, officeId, begin, end, units, interval, info, null, null);
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Timestamp versionDate){
+        this(page, pageSize, total, name, officeId, begin, end, versionDate, units, interval, info, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone) {
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, Timestamp versionDate, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
         this.begin = begin;
         this.end = end;
+        this.versionDate = versionDate;
         this.interval = interval;
         this.units = units;
         this.verticalDatumInfo = info;
@@ -252,12 +256,12 @@ public class TimeSeries extends CwmsDTOPaginated {
     @ArraySchema(
         schema = @Schema(
             name = "TimeSeries.Record",
-            description = "A representation of a time-series record",
+            description = "A representation of a time-series record in the form [dateTime, value, qualityCode]",
             type="array"
         ),
         arraySchema = @Schema(
             type="array",
-            example = "[123,54.3,0]"
+            example = "[123, 54.3, 0]"
         )        
     )
     @XmlAccessorType(XmlAccessType.FIELD)

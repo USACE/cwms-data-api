@@ -3,6 +3,8 @@ package cwms.cda.data.dao;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
+
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -32,7 +34,7 @@ public interface TimeSeriesDao {
 
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
                              String unit, String datum, ZonedDateTime begin, ZonedDateTime end,
-                             ZoneId timezone);
+                             ZoneId timezone, Timestamp versionDate);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);

@@ -86,7 +86,7 @@ public class TimeSeriesTest
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 
-		return new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi);
+		return new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, null);
 	}
 
 	VerticalDatumInfo buildVerticalDatumInfo()

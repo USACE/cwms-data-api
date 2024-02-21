@@ -3,6 +3,7 @@ package cwms.cda.api;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
@@ -52,8 +53,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
 
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(),
-                        isNotNull(), isNotNull(), isNotNull())).thenReturn(expected);
+                        isNull(), isNotNull(), isNotNull(), isNotNull(), isNull())).thenReturn(expected);
 
 
         // build mock request and response
@@ -99,7 +99,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(), isNotNull(), isNotNull(), isNotNull());
+                        isNull(), isNotNull(), isNotNull(), isNotNull(), isNull());
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -183,7 +183,6 @@ public class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
         assertSimilar(fakeTs, ts);
     }
-
 
     @NotNull
     private TimeSeries buildTimeSeries(String officeId, String tsId) {

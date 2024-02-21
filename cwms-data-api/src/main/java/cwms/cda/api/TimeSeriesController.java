@@ -1,46 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
-import static cwms.cda.api.Controllers.ACCEPT;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CATEGORY_ID;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.GROUP_ID;
-import static cwms.cda.api.Controllers.MAX_VERSION;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.STORE_RULE;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.TS_IDS;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -50,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -84,13 +46,7 @@ import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -103,6 +59,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.ws.Response;
+
+import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -333,6 +292,14 @@ public class TimeSeriesController implements CrudHandler {
                             + "parameters.\r\n3. Other. Any unit returned in the response to the "
                             + "units URI request that is appropriate for the requested parameters"
                             + "."),
+                    @OpenApiParam(name = VERSION_DATE, description="Specifies the version date of a "
+                            + "time series trace to be selected. The format for this field is ISO 8601 "
+                            + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
+                            + "empty, query will return a max aggregate for the timeseries."),
+                    @OpenApiParam(name = VERSION_TYPE,
+                            type = VersionType.class,
+                            description = VersionType.DESCRIPTION
+                    ),
                     @OpenApiParam(name = DATUM,  description = "Specifies the "
                             + "elevation datum of the response. This field affects only elevation"
                             + " location levels. Valid values for this field are:\r\n1. NAVD88.  "
@@ -411,6 +378,24 @@ public class TimeSeriesController implements CrudHandler {
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            String versionDateParam = ctx.queryParam(VERSION_DATE);
+            Timestamp versionDate = null;
+            if (versionDateParam != null) {
+                versionDate = Timestamp.from(DateUtils.parseUserDate(versionDateParam, timezone).toInstant());
+            }
+
+            String versionType = queryParamAsClass(ctx,
+                    new String[]{VERSION_TYPE, },
+                    String.class, VersionType.MAX_AGGREGATE.getValue(), metrics,
+                    name(TimeSeriesController.class.getName(), GET_ONE));
+
+            // Throw error if max aggregate version type is requested with a version date
+            // or single version version type is requested without a version date
+            if( (Objects.equals(versionType, "MAX_AGGREGATE") && !Objects.equals(versionDate, null))
+                || (Objects.equals(versionType, "SINGLE_VERSION") && Objects.equals(versionDate, null)) ) {
+                throw new IllegalArgumentException();
+            }
+
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
@@ -436,7 +421,7 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum,
-                        beginZdt, endZdt, tz);
+                        beginZdt, endZdt, tz, versionDate);
 
                 results = Formats.format(contentType, ts);
                 ctx.status(HttpServletResponse.SC_OK);

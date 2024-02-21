@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -104,20 +105,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                     String units, String datum,
-                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone) {
+                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone, Timestamp versionDate) {
         // Looks like the datum field is currently being ignored by this method.
         // Should we warn if the datum is not null?
-        return getTimeseries(page, pageSize, names, office, units, begin, end);
+        return getTimeseries(page, pageSize, names, office, units, begin, end, versionDate);
     }
 
     @SuppressWarnings("deprecated")
     protected TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
-                                       ZonedDateTime beginTime, ZonedDateTime endTime) {
+                                       ZonedDateTime beginTime, ZonedDateTime endTime, Timestamp versionDate) {
         TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
         Integer total = null;
+
 
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
@@ -214,11 +216,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
-        SQL retrieveSelectData = DSL.sql(
-            "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-           +"'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
-            tsId,unit, beginTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(),
-            null,null,null,null,null,null,null,officeId);
+        SQL retrieveSelectData = null;
+        // Query based on versionDate or query max aggregate
+        if(versionDate != null) {
+            retrieveSelectData = DSL.sql(
+                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                            + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTs",
+                    tsId, unit, beginTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(),
+                    null, null, null, null, null, versionDate.toInstant().toEpochMilli(), null, officeId);
+        } else {
+            retrieveSelectData = DSL.sql(
+                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                            + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
+                    tsId, unit, beginTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(),
+                    null, null, null, null, null, null, "T", officeId);
+        }
         
 
         Field<String> tzName;
@@ -237,19 +249,36 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Total is only an estimate, as it can change if fetching current data,
             // or the timeseries otherwise changes between queries.
 
-            @SuppressWarnings("deprecated")
-            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = DSL.select(
-                    dateTimeCol, valueCol, qualityCol
-            ).from(DSL.sql(
-                "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-               +"'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
-                valid.field("tsid", String.class),
-                valid.field("units", String.class),
-                beginTime.toInstant().toEpochMilli(),
-                endTime.toInstant().toEpochMilli(),
-                null, null, null, null, null, null, null,
-                valid.field("office_id", String.class)
-            ));
+            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = null;
+
+            // Query based on versionDate or query max aggregate
+            if(versionDate != null) {
+                retrieveSelectCount = DSL.select(
+                        dateTimeCol, valueCol, qualityCol
+                ).from(DSL.sql(
+                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                                + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTsTotal",
+                        valid.field("tsid", String.class),
+                        valid.field("units", String.class),
+                        beginTime.toInstant().toEpochMilli(),
+                        endTime.toInstant().toEpochMilli(),
+                        null, null, null, null, null, versionDate.toInstant().toEpochMilli(), null,
+                        valid.field("office_id", String.class)
+                ));
+            } else {
+                retrieveSelectCount = DSL.select(
+                        dateTimeCol, valueCol, qualityCol
+                ).from(DSL.sql(
+                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                                + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
+                        valid.field("tsid", String.class),
+                        valid.field("units", String.class),
+                        beginTime.toInstant().toEpochMilli(),
+                        endTime.toInstant().toEpochMilli(),
+                        null, null, null, null, null, null, "T",
+                        valid.field("office_id", String.class)
+                ));
+            }
 
             totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
         }
@@ -296,7 +325,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
                     Integer.class), tsMetadata.getValue("NAME", String.class),
                     tsMetadata.getValue("office_id", String.class),
-                    beginTime, endTime, tsMetadata.getValue("units", String.class),
+                    beginTime, endTime, versionDate, tsMetadata.getValue("units", String.class),
                     Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
                             tsMetadata.getValue("interval", Long.class)),
                     verticalDatumInfo,
