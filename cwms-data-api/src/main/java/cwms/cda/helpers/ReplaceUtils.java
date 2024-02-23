@@ -2,9 +2,16 @@ package cwms.cda.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.UnaryOperator;
+import org.jetbrains.annotations.NotNull;
 
 public class ReplaceUtils {
+
+    private ReplaceUtils() {
+        // Prevent instantiation
+    }
 
     /**
      * Returns a Function that replaces occurrences of a key in a string template with a specified value.
@@ -13,11 +20,11 @@ public class ReplaceUtils {
      * @param key the key to be replaced in the template
      * @return a Function that replaces occurrences of the key with a specified value
      */
-    public static UnaryOperator<String> replace(String template, String key){
+    public static UnaryOperator<String> replace(@NotNull String template, @NotNull String key){
         return value-> replace(template, key, value);
     }
 
-    public static String replace(String template, String key, String value){
+    public static String replace(@NotNull String template, @NotNull String key, String value){
         return replace(template, key, value, true);
     }
 
@@ -29,17 +36,22 @@ public class ReplaceUtils {
      * @param value the value to replace the key with
      * @param encode true to URL encode the value, false otherwise
      * @return the modified string template with the key replaced by the value
+     * @throws NullPointerException if the template is null
      */
-    public static String replace(String template, String key, String value, boolean encode){
+    public static String replace(@NotNull String template, @NotNull String key, String value, boolean encode){
+        String result = null;
+
         try {
-            if(encode){
+            if (encode) {
                 value = URLEncoder.encode(value, "UTF-8");
             }
 
-            return template.replace(key,value );
+            result = template.replace(key, value);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+
+        return result;
     }
 
     /**
@@ -60,24 +72,55 @@ public class ReplaceUtils {
     }
 
 
+    public static class OperatorBuilder {
 
-    public static void main(String[] args) {
-        String template1= "http://localhost:7000/spk-data/clob/ignored?clob-id={clob-id}&office-id={office}";
-        String template2 = "{context-root}clob/ignored?clob-id={clob-id}&office-id={office}";
+        String template;
 
-        UnaryOperator<String> mapper = replace(template1, "{clob-id}");
-        mapper = alsoReplace(mapper, "{context-root}", "http://localhost:7000/spk-data/", false);
-        mapper = alsoReplace(mapper, "{office}", "SWT");
-        System.out.println(mapper.apply("/TIME SERIES TEXT/1978044"));
+        Map<String, String> replacements = new LinkedHashMap<>();
+        private String operatorKey;
 
-        mapper = replace(template2, "{clob-id}");
-        mapper = alsoReplace(mapper, "{context-root}", "http://localhost:7000/spk-data/", false);
-        mapper = alsoReplace(mapper, "{office}", "SWT");
-        System.out.println(mapper.apply("/TIME SERIES TEXT/1978044"));
+        public OperatorBuilder() {
 
-        System.out.println(replace("{context-path}", "{context-path}", "/spk-data"));
-        System.out.println(replace("{context-path}", "{context-path}", "/spk-data", false));
+        }
+
+        public OperatorBuilder withTemplate(String template) {
+            this.template = template;
+            return this;
+        }
+
+        public OperatorBuilder replace(String key, String value) {
+            return replace(key, value, true);
+        }
+
+        public OperatorBuilder replace(String key, String value, boolean encode) {
+            if (encode) {
+                try {
+                    value = URLEncoder.encode(value, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            replacements.put(key, value);
+            return this;
+        }
+
+        public OperatorBuilder withOperatorKey(String key) {
+            this.operatorKey = key;
+            return this;
+        }
 
 
+        public UnaryOperator<String> build() {
+            String result = template;
+
+            // Apply the known replacements
+            for (Map.Entry<String, String> entry : replacements.entrySet()) {
+                result = result.replace(entry.getKey(), entry.getValue());
+            }
+
+            // Return the function that replaces the key with the result
+            return ReplaceUtils.replace(result, operatorKey);
+        }
     }
+
 }

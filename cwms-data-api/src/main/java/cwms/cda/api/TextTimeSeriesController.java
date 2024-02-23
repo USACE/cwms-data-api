@@ -62,7 +62,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.ZonedDateTime;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -87,7 +87,7 @@ public class TextTimeSeriesController implements CrudHandler {
     public static final String CONTEXT_TOKEN = "{context-path}";
     public static final String OFFICE_TOKEN = "{office}";
     public static final String CLOB_TOKEN = "{clob-id}";
-    public final static String clobTemplate = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
+    public static final String clobTemplate = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
 
     public TextTimeSeriesController(MetricRegistry metrics, String contextPath) {
         this.metrics = metrics;
@@ -181,7 +181,7 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String requestTemplate = ReplaceUtils.replace(clobTemplate, CONTEXT_TOKEN, contextPath, false);
             requestTemplate = ReplaceUtils.replace(requestTemplate, OFFICE_TOKEN, office);
-            Function<String, String> idToUrl = ReplaceUtils.replace(requestTemplate, CLOB_TOKEN);
+            UnaryOperator<String> idToUrl = ReplaceUtils.replace(requestTemplate, CLOB_TOKEN);
 
             TextTimeSeries textTimeSeries = dao.retrieveFromDao(mode, office, tsId, textMask,
                     beginZdt, endZdt, versionZdt,
