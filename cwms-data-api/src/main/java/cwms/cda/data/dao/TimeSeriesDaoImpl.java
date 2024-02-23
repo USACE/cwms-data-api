@@ -72,6 +72,7 @@ import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
@@ -105,7 +106,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                     String units, String datum,
-                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone, Timestamp versionDate) {
+                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone, ZonedDateTime versionDate) {
         // Looks like the datum field is currently being ignored by this method.
         // Should we warn if the datum is not null?
         return getTimeseries(page, pageSize, names, office, units, begin, end, versionDate);
@@ -114,7 +115,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @SuppressWarnings("deprecated")
     protected TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
-                                       ZonedDateTime beginTime, ZonedDateTime endTime, Timestamp versionDate) {
+                                       ZonedDateTime beginTime, ZonedDateTime endTime, ZonedDateTime versionDate) {
         TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
@@ -325,12 +326,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
                     Integer.class), tsMetadata.getValue("NAME", String.class),
                     tsMetadata.getValue("office_id", String.class),
-                    beginTime, endTime, versionDate, tsMetadata.getValue("units", String.class),
+                    beginTime, endTime, tsMetadata.getValue("units", String.class),
                     Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
                             tsMetadata.getValue("interval", Long.class)),
                     verticalDatumInfo,
                     tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
-                    tsMetadata.getValue(tzName)
+                    tsMetadata.getValue(tzName),
+                    versionDate
             );
         });
 
@@ -884,7 +886,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public void store(TimeSeries input, Timestamp versionDate, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection) {
         connection(dsl, connection ->
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection)
+                        Timestamp.from(input.getVersionDate().toInstant()), input.getValues(), createAsLrts, replaceAll, overrideProtection)
         );
     }
 
@@ -909,7 +911,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 qualityArray[i] = value.getQualityCode();
             }
         }
-
+        /*if(versionDate != null) {
+            connection(dsl, c->
+                    CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(c,officeId).configuration(),
+                                                            tsId, "T", officeId)
+            );
+        }*/
         tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
                 storeRule.getRule(), overrideProtection, versionDate, createAsLrts);
     }

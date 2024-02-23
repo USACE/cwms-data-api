@@ -223,6 +223,7 @@ task run(type: JavaExec) {
     dependsOn war
 
     classpath += configurations.baseLibs
+    classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs
     classpath += sourceSets.test.output // to get the fixture
 
@@ -230,13 +231,13 @@ task run(type: JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
 
-    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/spk-data"
+    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/swt-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    jvmArgs += "-DwarContext=/spk-data"
+    jvmArgs += "-DwarContext=/swt-data"
     // If you have the docker-compose environment up and are trying to run 
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
@@ -245,20 +246,21 @@ task run(type: JavaExec) {
 }
 
 task integrationTests(type: Test) {
-    dependsOn test
+    //dependsOn test
     dependsOn generateConfig
     dependsOn war
 
     useJUnitPlatform() {
         includeTags "integration"
     }
-    shouldRunAfter test
+    //shouldRunAfter test
     classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs
     // The before all extension will take care of these properties
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    jvmArgs += "-Dcwms.dataapi.default.office=SWT"
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"

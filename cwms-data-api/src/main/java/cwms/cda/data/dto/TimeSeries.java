@@ -18,15 +18,11 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.TimeSeries.Record;
@@ -43,6 +39,7 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TimeSeries extends CwmsDTOPaginated {
     public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
@@ -56,8 +53,11 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(description = "The units of the time series data",required = true)
     String units;
 
-    @Schema(description = "The version date of the time series trace")
-    Timestamp versionDate;
+    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
+    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @Schema(accessMode = AccessMode.READ_ONLY,
+            description = "The version date of the time series trace")
+    ZonedDateTime versionDate;
 
     @XmlJavaTypeAdapter(DurationAdapter.class)
     @JsonFormat(shape = Shape.STRING)
@@ -121,14 +121,14 @@ public class TimeSeries extends CwmsDTOPaginated {
     private TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
-        this(page, pageSize, total, name, officeId, begin, end, null, units, interval, null, null, null);
+        this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Timestamp versionDate){
-        this(page, pageSize, total, name, officeId, begin, end, versionDate, units, interval, info, null, null);
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate){
+        this(page, pageSize, total, name, officeId, begin, end,  units, interval, info, null, null, versionDate);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, Timestamp versionDate, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone) {
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone, ZonedDateTime versionDate) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
@@ -188,6 +188,10 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     public String getTimeZone() {
         return timeZone;
+    }
+
+    public ZonedDateTime getVersionDate() {
+        return versionDate;
     }
 
     @XmlElementWrapper(name="value-columns")

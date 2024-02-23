@@ -639,9 +639,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         ZonedDateTime firstValueTime = ZonedDateTime.ofInstant(start, NumericalConstants.UTC_ZONEID);
         ZonedDateTime lastValueTime = ZonedDateTime.ofInstant(end, NumericalConstants.UTC_ZONEID);
         TimeSeries timeSeries = new TimeSeries(null, size, size, timeSeriesId,
-                officeId, firstValueTime, lastValueTime, null, levelUnits,
+                officeId, firstValueTime, lastValueTime, levelUnits,
                 java.time.Duration.ofSeconds(interval.getSeconds()),
-                null, null, locationTimeZone.getId());
+                null, null, locationTimeZone.getId(), null);
         for (ZTSV_TYPE tsv : locLvlValues) {
             Timestamp dateTime = tsv.getDATE_TIME();
             Double value = tsv.getVALUE();

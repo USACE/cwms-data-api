@@ -143,11 +143,11 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
+                    /*@OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
                             + "the timeseries to create. If this field is not specified, a null "
                             + "version date will be used.  "
                             + "The format for this field is ISO 8601 extended, with optional timezone, "
-                            + "i.e., '" + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                            + "i.e., '" + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),*/
                     @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the version-date field (unless "
                             + "otherwise specified). If this field is not specified, the default time zone "
@@ -379,9 +379,9 @@ public class TimeSeriesController implements CrudHandler {
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             String versionDateParam = ctx.queryParam(VERSION_DATE);
-            Timestamp versionDate = null;
+            ZonedDateTime versionDate = null;
             if (versionDateParam != null) {
-                versionDate = Timestamp.from(DateUtils.parseUserDate(versionDateParam, timezone).toInstant());
+                versionDate = DateUtils.parseUserDate(versionDateParam, timezone);
             }
 
             String versionType = queryParamAsClass(ctx,
