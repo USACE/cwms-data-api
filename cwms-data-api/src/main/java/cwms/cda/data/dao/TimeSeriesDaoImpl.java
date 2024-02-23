@@ -831,8 +831,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public void create(TimeSeries input) {
-        create(input, TimeSeriesDao.NON_VERSIONED,
-                false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+        create(input, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
     }
 
     /**
@@ -851,7 +850,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
      * database entries.
      *
      * @param input Actual timeseries data
-     * @param versionDate "version" this data set is associated with. Null for non-versioned data.
      * @param createAsLrts Is this an irregular but well defined interval time series (e.g.
      *                     daily data in a local time zone.)
      *
@@ -861,16 +859,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
      */
     @SuppressWarnings("unused")
     public void create(TimeSeries input,
-                       Timestamp versionDate,
                        boolean createAsLrts, StoreRule storeRule, boolean overrideProtection){
         connection(dsl, connection -> {
             int intervalForward = 0;
             int intervalBackward = 0;
-            boolean versionedFlag = versionDate != null;
             boolean activeFlag = true;
             // the code does not need to be created before hand.
             // do not add a call to create_ts_code
             if (!input.getValues().isEmpty()) {
+                Timestamp versionDate = null;
+                if(input.getVersionDate() != null) {
+                    versionDate = Timestamp.from(input.getVersionDate().toInstant());
+                }
+
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
                         versionDate, input.getValues(), createAsLrts, storeRule,
                         overrideProtection);
@@ -886,7 +887,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public void store(TimeSeries input, Timestamp versionDate, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection) {
         connection(dsl, connection ->
                 store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        Timestamp.from(input.getVersionDate().toInstant()), input.getValues(), createAsLrts, replaceAll, overrideProtection)
+                        versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection)
         );
     }
 
@@ -912,10 +913,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
         /*if(versionDate != null) {
-            connection(dsl, c->
-                    CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(c,officeId).configuration(),
-                                                            tsId, "T", officeId)
-            );
+            CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection,officeId).configuration(),
+                                                    tsId, "T", officeId);
         }*/
         tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
                 storeRule.getRule(), overrideProtection, versionDate, createAsLrts);

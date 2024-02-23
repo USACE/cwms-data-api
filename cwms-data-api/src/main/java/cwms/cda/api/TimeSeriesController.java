@@ -1,7 +1,46 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.ACCEPT;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.DATE_FORMAT;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.EXAMPLE_DATE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.MAX_VERSION;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.STORE_RULE;
+import static cwms.cda.api.Controllers.TIMESERIES;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TS_IDS;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.VERSION_TYPE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -143,11 +182,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
-                            + "the timeseries to create. If this field is not specified, a null "
-                            + "version date will be used.  "
-                            + "The format for this field is ISO 8601 extended, with optional timezone, "
-                            + "i.e., '" + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the version-date field (unless "
                             + "otherwise specified). If this field is not specified, the default time zone "
@@ -169,12 +203,12 @@ public class TimeSeriesController implements CrudHandler {
     public void create(@NotNull Context ctx) {
 
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-        String version = ctx.queryParam(VERSION_DATE);
+        /*String version = ctx.queryParam(VERSION_DATE);
         Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
         if (version != null) {
             ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
             versionDate = Timestamp.from(beginZdt.toInstant());
-        }
+        }*/
 
         boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
         StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
@@ -185,7 +219,7 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
+            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");

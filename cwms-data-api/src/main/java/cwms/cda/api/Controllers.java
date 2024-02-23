@@ -106,7 +106,7 @@ public final class Controllers {
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
 
-    public static final String VERSION_TYPE = "version-type";
+    public static final String VERSION_TYPE = "date-version-type";
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
     public static final String OVERRIDE_PROTECTION = "override-protection";
