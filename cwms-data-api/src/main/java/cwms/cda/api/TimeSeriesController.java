@@ -425,9 +425,11 @@ public class TimeSeriesController implements CrudHandler {
 
             // Throw error if max aggregate version type is requested with a version date
             // or single version version type is requested without a version date
-            if( (Objects.equals(versionType, "MAX_AGGREGATE") && !Objects.equals(versionDate, null))
-                || (Objects.equals(versionType, "SINGLE_VERSION") && Objects.equals(versionDate, null)) ) {
-                throw new IllegalArgumentException();
+            if(Objects.equals(versionType, "MAX_AGGREGATE") && !Objects.equals(versionDate, null)) {
+                throw new IllegalArgumentException("Cannot query a max aggregate with a version date.");
+            }
+            if(Objects.equals(versionType, "SINGLE_VERSION") && Objects.equals(versionDate, null)) {
+                throw new IllegalArgumentException("A version date query must contain a valid version date.");
             }
 
             // The following parameters are only used for jsonv2 and xmlv2
@@ -455,9 +457,10 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum,
-                        beginZdt, endZdt, tz, versionDate);
+                        beginZdt, endZdt, tz, versionDate, versionType);
 
                 results = Formats.format(contentType, ts);
+
                 ctx.status(HttpServletResponse.SC_OK);
 
                 // Send back the link to the next page in the response header

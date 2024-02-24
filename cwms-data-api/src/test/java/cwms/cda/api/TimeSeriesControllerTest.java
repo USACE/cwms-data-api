@@ -53,7 +53,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
 
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(), isNotNull(), isNotNull(), isNotNull(), isNull())).thenReturn(expected);
+                        isNull(), isNotNull(), isNotNull(), isNotNull(), isNull(), isNotNull())).thenReturn(expected);
 
 
         // build mock request and response
@@ -99,7 +99,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(), isNotNull(), isNotNull(), isNotNull(), isNull());
+                        isNull(), isNotNull(), isNotNull(), isNotNull(), isNull(), isNotNull());
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);

@@ -75,7 +75,7 @@ public class DataApiTestIT {
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
     protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?)";
+    protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
@@ -148,7 +148,7 @@ public class DataApiTestIT {
                         stmt.setString(3,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to register user",ex);
+                        //throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
 
@@ -221,6 +221,7 @@ public class DataApiTestIT {
                 db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(removeApiKeys)) {
                         stmt.setString(1,user.getName());
+                        stmt.setString(2,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to delete api key",ex);

@@ -33,7 +33,7 @@ public interface TimeSeriesDao {
 
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
                              String unit, String datum, ZonedDateTime begin, ZonedDateTime end,
-                             ZoneId timezone, ZonedDateTime versionDate);
+                             ZoneId timezone, ZonedDateTime versionDate, String dateVersionType);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);

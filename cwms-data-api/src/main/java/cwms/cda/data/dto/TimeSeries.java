@@ -53,6 +53,9 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(description = "The units of the time series data",required = true)
     String units;
 
+    @Schema(description = "The type of time series query")
+    String dateVersionType;
+
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
     @Schema(accessMode = AccessMode.READ_ONLY,
@@ -121,20 +124,21 @@ public class TimeSeries extends CwmsDTOPaginated {
     private TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
-        this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null, null);
+        this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate){
-        this(page, pageSize, total, name, officeId, begin, end,  units, interval, info, null, null, versionDate);
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate, String dateVersionType){
+        this(page, pageSize, total, name, officeId, begin, end,  units, interval, info, null, null, versionDate, dateVersionType);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone, ZonedDateTime versionDate) {
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone, ZonedDateTime versionDate, String dateVersionType) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
         this.begin = begin;
         this.end = end;
         this.versionDate = versionDate;
+        this.dateVersionType = dateVersionType;
         this.interval = interval;
         this.units = units;
         this.verticalDatumInfo = info;
@@ -193,6 +197,8 @@ public class TimeSeries extends CwmsDTOPaginated {
     public ZonedDateTime getVersionDate() {
         return versionDate;
     }
+
+    public String getDateVersionType() { return dateVersionType; }
 
     @XmlElementWrapper(name="value-columns")
     @XmlElement(name="column")

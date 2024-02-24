@@ -106,16 +106,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                     String units, String datum,
-                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone, ZonedDateTime versionDate) {
+                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone, ZonedDateTime versionDate, String dateVersionType) {
         // Looks like the datum field is currently being ignored by this method.
         // Should we warn if the datum is not null?
-        return getTimeseries(page, pageSize, names, office, units, begin, end, versionDate);
+        return getTimeseries(page, pageSize, names, office, units, begin, end, versionDate, dateVersionType);
     }
 
     @SuppressWarnings("deprecated")
     protected TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
-                                       ZonedDateTime beginTime, ZonedDateTime endTime, ZonedDateTime versionDate) {
+                                       ZonedDateTime beginTime, ZonedDateTime endTime, ZonedDateTime versionDate, String dateVersionType) {
         TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
@@ -332,7 +332,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     verticalDatumInfo,
                     tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
                     tsMetadata.getValue(tzName),
-                    versionDate
+                    versionDate, dateVersionType
             );
         });
 
@@ -912,12 +912,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 qualityArray[i] = value.getQualityCode();
             }
         }
-        /*if(versionDate != null) {
-            CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection,officeId).configuration(),
-                                                    tsId, "T", officeId);
-        }*/
         tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
                 storeRule.getRule(), overrideProtection, versionDate, createAsLrts);
+
+        if(versionDate != null) {
+            CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection,officeId).configuration(),
+                    tsId, "T", officeId);
+        }
     }
 
     public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
