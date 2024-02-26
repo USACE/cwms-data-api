@@ -74,23 +74,23 @@ public class BinaryTimeSeriesRow {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        BinaryTimeSeriesRow row = (BinaryTimeSeriesRow) o;
+        BinaryTimeSeriesRow that = (BinaryTimeSeriesRow) o;
 
-        if (getDateTime() != null ? !getDateTime().equals(row.getDateTime()) : row.getDateTime() != null)
+        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
             return false;
-        if (getVersionDate() != null ? !getVersionDate().equals(row.getVersionDate()) : row.getVersionDate() != null)
+        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null)
             return false;
-        if (getDataEntryDate() != null ? !getDataEntryDate().equals(row.getDataEntryDate()) : row.getDataEntryDate() != null)
+        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
             return false;
-        if (getBinaryId() != null ? !getBinaryId().equals(row.getBinaryId()) : row.getBinaryId() != null)
+        if (getBinaryId() != null ? !getBinaryId().equals(that.getBinaryId()) : that.getBinaryId() != null)
             return false;
-        if (getAttribute() != null ? !getAttribute().equals(row.getAttribute()) : row.getAttribute() != null)
+        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
             return false;
-        if (getMediaType() != null ? !getMediaType().equals(row.getMediaType()) : row.getMediaType() != null)
+        if (getMediaType() != null ? !getMediaType().equals(that.getMediaType()) : that.getMediaType() != null)
             return false;
-        if (getFileExtension() != null ? !getFileExtension().equals(row.getFileExtension()) : row.getFileExtension() != null)
+        if (getFileExtension() != null ? !getFileExtension().equals(that.getFileExtension()) : that.getFileExtension() != null)
             return false;
-        return Arrays.equals(getBinaryValue(), row.getBinaryValue());
+        return Arrays.equals(getBinaryValue(), that.getBinaryValue());
     }
 
     @Override
