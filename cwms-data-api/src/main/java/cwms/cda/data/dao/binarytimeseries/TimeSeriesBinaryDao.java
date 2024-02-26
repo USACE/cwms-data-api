@@ -19,7 +19,6 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
-import org.jooq.Result;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 

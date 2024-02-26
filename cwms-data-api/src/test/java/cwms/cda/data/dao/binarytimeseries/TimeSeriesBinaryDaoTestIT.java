@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
