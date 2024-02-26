@@ -5,16 +5,16 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 
 @JsonDeserialize(builder = BinaryTimeSeriesRow.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class BinaryTimeSeriesRow {
-    private final Date dateTime;
-    private final Date versionDate;
-    private final Date dataEntryDate;
+    private final Instant dateTime;
+    private final Instant versionDate;
+    private final Instant dataEntryDate;
     private final String binaryId;
     private final Long attribute;
     private final String mediaType;
@@ -33,15 +33,15 @@ public class BinaryTimeSeriesRow {
         this.binaryValue = builder.binaryValue;
     }
 
-    public Date getDateTime() {
+    public Instant getDateTime() {
         return dateTime;
     }
 
-    public Date getVersionDate() {
+    public Instant getVersionDate() {
         return versionDate;
     }
 
-    public Date getDataEntryDate() {
+    public Instant getDataEntryDate() {
         return dataEntryDate;
     }
 
@@ -74,23 +74,23 @@ public class BinaryTimeSeriesRow {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        BinaryTimeSeriesRow that = (BinaryTimeSeriesRow) o;
+        BinaryTimeSeriesRow row = (BinaryTimeSeriesRow) o;
 
-        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
+        if (getDateTime() != null ? !getDateTime().equals(row.getDateTime()) : row.getDateTime() != null)
             return false;
-        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null)
+        if (getVersionDate() != null ? !getVersionDate().equals(row.getVersionDate()) : row.getVersionDate() != null)
             return false;
-        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
+        if (getDataEntryDate() != null ? !getDataEntryDate().equals(row.getDataEntryDate()) : row.getDataEntryDate() != null)
             return false;
-        if (getBinaryId() != null ? !getBinaryId().equals(that.getBinaryId()) : that.getBinaryId() != null)
+        if (getBinaryId() != null ? !getBinaryId().equals(row.getBinaryId()) : row.getBinaryId() != null)
             return false;
-        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
+        if (getAttribute() != null ? !getAttribute().equals(row.getAttribute()) : row.getAttribute() != null)
             return false;
-        if (getMediaType() != null ? !getMediaType().equals(that.getMediaType()) : that.getMediaType() != null)
+        if (getMediaType() != null ? !getMediaType().equals(row.getMediaType()) : row.getMediaType() != null)
             return false;
-        if (getFileExtension() != null ? !getFileExtension().equals(that.getFileExtension()) : that.getFileExtension() != null)
+        if (getFileExtension() != null ? !getFileExtension().equals(row.getFileExtension()) : row.getFileExtension() != null)
             return false;
-        return Arrays.equals(getBinaryValue(), that.getBinaryValue());
+        return Arrays.equals(getBinaryValue(), row.getBinaryValue());
     }
 
     @Override
@@ -110,31 +110,47 @@ public class BinaryTimeSeriesRow {
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
 
-        private Date dateTime;
-        private  Date versionDate;
-        private  Date dataEntryDate;
-        private  String binaryId;
-        private  Long attribute;
-        private  String mediaType;
-        private  String fileExtension;
-        private  byte[] binaryValue;
+        private Instant dateTime;
+        private Instant versionDate;
+        private Instant dataEntryDate;
+        private String binaryId;
+        private Long attribute;
+        private String mediaType;
+        private String fileExtension;
+        private byte[] binaryValue;
 
         public Builder(){
 
         }
 
-        public Builder withDateTime(Date dateTime){
+        public Builder withDateTime(Instant dateTime){
             this.dateTime = dateTime;
             return this;
         }
 
-        public Builder withVersionDate(Date versionDate){
+
+        public Builder withDateTime(long dateTimeEpochMillis){
+            this.dateTime = Instant.ofEpochMilli(dateTimeEpochMillis);
+            return this;
+        }
+
+        public Builder withVersionDate(Instant versionDate){
             this.versionDate = versionDate;
             return this;
         }
 
-        public Builder withDataEntryDate(Date dataEntryDate){
+        public Builder withVersionDate(long versionDateEpochMillis){
+            this.versionDate = Instant.ofEpochMilli(versionDateEpochMillis);
+            return this;
+        }
+
+        public Builder withDataEntryDate(Instant dataEntryDate){
             this.dataEntryDate = dataEntryDate;
+            return this;
+        }
+
+        public Builder withDataEntryDate(long dataEntryDateEpochMillis){
+            this.dataEntryDate = Instant.ofEpochMilli(dataEntryDateEpochMillis);
             return this;
         }
 

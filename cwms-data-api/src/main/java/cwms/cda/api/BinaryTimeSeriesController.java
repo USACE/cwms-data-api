@@ -147,7 +147,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             TimeSeriesBinaryDao dao = getDao(dsl);
 
             BinaryTimeSeries binaryTimeSeries = dao.retrieve(office, tsId, binTypeMask,
-                    beginZdt == null? null: beginZdt.toInstant(),
+                    beginZdt.toInstant(),
                     endZdt== null? null: endZdt.toInstant(),
                     versionZdt==null? null: versionZdt.toInstant(),
                     maxVersion,

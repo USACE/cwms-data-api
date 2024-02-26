@@ -101,7 +101,7 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
         String nowStr = Instant.now().toString();
         BinaryTimeSeriesRow row = new BinaryTimeSeriesRow.Builder()
                 .withAttribute(attr)
-                .withDateTime(Date.from(startZDT.toInstant()))
+                .withDateTime(startZDT.toInstant())
                 .withBinaryValue(nowStr.getBytes())
                 .withFileExtension(".bin")
                 .withMediaType("application/octet-stream")

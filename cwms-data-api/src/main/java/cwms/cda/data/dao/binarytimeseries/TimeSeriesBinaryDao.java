@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
@@ -18,6 +19,7 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
+import org.jooq.Result;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
@@ -194,17 +196,16 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                                                   Instant startTime, Instant endTime, Instant versionInstant,
                                                   boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
 
-        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+        TimeZone utzZone = OracleTypeMap.GMT_TIME_ZONE;
 
         RecordMapper<? super Record, BinaryTimeSeriesRow> mapper = new RecordMapper<Record, BinaryTimeSeriesRow>() {
             @Override
             public @Nullable BinaryTimeSeriesRow map(Record rowRecord) {
 
                 // Is there some way to know the names and types of the fields in the record?
-
-                Date dateTime = rowRecord.get("DATE_TIME", Date.class);
-                Date versionDate = rowRecord.get("VERSION_DATE", Date.class);
-                Timestamp dataEntryDate = rowRecord.get("DATA_ENTRY_DATE", Timestamp.class);
+                ZonedDateTime dateTimeZDT = rowRecord.get("DATE_TIME", LocalDateTime.class).atZone(utzZone.toZoneId());  // this works, even without converter
+                ZonedDateTime  versionDate = rowRecord.get("VERSION_DATE", LocalDateTime.class).atZone(utzZone.toZoneId());
+                ZonedDateTime dataEntryDate = rowRecord.get("DATA_ENTRY_DATE",LocalDateTime.class).atZone(utzZone.toZoneId());
                 String binaryId = rowRecord.get("ID", String.class);
                 BigDecimal attribute = rowRecord.get("ATTRIBUTE", BigDecimal.class);
                 String fileExtension = rowRecord.get("FILE_EXT", String.class);
@@ -212,9 +213,9 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 byte[] binaryData = rowRecord.get("VALUE", byte[].class);
 
                 return new BinaryTimeSeriesRow.Builder()
-                        .withDateTime(dateTime)
-                        .withDataEntryDate(dataEntryDate)
-                        .withVersionDate(versionDate)
+                        .withDateTime(dateTimeZDT.toInstant())
+                        .withDataEntryDate(dataEntryDate.toInstant())
+                        .withVersionDate(versionDate.toInstant())
                         .withBinaryId(binaryId)
                         .withAttribute(attribute==null?null:attribute.longValueExact())
                         .withMediaType(mediaType)
@@ -225,12 +226,12 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         };
 
         return CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_BINARY(dsl.configuration(),
-                        tsId, mask,
-                        startTime == null ? null : Timestamp.from(startTime),
-                        endTime == null ? null : Timestamp.from(endTime),
-                        versionInstant == null ? null : Timestamp.from(versionInstant),
-                        timeZone.getID(),
-                        maxVersion?"T": "F", retrieveBinary?"T": "F", minAttribute, maxAttribute, officeId)
+                tsId, mask,
+                startTime == null ? null : Timestamp.from(startTime),
+                endTime == null ? null : Timestamp.from(endTime),
+                versionInstant == null ? null : Timestamp.from(versionInstant),
+                utzZone.getID(),
+                maxVersion ? "T" : "F", retrieveBinary ? "T" : "F", minAttribute, maxAttribute, officeId)
                 .map(mapper);
     }
 
@@ -280,11 +281,11 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
         if(binRecord.getBinaryId() != null){
             store(configuration, officeId, tsId, binRecord.getBinaryId(),
-                    createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
         } else {
             store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                    createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getDateTime()), createTimestamp(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
         }
     }
