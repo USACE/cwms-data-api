@@ -36,9 +36,9 @@ class BinaryTimeSeriesRowTest {
     void testCreate(){
         BinaryTimeSeriesRow.Builder builder = new BinaryTimeSeriesRow.Builder();
         BinaryTimeSeriesRow row = builder
-                .withDateTime(new Date(3333333333L))
-                .withVersionDate(new Date(1111111111L))
-                .withDataEntryDate(new Date(2222222222L))
+                .withDateTime(new Date(3333333333L).toInstant())
+                .withVersionDate(new Date(1111111111L).toInstant())
+                .withDataEntryDate(new Date(2222222222L).toInstant())
                 .withBinaryId("binaryId")
                 .withAttribute(34L)
                 .withMediaType("mediaType")
@@ -47,9 +47,9 @@ class BinaryTimeSeriesRowTest {
                 .build();
         assertNotNull(row);
 
-        assertEquals(3333333333L, row.getDateTime().getTime());
-        assertEquals(1111111111L, row.getVersionDate().getTime());
-        assertEquals(2222222222L, row.getDataEntryDate().getTime());
+        assertEquals(3333333333L, Date.from(row.getDateTime()).getTime());
+        assertEquals(1111111111L, Date.from(row.getVersionDate()).getTime());
+        assertEquals(2222222222L, Date.from(row.getDataEntryDate()).getTime());
         assertEquals("binaryId", row.getBinaryId());
         assertEquals(34L, row.getAttribute());
         assertEquals("mediaType", row.getMediaType());

@@ -3,7 +3,6 @@ package cwms.cda.data.dto.binarytimeseries;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.readFully;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,16 +24,16 @@ class BinaryTimeSeriesTest {
         long date = 3333333333L;
         long attr = 1;
         rowBuilder
-                .withVersionDate(new Date(1111111111L))
-                .withDataEntryDate(new Date(2222222222L))
+                .withVersionDate(new Date(1111111111L).toInstant())
+                .withDataEntryDate(new Date(2222222222L).toInstant())
                 .withBinaryId("binaryId")
                 .withMediaType("mediaType")
                 .withFileExtension(".bin")
                 .withBinaryValue("binaryData".getBytes());
 
-        rows.add(rowBuilder.withDateTime(new Date(date++)).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++)).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++)).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
 
         BinaryTimeSeries bts = builder
                 .withOfficeId("SPK")
@@ -62,6 +61,24 @@ class BinaryTimeSeriesTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         BinaryTimeSeries bts = objectMapper.readValue(json, BinaryTimeSeries.class);
         assertNotNull(bts);
+
+        Collection<BinaryTimeSeriesRow> rows = bts.getBinaryValues();
+        assertNotNull(rows);
+        assertEquals(3, rows.size());
+        BinaryTimeSeriesRow first = rows.iterator().next();
+        assertNotNull(first);
+
+//        ZonedDateTime start = ZonedDateTime.parse("2008-05-01T15:00:00-00:00[UTC]");
+
+        assertEquals(1209679200000L, first.getDateTime().toEpochMilli() );
+
+        assertEquals("binaryId", first.getBinaryId());
+        assertEquals(1L, first.getAttribute());
+        assertEquals("mediaType", first.getMediaType());
+        assertEquals(".bin", first.getFileExtension());
+        assertEquals("binaryData", new String(first.getBinaryValue()));
+
+
     }
 
     @Test
@@ -72,16 +89,16 @@ class BinaryTimeSeriesTest {
         long date = 3333333333L;
         long attr = 1;
         rowBuilder
-                .withVersionDate(new Date(1111111111L))
-                .withDataEntryDate(new Date(2222222222L))
+                .withVersionDate(new Date(1111111111L).toInstant())
+                .withDataEntryDate(new Date(2222222222L).toInstant())
                 .withBinaryId("binaryId")
                 .withMediaType("mediaType")
                 .withFileExtension(".bin")
                 .withBinaryValue("binaryData".getBytes());
 
-        rows.add(rowBuilder.withDateTime(new Date(date++)).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++)).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++)).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
 
         BinaryTimeSeries bts = builder
                 .withOfficeId("SPK")
@@ -96,6 +113,7 @@ class BinaryTimeSeriesTest {
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         String json = objectMapper.writeValueAsString(bts);
+
         assertNotNull(json);
 
         BinaryTimeSeries bts2 = objectMapper.readValue(json, BinaryTimeSeries.class);
