@@ -10,3 +10,4 @@ gradle.properties
 kdata
 pki/certs
 compose.env
+cwms-data-api/build.gradle
