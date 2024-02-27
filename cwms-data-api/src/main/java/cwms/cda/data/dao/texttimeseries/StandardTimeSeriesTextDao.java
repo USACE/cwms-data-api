@@ -217,8 +217,8 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     }
 
     public void delete(String officeId, String tsId,
-                        String stdTextIdMask, Instant startTime,
-                        Instant endTime, Instant versionDate, boolean maxVersion,
+                        String stdTextIdMask, @NotNull Instant startTime,
+                        @NotNull Instant endTime, Instant versionDate, boolean maxVersion,
                         Long minAttribute, Long maxAttribute) {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 

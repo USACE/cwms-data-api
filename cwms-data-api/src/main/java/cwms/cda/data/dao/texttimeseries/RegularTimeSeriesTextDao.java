@@ -295,9 +295,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
 
         connection(dsl, connection -> {
             DSLContext dslContext = getDslContext(connection, officeId);
-
-            logger.atInfo().log("isAutocommit: " + connection.getAutoCommit());
-
             CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(dslContext.configuration(), tsId, textMask,
                     Timestamp.from(startTime),
                     endTime == null ? null : Timestamp.from(endTime),
