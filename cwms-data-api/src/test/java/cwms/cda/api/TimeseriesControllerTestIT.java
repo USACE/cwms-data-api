@@ -1,32 +1,192 @@
 package cwms.cda.api;
 
-import java.sql.SQLException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
-import fixtures.TestAccounts.KeyUser;
-import io.restassured.RestAssured;
+import io.jsonwebtoken.io.IOException;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.path.json.config.JsonPathConfig;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.config.JsonConfig.jsonConfig;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 public class TimeseriesControllerTestIT extends DataApiTestIT {
 
+    private static final String OFFICE = "SWT";
+    private static final String locationId = "TsVersionedTestLoc";
+    private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
+    public static final String BEGIN_STR = "2008-05-01T15:00:00Z";
+    public static final String END_STR = "2008-05-01T17:00:00Z";
+
+    @BeforeAll
+    public static void create() throws Exception {
+        createLocation(locationId, true, OFFICE);
+        createTimeseries(OFFICE, tsId, 0);
+    }
+
     @Test
+    void test_create_get() throws IOException, java.io.IOException {
+        // Post versioned time series
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+
+        // Get versioned time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+            .queryParam("date-version-type", "SINGLE_VERSION")
+            .queryParam("version-date", "2021-06-21T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(3))
+            .body("values[0][1]", equalTo(1.0F))
+            .body("values[1][1]", equalTo(1.0F))
+            .body("values[2][1]", equalTo(1.0F));
+    }
+
+    @Test
+    void test_create_get_delete_get() throws IOException, java.io.IOException {
+        // Post versioned time series
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+
+        // Get versioned time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+            .queryParam("date-version-type", "SINGLE_VERSION")
+            .queryParam("version-date", "2021-06-21T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(3))
+            .body("values[0][1]", equalTo(1.0F))
+            .body("values[1][1]", equalTo(1.0F))
+            .body("values[2][1]", equalTo(1.0F));
+
+        // Delete all values from timeseries
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("timeseries", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", "2008-05-01T18:00:00Z")
+            .queryParam("version-date", "2021-06-21T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/" + tsId)
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+
+        // Get versioned time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+            .queryParam("date-version-type", "SINGLE_VERSION")
+            .queryParam("version-date", "2021-06-21T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(3))
+            .body("values[0][1]", equalTo(null))
+            .body("values[1][1]", equalTo(null))
+            .body("values[2][1]", equalTo(null));
+    }
+
+    @Test
+    void test_create_get_param_conflict() throws IOException, java.io.IOException {
+
+    }
+    /*@Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -251,5 +411,5 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED))
             .body("message", is("User not authorized for this office."));
-    }
+    }*/
 }

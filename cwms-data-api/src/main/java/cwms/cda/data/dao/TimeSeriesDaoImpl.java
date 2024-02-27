@@ -67,6 +67,7 @@ import org.jooq.SelectJoinStep;
 import org.jooq.SelectQuery;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
@@ -912,13 +913,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 qualityArray[i] = value.getQualityCode();
             }
         }
+
+        if(versionDate != null) {
+            try {
+                CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection, officeId).configuration(),
+                        tsId, "T", officeId);
+            } catch(DataAccessException e) {
+                // Ignore tsId not found exceptions. tsDao.store() will create tsId if it is not found
+            }
+        }
+
         tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
                 storeRule.getRule(), overrideProtection, versionDate, createAsLrts);
 
-        if(versionDate != null) {
-            CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection,officeId).configuration(),
-                    tsId, "T", officeId);
-        }
     }
 
     public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,

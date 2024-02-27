@@ -148,7 +148,7 @@ public class DataApiTestIT {
                         stmt.setString(3,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        //throw new RuntimeException("Unable to register user",ex);
+                        throw new RuntimeException("Unable to register user",ex);
                     }
                 },"cwms_20");
 
