@@ -219,21 +219,38 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
         SQL retrieveSelectData = null;
+
+        Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
+        Long endTimeMilli = endTime.toInstant().toEpochMilli();
+        String trim = null;
+        String startInclusive = null;
+        String endInclusive = null;
+        String previous = null;
+        String next= null;
+        Long versionDateMilli = null;
+        String maxVersion = null;
+
+        if(versionDate != null) {
+            versionDateMilli = versionDate.toInstant().toEpochMilli();
+        } else {
+            maxVersion = "T";
+        }
+
         // Query based on versionDate or query max aggregate
         if(versionDate != null) {
             retrieveSelectData = DSL.sql(
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTs",
-                    tsId, unit, beginTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(),
-                    null, null, null, null, null, versionDate.toInstant().toEpochMilli(), null, officeId);
+                    tsId, unit, beginTimeMilli, endTimeMilli,
+                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion, officeId);
         } else {
             retrieveSelectData = DSL.sql(
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
-                    tsId, unit, beginTime.toInstant().toEpochMilli(), endTime.toInstant().toEpochMilli(),
-                    null, null, null, null, null, null, "T", officeId);
+                    tsId, unit, beginTimeMilli, endTimeMilli,
+                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion, officeId);
         }
-        
+
 
         Field<String> tzName;
         if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
@@ -919,8 +936,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection, officeId).configuration(),
                         tsId, "T", officeId);
             } catch(DataAccessException e) {
+                SQLException cause = (SQLException)e.getCause();
+                final int TS_ID_MISSING_CODE = 20001;
+                if (cause.getErrorCode() != TS_ID_MISSING_CODE) {
+                    throw cause;
+                }
                 // Ignore tsId not found exceptions. tsDao.store() will create tsId if it is not found
-                logger.log(Level.FINER, "TS ID not found");
+                logger.log(Level.FINER, e, () -> "TS ID: " + tsId +  " not found at office: " + officeId);
             }
         }
 
