@@ -184,7 +184,68 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_get_param_conflict() throws IOException, java.io.IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
 
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Get versioned time series with bad request parameters
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+            .queryParam("date-version-type", "MAX_AGGREGATE")
+            .queryParam("version-date", "2021-06-21T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+
+        // Get versioned time series with bad request parameters
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+            .queryParam("date-version-type", "SINGLE_VERSION")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
     /*@Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
