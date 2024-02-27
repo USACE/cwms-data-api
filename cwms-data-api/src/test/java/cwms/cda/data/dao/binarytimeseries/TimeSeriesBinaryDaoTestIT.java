@@ -1,7 +1,6 @@
 package cwms.cda.data.dao.binarytimeseries;
 
 
-import static cwms.cda.data.dao.DaoTest.getConnection;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -11,13 +10,12 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import fixtures.CwmsDataApiSetupCallback;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -102,7 +100,6 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
             assertNotNull(got);
             Collection<BinaryTimeSeriesRow> brows = got.getBinaryValues();
             assertTrue(brows == null || brows.isEmpty());  // its empty - but should it be?
-
 
             String nowStr = Instant.now().toString();
             BinaryTimeSeriesRow row = new BinaryTimeSeriesRow.Builder()
