@@ -17,7 +17,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
@@ -108,7 +107,7 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
             String nowStr = Instant.now().toString();
             BinaryTimeSeriesRow row = new BinaryTimeSeriesRow.Builder()
                     .withAttribute(attr)
-                    .withDateTime(Date.from(startZDT.toInstant()))
+                    .withDateTime(startZDT.toInstant())
                     .withBinaryValue(nowStr.getBytes())
                     .withFileExtension(".bin")
                     .withMediaType("application/octet-stream")

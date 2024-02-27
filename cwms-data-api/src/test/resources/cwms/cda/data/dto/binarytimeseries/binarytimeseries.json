@@ -5,7 +5,7 @@
   "time-zone": "PST",
   "binary-values": [
     {
-      "date-time": 3333333333,
+      "date-time": 1209679200000,
       "version-date": 1111111111,
       "data-entry-date": 2222222222,
       "binary-id": "binaryId",
@@ -15,7 +15,7 @@
       "binary-value": "YmluYXJ5RGF0YQ=="
     },
     {
-      "date-time": 3333333334,
+      "date-time": 1209682800000,
       "version-date": 1111111111,
       "data-entry-date": 2222222222,
       "binary-id": "binaryId",
@@ -25,7 +25,7 @@
       "binary-value": "YmluYXJ5RGF0YQ=="
     },
     {
-      "date-time": 3333333335,
+      "date-time": 1209686400000,
       "version-date": 1111111111,
       "data-entry-date": 2222222222,
       "binary-id": "binaryId",
