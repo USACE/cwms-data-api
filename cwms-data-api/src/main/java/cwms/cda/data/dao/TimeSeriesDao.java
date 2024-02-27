@@ -4,7 +4,6 @@ import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

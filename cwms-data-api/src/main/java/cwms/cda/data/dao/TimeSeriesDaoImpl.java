@@ -920,6 +920,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         tsId, "T", officeId);
             } catch(DataAccessException e) {
                 // Ignore tsId not found exceptions. tsDao.store() will create tsId if it is not found
+                logger.log(Level.FINER, "TS ID not found");
             }
         }
 

@@ -25,6 +25,7 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.LocationLevel;
@@ -46,6 +47,7 @@ import hec.data.level.JDomSeasonalValuesImpl;
 import hec.data.location.LocationTemplate;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
+import mil.army.usace.hec.metadata.Version;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -641,7 +643,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         TimeSeries timeSeries = new TimeSeries(null, size, size, timeSeriesId,
                 officeId, firstValueTime, lastValueTime, levelUnits,
                 java.time.Duration.ofSeconds(interval.getSeconds()),
-                null, null, locationTimeZone.getId(), null, null);
+                null, null, locationTimeZone.getId(), null, VersionType.UNVERSIONED.getValue());
         for (ZTSV_TYPE tsv : locLvlValues) {
             Timestamp dateTime = tsv.getDATE_TIME();
             Double value = tsv.getVALUE();
