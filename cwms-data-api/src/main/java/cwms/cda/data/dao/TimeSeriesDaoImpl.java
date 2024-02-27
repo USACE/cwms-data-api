@@ -279,9 +279,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTsTotal",
                         valid.field("tsid", String.class),
                         valid.field("units", String.class),
-                        beginTime.toInstant().toEpochMilli(),
-                        endTime.toInstant().toEpochMilli(),
-                        null, null, null, null, null, versionDate.toInstant().toEpochMilli(), null,
+                        beginTimeMilli,
+                        endTimeMilli,
+                        trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
                         valid.field("office_id", String.class)
                 ));
             } else {
@@ -292,9 +292,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
                         valid.field("tsid", String.class),
                         valid.field("units", String.class),
-                        beginTime.toInstant().toEpochMilli(),
-                        endTime.toInstant().toEpochMilli(),
-                        null, null, null, null, null, null, "T",
+                        beginTimeMilli,
+                        endTimeMilli,
+                        trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
                         valid.field("office_id", String.class)
                 ));
             }
