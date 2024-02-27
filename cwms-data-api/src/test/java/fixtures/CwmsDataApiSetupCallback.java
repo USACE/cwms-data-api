@@ -42,8 +42,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final String ORACLE_IMAGE = System.getProperty("CDA.oracle.database.image",System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C));
     private static final String ORACLE_VOLUME = System.getProperty("CDA.oracle.database.volume",System.getProperty("RADAR.oracle.database.volume", "cwmsdb_data_api_volume"));
-    private static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.iamge",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16"));
+    private static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.image",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16"));
 
+
+    private static String webUser = null;
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -63,17 +65,19 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withSchemaImage(CWMS_DB_IMAGE);
             cwmsDb.start();
 
+           
+            final String jdbcUrl = cwmsDb.getJdbcUrl();
+            webUser = cwmsDb.getPdUser().substring(0,2)+"webtest";
+            final String pw = cwmsDb.getPassword();
             this.loadDefaultData(cwmsDb);
             this.loadTimeSeriesData(cwmsDb);
-            final String jdbcUrl = cwmsDb.getJdbcUrl();
-            final String user = cwmsDb.getPdUser().replace("hectest_pu","webtest");
-            final String pw = cwmsDb.getPassword();
+
             System.setProperty("RADAR_JDBC_URL", jdbcUrl);
-            System.setProperty("RADAR_JDBC_USERNAME", user);
+            System.setProperty("RADAR_JDBC_USERNAME", webUser);
             System.setProperty("RADAR_JDBC_PASSWORD", pw);
 
             System.setProperty("CDA_JDBC_URL", jdbcUrl);
-            System.setProperty("CDA_JDBC_USERNAME", user);
+            System.setProperty("CDA_JDBC_USERNAME", webUser);
             System.setProperty("CDA_JDBC_PASSWORD", pw);
 
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
@@ -146,9 +150,11 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             } else if( user.equalsIgnoreCase("user")) {
                 user = cwmsDb.getUsername();
             }
-            logger.atInfo().log(String.format("Running %s as %s %s",data,user,cwmsDb.getPassword()));
-            cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&user.",cwmsDb.getPdUser()
-                                                                    .replace("&password.",cwmsDb.getPassword())), user);
+            logger.atInfo().log(String.format("Running %s as %s %s", data, user, cwmsDb.getPassword()));
+            cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&pduser", cwmsDb.getPdUser())
+                                                                    .replace("&user", cwmsDb.getUsername())
+                                                                    .replace("&webuser", webUser)
+                                                                    .replace("&password", cwmsDb.getPassword()), user);
         }
     }
 
@@ -198,4 +204,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         return cdaInstance.getSsoValve();
     }
 
+    public static String getWebUser() {
+        if (webUser == null) {
+            throw new IllegalStateException("This method should not be called before CwmsDataAPiSetupCallback::beforeAll.");
+        }
+        return webUser;
+    }
 }

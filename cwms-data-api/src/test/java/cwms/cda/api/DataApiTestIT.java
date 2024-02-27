@@ -324,10 +324,11 @@ public class DataApiTestIT {
         }, "cwms_20");
     }
 
+
     protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery);) {
                 stmt.setString(1, office);
                 stmt.setString(2, timeseries);
                 stmt.setInt(3, offset);

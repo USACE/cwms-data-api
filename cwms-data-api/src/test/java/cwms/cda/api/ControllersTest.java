@@ -271,6 +271,24 @@ class ControllersTest {
     }
 
     @Test
+    void testDeleteMethodSpace(){
+        JooqDao.DeleteMethod deleteMethod = Controllers.getDeleteMethod(null);
+        assertNull(deleteMethod);
+
+        assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("garbage"));
+
+        deleteMethod = Controllers.getDeleteMethod("delete data");
+        assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
+
+        deleteMethod = Controllers.getDeleteMethod("DELETE DATA");
+        assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
+
+
+        assertThrows(IllegalArgumentException.class, () -> Controllers.getDeleteMethod("bad-input"));
+    }
+
+
+    @Test
     void testDeleteMethodValidationRegistration() throws ClassNotFoundException {
 
         // Trigger static initialization of Controllers class

@@ -57,7 +57,7 @@ public class CountyControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].name", equalTo("Unknown County or County N/A"))
+            .body("[0].name", equalTo("Unknown County or County N/A for Unknown State or State N/A"))
             .body("[0].county-id", equalTo("000"))
             .body("[0].state-initial", equalTo("00"));
     }
