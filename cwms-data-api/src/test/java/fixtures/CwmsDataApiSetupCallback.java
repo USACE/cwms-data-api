@@ -26,6 +26,11 @@ import io.restassured.RestAssured;
 import io.restassured.config.JsonConfig;
 import io.restassured.path.json.config.JsonPathConfig;
 
+import javax.servlet.http.HttpServletResponse;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
+
 
 @SuppressWarnings("rawtypes")
 public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
@@ -87,6 +92,30 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                        .jsonConfig(
                             JsonConfig.jsonConfig()
                                       .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
+            healthCheck();
+        }
+    }
+
+    private static void healthCheck() throws InterruptedException {
+        int attempts = 0;
+        int maxAttempts = 15;
+        for (; attempts < maxAttempts; attempts++) {
+            try {
+                given()
+                .when()
+                    .get("/offices/SPK")
+                .then()
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+                logger.atInfo().log("Server is up!");
+                break;
+            } catch (Throwable e) {
+                logger.atInfo().log("Waiting for the server to start...");
+                Thread.sleep(100);
+            }
+        }
+        if (attempts == maxAttempts) {
+            throw new IllegalStateException("Server didn't start in time...");
         }
     }
 
