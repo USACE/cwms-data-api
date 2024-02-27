@@ -35,12 +35,11 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
-            @NotNull String officeId, @NotNull String tsId,
-                                           String textMask,
-                                           @Nullable ZonedDateTime startTime, @Nullable ZonedDateTime endTime,
-                                           @Nullable ZonedDateTime versionDate,
-                                           boolean maxVersion,
-                                           @Nullable Long minAttribute, @Nullable Long maxAttribute
+                                          @NotNull String officeId, @NotNull String tsId, String textMask,
+                                          @NotNull ZonedDateTime startTime, @NotNull ZonedDateTime endTime,
+                                          @Nullable ZonedDateTime versionDate,
+                                          boolean maxVersion,
+                                          @Nullable Long minAttribute, @Nullable Long maxAttribute
     ) {
         List<StandardTextTimeSeriesRow> stdRows = null;
         List<RegularTextTimeSeriesRow> regRows = null;
@@ -48,17 +47,23 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             boolean retrieveText = true;  // should this be true?
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
+            Instant versionInst = null;
+            if (versionDate != null) {
+                versionInst = versionDate.toInstant();
+            }
             stdRows = stdDao.retrieveRows(officeId, tsId, textMask,
-                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    startTime.toInstant(), endTime.toInstant(), versionInst,
                     maxVersion, retrieveText, minAttribute, maxAttribute);
-            // Do I need to build the std catalog thing?
-            // Add a flag for that or one method that builds and one that doesn't
         }
 
         if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
+            Instant instant = null;
+            if (versionDate != null) {
+                instant = versionDate.toInstant();
+            }
             regRows = regDao.retrieveRows(officeId, tsId, textMask,
-                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    startTime.toInstant(), endTime.toInstant(), instant,
                     maxVersion, minAttribute, maxAttribute);
         }
 
@@ -188,23 +193,24 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     
 
     public void delete(TimeSeriesTextMode mode, String officeId, String textTimeSeriesId, String textMask,
-                       ZonedDateTime start, ZonedDateTime end, ZonedDateTime versionDate,
+                       @NotNull ZonedDateTime start, @NotNull ZonedDateTime end, @Nullable ZonedDateTime versionDate,
                        boolean maxVersion, Long minAttribute, Long maxAttribute) {
 
+        Instant versionInstant = null;
+        if (versionDate != null) {
+            versionInstant = versionDate.toInstant();
+        }
 
-        Instant startInstant = getInstant(start);
-        Instant endInstant = getInstant(end);
-        Instant versionInstant = getInstant(versionDate);
         if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
             regDao.delete(officeId, textTimeSeriesId, textMask,
-                    startInstant, endInstant, versionInstant,
+                    start.toInstant(), end.toInstant(), versionInstant,
                     maxVersion, minAttribute, maxAttribute);
         }
         if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
             stdDao.delete(officeId, textTimeSeriesId, textMask,
-                    startInstant, endInstant, versionInstant,
+                    start.toInstant(), end.toInstant(), versionInstant,
                     maxVersion, minAttribute, maxAttribute);
         }
 
@@ -218,15 +224,6 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     @NotNull
     private RegularTimeSeriesTextDao getRegularDao() {
         return new RegularTimeSeriesTextDao(dsl);
-    }
-
-    @Nullable
-    private static Instant getInstant(@Nullable ZonedDateTime start) {
-        Instant instant = null;
-        if (start != null) {
-            instant = start.toInstant();
-        }
-        return instant;
     }
 
     @Nullable
