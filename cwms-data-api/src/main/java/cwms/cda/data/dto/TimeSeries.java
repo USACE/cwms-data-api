@@ -271,7 +271,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         ),
         arraySchema = @Schema(
             type="array",
-            example = "[123, 54.3, 0]"
+            example = "[1509654000000, 54.3, 0]"
         )        
     )
     @XmlAccessorType(XmlAccessType.FIELD)
