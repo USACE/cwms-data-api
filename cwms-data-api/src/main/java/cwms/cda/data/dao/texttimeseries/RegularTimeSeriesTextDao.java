@@ -1,6 +1,11 @@
 package cwms.cda.data.dao.texttimeseries;
 
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.LENGTH_THRESHOLD_FOR_URL_MAPPING;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.getDate;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.noPredicate;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.yesPredicate;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
@@ -23,6 +28,7 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +38,7 @@ import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class RegularTimeSeriesTextDao extends JooqDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -52,14 +59,12 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static final String DATE_TIME = "DATE_TIME";
 
 
-    private static final int TEXT_DOES_NOT_EXIST_ERROR_CODE = 20034;
-    private static final int TEXT_ID_DOES_NOT_EXIST_ERROR_CODE = 20001;
+
 
     private static final List<String> timeSeriesTextColumnsList;
-    private Predicate<ResultSet> whenToBuildUrl;
 
-    private UnaryOperator<String>howToBuildUrl;
-    private static final long LENGTH_THRESHOLD_FOR_URL_MAPPING = 255L;
+    Function<ResultSet, RegularTextTimeSeriesRow> mapper;
+
 
     static {
         String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, TEXT_ID, ATTRIBUTE, TEXT};
@@ -71,25 +76,70 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         super(dsl);
     }
 
-    public RegularTimeSeriesTextDao(DSLContext dsl, @Nullable UnaryOperator<String> howToBuildUrl)
+    public RegularTimeSeriesTextDao(DSLContext dsl, Function<ResultSet, RegularTextTimeSeriesRow> mapper)
     {
-        this(dsl, howToBuildUrl, lengthPredicate());
+        this(dsl);
+        this.mapper = mapper;
+    }
+
+    public static Function<ResultSet, RegularTextTimeSeriesRow > alwaysBuildUrl(@Nullable UnaryOperator<String> howToBuildUrl){
+        return rs -> {
+            try {
+                return buildRow(rs, howToBuildUrl, yesPredicate());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+    }
+
+    public static Function<ResultSet, RegularTextTimeSeriesRow> neverBuildUrl(){
+        return rs -> {
+            try {
+                return buildRow(rs, null, noPredicate());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     /**
-     *
-     * @param dsl The jOOQ DSLContext to use.
      * @param howToBuildUrl A caller provided function that will be called with the clob-id and is to return a URL to the clob-value.
      *                      If null, the URL will not be built.  The ReplaceUtils class contains helpful methods to build this operator.
      * @param whenToBuildUrl A caller provided predicate that will be called with the ResultSet and
      *                       is to return true if the URL should be built using howToBuildUrl.  If null, the URL will not be built.
      *                       The methods lengthPredicate, yesPredicate, and noPredicate are provided for convenience.
+     * @return
      */
-    public RegularTimeSeriesTextDao(DSLContext dsl, @Nullable UnaryOperator<String> howToBuildUrl, @Nullable Predicate<ResultSet> whenToBuildUrl) {
-        super(dsl);
-        this.howToBuildUrl = howToBuildUrl;
-        this.whenToBuildUrl = whenToBuildUrl;
+    public static Function<ResultSet, RegularTextTimeSeriesRow > usePredicate(@Nullable UnaryOperator<String> howToBuildUrl,  Predicate<ResultSet> whenToBuildUrl ){
+        return rs -> {
+            try {
+                return buildRow(rs, howToBuildUrl, whenToBuildUrl);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
+
+    public static Predicate<ResultSet> lengthPredicate() {
+        return lengthPredicate(LENGTH_THRESHOLD_FOR_URL_MAPPING);
+    }
+
+    public static Predicate<ResultSet> lengthPredicate(long lengthThreshold) {
+        return rs -> {
+            try {
+                Clob clob = rs.getClob(TEXT);
+                String textId = rs.getString(TEXT_ID);
+
+                return (textId != null && !textId.isEmpty() &&
+                        clob != null && clob.length() > lengthThreshold);
+            } catch (SQLException e) {
+                logger.atWarning().withCause(e).log("Error checking CLOB length");
+                return false;
+            }
+        };
+    }
+
 
     public Timestamp createTimestamp(Date date) {
         Timestamp retval = null;
@@ -147,7 +197,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             Instant startTime, Instant endTime, Instant versionDate,
             boolean maxVersion, Long minAttribute, Long maxAttribute)  {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
-        List<RegularTextTimeSeriesRow> rows;
 
         Timestamp pStartTime = createTimestamp(getDate(startTime));
         Timestamp pEndTime = createTimestamp(getDate(endTime));
@@ -155,7 +204,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         String pTimeZone = createTimeZoneId(timeZone);
         String pMaxVersion = OracleTypeMap.formatBool(maxVersion);
 
-        rows = connectionResult(dsl, conn -> {
+        return connectionResult(dsl, conn -> {
             // Making the call from jOOQ with something like:
             // ResultSet retrieveTsTextF = CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_TEXT_F(dsl.configuration(),...
             // No longer works b/c we want a CLOB so that we can test its size without downloading the whole
@@ -165,7 +214,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                 stmt.execute();
                 ResultSet rs = (ResultSet) stmt.getObject(1);
 
-                return buildRows(rs, howToBuildUrl, whenToBuildUrl);
+                return buildRows(rs, mapper);
             } catch (SQLException e) {
                 if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
                     throw new NoDataFoundException();
@@ -174,26 +223,8 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                 }
             }
         });
-
-        return rows;
     }
 
-    /*
-     * This method is used to parameterize the call to the stored procedure RETRIEVE_TS_TEXT*
-     *    procedure retrieve_ts_text(
-     *       p_cursor           out sys_refcursor,
-     *       p_tsid          in     varchar2,
-     *       p_text_mask     in     varchar2,
-     *       p_start_time    in     date,
-     *       p_end_time      in     date default null,
-     *       p_version_date  in     date default null,
-     *       p_time_zone     in     varchar2 default null,
-     *       p_max_version   in     varchar2 default 'T',
-     *       p_min_attribute in     number default null,
-     *       p_max_attribute in     number default null,
-     *       p_office_id     in     varchar2 default null);
-     *
-     */
     private static void parameterizeRetrieveTsText(CallableStatement stmt, String tsId, String textMask,
                                                    Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
                                                    String pMaxVersion, Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
@@ -219,12 +250,12 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
     @NotNull
-    private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs, UnaryOperator<String> howToBuildUrl, Predicate<ResultSet> whenToBuildUrl) throws SQLException {
+    private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs, Function<ResultSet, RegularTextTimeSeriesRow> mapper) throws SQLException {
         OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
         List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
 
         while (rs.next()) {
-            RegularTextTimeSeriesRow row = buildRow(rs, howToBuildUrl, whenToBuildUrl);
+            RegularTextTimeSeriesRow row = mapper.apply(rs);
             rows.add(row);
         }
         return rows;
@@ -275,31 +306,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         return url;
     }
 
-    public static Predicate<ResultSet> lengthPredicate() {
-        return lengthPredicate(LENGTH_THRESHOLD_FOR_URL_MAPPING);
-    }
-
-    public static Predicate<ResultSet> lengthPredicate(long lengthThreshold) {
-        return rs -> {
-            try {
-                Clob clob = rs.getClob(TEXT);
-                String textId = rs.getString(TEXT_ID);
-
-                return (textId != null && !textId.isEmpty() &&
-                        clob != null && clob.length() > lengthThreshold);
-            } catch (SQLException e) {
-                logger.atWarning().withCause(e).log("Error checking CLOB length");
-                return false;
-            }
-        };
-    }
-
-    public static Predicate<ResultSet> yesPredicate() {
-        return rs -> true;
-    }
-    public static Predicate<ResultSet> noPredicate() {
-        return rs -> false;
-    }
 
     public static RegularTextTimeSeriesRow buildRow(Timestamp dateTimeUtc, Timestamp versionDateUtc, Timestamp dataEntryDateUtc, Long attribute, String textId, String textValue, String url) {
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder()

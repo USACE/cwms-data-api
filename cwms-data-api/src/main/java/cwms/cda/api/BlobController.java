@@ -45,6 +45,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
@@ -216,7 +217,7 @@ public class BlobController implements CrudHandler {
 
             try {
                 ObjectMapper om = getObjectMapperForFormat(formatHeader);
-                Blob blob = om.readValue(ctx.body(), Blob.class);
+                Blob blob = om.readValue(ctx.bodyAsInputStream(), Blob.class);
 
                 if (blob.getOfficeId() == null) {
                     throw new FormattingException("An officeId is required when creating a blob");
@@ -234,7 +235,7 @@ public class BlobController implements CrudHandler {
                 BlobDao dao = new BlobDao(dsl);
                 dao.create(blob, failIfExists, false);
                 ctx.status(HttpCode.CREATED);
-            } catch (JsonProcessingException e) {
+            } catch (IOException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(), "Unable to "
                         + "parse request body");
             }

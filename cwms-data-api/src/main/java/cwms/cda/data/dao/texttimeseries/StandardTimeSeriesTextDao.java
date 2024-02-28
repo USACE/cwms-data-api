@@ -1,6 +1,11 @@
 package cwms.cda.data.dao.texttimeseries;
 
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.LENGTH_THRESHOLD_FOR_URL_MAPPING;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.getDate;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.noPredicate;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.yesPredicate;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
@@ -10,6 +15,8 @@ import cwms.cda.data.dto.texttimeseries.StandardTextId;
 import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.StandardTextValue;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
+import java.sql.CallableStatement;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,8 +31,13 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
+import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -48,6 +60,10 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     private static final List<String> stdTextCatalogColumnsList;
 
 
+
+    Function<ResultSet, StandardTextTimeSeriesRow> mapper;
+
+
     static {
         String[] array = new String[]{OFFICE_ID, STD_TEXT_ID, STD_TEXT};
         Arrays.sort(array);
@@ -64,6 +80,71 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         super(dsl);
     }
 
+    public StandardTimeSeriesTextDao(DSLContext dsl, Function<ResultSet, StandardTextTimeSeriesRow> mapper)
+    {
+        this(dsl);
+        this.mapper = mapper;
+    }
+
+
+    public static Function<ResultSet, StandardTextTimeSeriesRow> alwaysBuildUrl(@Nullable UnaryOperator<String> howToBuildUrl){
+        return rs -> {
+            try {
+                return buildRow(rs, howToBuildUrl, yesPredicate());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+    }
+
+    public static Function<ResultSet, StandardTextTimeSeriesRow> neverBuildUrl(){
+        return rs -> {
+            try {
+                return buildRow(rs, null, noPredicate());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    /**
+     * @param howToBuildUrl A caller provided function that will be called with the clob-id and is to return a URL to the clob-value.
+     *                      If null, the URL will not be built.  The ReplaceUtils class contains helpful methods to build this operator.
+     * @param whenToBuildUrl A caller provided predicate that will be called with the ResultSet and
+     *                       is to return true if the URL should be built using howToBuildUrl.  If null, the URL will not be built.
+     *                       The methods lengthPredicate, yesPredicate, and noPredicate are provided for convenience.
+     * @return
+     */
+    public static Function<ResultSet, StandardTextTimeSeriesRow > usePredicate(@Nullable UnaryOperator<String> howToBuildUrl,  Predicate<ResultSet> whenToBuildUrl ){
+        return rs -> {
+            try {
+                return buildRow(rs, howToBuildUrl, whenToBuildUrl);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+
+    public static Predicate<ResultSet> lengthPredicate() {
+        return lengthPredicate(LENGTH_THRESHOLD_FOR_URL_MAPPING);
+    }
+
+    public static Predicate<ResultSet> lengthPredicate(long lengthThreshold) {
+        return rs -> {
+            try {
+                Clob clob = rs.getClob(STD_TEXT);
+                String textId = rs.getString(STD_TEXT_ID);
+
+                return (textId != null && !textId.isEmpty() &&
+                        clob != null && clob.length() > lengthThreshold);
+            } catch (SQLException e) {
+                logger.atWarning().withCause(e).log("Error checking CLOB length");
+                return false;
+            }
+        };
+    }
 
     public StandardTextCatalog retrieveCatalog(String officeIdMask, String stdTextIdMask) throws SQLException {
 
@@ -260,15 +341,71 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
     public List<StandardTextTimeSeriesRow> retrieveRows(String officeId, String tsId, String stdTextIdMask, Instant startTime, Instant endTime, Instant versionDate, boolean maxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute) {
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
+        Timestamp pStartTime = Timestamp.from(startTime);
+        Timestamp pEndTime = Timestamp.from(endTime);
+        String pTimeZone = createTimeZoneId(timeZone);
 
-        return connectionResult(dsl, c -> {
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, c);
-            ResultSet retrieveTsStdTextF = dbText.retrieveTsStdTextF(c, tsId,
-                    stdTextIdMask, getDate(startTime), getDate(endTime), getDate(versionDate), timeZone, maxVersion,
-                    retrieveText, minAttribute, maxAttribute, officeId);
+        Timestamp pVersionDate;
+        if(versionDate != null) {
+            pVersionDate = Timestamp.from(versionDate);
+        } else {
+            pVersionDate = null;
+        }
+        String pMaxVersion = OracleTypeMap.formatBool(maxVersion);
 
-            return buildRows(officeId, retrieveTsStdTextF);
+        return connectionResult(dsl, conn -> {
+            // Making the call from jOOQ with something like:
+            // ResultSet retrieveTsTextF = CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_STD_TEXT_F(dsl.configuration(),...
+            // No longer works b/c we want a CLOB so that we can test its size without downloading the whole
+            // thing from the db.  jOOQ doesn't support getClob in its MockResultSet.
+            try (CallableStatement stmt = conn.prepareCall("{call CWMS_TEXT.RETRIEVE_TS_STD_TEXT(?,?,?,?,?,?,?,?,?,?,?,?)}")) {
+                parameterizeRetrieveTsStdText(stmt, tsId, stdTextIdMask, pStartTime, pEndTime, pVersionDate, pTimeZone, pMaxVersion, retrieveText, minAttribute, maxAttribute, officeId);
+                stmt.execute();
+                ResultSet rs = (ResultSet) stmt.getObject(1);
+
+                return buildRows(rs, mapper);
+            } catch (SQLException e) {
+                if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
+                    throw new NoDataFoundException();
+                } else {
+                    throw new RuntimeException(e);  // TODO: wrap with something else.
+                }
+            }
         });
+    }
+
+    public String createTimeZoneId(TimeZone timeZone) {
+        String retval = null;
+        if (timeZone != null) {
+            retval = timeZone.getID();
+        }
+        return retval;
+    }
+
+
+    private static void parameterizeRetrieveTsStdText(CallableStatement stmt, String tsId, String textMask,
+                                                   Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
+                                                   String pMaxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
+        stmt.registerOutParameter(1, oracle.jdbc.OracleTypes.CURSOR);
+        stmt.setString(2, tsId);
+        stmt.setString(3, textMask);
+        stmt.setTimestamp(4, pStartTime);
+        stmt.setTimestamp(5, pEndTime);
+        stmt.setTimestamp(6, pVersionDate);
+        stmt.setString(7, pTimeZone);
+        stmt.setString(8, pMaxVersion);
+        stmt.setString(9, retrieveText ? "T" : "F");
+        if (minAttribute == null) {
+            stmt.setNull(10, oracle.jdbc.OracleTypes.NUMBER);
+        } else {
+            stmt.setLong(10, minAttribute);
+        }
+        if (maxAttribute == null) {
+            stmt.setNull(11, oracle.jdbc.OracleTypes.NUMBER);
+        } else {
+            stmt.setLong(11, maxAttribute);
+        }
+        stmt.setString(12, officeId);
     }
 
     @NotNull
@@ -299,6 +436,65 @@ public class StandardTimeSeriesTextDao extends JooqDao {
 
         return buildRow(tsDateTime, tsVersionDate, tsDataEntryDate, attribute, clobString, officeId, stdTextId);
     }
+
+
+    @NotNull
+    private static List<StandardTextTimeSeriesRow> buildRows(ResultSet rs, Function<ResultSet, StandardTextTimeSeriesRow> mapper) throws SQLException {
+        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesStdTextColumnsList, TYPE);
+        List<StandardTextTimeSeriesRow> rows = new ArrayList<>();
+
+        while (rs.next()) {
+            StandardTextTimeSeriesRow row = mapper.apply(rs);
+            rows.add(row);
+        }
+        return rows;
+    }
+
+    private static StandardTextTimeSeriesRow buildRow(ResultSet rs, @Nullable UnaryOperator<String> mapper, @Nullable Predicate<ResultSet> shouldBuildUrl) throws SQLException {
+
+        Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
+        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);
+        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE);
+        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, gmtCalendar);
+        String textId = rs.getString(STD_TEXT_ID);
+        String clobString = null;
+        String valueUrl = null;
+
+
+        if( shouldBuildUrl != null && shouldBuildUrl.test(rs)){
+            valueUrl = getTextValueUrl(rs, mapper);
+        }
+
+        if (valueUrl == null) {
+            clobString = rs.getString(STD_TEXT);
+        }
+
+        Long attribute = rs.getLong(ATTRIBUTE);
+        if (rs.wasNull()) {
+            attribute = null;
+        }
+
+        return buildRow(tsDateTime, tsVersionDate, tsDataEntryDate, attribute, textId, clobString, valueUrl);
+    }
+
+    private static String getTextValueUrl(ResultSet rs, @Nullable UnaryOperator<String> howToBuildUrl) {
+        String url = null;
+
+        try {
+            if(howToBuildUrl != null && rs != null) {
+                String textId = rs.getString(STD_TEXT_ID);
+
+                if (textId != null && ! textId.isEmpty()) {
+                    url = howToBuildUrl.apply(textId);
+                }
+            }
+        } catch (SQLException e) {
+            logger.atWarning().withCause(e).log("Error mapping CLOB to URL");
+        }
+
+        return url;
+    }
+
 
     public static StandardTextTimeSeriesRow buildRow(Timestamp dateTimeUtc, Timestamp versionDateUtc, Timestamp dataEntryDateUtc, Long attribute, String textValue, String officeId, String stdTextId) {
         StandardTextTimeSeriesRow.Builder builder = new StandardTextTimeSeriesRow.Builder()

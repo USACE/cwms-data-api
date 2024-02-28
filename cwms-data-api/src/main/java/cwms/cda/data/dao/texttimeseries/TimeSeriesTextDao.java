@@ -7,6 +7,7 @@ import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -14,6 +15,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -27,19 +30,18 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_TEXT;
 public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+    public static final int TEXT_DOES_NOT_EXIST_ERROR_CODE = 20034;
+    public static final int TEXT_ID_DOES_NOT_EXIST_ERROR_CODE = 20001;
+    public static final long LENGTH_THRESHOLD_FOR_URL_MAPPING = 255L;
 
     public static final String OFFICE_ID = "OFFICE_ID";
-    private String clobTemplate = "/clob/ignored?clob-id={clob-id}&office-id={office}";
 
 
     public TimeSeriesTextDao(DSLContext dsl) {
         super(dsl);
     }
 
-    public TimeSeriesTextDao(DSLContext dsl, String clobTemplate) {
-        super(dsl);
-        this.clobTemplate = clobTemplate;
-    }
+
 
     public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
                                           @NotNull String officeId, @NotNull String tsId, String textMask,
@@ -85,7 +87,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
                                           @NotNull String officeId, @NotNull String tsId,
                                           String textMask,
-                                          @Nullable ZonedDateTime startTime, @Nullable ZonedDateTime endTime,
+                                          @NotNull ZonedDateTime startTime, @NotNull ZonedDateTime endTime,
                                           @Nullable ZonedDateTime versionDate,
                                           boolean maxVersion,
                                           @Nullable Long minAttribute, @Nullable Long maxAttribute,
@@ -96,9 +98,9 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
         if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             boolean retrieveText = true;  // should this be true?
-            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
+            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao(idToUrl);
             stdRows = stdDao.retrieveRows(officeId, tsId, textMask,
-                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    startTime.toInstant(), endTime.toInstant(), (versionDate== null)?null: versionDate.toInstant(),
                     maxVersion, retrieveText, minAttribute, maxAttribute);
             // Do I need to build the std catalog thing?
             // Add a flag for that or one method that builds and one that doesn't
@@ -107,7 +109,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
             RegularTimeSeriesTextDao regDao = getRegularDao(idToUrl);
             regRows = regDao.retrieveRows(officeId, tsId, textMask,
-                    getInstant(startTime), getInstant(endTime), getInstant(versionDate),
+                    startTime.toInstant(), endTime.toInstant(),  (versionDate== null)?null: versionDate.toInstant(),
                     maxVersion, minAttribute, maxAttribute);
         }
 
@@ -120,22 +122,15 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     public TextTimeSeries retrieveFromView(@NotNull String officeId, @NotNull String tsId,
-                                           @Nullable ZonedDateTime startTime, @Nullable ZonedDateTime endTime,
+                                           @NotNull ZonedDateTime startTime, @NotNull ZonedDateTime endTime,
                                            @Nullable ZonedDateTime versionDate,
                                            @Nullable Long minAttribute, @Nullable Long maxAttribute
     ) {
         Condition conditions = AV_TS_TEXT.AV_TS_TEXT.OFFICE_ID.eq(officeId)
                 .and(AV_TS_TEXT.AV_TS_TEXT.CWMS_TS_ID.eq(tsId));
 
-        if (startTime != null) {
-            conditions =
-                    conditions.and(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC.ge(Timestamp.from(startTime.toInstant())));
-        }
-
-        if (endTime != null) {
-            conditions =
-                    conditions.and(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC.le(Timestamp.from(endTime.toInstant())));
-        }
+        conditions = conditions.and(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC.ge(Timestamp.from(startTime.toInstant())));
+        conditions = conditions.and(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC.le(Timestamp.from(endTime.toInstant())));
 
         if (versionDate != null) {
             conditions =
@@ -195,8 +190,6 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         }
 
     }
-
-
 
     public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
 
@@ -266,9 +259,15 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
     @NotNull
-    private RegularTimeSeriesTextDao getRegularDao(UnaryOperator<String> idToUrl){
+    private StandardTimeSeriesTextDao getStandardTimeSeriesTextDao(UnaryOperator<String> idToUrl) {
+        Function<ResultSet, StandardTextTimeSeriesRow> mapper = StandardTimeSeriesTextDao.usePredicate(idToUrl, StandardTimeSeriesTextDao.lengthPredicate());
+        return new StandardTimeSeriesTextDao(dsl, mapper);
+    }
 
-        return new RegularTimeSeriesTextDao(dsl, idToUrl, RegularTimeSeriesTextDao.lengthPredicate());
+    @NotNull
+    private RegularTimeSeriesTextDao getRegularDao(UnaryOperator<String> idToUrl){
+        Function<ResultSet, RegularTextTimeSeriesRow> mapper = RegularTimeSeriesTextDao.usePredicate(idToUrl, RegularTimeSeriesTextDao.lengthPredicate());
+        return new RegularTimeSeriesTextDao(dsl, mapper);
     }
 
     @NotNull
@@ -296,5 +295,12 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
             startDate = null;
         }
         return startDate;
+    }
+
+    public static Predicate<ResultSet> yesPredicate() {
+        return rs -> true;
+    }
+    public static Predicate<ResultSet> noPredicate() {
+        return rs -> false;
     }
 }

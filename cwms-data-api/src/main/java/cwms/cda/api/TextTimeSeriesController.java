@@ -37,11 +37,13 @@ import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredZdt;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
@@ -50,7 +52,6 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -61,13 +62,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 
 
@@ -82,21 +82,26 @@ public class TextTimeSeriesController implements CrudHandler {
 
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
-    private final String contextPath;
 
     public static final String CONTEXT_TOKEN = "{context-path}";
     public static final String OFFICE_TOKEN = "{office}";
     public static final String CLOB_TOKEN = "{clob-id}";
-    public static final String clobTemplate = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
+    public static final String URL_TEMPLATE = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
+    private ReplaceUtils.OperatorBuilder urlBuilder;
 
     public TextTimeSeriesController(MetricRegistry metrics, String contextPath) {
         this.metrics = metrics;
-        this.contextPath = contextPath;  // like /spk-data
+
+        urlBuilder = new ReplaceUtils.OperatorBuilder()
+                .withTemplate(URL_TEMPLATE)
+                .withOperatorKey(CLOB_TOKEN)
+                .replace(CONTEXT_TOKEN, contextPath, false);
+
     }
 
     @NotNull
     protected TimeSeriesTextDao getDao(DSLContext dsl) {
-        return new TimeSeriesTextDao(dsl, clobTemplate );
+        return new TimeSeriesTextDao(dsl);
     }
 
 
@@ -138,28 +143,12 @@ public class TextTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        String office = ctx.queryParam(OFFICE);
-        if(office == null ){
-            throw new IllegalArgumentException(OFFICE + " is a required parameter");
-        }
-
-        String tsId = ctx.queryParam(NAME);
-        if(tsId == null ){
-            throw new IllegalArgumentException(NAME + " is a required parameter");
-        }
-
-        ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
-        if (beginZdt == null) {
-            throw new IllegalArgumentException(BEGIN + " is a required parameter");
-        }
-
-        ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
-        if (endZdt == null) {
-            throw new IllegalArgumentException(END + " is a required parameter");
-        }
-
+        String office = requiredParam(ctx, OFFICE);
+        String tsId = requiredParam(ctx, NAME);
+        ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
+        ZonedDateTime endZdt = requiredZdt(ctx, END);
         ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
         boolean maxVersion = versionZdt == null;
 
@@ -176,20 +165,11 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String textMask = "*";
 
-//            String contextPath = this.contextPath;
-//            String protocol = ctx.protocol();// HTTP/1.1
-//            String host = ctx.host();// localhost:7000
-//            String requestURI = ctx.req.getRequestURI();// /spk-data/timeseries/text
-//            String pathInfo = ctx.req.getPathInfo();// "/text"
-//            String servletPath = ctx.req.getServletPath();// "/timeseries"
-
-            String requestTemplate = ReplaceUtils.replace(clobTemplate, CONTEXT_TOKEN, contextPath, false);
-            requestTemplate = ReplaceUtils.replace(requestTemplate, OFFICE_TOKEN, office);
-            UnaryOperator<String> idToUrl = ReplaceUtils.replace(requestTemplate, CLOB_TOKEN);
+            urlBuilder.replace(OFFICE_TOKEN, office);
 
             TextTimeSeries textTimeSeries = dao.retrieveFromDao(mode, office, tsId, textMask,
                     beginZdt, endZdt, versionZdt,
-                    maxVersion, minAttr, maxAttr, idToUrl);
+                    maxVersion, minAttr, maxAttr, urlBuilder.build());
 
             ctx.contentType(contentType.toString());
 
@@ -206,20 +186,6 @@ public class TextTimeSeriesController implements CrudHandler {
 
     }
 
-    @Nullable
-    private static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
-        ZonedDateTime beginZdt = null;
-        String begin = ctx.queryParam(param);
-        if (begin != null) {
-            beginZdt = DateUtils.parseUserDate(begin, timezone);
-        }
-        return beginZdt;
-    }
-
-    @Nullable
-    private static ZonedDateTime queryParamAsZdt(Context ctx, String param) {
-        return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
-    }
 
     @OpenApi(ignore = true)
     @Override
@@ -248,9 +214,7 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            String body = ctx.body();
-
-            TextTimeSeries tts = deserialize(body, formatHeader);
+            TextTimeSeries tts = deserializeBody(ctx, formatHeader);
             TimeSeriesTextDao dao = getDao(dsl);
 
             boolean maxVersion = true;
@@ -258,11 +222,24 @@ public class TextTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_CREATE_REPLACE_ALL);
             dao.create(tts, maxVersion, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
+        } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    private static TextTimeSeries deserializeBody(@NotNull Context ctx, String formatHeader) throws IOException {
+        TextTimeSeries tts;
+
+        if (ContentType.equivalent(Formats.JSONV2, formatHeader)) {
+            ObjectMapper om = JsonV2.buildObjectMapper();
+            tts = om.readValue(ctx.bodyAsInputStream(), TextTimeSeries.class);
+        } else {
+            throw new IllegalArgumentException("Unsupported format: " + formatHeader);
+        }
+
+        return tts;
     }
 
     @OpenApi(
@@ -290,15 +267,13 @@ public class TextTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            String body = ctx.body();
-
-            TextTimeSeries tts = deserialize(body, formatHeader);
+            TextTimeSeries tts = deserializeBody(ctx, formatHeader);
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesTextDao dao = getDao(dsl);
             dao.store(tts,maxVersion, replaceAll);
 
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             CdaError re = new CdaError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), e);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
@@ -352,26 +327,13 @@ public class TextTimeSeriesController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String textTimeSeriesId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String office = ctx.queryParam(OFFICE);
-            if(office == null ){
-                throw new IllegalArgumentException(OFFICE + " is a required parameter");
-            }
-
-            String mask = ctx.queryParam(Controllers.TEXT_MASK);
-            if(mask == null ){
-                throw new IllegalArgumentException(Controllers.TEXT_MASK + " is a required parameter");
-            }
+            String office = requiredParam(ctx, OFFICE);
+            String mask = requiredParam(ctx, Controllers.TEXT_MASK);
 
             TimeSeriesTextMode mode = ctx.queryParamAsClass(MODE, TimeSeriesTextMode.class).get();
 
-            ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
-            if(beginZdt == null){
-                throw new IllegalArgumentException(BEGIN + " is a required parameter");
-            }
-            ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
-            if(endZdt == null){
-                throw new IllegalArgumentException(END + " is a required parameter");
-            }
+            ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
+            ZonedDateTime endZdt = requiredZdt(ctx, END);
             ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
 
             boolean maxVersion = versionZdt == null;
@@ -385,17 +347,6 @@ public class TextTimeSeriesController implements CrudHandler {
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
-    }
-
-    private static TextTimeSeries deserialize(String body, String format) throws JsonProcessingException {
-        TextTimeSeries retval;
-        if (ContentType.equivalent(Formats.JSONV2, format)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, TextTimeSeries.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
 }

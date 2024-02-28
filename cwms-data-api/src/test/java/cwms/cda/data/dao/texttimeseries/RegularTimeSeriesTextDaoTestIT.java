@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.function.UnaryOperator;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterEach;
@@ -71,12 +72,17 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testCreate() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-                    DSLContext dsl = getDslContext(c, officeId);
-                    RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper, RegularTimeSeriesTextDao.lengthPredicate() );
+            DSLContext dsl = getDslContext(c, officeId);
+            RegularTimeSeriesTextDao dao = buildDao(dsl);
 
-                    testCreate(dao);
-                }
-        );
+            testCreate(dao);
+        });
+    }
+
+    @NotNull
+    private static RegularTimeSeriesTextDao buildDao(DSLContext dsl) {
+        return new RegularTimeSeriesTextDao(dsl,
+                RegularTimeSeriesTextDao.usePredicate(mapper, RegularTimeSeriesTextDao.lengthPredicate()) );
     }
 
 
@@ -142,13 +148,12 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testRetrieve() throws SQLException {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, officeId);
-                    RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper);
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, officeId);
+            RegularTimeSeriesTextDao dao = buildDao(dsl);
 
-                    testRetrieve(dao);
-                }
-        );
+            testRetrieve(dao);
+        });
     }
 
     private static void testRetrieve(RegularTimeSeriesTextDao dao) {
@@ -187,13 +192,12 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     void testDelete() throws SQLException {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
-                    DSLContext dsl = getDslContext(c, officeId);
-                    RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper);
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, officeId);
+            RegularTimeSeriesTextDao dao = buildDao(dsl);
 
-                    testDelete(dao);
-                }
-        );
+            testDelete(dao);
+        });
     }
 
     private void testDelete(RegularTimeSeriesTextDao dao) {
@@ -243,9 +247,9 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
     @Test
     void testStore() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {//
+        databaseLink.connection(c -> {
                     DSLContext dsl = getDslContext(c, officeId);
-                    RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper);
+                    RegularTimeSeriesTextDao dao = buildDao(dsl);
 
                     testStore(dao);
                 }
@@ -316,7 +320,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, officeId);
-            RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper);
+            RegularTimeSeriesTextDao dao = buildDao(dsl);
 
             ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T03:00:00Z");
             ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T07:00:00Z");
@@ -348,7 +352,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, officeId);
-            RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper);
+            RegularTimeSeriesTextDao dao = buildDao(dsl);
 
             ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T03:00:00Z");
             ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T07:00:00Z");
@@ -384,7 +388,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         assertThrows(IllegalArgumentException.class, () -> {
             databaseLink.connection(c -> {
                 DSLContext dsl = getDslContext(c, officeId);
-                RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl, mapper);
+                RegularTimeSeriesTextDao dao = buildDao(dsl);
 
                 RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
                         .withTextValue("my new textValue")
