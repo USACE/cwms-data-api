@@ -604,98 +604,102 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("values[0][1]", equalTo(1.0F))
             .body("values[1][1]", equalTo(1.0F))
             .body("values[2][1]", equalTo(1.0F))
-            .body("values[3][1]", equalTo(2.0F));
-        /*
+            .body("values[3][1]", equalTo(3.0F));
+
+
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update_unversioned.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
 
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsUpdatedData)
-                .header("Authorization", user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/timeseries/" + tsIdUnversioned)
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsUpdatedData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/timeseries/" + tsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
 
-        // Get updated versioned time series
+        // Get updated max aggregate
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsIdUnversioned)
-                .queryParam("begin", BEGIN_STR)
-                .queryParam("end", END_STR)
-                .queryParam("date-version-type", "UNVERSIONED")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values.size()", equalTo(3))
-                .body("values[0][1]", equalTo(2.0F))
-                .body("values[1][1]", equalTo(2.0F))
-                .body("values[2][1]", equalTo(2.0F));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", "2008-05-01T18:00:00Z")
+            .queryParam("date-version-type", "MAX_AGGREGATE")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(4))
+            .body("values[0][1]", equalTo(2.0F))
+            .body("values[1][1]", equalTo(2.0F))
+            .body("values[2][1]", equalTo(2.0F))
+            .body("values[3][1]", equalTo(3.0F));;
 
 
-        // Delete all values from timeseries
+        // Delete all values from one version date
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", OFFICE)
-                .queryParam("timeseries", tsIdUnversioned)
-                .queryParam("begin", BEGIN_STR)
-                .queryParam("end", "2008-05-01T18:00:00Z")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/timeseries/" + tsIdUnversioned)
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("timeseries", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", "2008-05-01T18:00:00Z")
+            .queryParam("version-date", "2021-06-21T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/" + tsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
 
-        // Get versioned time series
+        // Get max aggregate
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsIdUnversioned)
-                .queryParam("begin", BEGIN_STR)
-                .queryParam("end", END_STR)
-                .queryParam("date-version-type", "UNVERSIONED")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values.size()", equalTo(3))
-                .body("values[0][1]", equalTo(null))
-                .body("values[1][1]", equalTo(null))
-                .body("values[2][1]", equalTo(null));*/
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end","2008-05-01T18:00:00Z")
+            .queryParam("date-version-type", "MAX_AGGREGATE")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(4))
+            .body("values[0][1]", equalTo(4.0F))
+            .body("values[1][1]", equalTo(4.0F))
+            .body("values[2][1]", equalTo(4.0F))
+            .body("values[3][1]", equalTo(3.0F));
     }
 
 
