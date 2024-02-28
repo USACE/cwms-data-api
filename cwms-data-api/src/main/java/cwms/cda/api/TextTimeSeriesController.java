@@ -81,7 +81,7 @@ public class TextTimeSeriesController implements CrudHandler {
     private final MetricRegistry metrics;
 
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
-    public static final boolean DEFAULT_UPDATE_REPLACE_ALL = false;
+    public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
     private final String contextPath;
 
     public static final String CONTEXT_TOKEN = "{context-path}";
@@ -116,7 +116,7 @@ public class TextTimeSeriesController implements CrudHandler {
                             + "otherwise specified). If this field is not specified, "
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
-                    @OpenApiParam(name = END, description = "The end of the time window. If specified the text associated with all times from start to end (inclusive) is returned."),
+                    @OpenApiParam(name = END, required = true, description = "The end of the time window."),
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the maximum version date is used."),
                     @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value to retrieve. If not specified, no minimum value is used."),
                     @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to retrieve. If not specified, no maximum value is used."),
@@ -139,12 +139,27 @@ public class TextTimeSeriesController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String tsId = ctx.queryParam(NAME);
 
+        String office = ctx.queryParam(OFFICE);
+        if(office == null ){
+            throw new IllegalArgumentException(OFFICE + " is a required parameter");
+        }
+
+        String tsId = ctx.queryParam(NAME);
+        if(tsId == null ){
+            throw new IllegalArgumentException(NAME + " is a required parameter");
+        }
 
         ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
+        if (beginZdt == null) {
+            throw new IllegalArgumentException(BEGIN + " is a required parameter");
+        }
+
         ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+        if (endZdt == null) {
+            throw new IllegalArgumentException(END + " is a required parameter");
+        }
+
         ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
         boolean maxVersion = versionZdt == null;
 
@@ -152,17 +167,6 @@ public class TextTimeSeriesController implements CrudHandler {
         Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
         TimeSeriesTextMode mode = ctx.queryParamAsClass(MODE, TimeSeriesTextMode.class).getOrDefault(TimeSeriesTextMode.ALL);
 
-        if(office == null ){
-           throw new IllegalArgumentException(OFFICE + " is a required parameter");
-        }
-
-        if(tsId == null ){
-            throw new IllegalArgumentException(NAME + " is a required parameter");
-        }
-
-        if (beginZdt == null) {
-            throw new IllegalArgumentException(BEGIN + " is a required parameter");
-        }
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -267,7 +271,6 @@ public class TextTimeSeriesController implements CrudHandler {
             @OpenApiParam(name = TIMESERIES, description = "The id of the text timeseries to be updated"),
         },
             queryParams = {
-
                     @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to replace any and all existing text with the specified text. Default is:" + DEFAULT_UPDATE_REPLACE_ALL)
             },
         requestBody = @OpenApiRequestBody(
@@ -283,7 +286,6 @@ public class TextTimeSeriesController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String reqContentType = ctx.req.getContentType();
@@ -333,9 +335,7 @@ public class TextTimeSeriesController implements CrudHandler {
                         + "the default time zone of UTC shall be used."),
                 @OpenApiParam(name = BEGIN, required = true, description = "The start of the time"
                         + " window"),
-                @OpenApiParam(name = END, description = "The end of the time window. If specified"
-                        + " the text associated with all times from start to end (inclusive) is "
-                        + "deleted."),
+                @OpenApiParam(name = END, required = true, description = "The end of the time window." ),
                 @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                         + "series.  If not specified, maximum version date is used."),
                 @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description =
@@ -369,6 +369,9 @@ public class TextTimeSeriesController implements CrudHandler {
                 throw new IllegalArgumentException(BEGIN + " is a required parameter");
             }
             ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+            if(endZdt == null){
+                throw new IllegalArgumentException(END + " is a required parameter");
+            }
             ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
 
             boolean maxVersion = versionZdt == null;

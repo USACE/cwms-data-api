@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,24 +35,32 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DateUtils;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.javalin.core.validation.JavalinValidation;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.ValidatableResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 @Tag("integration")
 public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE = "SPK";
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String REG_LOAD_RESOURCE = "cwms/cda/data/sql/store_reg_text_timeseries.sql";
     public static final String REG_DELETE_RESOURCE = "cwms/cda/data/sql/delete_reg_text_timeseries.sql";
     public static final String STD_LOAD_RESOURCE = "cwms/cda/data/sql/store_std_text_timeseries.sql";
@@ -63,12 +72,19 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
     public static final String STANDARD = "STANDARD";
     public static final String REGULAR = "REGULAR";
+    public static final String AUTHORIZATION = "Authorization";
 
     @BeforeAll
     public static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
 
         createTimeseries(OFFICE, tsId, 0);  // offset needs to be valid for 1Hour
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(dsl.configuration(), tsId, "T", OFFICE);
+        });
+
     }
 
     @BeforeEach
@@ -86,7 +102,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_standard() throws Exception {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_std.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_std.json");  // single point at 2005-02-01T15:00:00Z
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
@@ -98,17 +114,24 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         // 2.  create/store the row
         // 3.  retrieve the row and verify it is there
 
+        // The sql resource file for std stores hourly std data for  '2005-02-01 00:00:00' - '2005-02-03 17:00:00'
+        // the std delete deletes from                               '2005-02-01 00:00:00' -  2005-02-05 17:00:00'
+
+        // delete the default data
+        loadSqlDataFromResource(STD_DELETE_RESOURCE);
+
         // make sure it doesn't exist
         // this will return 200 but the lists should be empty.
+        String beginStr = "2005-02-01T15:00:00Z";
+        String endStr = "2005-02-04T23:00:00Z";
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin","2005-02-01T15:00:00Z")
-            .queryParam("end","2005-02-01T23:00:00Z")
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, beginStr)
+            .queryParam(Controllers.END, endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -127,7 +150,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .body(tsData)
-            .header("Authorization", user.toHeaderValue())
+            .header(AUTHORIZATION, user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -141,12 +164,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin","2005-02-01T15:00:00Z")
-                .queryParam("end","2005-02-01T23:00:00Z")
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN, beginStr)
+                .queryParam(Controllers.END, endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -177,12 +199,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin", startStr)
-                .queryParam("end", endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -206,7 +227,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
-                .header("Authorization", user.toHeaderValue())
+                .header(AUTHORIZATION, user.toHeaderValue())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -220,12 +241,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -250,12 +270,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -275,15 +294,19 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T08:00:00-07:00[PST8PDT]";
         String endStr = "2005-02-03T08:00:00-07:00[PST8PDT]";
 
+        // The sql resource file for std stores hourly std data for  '2005-02-01 00:00:00' - '2005-02-03 17:00:00'
+        ZonedDateTime startZdt = DateUtils.parseUserDate("2005-02-01T00:00:00Z", "UTC");
+        ZonedDateTime endZdt = DateUtils.parseUserDate("2005-02-03T17:00:00Z", "UTC");
+        int hours = (int) Duration.between(startZdt, endZdt).toHours(); // 24 +24 +17 = 65 hours
+
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -292,7 +315,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .body("regular-text-values", is(nullValue()))
-                .body("standard-text-values.size()", equalTo(1))
+                .body("standard-text-values.size()", equalTo(hours))
                 .body("standard-text-catalog.size()", equalTo(1))
                 .statusCode(is(HttpServletResponse.SC_OK));
     }
@@ -309,12 +332,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -337,11 +359,10 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("max-version", "true")
-                .queryParam("replace-all", "true")
+                .queryParam(TextTimeSeriesController.REPLACE_ALL, "true")
                 .contentType(Formats.JSONV2)
                 .body(tsData)
-                .header("Authorization", user.toHeaderValue())
+                .header(AUTHORIZATION, user.toHeaderValue())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -352,15 +373,14 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK));
 
         //3)retrieve and verify
-        given()
+        ValidatableResponse response = given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -385,16 +405,20 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T08:00:00-07:00[PST8PDT]";
         String endStr = "2005-02-03T08:00:00-07:00[PST8PDT]";
 
+        // The sql resource file for std stores hourly std data for  '2005-02-01 00:00:00' - '2005-02-03 17:00:00'
+        ZonedDateTime startZdt = DateUtils.parseUserDate("2005-02-01T00:00:00Z", "UTC");
+        ZonedDateTime endZdt = DateUtils.parseUserDate("2005-02-03T17:00:00Z", "UTC");
+        int hours = (int) Duration.between(startZdt, endZdt).toHours(); // 24 +24 +17 = 65 hours
+
         // 1)retrieve and verify
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -403,7 +427,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .body("regular-text-values", nullValue())
-                .body("standard-text-values.size()", equalTo(2))
+                .body("standard-text-values.size()", equalTo(hours))
                 // assert the first regular-text-value item is as expected
                 .body("standard-text-values[0].standard-text-id", equalTo("E"))
                 .statusCode(is(HttpServletResponse.SC_OK));
@@ -418,9 +442,10 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
+                .queryParam(TextTimeSeriesController.REPLACE_ALL, "true")
                 .contentType(Formats.JSONV2)
                 .body(tsData)
-                .header("Authorization", user.toHeaderValue())
+                .header(AUTHORIZATION, user.toHeaderValue())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -434,12 +459,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -448,9 +472,12 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .body("regular-text-values", nullValue())
-                .body("standard-text-values.size()", equalTo(2))
+                .body("standard-text-values.size()", equalTo(65))
                 // assert the first regular-text-value item is as expected
-                .body("standard-text-values[0].standard-text-id", equalTo("A"))
+                .body("standard-text-values[0].standard-text-id", equalTo("E"))
+                .body("standard-text-values[14].standard-text-id", equalTo("E"))
+                .body("standard-text-values[15].standard-text-id", equalTo("A"))
+                .body("standard-text-values[16].standard-text-id", equalTo("E"))
                 .statusCode(is(HttpServletResponse.SC_OK));
     }
 
@@ -466,16 +493,18 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T03:00:00Z";
         String endStr = "2005-01-01T04:00:00Z";
 
+        ZonedDateTime startZdt = DateUtils.parseUserDate(startStr, "UTC");
+        ZonedDateTime endZdt = DateUtils.parseUserDate(endStr, "UTC");
+
         // 1)retrieve and verify
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin", startStr)
-                .queryParam("end", endStr)
-                .queryParam("max-version", "false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -495,13 +524,17 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("text-mask", "*")
+                .header(AUTHORIZATION, user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.TEXT_MASK, "*")
+                .queryParam(Controllers.BEGIN, startStr)
+                .queryParam(Controllers.END, endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .delete("/timeseries/text/" + tsId + "?start=" + startStr + "&end=" + endStr +
-                        "&mode=" + REGULAR)
+                .delete("/timeseries/text/" + tsId )
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
@@ -512,12 +545,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin", startStr)
-                .queryParam("end", endStr)
-                .queryParam("max-version", "false")
-                .queryParam("mode", REGULAR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -529,6 +561,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .body("standard-text-values", nullValue())
                 .body("regular-text-values.size()", equalTo(0))
                 .statusCode(is(HttpServletResponse.SC_OK));
+
     }
 
     @Test
@@ -543,16 +576,19 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T08:00:00-07:00[PST8PDT]";
         String endStr = "2005-02-03T08:00:00-07:00[PST8PDT]";
 
+        ZonedDateTime startZdt = DateUtils.parseUserDate("2005-02-01T00:00:00Z", "UTC");
+        ZonedDateTime endZdt = DateUtils.parseUserDate("2005-02-03T17:00:00Z", "UTC");
+        int hours = (int) Duration.between(startZdt, endZdt).toHours(); // 24 +24 +17 = 65 hours
+
         // 1)retrieve and verify
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -561,7 +597,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .body("regular-text-values", nullValue())
-                .body("standard-text-values.size()", equalTo(2))
+                .body("standard-text-values.size()", equalTo(hours))
                 // assert the first regular-text-value item is as expected
                 .body("standard-text-values[0].standard-text-id", equalTo("E"))
                 .statusCode(is(HttpServletResponse.SC_OK));
@@ -571,12 +607,16 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("text-mask", "*")
+                .header(AUTHORIZATION, user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.TEXT_MASK, "*")
+                .queryParam(Controllers.BEGIN, startStr)
+                .queryParam(Controllers.END, endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .delete("/timeseries/text/" + tsId + "?start=" + startStr + "&end=" + endStr + "&mode=" + STANDARD)
+                .delete("/timeseries/text/" + tsId )
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
@@ -587,12 +627,11 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin",startStr)
-                .queryParam("end",endStr)
-                .queryParam("max-version","false")
-                .queryParam("mode", STANDARD)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .queryParam(TextTimeSeriesController.MODE, STANDARD)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)

@@ -1,7 +1,7 @@
 declare
     P_TSID              varchar2(256)   := 'TsTextTestLoc.Flow.Inst.1Hour.0.raw';
-    P_START_TIME   timestamp        := TO_TIMESTAMP_TZ('2005-02-01 13:30:00', 'YYYY-MM-DD HH24:MI:SS');
-    P_END_TIME   timestamp          := TO_TIMESTAMP_TZ('2005-02-02 17:00:00', 'YYYY-MM-DD HH24:MI:SS');
+    P_START_TIME   timestamp        := TO_TIMESTAMP_TZ('2005-02-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS');
+    P_END_TIME   timestamp          := TO_TIMESTAMP_TZ('2005-02-05 17:00:00', 'YYYY-MM-DD HH24:MI:SS');
     P_VERSION_DATE      date            := null;
 
 begin

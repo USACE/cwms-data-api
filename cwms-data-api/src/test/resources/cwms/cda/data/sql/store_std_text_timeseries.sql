@@ -34,8 +34,8 @@ begin
             P_TIME_ZONE => 'UTC',
             P_MAX_VERSION => 'T',
             P_EXISTING => 'T',
-            P_NON_EXISTING => 'F',
-            P_REPLACE_ALL => 'F',
+            P_NON_EXISTING => 'T',
+            P_REPLACE_ALL => 'T',
             P_ATTRIBUTE => null,
             P_OFFICE_ID => 'SPK'
     );

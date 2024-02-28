@@ -26,8 +26,10 @@ package cwms.cda.formatters.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.data.dto.Catalog;
@@ -114,6 +116,11 @@ public class JsonV2 implements OutputFormatter {
     @NotNull
     public static ObjectMapper buildObjectMapper(ObjectMapper om) {
         ObjectMapper retVal = om.copy();
+
+        retVal.findAndRegisterModules();
+        // Without these two disables an Instant gets written as 3333333.335000000
+        retVal.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        retVal.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
 
         retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);

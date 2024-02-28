@@ -409,18 +409,18 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         }
     }
 
-
     public void delete(String officeId, String tsId, String textMask,
-                       Instant startTime, Instant endTime, Instant versionInstant, boolean maxVersion,
+                       @NotNull Instant startTime, @NotNull Instant endTime, Instant versionInstant, boolean maxVersion,
                        Long minAttribute, Long maxAttribute) {
-        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
         connection(dsl, connection -> {
-            setOffice(connection, officeId);
-            CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
-            dbText.deleteTsText(connection, tsId, textMask, getDate(startTime), getDate(endTime),
-                    getDate(versionInstant), timeZone, maxVersion, minAttribute, maxAttribute,
-                    officeId);
+            DSLContext dslContext = getDslContext(connection, officeId);
+            CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(dslContext.configuration(), tsId, textMask,
+                    Timestamp.from(startTime),
+                    endTime == null ? null : Timestamp.from(endTime),
+                    versionInstant == null ? null : Timestamp.from(versionInstant),
+                    "UTC", maxVersion?"T":"F", minAttribute,
+                    maxAttribute, officeId);
         });
     }
 

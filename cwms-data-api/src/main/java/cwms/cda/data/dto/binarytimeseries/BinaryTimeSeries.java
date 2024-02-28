@@ -10,6 +10,7 @@ import cwms.cda.data.dto.CwmsDTO;
 import hec.data.timeSeriesText.DateDateKey;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import org.jetbrains.annotations.Nullable;
@@ -122,7 +123,7 @@ public class BinaryTimeSeries extends CwmsDTO {
                 if (entriesMap == null) {
                     entriesMap = new TreeMap<>(new DateDateComparator());
                 }
-                entriesMap.put(new DateDateKey(row.getDateTime(), row.getDataEntryDate()), row);
+                entriesMap.put(new DateDateKey(Date.from(row.getDateTime()), Date.from(row.getDataEntryDate())), row);
             }
             return this;
         }
