@@ -58,8 +58,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
-    @Schema(accessMode = AccessMode.READ_ONLY,
-            description = "The version date of the time series trace")
+    @Schema(description = "The version date of the time series trace")
     ZonedDateTime versionDate;
 
     @XmlJavaTypeAdapter(DurationAdapter.class)

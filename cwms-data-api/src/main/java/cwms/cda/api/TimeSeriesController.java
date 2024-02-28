@@ -531,11 +531,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the "
-                            + "version date for the timeseries to create. If"
-                            + " this field is not specified, a null version date will be used.  The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., '"
-                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the version-date field (unless "
                             + "otherwise specified). If this field is not specified, the default time zone "
@@ -559,19 +554,11 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
-            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            String version = ctx.queryParam(VERSION_DATE);
-            Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
-            if (version != null) {
-                ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
-                versionDate = Timestamp.from(beginZdt.toInstant());
-            }
-
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
             StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
-            dao.store(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
+            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {

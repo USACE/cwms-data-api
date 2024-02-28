@@ -25,7 +25,7 @@ public interface TimeSeriesDao {
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
-    void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
+    void store(TimeSeries timeSeries, boolean createAsLrts,
                StoreRule replaceAll, boolean overrideProtection);
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
