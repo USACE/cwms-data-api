@@ -39,7 +39,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
 
     }
-    implementation(libs.cwms.db.jooq.codegen) {
+    implementation(libs.cwms.db.jooq.codegen) { 
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -64,7 +64,7 @@ dependencies {
     implementation(libs.nucleus.data)
     implementation(libs.nucleus.metadata)
     implementation(libs.cwms.ratings.core) {
-
+        
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
     }
@@ -136,7 +136,7 @@ dependencies {
     tomcatLibs(libs.google.flogger.backend)
 
     testImplementation(libs.bundles.testcontainers)
-
+    
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
@@ -237,7 +237,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/spk-data"
-    // If you have the docker-compose environment up and are trying to run
+    // If you have the docker-compose environment up and are trying to run 
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
     //jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration"
