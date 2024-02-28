@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 public class TimeseriesControllerTestIT extends DataApiTestIT {
 
-    private static final String OFFICE = "SWT";
+    private static final String OFFICE = "SPK";
     private static final String locationId = "TsVersionedTestLoc";
     private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
     public static final String BEGIN_STR = "2008-05-01T15:00:00Z";
@@ -35,12 +35,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get() throws IOException, java.io.IOException {
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -87,12 +87,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get_delete_get() throws IOException, java.io.IOException {
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -184,12 +184,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_get_param_conflict() throws IOException, java.io.IOException {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -251,12 +251,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get_update_get_delete_get() throws IOException, java.io.IOException {
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -299,7 +299,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("values[2][1]", equalTo(1.0F));
 
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_update.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
@@ -398,12 +398,12 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
         final String tsIdUnversioned = locationId + ".Flow.Inst.1Hour.0.rawUnversioned";
 
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create_unversioned.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create_unversioned.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -445,7 +445,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("values[2][1]", equalTo(1.0F));
 
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update_unversioned.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_update_unversioned.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
@@ -539,17 +539,17 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get_update_get_delete_get_max_agg() throws IOException, java.io.IOException {
         // Post 2 versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        InputStream resource2 = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create2.json");
+        InputStream resource2 = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_create2.json");
         assertNotNull(resource2);
         String tsData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
         assertNotNull(tsData2);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -608,7 +608,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
 
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/num_ts_update.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
@@ -652,7 +652,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("values[0][1]", equalTo(2.0F))
             .body("values[1][1]", equalTo(2.0F))
             .body("values[2][1]", equalTo(2.0F))
-            .body("values[3][1]", equalTo(3.0F));;
+            .body("values[3][1]", equalTo(3.0F));
 
 
         // Delete all values from one version date
