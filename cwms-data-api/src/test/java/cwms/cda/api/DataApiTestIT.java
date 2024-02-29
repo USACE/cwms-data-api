@@ -317,7 +317,7 @@ public class DataApiTestIT {
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
-                    return; // TS already exists. that's find for these tests.
+                    return; // TS already exists. that's fine for these tests.
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
@@ -335,7 +335,7 @@ public class DataApiTestIT {
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
-                    return; // TS already exists. that's find for these tests.
+                    return; // TS already exists. that's fine for these tests.
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
