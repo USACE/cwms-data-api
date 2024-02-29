@@ -50,6 +50,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.Objects;
@@ -265,7 +266,7 @@ public class ClobController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
             try {
-                Clob clob = deserialize(ctx.body(), formatHeader);
+                Clob clob = deserializeBody(ctx.bodyAsInputStream(), formatHeader);
 
                 if (clob.getOfficeId() == null) {
                     throw new FormattingException("An officeId is required when creating a clob");
@@ -283,10 +284,15 @@ public class ClobController implements CrudHandler {
                 ClobDao dao = new ClobDao(dsl);
                 dao.create(clob, failIfExists);
                 ctx.status(HttpCode.CREATED);
-            } catch (JsonProcessingException e) {
+            } catch (IOException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
             }
         }
+    }
+
+    private Clob deserializeBody(InputStream bodyStream, String formatHeader) throws IOException {
+        ObjectMapper om = getObjectMapperForFormat(formatHeader);
+        return om.readValue(bodyStream, Clob.class);
     }
 
     public Clob deserialize(String body, String formatHeader) throws JsonProcessingException {
@@ -353,7 +359,7 @@ public class ClobController implements CrudHandler {
             ClobDao dao = new ClobDao(dsl);
 
             try {
-                Clob clob = deserialize(ctx.body(), formatHeader);
+                Clob clob = deserializeBody(ctx.bodyAsInputStream(), formatHeader);
 
                 if (clob.getOfficeId() == null) {
                     throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
@@ -368,7 +374,7 @@ public class ClobController implements CrudHandler {
                 }
 
                 dao.update(clob, ignoreNulls);
-            } catch (JsonProcessingException e) {
+            } catch (IOException e) {
                 throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),
                         "Unable to parse request body");
             }

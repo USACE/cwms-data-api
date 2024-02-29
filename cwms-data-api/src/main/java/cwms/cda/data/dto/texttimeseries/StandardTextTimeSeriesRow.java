@@ -22,10 +22,10 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
     private final Date versionDate;
     private final Date dataEntryDate;
     private final Long attribute;
-
     private final String officeId;
     private final String standardTextId;
     private final String textValue;
+    private final String url;
 
 
     private StandardTextTimeSeriesRow(Builder builder) {
@@ -36,6 +36,7 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
         this.versionDate = builder.versionDate;
         this.dataEntryDate = builder.dataEntryDate;
         this.attribute = builder.attribute;
+        this.url = builder.url;
     }
 
 
@@ -79,6 +80,10 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
 
     public String getTextValue() {
         return textValue;
+    }
+
+    public String getUrl() {
+        return url;
     }
 
     @Override
@@ -144,6 +149,8 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
 
         private String officeId;
 
+        private String url;
+
         public Builder() {
         }
 
@@ -203,6 +210,11 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
+        public Builder withUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
 
         public StandardTextTimeSeriesRow.Builder from(StandardTextTimeSeriesRow stdRow) {
             if (stdRow == null) {
@@ -213,6 +225,7 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withStandardTextId(null)
                         .withTextValue(null)
                         .withOfficeId(null)
+                        .withUrl(null)
                         ;
             } else {
                 return withDateTime(stdRow.dateTime)
@@ -222,6 +235,7 @@ public class StandardTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withStandardTextId(stdRow.standardTextId)
                         .withTextValue(stdRow.textValue)
                         .withOfficeId(stdRow.officeId)
+                        .withUrl(stdRow.url)
                         ;
             }
         }

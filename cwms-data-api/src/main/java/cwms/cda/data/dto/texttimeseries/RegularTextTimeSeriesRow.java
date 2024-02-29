@@ -23,6 +23,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     private final Long attribute;
     private final String textId;
     private final String textValue;
+    private final String url;
 
 
     private RegularTextTimeSeriesRow(Builder builder) {
@@ -32,6 +33,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         textId = builder.textId;
         attribute = builder.attribute;
         textValue = builder.textValue;
+        this.url = builder.url;
     }
 
     public Date getVersionDate() {
@@ -50,6 +52,9 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         return textValue;
     }
 
+    public String getUrl() {
+        return url;
+    }
 
 
     @Override
@@ -129,6 +134,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         private String textId;
         private Long attribute;
         private String textValue;
+        private String url;
 
 
         public Builder() {
@@ -184,6 +190,10 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
+        public Builder withUrl(String url) {
+            this.url = url;
+            return this;
+        }
 
 
         public RegularTextTimeSeriesRow build() {
@@ -198,6 +208,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withTextId(null)
                         .withAttribute((Long) null)
                         .withTextValue(null)
+                        .withUrl(null)
                         ;
             } else {
                 return withDateTime(regularTextTimeSeriesRow.dateTime)
@@ -206,10 +217,10 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                         .withTextId(regularTextTimeSeriesRow.textId)
                         .withAttribute(regularTextTimeSeriesRow.attribute)
                         .withTextValue(regularTextTimeSeriesRow.textValue)
+                        .withUrl(regularTextTimeSeriesRow.url)
                         ;
             }
         }
-
 
     }
 }

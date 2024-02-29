@@ -1,61 +1,61 @@
 package cwms.cda.data.dao.binarytimeseries;
 
+
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
+
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import java.math.BigDecimal;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
+import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    private static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getDefault();
-    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+    private static final int ORACLE_CURSOR_TYPE = -10;
 
+    Function<ResultSet, BinaryTimeSeriesRow> mapper;
 
     public TimeSeriesBinaryDao(DSLContext dsl) {
         super(dsl);
     }
 
-    public Timestamp createTimestamp(Date date) {
-        Timestamp retval = null;
-        if (date != null) {
-            long time = date.getTime();
-            retval = createTimestamp(time);
-        }
-        return retval;
+    public TimeSeriesBinaryDao(DSLContext dsl, Function<ResultSet, BinaryTimeSeriesRow> mapper) {
+        super(dsl);
+        this.mapper = mapper;
     }
 
-    public Timestamp createTimestamp(long date) {
-
-        if (logger.atFinest().isEnabled()) {
-            TimeZone defaultTimeZone = DEFAULT_TIME_ZONE;
-            String defaultTimeZoneDisplayName =
-                    " " + defaultTimeZone.getDisplayName(defaultTimeZone.inDaylightTime(new Date(date)), TimeZone.SHORT);
-            TimeZone gmtTimeZone = OracleTypeMap.GMT_TIME_ZONE;
-            Date convertedDate = new Date(date);
-            String utcTimeZoneDisplayName =
-                    " " + gmtTimeZone.getDisplayName(gmtTimeZone.inDaylightTime(convertedDate),
-                            TimeZone.SHORT);
-            logger.atFinest().log("Storing date: " + dateTimeFormatter.format(date) + defaultTimeZoneDisplayName
-                    + " converted to UTC date: " + dateTimeFormatter.format(convertedDate) + utcTimeZoneDisplayName);
-        }
-        return new Timestamp(date);
+   public static Function<ResultSet, BinaryTimeSeriesRow> usePredicate(@Nullable UnaryOperator<String> howToBuildUrl,  Predicate<ResultSet> whenToBuildUrl ){
+        return rs -> {
+            try {
+                return buildRow(rs, howToBuildUrl, whenToBuildUrl);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
 
@@ -191,48 +191,73 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 .build();
     }
 
+
     public List<BinaryTimeSeriesRow> retrieveRows(String officeId, String tsId, String mask,
-                                                  Instant startTime, Instant endTime, Instant versionInstant,
+                                                  Instant startTime, Instant endTime, Instant versionDate,
                                                   boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
+        Timestamp pStartTime = Timestamp.valueOf(startTime.atZone(ZoneId.of("UTC")).toLocalDateTime());
+        Timestamp pEndTime = Timestamp.valueOf(endTime.atZone(ZoneId.of("UTC")).toLocalDateTime());
+        Timestamp pVersionDate;
+        if(versionDate == null){
+            pVersionDate = null;
+        } else {
+            pVersionDate = Timestamp.valueOf(versionDate.atZone(ZoneId.of("UTC")).toLocalDateTime());
+        }
+        String pTimeZone = "UTC";
+        String pMaxVersion = OracleTypeMap.formatBool(maxVersion);
 
-        TimeZone utzZone = OracleTypeMap.GMT_TIME_ZONE;
 
-        RecordMapper<? super Record, BinaryTimeSeriesRow> mapper = new RecordMapper<Record, BinaryTimeSeriesRow>() {
-            @Override
-            public @Nullable BinaryTimeSeriesRow map(Record rowRecord) {
+        return connectionResult(dsl, conn -> {
+            // Making the call from jOOQ with something like:
+            // ResultSet retrieveTsTextF = CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_TEXT_F(dsl.configuration(),...
+            // No longer works b/c we want a CLOB so that we can test its size without downloading the whole
+            // thing from the db.  jOOQ doesn't support getClob in its MockResultSet.
+            try (CallableStatement stmt = conn.prepareCall("{call CWMS_TEXT.RETRIEVE_TS_BINARY(?,?,?,?,?,?,?,?,?,?,?,?)}")) {
+                parameterizeRetrieveTsBinText(stmt, tsId, mask, pStartTime, pEndTime, pVersionDate, pTimeZone, pMaxVersion, retrieveBinary, minAttribute, maxAttribute, officeId);
+                stmt.execute();
+                ResultSet rs = (ResultSet) stmt.getObject(1);
 
-                // Is there some way to know the names and types of the fields in the record?
-                ZonedDateTime dateTimeZDT = rowRecord.get("DATE_TIME", LocalDateTime.class).atZone(utzZone.toZoneId());  // this works, even without converter
-                ZonedDateTime  versionDate = rowRecord.get("VERSION_DATE", LocalDateTime.class).atZone(utzZone.toZoneId());
-                ZonedDateTime dataEntryDate = rowRecord.get("DATA_ENTRY_DATE",LocalDateTime.class).atZone(utzZone.toZoneId());
-                String binaryId = rowRecord.get("ID", String.class);
-                BigDecimal attribute = rowRecord.get("ATTRIBUTE", BigDecimal.class);
-                String fileExtension = rowRecord.get("FILE_EXT", String.class);
-                String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
-                byte[] binaryData = rowRecord.get("VALUE", byte[].class);
+                List<BinaryTimeSeriesRow> rows = new ArrayList<>();
 
-                return new BinaryTimeSeriesRow.Builder()
-                        .withDateTime(dateTimeZDT.toInstant())
-                        .withDataEntryDate(dataEntryDate.toInstant())
-                        .withVersionDate(versionDate.toInstant())
-                        .withBinaryId(binaryId)
-                        .withAttribute(attribute==null?null:attribute.longValueExact())
-                        .withMediaType(mediaType)
-                        .withFileExtension(fileExtension)
-                        .withBinaryValue(binaryData)
-                        .build();
+                while (rs.next()) {
+                    BinaryTimeSeriesRow row = mapper.apply(rs);
+                    rows.add(row);
+                }
+                return rows;
+            } catch (SQLException e) {
+                if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
+                    throw new NoDataFoundException();
+                } else {
+                    throw new RuntimeException(e);  // TODO: wrap with something else.
+                }
             }
-        };
-
-        return CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_BINARY(dsl.configuration(),
-                tsId, mask,
-                startTime == null ? null : Timestamp.from(startTime),
-                endTime == null ? null : Timestamp.from(endTime),
-                versionInstant == null ? null : Timestamp.from(versionInstant),
-                utzZone.getID(),
-                maxVersion ? "T" : "F", retrieveBinary ? "T" : "F", minAttribute, maxAttribute, officeId)
-                .map(mapper);
+        });
     }
+
+    private void parameterizeRetrieveTsBinText(CallableStatement stmt, String tsId, String mask,
+                Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
+                String pMaxVersion, boolean retrieveBin, Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
+            stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
+            stmt.setString(2, tsId);
+            stmt.setString(3, mask);
+            stmt.setTimestamp(4, pStartTime);
+            stmt.setTimestamp(5, pEndTime);
+            stmt.setTimestamp(6, pVersionDate);
+            stmt.setString(7, pTimeZone);
+            stmt.setString(8, pMaxVersion);
+            stmt.setString(9, retrieveBin ? "T" : "F");
+            if (minAttribute == null) {
+                stmt.setNull(10, Types.NUMERIC);
+            } else {
+                stmt.setLong(10, minAttribute);
+            }
+            if (maxAttribute == null) {
+                stmt.setNull(11, Types.NUMERIC);
+            } else {
+                stmt.setLong(11, maxAttribute);
+            }
+            stmt.setString(12, officeId);
+        }
 
     public void store(BinaryTimeSeries tts, boolean maxVersion,  boolean replaceAll) {
         store(tts, maxVersion, true, true, replaceAll);
@@ -250,7 +275,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
     private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
                           boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
             connDsl.transaction((Configuration trx) -> {
                         Configuration config = trx.dsl().configuration();
@@ -260,13 +285,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                     }
                     // Implicit commit executed here
             );
-        });
-    }
-
-    private void storeRow(String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
-        dsl.connection(connection -> {
-            DSLContext connDsl = getDslContext(connection, officeId);
-            storeRow(connDsl.configuration(), officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
         });
     }
 
@@ -316,4 +334,85 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private boolean hasIdAndValue(BinaryTimeSeriesRow row) {
         return row != null && row.getBinaryId() != null && row.getBinaryValue() != null;
     }
+
+    private static BinaryTimeSeriesRow buildRow(ResultSet rs, @Nullable UnaryOperator<String> mapper, @Nullable Predicate<ResultSet> shouldBuildUrl) throws SQLException {
+
+        Instant dateTimeInstant = getInstant(rs.getTimestamp("DATE_TIME"));
+        Instant versionInstant =  getInstant(rs.getTimestamp("VERSION_DATE"));
+        Instant dataEntryInstant = getInstant(rs.getTimestamp("DATA_ENTRY_DATE"));
+
+        String binaryId = rs.getString("ID");
+        BigDecimal attribute = rs.getBigDecimal("ATTRIBUTE");
+        if (rs.wasNull()) {
+            attribute = null;
+        }
+        String fileExtension = rs.getString("FILE_EXT");
+        String mediaType = rs.getString("MEDIA_TYPE_ID");
+
+        byte[] binaryData = null;
+
+        String valueUrl = null;
+        if( shouldBuildUrl != null && shouldBuildUrl.test(rs)){
+            valueUrl = getValueUrl(rs, mapper);
+        }
+
+        if (valueUrl == null) {
+            binaryData = rs.getBytes("VALUE");
+        }
+
+        return new BinaryTimeSeriesRow.Builder()
+                .withDateTime(dateTimeInstant)
+                .withDataEntryDate(dataEntryInstant)
+                .withVersionDate(versionInstant)
+                .withBinaryId(binaryId)
+                .withAttribute(attribute==null?null:attribute.longValueExact())
+                .withMediaType(mediaType)
+                .withFileExtension(fileExtension)
+                .withBinaryValue(binaryData)
+                .withUrl(valueUrl)
+                .build();
+    }
+
+    @Nullable
+    private static Instant getInstant(Timestamp dateTime) {
+        Instant dateTimeInstant = null;
+        if(dateTime != null) {
+            dateTimeInstant = dateTime.toLocalDateTime().atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId()).toInstant();
+        }
+        return dateTimeInstant;
+    }
+
+    private static String getValueUrl(ResultSet rs, @Nullable UnaryOperator<String> howToBuildUrl) {
+        String url = null;
+
+        try {
+            if(howToBuildUrl != null && rs != null) {
+                String id = rs.getString("ID");
+
+                if (id != null && ! id.isEmpty()) {
+                    url = howToBuildUrl.apply(id);
+                }
+            }
+        } catch (SQLException e) {
+            logger.atWarning().withCause(e).log("Error mapping BLOB to URL");
+        }
+
+        return url;
+    }
+
+    public static Predicate<ResultSet> lengthPredicate(long byteThreshold) {
+        return rs -> {
+            try {
+                Blob blob = rs.getBlob("VALUE");
+                String blobId = rs.getString("ID");
+
+                return (blobId != null && !blobId.isEmpty() &&
+                        blob != null && blob.length() > byteThreshold);
+            } catch (SQLException e) {
+                logger.atWarning().withCause(e).log("Error checking BLOB length");
+                return false;
+            }
+        };
+    }
+
 }
