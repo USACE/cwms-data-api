@@ -1,5 +1,6 @@
 package cwms.cda.data.dao.texttimeseries;
 
+import static cwms.cda.data.dao.texttimeseries.RegularTimeSeriesTextDao.ORACLE_CURSOR_TYPE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.LENGTH_THRESHOLD_FOR_URL_MAPPING;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
@@ -21,6 +22,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,7 +116,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
      * @param whenToBuildUrl A caller provided predicate that will be called with the ResultSet and
      *                       is to return true if the URL should be built using howToBuildUrl.  If null, the URL will not be built.
      *                       The methods lengthPredicate, yesPredicate, and noPredicate are provided for convenience.
-     * @return
+     * @return A function that will build a StandardTextTimeSeriesRow from a ResultSet using the provided howToBuildUrl and whenToBuildUrl.
      */
     public static Function<ResultSet, StandardTextTimeSeriesRow > usePredicate(@Nullable UnaryOperator<String> howToBuildUrl,  Predicate<ResultSet> whenToBuildUrl ){
         return rs -> {
@@ -386,7 +388,7 @@ public class StandardTimeSeriesTextDao extends JooqDao {
     private static void parameterizeRetrieveTsStdText(CallableStatement stmt, String tsId, String textMask,
                                                    Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
                                                    String pMaxVersion, boolean retrieveText, Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
-        stmt.registerOutParameter(1, oracle.jdbc.OracleTypes.CURSOR);
+        stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
         stmt.setString(2, tsId);
         stmt.setString(3, textMask);
         stmt.setTimestamp(4, pStartTime);
@@ -396,12 +398,12 @@ public class StandardTimeSeriesTextDao extends JooqDao {
         stmt.setString(8, pMaxVersion);
         stmt.setString(9, retrieveText ? "T" : "F");
         if (minAttribute == null) {
-            stmt.setNull(10, oracle.jdbc.OracleTypes.NUMBER);
+            stmt.setNull(10, Types.NUMERIC);
         } else {
             stmt.setLong(10, minAttribute);
         }
         if (maxAttribute == null) {
-            stmt.setNull(11, oracle.jdbc.OracleTypes.NUMBER);
+            stmt.setNull(11, Types.NUMERIC);
         } else {
             stmt.setLong(11, maxAttribute);
         }

@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -57,6 +58,8 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static final String DATA_ENTRY_DATE = "DATA_ENTRY_DATE";
     private static final String VERSION_DATE = "VERSION_DATE";
     private static final String DATE_TIME = "DATE_TIME";
+
+    protected static final int ORACLE_CURSOR_TYPE = -10;
 
 
 
@@ -109,7 +112,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
      * @param whenToBuildUrl A caller provided predicate that will be called with the ResultSet and
      *                       is to return true if the URL should be built using howToBuildUrl.  If null, the URL will not be built.
      *                       The methods lengthPredicate, yesPredicate, and noPredicate are provided for convenience.
-     * @return
+     * @return A function that will build a RegularTextTimeSeriesRow from a ResultSet using the provided howToBuildUrl and whenToBuildUrl.
      */
     public static Function<ResultSet, RegularTextTimeSeriesRow > usePredicate(@Nullable UnaryOperator<String> howToBuildUrl,  Predicate<ResultSet> whenToBuildUrl ){
         return rs -> {
@@ -228,7 +231,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static void parameterizeRetrieveTsText(CallableStatement stmt, String tsId, String textMask,
                                                    Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
                                                    String pMaxVersion, Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
-        stmt.registerOutParameter(1, oracle.jdbc.OracleTypes.CURSOR);
+        stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
         stmt.setString(2, tsId);
         stmt.setString(3, textMask);
         stmt.setTimestamp(4, pStartTime);
@@ -237,12 +240,12 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         stmt.setString(7, pTimeZone);
         stmt.setString(8, pMaxVersion);
         if (minAttribute == null) {
-            stmt.setNull(9, oracle.jdbc.OracleTypes.NUMBER);
+            stmt.setNull(9, Types.NUMERIC);
         } else {
             stmt.setLong(9, minAttribute);
         }
         if (maxAttribute == null) {
-            stmt.setNull(10, oracle.jdbc.OracleTypes.NUMBER);
+            stmt.setNull(10, Types.NUMERIC);
         } else {
             stmt.setLong(10, maxAttribute);
         }
@@ -423,7 +426,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             DSLContext dslContext = getDslContext(connection, officeId);
             CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(dslContext.configuration(), tsId, textMask,
                     Timestamp.from(startTime),
-                    endTime == null ? null : Timestamp.from(endTime),
+                    Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
                     "UTC", maxVersion?"T":"F", minAttribute,
                     maxAttribute, officeId);

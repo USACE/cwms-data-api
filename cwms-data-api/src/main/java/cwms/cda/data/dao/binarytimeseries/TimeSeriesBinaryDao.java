@@ -1,5 +1,6 @@
 package cwms.cda.data.dao.binarytimeseries;
 
+
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
 
@@ -13,14 +14,13 @@ import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Function;
@@ -29,16 +29,13 @@ import java.util.function.UnaryOperator;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    private static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getDefault();
-    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+    private static final int ORACLE_CURSOR_TYPE = -10;
 
     Function<ResultSet, BinaryTimeSeriesRow> mapper;
 
@@ -59,23 +56,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 throw new RuntimeException(e);
             }
         };
-    }
-
-    public Timestamp createTimestamp(long date) {
-
-        if (logger.atFinest().isEnabled()) {
-            TimeZone defaultTimeZone = DEFAULT_TIME_ZONE;
-            String defaultTimeZoneDisplayName =
-                    " " + defaultTimeZone.getDisplayName(defaultTimeZone.inDaylightTime(new Date(date)), TimeZone.SHORT);
-            TimeZone gmtTimeZone = OracleTypeMap.GMT_TIME_ZONE;
-            Date convertedDate = new Date(date);
-            String utcTimeZoneDisplayName =
-                    " " + gmtTimeZone.getDisplayName(gmtTimeZone.inDaylightTime(convertedDate),
-                            TimeZone.SHORT);
-            logger.atFinest().log("Storing date: " + dateTimeFormatter.format(date) + defaultTimeZoneDisplayName
-                    + " converted to UTC date: " + dateTimeFormatter.format(convertedDate) + utcTimeZoneDisplayName);
-        }
-        return new Timestamp(date);
     }
 
 
@@ -211,48 +191,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 .build();
     }
 
-    public List<BinaryTimeSeriesRow> retrieveRowsOld(String officeId, String tsId, String mask,
-                                                  Instant startTime, Instant endTime, Instant versionInstant,
-                                                  boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
-
-        TimeZone utzZone = OracleTypeMap.GMT_TIME_ZONE;
-
-        RecordMapper<? super Record, BinaryTimeSeriesRow> mapper = new RecordMapper<Record, BinaryTimeSeriesRow>() {
-            @Override
-            public @Nullable BinaryTimeSeriesRow map(Record rowRecord) {
-
-                // Is there some way to know the names and types of the fields in the record?
-                ZonedDateTime dateTimeZDT = rowRecord.get("DATE_TIME", LocalDateTime.class).atZone(utzZone.toZoneId());  // this works, even without converter
-                ZonedDateTime  versionDate = rowRecord.get("VERSION_DATE", LocalDateTime.class).atZone(utzZone.toZoneId());
-                ZonedDateTime dataEntryDate = rowRecord.get("DATA_ENTRY_DATE",LocalDateTime.class).atZone(utzZone.toZoneId());
-                String binaryId = rowRecord.get("ID", String.class);
-                BigDecimal attribute = rowRecord.get("ATTRIBUTE", BigDecimal.class);
-                String fileExtension = rowRecord.get("FILE_EXT", String.class);
-                String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
-                byte[] binaryData = rowRecord.get("VALUE", byte[].class);
-
-                return new BinaryTimeSeriesRow.Builder()
-                        .withDateTime(dateTimeZDT.toInstant())
-                        .withDataEntryDate(dataEntryDate.toInstant())
-                        .withVersionDate(versionDate.toInstant())
-                        .withBinaryId(binaryId)
-                        .withAttribute(attribute==null?null:attribute.longValueExact())
-                        .withMediaType(mediaType)
-                        .withFileExtension(fileExtension)
-                        .withBinaryValue(binaryData)
-                        .build();
-            }
-        };
-
-        return CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_BINARY(dsl.configuration(),
-                tsId, mask,
-                startTime == null ? null : Timestamp.from(startTime),
-                endTime == null ? null : Timestamp.from(endTime),
-                versionInstant == null ? null : Timestamp.from(versionInstant),
-                utzZone.getID(),
-                maxVersion ? "T" : "F", retrieveBinary ? "T" : "F", minAttribute, maxAttribute, officeId)
-                .map(mapper);
-    }
 
     public List<BinaryTimeSeriesRow> retrieveRows(String officeId, String tsId, String mask,
                                                   Instant startTime, Instant endTime, Instant versionDate,
@@ -299,7 +237,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private void parameterizeRetrieveTsBinText(CallableStatement stmt, String tsId, String mask,
                 Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
                 String pMaxVersion, boolean retrieveBin, Long minAttribute, Long maxAttribute, String officeId) throws SQLException {
-            stmt.registerOutParameter(1, oracle.jdbc.OracleTypes.CURSOR);
+            stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
             stmt.setString(2, tsId);
             stmt.setString(3, mask);
             stmt.setTimestamp(4, pStartTime);
@@ -309,12 +247,12 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
             stmt.setString(8, pMaxVersion);
             stmt.setString(9, retrieveBin ? "T" : "F");
             if (minAttribute == null) {
-                stmt.setNull(10, oracle.jdbc.OracleTypes.NUMBER);
+                stmt.setNull(10, Types.NUMERIC);
             } else {
                 stmt.setLong(10, minAttribute);
             }
             if (maxAttribute == null) {
-                stmt.setNull(11, oracle.jdbc.OracleTypes.NUMBER);
+                stmt.setNull(11, Types.NUMERIC);
             } else {
                 stmt.setLong(11, maxAttribute);
             }
