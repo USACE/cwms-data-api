@@ -209,14 +209,6 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
-        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-        /*String version = ctx.queryParam(VERSION_DATE);
-        Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
-        if (version != null) {
-            ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
-            versionDate = Timestamp.from(beginZdt.toInstant());
-        }*/
-
         boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
         StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
