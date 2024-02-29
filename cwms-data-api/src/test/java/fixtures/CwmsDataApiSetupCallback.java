@@ -58,8 +58,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withSchemaImage(CWMS_DB_IMAGE);
             cwmsDb.start();
 
-            //this.loadDefaultData(cwmsDb);
-            //this.loadTimeSeriesData(cwmsDb);
+            this.loadDefaultData(cwmsDb);
+            this.loadTimeSeriesData(cwmsDb);
             final String jdbcUrl = cwmsDb.getJdbcUrl();
             final String user = cwmsDb.getPdUser().replace("hectest_pu","webtest");
             final String pw = cwmsDb.getPassword();
