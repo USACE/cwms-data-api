@@ -24,8 +24,7 @@
 
 package cwms.cda.data.dao;
 
-public enum DeleteRule
-{
+public enum DeleteRule {
     // Not obvious which of the constants in CWMS_UTIL_PACKAGE are Delete rule and which aren't.
     DELETE_INSERT("DELETE INSERT"),
     DELETE_ALL("DELETE ALL"),
@@ -40,13 +39,16 @@ public enum DeleteRule
 
     private final String rule;
 
-    DeleteRule(String rule)
-    {
+    DeleteRule(String rule) {
         this.rule = rule;
     }
 
-    public String getRule()
-    {
+    public String getRule() {
+        return rule;
+    }
+
+    @Override
+    public String toString() {
         return rule;
     }
 }

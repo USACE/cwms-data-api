@@ -1,0 +1,16 @@
+{
+  "office-id": "SPK",
+  "name": "TsTextTestLoc.Flow.Inst.1Hour.0.raw",
+  "regular-text-values": [
+    {
+      "date-time": 1104548400000,
+      "data-entry-date": 1706028410476,
+      "text-value": "still great"
+    },
+    {
+      "date-time": 1104552000000,
+      "data-entry-date": 1706028410476,
+      "text-value": "still great"
+    }
+  ]
+}

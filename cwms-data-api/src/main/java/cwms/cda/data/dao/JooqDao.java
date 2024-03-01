@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -171,6 +171,20 @@ public abstract class JooqDao<T> extends Dao<T> {
                 }
             }
         };
+    }
+
+    /**
+     * Oracle supports case insensitive regexp search but the syntax for calling it is a
+     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
+     * an easy to read manner without having to worry about the syntax.
+     * <p/>
+     * A null regex will return a condition that always evaluates to true
+     */
+    public static Condition caseInsensitiveLikeRegexNullTrue(Field<String> field, String regex) {
+        if(regex == null) {
+            return DSL.trueCondition();
+        }
+        return caseInsensitiveLikeRegex(field, regex);
     }
 
     /**
@@ -408,7 +422,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @param dslContext the DSLContext to use
      * @param cr the ConnectionRunnable to run with the connection
      */
-    protected void connection(DSLContext dslContext, ConnectionRunnable cr) {
+    protected static void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
         } catch (RuntimeException e) {
@@ -423,7 +437,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @param dslContext the DSLContext to use
      * @param var1 the ConnectionCallable to run with the connection
      */
-    <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
+    protected static <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
             return dslContext.connectionResult(var1);
         } catch (RuntimeException e) {

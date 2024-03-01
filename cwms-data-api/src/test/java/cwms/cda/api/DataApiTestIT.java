@@ -318,24 +318,25 @@ public class DataApiTestIT {
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
-                    return; // TS already exists. that's find for these tests.
+                    return; // TS already exists. that's fine for these tests.
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
         }, "cwms_20");
     }
 
+
     protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery);) {
                 stmt.setString(1, office);
                 stmt.setString(2, timeseries);
                 stmt.setInt(3, offset);
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
-                    return; // TS already exists. that's find for these tests.
+                    return; // TS already exists. that's fine for these tests.
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }

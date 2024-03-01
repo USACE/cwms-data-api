@@ -14,9 +14,11 @@ import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
+
+import cwms.cda.api.DataApiTestIT;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
-public class DaoTest
+public class DaoTest extends DataApiTestIT
 {
 
 	public static Connection getConnection() throws SQLException

@@ -32,7 +32,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    public void test_no_aliased_results_returned() {
+    void test_no_aliased_results_returned() {
         given().accept(Formats.JSONV2)
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam("office", "SPK")
@@ -50,7 +50,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    public void test_queries_are_case_insensitive() {
+    void test_queries_are_case_insensitive() {
         given()
             .accept("application/json;version=2")
             .queryParam("office", "SPK")
@@ -67,9 +67,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    public void test_all_office_pagination_works() {
+    void test_all_office_pagination_works() {
         assertTimeout(Duration.ofMinutes(5), () -> {
-            final int pageSize = 200;
+            final int pageSize = 50;
             Response initialResponse =
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
