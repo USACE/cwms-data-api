@@ -10,6 +10,7 @@ import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 
+import io.javalin.core.validation.JavalinValidation;
 import io.restassured.filter.log.LogDetail;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
@@ -643,5 +646,19 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[3][1]", equalTo(3.0F))
                 .body("version-date", equalTo(null))
                 .body("date-version-type", equalTo(VersionType.MAX_AGGREGATE.getValue()));
+    }
+
+    @Test
+    void testVersionTypeValidationRegistration() throws ClassNotFoundException {
+
+        // Trigger static initialization of Controllers class
+        Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
+        assertNotNull(ignored);
+
+        assertTrue(JavalinValidation.INSTANCE.hasConverter(VersionType.class));
+        assertEquals(VersionType.MAX_AGGREGATE, JavalinValidation.INSTANCE.convertValue(VersionType.class, "MAX_AGGREGATE"));
+        assertEquals(VersionType.SINGLE_VERSION, JavalinValidation.INSTANCE.convertValue(VersionType.class, "SINGLE_VERSION"));
+        assertEquals(VersionType.UNDEF, JavalinValidation.INSTANCE.convertValue(VersionType.class, "UNDEFINED"));
+        assertEquals(VersionType.UNVERSIONED, JavalinValidation.INSTANCE.convertValue(VersionType.class, "UNVERSIONED"));
     }
 }
