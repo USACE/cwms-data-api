@@ -107,6 +107,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.ws.Response;
 
+import jdk.nashorn.internal.runtime.Version;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -208,7 +209,6 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-
         boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
         StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
@@ -246,7 +246,7 @@ public class TimeSeriesController implements CrudHandler {
                             + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window to delete."
-                    + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                            + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
                             + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include offset or time zone information. "
@@ -372,7 +372,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. "
-                                            + "Default " + defaultPageSize + "."
+                                    + "Default " + defaultPageSize + "."
                     )
             },
             responses = {@OpenApiResponse(status = STATUS_200,
@@ -417,17 +417,15 @@ public class TimeSeriesController implements CrudHandler {
                 versionDate = DateUtils.parseUserDate(versionDateParam, timezone);
             }
 
-            String versionType = queryParamAsClass(ctx,
-                    new String[]{VERSION_TYPE, },
-                    String.class, VersionType.MAX_AGGREGATE.getValue(), metrics,
-                    name(TimeSeriesController.class.getName(), GET_ONE));
+            String versionTypeParam = ctx.queryParam(VERSION_TYPE);
+            VersionType versionType = VersionType.versionTypeFor(versionTypeParam);
 
             // Throw error if max aggregate version type is requested with a version date
             // or single version version type is requested without a version date
-            if(Objects.equals(versionType, "MAX_AGGREGATE") && !Objects.equals(versionDate, null)) {
+            if(Objects.equals(versionType, VersionType.MAX_AGGREGATE) && versionDate != null) {
                 throw new IllegalArgumentException("Cannot query a max aggregate with a version date.");
             }
-            if(Objects.equals(versionType, "SINGLE_VERSION") && Objects.equals(versionDate, null)) {
+            if(Objects.equals(versionType, VersionType.SINGLE_VERSION) && versionDate == null) {
                 throw new IllegalArgumentException("A version date query must contain a valid version date.");
             }
 
@@ -470,8 +468,8 @@ public class TimeSeriesController implements CrudHandler {
                 if (ts.getNextPage() != null) {
                     linkValue.append(",");
                     linkValue.append(String.format("<%s>; rel=next; type=\"%s\"",
-                                    buildRequestUrl(ctx, ts, ts.getNextPage()),
-                                    contentType));
+                            buildRequestUrl(ctx, ts, ts.getNextPage()),
+                            contentType));
                 }
 
                 ctx.header("Link", linkValue.toString());
@@ -669,7 +667,7 @@ public class TimeSeriesController implements CrudHandler {
                             + "timeseries group(s) whose data is to be included in the response. "
                             + "If this field is not specified, matching timeseries groups "
                             + "information from all offices shall be returned."),
-               },
+            },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(isArray = true, from = Tsv.class, type = Formats.JSON)}

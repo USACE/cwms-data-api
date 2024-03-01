@@ -1,5 +1,6 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
@@ -32,7 +33,7 @@ public interface TimeSeriesDao {
 
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
                              String unit, String datum, ZonedDateTime begin, ZonedDateTime end,
-                             ZoneId timezone, ZonedDateTime versionDate, String dateVersionType);
+                             ZoneId timezone, ZonedDateTime versionDate, VersionType dateVersionType);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);

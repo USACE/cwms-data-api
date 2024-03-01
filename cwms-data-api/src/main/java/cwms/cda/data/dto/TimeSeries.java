@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.TimeSeries.Record;
 import cwms.cda.formatters.xml.adapters.DurationAdapter;
@@ -39,7 +40,6 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class TimeSeries extends CwmsDTOPaginated {
     public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
@@ -53,8 +53,12 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(description = "The units of the time series data",required = true)
     String units;
 
-    @Schema(description = "The type of time series query")
-    String dateVersionType;
+    @Schema(description = "The version type for the time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. " +
+            "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid " +
+            "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. " +
+            "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
+    @JsonFormat(shape = Shape.STRING)
+    VersionType dateVersionType;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
@@ -64,25 +68,25 @@ public class TimeSeries extends CwmsDTOPaginated {
     @XmlJavaTypeAdapter(DurationAdapter.class)
     @JsonFormat(shape = Shape.STRING)
     @Schema(
-        accessMode = AccessMode.READ_ONLY,
-        format = "Java Duration",
-        description = "The interval of the time-series, in ISO-8601 duration format"
-        )
+            accessMode = AccessMode.READ_ONLY,
+            format = "Java Duration",
+            description = "The interval of the time-series, in ISO-8601 duration format"
+    )
     Duration interval;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
     @Schema(
-        accessMode = AccessMode.READ_ONLY,
-        description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+            accessMode = AccessMode.READ_ONLY,
+            description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
     )
     ZonedDateTime begin;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
     @Schema(
-        accessMode = AccessMode.READ_ONLY,
-        description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+            accessMode = AccessMode.READ_ONLY,
+            description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
     )
     ZonedDateTime end;
 
@@ -91,29 +95,29 @@ public class TimeSeries extends CwmsDTOPaginated {
     // Use the array shape to optimize data transfer to client
     @JsonFormat(shape=JsonFormat.Shape.ARRAY)
     @ArraySchema(
-        schema = @Schema(
-            description = "List of retrieved time-series values",
-            implementation = Record.class
-        )
+            schema = @Schema(
+                    description = "List of retrieved time-series values",
+                    implementation = Record.class
+            )
     )
     List<Record> values;
 
     @Schema(
-        accessMode = AccessMode.READ_ONLY,
-        description = "Information about where the measurement takes place in relation to a defined dataum."
+            accessMode = AccessMode.READ_ONLY,
+            description = "Information about where the measurement takes place in relation to a defined dataum."
     )
     VerticalDatumInfo verticalDatumInfo;
 
     @Schema(
-        accessMode = AccessMode.READ_ONLY,
-        description="Offset from top of interval"
+            accessMode = AccessMode.READ_ONLY,
+            description="Offset from top of interval"
     )
     @XmlElement(name="interval-offset")
     private Long intervalOffset;
 
-    @Schema( 
-        accessMode = AccessMode.READ_ONLY,
-        description = "Only on 21.1.1 Database. The timezone the Interval Offset is from."
+    @Schema(
+            accessMode = AccessMode.READ_ONLY,
+            description = "Only on 21.1.1 Database. The timezone the Interval Offset is from."
     )
     @XmlElement(name="time-zone")
     private String timeZone;
@@ -126,11 +130,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate, String dateVersionType){
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate, VersionType dateVersionType){
         this(page, pageSize, total, name, officeId, begin, end,  units, interval, info, null, null, versionDate, dateVersionType);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone, ZonedDateTime versionDate, String dateVersionType) {
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset, String timeZone, ZonedDateTime versionDate, VersionType dateVersionType) {
         super(page, pageSize, total);
         this.name = name;
         this.officeId = officeId;
@@ -161,7 +165,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     @XmlTransient
     @JsonIgnore
     public long getIntervalMinutes() {
-         return interval.toMinutes();
+        return interval.toMinutes();
     }
 
     public Duration getInterval() {
@@ -197,7 +201,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         return versionDate;
     }
 
-    public String getDateVersionType() { return dateVersionType; }
+    public VersionType getDateVersionType() { return dateVersionType; }
 
     @XmlElementWrapper(name="value-columns")
     @XmlElement(name="column")
@@ -263,15 +267,15 @@ public class TimeSeries extends CwmsDTOPaginated {
 
 
     @ArraySchema(
-        schema = @Schema(
-            name = "TimeSeries.Record",
-            description = "A representation of a time-series record in the form [dateTime, value, qualityCode]",
-            type="array"
-        ),
-        arraySchema = @Schema(
-            type="array",
-            example = "[1509654000000, 54.3, 0]"
-        )        
+            schema = @Schema(
+                    name = "TimeSeries.Record",
+                    description = "A representation of a time-series record in the form [dateTime, value, qualityCode]",
+                    type="array"
+            ),
+            arraySchema = @Schema(
+                    type="array",
+                    example = "[1509654000000, 54.3, 0]"
+            )
     )
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlRootElement

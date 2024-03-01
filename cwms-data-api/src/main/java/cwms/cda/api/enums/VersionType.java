@@ -1,20 +1,25 @@
 package cwms.cda.api.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jdk.nashorn.internal.runtime.Version;
+
+import javax.xml.bind.annotation.adapters.XmlAdapter;
+import java.time.ZonedDateTime;
 
 @Schema(
         name = "Version Type",
         description = "Version type specifies the type of timeseries response to be received. Can be max aggregate "
-                      + "or single version. Max aggregate cannot be ran if version date field is specified."
+                + "or single version. Max aggregate cannot be ran if version date field is specified."
 )
 public enum VersionType {
     MAX_AGGREGATE("MAX_AGGREGATE"),
     SINGLE_VERSION("SINGLE_VERSION"),
-    UNVERSIONED("UNVERSIONED");
+    UNVERSIONED("UNVERSIONED"),
+    UNDEF("UNDEFINED");
 
     public static final String DESCRIPTION = "Version type specifies the type of timeseries response to be received. Can be max aggregate "
-                                             + "or single version. Max aggregate cannot be ran if version date field is specified. If "
-                                             + "unspecified, defaults to max aggregate.";
+            + "or single version. Max aggregate cannot be ran if version date field is specified. If "
+            + "unspecified, defaults to max aggregate.";
 
     private String versionType;
 
@@ -28,5 +33,16 @@ public enum VersionType {
 
     public String getValue() {
         return versionType;
+    }
+
+    public static VersionType versionTypeFor(String versionType) {
+        VersionType retval = UNDEF;
+        for (VersionType enumVt : values()) {
+            if (enumVt.getValue().equalsIgnoreCase(versionType)) {
+                retval = enumVt;
+                break;
+            }
+        }
+        return retval;
     }
 }
