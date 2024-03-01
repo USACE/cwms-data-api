@@ -1,0 +1,14 @@
+{
+  "office-id": "SPK",
+  "name": "TsTextTestLoc.Flow.Inst.1Hour.0.raw",
+  "regular-text-values": [
+
+    {
+      "date-time":1104566400000,
+      "version-date": -27079718400000,
+      "data-entry-date": 1706028410476,
+      "attribute":420,
+      "text-value":"newly created text value"
+    }
+  ]
+}

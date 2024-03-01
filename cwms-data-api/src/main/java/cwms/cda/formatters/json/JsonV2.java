@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,9 @@ import cwms.cda.data.dto.rating.TableRating;
 import cwms.cda.data.dto.rating.TransitionalRating;
 import cwms.cda.data.dto.rating.UsgsStreamRating;
 import cwms.cda.data.dto.rating.VirtualRating;
+import cwms.cda.data.dto.texttimeseries.StandardTextCatalog;
+import cwms.cda.data.dto.texttimeseries.StandardTextValue;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
@@ -89,6 +92,7 @@ import java.util.List;
         RatingSpec.class, RatingSpecs.class,
         LocationLevel.class, LocationLevels.class,
         TimeSeriesIdentifierDescriptor.class, TimeSeriesIdentifierDescriptors.class,
+        TextTimeSeries.class, StandardTextValue.class, StandardTextCatalog.class,
         BinaryTimeSeries.class
 })
 /**

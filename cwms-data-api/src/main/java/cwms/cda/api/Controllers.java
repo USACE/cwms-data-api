@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,15 @@
 
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 
 public final class Controllers {
@@ -124,6 +125,7 @@ public final class Controllers {
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
     public static final String ID_MASK = "id-mask";
+    public static final String OFFICE_MASK = "office-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -140,14 +142,17 @@ public final class Controllers {
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
-
+    public static final String TEXT_MASK = "text-mask";
+    public static final String DELETE_MODE = "delete-mode";
     public static final String MIN_ATTRIBUTE = "min-attribute";
     public static final String MAX_ATTRIBUTE = "max-attribute";
-
+    public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
+    public static final String STANDARD_TEXT_ID = "standard-text-id";
 
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
     }
 
     private Controllers() {
@@ -252,6 +257,7 @@ public final class Controllers {
         JooqDao.DeleteMethod retval = null;
 
         if (input != null) {
+            input = input.replace(' ', '_');
             retval = JooqDao.DeleteMethod.valueOf(input.toUpperCase());
         }
         return retval;

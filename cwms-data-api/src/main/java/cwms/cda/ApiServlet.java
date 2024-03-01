@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,9 @@ import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
+import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
+import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
@@ -67,6 +69,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
@@ -92,7 +95,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.concurrent.TimeUnit;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -118,9 +120,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
+import static java.lang.String.format;
 
 
 /**
@@ -199,6 +203,8 @@ public class ApiServlet extends HttpServlet {
     public void init() {
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
+
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
@@ -374,6 +380,10 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        cdaCrudCache(format("/timeseries/text/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
+                new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache("/timeseries/text/{timeseries}",
+                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/binary/{timeseries}",
                 new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
@@ -403,6 +413,7 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
     }
 
     /**
@@ -518,7 +529,7 @@ public class ApiServlet extends HttpServlet {
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        am.getContainedManagers().forEach((manager)->{
+        am.getContainedManagers().forEach(manager -> {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
@@ -537,9 +548,7 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
-                });
+                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
                 return api;
             })
             .defaultDocumentation(doc -> {

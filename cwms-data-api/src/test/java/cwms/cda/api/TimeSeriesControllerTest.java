@@ -7,6 +7,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
@@ -215,7 +216,38 @@ public class TimeSeriesControllerTest extends ControllerTest {
         return ts;
     }
 
+    @Test
+    public void testGetIds(){
+        String input = "a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c";
+        List<String> tsIds = TimeSeriesController.getTsIds(input);
+        assertNotNull(tsIds);
+        assertEquals(3, tsIds.size());
 
+        assertEquals("a.b.c.e.f", tsIds.get(0));
+        assertEquals("2a.2b.2c.2d", tsIds.get(1));
+        assertEquals("3a.3b.3c", tsIds.get(2));
+
+        // input can have double quotes too
+        input = "\"a.b.c.e.f\",2a.2b.2c.2d,\"3a.3b.3c\"";
+        tsIds = TimeSeriesController.getTsIds(input);
+        assertNotNull(tsIds);
+        assertEquals(3, tsIds.size());
+        // but you will get them back
+        assertEquals("\"a.b.c.e.f\"", tsIds.get(0));
+        assertEquals("2a.2b.2c.2d", tsIds.get(1));
+        assertEquals("\"3a.3b.3c\"", tsIds.get(2));
+
+        // input can have brackets too
+        input = "[a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c]";
+        tsIds = TimeSeriesController.getTsIds(input);
+        assertNotNull(tsIds);
+        assertEquals(3, tsIds.size());
+
+        assertEquals("a.b.c.e.f", tsIds.get(0));
+        assertEquals("2a.2b.2c.2d", tsIds.get(1));
+        assertEquals("3a.3b.3c", tsIds.get(2));
+
+    }
 
 
 }
