@@ -105,10 +105,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.ws.Response;
 
-import jdk.nashorn.internal.runtime.Version;
-import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -417,15 +414,15 @@ public class TimeSeriesController implements CrudHandler {
                 versionDate = DateUtils.parseUserDate(versionDateParam, timezone);
             }
 
-            String versionTypeParam = ctx.queryParam(VERSION_TYPE);
-            VersionType versionType = VersionType.versionTypeFor(versionTypeParam);
+
+            VersionType versionType = ctx.queryParamAsClass(VERSION_TYPE, VersionType.class).getOrDefault(VersionType.UNDEF);
 
             // Throw error if max aggregate version type is requested with a version date
             // or single version version type is requested without a version date
-            if(Objects.equals(versionType, VersionType.MAX_AGGREGATE) && versionDate != null) {
+            if(versionType == VersionType.MAX_AGGREGATE && versionDate != null) {
                 throw new IllegalArgumentException("Cannot query a max aggregate with a version date.");
             }
-            if(Objects.equals(versionType, VersionType.SINGLE_VERSION) && versionDate == null) {
+            if(versionType == VersionType.SINGLE_VERSION && versionDate == null) {
                 throw new IllegalArgumentException("A version date query must contain a valid version date.");
             }
 
