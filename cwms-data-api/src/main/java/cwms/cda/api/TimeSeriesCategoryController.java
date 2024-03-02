@@ -141,7 +141,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
@@ -235,7 +235,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             dao.delete(categoryId, cascadeDelete, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);

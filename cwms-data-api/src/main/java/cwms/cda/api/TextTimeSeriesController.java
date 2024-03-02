@@ -24,6 +24,24 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMESERIES;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredZdt;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,7 +52,6 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -44,22 +61,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 
 public class TextTimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TextTimeSeriesController.class.getName());
-    static final String TAG = "Text-TimeSeries";
+    private static final String TAG = "Text-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
 
@@ -111,28 +123,12 @@ public class TextTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        String office = ctx.queryParam(OFFICE);
-        if(office == null ){
-            throw new IllegalArgumentException(OFFICE + " is a required parameter");
-        }
-
-        String tsId = ctx.queryParam(NAME);
-        if(tsId == null ){
-            throw new IllegalArgumentException(NAME + " is a required parameter");
-        }
-
-        ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
-        if (beginZdt == null) {
-            throw new IllegalArgumentException(BEGIN + " is a required parameter");
-        }
-
-        ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
-        if (endZdt == null) {
-            throw new IllegalArgumentException(END + " is a required parameter");
-        }
-
+        String office = requiredParam(ctx, OFFICE);
+        String tsId = requiredParam(ctx, NAME);
+        ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
+        ZonedDateTime endZdt = requiredZdt(ctx, END);
         ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
         boolean maxVersion = versionZdt == null;
 
@@ -167,20 +163,6 @@ public class TextTimeSeriesController implements CrudHandler {
 
     }
 
-    @Nullable
-    private static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
-        ZonedDateTime beginZdt = null;
-        String begin = ctx.queryParam(param);
-        if (begin != null) {
-            beginZdt = DateUtils.parseUserDate(begin, timezone);
-        }
-        return beginZdt;
-    }
-
-    @Nullable
-    private static ZonedDateTime queryParamAsZdt(Context ctx, String param) {
-        return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
-    }
 
     @OpenApi(ignore = true)
     @Override
@@ -305,25 +287,12 @@ public class TextTimeSeriesController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String textTimeSeriesId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String office = ctx.queryParam(OFFICE);
-            if(office == null ){
-                throw new IllegalArgumentException(OFFICE + " is a required parameter");
-            }
-
-            String mask = ctx.queryParam(Controllers.TEXT_MASK);
-            if(mask == null ){
-                throw new IllegalArgumentException(Controllers.TEXT_MASK + " is a required parameter");
-            }
+            String office = requiredParam(ctx, OFFICE);
+            String mask = requiredParam(ctx, Controllers.TEXT_MASK);
 
 
-            ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
-            if(beginZdt == null){
-                throw new IllegalArgumentException(BEGIN + " is a required parameter");
-            }
-            ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
-            if(endZdt == null){
-                throw new IllegalArgumentException(END + " is a required parameter");
-            }
+            ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
+            ZonedDateTime endZdt = requiredZdt(ctx, END);
             ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
 
             boolean maxVersion = versionZdt == null;
