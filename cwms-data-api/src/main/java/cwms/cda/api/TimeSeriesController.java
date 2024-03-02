@@ -41,6 +41,9 @@ import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredZdt;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -272,21 +275,20 @@ public class TimeSeriesController implements CrudHandler {
     @Override
     public void delete(Context ctx, @NotNull String timeseries) {
 
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
-            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            Timestamp startTimeDate = Timestamp.from(requiredZdt(ctx, BEGIN).toInstant());
+            Timestamp endTimeDate = Timestamp.from(requiredZdt(ctx, END).toInstant());
 
-            Timestamp startTimeDate = Timestamp.from(DateUtils.parseUserDate(ctx.queryParam(BEGIN), timezone).toInstant());
-            Timestamp endTimeDate = Timestamp.from(DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant());
-            String versionDateParam = ctx.queryParam(VERSION_DATE);
             Timestamp versionDate = null;
-            if (versionDateParam != null) {
-                versionDate = Timestamp.from(DateUtils.parseUserDate(versionDateParam, timezone).toInstant());
+            ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
+            if (versionZdt != null) {
+                versionDate = Timestamp.from(versionZdt.toInstant());
             }
 
             // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
@@ -403,7 +405,7 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
-            String names = ctx.queryParam(NAME);
+            String names = requiredParam(ctx, NAME);
             String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParamAsClass(UNIT, String.class)
                     .getOrDefault(UnitSystem.EN.getValue());
