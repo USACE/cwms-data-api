@@ -72,6 +72,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -246,6 +247,11 @@ public class ApiServlet extends HttpServlet {
                     CdaError re = new CdaError("Bad Request", e.getDetails());
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
+                })
+                .exception(RequiredQueryParameterException.class, (e, ctx) -> {
+                    CdaError re = new CdaError("Bad Request", e.getDetails());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request");
