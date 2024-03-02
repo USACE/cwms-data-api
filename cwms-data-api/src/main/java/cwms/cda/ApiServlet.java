@@ -24,6 +24,12 @@
 
 package cwms.cda;
 
+import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.prefixPath;
+import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static java.lang.String.format;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -68,6 +74,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.formatters.Formats;
@@ -95,20 +102,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import org.apache.http.entity.ContentType;
-import org.jetbrains.annotations.NotNull;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
-
-import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -122,9 +115,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
-
-import static io.javalin.apibuilder.ApiBuilder.*;
-import static java.lang.String.format;
+import javax.annotation.Resource;
+import javax.management.ServiceNotFoundException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 
 /**
@@ -249,6 +252,11 @@ public class ApiServlet extends HttpServlet {
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
                 })
+                .exception(RequiredQueryParameterException.class, (e, ctx) -> {
+                    CdaError re = new CdaError("Bad Request", e.getDetails());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request");
                     logger.atInfo().withCause(e).log(re.toString());
@@ -291,7 +299,7 @@ public class ApiServlet extends HttpServlet {
                     switch (e.getAuthFailCode()) {
                         case 401:
                         {
-                            String msg = e.suppressMessage() == false ? e.getLocalizedMessage() : "Invalid User";
+                            String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
                             re = new CdaError(msg,true);
                             break;
                         }
