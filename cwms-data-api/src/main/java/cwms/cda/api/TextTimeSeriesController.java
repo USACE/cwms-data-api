@@ -72,7 +72,7 @@ import org.jooq.DSLContext;
 
 public class TextTimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TextTimeSeriesController.class.getName());
-    private static final String TAG = "Text-TimeSeries";
+    static final String TAG = "Text-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
     public static final String MODE = "mode";
