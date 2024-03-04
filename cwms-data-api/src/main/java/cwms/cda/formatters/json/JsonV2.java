@@ -60,8 +60,6 @@ import cwms.cda.data.dto.rating.TableRating;
 import cwms.cda.data.dto.rating.TransitionalRating;
 import cwms.cda.data.dto.rating.UsgsStreamRating;
 import cwms.cda.data.dto.rating.VirtualRating;
-import cwms.cda.data.dto.texttimeseries.StandardTextCatalog;
-import cwms.cda.data.dto.texttimeseries.StandardTextValue;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -92,7 +90,7 @@ import java.util.List;
         RatingSpec.class, RatingSpecs.class,
         LocationLevel.class, LocationLevels.class,
         TimeSeriesIdentifierDescriptor.class, TimeSeriesIdentifierDescriptors.class,
-        TextTimeSeries.class, StandardTextValue.class, StandardTextCatalog.class,
+        TextTimeSeries.class,
         BinaryTimeSeries.class
 })
 /**

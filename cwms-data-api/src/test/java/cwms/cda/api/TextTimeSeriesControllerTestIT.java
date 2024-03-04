@@ -66,8 +66,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
     private static final String locationId = "TsTextTestLoc";
     private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
-    public static final String STANDARD = "STANDARD";
-    public static final String REGULAR = "REGULAR";
+
     public static final String AUTHORIZATION = "Authorization";
 
     @BeforeAll
@@ -118,7 +117,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -160,7 +158,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -189,7 +186,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -222,7 +218,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -266,7 +261,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -306,7 +300,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -332,7 +325,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.TEXT_MASK, "*")
                 .queryParam(Controllers.BEGIN, startStr)
                 .queryParam(Controllers.END, endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -351,7 +343,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsId)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .queryParam(TextTimeSeriesController.MODE, REGULAR)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)

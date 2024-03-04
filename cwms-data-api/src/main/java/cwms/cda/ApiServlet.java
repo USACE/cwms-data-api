@@ -24,6 +24,11 @@
 
 package cwms.cda;
 
+import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.prefixPath;
+import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -50,7 +55,6 @@ import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
-import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -69,7 +73,6 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
@@ -95,20 +98,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import org.apache.http.entity.ContentType;
-import org.jetbrains.annotations.NotNull;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
-
-import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -122,9 +111,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
-
-import static io.javalin.apibuilder.ApiBuilder.*;
-import static java.lang.String.format;
+import javax.annotation.Resource;
+import javax.management.ServiceNotFoundException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 
 /**
@@ -203,7 +202,6 @@ public class ApiServlet extends HttpServlet {
     public void init() {
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
 
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -291,7 +289,7 @@ public class ApiServlet extends HttpServlet {
                     switch (e.getAuthFailCode()) {
                         case 401:
                         {
-                            String msg = e.suppressMessage() == false ? e.getLocalizedMessage() : "Invalid User";
+                            String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
                             re = new CdaError(msg,true);
                             break;
                         }
@@ -380,8 +378,6 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
-        cdaCrudCache(format("/timeseries/text/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
-                new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/timeseries/text/{timeseries}",
                 new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/binary/{timeseries}",
