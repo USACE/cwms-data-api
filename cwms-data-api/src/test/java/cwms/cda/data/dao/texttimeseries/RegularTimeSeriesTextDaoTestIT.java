@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
-import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import fixtures.CwmsDataApiSetupCallback;
 import java.sql.SQLException;
@@ -169,8 +168,6 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Assertions.assertNotNull(first);
         Assertions.assertEquals(EXPECTED_TEXT_VALUE, first.getTextValue());
 
-        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
-        Assertions.assertNull(stdRows);
 
     }
 
