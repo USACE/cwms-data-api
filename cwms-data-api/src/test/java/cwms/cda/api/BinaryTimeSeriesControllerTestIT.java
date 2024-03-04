@@ -208,6 +208,7 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
+            .queryParam("office", OFFICE)
             .queryParam("begin", BEGIN_STR)
             .queryParam("end", END_STR)
             .delete("/timeseries/binary/" + tsId)
