@@ -46,6 +46,7 @@ import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
 import static cwms.cda.api.Controllers.TIMESERIES_ID_REGEX;
 import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -306,7 +307,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void update(Context ctx, @NotNull String timeseriesId) {
 
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
         Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrDefault(null);
 
@@ -360,7 +361,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
 
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)){
             DSLContext dsl = getDslContext(ctx);

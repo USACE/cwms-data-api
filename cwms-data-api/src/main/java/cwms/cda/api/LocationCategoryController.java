@@ -154,7 +154,7 @@ public class LocationCategoryController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
 
             Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
             if (grp.isPresent()) {
@@ -249,7 +249,7 @@ public class LocationCategoryController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             dao.delete(categoryId, cascadeDelete, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
