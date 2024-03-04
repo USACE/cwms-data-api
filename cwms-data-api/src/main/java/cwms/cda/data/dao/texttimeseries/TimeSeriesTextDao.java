@@ -4,20 +4,23 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
-import hec.data.timeSeriesText.TextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeriesRow;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_TEXT;
 
 // based on https://bitbucket.hecdev.net/projects/CWMS/repos/hec-cwms-data-access/browse/hec-db-jdbc/src/main/java/wcds/dbi/oracle/cwms/CwmsTimeSeriesTextJdbcDao.java
@@ -94,10 +97,8 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
         List<TextTimeSeriesRow> rows = dsl.select(
                         AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC,
-                        AV_TS_TEXT.AV_TS_TEXT.VERSION_DATE_UTC,
                         AV_TS_TEXT.AV_TS_TEXT.DATA_ENTRY_DATE_UTC,
                         AV_TS_TEXT.AV_TS_TEXT.ATTRIBUTE,
-                        AV_TS_TEXT.AV_TS_TEXT.STD_TEXT_ID,
                         AV_TS_TEXT.AV_TS_TEXT.TEXT_VALUE
                 )
                 .from(AV_TS_TEXT.AV_TS_TEXT)
@@ -116,11 +117,11 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
     private TextTimeSeriesRow buildRow(Record next, String officeId) {
 
-        Timestamp dateTimeUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC);
-        Timestamp versionDateUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.VERSION_DATE_UTC);
-        Timestamp dataEntryDateUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.DATA_ENTRY_DATE_UTC);
-        BigDecimal attribute = next.get(AV_TS_TEXT.AV_TS_TEXT.ATTRIBUTE);
+        TimeZone utzZone = OracleTypeMap.GMT_TIME_ZONE;
 
+        ZonedDateTime dateTimeZdt = next.get(AV_TS_TEXT.AV_TS_TEXT.DATE_TIME_UTC, LocalDateTime.class).atZone(utzZone.toZoneId());
+        ZonedDateTime dataEntryDateZdt = next.get(AV_TS_TEXT.AV_TS_TEXT.DATA_ENTRY_DATE_UTC, LocalDateTime.class).atZone(utzZone.toZoneId());
+        BigDecimal attribute = next.get(AV_TS_TEXT.AV_TS_TEXT.ATTRIBUTE);
         String textValue = next.get(AV_TS_TEXT.AV_TS_TEXT.TEXT_VALUE);
 
         Long attrLong = null;
@@ -128,31 +129,29 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
             attrLong = attribute.longValue();
         }
 
-        return RegularTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, null,  textValue);
+        return RegularTimeSeriesTextDao.buildRow(dateTimeZdt.toInstant(), dataEntryDateZdt.toInstant(), attrLong,  textValue);
     }
 
 
 
     public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
-
-
-
+        ZonedDateTime versionDate = tts.getVersionDate();
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
-            regDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, regRows);
+            regDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, regRows, versionDate==null?null:versionDate.toInstant());
         }
-
     }
     
     public void store(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
 
+        ZonedDateTime versionDate = tts.getVersionDate();
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
 
             for (RegularTextTimeSeriesRow regRow : regRows) {
-                regDao.storeRow(tts.getOfficeId(), tts.getName(), regRow, maxVersion, replaceAll);
+                regDao.storeRow(tts.getOfficeId(), tts.getName(), regRow, maxVersion, replaceAll, versionDate==null?null:versionDate.toInstant());
             }
 
         }

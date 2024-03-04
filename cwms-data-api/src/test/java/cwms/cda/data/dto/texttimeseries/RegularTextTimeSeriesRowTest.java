@@ -25,12 +25,11 @@ class RegularTextTimeSeriesRowTest {
 //        Date specificDate = df.parse("2023-01-01 12:00:00");
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-        builder.withDateTime(df.parse("2023-01-03 12:05:00"));
-        builder.withVersionDate(df.parse("2023-05-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-05-02 12:05:00"));
+        builder.withDateTime(df.parse("2023-01-03 12:05:00").toInstant());
+
+        builder.withDataEntryDate(df.parse("2023-05-02 12:05:00").toInstant());
         builder.withAttribute(420L);
 
-        builder.withTextId("theId");
         builder.withTextValue("stdText");
 
         RegularTextTimeSeriesRow row = builder.build();
@@ -51,12 +50,11 @@ class RegularTextTimeSeriesRowTest {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-        builder.withDateTime(df.parse("2023-01-01 12:05:00"));
-        builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
+        builder.withDateTime(df.parse("2023-01-01 12:05:00").toInstant());
+
+        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00").toInstant());
         builder.withAttribute(420L);
 
-//        builder.withTextId("theId");
         builder.withTextValue("my awesome text ts");
 
         RegularTextTimeSeriesRow row = builder.build();
@@ -72,8 +70,7 @@ class RegularTextTimeSeriesRowTest {
         assertEquals(row.getAttribute(), row2.getAttribute());
         assertEquals(row.getDateTime(), row2.getDateTime());
         assertEquals(row.getDataEntryDate(), row2.getDataEntryDate());
-        assertEquals(row.getVersionDate(), row2.getVersionDate());
-        assertEquals(row.getTextId(), row2.getTextId());
+
         assertEquals(row.getTextValue(), row2.getTextValue());
 
 
@@ -97,9 +94,9 @@ class RegularTextTimeSeriesRowTest {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
 
-        builder.withDateTime(df.parse("2023-01-03 12:05:00"));
-        builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
+        builder.withDateTime(df.parse("2023-01-03 12:05:00").toInstant());
+
+        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00").toInstant());
         builder.withAttribute(420L);
 
         builder.withTextValue("my awesome text ts");
