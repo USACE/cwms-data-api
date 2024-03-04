@@ -28,7 +28,6 @@ import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
-import static java.lang.String.format;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
