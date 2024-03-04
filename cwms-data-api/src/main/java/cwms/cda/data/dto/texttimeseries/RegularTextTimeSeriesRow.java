@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import hec.data.timeSeriesText.DateDateKey;
-import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Date;
 
 @JsonDeserialize(builder = RegularTextTimeSeriesRow.Builder.class)
@@ -17,29 +17,17 @@ import java.util.Date;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
 
-    private final Date dateTime;
-    private final Date versionDate;
-    private final Date dataEntryDate;
+    private final Instant dateTime;
+    private final Instant dataEntryDate;
     private final Long attribute;
-    private final String textId;
     private final String textValue;
 
 
     private RegularTextTimeSeriesRow(Builder builder) {
         dateTime = builder.dateTime;
-        versionDate = builder.versionDate;
         dataEntryDate = builder.dataEntryDate;
-        textId = builder.textId;
         attribute = builder.attribute;
         textValue = builder.textValue;
-    }
-
-    public Date getVersionDate() {
-        return versionDate;
-    }
-
-    public String getTextId() {
-        return textId;
     }
 
     public Long getAttribute() {
@@ -51,26 +39,23 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     }
 
 
-
-    @Override
     public RegularTextTimeSeriesRow copy() {
         return new RegularTextTimeSeriesRow.Builder().from(this).build();
     }
 
-    @Override
-    public Date getDateTime() {
+
+    public Instant getDateTime() {
         return dateTime;
     }
 
-    @Override
-    public Date getDataEntryDate() {
+
+    public Instant getDataEntryDate() {
         return dataEntryDate;
     }
 
     @JsonIgnore
-    @Override
     public DateDateKey getDateDateKey() {
-        return new DateDateKey(dateTime, dataEntryDate);
+        return new DateDateKey(dateTime == null? null: Date.from(dateTime), dataEntryDate==null ? null: Date.from(dataEntryDate));
     }
 
     @Override
@@ -89,17 +74,12 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
                 that.getDateTime() != null) {
             return false;
         }
-        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) :
-                that.getVersionDate() != null) {
-            return false;
-        }
+
         if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) :
                 that.getDataEntryDate() != null) {
             return false;
         }
-        if (getTextId() != null ? !getTextId().equals(that.getTextId()) : that.getTextId() != null) {
-            return false;
-        }
+
         if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) :
                 that.getAttribute() != null) {
             return false;
@@ -111,9 +91,7 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     @Override
     public int hashCode() {
         int result = getDateTime() != null ? getDateTime().hashCode() : 0;
-        result = 31 * result + (getVersionDate() != null ? getVersionDate().hashCode() : 0);
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
-        result = 31 * result + (getTextId() != null ? getTextId().hashCode() : 0);
         result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
         result = 31 * result + (getTextValue() != null ? getTextValue().hashCode() : 0);
 
@@ -123,10 +101,8 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private Date dateTime;
-        private Date versionDate;
-        private Date dataEntryDate;
-        private String textId;
+        private Instant dateTime;
+        private Instant dataEntryDate;
         private Long attribute;
         private String textValue;
 
@@ -134,23 +110,13 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         public Builder() {
         }
 
-        public Builder withDateTime(Date dateTime) {
+        public Builder withDateTime(Instant dateTime) {
             this.dateTime = dateTime;
             return this;
         }
 
-        public Builder withVersionDate(Date versionDate) {
-            this.versionDate = versionDate;
-            return this;
-        }
-
-        public Builder withDataEntryDate(Date dataEntryDate) {
+        public Builder withDataEntryDate(Instant dataEntryDate) {
             this.dataEntryDate = dataEntryDate;
-            return this;
-        }
-
-        public Builder withTextId(String textId) {
-            this.textId = textId;
             return this;
         }
 
@@ -159,7 +125,6 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             this.attribute = attribute;
             return this;
         }
-
 
         public Builder withAttribute(Integer attribute) {
             if (attribute == null) {
@@ -184,8 +149,6 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
-
-
         public RegularTextTimeSeriesRow build() {
             return new RegularTextTimeSeriesRow(this);
         }
@@ -193,23 +156,17 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
         public Builder from(RegularTextTimeSeriesRow regularTextTimeSeriesRow) {
             if (regularTextTimeSeriesRow == null) {
                 return withDateTime(null)
-                        .withVersionDate(null)
                         .withDataEntryDate(null)
-                        .withTextId(null)
                         .withAttribute((Long) null)
                         .withTextValue(null)
                         ;
             } else {
                 return withDateTime(regularTextTimeSeriesRow.dateTime)
-                        .withVersionDate(regularTextTimeSeriesRow.versionDate)
                         .withDataEntryDate(regularTextTimeSeriesRow.dataEntryDate)
-                        .withTextId(regularTextTimeSeriesRow.textId)
                         .withAttribute(regularTextTimeSeriesRow.attribute)
                         .withTextValue(regularTextTimeSeriesRow.textValue)
                         ;
             }
         }
-
-
     }
 }

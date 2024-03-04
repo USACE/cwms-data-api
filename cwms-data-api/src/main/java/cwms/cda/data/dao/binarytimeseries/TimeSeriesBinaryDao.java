@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.Nullable;
@@ -32,31 +31,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         super(dsl);
     }
 
-    public Timestamp createTimestamp(Date date) {
-        Timestamp retval = null;
-        if (date != null) {
-            long time = date.getTime();
-            retval = createTimestamp(time);
-        }
-        return retval;
-    }
-
-    public Timestamp createTimestamp(long date) {
-
-        if (logger.atFinest().isEnabled()) {
-            TimeZone defaultTimeZone = DEFAULT_TIME_ZONE;
-            String defaultTimeZoneDisplayName =
-                    " " + defaultTimeZone.getDisplayName(defaultTimeZone.inDaylightTime(new Date(date)), TimeZone.SHORT);
-            TimeZone gmtTimeZone = OracleTypeMap.GMT_TIME_ZONE;
-            Date convertedDate = new Date(date);
-            String utcTimeZoneDisplayName =
-                    " " + gmtTimeZone.getDisplayName(gmtTimeZone.inDaylightTime(convertedDate),
-                            TimeZone.SHORT);
-            logger.atFinest().log("Storing date: " + dateTimeFormatter.format(date) + defaultTimeZoneDisplayName
-                    + " converted to UTC date: " + dateTimeFormatter.format(convertedDate) + utcTimeZoneDisplayName);
-        }
-        return new Timestamp(date);
-    }
 
 
     public void delete(String officeId, String tsId, String binaryTypeMask,

@@ -14,7 +14,6 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.NavigableSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.ifc.text.CwmsDbText;
@@ -57,6 +57,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         Arrays.sort(array);
         timeSeriesTextColumnsList = Arrays.asList(array);
     }
+
 
     public RegularTimeSeriesTextDao(DSLContext dsl) {
         super(dsl);
@@ -168,27 +169,32 @@ public class RegularTimeSeriesTextDao extends JooqDao {
 
     private static RegularTextTimeSeriesRow buildRow(ResultSet rs) throws SQLException {
 
-        Calendar gmtCalendar = OracleTypeMap.getInstance().getGmtCalendar();
-        Timestamp tsDateTime = rs.getTimestamp(DATE_TIME, gmtCalendar);
-        Timestamp tsVersionDate = rs.getTimestamp(VERSION_DATE);
-        Timestamp tsDataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, gmtCalendar);
-        String textId = rs.getString(TEXT_ID);
+        Instant tsDateTime = getInstant(rs.getTimestamp(DATE_TIME));
+        Instant tsDataEntryDate = getInstant(rs.getTimestamp(DATA_ENTRY_DATE));
+
         String clobString = rs.getString(TEXT);
         Long attribute = rs.getLong(ATTRIBUTE);
         if (rs.wasNull()) {
             attribute = null;
         }
 
-        return buildRow(tsDateTime, tsVersionDate, tsDataEntryDate, attribute, textId, clobString);
+        return buildRow(tsDateTime,  tsDataEntryDate, attribute, clobString);
     }
 
-    public static RegularTextTimeSeriesRow buildRow(Timestamp dateTimeUtc, Timestamp versionDateUtc, Timestamp dataEntryDateUtc, Long attribute, String textId, String textValue) {
+    @Nullable
+    private static Instant getInstant(Timestamp dateTime) {
+        Instant dateTimeInstant = null;
+        if(dateTime != null) {
+            dateTimeInstant = dateTime.toLocalDateTime().atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId()).toInstant();
+        }
+        return dateTimeInstant;
+    }
+
+    public static RegularTextTimeSeriesRow buildRow(Instant dateTimeUtc, Instant dataEntryDateUtc, Long attribute, String textValue) {
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder()
-                .withDateTime(getDate(dateTimeUtc))
-                .withVersionDate(getDate(versionDateUtc))
-                .withDataEntryDate(getDate(dataEntryDateUtc))
+                .withDateTime((dateTimeUtc))
+                .withDataEntryDate(dataEntryDateUtc)
                 .withAttribute(attribute)
-                .withTextId(textId)
                 .withTextValue(textValue)
                 ;
 
@@ -196,7 +202,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
     public void storeRows(String officeId, String id, boolean maxVersion, boolean replaceAll,
-                          Collection<RegularTextTimeSeriesRow> regRows) {
+                          Collection<RegularTextTimeSeriesRow> regRows, Instant versionDate) {
         // This could be made into a more efficient bulk store.
         // We'd have to sort the rows by textId and textValue pairs and then build a set of all the matching dates
         // Then for each set of dates we'd call the appropriate storeTsText or storeTsTextId method.
@@ -204,89 +210,38 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         connection(dsl, connection -> {
             setOffice(connection, officeId);
             for (RegularTextTimeSeriesRow regRow : regRows) {
-                storeRow(connection, officeId, id, regRow, maxVersion, replaceAll);
+                storeRow(connection, officeId, id, regRow, maxVersion, replaceAll, versionDate);
             }
         });
     }
 
     public void storeRow(String officeId, String tsId, RegularTextTimeSeriesRow regularTextTimeSeriesRow,
-                         boolean maxVersion, boolean replaceAll) {
+                         boolean maxVersion, boolean replaceAll, Instant versionDate) {
         connection(dsl, connection -> {
             setOffice(connection, officeId);
-            storeRow(connection, officeId, tsId, regularTextTimeSeriesRow, maxVersion, replaceAll);
+            storeRow(connection, officeId, tsId, regularTextTimeSeriesRow, maxVersion, replaceAll, versionDate);
         });
     }
 
     private void storeRow(Connection connection, String officeId, String tsId,
                           RegularTextTimeSeriesRow regularTextTimeSeriesRow,
-                          boolean maxVersion, boolean replaceAll) throws SQLException {
+                          boolean maxVersion, boolean replaceAll, Instant versionDate) throws SQLException {
 
         TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
 
-        String textId = regularTextTimeSeriesRow.getTextId();
         String textValue = regularTextTimeSeriesRow.getTextValue();
-        Date dateTime = regularTextTimeSeriesRow.getDateTime();
-        Date versionDate = regularTextTimeSeriesRow.getVersionDate();
+        Instant dateTime = regularTextTimeSeriesRow.getDateTime();
+
         Long attribute = regularTextTimeSeriesRow.getAttribute();
 
         NavigableSet<Date> dates = new TreeSet<>();
-        dates.add(dateTime);
-
-        /* the pl/sql has:
-            procedure store_ts_text(
-                  p_tsid         in varchar2,
-                  p_text         in clob,
-                  p_start_time   in date,
-                  p_end_time     in date default null,
-                  p_version_date in date default null,
-                  p_time_zone    in varchar2 default null,
-                  p_max_version  in varchar2 default 'T',
-                  p_existing     in varchar2 default 'T',
-                  p_non_existing in varchar2 default 'F',
-                  p_replace_all  in varchar2 default 'F',
-                  p_attribute    in number default null,
-                  p_office_id    in varchar2 default null)
-
-             Jooq names this one:   call_STORE_TS_TEXT - takes a date range. not used here.
-
-            and also:
-                 procedure store_ts_text(
-                      p_tsid         in varchar2,
-                      p_text         in clob,
-                      p_times        in date_table_type,
-                      p_version_date in date default null,
-                      p_time_zone    in varchar2 default null,
-                      p_max_version  in varchar2 default 'T',
-                      p_replace_all  in varchar2 default 'F',
-                      p_attribute    in number default null,
-                      p_office_id    in varchar2 default null)
-
-            Jooq names this one:   call_STORE_TS_TEXT__2  - this is what we use
-         */
-
-        if(textId != null && textValue != null){
-            // There are two storeTs methods.  You either:
-            // 1.  store a textValue at specific times but you don't care about what the textId is.
-            // 2.  make an existing textId apply at the specified times - you don't care about the current textId to textValue.
-            // This branch is if the user is trying to specify the text_Id and the text_value.
-            // We'll have to make some choices to implement this.
-            throw new IllegalArgumentException(String.format("TextId:\"%s\" and TextValue:\"%s\" are both specified.  "
-                    + "This is not supported yet.", textId, textValue));
-        }
+        dates.add(Date.from(dateTime));
 
         CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
 
-        if (textId == null) {
-            // dbText.storeTsText makes DATE_TABLE_TYPE pTimes = convertDates(dates); then calls STORE_TS_TEXT__2
-            dbText.storeTsText(connection, tsId, textValue, dates,
-                    versionDate, timeZone, maxVersion, replaceAll,
-                    attribute, officeId);
-        } else {
-            // ends up calling STORE_TS_TEXT_ID__2
-            dbText.storeTsTextId(connection, tsId, textId, dates,
-                    versionDate, timeZone, maxVersion, replaceAll,
-                    attribute, officeId);
-        }
+        dbText.storeTsText(connection, tsId, textValue, dates,
+                versionDate==null?null:Date.from(versionDate), timeZone, maxVersion, replaceAll,
+                attribute, officeId);
     }
 
     public void delete(String officeId, String tsId, String textMask,
@@ -297,7 +252,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             DSLContext dslContext = getDslContext(connection, officeId);
             CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(dslContext.configuration(), tsId, textMask,
                     Timestamp.from(startTime),
-                    endTime == null ? null : Timestamp.from(endTime),
+                    Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
                     "UTC", maxVersion?"T":"F", minAttribute,
                     maxAttribute, officeId);

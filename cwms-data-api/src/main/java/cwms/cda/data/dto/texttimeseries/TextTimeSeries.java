@@ -1,21 +1,28 @@
 package cwms.cda.data.dto.texttimeseries;
 
+import static cwms.cda.data.dto.TimeSeries.ZONED_DATE_TIME_FORMAT;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
-import hec.data.timeSeriesText.DateDateComparator;
+import cwms.cda.data.dto.binarytimeseries.DateDateComparator;
+import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import hec.data.timeSeriesText.DateDateKey;
-import hec.data.timeSeriesText.TextTimeSeriesRow;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.jetbrains.annotations.Nullable;
 
 
@@ -24,9 +31,22 @@ import org.jetbrains.annotations.Nullable;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class TextTimeSeries extends CwmsDTO {
 
+
     private final String name;
     private final Long intervalOffset;
     private final String timeZone;
+
+    @Schema(description = "The version type for the text time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. " +
+            "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid " +
+            "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. " +
+            "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    VersionType dateVersionType;
+
+    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @Schema(description = "The version date of the time series trace")
+    ZonedDateTime versionDate;
 
     private final NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regularMap;
 
@@ -36,6 +56,8 @@ public class TextTimeSeries extends CwmsDTO {
         name = builder.name;
         intervalOffset = builder.intervalOffset;
         timeZone = builder.timeZone;
+        dateVersionType = builder.dateVersionType;
+        versionDate = builder.versionDate;
 
         if (builder.regMap == null) {
             regularMap = null;
@@ -55,6 +77,14 @@ public class TextTimeSeries extends CwmsDTO {
 
     public String getTimeZone() {
         return timeZone;
+    }
+
+    public VersionType getDateVersionType() {
+        return dateVersionType;
+    }
+
+    public ZonedDateTime getVersionDate() {
+        return versionDate;
     }
 
     @Override
@@ -94,6 +124,9 @@ public class TextTimeSeries extends CwmsDTO {
         private Long intervalOffset;
 
         private String timeZone;
+
+        public VersionType dateVersionType;
+        public ZonedDateTime versionDate;
         NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regMap = null;
 
 
@@ -123,6 +156,18 @@ public class TextTimeSeries extends CwmsDTO {
             return this;
         }
 
+        public Builder withDateVersionType(VersionType dateVersionType) {
+            this.dateVersionType = dateVersionType;
+            return this;
+        }
+
+        public Builder withVersionDate(ZonedDateTime versionDate) {
+            this.versionDate = versionDate;
+            return this;
+        }
+
+
+
 
         public Builder withRows(Collection<TextTimeSeriesRow> rows) {
             if (rows == null) {
@@ -146,9 +191,8 @@ public class TextTimeSeries extends CwmsDTO {
         public Builder withRow(TextTimeSeriesRow row) {
             Builder retval = this;
             if (row instanceof RegularTextTimeSeriesRow) {
-                retval =  withRegRow((RegularTextTimeSeriesRow) row);
+                retval = withRegRow((RegularTextTimeSeriesRow) row);
             }
-
             return retval;
         }
 
@@ -181,10 +225,6 @@ public class TextTimeSeries extends CwmsDTO {
             }
             return this;
         }
-
-
-
-
 
         public TextTimeSeries build() {
             return new TextTimeSeries(this);
