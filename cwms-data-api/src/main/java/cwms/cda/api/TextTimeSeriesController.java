@@ -30,7 +30,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
-import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -63,7 +62,7 @@ public class TextTimeSeriesController implements CrudHandler {
     static final String TAG = "Text-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
-    public static final String MODE = "mode";
+
 
     private final MetricRegistry metrics;
 
@@ -101,14 +100,7 @@ public class TextTimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the maximum version date is used."),
                     @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value to retrieve. If not specified, no minimum value is used."),
                     @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to retrieve. If not specified, no maximum value is used."),
-                    @OpenApiParam(name = MODE, required = true, type = TimeSeriesTextMode.class,
-                            description = "Type of Text TimeSeries to retrieve."
-                                    + "<table>\n"
-                                    + "<tr><td>ALL</td><td>Retrieve Standard and Regular text timeseries.</td></tr>\n"
-                                    + "<tr><td>STANDARD</td><td>Retrieve Standard text timeseries.</td></tr>\n"
-                                    + "<tr><td>REGULAR</td><td>Retrieve Regular text timeseries.</td></tr>\n"
-                                    + "</table>"
-                    ),
+
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -146,7 +138,6 @@ public class TextTimeSeriesController implements CrudHandler {
 
         Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
         Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
-        TimeSeriesTextMode mode = ctx.queryParamAsClass(MODE, TimeSeriesTextMode.class).getOrDefault(TimeSeriesTextMode.ALL);
 
 
         String formatHeader = ctx.header(Header.ACCEPT);
@@ -157,7 +148,7 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String textMask = "*";
 
-            TextTimeSeries textTimeSeries = dao.retrieveFromDao(mode, office, tsId, textMask,
+            TextTimeSeries textTimeSeries = dao.retrieveFromDao( office, tsId, textMask,
                     beginZdt, endZdt, versionZdt,
                     maxVersion, minAttr, maxAttr);
 
@@ -290,15 +281,7 @@ public class TextTimeSeriesController implements CrudHandler {
                         + "characters for pattern matching."
                         + "  For StandardTextTimeSeries this should be the Standard_Text_Id (such"
                         + " as 'E' for ESTIMATED)"),
-                @OpenApiParam(name = MODE, required = true, type =
-                        TimeSeriesTextMode.class,
-                        description = "Type of delete to perform. \n"
-                                + "<table>\n"
-                                + "<tr><td>ALL</td><td>Delete Standard and Regular text timeseries values for the specified time series.</td></tr>\n"
-                                + "<tr><td>STANDARD</td><td>Delete Standard text time series for the specified text timeseries.</td></tr>\n"
-                                + "<tr><td>REGULAR</td><td>Delete Regular text timeseries values for the specified time series.</td></tr>\n"
-                                + "</table>"
-                ),
+
                 @OpenApiParam(name = TIMEZONE, description = "Specifies "
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified). If this field is not specified, "
@@ -332,7 +315,6 @@ public class TextTimeSeriesController implements CrudHandler {
                 throw new IllegalArgumentException(Controllers.TEXT_MASK + " is a required parameter");
             }
 
-            TimeSeriesTextMode mode = ctx.queryParamAsClass(MODE, TimeSeriesTextMode.class).get();
 
             ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
             if(beginZdt == null){
@@ -351,7 +333,7 @@ public class TextTimeSeriesController implements CrudHandler {
 
             TimeSeriesTextDao dao = getDao(dsl);
 
-            dao.delete(mode, office, textTimeSeriesId, mask, beginZdt, endZdt, versionZdt, maxVersion, minAttr, maxAttr);
+            dao.delete( office, textTimeSeriesId, mask, beginZdt, endZdt, versionZdt, maxVersion, minAttr, maxAttr);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

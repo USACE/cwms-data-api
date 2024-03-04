@@ -3,7 +3,6 @@ package cwms.cda.data.dao.texttimeseries;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
-import cwms.cda.data.dto.texttimeseries.StandardTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import hec.data.timeSeriesText.TextTimeSeriesRow;
 import java.math.BigDecimal;
@@ -13,7 +12,6 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,44 +32,30 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         super(dsl);
     }
 
-    public TextTimeSeries retrieveFromDao(@NotNull TimeSeriesTextMode mode,
+    public TextTimeSeries retrieveFromDao(
                                           @NotNull String officeId, @NotNull String tsId, String textMask,
                                           @NotNull ZonedDateTime startTime, @NotNull ZonedDateTime endTime,
                                           @Nullable ZonedDateTime versionDate,
                                           boolean maxVersion,
                                           @Nullable Long minAttribute, @Nullable Long maxAttribute
     ) {
-        List<StandardTextTimeSeriesRow> stdRows = null;
+
         List<RegularTextTimeSeriesRow> regRows = null;
 
-        if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
-            boolean retrieveText = true;  // should this be true?
-            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-            Instant versionInst = null;
-            if (versionDate != null) {
-                versionInst = versionDate.toInstant();
-            }
-            stdRows = stdDao.retrieveRows(officeId, tsId, textMask,
-                    startTime.toInstant(), endTime.toInstant(), versionInst,
-                    maxVersion, retrieveText, minAttribute, maxAttribute);
-        }
 
-        if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
-            RegularTimeSeriesTextDao regDao = getRegularDao();
-            Instant instant = null;
-            if (versionDate != null) {
-                instant = versionDate.toInstant();
-            }
-            regRows = regDao.retrieveRows(officeId, tsId, textMask,
-                    startTime.toInstant(), endTime.toInstant(), instant,
-                    maxVersion, minAttribute, maxAttribute);
+        RegularTimeSeriesTextDao regDao = getRegularDao();
+        Instant instant = null;
+        if (versionDate != null) {
+            instant = versionDate.toInstant();
         }
+        regRows = regDao.retrieveRows(officeId, tsId, textMask,
+                startTime.toInstant(), endTime.toInstant(), instant,
+                maxVersion, minAttribute, maxAttribute);
 
         return new TextTimeSeries.Builder()
                 .withOfficeId(officeId)
                 .withName(tsId)
                 .withRegularTextValues(regRows)
-                .withStandardTextValues(stdRows)
                 .build();
     }
 
@@ -136,7 +120,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         Timestamp versionDateUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.VERSION_DATE_UTC);
         Timestamp dataEntryDateUtc = next.get(AV_TS_TEXT.AV_TS_TEXT.DATA_ENTRY_DATE_UTC);
         BigDecimal attribute = next.get(AV_TS_TEXT.AV_TS_TEXT.ATTRIBUTE);
-        String stdTextId = next.get(AV_TS_TEXT.AV_TS_TEXT.STD_TEXT_ID);
+
         String textValue = next.get(AV_TS_TEXT.AV_TS_TEXT.TEXT_VALUE);
 
         Long attrLong = null;
@@ -144,40 +128,24 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
             attrLong = attribute.longValue();
         }
 
-        if (stdTextId == null) {
-            return RegularTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, null,  textValue);
-        } else {
-            return StandardTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, textValue, officeId, stdTextId);
-        }
-
+        return RegularTimeSeriesTextDao.buildRow(dateTimeUtc, versionDateUtc, dataEntryDateUtc, attrLong, null,  textValue);
     }
 
 
 
     public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
 
-        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
-        if (stdRows != null) {
-            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-            stdDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, stdRows);
-        }
+
 
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
             regDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, regRows);
-
         }
 
     }
     
     public void store(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
-
-        Collection<StandardTextTimeSeriesRow> stdRows = tts.getStandardTextValues();
-        if (stdRows != null) {
-            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-            stdDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, stdRows);
-        }
 
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
@@ -192,7 +160,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
     
 
-    public void delete(TimeSeriesTextMode mode, String officeId, String textTimeSeriesId, String textMask,
+    public void delete( String officeId, String textTimeSeriesId, String textMask,
                        @NotNull ZonedDateTime start, @NotNull ZonedDateTime end, @Nullable ZonedDateTime versionDate,
                        boolean maxVersion, Long minAttribute, Long maxAttribute) {
 
@@ -201,25 +169,13 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
             versionInstant = versionDate.toInstant();
         }
 
-        if (Objects.equals(TimeSeriesTextMode.REGULAR, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
-            RegularTimeSeriesTextDao regDao = getRegularDao();
-            regDao.delete(officeId, textTimeSeriesId, textMask,
-                    start.toInstant(), end.toInstant(), versionInstant,
-                    maxVersion, minAttribute, maxAttribute);
-        }
-        if (Objects.equals(TimeSeriesTextMode.STANDARD, mode) || Objects.equals(TimeSeriesTextMode.ALL, mode)) {
-            StandardTimeSeriesTextDao stdDao = getStandardTimeSeriesTextDao();
-            stdDao.delete(officeId, textTimeSeriesId, textMask,
-                    start.toInstant(), end.toInstant(), versionInstant,
-                    maxVersion, minAttribute, maxAttribute);
-        }
+        RegularTimeSeriesTextDao regDao = getRegularDao();
+        regDao.delete(officeId, textTimeSeriesId, textMask,
+                start.toInstant(), end.toInstant(), versionInstant,
+                maxVersion, minAttribute, maxAttribute);
 
     }
 
-    @NotNull
-    private StandardTimeSeriesTextDao getStandardTimeSeriesTextDao() {
-        return new StandardTimeSeriesTextDao(dsl);
-    }
 
     @NotNull
     private RegularTimeSeriesTextDao getRegularDao() {
