@@ -19,6 +19,7 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -412,7 +413,7 @@ public class ClobController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, @NotNull String clobId) {
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);

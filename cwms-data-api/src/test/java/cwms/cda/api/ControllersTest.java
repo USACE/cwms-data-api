@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -299,4 +300,29 @@ class ControllersTest {
         JooqDao.DeleteMethod deleteMethod = JavalinValidation.INSTANCE.convertValue(JooqDao.DeleteMethod.class, "delete_data");
         assertEquals(JooqDao.DeleteMethod.DELETE_DATA, deleteMethod);
     }
+
+    @Test
+    void testMissingRequiredParams(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put("boring", "the_value");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        // if its present it should work
+        assertEquals("the_value", Controllers.requiredParam(ctx, "boring"));
+
+        // if its not present it should throw an exception
+        assertThrows(RequiredQueryParameterException.class, () -> Controllers.requiredParam(ctx, Controllers.OFFICE));
+        assertThrows(RequiredQueryParameterException.class, () -> Controllers.requiredZdt(ctx, Controllers.BEGIN));
+    }
+
+
+
+
 }
