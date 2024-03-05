@@ -37,6 +37,8 @@ import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredZdt;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -100,7 +102,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
                             + "the Binary TimeSeries whose data is to be included in the response."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the id of the "
                             + "binary timeseries"),
-                    @OpenApiParam(name = BINARY_TYPE_MASK, required = true, description = "The "
+                    @OpenApiParam(name = BINARY_TYPE_MASK, description = "The "
                             + "data type pattern expressed as either an internet media type "
                             + "(e.g. 'image/*') or a file extension (e.g. '.*'). Use glob-style "
                             + "wildcard characters as shown above instead of sql-style wildcard "
@@ -110,7 +112,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
                             + "otherwise specified). If this field is not specified, "
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
-                    @OpenApiParam(name = END, description = "The end of the time window. If specified the binaries associated with all times from start to end (inclusive) is retrieved."),
+                    @OpenApiParam(name = END, required = true, description = "The end of the time window"),
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the maximum version date is used."),
                     @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value. If not specified, no minimum value is used."),
                     @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value. If not specified, no maximum value is used."),
@@ -126,11 +128,11 @@ public class BinaryTimeSeriesController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String tsId = ctx.queryParam(NAME);
+        String office = requiredParam(ctx, OFFICE);
+        String tsId = requiredParam(ctx, NAME);
 
-        ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
-        ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+        ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
+        ZonedDateTime endZdt = requiredZdt(ctx, END);
         ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
         boolean maxVersion = true;
         Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
@@ -148,7 +150,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             BinaryTimeSeries binaryTimeSeries = dao.retrieve(office, tsId, binTypeMask,
                     beginZdt.toInstant(),
-                    endZdt== null? null: endZdt.toInstant(),
+                    endZdt.toInstant(),
                     versionZdt==null? null: versionZdt.toInstant(),
                     maxVersion,
                     retrieveBinary,
@@ -277,7 +279,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the timeseries identifier to be deleted"),
-                    @OpenApiParam(name = BINARY_TYPE_MASK, required = true, description= "The data "
+                    @OpenApiParam(name = BINARY_TYPE_MASK, description= "The data "
                             + "type pattern expressed as either an internet media type "
                             + "(e.g. 'image/*') or a file extension (e.g. '.*'). Use glob-style "
                             + "wildcard characters as shown above instead of sql-style wildcard "
@@ -288,9 +290,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time"
                             + " window"),
-                    @OpenApiParam(name = END, description = "The end of the time window. If specified"
-                            + " the binaries associated with all times from start to end (inclusive) is "
-                            + "deleted."),
+                    @OpenApiParam(name = END, required = true, description = "The end of the time window. "),
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                             + "series.  If not specified, the minimum or maximum version date "
                             + "(depending on p_max_version) is used."),
@@ -309,14 +309,14 @@ public class BinaryTimeSeriesController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String binaryTimeSeriesId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
 
             String mask = ctx.queryParamAsClass(BINARY_TYPE_MASK, String.class).getOrDefault(DEFAULT_BIN_TYPE_MASK);
 
             boolean maxVersion = true;
 
-            ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
-            ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+            ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
+            ZonedDateTime endZdt = requiredZdt(ctx, END);
             ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
 
             Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
