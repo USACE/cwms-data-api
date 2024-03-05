@@ -360,7 +360,7 @@ public class LevelsController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, @NotNull String levelId) {
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         String units = ctx.queryParam(UNIT);
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
@@ -656,10 +656,10 @@ public class LevelsController implements CrudHandler {
                 throw new IllegalArgumentException(LEVEL_ID + " path parameter can not be null when retrieving levels as time series");
             }
             String levelId = pathParam.get();
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
-            String units = ctx.queryParam(UNIT);
+            String units = requiredParam(ctx, UNIT);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             String intervalParameter = ctx.queryParamAsClass(INTERVAL, String.class).getOrDefault("0");
 

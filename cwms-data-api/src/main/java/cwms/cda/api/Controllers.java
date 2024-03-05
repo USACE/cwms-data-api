@@ -28,10 +28,15 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.VersionType;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
+import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+import io.javalin.http.Context;
+import java.time.ZonedDateTime;
+import org.jetbrains.annotations.Nullable;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
@@ -264,4 +269,55 @@ public final class Controllers {
         }
         return retval;
     }
+
+    /**
+     * Returns the first matching query param or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param name Query parameter name
+     * @return value of the parameter
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static String requiredParam(io.javalin.http.Context ctx, String name) {
+        // I would do this but it doesn't seem to play nicely with the ApiServlet error messages.
+//        Validator<String> val = ctx.queryParamAsClass(name, String.class);
+//        val.check( value -> value != null && !value.isEmpty(), "Missing required parameter: " + name);
+//        return val.get();
+        String param = ctx.queryParam(name);
+        if (param == null || param.isEmpty()) {
+            throw new RequiredQueryParameterException(name);
+        }
+        return param;
+    }
+
+    @Nullable
+    public static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
+        ZonedDateTime beginZdt = null;
+        String begin = ctx.queryParam(param);
+        if (begin != null) {
+            beginZdt = DateUtils.parseUserDate(begin, timezone);
+        }
+        return beginZdt;
+    }
+
+    @Nullable
+    public static ZonedDateTime queryParamAsZdt(Context ctx, String param) {
+        return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+    }
+
+    /**
+     * Parses the named parameters as ZonedDateTime or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param param Query parameter name
+     * @return ZonedDateTime
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static ZonedDateTime requiredZdt(Context ctx, String param) {
+        ZonedDateTime zdt = queryParamAsZdt(ctx, param);
+        if (zdt == null) {
+            throw new RequiredQueryParameterException(param);
+        }
+        return zdt;
+    }
+
+
 }
