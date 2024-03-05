@@ -169,7 +169,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
 
     private static RegularTextTimeSeriesRow buildRow(ResultSet rs) throws SQLException {
 
-
         Instant tsDateTime = getInstant(rs.getTimestamp(DATE_TIME));
         Instant tsDataEntryDate = getInstant(rs.getTimestamp(DATA_ENTRY_DATE));
 
@@ -238,15 +237,11 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         NavigableSet<Date> dates = new TreeSet<>();
         dates.add(Date.from(dateTime));
 
-
         CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
 
-
-            // dbText.storeTsText makes DATE_TABLE_TYPE pTimes = convertDates(dates); then calls STORE_TS_TEXT__2
-            dbText.storeTsText(connection, tsId, textValue, dates,
-                    versionDate==null?null:Date.from(versionDate), timeZone, maxVersion, replaceAll,
-                    attribute, officeId);
-
+        dbText.storeTsText(connection, tsId, textValue, dates,
+                versionDate==null?null:Date.from(versionDate), timeZone, maxVersion, replaceAll,
+                attribute, officeId);
     }
 
     public void delete(String officeId, String tsId, String textMask,
@@ -257,7 +252,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             DSLContext dslContext = getDslContext(connection, officeId);
             CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(dslContext.configuration(), tsId, textMask,
                     Timestamp.from(startTime),
-                    endTime == null ? null : Timestamp.from(endTime),
+                    Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
                     "UTC", maxVersion?"T":"F", minAttribute,
                     maxAttribute, officeId);
