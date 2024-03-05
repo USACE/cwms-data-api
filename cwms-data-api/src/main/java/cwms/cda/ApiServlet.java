@@ -28,6 +28,7 @@ import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static java.lang.String.format;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -55,6 +56,7 @@ import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
+import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -149,7 +151,8 @@ import org.owasp.html.PolicyFactory;
         "/blobs/*",
         "/clobs/*",
         "/pools/*",
-        "/specified-levels/*"
+        "/specified-levels/*",
+        "/standard-text-id/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -384,6 +387,8 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
+                new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/timeseries/text/{timeseries}",
                 new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/binary/{timeseries}",
