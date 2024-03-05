@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.json.JsonV2;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,19 +19,18 @@ import org.junit.jupiter.api.Test;
 class BinaryTimeSeriesTest {
 
     @Test
-    void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws IOException {
         BinaryTimeSeries.Builder builder = new BinaryTimeSeries.Builder();
         Collection<BinaryTimeSeriesRow> rows = new ArrayList<>();
         BinaryTimeSeriesRow.Builder rowBuilder = new BinaryTimeSeriesRow.Builder();
         long date = 3333333333L;
         long attr = 1;
+        byte[] bytes = "the_byles".getBytes();
         rowBuilder
-                .withVersionDate(new Date(1111111111L).toInstant())
                 .withDataEntryDate(new Date(2222222222L).toInstant())
-                .withBinaryId("binaryId")
                 .withMediaType("mediaType")
                 .withFileExtension(".bin")
-                .withBinaryValue("binaryData".getBytes());
+                .withBinaryValue(bytes);
 
         rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
         rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
@@ -40,6 +41,7 @@ class BinaryTimeSeriesTest {
                 .withName("TsBinTestLoc.Flow.Inst.1Hour.0.raw")
                 .withIntervalOffset(0L)
                 .withTimeZone("PST")
+                .withDateVersionType(VersionType.UNVERSIONED)
                 .withBinaryValues(rows)
                 .build();
 
@@ -47,6 +49,7 @@ class BinaryTimeSeriesTest {
         assertEquals(3, bts.getBinaryValues().size());
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
         String json = objectMapper.writeValueAsString(bts);
         assertNotNull(json);
     }
@@ -61,6 +64,7 @@ class BinaryTimeSeriesTest {
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
         BinaryTimeSeries bts = objectMapper.readValue(json, BinaryTimeSeries.class);
         assertNotNull(bts);
+        assertEquals(VersionType.UNVERSIONED, bts.getDateVersionType());
 
         Collection<BinaryTimeSeriesRow> rows = bts.getBinaryValues();
         assertNotNull(rows);
@@ -72,11 +76,31 @@ class BinaryTimeSeriesTest {
 
         assertEquals(1209679200000L, first.getDateTime().toEpochMilli() );
 
-        assertEquals("binaryId", first.getBinaryId());
         assertEquals(1L, first.getAttribute());
         assertEquals("mediaType", first.getMediaType());
         assertEquals(".bin", first.getFileExtension());
         assertEquals("binaryData", new String(first.getBinaryValue()));
+
+
+    }
+
+    @Test
+    void testDeserialize2() throws IOException {
+        InputStream stream = getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create.json");
+        assertNotNull(stream);
+        String json = readFully(stream);
+
+        ObjectMapper objectMapper = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = objectMapper.readValue(json, BinaryTimeSeries.class);
+        assertNotNull(bts);
+
+        Collection<BinaryTimeSeriesRow> rows = bts.getBinaryValues();
+        assertNotNull(rows);
+        assertEquals(3, rows.size());
+        BinaryTimeSeriesRow first = rows.iterator().next();
+        assertNotNull(first);
+
+        assertEquals(1209654000000L, first.getDateTime().toEpochMilli() );
 
 
     }
@@ -89,9 +113,7 @@ class BinaryTimeSeriesTest {
         long date = 3333333333L;
         long attr = 1;
         rowBuilder
-                .withVersionDate(new Date(1111111111L).toInstant())
                 .withDataEntryDate(new Date(2222222222L).toInstant())
-                .withBinaryId("binaryId")
                 .withMediaType("mediaType")
                 .withFileExtension(".bin")
                 .withBinaryValue("binaryData".getBytes());
@@ -132,9 +154,7 @@ class BinaryTimeSeriesTest {
             BinaryTimeSeriesRow row = (BinaryTimeSeriesRow) binaryValues.toArray()[i];
             BinaryTimeSeriesRow row2 = (BinaryTimeSeriesRow) binaryValues2.toArray()[i];
             assertEquals(row.getDateTime(), row2.getDateTime());
-            assertEquals(row.getVersionDate(), row2.getVersionDate());
             assertEquals(row.getDataEntryDate(), row2.getDataEntryDate());
-            assertEquals(row.getBinaryId(), row2.getBinaryId());
             assertEquals(row.getAttribute(), row2.getAttribute());
             assertEquals(row.getMediaType(), row2.getMediaType());
             assertEquals(row.getFileExtension(), row2.getFileExtension());

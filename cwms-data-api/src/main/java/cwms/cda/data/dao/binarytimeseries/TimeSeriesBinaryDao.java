@@ -85,12 +85,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                     timeZone.getID(),
                     maxVersion ? "T" : "F", minAttribute, maxAttribute, officeId);
         });
-
-
-
     }
-
-
 
     void store(String officeId, String tsId, byte[] binaryData, String binaryType, Instant startTime, Instant endTime, Instant versionInstant,
                       boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Long attribute) {
@@ -203,9 +198,9 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
                 // Is there some way to know the names and types of the fields in the record?
                 ZonedDateTime dateTimeZDT = rowRecord.get("DATE_TIME", LocalDateTime.class).atZone(utzZone.toZoneId());  // this works, even without converter
-                ZonedDateTime  versionDate = rowRecord.get("VERSION_DATE", LocalDateTime.class).atZone(utzZone.toZoneId());
+//                ZonedDateTime  versionDate = rowRecord.get("VERSION_DATE", LocalDateTime.class).atZone(utzZone.toZoneId());
                 ZonedDateTime dataEntryDate = rowRecord.get("DATA_ENTRY_DATE",LocalDateTime.class).atZone(utzZone.toZoneId());
-                String binaryId = rowRecord.get("ID", String.class);
+//                String binaryId = rowRecord.get("ID", String.class);
                 BigDecimal attribute = rowRecord.get("ATTRIBUTE", BigDecimal.class);
                 String fileExtension = rowRecord.get("FILE_EXT", String.class);
                 String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
@@ -214,8 +209,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 return new BinaryTimeSeriesRow.Builder()
                         .withDateTime(dateTimeZDT.toInstant())
                         .withDataEntryDate(dataEntryDate.toInstant())
-                        .withVersionDate(versionDate.toInstant())
-                        .withBinaryId(binaryId)
                         .withAttribute(attribute==null?null:attribute.longValueExact())
                         .withMediaType(mediaType)
                         .withFileExtension(fileExtension)
@@ -240,22 +233,18 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
     public void store(BinaryTimeSeries tts, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
 
-        if(hasRowWithIdAndValue(tts)){
-            throw new IllegalArgumentException("The provided BinaryTimeSeries has an entry with a non-null binary-id and "
-                    + "also a non-null binary-value.  For storage and creation either specify the id or the the value but not both.");
-        }
-
-        storeRows(tts.getOfficeId(), tts.getName(), tts.getBinaryValues(), maxVersion, storeExisting, storeNonExisting, replaceAll);
+        ZonedDateTime versionDateZdt = tts.getVersionDate();
+        storeRows(tts.getOfficeId(), tts.getName(), tts.getBinaryValues(), maxVersion, storeExisting, storeNonExisting, replaceAll, versionDateZdt==null?null:versionDateZdt.toInstant());
     }
 
     private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
-                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Instant versionDate) {
         dsl.connection(connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
             connDsl.transaction((Configuration trx) -> {
                         Configuration config = trx.dsl().configuration();
                         for (BinaryTimeSeriesRow binRecord : rows) {
-                            storeRow(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
+                            storeRow(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll, versionDate);
                         }
                     }
                     // Implicit commit executed here
@@ -263,57 +252,20 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         });
     }
 
-    private void storeRow(String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
+    private void storeRow(String officeId, String tsId, BinaryTimeSeriesRow binRecord, boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Instant versionDate) {
         dsl.connection(connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
-            storeRow(connDsl.configuration(), officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll);
+            storeRow(connDsl.configuration(), officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll, versionDate);
         });
     }
 
     private void storeRow(Configuration configuration, String officeId, String tsId,
                           BinaryTimeSeriesRow binRecord,
-                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
-
-        if(hasIdAndValue(binRecord)){
-            throw new IllegalArgumentException("BinaryTimeSeriesRow cannot have both a binaryId and a binaryValue");
-        }
-
-        if(binRecord.getBinaryId() != null){
-            store(configuration, officeId, tsId, binRecord.getBinaryId(),
-                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
-                    maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
-        } else {
+                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Instant versionDate) {
             store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(versionDate), OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
-        }
     }
 
-    private boolean hasRowWithIdAndValue(BinaryTimeSeries bts){
-        boolean hasBoth = false;
 
-        if(bts != null) {
-            Collection<BinaryTimeSeriesRow> rows = bts.getBinaryValues();
-            hasBoth = hasRowWithIdAndValue(rows);
-        }
-
-        return hasBoth;
-    }
-
-    private boolean hasRowWithIdAndValue(Collection<BinaryTimeSeriesRow> rows) {
-        boolean hasBoth = false;
-        if (rows != null) {
-            for (BinaryTimeSeriesRow binRecord : rows) {
-                if (hasIdAndValue(binRecord)) {
-                    hasBoth = true;
-                    break;
-                }
-            }
-        }
-        return hasBoth;
-    }
-
-    private boolean hasIdAndValue(BinaryTimeSeriesRow row) {
-        return row != null && row.getBinaryId() != null && row.getBinaryValue() != null;
-    }
 }
