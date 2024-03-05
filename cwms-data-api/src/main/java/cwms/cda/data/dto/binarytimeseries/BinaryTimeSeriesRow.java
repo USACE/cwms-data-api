@@ -13,9 +13,9 @@ import java.util.Arrays;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class BinaryTimeSeriesRow {
     private final Instant dateTime;
-    private final Instant versionDate;
+
     private final Instant dataEntryDate;
-    private final String binaryId;
+
     private final Long attribute;
     private final String mediaType;
     private final String fileExtension;
@@ -24,9 +24,9 @@ public class BinaryTimeSeriesRow {
 
     private BinaryTimeSeriesRow(Builder builder) {
         this.dateTime = builder.dateTime;
-        this.versionDate = builder.versionDate;
+
         this.dataEntryDate = builder.dataEntryDate;
-        this.binaryId = builder.binaryId;
+
         this.attribute = builder.attribute;
         this.mediaType = builder.mediaType;
         this.fileExtension = builder.fileExtension;
@@ -37,17 +37,13 @@ public class BinaryTimeSeriesRow {
         return dateTime;
     }
 
-    public Instant getVersionDate() {
-        return versionDate;
-    }
+
 
     public Instant getDataEntryDate() {
         return dataEntryDate;
     }
 
-    public String getBinaryId() {
-        return binaryId;
-    }
+
 
     public Long getAttribute() {
         return attribute;
@@ -78,12 +74,10 @@ public class BinaryTimeSeriesRow {
 
         if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
             return false;
-        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null)
-            return false;
+
         if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
             return false;
-        if (getBinaryId() != null ? !getBinaryId().equals(that.getBinaryId()) : that.getBinaryId() != null)
-            return false;
+
         if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
             return false;
         if (getMediaType() != null ? !getMediaType().equals(that.getMediaType()) : that.getMediaType() != null)
@@ -96,9 +90,7 @@ public class BinaryTimeSeriesRow {
     @Override
     public int hashCode() {
         int result = getDateTime() != null ? getDateTime().hashCode() : 0;
-        result = 31 * result + (getVersionDate() != null ? getVersionDate().hashCode() : 0);
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
-        result = 31 * result + (getBinaryId() != null ? getBinaryId().hashCode() : 0);
         result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
         result = 31 * result + (getMediaType() != null ? getMediaType().hashCode() : 0);
         result = 31 * result + (getFileExtension() != null ? getFileExtension().hashCode() : 0);
@@ -111,9 +103,7 @@ public class BinaryTimeSeriesRow {
     public static class Builder {
 
         private Instant dateTime;
-        private Instant versionDate;
         private Instant dataEntryDate;
-        private String binaryId;
         private Long attribute;
         private String mediaType;
         private String fileExtension;
@@ -134,15 +124,6 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
-        public Builder withVersionDate(Instant versionDate){
-            this.versionDate = versionDate;
-            return this;
-        }
-
-        public Builder withVersionDate(long versionDateEpochMillis){
-            this.versionDate = Instant.ofEpochMilli(versionDateEpochMillis);
-            return this;
-        }
 
         public Builder withDataEntryDate(Instant dataEntryDate){
             this.dataEntryDate = dataEntryDate;
@@ -154,10 +135,6 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
-        public Builder withBinaryId(String binaryId){
-            this.binaryId = binaryId;
-            return this;
-        }
 
         public Builder withAttribute(Long attribute){
             this.attribute = attribute;
@@ -183,8 +160,6 @@ public class BinaryTimeSeriesRow {
             if(row == null){
                 return withDateTime(null)
                         .withDataEntryDate(null)
-                        .withVersionDate(null)
-                        .withBinaryId(null)
                         .withBinaryValue(null)
                         .withFileExtension(null)
                         .withMediaType(null)
@@ -192,8 +167,6 @@ public class BinaryTimeSeriesRow {
             } else {
                 return withDateTime(row.dateTime)
                         .withDataEntryDate(row.dataEntryDate)
-                        .withVersionDate(row.versionDate)
-                        .withBinaryId(row.binaryId)
                         .withBinaryValue(row.binaryValue)
                         .withFileExtension(row.fileExtension)
                         .withMediaType(row.mediaType)
