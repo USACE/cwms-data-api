@@ -1,7 +1,6 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
 import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
@@ -40,6 +39,7 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.VERSION_TYPE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -53,6 +53,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -91,6 +92,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -106,6 +108,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -187,11 +190,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date for "
-                            + "the timeseries to create. If this field is not specified, a null "
-                            + "version date will be used.  "
-                            + "The format for this field is ISO 8601 extended, with optional timezone, "
-                            + "i.e., '" + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the version-date field (unless "
                             + "otherwise specified). If this field is not specified, the default time zone "
@@ -211,15 +209,6 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-
-        String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-        String version = ctx.queryParam(VERSION_DATE);
-        Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
-        if (version != null) {
-            ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
-            versionDate = Timestamp.from(beginZdt.toInstant());
-        }
-
         boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
         StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
@@ -229,7 +218,7 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
+            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
@@ -257,7 +246,7 @@ public class TimeSeriesController implements CrudHandler {
                             + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window to delete."
-                    + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+                            + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
                             + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include offset or time zone information. "
@@ -335,6 +324,14 @@ public class TimeSeriesController implements CrudHandler {
                             + "parameters.\r\n3. Other. Any unit returned in the response to the "
                             + "units URI request that is appropriate for the requested parameters"
                             + "."),
+                    @OpenApiParam(name = VERSION_DATE, description="Specifies the version date of a "
+                            + "time series trace to be selected. The format for this field is ISO 8601 "
+                            + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
+                            + "empty, query will return a max aggregate for the timeseries."),
+                    @OpenApiParam(name = VERSION_TYPE,
+                            type = VersionType.class,
+                            description = VersionType.DESCRIPTION
+                    ),
                     @OpenApiParam(name = DATUM,  description = "Specifies the "
                             + "elevation datum of the response. This field affects only elevation"
                             + " location levels. Valid values for this field are:\r\n1. NAVD88.  "
@@ -374,7 +371,7 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. "
-                                            + "Default " + defaultPageSize + "."
+                                    + "Default " + defaultPageSize + "."
                     )
             },
             responses = {@OpenApiResponse(status = STATUS_200,
@@ -413,6 +410,24 @@ public class TimeSeriesController implements CrudHandler {
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            String versionDateParam = ctx.queryParam(VERSION_DATE);
+            ZonedDateTime versionDate = null;
+            if (versionDateParam != null) {
+                versionDate = DateUtils.parseUserDate(versionDateParam, timezone);
+            }
+
+
+            VersionType versionType = ctx.queryParamAsClass(VERSION_TYPE, VersionType.class).getOrDefault(VersionType.UNDEF);
+
+            // Throw error if max aggregate version type is requested with a version date
+            // or single version version type is requested without a version date
+            if(versionType == VersionType.MAX_AGGREGATE && versionDate != null) {
+                throw new IllegalArgumentException("Cannot query a max aggregate with a version date.");
+            }
+            if(versionType == VersionType.SINGLE_VERSION && versionDate == null) {
+                throw new IllegalArgumentException("A version date query must contain a valid version date.");
+            }
+
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
@@ -438,9 +453,10 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum,
-                        beginZdt, endZdt, tz);
+                        beginZdt, endZdt, tz, versionDate, versionType);
 
                 results = Formats.format(contentType, ts);
+
                 ctx.status(HttpServletResponse.SC_OK);
 
                 // Send back the link to the next page in the response header
@@ -451,8 +467,8 @@ public class TimeSeriesController implements CrudHandler {
                 if (ts.getNextPage() != null) {
                     linkValue.append(",");
                     linkValue.append(String.format("<%s>; rel=next; type=\"%s\"",
-                                    buildRequestUrl(ctx, ts, ts.getNextPage()),
-                                    contentType));
+                            buildRequestUrl(ctx, ts, ts.getNextPage()),
+                            contentType));
                 }
 
                 ctx.header("Link", linkValue.toString());
@@ -504,11 +520,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = VERSION_DATE, description = "Specifies the "
-                            + "version date for the timeseries to create. If"
-                            + " this field is not specified, a null version date will be used.  The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., '"
-                            + FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the version-date field (unless "
                             + "otherwise specified). If this field is not specified, the default time zone "
@@ -532,19 +543,11 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
-            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            String version = ctx.queryParam(VERSION_DATE);
-            Timestamp versionDate = TimeSeriesDao.NON_VERSIONED;
-            if (version != null) {
-                ZonedDateTime beginZdt = DateUtils.parseUserDate(version, timezone);
-                versionDate = Timestamp.from(beginZdt.toInstant());
-            }
-
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
             StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
-            dao.store(timeSeries, versionDate, createAsLrts, storeRule, overrideProtection);
+            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
@@ -663,7 +666,7 @@ public class TimeSeriesController implements CrudHandler {
                             + "timeseries group(s) whose data is to be included in the response. "
                             + "If this field is not specified, matching timeseries groups "
                             + "information from all offices shall be returned."),
-               },
+            },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
                             @OpenApiContent(isArray = true, from = Tsv.class, type = Formats.JSON)}

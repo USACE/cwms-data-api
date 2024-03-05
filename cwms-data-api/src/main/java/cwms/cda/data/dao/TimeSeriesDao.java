@@ -1,8 +1,10 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
+
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -21,18 +23,17 @@ public interface TimeSeriesDao {
     void create(TimeSeries input);
 
     void create(TimeSeries input,
-                Timestamp versionDate,
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
-    void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
+    void store(TimeSeries timeSeries, boolean createAsLrts,
                StoreRule replaceAll, boolean overrideProtection);
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
                              String unit, String datum, ZonedDateTime begin, ZonedDateTime end,
-                             ZoneId timezone);
+                             ZoneId timezone, ZonedDateTime versionDate, VersionType dateVersionType);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);
