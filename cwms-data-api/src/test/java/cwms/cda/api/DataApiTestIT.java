@@ -148,7 +148,7 @@ public class DataApiTestIT {
                         stmt.setString(3,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to register user",ex);
+                        throw new RuntimeException("Unable to register user:" + user.getName() ,ex);
                     }
                 },"cwms_20");
 
@@ -329,7 +329,7 @@ public class DataApiTestIT {
     protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery);) {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
                 stmt.setString(1, office);
                 stmt.setString(2, timeseries);
                 stmt.setInt(3, offset);

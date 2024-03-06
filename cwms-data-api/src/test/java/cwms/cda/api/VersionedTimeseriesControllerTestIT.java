@@ -6,7 +6,6 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.VERSION_TYPE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -85,7 +84,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
+
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -113,7 +112,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z") // need to increment end by one hour to delete all values
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -135,7 +133,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR) // put old end date back in map
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -193,7 +190,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -216,7 +212,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -269,7 +264,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -319,7 +313,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -347,7 +340,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -369,7 +361,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -426,7 +417,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -474,7 +464,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -501,7 +490,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -522,7 +510,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -602,7 +589,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -653,7 +639,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -702,7 +687,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)

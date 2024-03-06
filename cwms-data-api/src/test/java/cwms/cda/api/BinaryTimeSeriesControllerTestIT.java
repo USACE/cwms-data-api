@@ -205,6 +205,7 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
+            .queryParam("office", OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

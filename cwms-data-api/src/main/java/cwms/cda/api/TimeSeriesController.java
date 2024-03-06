@@ -39,7 +39,6 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.VERSION_TYPE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -50,7 +49,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
@@ -324,12 +322,6 @@ public class TimeSeriesController implements CrudHandler {
                             + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
                             + "empty, query will return a max aggregate for the timeseries. "
                             + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
-                    @OpenApiParam(name = VERSION_TYPE, type = VersionType.class,
-                            description = "Version type specifies the type of timeseries response to be received. Can be max aggregate "
-                                    + "or single version. Max aggregate cannot be run if version date field is specified. If "
-                                    + "unspecified, defaults to:MAX_AGGREGATE, "
-                                    + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2
-                    ),
                     @OpenApiParam(name = DATUM,  description = "Specifies the "
                             + "elevation datum of the response. This field affects only elevation"
                             + " location levels. Valid values for this field are:\r\n1. NAVD88.  "
@@ -437,30 +429,7 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
                 if(datum != null){
-                    throw new IllegalArgumentException("Datum is not supported for version 2");
-                }
-
-                VersionType versionType = ctx.queryParamAsClass(VERSION_TYPE, VersionType.class).getOrDefault(VersionType.MAX_AGGREGATE);
-
-                // Each of the VersionTypes has rules about what the versionDate parameter needs to be.
-                switch (versionType) {
-                    case MAX_AGGREGATE:
-                        if(versionDate != null) {
-                            throw new IllegalArgumentException("Cannot query for a max-aggregate and supply a version date.");
-                        }
-                        break;
-                    case SINGLE_VERSION:
-                        if(versionDate == null){
-                            throw new IllegalArgumentException("SINGLE_VERSION query must supply a version date.");
-                        }
-                        break;
-                    case UNVERSIONED:
-                        if(versionDate != null){
-                            throw new IllegalArgumentException("An unversioned query cannot supply a valid version date.");
-                        }
-                        break;
-                    default:
-                        throw new IllegalStateException("Unexpected value: " + versionType);
+                    throw new IllegalArgumentException("Datum is not supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2);
                 }
 
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
@@ -485,10 +454,8 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.header("Link", linkValue.toString());
                 ctx.result(results).contentType(contentType.toString());
             } else {
-
-                VersionType versionType = ctx.queryParamAsClass(VERSION_TYPE, VersionType.class).getOrDefault(null);
-                if(versionType != null || versionDate != null){
-                    throw new IllegalArgumentException("Version type and version date are only supported for version 2");
+                if(versionDate != null){
+                    throw new IllegalArgumentException("Version date is only supported for" + Formats.JSONV2 + " and " + Formats.XMLV2);
                 }
 
                 if (format == null || format.isEmpty()) {
