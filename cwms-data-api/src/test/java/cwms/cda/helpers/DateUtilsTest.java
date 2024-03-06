@@ -4,16 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cwms.cda.data.dto.TimeSeries;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import mil.army.usace.hec.metadata.constants.NumericalConstants;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
-
-import cwms.cda.data.dto.TimeSeries;
 
 class DateUtilsTest {
 
@@ -97,6 +98,17 @@ class DateUtilsTest {
         assertTrue(DateUtils.hasZone("-07:00"), "offset not matched");
         assertTrue(DateUtils.hasZone("Z"), "offset not matched");
         assertFalse(DateUtils.hasZone("2021-01-01T00:00:00"), "Date without timezone matched");
+    }
+
+    @Test
+    void test_not_versioned(){
+        Instant my_nv_inst = ZonedDateTime.of(1111,11,18,0,0,0,0,
+                ZoneId.of("UTC")).toInstant();
+
+        assertTrue(NumericalConstants.isNotVersioned(NumericalConstants.notVersioned()));
+        assertEquals(NumericalConstants.notVersioned(), my_nv_inst);
+//        assertTrue(NumericalConstants.isNotVersioned(my_nv_inst));
+
     }
 
 }
