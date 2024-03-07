@@ -1,0 +1,24 @@
+{
+  "office-id": "SPK",
+  "name": "TsVersionedTestLoc.Flow.Inst.1Hour.0.raw",
+  "units": "CFS",
+  "version-date": "2021-06-21T08:00:00-0000[UTC]",
+  "values": [
+    [
+      1209654000000,
+      1,
+      0
+    ],
+    [
+      1209657600000,
+      1,
+      0
+    ],
+    [
+      1209661200000,
+      1,
+      0
+    ]
+  ]
+}
+

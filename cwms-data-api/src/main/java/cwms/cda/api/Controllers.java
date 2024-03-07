@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.helpers.DateUtils;
@@ -110,6 +111,7 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
+
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
     public static final String OVERRIDE_PROTECTION = "override-protection";
@@ -154,6 +156,7 @@ public final class Controllers {
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
     }
 
     private Controllers() {
@@ -272,10 +275,6 @@ public final class Controllers {
      * @throws RequiredQueryParameterException if the parameter is not found
      */
     public static String requiredParam(io.javalin.http.Context ctx, String name) {
-        // I would do this but it doesn't seem to play nicely with the ApiServlet error messages.
-//        Validator<String> val = ctx.queryParamAsClass(name, String.class);
-//        val.check( value -> value != null && !value.isEmpty(), "Missing required parameter: " + name);
-//        return val.get();
         String param = ctx.queryParam(name);
         if (param == null || param.isEmpty()) {
             throw new RequiredQueryParameterException(name);

@@ -3,29 +3,25 @@ package cwms.cda.api;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
-import fixtures.TestAccounts.KeyUser;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 public class TimeseriesControllerTestIT extends DataApiTestIT {
-
     @Test
     public void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
@@ -42,7 +38,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
         try {
             createLocation(location,true,officeId);
 
-            KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
             // inserting the time series
             given()
@@ -60,7 +56,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-    
+
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -83,7 +79,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values[1][1]",closeTo(600.0,0.0001))
                 .body("values[0][1]",closeTo(500.0,0.0001))
-    
+
                 ;
         } catch( SQLException ex) {
             throw new RuntimeException("Unable to create location for TS",ex);
@@ -93,17 +89,17 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     public void test_lrl_1day() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-    
+
         String tsData = IOUtils.toString(this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset.json"),"UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
-    
+
         try {
             createLocation(location,true,officeId);
 
-            KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
             // inserting the time series
             given()
@@ -121,7 +117,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-    
+
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -159,7 +155,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
         String officeId = ts.get("office-id").asText();
         createLocation(location,true,officeId);
 
-        KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // inserting the time series
         given()
@@ -232,7 +228,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
 
         createLocation(location,true,officeId);
 
-        KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // inserting the time series
         given()
