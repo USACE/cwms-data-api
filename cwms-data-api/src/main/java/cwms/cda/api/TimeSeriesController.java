@@ -344,7 +344,9 @@ public class TimeSeriesController implements CrudHandler {
                             + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
                     @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified), as well as the time zone of any times in the"
+                            + "otherwise specified).  "
+                            + "For "+Formats.JSONV2 + " amd " + Formats.XMLV2 + " the results are returned in UTC.  "
+                            + "For other formats this parameter affects the time zone of times in the"
                             + " response. If this field is not specified, the default time zone "
                             + "of UTC shall be used.\r\nIgnored if begin was specified with "
                             + "offset and timezone."),
