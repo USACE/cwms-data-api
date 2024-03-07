@@ -45,13 +45,6 @@ public abstract class Dao<T> {
         return cwmsDbVersion;
     }
 
-    /**
-     * This should be called before attempting to write an object to the database.
-     * @param object Object Owned by an office id.
-     */
-    protected void setOffice(CwmsDTO object) {
-        this.setOffice(object.getOfficeId());
-    }
 
     /**
      * set session office on specific connection
@@ -68,14 +61,6 @@ public abstract class Dao<T> {
         db.setSessionOfficeId(c,office);
     }
 
-    /**
-     * Same as setOffice with DSL, however Office is known and no DTO provided.
-     * E.g. DELETE
-     * @param office
-     */
-    protected void setOffice(String office) {
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
-    }
 
     public abstract List<T> getAll(Optional<String> limitToOffice);
 
