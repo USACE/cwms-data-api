@@ -8,12 +8,10 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
@@ -28,8 +26,6 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    private static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getDefault();
-    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 
 
     public TimeSeriesBinaryDao(DSLContext dsl) {
@@ -195,8 +191,6 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         });
     }
 
-
-
     public List<BinaryTimeSeriesRow> retrieveRows(String officeId, String tsId, String mask,
                                                   @NotNull Instant startTime, @NotNull Instant endTime, Instant versionInstant,
                                                   boolean maxVersion, boolean retrieveBinary, Long minAttribute, Long maxAttribute) {
@@ -210,18 +204,27 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 ZonedDateTime dateTimeZDT = rowRecord.get("DATE_TIME", LocalDateTime.class).atZone(utzZone.toZoneId());
                 ZonedDateTime dataEntryDate = rowRecord.get("DATA_ENTRY_DATE",LocalDateTime.class).atZone(utzZone.toZoneId());
 
-                String filename = rowRecord.get("FILENAME", String.class);
-                String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
-                byte[] binaryData = rowRecord.get("VALUE", byte[].class);
-
-                return new BinaryTimeSeriesRow.Builder()
+                BinaryTimeSeriesRow.Builder builder = new BinaryTimeSeriesRow.Builder()
                         .withDateTime(dateTimeZDT.toInstant())
-                        .withDataEntryDate(dataEntryDate.toInstant())
+                        .withDataEntryDate(dataEntryDate.toInstant());
 
-                        .withMediaType(mediaType)
-                        .withFilename(filename)
-                        .withBinaryValue(binaryData)
-                        .build();
+                // FILENAME, MEDIA_TYPE_ID, VALUE are new and aren't coming back from db yet...
+                if(hasField(rowRecord, "FILENAME")) {
+                    String filename = rowRecord.get("FILENAME", String.class);
+                    builder = builder.withFilename(filename);
+                }
+
+                if(hasField(rowRecord, "MEDIA_TYPE_ID")) {
+                    String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
+                    builder = builder.withMediaType(mediaType);
+                }
+
+                if(hasField(rowRecord, "VALUE")) {
+                    byte[] binaryData = rowRecord.get("VALUE", byte[].class);
+                    builder = builder.withBinaryValue(binaryData);
+                }
+
+                return builder.build();
             }
         };
 
@@ -233,6 +236,16 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 utzZone.getID(),
                 formatBool(maxVersion), formatBool(retrieveBinary), minAttribute, maxAttribute, officeId)
                 .map(mapper);
+    }
+
+    private boolean hasField(Record rowRecord, String name) {
+        boolean retval = false;
+
+        if(rowRecord != null){
+            retval = rowRecord.field(name) != null;
+        }
+
+        return retval;
     }
 
     public void store(BinaryTimeSeries tts, boolean maxVersion,  boolean replaceAll) {
