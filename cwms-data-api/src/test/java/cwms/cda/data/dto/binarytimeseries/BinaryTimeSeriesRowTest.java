@@ -21,9 +21,9 @@ class BinaryTimeSeriesRowTest {
         BinaryTimeSeriesRow.Builder builder = new BinaryTimeSeriesRow.Builder();
         BinaryTimeSeriesRow row = builder.withDateTime(null)
                 .withDataEntryDate(null)
-                .withAttribute(null)
+
                 .withMediaType(null)
-                .withFileExtension(null)
+                .withFilename(null)
                 .withBinaryValue(null)
                 .build();
         assertNotNull(row);
@@ -36,17 +36,17 @@ class BinaryTimeSeriesRowTest {
         BinaryTimeSeriesRow row = builder
                 .withDateTime(new Date(3333333333L).toInstant())
                 .withDataEntryDate(new Date(2222222222L).toInstant())
-                .withAttribute(34L)
+
                 .withMediaType("mediaType")
-                .withFileExtension(".bin")
+                .withFilename("file.bin")
                 .withBinaryValue("binaryData".getBytes())
                 .build();
         assertNotNull(row);
         assertEquals(3333333333L, Date.from(row.getDateTime()).getTime());
         assertEquals(2222222222L, Date.from(row.getDataEntryDate()).getTime());
-        assertEquals(34L, row.getAttribute());
+
         assertEquals("mediaType", row.getMediaType());
-        assertEquals(".bin", row.getFileExtension());
+        assertEquals("file.bin", row.getFilename());
         assertEquals("binaryData", new String(row.getBinaryValue()));
     }
 

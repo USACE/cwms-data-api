@@ -113,7 +113,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the maximum version date is used."),
+                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series."),
                     @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value. If not specified, no minimum value is used."),
                     @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value. If not specified, no maximum value is used."),
 
@@ -127,7 +127,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
         String office = requiredParam(ctx, OFFICE);
         String tsId = requiredParam(ctx, NAME);
 

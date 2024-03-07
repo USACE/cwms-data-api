@@ -8,25 +8,22 @@
     {
       "date-time": 1209679200000,
       "data-entry-date": 2222222222,
-      "attribute": 1,
       "media-type": "mediaType",
-      "file-extension": ".bin",
+      "filename": "file.bin",
       "binary-value": "YmluYXJ5RGF0YQ=="
     },
     {
       "date-time": 1209682800000,
       "data-entry-date": 2222222222,
-      "attribute": 2,
       "media-type": "mediaType",
-      "file-extension": ".bin",
+      "filename": "file.bin",
       "binary-value": "YmluYXJ5RGF0YQ=="
     },
     {
       "date-time": 1209686400000,
       "data-entry-date": 2222222222,
-      "attribute": 3,
       "media-type": "mediaType",
-      "file-extension": ".bin",
+      "filename": "file.bin",
       "binary-value": "YmluYXJ5RGF0YQ=="
     }
   ]

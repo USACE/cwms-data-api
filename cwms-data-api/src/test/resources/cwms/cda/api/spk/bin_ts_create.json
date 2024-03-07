@@ -8,21 +8,18 @@
     {
       "date-time": 1209654000000,
       "data-entry-date": 2222222222,
-      "attribute": 1,
       "media-type": "image/png",
       "binary-value": "YmluYXJ5RGF0YQ=="
     },
     {
       "date-time": 1209657600000,
       "data-entry-date": 2222222222,
-      "attribute": 2,
       "media-type": "image/png",
       "binary-value": "YmluYXJ5RGF0YQ=="
     },
     {
       "date-time": 1209661200000,
       "data-entry-date": 2222222222,
-      "attribute": 3,
       "media-type": "image/png",
       "binary-value": "YmluYXJ5RGF0YQ=="
     }
