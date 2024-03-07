@@ -43,8 +43,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -54,6 +52,7 @@ import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.JoinType;
@@ -74,6 +73,7 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -107,23 +107,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
 
+    @Override
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
-                                    String units, String datum,
-                                    ZonedDateTime begin, ZonedDateTime end, ZoneId timezone, ZonedDateTime versionDate, VersionType dateVersionType) {
-        // Looks like the datum field is currently being ignored by this method.
-        // Should we warn if the datum is not null?
-        return getTimeseries(page, pageSize, names, office, units, begin, end, versionDate, dateVersionType);
-    }
-
-    @SuppressWarnings("deprecated")
-    protected TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
-                                       ZonedDateTime beginTime, ZonedDateTime endTime, ZonedDateTime versionDate, VersionType dateVersionType) {
+                                       ZonedDateTime beginTime, ZonedDateTime endTime,
+                                    ZonedDateTime versionDate) {
         TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
         Integer total = null;
-
 
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
@@ -251,9 +243,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
                     tsId, unit, beginTimeMilli, endTimeMilli,
-                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion, officeId);
-        }
-
+                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,officeId);
+}
 
         Field<String> tzName;
         if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
@@ -306,7 +297,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
         }
 
-
         SelectJoinStep<?> metadataQuery =
                 dsl.with(valid)
                         .select(
@@ -341,24 +331,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-        // need to determine type of time series from db when version date is null
-        if(versionDate == null) {
-            AtomicReference<String> isVersioned = new AtomicReference<>("");
-            connection(dsl, connection -> {
-                isVersioned.set(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(getDslContext(connection, office).configuration(),
-                        names, office));
-            });
-
-            if(Objects.equals(isVersioned.get(), "T")) {
-                dateVersionType = VersionType.MAX_AGGREGATE;
-            } else {
-                dateVersionType = VersionType.UNVERSIONED;
-            }
-        } else {
-            dateVersionType = VersionType.SINGLE_VERSION; // version date being non-null implies that version type is single version
-        }
-
-        VersionType finalDateVersionType = dateVersionType;
+        VersionType finalDateVersionType = getVersionType(names, office, versionDate != null);
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
             String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
@@ -410,6 +383,34 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         return retVal;
+    }
+
+    @NotNull
+    private VersionType getVersionType(String names, String office, boolean versionDateProvided) {
+        VersionType dateVersionType;
+        // need to determine type of time series from db when version date is null
+
+        if (versionDateProvided) {
+            dateVersionType = VersionType.SINGLE_VERSION;
+        } else {
+            boolean isVersioned = isVersioned(names, office);
+
+            if(isVersioned) {
+                dateVersionType = VersionType.MAX_AGGREGATE;
+            } else {
+                dateVersionType = VersionType.UNVERSIONED;
+            }
+        }
+
+        return dateVersionType;
+    }
+
+    private boolean isVersioned(String names, String office) {
+        return connectionResult(dsl, connection -> {
+            Configuration configuration = getDslContext(connection, office).configuration();
+            return OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
+                    names, office));
+        });
     }
 
     // datumInfo comes back like:
@@ -1018,6 +1019,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     options.getTsItemMask(), options.getOverrideProtection());
         });
     }
+
 
 
     public enum OverrideProtection {

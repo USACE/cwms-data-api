@@ -31,8 +31,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
-import java.util.Arrays;
-
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.restassured.filter.log.LogDetail;
@@ -63,7 +61,7 @@ public class OfficeControllerIT extends DataApiTestIT {
                 .header(Header.ETAG, not(isEmptyOrNullString()))
                 .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
                 .rootPath("find {it.name == '%s'}", withArgs("CPC"))
-                .body("longname", CoreMatchers.equalTo("Central Processing Center"))
+                .body("long-name", CoreMatchers.equalTo("Central Processing Center"))
                 ;
     }
 

@@ -39,7 +39,6 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.VERSION_TYPE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -48,14 +47,10 @@ import static cwms.cda.api.Controllers.requiredZdt;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.enums.VersionType;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -92,7 +87,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -108,7 +102,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -262,7 +255,7 @@ public class TimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String timeseries) {
+    public void delete(@NotNull Context ctx, @NotNull String timeseries) {
 
         String office = requiredParam(ctx, OFFICE);
 
@@ -327,17 +320,15 @@ public class TimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = VERSION_DATE, description="Specifies the version date of a "
                             + "time series trace to be selected. The format for this field is ISO 8601 "
                             + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
-                            + "empty, query will return a max aggregate for the timeseries."),
-                    @OpenApiParam(name = VERSION_TYPE,
-                            type = VersionType.class,
-                            description = VersionType.DESCRIPTION
-                    ),
+                            + "empty, query will return a max aggregate for the timeseries. "
+                            + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
                     @OpenApiParam(name = DATUM,  description = "Specifies the "
                             + "elevation datum of the response. This field affects only elevation"
                             + " location levels. Valid values for this field are:\r\n1. NAVD88.  "
                             + "The elevation values will in the specified or default units above "
                             + "the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in "
-                            + "the specified or default units above the NGVD-29 datum."),
+                            + "the specified or default units above the NGVD-29 datum.  "
+                            + "This parameter is not supported for:" + Formats.JSONV2 + " or " + Formats.XMLV2),
                     @OpenApiParam(name = BEGIN,  description = "Specifies the "
                             + "start of the time window for data to be included in the response. "
                             + "If this field is not specified, any required time window begins 24"
@@ -410,23 +401,8 @@ public class TimeSeriesController implements CrudHandler {
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            String versionDateParam = ctx.queryParam(VERSION_DATE);
-            ZonedDateTime versionDate = null;
-            if (versionDateParam != null) {
-                versionDate = DateUtils.parseUserDate(versionDateParam, timezone);
-            }
 
-
-            VersionType versionType = ctx.queryParamAsClass(VERSION_TYPE, VersionType.class).getOrDefault(VersionType.UNDEF);
-
-            // Throw error if max aggregate version type is requested with a version date
-            // or single version version type is requested without a version date
-            if(versionType == VersionType.MAX_AGGREGATE && versionDate != null) {
-                throw new IllegalArgumentException("Cannot query a max aggregate with a version date.");
-            }
-            if(versionType == VersionType.SINGLE_VERSION && versionDate == null) {
-                throw new IllegalArgumentException("A version date query must contain a valid version date.");
-            }
+            ZonedDateTime versionDate = queryParamAsZdt(ctx, VERSION_DATE);
 
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
@@ -452,8 +428,12 @@ public class TimeSeriesController implements CrudHandler {
                     : ZonedDateTime.now(tz);
 
             if (version != null && version.equals("2")) {
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit, datum,
-                        beginZdt, endZdt, tz, versionDate, versionType);
+                if(datum != null){
+                    throw new IllegalArgumentException("Datum is not supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2);
+                }
+
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
+                        beginZdt, endZdt, versionDate);
 
                 results = Formats.format(contentType, ts);
 
@@ -474,6 +454,10 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.header("Link", linkValue.toString());
                 ctx.result(results).contentType(contentType.toString());
             } else {
+                if(versionDate != null){
+                    throw new IllegalArgumentException("Version date is only supported for" + Formats.JSONV2 + " and " + Formats.XMLV2);
+                }
+
                 if (format == null || format.isEmpty()) {
                     format = "json";
                 }
@@ -571,11 +555,6 @@ public class TimeSeriesController implements CrudHandler {
         TimeSeries retval;
 
         if ((Formats.XMLV2).equals(contentType)) {
-            // This is how it would be done if we could use jackson to parse the xml
-            // it currently doesn't work because some jackson annotations
-            // use certain naming conventions (e.g. "value-columns" vs "valueColumns")
-            //  ObjectMapper om = buildXmlObjectMapper();
-            //  retval = om.readValue(body, TimeSeries.class);
             retval = deserializeJaxb(body);
         } else if ((Formats.JSONV2).equals(contentType)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
@@ -598,14 +577,6 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     @NotNull
-    public static ObjectMapper buildXmlObjectMapper() {
-        ObjectMapper retval = new XmlMapper();
-        retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        retval.registerModule(new JavaTimeModule());
-        return retval;
-    }
-
-    @NotNull
     private ContentType getContentType(Context ctx) {
         String acceptHeader = ctx.req.getHeader(ACCEPT);
         String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
@@ -624,9 +595,9 @@ public class TimeSeriesController implements CrudHandler {
     /**
      * Builds a URL that references a specific "page" of the result.
      *
-     * @param ctx
-     * @param ts
-     * @return
+     * @param ctx the context of the request
+     * @param ts the TimeSeries object that was used to generate the result
+     * @return a URL that references the same query, but with a different "page" parameter
      */
     private String buildRequestUrl(Context ctx, TimeSeries ts, String cursor) {
         StringBuffer result = ctx.req.getRequestURL();
