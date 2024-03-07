@@ -14,6 +14,7 @@ import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import hec.data.timeSeriesText.DateDateKey;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +54,6 @@ public class BinaryTimeSeries extends CwmsDTO {
 
         dateVersionType = builder.dateVersionType;
         versionDate = builder.versionDate;
-
 
         if (builder.entriesMap != null) {
             entries = new TreeMap<>(builder.entriesMap);
@@ -106,8 +106,8 @@ public class BinaryTimeSeries extends CwmsDTO {
 
         private Long intervalOffset;
         private String timeZone;
-        public VersionType dateVersionType;
-        public ZonedDateTime versionDate;
+        private VersionType dateVersionType;
+        private ZonedDateTime versionDate;
 
         NavigableMap<DateDateKey, BinaryTimeSeriesRow> entriesMap = null;
 
@@ -168,7 +168,9 @@ public class BinaryTimeSeries extends CwmsDTO {
                 if (entriesMap == null) {
                     entriesMap = new TreeMap<>(new DateDateComparator());
                 }
-                entriesMap.put(new DateDateKey(Date.from(row.getDateTime()), Date.from(row.getDataEntryDate())), row);
+                Instant dateTime = row.getDateTime();
+                Instant dataEntryDate = row.getDataEntryDate();
+                entriesMap.put(new DateDateKey(dateTime==null?null:Date.from(dateTime), dataEntryDate==null?null:Date.from(dataEntryDate)), row);
             }
             return this;
         }

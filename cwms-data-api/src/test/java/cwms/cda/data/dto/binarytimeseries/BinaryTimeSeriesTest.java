@@ -29,12 +29,12 @@ class BinaryTimeSeriesTest {
         rowBuilder
                 .withDataEntryDate(new Date(2222222222L).toInstant())
                 .withMediaType("mediaType")
-                .withFileExtension(".bin")
+                .withFilename("file.bin")
                 .withBinaryValue(bytes);
 
-        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
 
         BinaryTimeSeries bts = builder
                 .withOfficeId("SPK")
@@ -76,9 +76,8 @@ class BinaryTimeSeriesTest {
 
         assertEquals(1209679200000L, first.getDateTime().toEpochMilli() );
 
-        assertEquals(1L, first.getAttribute());
         assertEquals("mediaType", first.getMediaType());
-        assertEquals(".bin", first.getFileExtension());
+        assertEquals("file.bin", first.getFilename());
         assertEquals("binaryData", new String(first.getBinaryValue()));
 
 
@@ -111,16 +110,16 @@ class BinaryTimeSeriesTest {
         Collection<BinaryTimeSeriesRow> rows = new ArrayList<>();
         BinaryTimeSeriesRow.Builder rowBuilder = new BinaryTimeSeriesRow.Builder();
         long date = 3333333333L;
-        long attr = 1;
+
         rowBuilder
                 .withDataEntryDate(new Date(2222222222L).toInstant())
                 .withMediaType("mediaType")
-                .withFileExtension(".bin")
+                .withFilename("file.bin")
                 .withBinaryValue("binaryData".getBytes());
 
-        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
-        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).withAttribute(attr++).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
+        rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
 
         BinaryTimeSeries bts = builder
                 .withOfficeId("SPK")
@@ -155,9 +154,8 @@ class BinaryTimeSeriesTest {
             BinaryTimeSeriesRow row2 = (BinaryTimeSeriesRow) binaryValues2.toArray()[i];
             assertEquals(row.getDateTime(), row2.getDateTime());
             assertEquals(row.getDataEntryDate(), row2.getDataEntryDate());
-            assertEquals(row.getAttribute(), row2.getAttribute());
             assertEquals(row.getMediaType(), row2.getMediaType());
-            assertEquals(row.getFileExtension(), row2.getFileExtension());
+            assertEquals(row.getFilename(), row2.getFilename());
             assertEquals(new String(row.getBinaryValue()), new String(row2.getBinaryValue()));
         }
 

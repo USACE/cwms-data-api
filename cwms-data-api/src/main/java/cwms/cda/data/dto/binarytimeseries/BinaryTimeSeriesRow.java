@@ -13,23 +13,17 @@ import java.util.Arrays;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class BinaryTimeSeriesRow {
     private final Instant dateTime;
-
     private final Instant dataEntryDate;
-
-    private final Long attribute;
     private final String mediaType;
-    private final String fileExtension;
+    private final String filename;
     private final byte[] binaryValue;
 
 
     private BinaryTimeSeriesRow(Builder builder) {
         this.dateTime = builder.dateTime;
-
         this.dataEntryDate = builder.dataEntryDate;
-
-        this.attribute = builder.attribute;
         this.mediaType = builder.mediaType;
-        this.fileExtension = builder.fileExtension;
+        this.filename = builder.filename;
         this.binaryValue = builder.binaryValue;
     }
 
@@ -44,17 +38,12 @@ public class BinaryTimeSeriesRow {
     }
 
 
-
-    public Long getAttribute() {
-        return attribute;
-    }
-
     public String getMediaType() {
         return mediaType;
     }
 
-    public String getFileExtension() {
-        return fileExtension;
+    public String getFilename() {
+        return filename;
     }
 
     public byte[] getBinaryValue() {
@@ -78,11 +67,9 @@ public class BinaryTimeSeriesRow {
         if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
             return false;
 
-        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
-            return false;
         if (getMediaType() != null ? !getMediaType().equals(that.getMediaType()) : that.getMediaType() != null)
             return false;
-        if (getFileExtension() != null ? !getFileExtension().equals(that.getFileExtension()) : that.getFileExtension() != null)
+        if (getFilename() != null ? !getFilename().equals(that.getFilename()) : that.getFilename() != null)
             return false;
         return Arrays.equals(getBinaryValue(), that.getBinaryValue());
     }
@@ -91,9 +78,8 @@ public class BinaryTimeSeriesRow {
     public int hashCode() {
         int result = getDateTime() != null ? getDateTime().hashCode() : 0;
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
-        result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
         result = 31 * result + (getMediaType() != null ? getMediaType().hashCode() : 0);
-        result = 31 * result + (getFileExtension() != null ? getFileExtension().hashCode() : 0);
+        result = 31 * result + (getFilename() != null ? getFilename().hashCode() : 0);
         result = 31 * result + Arrays.hashCode(getBinaryValue());
         return result;
     }
@@ -104,9 +90,8 @@ public class BinaryTimeSeriesRow {
 
         private Instant dateTime;
         private Instant dataEntryDate;
-        private Long attribute;
         private String mediaType;
-        private String fileExtension;
+        private String filename;
         private byte[] binaryValue;
 
         public Builder(){
@@ -136,18 +121,13 @@ public class BinaryTimeSeriesRow {
         }
 
 
-        public Builder withAttribute(Long attribute){
-            this.attribute = attribute;
-            return this;
-        }
-
         public Builder withMediaType(String mediaType){
             this.mediaType = mediaType;
             return this;
         }
 
-        public Builder withFileExtension(String fileExtension){
-            this.fileExtension = fileExtension;
+        public Builder withFilename(String filename){
+            this.filename = filename;
             return this;
         }
 
@@ -161,16 +141,14 @@ public class BinaryTimeSeriesRow {
                 return withDateTime(null)
                         .withDataEntryDate(null)
                         .withBinaryValue(null)
-                        .withFileExtension(null)
-                        .withMediaType(null)
-                        .withAttribute(null);
+                        .withFilename(null)
+                        .withMediaType(null);
             } else {
                 return withDateTime(row.dateTime)
                         .withDataEntryDate(row.dataEntryDate)
                         .withBinaryValue(row.binaryValue)
-                        .withFileExtension(row.fileExtension)
-                        .withMediaType(row.mediaType)
-                        .withAttribute(row.attribute);
+                        .withFilename(row.filename)
+                        .withMediaType(row.mediaType);
             }
         }
 
