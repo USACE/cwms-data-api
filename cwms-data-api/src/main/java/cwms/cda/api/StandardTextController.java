@@ -55,7 +55,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class StandardTextController implements CrudHandler {
-    private static final String TAG = TextTimeSeriesController.TAG;
+    private static final String TAG = "Standard Text";
     private final MetricRegistry metrics;
 
     public StandardTextController(MetricRegistry metrics) {

@@ -76,7 +76,6 @@ import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.security.CwmsAuthException;
@@ -152,7 +151,8 @@ import org.owasp.html.PolicyFactory;
         "/blobs/*",
         "/clobs/*",
         "/pools/*",
-        "/specified-levels/*"
+        "/specified-levels/*",
+        "/standard-text-id/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -206,7 +206,6 @@ public class ApiServlet extends HttpServlet {
     public void init() {
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
 
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -388,7 +387,7 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
-        cdaCrudCache(format("/timeseries/text/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
+        cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/timeseries/text/{timeseries}",
                 new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);

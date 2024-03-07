@@ -49,8 +49,7 @@ public class StandardTextIdComparator implements Comparator<StandardTextId> {
         if (s2 == null) {
             return 1;
         }
-        int compare = String.CASE_INSENSITIVE_ORDER.compare(s1, s2);
-        return compare;
+        return String.CASE_INSENSITIVE_ORDER.compare(s1, s2);
     }
 
 }

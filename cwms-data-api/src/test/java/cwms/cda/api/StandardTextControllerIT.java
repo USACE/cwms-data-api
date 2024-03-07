@@ -46,8 +46,10 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 public class StandardTextControllerIT extends DataApiTestIT {
 
+    public static final String controllerPath = "/standard-text-id/";
+
     @Test
-    public void test_standard_text_crud() throws Exception {
+    void test_standard_text_crud() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         String tsData = IOUtils.toString(getClass()
@@ -67,7 +69,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/timeseries/text/standard-text-id/")
+            .post(controllerPath)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -82,7 +84,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/timeseries/text/standard-text-id/HW")
+            .get(controllerPath  + "HW")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -102,7 +104,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/timeseries/text/standard-text-id/HW")
+            .delete(controllerPath + "HW")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -117,7 +119,8 @@ public class StandardTextControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/timeseries/text/standard-text-id/HW")
+            .get(controllerPath
+                    + "HW")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -125,7 +128,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
     }
 
     @Test
-    public void test_standard_text_catalog() {
+    void test_standard_text_catalog() {
         //Pulling out one CWMS owned standard text that should always exist
         Map<String, Object> expectedValue = new HashMap<>();
         expectedValue.put("standard-text", "NO RECORD");
@@ -141,7 +144,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/timeseries/text/standard-text-id/")
+            .get(controllerPath)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()

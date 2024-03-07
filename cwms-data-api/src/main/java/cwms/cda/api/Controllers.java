@@ -30,7 +30,6 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.texttimeseries.TimeSeriesTextMode;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
@@ -157,7 +156,6 @@ public final class Controllers {
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-        JavalinValidation.register(TimeSeriesTextMode.class, TimeSeriesTextMode::getMode);
         JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
     }
 
