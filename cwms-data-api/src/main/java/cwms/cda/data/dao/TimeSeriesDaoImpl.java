@@ -331,7 +331,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-        VersionType finalDateVersionType = getVersionType(names, office, versionDate);
+        VersionType finalDateVersionType = getVersionType(names, office, versionDate != null);
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
             String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
@@ -386,10 +386,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @NotNull
-    private VersionType getVersionType(String names, String office, ZonedDateTime versionDate) {
+    private VersionType getVersionType(String names, String office, boolean versionDateProvided) {
         VersionType dateVersionType;
         // need to determine type of time series from db when version date is null
-        if(versionDate == null) {
+
+        if (versionDateProvided) {
+            dateVersionType = VersionType.SINGLE_VERSION;
+        } else {
             boolean isVersioned = isVersioned(names, office);
 
             if(isVersioned) {
@@ -397,9 +400,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             } else {
                 dateVersionType = VersionType.UNVERSIONED;
             }
-
-        } else {
-            dateVersionType = VersionType.SINGLE_VERSION;
         }
 
         return dateVersionType;
