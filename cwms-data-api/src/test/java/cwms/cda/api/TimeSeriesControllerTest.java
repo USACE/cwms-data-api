@@ -1,5 +1,26 @@
 package cwms.cda.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.data.dao.TimeSeriesDao;
+import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -11,32 +32,9 @@ import java.util.Map;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import cwms.cda.data.dao.TimeSeriesDao;
-import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNotNull;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class TimeSeriesControllerTest extends ControllerTest {
 
@@ -51,10 +49,18 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // build a mock dao that returns a pre-built ts when called a certain way
         TimeSeriesDao dao = mock(TimeSeriesDao.class);
 
+        //    String cursor,
+        //    int pageSize,
+        //    String names,
+        //    String office,
+        //    String unit,
+        //    ZonedDateTime begin,
+        //    ZonedDateTime end,
+        //    ZonedDateTime versionDate
+
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(),
-                        isNotNull(), isNotNull(), isNotNull())).thenReturn(expected);
+                         isNotNull(), isNotNull(), isNull() )).thenReturn(expected);
 
 
         // build mock request and response
@@ -100,7 +106,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(), isNotNull(), isNotNull(), isNotNull());
+                         isNotNull(), isNotNull(), isNull());
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -184,7 +190,6 @@ public class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
         assertSimilar(fakeTs, ts);
     }
-
 
     @NotNull
     private TimeSeries buildTimeSeries(String officeId, String tsId) {
