@@ -16,6 +16,6 @@
   "published-latitude": 50.0,
   "elevation": 0.0,
   "map-label": "label",
-  "bounding-office-id": "LRL",
-  "office-id": "LRL"
+  "bounding-office-id": "${boundingOffice?upper_case}",
+  "office-id": "${office?upper_case}"
 }

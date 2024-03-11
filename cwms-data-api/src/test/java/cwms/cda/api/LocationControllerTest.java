@@ -1,7 +1,10 @@
 package cwms.cda.api;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,6 +15,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
+import freemarker.template.Template;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import io.javalin.http.util.ContextUtil;
@@ -43,14 +47,22 @@ class LocationControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeLocationJSON() throws IOException
+    void testDeserializeLocationJSON() throws Exception
     {
-        String json = loadResourceAsString("cwms/cda/api/location_create.json");
+        final String OFFICE = "LRL";
+        Template jsonTemplate = DataApiTestIT.loadTemplateFromResource("cwms/cda/api/location_create.json");
+        Map<String, Object> root = new HashMap<>();
+        root.put("office", OFFICE);
+        root.put("boundingOffice", OFFICE);
+        StringWriter out = new StringWriter();
+        jsonTemplate.process(root, out);
+
+        final String json = out.toString();
         assertNotNull(json);
         Location location = LocationController.deserializeLocation(json, Formats.JSON);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
-        assertEquals("LRL", location.getOfficeId());
+        assertEquals(OFFICE, location.getOfficeId());
         assertEquals("NGVD-29", location.getHorizontalDatum());
         assertEquals("UTC", location.getTimezoneName());
         assertEquals(Nation.US, location.getNation());
