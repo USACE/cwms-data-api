@@ -63,7 +63,7 @@ public class AccessManagerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ArgumentsSource(UserSpecSource.class)
-    @AuthType(userTypes = { AuthType.UserType.PRIVS })
+    @AuthType(userTypes = { AuthType.UserType.PRIVS }, forOffice = "SPK")
     public void can_create_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException {
         String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
         assertNotNull(json);
@@ -71,7 +71,7 @@ public class AccessManagerTestIT extends DataApiTestIT {
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
             .contentType("application/json")
-            .queryParam("office", "SPK")
+            .queryParam("office", user.getOperatingOffice())
             .spec(authSpec)
             .body(json)
         .when()

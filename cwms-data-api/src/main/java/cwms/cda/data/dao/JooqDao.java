@@ -296,7 +296,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new NotFoundException(parts[0]);
+                exception = new NotFoundException(parts[0], cause);
             }
         }
         return exception;
@@ -361,7 +361,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new AlreadyExists(parts[0]);
+                exception = new AlreadyExists(parts[0], cause);
             }
         }
         return exception;
@@ -395,7 +395,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new IllegalArgumentException(parts[0]);
+                exception = new IllegalArgumentException(parts[0], cause);
             }
         }
         return exception;
@@ -416,7 +416,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new InvalidItemException(parts[0]);
+                exception = new InvalidItemException(parts[0], cause);
             }
         }
         return exception;
