@@ -24,6 +24,12 @@
 
 package cwms.cda.data.dao;
 
+import static java.util.stream.Collectors.toList;
+import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
+import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
+import static org.jooq.impl.DSL.asterisk;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
+
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
@@ -45,9 +51,28 @@ import hec.data.level.JDomSeasonalIntervalImpl;
 import hec.data.level.JDomSeasonalValueImpl;
 import hec.data.level.JDomSeasonalValuesImpl;
 import hec.data.location.LocationTemplate;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
-import mil.army.usace.hec.metadata.Version;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +82,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
-import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
@@ -71,33 +95,6 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.MathContext;
-import java.math.RoundingMode;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static java.util.stream.Collectors.toList;
-import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
-import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
-import static org.jooq.impl.DSL.asterisk;
-import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
 
 public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao {
     private static final Logger logger = Logger.getLogger(LocationLevelsDaoImpl.class.getName());
@@ -340,10 +337,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
 
-        Condition siAndTsIdNull = view.UNIT_SYSTEM.eq("SI").and(view.TSID.isNull());
-        Condition tsIdNotNull = view.TSID.isNotNull();
-
-        Condition whereCondition = siAndTsIdNull.or(tsIdNotNull);
+        Condition whereCondition = view.TSID.isNotNull();
 
         if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
@@ -363,7 +357,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     Timestamp.from(endZdt.toInstant())));
         }
 
-        Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new HashMap<>();
+        if(unit != null && !unit.isEmpty()){
+            whereCondition = whereCondition.and(DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase()));
+        }
+
+        Condition siAndTsIdNull = view.UNIT_SYSTEM.eq("SI").and(view.TSID.isNull());
+        whereCondition = whereCondition.or(siAndTsIdNull);
+
+        Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new LinkedHashMap<>();
 
         SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(asterisk())
                 .from(view)
@@ -374,19 +375,22 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .offset(offset)
                 .limit(pageSize);
 
-        logger.fine(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+//        logger.fine(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
 
-        List<LocationLevel> levels = query
-                .stream()
-                .map(r -> toLocationLevel(r, levelMap))
-                .collect(toList());
+        query.stream().forEach(r -> addSeasonalValue(r, levelMap));
+
+        List<LocationLevel> levels = new java.util.ArrayList<>();
+        for (JDomLocationLevelImpl levelImpl : levelMap.values()) {
+            LocationLevel level = new LocationLevel.Builder(levelImpl).build();
+            levels.add(level);
+        }
 
         LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
         builder.addAll(levels);
         return builder.build();
     }
 
-    private LocationLevel toLocationLevel(Record r, Map<JDomLocationLevelImpl,
+    private void addSeasonalValue(Record r, Map<JDomLocationLevelImpl,
             JDomLocationLevelImpl> levelMap) {
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
         Timestamp levelDateTimestamp = r.get(view.LEVEL_DATE);
@@ -442,8 +446,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     levelComment);
         }
         parseSeasonalValues(r, intervalOriginDate, locationLevelImpl, levelSiUnit);
-
-        return new LocationLevel.Builder(locationLevelImpl).build();
     }
 
     private void setLevelData(String tsid, Double dConstLevel, String attrComment,
