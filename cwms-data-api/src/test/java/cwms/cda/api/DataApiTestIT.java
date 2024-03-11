@@ -48,6 +48,9 @@ import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -74,12 +77,17 @@ public class DataApiTestIT {
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
-    protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
+    protected final static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
+    protected final static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
+
+    protected final static Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
 
+    static {
+        freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
+    }
 
     /**
      * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
@@ -100,6 +108,10 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to process SQL",ex);
             }
         }, "cwms_20");
+    }
+
+    protected static Template loadTemplateFromResource(String resource) throws Exception {
+        return freemarkerConfig.getTemplate(resource);
     }
 
     @BeforeAll

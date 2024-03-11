@@ -1,12 +1,16 @@
 package cwms.cda.api;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
+import freemarker.template.Template;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
@@ -43,8 +47,16 @@ public class AccessManagerTestIT extends DataApiTestIT {
     @ParameterizedTest
     @ArgumentsSource(UserSpecSource.class)
     @AuthType(user = TestAccounts.KeyUser.GUEST)
-    public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException {
-        String json = loadResourceAsString("cwms/cda/api/location_create.json");
+    public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception {
+        Template jsonTemplate = loadTemplateFromResource("cwms/cda/api/location_create.json");
+        Map<String, Object> root = new HashMap<>();
+        // the office here isn't critical as the request should fail before it tries to write
+        root.put("office", "SPK");
+        root.put("boundingOffice", "SPK");
+        StringWriter out = new StringWriter();
+        jsonTemplate.process(root, out);
+
+        final String json = out.toString();
         assertNotNull(json);
 
         given()
@@ -85,9 +97,16 @@ public class AccessManagerTestIT extends DataApiTestIT {
     @ParameterizedTest
     @ArgumentsSource(UserSpecSource.class)
     @AuthType(userTypes = { AuthType.UserType.NO_PRIVS })
-    public void cant_create_with_user_without_role(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException {
-        String json = loadResourceAsString("cwms/cda/api/location_create.json");
-        assertNotNull(json);
+    public void cant_create_with_user_without_role(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception {
+        Template jsonTemplate = loadTemplateFromResource("cwms/cda/api/location_create.json");
+        Map<String, Object> root = new HashMap<>();
+        // the office here isn't critical as the request should fail before it tries to write
+        root.put("office", "SPK");
+        root.put("boundingOffice", "SPK");
+        StringWriter out = new StringWriter();
+        jsonTemplate.process(root, out);
+
+        final String json = out.toString();
 
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
