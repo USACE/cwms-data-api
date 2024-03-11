@@ -4,7 +4,9 @@ import static usace.cwms.db.dao.util.OracleTypeMap.formatBool;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.VersionType;
+import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import java.sql.Timestamp;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -209,19 +212,34 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                         .withDataEntryDate(dataEntryDate.toInstant());
 
                 // FILENAME, MEDIA_TYPE_ID, VALUE are new and aren't coming back from db yet...
+                String filename;
                 if(hasField(rowRecord, "FILENAME")) {
-                    String filename = rowRecord.get("FILENAME", String.class);
-                    builder = builder.withFilename(filename);
+                    filename = rowRecord.get("FILENAME", String.class);
+                } else {
+                    filename = dateTimeZDT.toInstant().getEpochSecond() + ".bin";
                 }
+                builder = builder.withFilename(filename);
 
+                String mediaType;
                 if(hasField(rowRecord, "MEDIA_TYPE_ID")) {
-                    String mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
-                    builder = builder.withMediaType(mediaType);
+                    mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
+                } else {
+                    mediaType = "application/octet-stream";
                 }
+                builder = builder.withMediaType(mediaType);
 
                 if(hasField(rowRecord, "VALUE")) {
                     byte[] binaryData = rowRecord.get("VALUE", byte[].class);
                     builder = builder.withBinaryValue(binaryData);
+                } else if (hasField(rowRecord, "ID")) {
+                    // The record is the old style with a blob-id
+                    String binaryId = rowRecord.get("ID", String.class);
+                    BlobDao blobDao = new BlobDao(dsl);
+                    Optional<Blob> optBlob = blobDao.getByUniqueName(binaryId, Optional.of(officeId));
+                    if(optBlob.isPresent()){
+                        Blob blob = optBlob.get();
+                        builder = builder.withBinaryValue(blob.getValue());
+                    }
                 }
 
                 return builder.build();
