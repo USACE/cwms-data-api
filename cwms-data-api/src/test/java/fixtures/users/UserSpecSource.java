@@ -25,11 +25,12 @@ public class UserSpecSource implements ArgumentsProvider {
      * setting appropriate credentials
      * @return
      */
-    public static ArrayList<Arguments> userSpecsValidPrivsWithGuest() {
+    public static ArrayList<Arguments> userSpecsValidPrivsWithGuest(String office) {
         final ArrayList<Arguments> list = new ArrayList<>();
         list.add(specificUser(TestAccounts.KeyUser.GUEST));
         Stream.of(TestAccounts.KeyUser.values())
               .filter(u -> u.getRoles().length > 0)
+              .filter(u -> office.isEmpty() || u.getOperatingOffice().equals(office))
               .forEach(u -> {
                 list.add(apiKeyUser(u));
                 list.add(cwmsAaaUser(u));
@@ -37,10 +38,11 @@ public class UserSpecSource implements ArgumentsProvider {
         return list;
     }
 
-    public static ArrayList<Arguments> userSpecsValidPrivs() {
+    public static ArrayList<Arguments> userSpecsValidPrivs(String office) {
         final ArrayList<Arguments> list = new ArrayList<>();
         Stream.of(TestAccounts.KeyUser.values())
               .filter(u -> u.getRoles().length > 0)
+              .filter(u -> office.isEmpty() || u.getOperatingOffice().equals(office))
               .forEach(u -> {
                 list.add(apiKeyUser(u));
                 list.add(cwmsAaaUser(u));
@@ -56,7 +58,7 @@ public class UserSpecSource implements ArgumentsProvider {
         }
     }
 
-    public static ArrayList<Arguments> usersNoPrivs() {
+    public static ArrayList<Arguments> usersNoPrivs(String office) {
         final ArrayList<Arguments> list = new ArrayList<>();
         //list.add(Arguments.of("NONE",TestAccounts.KeyUser.GUEST,new RequestSpecBuilder().build()));
         Stream.of(TestAccounts.KeyUser.values())
@@ -64,6 +66,7 @@ public class UserSpecSource implements ArgumentsProvider {
                         && (!u.getName().equalsIgnoreCase("guest"))
                         && (!u.getName().equalsIgnoreCase("none"))
               )
+              .filter(u -> office.isEmpty() || u.getOperatingOffice().equals(office))
               .forEach(u -> {
                 list.add(apiKeyUser(u));
                 list.add(cwmsAaaUser(u));
@@ -105,17 +108,18 @@ public class UserSpecSource implements ArgumentsProvider {
             Method method = testMethod.get();
             AuthType at = method.getAnnotation(AuthType.class);
             UserType uts[] = at.userTypes();
+            final String office = at.forOffice();
             if(uts != null) {
                 for(UserType ut: uts) {
                     if( ut.equals(UserType.GUEST_AND_PRIVS)) {
                         logger.atFine().log("Adding GUEST users");
-                        args.addAll(userSpecsValidPrivsWithGuest());
+                        args.addAll(userSpecsValidPrivsWithGuest(office));
                     } else if (ut.equals(UserType.NO_PRIVS)) {
                         logger.atFine().log("Adding no priv users");
-                        args.addAll(usersNoPrivs());
+                        args.addAll(usersNoPrivs(office));
                     } else if (ut.equals(UserType.PRIVS)) {
                         logger.atFine().log("Adding users with privs");
-                        args.addAll(userSpecsValidPrivs());
+                        args.addAll(userSpecsValidPrivs(office));
                     }
                 }
             }

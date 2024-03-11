@@ -14,9 +14,13 @@ import fixtures.TestAccounts;
 public @interface AuthType {
 
     /**
-     * The name of the static variable
+     * which types of user (with/without creds, etc)
      */
     UserType[] userTypes() default {};
+    /*
+     * If not blank, limit to users with the given office id.
+     */
+    String forOffice() default "";
     /**
      *
      * @return Specific user for test
