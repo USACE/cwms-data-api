@@ -1,7 +1,7 @@
 {
   "name": "LOC_TEST",
-  "latitude": 10.0,
-  "longitude": 50.0,
+  "latitude": 38.5816,
+  "longitude": -121.4944,
   "public-name": "LOC_TEST",
   "long-name": "LOCATION_TEST",
   "description": "For Testing",
@@ -12,10 +12,10 @@
   "county-name": "Sacramento",
   "nearest-city": "Sacramento",
   "horizontal-datum": "NGVD-29",
-  "published-longitude": 10.0,
-  "published-latitude": 50.0,
+  "published-longitude": 38.5816,
+  "published-latitude": -121.4944,
   "elevation": 0.0,
   "map-label": "label",
-  "bounding-office-id": "${boundingOffice?upper_case}",
-  "office-id": "${office?upper_case}"
+  "bounding-office-id": "${(user.operatingOffice)!'null'}",
+  "office-id": "${(user.operatingOffice)!'null'}"
 }

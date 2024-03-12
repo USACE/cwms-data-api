@@ -1,9 +1,7 @@
 package cwms.cda.api;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,7 +13,6 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
-import freemarker.template.Template;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import io.javalin.http.util.ContextUtil;
@@ -23,6 +20,7 @@ import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
 import org.junit.jupiter.api.Test;
 
+import static cwms.cda.api.DataApiTestIT.getResourceTemplateStatic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -49,15 +47,9 @@ class LocationControllerTest extends ControllerTest
     @Test
     void testDeserializeLocationJSON() throws Exception
     {
-        final String OFFICE = "LRL";
-        Template jsonTemplate = DataApiTestIT.loadTemplateFromResource("cwms/cda/api/location_create.json");
-        Map<String, Object> root = new HashMap<>();
-        root.put("office", OFFICE);
-        root.put("boundingOffice", OFFICE);
-        StringWriter out = new StringWriter();
-        jsonTemplate.process(root, out);
+        final String OFFICE = "SPK";
+        final String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
 
-        final String json = out.toString();
         assertNotNull(json);
         Location location = LocationController.deserializeLocation(json, Formats.JSON);
         assertNotNull(location);
