@@ -33,6 +33,7 @@ import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,7 +42,11 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
@@ -50,6 +55,7 @@ import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import freemarker.template.TemplateException;
 
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -110,7 +116,7 @@ public class DataApiTestIT {
         }, "cwms_20");
     }
 
-    protected static Template loadTemplateFromResource(String resource) throws Exception {
+    private static Template loadTemplateFromResource(String resource) throws Exception {
         return freemarkerConfig.getTemplate(resource);
     }
 
@@ -425,7 +431,6 @@ public class DataApiTestIT {
         return String.join("\n", Files.readAllLines(path));
     }
 
-
     /**
      * Let the infrastructure know a group is getting created so it can
      * be deleted in cases of test failure.
@@ -494,5 +499,109 @@ public class DataApiTestIT {
                 } // otherwise we don't get it was successfully deleted in the test
             }
         });
+    }
+
+
+    // Resource Template operations
+    /**
+     * Get a FluentTemplate to handle our operations of setting up the data model before rendering.
+     * The non static version provides a default data model based on the active CDA and Database Instance
+     *
+     * @param resource
+     * @return A fluent template that can have its data model be expanded, if needed, and then rendered.
+     * @throws Exception
+     */
+    public FluentTemplate getResourceTemplate(String resource) throws Exception {
+        final Template template = loadTemplateFromResource(resource);
+        final CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        return new FluentTemplate(template)
+                    .with("office", cwmsDb.getOfficeId())
+                    .with("boundingOffice", cwmsDb.getOfficeId())
+                    .with("dbOffice", cwmsDb.getOfficeId())
+                    .with("dbTestUser",cwmsDb.getUsername())
+                    .with("cdaUrl", CwmsDataApiSetupCallback.httpUrl());
+
+    }
+
+    /**
+     * Get a FluentTemplate for use outside the integration test system.
+     * The default model uses HQ for the office and otherwise in valid values for
+     *
+     * @param resource
+     * @return
+     * @throws Exception
+     */
+    public static FluentTemplate getResourceTemplateStatic(String resource) throws Exception {
+        final Template template = loadTemplateFromResource(resource);
+        return new FluentTemplate(template)
+                    .with("office", "HQ")
+                    .with("boundingOffice", "HQ")
+                    .with("dbOffice", "HQ")
+                    .with("dbTestUser", "not-active")
+                    .with("cdaUrl", "no-url");
+    }
+
+
+
+    public String getResourceFromTemplate(String resource, Map<String, Object> dataModel) throws Exception {
+        return getResourceTemplate(resource).render();
+    }
+
+    /**
+     * A simple helper to make setting up models to render easier.
+     */
+    public static class FluentTemplate {
+        final Map<String, Object> dataModel = new HashMap<>();
+        final Template template;
+
+        public FluentTemplate(Template template) {
+            this.template = template;
+        }
+
+        /**
+         * Add a value to the data model
+         * @param fieldName
+         * @param field
+         * @return
+         */
+        public FluentTemplate with(String fieldName, Object field) {
+            dataModel.put(fieldName, field);
+            return this;
+        }
+
+        /**
+         * Add additional values, they may overwrite defaults to the data model.
+         * @param model
+         * @return
+         */
+        public FluentTemplate with(Map<String, Object> model) {
+            dataModel.putAll(model);
+            return this;
+        }
+
+        public FluentTemplate withUser(TestAccounts.KeyUser user) {
+            dataModel.put("user", user);
+            return this;
+        }
+
+        /**
+         * Render the template to string using the internal data model
+         * @return
+         * @throws TemplateException
+         * @throws IOException
+         */
+        public String render() throws TemplateException, IOException {
+            final StringWriter out = new StringWriter();
+            template.process(dataModel, out);
+            return out.toString();
+        }
+
+        /**
+         * Get a copy of the Data Model. The returned Map is read only.
+         * @return
+         */
+        public Map<String, Object> getModel() {
+            return Collections.unmodifiableMap(dataModel);
+        }
     }
 }

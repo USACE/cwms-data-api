@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
-import freemarker.template.Template;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,15 +46,9 @@ public class AccessManagerTestIT extends DataApiTestIT {
     @ArgumentsSource(UserSpecSource.class)
     @AuthType(user = TestAccounts.KeyUser.GUEST)
     public void cant_create_without_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception {
-        Template jsonTemplate = loadTemplateFromResource("cwms/cda/api/location_create.json");
-        Map<String, Object> root = new HashMap<>();
-        // the office here isn't critical as the request should fail before it tries to write
-        root.put("office", "SPK");
-        root.put("boundingOffice", "SPK");
-        StringWriter out = new StringWriter();
-        jsonTemplate.process(root, out);
-
-        final String json = out.toString();
+        final String json  = getResourceTemplate("cwms/cda/api/location_create.json.freemarker")
+                                .withUser(user)
+                                .render();
         assertNotNull(json);
 
         given()
@@ -75,9 +67,11 @@ public class AccessManagerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ArgumentsSource(UserSpecSource.class)
-    @AuthType(userTypes = { AuthType.UserType.PRIVS }, forOffice = "SPK")
-    public void can_create_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws IOException {
-        String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+    @AuthType(userTypes = { AuthType.UserType.PRIVS })
+    public void can_create_with_user(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception {
+        final String json  = getResourceTemplate("cwms/cda/api/location_create.json.freemarker")
+                                .withUser(user)
+                                .render();
         assertNotNull(json);
 
         given()
@@ -98,15 +92,8 @@ public class AccessManagerTestIT extends DataApiTestIT {
     @ArgumentsSource(UserSpecSource.class)
     @AuthType(userTypes = { AuthType.UserType.NO_PRIVS })
     public void cant_create_with_user_without_role(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception {
-        Template jsonTemplate = loadTemplateFromResource("cwms/cda/api/location_create.json");
-        Map<String, Object> root = new HashMap<>();
-        // the office here isn't critical as the request should fail before it tries to write
-        root.put("office", "SPK");
-        root.put("boundingOffice", "SPK");
-        StringWriter out = new StringWriter();
-        jsonTemplate.process(root, out);
-
-        final String json = out.toString();
+        final String json  = getResourceTemplate("cwms/cda/api/location_create.json.freemarker")
+                                .with("user", user).render();
 
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
