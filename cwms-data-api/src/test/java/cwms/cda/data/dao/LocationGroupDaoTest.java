@@ -15,6 +15,7 @@ import cwms.cda.formatters.json.JsonV1;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.geojson.FeatureCollection;
 import org.jooq.DSLContext;
@@ -25,7 +26,7 @@ import org.junit.jupiter.api.Test;
 public class LocationGroupDaoTest {
 
     @Test
-    public void testGetOne() throws SQLException {
+    void testGetOne() throws SQLException {
         DSLContext lrl = getDslContext(getConnection(), "LRL");
 
         LocationGroupDao dao = new LocationGroupDao(lrl);
@@ -52,7 +53,9 @@ public class LocationGroupDaoTest {
     void getLocationGroup() throws SQLException {
         DSLContext lrl = getDslContext(getConnection(), "LRL");
         LocationGroupDao dao = new LocationGroupDao(lrl);
-        LocationGroup group = dao.getLocationGroup("LRL", "Basin", "Green River Basin").get();
+        Optional<LocationGroup> lgOpt = dao.getLocationGroup("LRL", "Basin", "Green River Basin");
+        assertTrue(lgOpt.isPresent());
+        LocationGroup group = lgOpt.get();
 
         assertNotNull(group);
         List<AssignedLocation> locs = group.getAssignedLocations();
@@ -98,7 +101,7 @@ public class LocationGroupDaoTest {
 
 
     @Test
-    public void getLocationGroupAsGeojson() throws SQLException, JsonProcessingException {
+    void getLocationGroupAsGeojson() throws SQLException, JsonProcessingException {
         DSLContext lrl = getDslContext(getConnection(), "LRL");
         LocationGroupDao dao = new LocationGroupDao(lrl);
         FeatureCollection fc = dao.buildFeatureCollectionForLocationGroup("LRL", "Basin",
