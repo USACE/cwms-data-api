@@ -6,7 +6,6 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.VERSION_TYPE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -30,11 +29,13 @@ import org.junit.jupiter.api.Test;
 @Tag("integration")
 public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
-    private static final String OFFICE_STR = "SWT";
+    private static final String OFFICE_STR = "SPK";
+    private static TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private static final String locationId = "TsVersionedTestLoc";
     private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
     private static final String BEGIN_STR = "2008-05-01T15:00:00Z";
     private static final String END_STR = "2008-05-01T17:00:00Z";
+    public static final String resourcePath = String.format("/cwms/cda/api/%s/", OFFICE_STR.toLowerCase());
 
 
     @BeforeAll
@@ -46,7 +47,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get_delete_get_versioned() throws Exception {
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
@@ -56,7 +57,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         ts = om.readValue(tsData, TimeSeries.class);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -85,7 +86,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
+
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -98,7 +99,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(1.0F))
                 .body("values[1][1]", equalTo(1.0F))
                 .body("values[2][1]", equalTo(1.0F))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[UTC]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
 
         // Delete all values from timeseries
@@ -113,7 +114,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z") // need to increment end by one hour to delete all values
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -135,7 +135,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR) // put old end date back in map
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -148,15 +147,14 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(null))
                 .body("values[1][1]", equalTo(null))
                 .body("values[2][1]", equalTo(null))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[UTC]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
     }
-
 
     @Test
     void test_create_get_update_get_delete_get_versioned() throws Exception {
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
@@ -164,8 +162,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         TimeSeries ts;
         ObjectMapper om = JsonV2.buildObjectMapper();
         ts = om.readValue(tsData, TimeSeries.class);
-
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -195,7 +191,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -208,11 +203,11 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(1.0F))
                 .body("values[1][1]", equalTo(1.0F))
                 .body("values[2][1]", equalTo(1.0F))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[UTC]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
 
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_update.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
@@ -245,7 +240,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -258,8 +252,8 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(2.0F))
                 .body("values[1][1]", equalTo(2.0F))
                 .body("values[2][1]", equalTo(2.0F))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[UTC]"))
-                .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));;
+                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
+                .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
 
         // Delete all values from timeseries
         given()
@@ -273,7 +267,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -295,7 +288,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.SINGLE_VERSION.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -308,14 +300,14 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(null))
                 .body("values[1][1]", equalTo(null))
                 .body("values[2][1]", equalTo(null))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[UTC]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
     }
 
     @Test
     void test_create_get_update_get_delete_get_unversioned() throws Exception {
         // Post versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create_unversioned.json");
+        InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create_unversioned.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
@@ -324,7 +316,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         ts = om.readValue(tsData, TimeSeries.class);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -352,7 +344,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -369,7 +360,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("date-version-type", equalTo(VersionType.UNVERSIONED.toString()));
 
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update_unversioned.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_update_unversioned.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
@@ -400,7 +391,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -427,7 +417,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -448,7 +437,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
-                .queryParam(VERSION_TYPE, VersionType.UNVERSIONED.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -468,7 +456,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get_update_get_delete_get_max_agg() throws Exception {
         // Post 2 versioned time series
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create.json");
+        InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
@@ -480,12 +468,10 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         ts = om.readValue(tsData, TimeSeries.class);
 
-        InputStream resource2 = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_create2.json");
+        InputStream resource2 = this.getClass().getResourceAsStream(resourcePath + "num_ts_create2.json");
         assertNotNull(resource2);
         String tsData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
         assertNotNull(tsData2);
-
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -528,7 +514,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -547,7 +532,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
 
         // Update versioned time series
-        InputStream updated_resource = this.getClass().getResourceAsStream("/cwms/cda/api/swt/num_ts_update.json");
+        InputStream updated_resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_update.json");
         assertNotNull(updated_resource);
         String tsUpdatedData = IOUtils.toString(updated_resource, StandardCharsets.UTF_8);
         assertNotNull(tsUpdatedData);
@@ -579,7 +564,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -628,7 +612,6 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, "2008-05-01T18:00:00Z")
-                .queryParam(VERSION_TYPE, VersionType.MAX_AGGREGATE.toString())
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)

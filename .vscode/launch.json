@@ -18,6 +18,7 @@
             "request": "attach",
             "port": 5005,
             "hostName": "localhost",
+            "projectName": "cwms-data-api",
             "sourcePaths": [
                 "build/generated/sources/annotationProcessor/java/main",               
             ]

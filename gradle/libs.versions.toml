@@ -15,7 +15,7 @@ javalin = "4.6.7"
 tomcat = "9.0.83"
 swagger-core = "2.2.2"
 swagger-ui = "5.9.0"
-jackson = "2.13.3"
+jackson = "2.16.2"
 geojson-jackson = "1.14"
 dropwizard = "4.2.12"
 dropwizard_prometheus = "0.15.0"
@@ -33,6 +33,7 @@ rest-assured = "5.2.0"
 hamcrest = "1.3"
 apache-commons-csv = "1.9.0"
 google-auto-service = "1.0-rc6"
+freemarker = "2.3.32"
 
 [libraries]
 
@@ -102,7 +103,7 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 oracle-jdbc-driver = { module ="com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc" }
 rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
 hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref = "hamcrest" }
-
+apache-freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons.csv" }
 # test runtime
 
