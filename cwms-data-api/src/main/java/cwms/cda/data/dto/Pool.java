@@ -4,9 +4,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.Formats;
+
 import usace.cwms.db.dao.ifc.pool.PoolNameType;
 import usace.cwms.db.dao.ifc.pool.PoolType;
 
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Pool extends PoolType implements CwmsDTOBase {
 	private final Number attribute;
 	private final String description;

@@ -11,12 +11,10 @@ import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
-import service.annotations.FormatService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@FormatService(contentType = Formats.NAMED_PGJSON, dataTypes = {Basin.class})
 public class NamedPgJsonFormatter implements OutputFormatter {
     private final ObjectMapper om;
 

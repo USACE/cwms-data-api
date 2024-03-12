@@ -10,30 +10,15 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
-import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
-import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class})
 public class XMLv2 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv2.class.getName());
-    private JAXBContext context = null;
-    private Marshaller mar = null;
 
-    public XMLv2() throws InternalServerErrorResponse{
-        try {
-            context = JAXBContext.newInstance(TimeSeries.class,Clobs.class);
-            mar = context.createMarshaller();
-            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
-        } catch( JAXBException jaxb ){
-            logger.log(Level.SEVERE, "Unable to build XML Marshaller", jaxb);
-            throw new InternalServerErrorResponse("Internal error");
-        }
-
+    public XMLv2() {
     }
 
     @Override
@@ -43,12 +28,16 @@ public class XMLv2 implements OutputFormatter {
 
     @Override
     public String format(CwmsDTOBase dto) {
-        try{
+        try {
+            final JAXBContext context = JAXBContext.newInstance(dto.getClass());
+            final Marshaller mar = context.createMarshaller();
+            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
+
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             mar.marshal(dto,pw);
             return sw.toString();
-        } catch( JAXBException jaxb ){
+        } catch (JAXBException jaxb) {
             String msg = dto != null ?
                     "Error rendering '" + dto.toString() + "' to XML"
                     :

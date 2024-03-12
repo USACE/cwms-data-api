@@ -107,10 +107,7 @@ dependencies {
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
 
-    // Now using the FormatService annotation in runtime in JsonV1 too.
-    implementation project(":formatting")
     implementation project(":access-manager-api")
-    annotationProcessor project(":formatting")
 
     implementation(libs.bundles.metrics)
 

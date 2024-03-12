@@ -31,63 +31,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import cwms.cda.data.dto.Blobs;
-import cwms.cda.data.dto.Catalog;
-import cwms.cda.data.dto.Clob;
-import cwms.cda.data.dto.Clobs;
-import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
-import cwms.cda.data.dto.Office;
-import cwms.cda.data.dto.Pool;
-import cwms.cda.data.dto.Pools;
-import cwms.cda.data.dto.SpecifiedLevel;
-import cwms.cda.data.dto.State;
-import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
-import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
-import cwms.cda.data.dto.rating.ExpressionRating;
-import cwms.cda.data.dto.rating.RatingMetadata;
-import cwms.cda.data.dto.rating.RatingMetadataList;
-import cwms.cda.data.dto.rating.RatingSpec;
-import cwms.cda.data.dto.rating.RatingSpecs;
-import cwms.cda.data.dto.rating.RatingTemplate;
-import cwms.cda.data.dto.rating.RatingTemplates;
-import cwms.cda.data.dto.rating.TableRating;
-import cwms.cda.data.dto.rating.TransitionalRating;
-import cwms.cda.data.dto.rating.UsgsStreamRating;
-import cwms.cda.data.dto.rating.VirtualRating;
-import cwms.cda.data.dto.texttimeseries.StandardTextCatalog;
-import cwms.cda.data.dto.texttimeseries.StandardTextValue;
-import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
 import org.jetbrains.annotations.NotNull;
-import service.annotations.FormatService;
 
 import java.util.List;
 
-@FormatService(contentType = Formats.JSONV2, dataTypes = {
-        Location.class,
-        Catalog.class,
-        TimeSeries.class,
-        Pool.class,
-        Pools.class,
-        SpecifiedLevel.class,
-        RatingTemplate.class, RatingTemplates.class,
-        RatingMetadataList.class, RatingMetadata.class,
-        TableRating.class, TransitionalRating.class, VirtualRating.class,
-        ExpressionRating.class, UsgsStreamRating.class,
-        RatingSpec.class, RatingSpecs.class,
-        LocationLevel.class, LocationLevels.class,
-        TimeSeriesIdentifierDescriptor.class, TimeSeriesIdentifierDescriptors.class,
-        TextTimeSeries.class, StandardTextValue.class, StandardTextCatalog.class,
-        BinaryTimeSeries.class
-})
 /**
  * Formatter for CDA generated JSON.
  */

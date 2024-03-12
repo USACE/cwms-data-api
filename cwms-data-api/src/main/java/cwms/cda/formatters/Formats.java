@@ -86,51 +86,11 @@ public class Formats {
     }
 
 
-    private Map<ContentType, Map<Class<? extends CwmsDTOBase>, OutputFormatter>> formatters = null;
+    private Map<ContentType, Map<Class<? extends CwmsDTOBase>, OutputFormatter>> formatters = new LinkedHashMap<>();
 
-    private static Formats formats = null;
+    private static Formats formats = new Formats();
 
-    private Formats() throws IOException {
-        formatters = new LinkedHashMap<>();
-        InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list",
-                this.getClass());
-        BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
-        while (br.ready()) {
-            String line = br.readLine();
-            logger.finest(line);
-            String[] typeFormatterClasses = line.split(":");
-
-            ContentType type = new ContentType(typeFormatterClasses[0]);
-            logger.finest(() -> "Adding links for content-type: " + type);
-
-            try {
-                @SuppressWarnings("unchecked")
-                Class<OutputFormatter> formatter =
-                        (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
-                OutputFormatter formatterInstance;
-                logger.finest("Formatter class: " + typeFormatterClasses[1]);
-                formatterInstance = formatter.getDeclaredConstructor().newInstance();
-                Map<Class<? extends CwmsDTOBase>, OutputFormatter> tmp = new HashMap<>();
-
-                for (String clazz : typeFormatterClasses[2].split(";")) {
-                    logger.finest("\tFor Class: " + clazz);
-
-                    @SuppressWarnings("unchecked")
-                    Class<? extends CwmsDTOBase> formatForClass = (Class<CwmsDTOBase>) Class.forName(clazz);
-                    tmp.put(formatForClass, formatterInstance);
-                }
-
-                formatters.put(type, tmp);
-            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                     | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                throw new IOException("Failed to load format list, formatter for "
-                        + typeFormatterClasses[0] + " point to a class with an invalid constructor", e);
-            } catch (ClassNotFoundException e) {
-                throw new IOException("Failed to find class referenced for formatter "
-                        + typeFormatterClasses[0], e);
-            }
-        }
-
+    private Formats() {
     }
 
 
@@ -192,27 +152,12 @@ public class Formats {
         }
     }
 
-    private static void init() {
-        if (formats == null) {
-            logger.finest("creating instance");
-            try {
-                formats = new Formats();
-            } catch (IOException err) {
-                throw new FormattingException("Failed to load format map", err);
-            }
-        }
-    }
-
     public static String format(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
-        logger.finest("formats");
-        init();
         return formats.getFormatted(type, toFormat);
     }
 
     public static String format(ContentType type, List<? extends CwmsDTOBase> toFormat, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
-        logger.finest("format list");
-        init();
         return formats.getFormatted(type, toFormat, rootType);
     }
 
