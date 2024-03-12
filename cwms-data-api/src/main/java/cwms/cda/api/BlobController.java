@@ -59,8 +59,8 @@ import org.jooq.DSLContext;
  *
  */
 public class BlobController implements CrudHandler {
-    private final static FluentLogger logger = FluentLogger.forEnclosingClass();
-    private static final int defaultPageSize = 20;
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Blob";
 
     private final MetricRegistry metrics;
@@ -84,43 +84,40 @@ public class BlobController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = OFFICE,
-                            description = "Specifies the owning office. If this field is not "
-                                    + "specified, matching information from all offices shall be "
-                                    + "returned."),
-                    @OpenApiParam(name = PAGE,
-                            description = "This end point can return a lot of data, this "
-                                    + "identifies where in the request you are. This is an opaque"
-                                    + " value, and can be obtained from the 'next-page' value in "
-                                    + "the response."
-                    ),
-                    @OpenApiParam(name = PAGE_SIZE,
-                            type = Integer.class,
-                            description = "How many entries per page returned. Default "
-                                    + defaultPageSize + "."
-                    ),
-                    @OpenApiParam(name = LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> describing the blob id's you want"
-                    )
-            },
-            responses = {@OpenApiResponse(status = STATUS_200,
-                    description = "A list of blobs.",
-                    content = {
-                            @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                            @OpenApiContent(type = Formats.XMLV2, from = Blobs.class)
-                    }
-            )
-            },
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = OFFICE,
+                    description = "Specifies the owning office. If this field is not "
+                            + "specified, matching information from all offices shall be "
+                            + "returned."),
+            @OpenApiParam(name = PAGE,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response."),
+            @OpenApiParam(name = PAGE_SIZE,
+                    type = Integer.class,
+                    description = "How many entries per page returned. Default "
+                            + DEFAULT_PAGE_SIZE + "."),
+            @OpenApiParam(name = LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "describing the blob id's you want")
+        },
+        responses = {@OpenApiResponse(status = STATUS_200,
+                description = "A list of blobs.",
+                content = {
+                    @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
+                    @OpenApiContent(type = Formats.XMLV2, from = Blobs.class)
+                })
+        },
+        tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
 
-        try ( final Timer.Context ignored = markAndTime(GET_ALL)) {
-                DSLContext dsl = getDslContext(ctx);
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
-            Optional<String> officeOpt = Optional.ofNullable(office);
+
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(BlobController.class.getName(), GET_ALL));
@@ -132,7 +129,7 @@ public class BlobController implements CrudHandler {
             }
 
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE},
-                    Integer.class, defaultPageSize, metrics,
+                    Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(BlobController.class.getName(), GET_ALL));
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
@@ -141,7 +138,7 @@ public class BlobController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
 
             BlobDao dao = new BlobDao(dsl);
-            List<Blob> blobList = dao.getAll(officeOpt, like);
+            List<Blob> blobList = dao.getAll(office, like);
 
             Blobs blobs = new Blobs.Builder(cursor, pageSize, 0).addAll(blobList).build();
             String result = Formats.format(contentType, blobs);
@@ -154,7 +151,7 @@ public class BlobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
             tags = {TAG}
     )
@@ -193,13 +190,13 @@ public class BlobController implements CrudHandler {
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = Blob.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = Blob.class, type = Formats.XMLV2)
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true")
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                        description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
             tags = {TAG}
