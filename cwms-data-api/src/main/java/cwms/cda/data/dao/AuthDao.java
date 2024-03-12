@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
-public class AuthDao extends Dao<DataApiPrincipal>{
+public class AuthDao extends Dao<DataApiPrincipal> {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
@@ -86,11 +86,11 @@ public class AuthDao extends Dao<DataApiPrincipal>{
         if (AuthDao.defaultOffice == null) {
             AuthDao.defaultOffice = defaultOffice;
             try {
-                connectionUser = dsl.connectionResult(c->c.getMetaData().getUserName());
+                connectionUser = dsl.connectionResult(c -> c.getMetaData().getUserName());
                 dsl.execute("BEGIN cwms_env.set_session_user_direct(?,?); END;", connectionUser, defaultOffice);
                 hasCwmsEnvMultiOfficeAuthFix = true;
             } catch (DataAccessException ex) {
-                if( ex.getLocalizedMessage()
+                if (ex.getLocalizedMessage()
                     .toLowerCase()
                     .contains("wrong number or types of arguments in call")) {
                     hasCwmsEnvMultiOfficeAuthFix = false;
@@ -109,8 +109,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      */
     public static AuthDao getInstance(DSLContext dsl, String defaultOffice) {
         AuthDao dao = instance.get();
-        if (dao == null)
-        {
+        if (dao == null) {
             dao = new AuthDao(dsl,defaultOffice);
             instance.set(dao);
         } else {
@@ -130,7 +129,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     }
 
     @Override
-    public List<DataApiPrincipal> getAll(Optional<String> limitToOffice) {
+    public List<DataApiPrincipal> getAll(String limitToOffice) {
         throw new UnsupportedOperationException("Unimplemented method 'getAll'");
     }
 
@@ -139,13 +138,13 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * (Also required by Dao<dataApiPrincipal>)
      */
     @Override
-    public Optional<DataApiPrincipal> getByUniqueName(String uniqueName, Optional<String> limitToOffice) throws CwmsAuthException {
+    public Optional<DataApiPrincipal> getByUniqueName(String uniqueName, String limitToOffice) throws CwmsAuthException {
         throw new UnsupportedOperationException("Unimplemented method 'getByUniqueName'");
     }
 
     /**
      * Retrieve required user information from database for a given APIKEY.
-     * @param apikey
+     * @param apikey the key to look up.
      * @return valid DataApiPrincipal object for further authorization verification.
      * @throws CwmsAuthException throw for any issue with verification of Key or user information.
      */
@@ -157,18 +156,18 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     /**
      * Setup session environment so we can query the required tables.
-     * @param conn
+     * @param conn the connection to setup.
      * @throws SQLException
      */
     private void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
-            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
+            try (PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
                 setApiUser.setString(1,connectionUser);
                 setApiUser.setString(2,defaultOffice);
                 setApiUser.execute();
             }
         } else {
-            try(PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT)) {
+            try (PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT)) {
                 setApiUser.setString(1,connectionUser);
                 setApiUser.execute();
             }
@@ -177,7 +176,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     private String checkKey(String key) throws CwmsAuthException {
         try {
-            return dsl.connectionResult(c-> {
+            return dsl.connectionResult(c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY)) {
                     checkForKey.setString(1,key);
@@ -204,13 +203,13 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     /**
      *
-     * @param edipi
-     * @return
+     * @param edipi the edipi to look up.
+     * @return the username for the given edipi.
      * @throws CwmsAuthException
      */
     private String userForEdipi(long edipi) throws CwmsAuthException {
         try {
-            return dsl.connectionResult(c-> {
+            return dsl.connectionResult(c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement userForEdipi = c.prepareStatement(USER_FOR_EDIPI)) {
                     userForEdipi.setLong(1, edipi);
@@ -247,12 +246,12 @@ public class AuthDao extends Dao<DataApiPrincipal>{
 
     /**
      * Retrieve roles a user has.
-     * @param user
-     * @return
+     * @param user the user to look up.
+     * @return a set of roles the user has.
      */
     private Set<RouteRole> getRolesForUser(String user) {
         final Set<RouteRole> roles = new HashSet<>();
-        dsl.connection(c->{
+        dsl.connection(c -> {
             setSessionForAuthCheck(c);
             try (PreparedStatement getRoles = c.prepareStatement(RETRIEVE_GROUPS_OF_USER)) {
                 getRoles.setString(1,user);
@@ -271,13 +270,12 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     /**
      * Allows connection to be correctly setup, key is used to assert user, then the office
      * is set to the user specified office for further checks within the database.
-     *
      * NOTE: side affect on ctx for this session.
      *
      * @param ctx javalin context if additional parameters are required.
      * @param p User information
      */
-    public static void prepareContextWithUser(Context ctx, DataApiPrincipal p) throws SQLException {
+    public static void prepareContextWithUser(Context ctx, DataApiPrincipal p) {
         Objects.requireNonNull(ctx, "A valid Javalin Context must be provided to this call.");
         Objects.requireNonNull(p, "A valid data api principal must be provided to this call.");
         logger.atInfo()
@@ -301,9 +299,9 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     /**
      * Primary logic to determine if a given principal can perform the desired operation.
      * Throws exception if not valid, otherwise just returns.
-     * @param ctx
-     * @param p
-     * @param routeRoles
+     * @param ctx the context to check
+     * @param p the principal to check
+     * @param routeRoles the required roles
      */
     public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles) throws CwmsAuthException {
         if (routeRoles == null || routeRoles.isEmpty()) {
@@ -409,7 +407,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
             try (PreparedStatement listKeys = c.prepareStatement(LIST_KEYS)) {
                 listKeys.setString(1,p.getName());
                 try (ResultSet rs = listKeys.executeQuery()) {
-                    while(rs.next()) {
+                    while (rs.next()) {
                         keys.add(rs2ApiKey(rs));
                     }
                 }
@@ -448,9 +446,8 @@ public class AuthDao extends Dao<DataApiPrincipal>{
      * @param p User principal to narrow and limit request
      * @param keyName name of the key to remove
      */
-    public void deleteKeyForUser(DataApiPrincipal p, String keyName)
-    {
-        dsl.connection( c -> {
+    public void deleteKeyForUser(DataApiPrincipal p, String keyName) {
+        dsl.connection(c -> {
             setSessionForAuthCheck(c);
             try (PreparedStatement deleteKey = c.prepareStatement(REMOVE_API_KEY)) {
                 deleteKey.setString(1, p.getName());
@@ -461,8 +458,7 @@ public class AuthDao extends Dao<DataApiPrincipal>{
     }
 
 
-    public DataApiPrincipal getDataApiPrincipal(Context ctx)
-    {
+    public DataApiPrincipal getDataApiPrincipal(Context ctx) {
         return ctx.attribute(DATA_API_PRINCIPAL);
     }
 
