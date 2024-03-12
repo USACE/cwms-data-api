@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class BinaryTimeSeriesTest {
@@ -23,14 +24,17 @@ class BinaryTimeSeriesTest {
         BinaryTimeSeries.Builder builder = new BinaryTimeSeries.Builder();
         Collection<BinaryTimeSeriesRow> rows = new ArrayList<>();
         BinaryTimeSeriesRow.Builder rowBuilder = new BinaryTimeSeriesRow.Builder();
-        long date = 3333333333L;
+        long date = 1209333333333L;
         long attr = 1;
         byte[] bytes = "the_byles".getBytes();
         rowBuilder
-                .withDataEntryDate(new Date(2222222222L).toInstant())
+                .withDataEntryDate(new Date(1209222222222L).toInstant())
                 .withMediaType("mediaType")
                 .withFilename("file.bin")
-                .withBinaryValue(bytes);
+                .withBinaryValue(bytes)
+                .withDestFlag(0)
+                .withValueUrl("http://somehost:80/path?thequery")
+        ;
 
         rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
         rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
@@ -69,7 +73,10 @@ class BinaryTimeSeriesTest {
         Collection<BinaryTimeSeriesRow> rows = bts.getBinaryValues();
         assertNotNull(rows);
         assertEquals(3, rows.size());
-        BinaryTimeSeriesRow first = rows.iterator().next();
+
+        List<BinaryTimeSeriesRow> rowList = new ArrayList<>(rows);
+
+        BinaryTimeSeriesRow first = rowList.get(0);
         assertNotNull(first);
 
 //        ZonedDateTime start = ZonedDateTime.parse("2008-05-01T15:00:00-00:00[UTC]");
@@ -79,9 +86,14 @@ class BinaryTimeSeriesTest {
         assertEquals("mediaType", first.getMediaType());
         assertEquals("file.bin", first.getFilename());
         assertEquals("binaryData", new String(first.getBinaryValue()));
+        assertEquals(2, first.getDestFlag());
 
+        BinaryTimeSeriesRow third = rowList.get(2);
+        assertNotNull(third);
+        assertEquals(0, third.getDestFlag());
 
     }
+
 
     @Test
     void testDeserialize2() throws IOException {
@@ -109,13 +121,15 @@ class BinaryTimeSeriesTest {
         BinaryTimeSeries.Builder builder = new BinaryTimeSeries.Builder();
         Collection<BinaryTimeSeriesRow> rows = new ArrayList<>();
         BinaryTimeSeriesRow.Builder rowBuilder = new BinaryTimeSeriesRow.Builder();
-        long date = 3333333333L;
+        long date = 1209333333333L;
 
         rowBuilder
-                .withDataEntryDate(new Date(2222222222L).toInstant())
+                .withDataEntryDate(new Date(1209222222222L).toInstant())
                 .withMediaType("mediaType")
                 .withFilename("file.bin")
-                .withBinaryValue("binaryData".getBytes());
+                .withBinaryValue("binaryData".getBytes())
+                .withDestFlag(2)
+        ;
 
         rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
         rows.add(rowBuilder.withDateTime(new Date(date++).toInstant()).build());
@@ -157,8 +171,9 @@ class BinaryTimeSeriesTest {
             assertEquals(row.getMediaType(), row2.getMediaType());
             assertEquals(row.getFilename(), row2.getFilename());
             assertEquals(new String(row.getBinaryValue()), new String(row2.getBinaryValue()));
+            assertEquals(row.getDestFlag(), row2.getDestFlag());
+            assertEquals(row.getValueUrl(), row2.getValueUrl());
         }
-
 
     }
 }

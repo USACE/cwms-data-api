@@ -10,21 +10,24 @@
       "data-entry-date": 2222222222,
       "media-type": "mediaType",
       "filename": "file.bin",
-      "binary-value": "YmluYXJ5RGF0YQ=="
+      "binary-value": "YmluYXJ5RGF0YQ==",
+      "dest-flag": 2
     },
     {
       "date-time": 1209682800000,
       "data-entry-date": 2222222222,
       "media-type": "mediaType",
       "filename": "file.bin",
-      "binary-value": "YmluYXJ5RGF0YQ=="
+      "binary-value": "YmluYXJ5RGF0YQ==",
+      "dest-flag": 2
     },
     {
       "date-time": 1209686400000,
       "data-entry-date": 2222222222,
       "media-type": "mediaType",
       "filename": "file.bin",
-      "binary-value": "YmluYXJ5RGF0YQ=="
+      "value-url": "http://somehost:80/path?thequery",
+      "dest-flag": 0
     }
   ]
 }

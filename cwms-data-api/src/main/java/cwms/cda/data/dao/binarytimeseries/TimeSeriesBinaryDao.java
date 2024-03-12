@@ -6,17 +6,19 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.TimeZone;
+import java.util.function.Consumer;
+import kotlin.Triple;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Configuration;
@@ -213,7 +215,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
                 // FILENAME, MEDIA_TYPE_ID, VALUE are new and aren't coming back from db yet...
                 String filename;
-                if(hasField(rowRecord, "FILENAME")) {
+                if (hasField(rowRecord, "FILENAME")) {
                     filename = rowRecord.get("FILENAME", String.class);
                 } else {
                     filename = dateTimeZDT.toInstant().getEpochSecond() + ".bin";
@@ -221,25 +223,36 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 builder = builder.withFilename(filename);
 
                 String mediaType;
-                if(hasField(rowRecord, "MEDIA_TYPE_ID")) {
+                if (hasField(rowRecord, "MEDIA_TYPE_ID")) {
                     mediaType = rowRecord.get("MEDIA_TYPE_ID", String.class);
                 } else {
                     mediaType = "application/octet-stream";
                 }
                 builder = builder.withMediaType(mediaType);
 
-                if(hasField(rowRecord, "VALUE")) {
+                if (hasField(rowRecord, "VALUE")) {
                     byte[] binaryData = rowRecord.get("VALUE", byte[].class);
                     builder = builder.withBinaryValue(binaryData);
                 } else if (hasField(rowRecord, "ID")) {
                     // The record is the old style with a blob-id
                     String binaryId = rowRecord.get("ID", String.class);
                     BlobDao blobDao = new BlobDao(dsl);
-                    Optional<Blob> optBlob = blobDao.getByUniqueName(binaryId, Optional.of(officeId));
-                    if(optBlob.isPresent()){
-                        Blob blob = optBlob.get();
-                        builder = builder.withBinaryValue(blob.getValue());
-                    }
+
+                    BinaryTimeSeriesRow.Builder finalBuilder = builder;
+                    Consumer<Triple<InputStream, Long, String>> tripleConsumer = triple -> {
+                        InputStream is = triple.getFirst();
+                        // Could check the size here and conditionally build value-url instead of value.
+                        if (is != null) {
+                            try {
+                                byte[] bytes = BlobDao.readFully(is);
+                                finalBuilder.withBinaryValue(bytes);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    };
+
+                    blobDao.getBlob(binaryId, officeId, tripleConsumer);
                 }
 
                 return builder.build();
@@ -256,10 +269,18 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 .map(mapper);
     }
 
+    /**
+     * Check if a field exists in a record
+     * @param rowRecord the record to search
+     * @param name the name of the field to search for
+     * @return true if the field exists, false otherwise
+     * @deprecated - method should be removed once the database changes are made.
+     *
+     */
     private boolean hasField(Record rowRecord, String name) {
         boolean retval = false;
 
-        if(rowRecord != null){
+        if (rowRecord != null) {
             retval = rowRecord.field(name) != null;
         }
 
@@ -281,13 +302,11 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         dsl.connection(connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
             connDsl.transaction((Configuration trx) -> {
-                        Configuration config = trx.dsl().configuration();
-                        for (BinaryTimeSeriesRow binRecord : rows) {
-                            storeRow(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll, versionDate);
-                        }
-                    }
-                    // Implicit commit executed here
-            );
+                Configuration config = trx.dsl().configuration();
+                for (BinaryTimeSeriesRow binRecord : rows) {
+                    storeRow(config, officeId, tsId, binRecord, maxVersion, storeExisting, storeNonExisting, replaceAll, versionDate);
+                }
+            });
         });
     }
 
@@ -301,9 +320,9 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private void storeRow(Configuration configuration, String officeId, String tsId,
                           BinaryTimeSeriesRow binRecord,
                           boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Instant versionDate) {
-            store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(versionDate), OracleTypeMap.GMT_TIME_ZONE,
-                    maxVersion, storeExisting, storeNonExisting, replaceAll);
+        store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
+                Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(versionDate), OracleTypeMap.GMT_TIME_ZONE,
+                maxVersion, storeExisting, storeNonExisting, replaceAll);
     }
 
 

@@ -32,10 +32,10 @@ public class BinaryTimeSeries extends CwmsDTO {
     private final Long intervalOffset;
     private final String timeZone;
 
-    @Schema(description = "The version type for the binary time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. " +
-            "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid " +
-            "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. " +
-            "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
+    @Schema(description = "The version type for the binary time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. "
+            + "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid "
+            + "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. "
+            + "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     VersionType dateVersionType;
 
@@ -168,11 +168,16 @@ public class BinaryTimeSeries extends CwmsDTO {
                 if (entriesMap == null) {
                     entriesMap = new TreeMap<>(new DateDateComparator());
                 }
-                Instant dateTime = row.getDateTime();
-                Instant dataEntryDate = row.getDataEntryDate();
-                entriesMap.put(new DateDateKey(dateTime==null?null:Date.from(dateTime), dataEntryDate==null?null:Date.from(dataEntryDate)), row);
+
+                entriesMap.put(buildDateDateKey(row.getDateTime(), row.getDataEntryDate()), row);
             }
             return this;
+        }
+
+        private DateDateKey buildDateDateKey(Instant dateTime, Instant dataEntry) {
+            Date dateTimeDate = dateTime == null ? null : Date.from(dateTime);
+            Date dataEntryDate = dataEntry == null ? null : Date.from(dataEntry);
+            return new DateDateKey(dateTimeDate, dataEntryDate);
         }
 
         public BinaryTimeSeries build() {

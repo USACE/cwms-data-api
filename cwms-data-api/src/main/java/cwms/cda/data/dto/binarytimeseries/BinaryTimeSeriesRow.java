@@ -16,7 +16,9 @@ public class BinaryTimeSeriesRow {
     private final Instant dataEntryDate;
     private final String mediaType;
     private final String filename;
+    private final int destFlag;
     private final byte[] binaryValue;
+    private final String valueUrl;
 
 
     private BinaryTimeSeriesRow(Builder builder) {
@@ -25,18 +27,17 @@ public class BinaryTimeSeriesRow {
         this.mediaType = builder.mediaType;
         this.filename = builder.filename;
         this.binaryValue = builder.binaryValue;
+        this.destFlag = builder.destFlag;
+        this.valueUrl = builder.valueUrl;
     }
 
     public Instant getDateTime() {
         return dateTime;
     }
 
-
-
     public Instant getDataEntryDate() {
         return dataEntryDate;
     }
-
 
     public String getMediaType() {
         return mediaType;
@@ -48,6 +49,14 @@ public class BinaryTimeSeriesRow {
 
     public byte[] getBinaryValue() {
         return binaryValue;
+    }
+
+    public int getDestFlag() {
+        return destFlag;
+    }
+
+    public String getValueUrl() {
+        return valueUrl;
     }
 
     public BinaryTimeSeriesRow copy(){
@@ -92,7 +101,9 @@ public class BinaryTimeSeriesRow {
         private Instant dataEntryDate;
         private String mediaType;
         private String filename;
+        private String valueUrl;
         private byte[] binaryValue;
+        public int destFlag = 0;
 
         public Builder(){
 
@@ -136,19 +147,35 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
+        public Builder withDestFlag(int destFlag){
+            this.destFlag = destFlag;
+            return this;
+        }
+
+        public Builder withValueUrl(String valueUrl){
+            this.valueUrl = valueUrl;
+            return this;
+        }
+
         public Builder from(BinaryTimeSeriesRow row){
             if(row == null){
                 return withDateTime(null)
                         .withDataEntryDate(null)
                         .withBinaryValue(null)
                         .withFilename(null)
-                        .withMediaType(null);
+                        .withMediaType(null)
+                        .withDestFlag(0)
+                        .withValueUrl(null)
+                        ;
             } else {
                 return withDateTime(row.dateTime)
                         .withDataEntryDate(row.dataEntryDate)
                         .withBinaryValue(row.binaryValue)
                         .withFilename(row.filename)
-                        .withMediaType(row.mediaType);
+                        .withMediaType(row.mediaType)
+                        .withDestFlag(row.destFlag)
+                        .withValueUrl(this.valueUrl)
+                        ;
             }
         }
 

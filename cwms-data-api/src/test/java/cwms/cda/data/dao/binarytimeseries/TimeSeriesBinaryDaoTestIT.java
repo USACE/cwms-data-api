@@ -18,13 +18,11 @@ import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 
 @Tag("integration")
-@Disabled("I can't get my debugger to actually stop in this file to see WTF is going on.")
 public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
 
     private static final String officeId = "SPK";
