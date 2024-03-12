@@ -1,24 +1,24 @@
 package cwms.cda.api;
 
-import java.sql.SQLException;
-import javax.servlet.http.HttpServletResponse;
+import static io.restassured.RestAssured.given;
+import static io.restassured.config.JsonConfig.jsonConfig;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
+import java.sql.SQLException;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.config.JsonConfig.jsonConfig;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 public class TimeseriesControllerTestIT extends DataApiTestIT {
@@ -119,6 +119,7 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK));
 
             // get it back
+            String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or 1675335600000
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -128,8 +129,8 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam("office",officeId)
                 .queryParam("units","F")
                 .queryParam("name",ts.get("name").asText())
-                .queryParam("begin","2023-02-02T06:00:00-05:00")
-                .queryParam("end","2023-02-02T06:00:00-05:00")
+                .queryParam("begin", firstPoint)
+                .queryParam("end", firstPoint)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -138,7 +139,11 @@ public class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]",closeTo(35,0.0001));
+                .body("values.size()", equalTo(1))  // one point
+                .body("values[0].size()", equalTo(3))  // time, value, quality
+                .body("values[0][0]",equalTo(1675335600000L)) // time
+                .body("values[0][1]",closeTo(35,0.0001))
+            ;
         } catch( SQLException ex) {
             throw new RuntimeException("Unable to create location for TS",ex);
         }
