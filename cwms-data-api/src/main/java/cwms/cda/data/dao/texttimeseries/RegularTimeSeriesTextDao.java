@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,8 +40,8 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 
     public static final String OFFICE_ID = "OFFICE_ID";
-    private static final String TEXT = "TEXT";
-    private static final String TEXT_ID = "TEXT_ID";
+    private static final String TEXT = "TEXT";  // Column should be going away
+    private static final String TEXT_ID = "TEXT_ID"; // Column should be going away
     private static final String DATA_ENTRY_DATE = "DATA_ENTRY_DATE";
     private static final String VERSION_DATE = "VERSION_DATE";
     private static final String DATE_TIME = "DATE_TIME";
@@ -130,12 +131,14 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         List<RegularTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, textMask,
                 startTime, endTime, versionDate, maxVersion, minAttribute, maxAttribute);
 
+        ZonedDateTime versionZdt = versionDate == null ? null : versionDate.atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId());
+
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
         return builder.withName(tsId)
                 .withOfficeId(officeId)
                 .withRegularTextValues(rows)
+                .withVersionDate(versionZdt)
                 .build();
-
     }
 
     public List<RegularTextTimeSeriesRow> retrieveRows(
@@ -187,7 +190,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             filename = rs.getString(FILENAME);
         }
         if (filename == null) {
-            filename = tsDateTime.getEpochSecond() + ".txt";
+            filename = buildDefaultFilename(rs, metaData, office);
         }
         builder = builder.withFilename(filename);
 
@@ -203,17 +206,18 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         String clobString = null;
         if (OracleTypeMap.containsColumnIgnoreCase(metaData, CLOB)) {
             clobString = rs.getString(CLOB);
-        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT)){
+        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT)) {  // Old column
             clobString = rs.getString(TEXT);
         }
         if (clobString != null) {
             builder = builder.withTextValue(clobString);
-        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT_ID)){
+        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT_ID)) { //Old column
             String textId = rs.getString(TEXT_ID);
             if (textId != null && !textId.isEmpty()) {
                 ClobDao clobDao = new ClobDao(dsl);
                 RegularTextTimeSeriesRow.Builder finalBuilder = builder;
-                clobDao.getByUniqueName(textId, office).ifPresent(clob -> finalBuilder.withTextValue(clob.getValue()));
+                clobDao.getByUniqueName(textId, office)
+                        .ifPresent(clob -> finalBuilder.withTextValue(clob.getValue()));
             }
         }
 
@@ -223,18 +227,69 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         }
 
         if (OracleTypeMap.containsColumnIgnoreCase(metaData, DEST_FLAG)) {
-            int destFlag = rs.getInt(DEST_FLAG);
+            Integer destFlag = rs.getObject(DEST_FLAG, Integer.class);  // nullable
             builder = builder.withDestFlag(destFlag);
         }
 
         return builder.build();
     }
 
+    protected String buildDefaultFilename(ResultSet rs, ResultSetMetaData metaData, String office)
+            throws SQLException {
+        String retval = "unknown.txt";
+        Instant tsDateTime = getInstant(rs.getTimestamp(DATE_TIME));
+
+        if (tsDateTime != null) {
+            retval =  tsDateTime.getEpochSecond() + ".txt";
+        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT_ID)) {
+            String textId = rs.getString(TEXT_ID);
+            if (textId != null && !textId.isEmpty()) {
+                retval = sanitizeFilename(textId);
+            }
+        }
+
+        return retval;
+    }
+
+
+    @NotNull
+    public static String sanitizeFilename(@Nullable String inputName) {
+        String retval = inputName == null ? "" : inputName.trim();
+
+        // If it ends in .txt, we'll remove it.
+        if (retval.endsWith(".txt")) {
+            retval = retval.substring(0, retval.length() - 4);
+        }
+
+        retval = retval.replaceAll("[^a-zA-Z0-9-_.]", "_");
+
+        // If the name is too long, truncate it.
+        if (retval.length() > 250) {
+            retval = retval.substring(0, 250);
+        }
+
+        // Remove trailing periods
+        while (retval.endsWith(".")) {
+            retval = retval.substring(0, retval.length() - 1);
+        }
+
+        retval = retval.trim();
+
+        // If the name is empty, use a default name.
+        if (retval.isEmpty()) {
+            retval = "unknown";
+        }
+
+        return retval + ".txt";
+    }
+
     @Nullable
     private static Instant getInstant(Timestamp dateTime) {
         Instant dateTimeInstant = null;
-        if(dateTime != null) {
-            dateTimeInstant = dateTime.toLocalDateTime().atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId()).toInstant();
+        if (dateTime != null) {
+            dateTimeInstant = dateTime.toLocalDateTime()
+                    .atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId())
+                    .toInstant();
         }
         return dateTimeInstant;
     }

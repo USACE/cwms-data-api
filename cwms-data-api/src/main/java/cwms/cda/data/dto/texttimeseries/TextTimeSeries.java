@@ -3,7 +3,6 @@ package cwms.cda.data.dto.texttimeseries;
 import static cwms.cda.data.dto.TimeSeries.ZONED_DATE_TIME_FORMAT;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -16,9 +15,11 @@ import cwms.cda.data.dto.binarytimeseries.DateDateComparator;
 import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import hec.data.timeSeriesText.DateDateKey;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -36,10 +37,13 @@ public class TextTimeSeries extends CwmsDTO {
     private final Long intervalOffset;
     private final String timeZone;
 
-    @Schema(description = "The version type for the text time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. " +
-            "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid " +
-            "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. " +
-            "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
+    @Schema(description = "The version type for the text time series being queried. Can be in the "
+            + "form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. MAX_AGGREGATE will get the "
+            + "latest version date value for each value in the date range. SINGLE_VERSION must be "
+            + "called with a valid version date and will return the values for the version date "
+            + "provided. UNVERSIONED return values from an unversioned time series. Note that "
+            + "SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED "
+            + "each require a null version date.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     VersionType dateVersionType;
 
@@ -92,15 +96,6 @@ public class TextTimeSeries extends CwmsDTO {
 
     }
 
-    @JsonIgnore
-    @Nullable
-    public NavigableMap<DateDateKey, RegularTextTimeSeriesRow> getTextTimeSeriesMap() {
-        if (regularMap == null) {
-            return null;
-        }
-        return Collections.unmodifiableNavigableMap(regularMap);
-    }
-
     @Nullable
     public Collection<RegularTextTimeSeriesRow> getRegularTextValues() {
         if (regularMap == null) {
@@ -109,9 +104,6 @@ public class TextTimeSeries extends CwmsDTO {
             return Collections.unmodifiableCollection(regularMap.values());
         }
     }
-
-
-
 
 
     @JsonPOJOBuilder
@@ -125,12 +117,9 @@ public class TextTimeSeries extends CwmsDTO {
 
         private String timeZone;
 
-        public VersionType dateVersionType;
-        public ZonedDateTime versionDate;
+        private VersionType dateVersionType;
+        private ZonedDateTime versionDate;
         NavigableMap<DateDateKey, RegularTextTimeSeriesRow> regMap = null;
-
-
-
 
 
         public Builder() {
@@ -165,9 +154,6 @@ public class TextTimeSeries extends CwmsDTO {
             this.versionDate = versionDate;
             return this;
         }
-
-
-
 
         public Builder withRows(Collection<TextTimeSeriesRow> rows) {
             if (rows == null) {
@@ -209,19 +195,35 @@ public class TextTimeSeries extends CwmsDTO {
 
                 for (RegularTextTimeSeriesRow row : rows) {
                     if (row != null) {
-                        regMap.put(row.getDateDateKey(), row);
+                        regMap.put(buildDateDateKey(row), row);
                     }
                 }
             }
             return this;
         }
 
+        private DateDateKey buildDateDateKey(RegularTextTimeSeriesRow row) {
+            DateDateKey retval = null;
+            if (row != null) {
+                retval = buildDateDateKey(row.getDateTime(), row.getDataEntryDate());
+            }
+            return retval;
+        }
+
+        private DateDateKey buildDateDateKey(Instant dateTime, Instant dataEntryDate) {
+            Date dateTimeDate = dateTime == null ? null : Date.from(dateTime);
+            Date dataEntryDateDate = dataEntryDate == null ? null : Date.from(dataEntryDate);
+
+            return new DateDateKey(dateTimeDate, dataEntryDateDate);
+        }
+
+
         public Builder withRegRow(RegularTextTimeSeriesRow row) {
             if (row != null) {
                 if (regMap == null) {
                     regMap = new TreeMap<>(new DateDateComparator());
                 }
-                regMap.put(row.getDateDateKey(), row);
+                regMap.put(buildDateDateKey(row), row);
             }
             return this;
         }
