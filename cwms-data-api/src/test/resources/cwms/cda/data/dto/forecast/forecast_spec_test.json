@@ -1,0 +1,22 @@
+{
+  "spec-id": "spec",
+  "office-id": "office",
+  "location-id": "location",
+  "source-entity-id": "sourceEntity",
+  "designator": "designator",
+  "description": "description",
+  "time-series-ids": [
+    {
+      "time-series-id": "tsid1",
+      "active": false
+    },
+    {
+      "time-series-id": "tsid2",
+      "active": false
+    },
+    {
+      "time-series-id": "tsid3",
+      "active": false
+    }
+  ]
+}
