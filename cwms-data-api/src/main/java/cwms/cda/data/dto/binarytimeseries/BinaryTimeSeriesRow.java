@@ -16,9 +16,10 @@ public class BinaryTimeSeriesRow {
     private final Instant dataEntryDate;
     private final String mediaType;
     private final String filename;
-    private final int destFlag;
+    private final Integer destFlag;
     private final byte[] binaryValue;
     private final String valueUrl;
+    private final Long qualityCode;
 
 
     private BinaryTimeSeriesRow(Builder builder) {
@@ -29,6 +30,8 @@ public class BinaryTimeSeriesRow {
         this.binaryValue = builder.binaryValue;
         this.destFlag = builder.destFlag;
         this.valueUrl = builder.valueUrl;
+        this.qualityCode = builder.qualityCode;
+
     }
 
     public Instant getDateTime() {
@@ -51,12 +54,16 @@ public class BinaryTimeSeriesRow {
         return binaryValue;
     }
 
-    public int getDestFlag() {
+    public Integer getDestFlag() {
         return destFlag;
     }
 
     public String getValueUrl() {
         return valueUrl;
+    }
+
+    public Long getQualityCode() {
+        return qualityCode;
     }
 
     public BinaryTimeSeriesRow copy(){
@@ -99,11 +106,12 @@ public class BinaryTimeSeriesRow {
 
         private Instant dateTime;
         private Instant dataEntryDate;
-        private String mediaType;
         private String filename;
+        private String mediaType;
+        private Long qualityCode;
         private String valueUrl;
         private byte[] binaryValue;
-        public int destFlag = 0;
+        private Integer destFlag = 0;
 
         public Builder(){
 
@@ -147,13 +155,18 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
-        public Builder withDestFlag(int destFlag){
+        public Builder withDestFlag(Integer destFlag){
             this.destFlag = destFlag;
             return this;
         }
 
         public Builder withValueUrl(String valueUrl){
             this.valueUrl = valueUrl;
+            return this;
+        }
+
+        public Builder withQualityCode(Long qualityCode){
+            this.qualityCode = qualityCode;
             return this;
         }
 
@@ -164,8 +177,9 @@ public class BinaryTimeSeriesRow {
                         .withBinaryValue(null)
                         .withFilename(null)
                         .withMediaType(null)
-                        .withDestFlag(0)
+                        .withDestFlag(null)
                         .withValueUrl(null)
+                        .withQualityCode(null)
                         ;
             } else {
                 return withDateTime(row.dateTime)
@@ -174,7 +188,8 @@ public class BinaryTimeSeriesRow {
                         .withFilename(row.filename)
                         .withMediaType(row.mediaType)
                         .withDestFlag(row.destFlag)
-                        .withValueUrl(this.valueUrl)
+                        .withValueUrl(row.valueUrl)
+                        .withQualityCode(row.qualityCode)
                         ;
             }
         }
