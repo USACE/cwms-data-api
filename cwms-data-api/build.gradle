@@ -140,6 +140,7 @@ dependencies {
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
+    testImplementation(libs.apache.freemarker)
 
     webjars(libs.swagger.ui) {
         transitive = false

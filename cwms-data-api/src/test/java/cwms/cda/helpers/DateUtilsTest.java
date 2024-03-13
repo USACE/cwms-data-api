@@ -111,4 +111,15 @@ class DateUtilsTest {
 
     }
 
+    @Test
+    void test_PT_doesnt_care_about_zone(){
+        ZonedDateTime now = ZonedDateTime.now();
+        ZoneId utcZone = ZoneId.of("UTC");
+        ZoneId centralZone = ZoneId.of("US/Central");
+        ZonedDateTime ptZdt = DateUtils.parseUserDate("PT-24H", utcZone, now);
+        ZonedDateTime ptChZdt = DateUtils.parseUserDate("PT-24H", centralZone, now);
+
+        assertEquals(ptZdt.toInstant(), ptChZdt.toInstant(), "PT-24H should be the same in any zone");
+    }
+
 }
