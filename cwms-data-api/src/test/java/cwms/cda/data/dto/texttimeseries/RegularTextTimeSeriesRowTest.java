@@ -25,9 +25,11 @@ class RegularTextTimeSeriesRowTest {
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
         builder.withDateTime(df.parse("2023-01-03 12:05:00").toInstant());
-
         builder.withDataEntryDate(df.parse("2023-05-02 12:05:00").toInstant());
-        builder.withAttribute(420L);
+        builder.withMediaType("text/plain");
+        builder.withQualityCode(1L);
+        builder.withDestFlag(2);
+        builder.withFilename("myFile.txt");
 
         builder.withTextValue("stdText");
 
@@ -39,8 +41,6 @@ class RegularTextTimeSeriesRowTest {
         assertNotNull(json);
 
         assertTrue(json.contains("stdText"));
-        assertTrue(json.contains("420"));
-
     }
 
     @Test
@@ -52,9 +52,11 @@ class RegularTextTimeSeriesRowTest {
         builder.withDateTime(df.parse("2023-01-01 12:05:00").toInstant());
 
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00").toInstant());
-        builder.withAttribute(420L);
-
         builder.withTextValue("my awesome text ts");
+        builder.withMediaType("text/plain");
+        builder.withQualityCode(420L);
+        builder.withDestFlag(2);
+        builder.withFilename("myFile.txt");
 
         RegularTextTimeSeriesRow row = builder.build();
         assertNotNull(row);
@@ -66,11 +68,15 @@ class RegularTextTimeSeriesRowTest {
         RegularTextTimeSeriesRow row2 = objectMapper.readValue(json, RegularTextTimeSeriesRow.class);
         assertNotNull(row2);
 
-        assertEquals(row.getAttribute(), row2.getAttribute());
+
         assertEquals(row.getDateTime(), row2.getDateTime());
         assertEquals(row.getDataEntryDate(), row2.getDataEntryDate());
-
         assertEquals(row.getTextValue(), row2.getTextValue());
+        assertEquals(row.getMediaType(), row2.getMediaType());
+        assertEquals(row.getQualityCode(), row2.getQualityCode());
+        assertEquals(row.getDestFlag(), row2.getDestFlag());
+        assertEquals(row.getFilename(), row2.getFilename());
+        assertEquals(row.getValueUrl(), row2.getValueUrl());
 
 
     }
@@ -92,13 +98,14 @@ class RegularTextTimeSeriesRowTest {
     static RegularTextTimeSeriesRow buildRow() throws ParseException {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-
         builder.withDateTime(df.parse("2023-01-03 12:05:00").toInstant());
-
         builder.withDataEntryDate(df.parse("2023-03-03 12:05:00").toInstant());
-        builder.withAttribute(420L);
-
         builder.withTextValue("my awesome text ts");
+        builder.withMediaType("text/plain");
+        builder.withQualityCode(420L);
+        builder.withDestFlag(2);
+        builder.withFilename("myFile.txt");
+        builder.withValueUrl("http://example.com/cwms-data/timeseries/text/ignored?text-id=someId&office-id=SPK&value=true");
 
         return builder.build();
     }

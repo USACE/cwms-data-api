@@ -248,17 +248,22 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                           BinaryTimeSeriesRow binRecord,
                           boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll) {
 
-        if(hasIdAndValue(binRecord)){
+        if (hasIdAndValue(binRecord)) {
             throw new IllegalArgumentException("BinaryTimeSeriesRow cannot have both a binaryId and a binaryValue");
         }
 
-        if(binRecord.getBinaryId() != null){
+        Instant dateTimeInst = binRecord.getDateTime();
+        Instant versionInst = binRecord.getVersionDate();
+
+        Timestamp dateTimestamp = dateTimeInst == null ? null : Timestamp.from(dateTimeInst);
+        Timestamp versionStamp = versionInst == null ? null : Timestamp.from(versionInst);
+        if (binRecord.getBinaryId() != null) {
             store(configuration, officeId, tsId, binRecord.getBinaryId(),
-                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    dateTimestamp, dateTimestamp, versionStamp, OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
         } else {
             store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                    Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getVersionDate()), OracleTypeMap.GMT_TIME_ZONE,
+                    dateTimestamp, dateTimestamp, versionStamp, OracleTypeMap.GMT_TIME_ZONE,
                     maxVersion, storeExisting, storeNonExisting, replaceAll, binRecord.getAttribute());
         }
     }

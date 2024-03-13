@@ -2,13 +2,11 @@ package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import hec.data.timeSeriesText.DateDateKey;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
 
@@ -19,23 +17,50 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
 
     private final Instant dateTime;
     private final Instant dataEntryDate;
-    private final Long attribute;
     private final String textValue;
+    private final String filename;
+    private final String mediaType;
+    private final Long qualityCode;
+    private final int destFlag;
+    private final String valueUrl;
+
 
 
     private RegularTextTimeSeriesRow(Builder builder) {
         dateTime = builder.dateTime;
         dataEntryDate = builder.dataEntryDate;
-        attribute = builder.attribute;
         textValue = builder.textValue;
+        filename = builder.filename;
+        mediaType = builder.mediaType;
+        qualityCode = builder.qualityCode;
+        destFlag = builder.destFlag;
+        valueUrl = builder.valueUrl;
     }
 
-    public Long getAttribute() {
-        return attribute;
-    }
+
 
     public String getTextValue() {
         return textValue;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public Long getQualityCode() {
+        return qualityCode;
+    }
+
+    public int getDestFlag() {
+        return destFlag;
+    }
+
+    public String getValueUrl() {
+        return valueUrl;
     }
 
 
@@ -60,41 +85,33 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         RegularTextTimeSeriesRow that = (RegularTextTimeSeriesRow) o;
 
-
-        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) :
-                that.getDateTime() != null) {
+        if (getDestFlag() != that.getDestFlag()) return false;
+        if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
             return false;
-        }
-
-        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) :
-                that.getDataEntryDate() != null) {
+        if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
             return false;
-        }
-
-        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) :
-                that.getAttribute() != null) {
+        if (getTextValue() != null ? !getTextValue().equals(that.getTextValue()) : that.getTextValue() != null)
             return false;
-        }
-        return getTextValue() != null ? getTextValue().equals(that.getTextValue()) :
-                that.getTextValue() == null;
+        if (getFilename() != null ? !getFilename().equals(that.getFilename()) : that.getFilename() != null)
+            return false;
+        if (getMediaType() != null ? !getMediaType().equals(that.getMediaType()) : that.getMediaType() != null)
+            return false;
+        return getQualityCode() != null ? getQualityCode().equals(that.getQualityCode()) : that.getQualityCode() == null;
     }
 
     @Override
     public int hashCode() {
         int result = getDateTime() != null ? getDateTime().hashCode() : 0;
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
-        result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
         result = 31 * result + (getTextValue() != null ? getTextValue().hashCode() : 0);
-
+        result = 31 * result + (getFilename() != null ? getFilename().hashCode() : 0);
+        result = 31 * result + (getMediaType() != null ? getMediaType().hashCode() : 0);
+        result = 31 * result + (getQualityCode() != null ? getQualityCode().hashCode() : 0);
         return result;
     }
 
@@ -103,8 +120,12 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
     public static class Builder {
         private Instant dateTime;
         private Instant dataEntryDate;
-        private Long attribute;
         private String textValue;
+        private String filename;
+        private String mediaType;
+        private Long qualityCode;
+        private int destFlag;
+        private String valueUrl;
 
 
         public Builder() {
@@ -120,32 +141,33 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             return this;
         }
 
-        @JsonProperty("attribute")
-        public Builder withAttribute(Long attribute) {
-            this.attribute = attribute;
-            return this;
-        }
-
-        public Builder withAttribute(Integer attribute) {
-            if (attribute == null) {
-                this.attribute = null;
-            } else {
-                this.attribute = attribute.longValue();
-            }
-            return this;
-        }
-
-        public Builder withAttribute(BigDecimal attribute) {
-            if (attribute == null) {
-                this.attribute = null;
-            } else {
-                this.attribute = attribute.longValue();
-            }
-            return this;
-        }
-
         public Builder withTextValue(String textValue) {
             this.textValue = textValue;
+            return this;
+        }
+
+        public Builder withFilename(String filename) {
+            this.filename = filename;
+            return this;
+        }
+
+        public Builder withMediaType(String mediaType) {
+            this.mediaType = mediaType;
+            return this;
+        }
+
+        public Builder withQualityCode(Long qualityCode) {
+            this.qualityCode = qualityCode;
+            return this;
+        }
+
+        public Builder withDestFlag(int destFlag) {
+            this.destFlag = destFlag;
+            return this;
+        }
+
+        public Builder withValueUrl(String valueUrl) {
+            this.valueUrl = valueUrl;
             return this;
         }
 
@@ -157,14 +179,22 @@ public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
             if (regularTextTimeSeriesRow == null) {
                 return withDateTime(null)
                         .withDataEntryDate(null)
-                        .withAttribute((Long) null)
                         .withTextValue(null)
+                        .withFilename(null)
+                        .withMediaType(null)
+                        .withQualityCode(null)
+                        .withDestFlag(0)
+                        .withValueUrl(null)
                         ;
             } else {
                 return withDateTime(regularTextTimeSeriesRow.dateTime)
                         .withDataEntryDate(regularTextTimeSeriesRow.dataEntryDate)
-                        .withAttribute(regularTextTimeSeriesRow.attribute)
                         .withTextValue(regularTextTimeSeriesRow.textValue)
+                        .withFilename(regularTextTimeSeriesRow.filename)
+                        .withMediaType(regularTextTimeSeriesRow.mediaType)
+                        .withQualityCode(regularTextTimeSeriesRow.qualityCode)
+                        .withDestFlag(regularTextTimeSeriesRow.destFlag)
+                        .withValueUrl(regularTextTimeSeriesRow.valueUrl)
                         ;
             }
         }

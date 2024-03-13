@@ -105,7 +105,6 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         String testValue = EXPECTED_TEXT_VALUE;
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
                 .withDateTime(startInstant)
-                .withAttribute(420L)
                 .withTextValue(testValue)
                 .build();
 
@@ -274,7 +273,6 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
                 .from(first)
                 .withTextValue(updatedValue)
-                .withAttribute((Long) null)
                 .build();
 
         // fyi the date.toSTring is: "Fri Dec 31 19:00:00 PST 2004" or: 2004-12-31T19:00:00

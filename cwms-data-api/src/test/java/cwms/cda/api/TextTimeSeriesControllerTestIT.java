@@ -169,7 +169,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .body("standard-text-values", nullValue())
                 .body("regular-text-values.size()", equalTo(1))
                 .body("regular-text-values[0].text-value", equalTo("newly created text value"))
-                .body("regular-text-values[0].attribute", equalTo(420))
                 .statusCode(is(HttpServletResponse.SC_OK));
 
     }

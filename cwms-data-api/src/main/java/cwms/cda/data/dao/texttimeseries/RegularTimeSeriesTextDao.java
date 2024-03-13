@@ -3,11 +3,13 @@ package cwms.cda.data.dao.texttimeseries;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.getDate;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -39,12 +41,15 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     public static final String OFFICE_ID = "OFFICE_ID";
     private static final String TEXT = "TEXT";
     private static final String TEXT_ID = "TEXT_ID";
-
-    private static final String ATTRIBUTE = "ATTRIBUTE";
-
     private static final String DATA_ENTRY_DATE = "DATA_ENTRY_DATE";
     private static final String VERSION_DATE = "VERSION_DATE";
     private static final String DATE_TIME = "DATE_TIME";
+    private static final String CLOB = "CLOB";
+    private static final String MEDIA_TYPE = "MEDIA_TYPE";
+    private static final String FILENAME = "FILENAME";
+    public static final  String QUALITY = "QUALITY";
+    public static final  String DEST_FLAG = "DEST_FLAG";
+
 
 
     private static final int TEXT_DOES_NOT_EXIST_ERROR_CODE = 20034;
@@ -53,7 +58,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static final List<String> timeSeriesTextColumnsList;
 
     static {
-        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, TEXT_ID, ATTRIBUTE, TEXT};
+        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, CLOB, QUALITY, FILENAME, MEDIA_TYPE, DEST_FLAG};
         Arrays.sort(array);
         timeSeriesTextColumnsList = Arrays.asList(array);
     }
@@ -144,7 +149,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                 getDate(startTime), getDate(endTime), getDate(versionDate), timeZone,
                 maxVersion, minAttribute, maxAttribute,
                 officeId)) {
-            rows = buildRows(retrieveTsTextF);
+            rows = buildRows(retrieveTsTextF, officeId);
         } catch (SQLException e) {
             if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
                 throw new NoDataFoundException();
@@ -156,29 +161,73 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
     @NotNull
-    private static List<RegularTextTimeSeriesRow> buildRows(ResultSet rs) throws SQLException {
-        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
+    private List<RegularTextTimeSeriesRow> buildRows(ResultSet rs, String office) throws SQLException {
+//        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
         List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
 
         while (rs.next()) {
-            RegularTextTimeSeriesRow row = buildRow(rs);
+            RegularTextTimeSeriesRow row = buildRow(rs, office);
             rows.add(row);
         }
         return rows;
     }
 
-    private static RegularTextTimeSeriesRow buildRow(ResultSet rs) throws SQLException {
-
+    private RegularTextTimeSeriesRow buildRow(ResultSet rs, String office) throws SQLException {
         Instant tsDateTime = getInstant(rs.getTimestamp(DATE_TIME));
         Instant tsDataEntryDate = getInstant(rs.getTimestamp(DATA_ENTRY_DATE));
 
-        String clobString = rs.getString(TEXT);
-        Long attribute = rs.getLong(ATTRIBUTE);
-        if (rs.wasNull()) {
-            attribute = null;
+        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder()
+                .withDateTime(tsDateTime)
+                .withDataEntryDate(tsDataEntryDate);
+
+        ResultSetMetaData metaData = rs.getMetaData();
+
+        String filename = null;
+        if (OracleTypeMap.containsColumnIgnoreCase(metaData, FILENAME)) {
+            filename = rs.getString(FILENAME);
+        }
+        if (filename == null) {
+            filename = tsDateTime.getEpochSecond() + ".txt";
+        }
+        builder = builder.withFilename(filename);
+
+        String mediaType = null;
+        if (OracleTypeMap.containsColumnIgnoreCase(metaData, MEDIA_TYPE)) {
+            mediaType = rs.getString(MEDIA_TYPE);
+        }
+        if (mediaType == null) {
+            mediaType = "text/plain";
+        }
+        builder = builder.withMediaType(mediaType);
+
+        String clobString = null;
+        if (OracleTypeMap.containsColumnIgnoreCase(metaData, CLOB)) {
+            clobString = rs.getString(CLOB);
+        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT)){
+            clobString = rs.getString(TEXT);
+        }
+        if (clobString != null) {
+            builder = builder.withTextValue(clobString);
+        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT_ID)){
+            String textId = rs.getString(TEXT_ID);
+            if (textId != null && !textId.isEmpty()) {
+                ClobDao clobDao = new ClobDao(dsl);
+                RegularTextTimeSeriesRow.Builder finalBuilder = builder;
+                clobDao.getByUniqueName(textId, office).ifPresent(clob -> finalBuilder.withTextValue(clob.getValue()));
+            }
         }
 
-        return buildRow(tsDateTime,  tsDataEntryDate, attribute, clobString);
+        if (OracleTypeMap.containsColumnIgnoreCase(metaData, QUALITY)) {
+            long qualityCode = rs.getLong(QUALITY);
+            builder = builder.withQualityCode(qualityCode);
+        }
+
+        if (OracleTypeMap.containsColumnIgnoreCase(metaData, DEST_FLAG)) {
+            int destFlag = rs.getInt(DEST_FLAG);
+            builder = builder.withDestFlag(destFlag);
+        }
+
+        return builder.build();
     }
 
     @Nullable
@@ -188,17 +237,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             dateTimeInstant = dateTime.toLocalDateTime().atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId()).toInstant();
         }
         return dateTimeInstant;
-    }
-
-    public static RegularTextTimeSeriesRow buildRow(Instant dateTimeUtc, Instant dataEntryDateUtc, Long attribute, String textValue) {
-        RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder()
-                .withDateTime((dateTimeUtc))
-                .withDataEntryDate(dataEntryDateUtc)
-                .withAttribute(attribute)
-                .withTextValue(textValue)
-                ;
-
-        return builder.build();
     }
 
     public void storeRows(String officeId, String id, boolean maxVersion, boolean replaceAll,
@@ -232,7 +270,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         String textValue = regularTextTimeSeriesRow.getTextValue();
         Instant dateTime = regularTextTimeSeriesRow.getDateTime();
 
-        Long attribute = regularTextTimeSeriesRow.getAttribute();
+        Long attribute = null; // removed field.
 
         NavigableSet<Date> dates = new TreeSet<>();
         dates.add(Date.from(dateTime));
@@ -240,7 +278,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         CwmsDbText dbText = CwmsDbServiceLookup.buildCwmsDb(CwmsDbText.class, connection);
 
         dbText.storeTsText(connection, tsId, textValue, dates,
-                versionDate==null?null:Date.from(versionDate), timeZone, maxVersion, replaceAll,
+                versionDate == null ? null : Date.from(versionDate), timeZone, maxVersion, replaceAll,
                 attribute, officeId);
     }
 
@@ -254,7 +292,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                     Timestamp.from(startTime),
                     Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
-                    "UTC", maxVersion?"T":"F", minAttribute,
+                    "UTC", OracleTypeMap.formatBool(maxVersion), minAttribute,
                     maxAttribute, officeId);
         });
     }
