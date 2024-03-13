@@ -320,8 +320,10 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private void storeRow(Configuration configuration, String officeId, String tsId,
                           BinaryTimeSeriesRow binRecord,
                           boolean maxVersion, boolean storeExisting, boolean storeNonExisting, boolean replaceAll, Instant versionDate) {
+        Timestamp dateTimestamp = binRecord.getDateTime() == null ? null : Timestamp.from(binRecord.getDateTime());
+        Timestamp versionStamp = versionDate == null ? null : Timestamp.from(versionDate);
         store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                Timestamp.from(binRecord.getDateTime()), Timestamp.from(binRecord.getDateTime()), Timestamp.from(versionDate), OracleTypeMap.GMT_TIME_ZONE,
+                dateTimestamp, dateTimestamp, versionStamp, OracleTypeMap.GMT_TIME_ZONE,
                 maxVersion, storeExisting, storeNonExisting, replaceAll);
     }
 
