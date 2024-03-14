@@ -21,10 +21,10 @@ public class ContentType implements Comparable<ContentType> {
         mediaType = parts[0];
         if (parts.length > 1) {
             for (int i = 1; i < parts.length; i++) {
-                String[] key_val = parts[i].split(ELEM_DELIM);
-                if (key_val.length == 2) {
-                    String key = key_val[0].trim();
-                    String value = key_val[1].trim();
+                String[] keyVal = parts[i].split(ELEM_DELIM);
+                if (keyVal.length == 2) {
+                    String key = keyVal[0].trim();
+                    String value = keyVal[1].trim();
                     if (CHARSET.equalsIgnoreCase(key)) {
                         charset = value;
                     } else {
@@ -84,7 +84,7 @@ public class ContentType implements Comparable<ContentType> {
     @Override
     public int compareTo(ContentType o) {
         float myPriority = Float.parseFloat(parameters.getOrDefault("q", "1"));
-        float otherPriority = Float.parseFloat(parameters.getOrDefault("q", "1"));
+        float otherPriority = Float.parseFloat(o.parameters.getOrDefault("q", "1"));
         if (myPriority == otherPriority) return 0;
         else if (myPriority > otherPriority) return 1;
         else return -1;
@@ -111,7 +111,7 @@ public class ContentType implements Comparable<ContentType> {
      * @param b
      * @return whether they are equivalent
      */
-    final public static boolean equivalent(String a, String b) {
+    public static boolean equivalent(String a, String b) {
         Objects.requireNonNull(a, "Cannot determine equivalency of null content-types");
         Objects.requireNonNull(b, "Cannot determine equivalency of null content-types");
         ContentType ctA = new ContentType(a);
