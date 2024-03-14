@@ -28,8 +28,7 @@ public class RatingAdapter {
         RatingSpec retVal = null;
 
         if (spec != null) {
-            return new RatingSpec.Builder()
-                    .fromRatingSpec(spec).build();
+            retVal = new RatingSpec.Builder().fromRatingSpec(spec).build();
         }
 
         return retVal;
