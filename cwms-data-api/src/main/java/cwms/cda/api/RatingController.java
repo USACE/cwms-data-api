@@ -385,7 +385,7 @@ public class RatingController implements CrudHandler {
                     if (ratingSet != null) {
                         if (Formats.JSONV2.equals(acceptHeader)) {
                             retval = JsonRatingUtils.toJson(ratingSet);
-                        } else if (Formats.XMLV2.equals(acceptHeader)) {
+                        } else {
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
                         }
                     } else {
