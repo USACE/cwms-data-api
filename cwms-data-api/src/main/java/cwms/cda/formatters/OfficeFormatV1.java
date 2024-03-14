@@ -5,7 +5,7 @@ import java.util.List;
 import cwms.cda.data.dto.Office;
 
 public class OfficeFormatV1 {
-    public class OfficesFMT{        
+    public static class OfficesFMT{
         public List<Office> offices;
     }
     
