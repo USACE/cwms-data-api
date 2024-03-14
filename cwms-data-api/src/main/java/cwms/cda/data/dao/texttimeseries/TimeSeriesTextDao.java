@@ -40,7 +40,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
                                           @Nullable Long minAttribute, @Nullable Long maxAttribute
     ) {
 
-        List<RegularTextTimeSeriesRow> regRows = null;
+        List<RegularTextTimeSeriesRow> regRows;
 
 
         RegularTimeSeriesTextDao regDao = getRegularDao();
