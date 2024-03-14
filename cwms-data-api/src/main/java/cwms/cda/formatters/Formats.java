@@ -83,7 +83,7 @@ public class Formats {
     }
 
 
-    private Map<ContentType, Map<Class<CwmsDTO>, OutputFormatter>> formatters = null;
+    private Map<ContentType, Map<Class<CwmsDTO>, OutputFormatter>> formatters;
 
     private static Formats formats = null;
 
