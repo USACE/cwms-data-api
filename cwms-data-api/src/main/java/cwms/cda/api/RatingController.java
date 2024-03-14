@@ -207,7 +207,7 @@ public class RatingController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String ratingSpecId) {
+    public void delete(@NotNull Context ctx, @NotNull String ratingSpecId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 

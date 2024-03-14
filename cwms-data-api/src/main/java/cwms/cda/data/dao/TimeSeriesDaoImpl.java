@@ -88,6 +88,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
 
     public static final boolean OVERRIDE_PROTECTION = true;
+    public static final int TS_ID_MISSING_CODE = 20001;
 
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
@@ -123,8 +124,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             logger.fine("Decoded cursor");
             logger.finest(() -> {
                 StringBuilder sb = new StringBuilder();
-                for (String p: parts)
-                {
+                for (String p: parts) {
                     sb.append(p).append("\n");
                 }
                 return sb.toString();
@@ -482,7 +482,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
 
             SelectJoinStep<Record1<Integer>> selectCountFrom;
-            if(boundingOfficeLike == null){
+            if (boundingOfficeLike == null) {
                 selectCountFrom = dsl.select(count(asterisk())).from(AV_CWMS_TS_ID2);
             } else {
                 condition = condition.and(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID, boundingOfficeLike));
@@ -597,11 +597,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // will at extra rows per TS
         LinkedHashMap<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
         result.forEach(row -> {
-            String officeTsId = new StringBuilder()
-                    .append(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
-                    .append("/")
-                    .append(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
-                    .toString();
+            String officeTsId = row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID)
+                    + "/"
+                    + row.get(AV_CWMS_TS_ID2.CWMS_TS_ID);
             if (!tsIdExtentMap.containsKey(officeTsId)) {
                 TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
                         .officeId(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
@@ -698,8 +696,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             retval = dsl.select(tsvView.asterisk(), tsView.CWMS_TS_ID)
                     .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
                     .where(
-                            tsView.CWMS_TS_ID.in(tsIds).and(tsvView.DATE_TIME.ge(start)).and(tsvView.DATE_TIME.lt(end)).and(
-                                    tsvView.START_DATE.le(end)).and(tsvView.END_DATE.gt(start))).orderBy(tsvView.DATE_TIME).fetch(
+                            tsView.CWMS_TS_ID.in(tsIds)
+                                    .and(tsvView.DATE_TIME.ge(start))
+                                    .and(tsvView.DATE_TIME.lt(end))
+                                    .and(tsvView.START_DATE.le(end))
+                                    .and(tsvView.END_DATE.gt(start)))
+                    .orderBy(tsvView.DATE_TIME).fetch(
                             jrecord -> buildTsvFromViewRow(jrecord.into(tsvView)));
         }
         return retval;
@@ -897,7 +899,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
      */
     @SuppressWarnings("unused")
     public void create(TimeSeries input,
-                       boolean createAsLrts, StoreRule storeRule, boolean overrideProtection){
+                       boolean createAsLrts, StoreRule storeRule, boolean overrideProtection) {
         connection(dsl, connection -> {
             int intervalForward = 0;
             int intervalBackward = 0;
@@ -906,7 +908,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // do not add a call to create_ts_code
             if (!input.getValues().isEmpty()) {
                 Timestamp versionDate = null;
-                if(input.getVersionDate() != null) {
+                if (input.getVersionDate() != null) {
                     versionDate = Timestamp.from(input.getVersionDate().toInstant());
                 }
 
@@ -918,7 +920,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @Override
-    public void store(TimeSeries timeSeries, Timestamp versionDate){
+    public void store(TimeSeries timeSeries, Timestamp versionDate) {
         store(timeSeries, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
     }
 
@@ -956,14 +958,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
 
-        if(versionDate != null) {
+        if (versionDate != null) {
             try {
                 CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection, officeId).configuration(),
                         tsId, "T", officeId);
-            } catch(DataAccessException e) {
-                if(e.getCause() instanceof SQLException) {
+            } catch (DataAccessException e) {
+                if (e.getCause() instanceof SQLException) {
                     SQLException cause = (SQLException)e.getCause();
-                    final int TS_ID_MISSING_CODE = 20001;
+
                     if (cause.getErrorCode() != TS_ID_MISSING_CODE) {
                         throw cause;
                     }
@@ -1006,7 +1008,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
 
-    public void delete(String officeId, String tsId, TimeSeriesDeleteOptions options){
+    public void delete(String officeId, String tsId, TimeSeriesDeleteOptions options) {
         connection(dsl, connection -> {
             setOffice(connection,officeId);
             CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);

@@ -76,18 +76,18 @@ public class CountyController implements CrudHandler {
 
     @OpenApi(
             responses = {
-                    @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
-                            description = "A list of counties.",
-                            content = {
-                                    @OpenApiContent(from = County.class, isArray = true,
-                                            type =  Formats.JSONV2),
-                            }),
+                @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
+                        description = "A list of counties.",
+                        content = {
+                            @OpenApiContent(from = County.class, isArray = true,
+                                    type =  Formats.JSONV2),
+                        }),
             },
             tags = {"Counties"}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
+        try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             CountyDao dao = new CountyDao(dsl);
             List<County> counties = dao.getCounties();

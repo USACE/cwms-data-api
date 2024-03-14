@@ -147,15 +147,6 @@ public class Formats {
 
     }
 
-    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTOBase> klass) {
-        OutputFormatter outputFormatter = null;
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
-        if (contentFormatters != null) {
-            outputFormatter = contentFormatters.get(klass);
-        }
-        return outputFormatter;
-    }
-
     private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
         for (ContentType key : formatters.keySet()) {
@@ -168,9 +159,18 @@ public class Formats {
             return outputFormatter.format(dtos);
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
-                            type.toString(), dtos.get(0).getClass().getName());
+                    type.toString(), dtos.get(0).getClass().getName());
             throw new FormattingException(message);
         }
+    }
+
+    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTOBase> klass) {
+        OutputFormatter outputFormatter = null;
+        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
+        if (contentFormatters != null) {
+            outputFormatter = contentFormatters.get(klass);
+        }
+        return outputFormatter;
     }
 
     private static void init() {

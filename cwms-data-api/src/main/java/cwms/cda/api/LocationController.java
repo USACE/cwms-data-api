@@ -149,9 +149,9 @@ public class LocationController implements CrudHandler {
             tags = {"Locations"}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -240,7 +240,7 @@ public class LocationController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String units =
@@ -286,7 +286,7 @@ public class LocationController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(CREATE)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -326,7 +326,7 @@ public class LocationController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
 
-        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -373,10 +373,10 @@ public class LocationController implements CrudHandler {
                         + "the location whose data is to be deleted. If this field is not "
                         + "specified, matching location information will be deleted from all "
                         + "offices."),
-                    //Keeping hidden from the API docs for now as this call is particularly destructive
-                    //@OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
-                    //description = "Specifies whether to specifies whether to delete associated data " +
-                    //"for this location before deleting the location itself. Default: false")
+                //Keeping hidden from the API docs for now as this call is particularly destructive
+                //@OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
+                //description = "Specifies whether to specifies whether to delete associated data " +
+                //"for this location before deleting the location itself. Default: false")
             },
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
@@ -391,7 +391,7 @@ public class LocationController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String locationId) {
 
         String office = ctx.queryParam(OFFICE);
-        try (Timer.Context timeContext = markAndTime(DELETE)) {
+        try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -400,7 +400,7 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);
-            if(cause != null && cause.getErrorCode() == 20031) {
+            if (cause != null && cause.getErrorCode() == 20031) {
                 throw new DeleteConflictException("Unable to delete requested location: " + locationId + " for office: " + office, cause);
             }
             throw ex;

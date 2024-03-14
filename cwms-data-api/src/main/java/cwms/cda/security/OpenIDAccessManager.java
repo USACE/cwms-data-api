@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This is currently more a placeholder for example than actual implementation
@@ -57,7 +58,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
     }
 
     @Override
-    public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+    public void manage(Handler handler, @NotNull Context ctx, @NotNull Set<RouteRole> routeRoles) throws Exception {
         DataApiPrincipal p = getUserFromToken(ctx);
         AuthDao.isAuthorized(ctx,p,routeRoles);
         AuthDao.prepareContextWithUser(ctx, p);
