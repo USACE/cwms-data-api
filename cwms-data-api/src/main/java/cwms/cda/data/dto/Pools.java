@@ -46,7 +46,7 @@ public class Pools extends CwmsDTOPaginated {
 
 
     public static class Builder {
-        private Pools workingPools = null;
+        private Pools workingPools;
 
         public Builder(int offset, int pageSize, Integer total){
             workingPools = new Pools(offset, pageSize, total);
