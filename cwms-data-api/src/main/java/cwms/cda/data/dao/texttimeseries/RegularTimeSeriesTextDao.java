@@ -297,7 +297,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             DSLContext dslContext = getDslContext(connection, officeId);
             CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(dslContext.configuration(), tsId, textMask,
                     Timestamp.from(startTime),
-                    endTime == null ? null : Timestamp.from(endTime),
+                    Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
                     "UTC", maxVersion?"T":"F", minAttribute,
                     maxAttribute, officeId);
