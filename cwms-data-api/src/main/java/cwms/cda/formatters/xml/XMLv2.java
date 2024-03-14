@@ -22,8 +22,8 @@ import service.annotations.FormatService;
 @FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class, Clobs.class})
 public class XMLv2 implements OutputFormatter {
     private static Logger logger = Logger.getLogger(XMLv2.class.getName());
-    private JAXBContext context = null;
-    private Marshaller mar = null;
+    private JAXBContext context;
+    private Marshaller mar;
 
     public XMLv2() throws InternalServerErrorResponse{
         try {
