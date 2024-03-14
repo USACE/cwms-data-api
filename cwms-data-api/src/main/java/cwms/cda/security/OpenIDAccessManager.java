@@ -1,35 +1,12 @@
 package cwms.cda.security;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPublicKeySpec;
-import java.sql.SQLException;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Base64.Decoder;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-
-import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.spi.CdaAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -41,6 +18,21 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
+import java.time.ZonedDateTime;
+import java.util.Base64;
+import java.util.Base64.Decoder;
+import java.util.HashMap;
+import java.util.Set;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * This is currently more a placeholder for example than actual implementation
@@ -49,7 +41,6 @@ public class OpenIDAccessManager extends CdaAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
-    private DataSource dataSource = null;
 
 
     public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout, String authUrl) {
@@ -87,7 +78,16 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
     private String getToken(Context ctx) {
         String header = ctx.header("Authorization");
-        return header.split("\\s+")[1];
+        if (header == null) {
+            throw new IllegalArgumentException("Authorization not found");
+        } else {
+            String[] parts = header.split("\\s+");
+            if (parts.length >= 2) {
+                return parts[1];
+            } else {
+                throw new IllegalArgumentException(String.format("Authorization header:%s could not be split.", header));
+            }
+        }
     }
 
     /**
