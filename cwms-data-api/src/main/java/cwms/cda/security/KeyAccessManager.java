@@ -40,8 +40,8 @@ public class KeyAccessManager extends CdaAccessManager {
             return null;
         }
 
-        String []parts = header.split("\\s+");
-        if (parts.length < 0) {
+        String[] parts = header.split("\\s+");
+        if (parts.length < 2) {
             return null;
         } else {
             return parts[1];
