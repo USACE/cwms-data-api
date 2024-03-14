@@ -45,6 +45,7 @@ public class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     }
 
 
+
     public void delete(String officeId, String tsId, String binaryTypeMask,
                    ZonedDateTime startTime, ZonedDateTime endTime, ZonedDateTime versionInstant,
                    boolean maxVersion, Long minAttribute, Long maxAttribute) {
