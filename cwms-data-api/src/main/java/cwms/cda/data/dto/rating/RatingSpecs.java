@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +17,7 @@ import java.util.List;
 @JsonDeserialize(builder = RatingSpecs.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class RatingSpecs extends CwmsDTOPaginated {
 
     private List<RatingSpec> specs;

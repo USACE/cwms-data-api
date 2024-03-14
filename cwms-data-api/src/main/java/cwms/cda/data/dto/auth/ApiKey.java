@@ -24,7 +24,7 @@ public class ApiKey {
     private String userId;
     @JsonProperty(required = true)
     private String keyName;
-    
+
     private String apiKey;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)

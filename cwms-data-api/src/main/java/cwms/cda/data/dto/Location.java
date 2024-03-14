@@ -11,6 +11,11 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +26,8 @@ import java.util.function.Consumer;
 @JsonDeserialize(builder = Location.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;

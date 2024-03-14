@@ -1,6 +1,9 @@
 package helpers;
 
-import static org.junit.jupiter.api.Assertions.*;
+
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
