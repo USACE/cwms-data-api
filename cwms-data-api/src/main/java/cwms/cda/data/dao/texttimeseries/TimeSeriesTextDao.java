@@ -1,6 +1,5 @@
 package cwms.cda.data.dao.texttimeseries;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
@@ -22,8 +21,6 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_TEXT;
 
 // based on https://bitbucket.hecdev.net/projects/CWMS/repos/hec-cwms-data-access/browse/hec-db-jdbc/src/main/java/wcds/dbi/oracle/cwms/CwmsTimeSeriesTextJdbcDao.java
 public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
 
     public static final String OFFICE_ID = "OFFICE_ID";
 
@@ -160,7 +157,7 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
     
 
-    public void delete( String officeId, String textTimeSeriesId, String textMask,
+    public void delete(String officeId, String textTimeSeriesId, String textMask,
                        @NotNull ZonedDateTime start, @NotNull ZonedDateTime end, @Nullable ZonedDateTime versionDate,
                        boolean maxVersion, Long minAttribute, Long maxAttribute) {
 

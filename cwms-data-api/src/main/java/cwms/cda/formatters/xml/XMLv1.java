@@ -16,7 +16,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
 public class XMLv1 implements OutputFormatter {
-    private static Logger logger = Logger.getLogger(XMLv1.class.getName());
+    private static final Logger logger = Logger.getLogger(XMLv1.class.getName());
 
     public XMLv1() {
 
@@ -45,7 +45,7 @@ public class XMLv1 implements OutputFormatter {
             }
         } catch (JAXBException jaxb) {
             String msg = dto != null ?
-                    "Error rendering '" + dto.toString() + "' to XML"
+                    "Error rendering '" + dto + "' to XML"
                     :
                     "Null element passed to formatter";
             logger.log(Level.WARNING, msg, jaxb);
