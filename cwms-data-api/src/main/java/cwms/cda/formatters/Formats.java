@@ -101,6 +101,23 @@ public class Formats {
 
     }
 
+    private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
+            extends CwmsDTOBase> rootType) throws FormattingException {
+        for (ContentType key : formatters.keySet()) {
+            logger.finest(() -> key.toString());
+        }
+
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+
+        if (outputFormatter != null) {
+            return outputFormatter.format(dtos);
+        } else {
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                    type.toString(), dtos.get(0).getClass().getName());
+            throw new FormattingException(message);
+        }
+    }
+
     private OutputFormatter getOutputFormatter(ContentType type,
                                                Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
@@ -128,23 +145,6 @@ public class Formats {
         return outputFormatter;
     }
 
-    private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
-            extends CwmsDTOBase> rootType) throws FormattingException {
-        for (ContentType key : formatters.keySet()) {
-            logger.finest(() -> key.toString());
-        }
-
-        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
-
-        if (outputFormatter != null) {
-            return outputFormatter.format(dtos);
-        } else {
-            String message = String.format("No Format for this content-type and data type : (%s, %s)",
-                            type.toString(), dtos.get(0).getClass().getName());
-            throw new FormattingException(message);
-        }
-    }
-
     public static String format(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         return formats.getFormatted(type, toFormat);
     }
@@ -162,6 +162,7 @@ public class Formats {
      * @param header     Accept header value
      * @param queryParam format query parameter value
      * @return an appropriate standard mimetype for lookup
+     * @throws FormattingException if the header and queryParam are both supplied or neither are
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
         if (queryParam != null && !queryParam.isEmpty()) {
