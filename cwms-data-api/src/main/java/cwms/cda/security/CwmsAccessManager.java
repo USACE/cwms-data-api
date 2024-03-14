@@ -35,7 +35,7 @@ public class CwmsAccessManager extends CdaAccessManager {
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
         Optional<String> user = getUser(ctx);
-        if(user.isPresent()) {
+        if (user.isPresent()) {
             Set<RouteRole> roles = getRoles(ctx);
             return new DataApiPrincipal(user.get(), roles);
         } else {
@@ -56,7 +56,7 @@ public class CwmsAccessManager extends CdaAccessManager {
     /**
      * Retrieve listed roles from the CwmsPrincipal. No additional db checks are required.
      * @param ctx Javalin Context
-     * @return
+     * @return Set of roles
      */
     private static Set<RouteRole> getRoles(@NotNull Context ctx) {
         Objects.requireNonNull(ctx,"Configuration is horribly wrong. This system is not usable.");
@@ -81,7 +81,7 @@ public class CwmsAccessManager extends CdaAccessManager {
                 if (roleNames != null) {
                     roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
                 }
-                logger.fine("Principal had roles: " + retval);
+                logger.log(Level.FINE, "Principal had roles: {0}", retval);
             } catch (ClassCastException e) {
                 logger.severe("cwmsaaa api and implementation jars should only be in the system "
                         + "classpath, not the war file. Verify and restart application");
@@ -101,7 +101,7 @@ public class CwmsAccessManager extends CdaAccessManager {
         return new SecurityScheme()
                 .type(Type.APIKEY)
                 .in(In.COOKIE)
-                .name("JSESSIONIDSSO")
+                .name(SESSION_COOKIE_NAME)
                 .description("Auth handler running on same tomcat instance as the data api.");
     }
 

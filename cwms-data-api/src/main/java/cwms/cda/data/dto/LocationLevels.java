@@ -45,7 +45,7 @@ public class LocationLevels extends CwmsDTOPaginated {
 
 
     public static class Builder {
-        private LocationLevels workingLevels = null;
+        private LocationLevels workingLevels;
 
         public Builder(int offset, int pageSize, Integer total) {
             workingLevels = new LocationLevels(offset, pageSize, total);

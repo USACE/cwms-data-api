@@ -1,5 +1,10 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,28 +15,23 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-@XmlRootElement(name="blobs")
+@XmlRootElement(name = "blobs")
 @XmlSeeAlso(Blob.class)
 @XmlAccessorType(XmlAccessType.FIELD)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Blobs extends CwmsDTOPaginated {
     @XmlElementWrapper
-    @XmlElement(name="blob")
+    @XmlElement(name = "blob")
 
     @Schema(description = "List of retrieved blobs")
     List<Blob> blobs;
 
     @SuppressWarnings("unused") // for JAXB to handle marshalling
-    private Blobs(){}
+    private Blobs() {
+    }
 
 
-    private Blobs(String cursor, int pageSize, int total){
+    private Blobs(String cursor, int pageSize, int total) {
         super(cursor, pageSize, total);
         blobs = new ArrayList<>();
     }
@@ -41,17 +41,18 @@ public class Blobs extends CwmsDTOPaginated {
     }
 
     public static class Builder {
-        private Blobs workingBlobs = null;
-        public Builder( String cursor, int pageSize, int total){
+        private Blobs workingBlobs;
+
+        public Builder(String cursor, int pageSize, int total) {
             workingBlobs = new Blobs(cursor, pageSize, total);
         }
 
-        public Blobs build(){
-            if( this.workingBlobs.blobs.size() == this.workingBlobs.pageSize){
+        public Blobs build() {
+            if (this.workingBlobs.blobs.size() == this.workingBlobs.pageSize) {
                 this.workingBlobs.nextPage = encodeCursor(
-                            this.workingBlobs.blobs.get(this.workingBlobs.blobs.size()-1).toString().toUpperCase(),
-                            this.workingBlobs.pageSize,
-                            this.workingBlobs.total);
+                        this.workingBlobs.blobs.get(this.workingBlobs.blobs.size() - 1).toString().toUpperCase(),
+                        this.workingBlobs.pageSize,
+                        this.workingBlobs.total);
             } else {
                 this.workingBlobs.nextPage = null;
             }
@@ -60,12 +61,12 @@ public class Blobs extends CwmsDTOPaginated {
 
         }
 
-        public Builder addBlob(Blob blob){
+        public Builder addBlob(Blob blob) {
             this.workingBlobs.blobs.add(blob);
             return this;
         }
 
-        public Builder addAll(List<Blob> toAdd ){
+        public Builder addAll(List<Blob> toAdd) {
             this.workingBlobs.blobs.addAll(toAdd);
             return this;
         }
