@@ -235,6 +235,9 @@ public class LocationController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
+            if (contentType == null) {
+                throw new FormattingException("Format header could not be parsed");
+            }
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
             Location location = locationDao.getLocation(name, units, office);
