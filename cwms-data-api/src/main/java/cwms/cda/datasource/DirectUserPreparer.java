@@ -2,10 +2,7 @@ package cwms.cda.datasource;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
-import org.jooq.impl.DSL;
 
 
 public class DirectUserPreparer implements ConnectionPreparer {
@@ -24,9 +21,8 @@ public class DirectUserPreparer implements ConnectionPreparer {
                 setApiUser.setString(1,user);
                 setApiUser.execute();                
             } catch (Exception e) {
-                boolean keyNullOrEmpty = user == null || user.isEmpty();
                 throw new DataAccessException("Unable to set user session.  "
-                        + "user null or empty = " + keyNullOrEmpty, e);
+                        + "user empty = " + user.isEmpty(), e);
             }
         }
 
