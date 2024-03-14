@@ -60,7 +60,7 @@ public class Formats {
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
 
 
-    private static List<ContentType> contentTypeList = new ArrayList<>();
+    private static final List<ContentType> contentTypeList = new ArrayList<>();
 
     static {
         contentTypeList.addAll(
@@ -69,7 +69,7 @@ public class Formats {
                         .collect(Collectors.toList()));
     }
 
-    private static Map<String, String> typeMap = new LinkedHashMap<>();
+    private static final Map<String, String> typeMap = new LinkedHashMap<>();
 
     static {
         typeMap.put("json", Formats.JSON);
@@ -105,12 +105,13 @@ public class Formats {
                 Class<OutputFormatter> formatter =
                         (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
                 OutputFormatter formatterInstance;
-                logger.finest("Formatter class: " + typeFormatterClasses[1]);
+                logger.finest(() -> "Formatter class: " + typeFormatterClasses[1]);
+
                 formatterInstance = formatter.getDeclaredConstructor().newInstance();
                 Map<Class<CwmsDTO>, OutputFormatter> tmp = new HashMap<>();
 
                 for (String clazz : typeFormatterClasses[2].split(";")) {
-                    logger.finest("\tFor Class: " + clazz);
+                    logger.finest(() -> "\tFor Class: " + clazz);
 
                     @SuppressWarnings("unchecked")
                     Class<CwmsDTO> formatForClass = (Class<CwmsDTO>) Class.forName(clazz);
@@ -158,7 +159,7 @@ public class Formats {
     private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
         for (ContentType key : formatters.keySet()) {
-            logger.finest(() -> key.toString());
+            logger.finest(key::toString);
         }
 
         OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
@@ -253,7 +254,7 @@ public class Formats {
 
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
-            logger.finest("Finding handlers " + all.length);
+            logger.finest(() -> "Finding handlers " + all.length);
             for (String ct : all) {
                 logger.finest(ct);
                 contentTypes.add(new ContentType(ct));

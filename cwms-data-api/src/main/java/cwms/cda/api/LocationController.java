@@ -24,6 +24,23 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -36,9 +53,9 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
@@ -48,13 +65,12 @@ import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.*;
-import org.geojson.FeatureCollection;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
-
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -63,15 +79,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
+import org.geojson.FeatureCollection;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-
-/**
- *
- */
 public class LocationController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(LocationController.class.getName());
     public static final String NAMES = "names";
@@ -93,43 +107,43 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = NAMES, description = "Specifies the name(s) of the "
-                            + "location(s) whose data is to be included in the response"),
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
-                            + "the location level(s) whose data is to be included in the response"
-                            + ". If this field is not specified, matching location level "
-                            + "information from all offices shall be returned."),
-                    @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                            + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                            + "  Specifies English unit system.  Location level values will be in"
-                            + " the default English units for their parameters.\r\n2. SI.   "
-                            + "Specifies the SI unit system.  Location level values will be in "
-                            + "the default SI units for their parameters.\r\n3. Other. Any unit "
-                            + "returned in the response to the units URI request that is "
-                            + "appropriate for the requested parameters."),
-                    @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
-                            + " the response. This field affects only elevation location levels. "
-                            + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
-                            + "values will in the specified or default units above the NAVD-88 "
-                            + "datum.\r\n2. NGVD29.  The elevation values will be in the "
-                            + "specified or default units above the NGVD-29 datum."),
-                    @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
-                            + "of the response. Valid values for the format field for this URI "
-                            + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if "
-                            + "name field is specified)\r\n5.    json (default)\n" + "6.    "
-                            + "geojson")
+                @OpenApiParam(name = NAMES, description = "Specifies the name(s) of the "
+                        + "location(s) whose data is to be included in the response"),
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                        + "the location level(s) whose data is to be included in the response"
+                        + ". If this field is not specified, matching location level "
+                        + "information from all offices shall be returned."),
+                @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
+                        + " of the response. Valid values for the unit field are:\r\n 1. EN. "
+                        + "  Specifies English unit system.  Location level values will be in"
+                        + " the default English units for their parameters.\r\n2. SI.   "
+                        + "Specifies the SI unit system.  Location level values will be in "
+                        + "the default SI units for their parameters.\r\n3. Other. Any unit "
+                        + "returned in the response to the units URI request that is "
+                        + "appropriate for the requested parameters."),
+                @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
+                        + " the response. This field affects only elevation location levels. "
+                        + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
+                        + "values will in the specified or default units above the NAVD-88 "
+                        + "datum.\r\n2. NGVD29.  The elevation values will be in the "
+                        + "specified or default units above the NGVD-29 datum."),
+                @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
+                        + "of the response. Valid values for the format field for this URI "
+                        + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if "
+                        + "name field is specified)\r\n5.    json (default)\n" + "6.    "
+                        + "geojson")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(type = Formats.JSON),
-                                    @OpenApiContent(type = Formats.TAB),
-                                    @OpenApiContent(type = Formats.CSV),
-                                    @OpenApiContent(type = Formats.XML),
-                                    @OpenApiContent(type = Formats.WML2),
-                                    @OpenApiContent(type = Formats.GEOJSON),
-                                    @OpenApiContent(type = "")
-                            })
+                @OpenApiResponse(status = STATUS_200,
+                        content = {
+                            @OpenApiContent(type = Formats.JSON),
+                            @OpenApiContent(type = Formats.TAB),
+                            @OpenApiContent(type = Formats.CSV),
+                            @OpenApiContent(type = Formats.XML),
+                            @OpenApiContent(type = Formats.WML2),
+                            @OpenApiContent(type = Formats.GEOJSON),
+                            @OpenApiContent(type = "")
+                        })
             },
             description = "Returns CWMS Location Data",
             tags = {"Locations"}
@@ -137,7 +151,7 @@ public class LocationController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -198,35 +212,35 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the location level(s) whose data is to be "
-                            + "included in the response. If this field is not specified, matching"
-                            + " location level information from all offices shall be returned."),
-                    @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                            + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                            + "  Specifies English unit system.  Location values will be in the "
-                            + "default English units for their parameters.\r\n2. SI.   Specifies "
-                            + "the SI unit system.  Location values will be in the default SI "
-                            + "units for their parameters.\r\n3. Other. Any unit returned in the "
-                            + "response to the units URI request that is appropriate for the "
-                            + "requested parameters.")
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the location level(s) whose data is to be "
+                        + "included in the response. If this field is not specified, matching"
+                        + " location level information from all offices shall be returned."),
+                @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
+                        + " of the response. Valid values for the unit field are:\r\n 1. EN. "
+                        + "  Specifies English unit system.  Location values will be in the "
+                        + "default English units for their parameters.\r\n2. SI.   Specifies "
+                        + "the SI unit system.  Location values will be in the default SI "
+                        + "units for their parameters.\r\n3. Other. Any unit returned in the "
+                        + "response to the units URI request that is appropriate for the "
+                        + "requested parameters.")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(type = Formats.JSONV2, from = Location.class),
-                                    @OpenApiContent(type = Formats.XMLV2, from = Location.class)
-                            }),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the location was not found.")
+                @OpenApiResponse(status = STATUS_200,
+                        content = {
+                            @OpenApiContent(type = Formats.JSONV2, from = Location.class),
+                            @OpenApiContent(type = Formats.XMLV2, from = Location.class)
+                        }),
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
             tags = {"Locations"}
     )
     @Override
-    public void getOne(Context ctx, @NotNull String name) {
+    public void getOne(@NotNull Context ctx, @NotNull String name) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String units =
@@ -260,8 +274,8 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Location.class, type = Formats.JSON),
-                            @OpenApiContent(from = Location.class, type = Formats.XML)
+                        @OpenApiContent(from = Location.class, type = Formats.JSON),
+                        @OpenApiContent(from = Location.class, type = Formats.XML)
                     },
                     required = true),
             description = "Create new CWMS Location",
@@ -270,9 +284,9 @@ public class LocationController implements CrudHandler {
             tags = {"Locations"}
     )
     @Override
-    public void create(Context ctx) {
+    public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(CREATE)){
+        try (final Timer.Context timeContext = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -296,8 +310,8 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Location.class, type = Formats.JSON),
-                            @OpenApiContent(from = Location.class, type = Formats.XML)
+                        @OpenApiContent(from = Location.class, type = Formats.JSON),
+                        @OpenApiContent(from = Location.class, type = Formats.XML)
                     },
                     required = true),
             description = "Update CWMS Location",
@@ -305,14 +319,14 @@ public class LocationController implements CrudHandler {
             path = "/locations",
             tags = {"Locations"},
             responses = {
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the location was not found.")
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the location was not found.")
             }
     )
     @Override
-    public void update(Context ctx, @NotNull String locationId) {
+    public void update(@NotNull Context ctx, @NotNull String locationId) {
 
-        try (final Timer.Context timeContext = markAndTime(UPDATE)){
+        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);
@@ -355,10 +369,10 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
-                            + "the location whose data is to be deleted. If this field is not "
-                            + "specified, matching location information will be deleted from all "
-                            + "offices."),
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                        + "the location whose data is to be deleted. If this field is not "
+                        + "specified, matching location information will be deleted from all "
+                        + "offices."),
                     //Keeping hidden from the API docs for now as this call is particularly destructive
                     //@OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
                     //description = "Specifies whether to specifies whether to delete associated data " +
@@ -369,15 +383,15 @@ public class LocationController implements CrudHandler {
             path = "/locations",
             tags = {"Locations"},
             responses = {
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the location was not found.")
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the location was not found.")
             }
     )
     @Override
-    public void delete(Context ctx, @NotNull String locationId) {
+    public void delete(@NotNull Context ctx, @NotNull String locationId) {
 
         String office = ctx.queryParam(OFFICE);
-        try (Timer.Context timeContext = markAndTime(DELETE)){
+        try (Timer.Context timeContext = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationsDao locationsDao = getLocationsDao(dsl);

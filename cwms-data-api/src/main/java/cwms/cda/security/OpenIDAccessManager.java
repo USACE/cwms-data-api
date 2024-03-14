@@ -31,6 +31,7 @@ import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
@@ -68,7 +69,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             String username = token.getBody().get("preferred_username",String.class);
             AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-            String edipiStr = username.substring(username.lastIndexOf(".")+1);
+            String edipiStr = username.substring(username.lastIndexOf(".") + 1);
             long edipi = Long.parseLong(edipiStr);
             return dao.getPrincipalFromEdipi(edipi);
         } catch (NumberFormatException | JwtException ex) {
@@ -114,10 +115,10 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
 
     private static class UrlResolver extends SigningKeyResolverAdapter {
-        private URL jwksUrl;
+        private final URL jwksUrl;
         private ZonedDateTime lastCheck;
-        private HashMap<String,Key> realmPublicKeys = new HashMap<>();
-        private int realmPublicKeyTimeoutMinutes;
+        private final Map<String,Key> realmPublicKeys = new HashMap<>();
+        private final int realmPublicKeyTimeoutMinutes;
         private KeyFactory keyFactory = null;
 
         public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
@@ -151,8 +152,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
         private void updateSigningKey() throws IOException, InvalidKeySpecException {
             HttpURLConnection http = null;
-            try
-            {
+            try {
                 http = (HttpURLConnection)jwksUrl.openConnection();
                 http.setRequestMethod("GET");
                 http.setInstanceFollowRedirects(true);
@@ -160,7 +160,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
                 if (status == 200) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
-                    for(JsonNode key: keys) {
+                    for (JsonNode key: keys) {
                         String kid = key.get("kid").textValue();
                         Decoder b64 = Base64.getUrlDecoder(); // https://datatracker.ietf.org/doc/id/draft-jones-json-web-key-01.html#RFC4648
                         String nStr = key.get("n").textValue();

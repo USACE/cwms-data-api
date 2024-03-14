@@ -23,7 +23,7 @@ import org.apache.commons.io.IOUtils;
  */
 public class TsRandomSampler {
 
-    private static Logger logger = Logger.getLogger(TsRandomSampler.class.getName());
+    private static final Logger logger = Logger.getLogger(TsRandomSampler.class.getName());
     private static CSVFormat TS_SAMPLE_FORMAT = CSVFormat.Builder
             .create(CSVFormat.DEFAULT)
             .setNullString("null")
@@ -43,7 +43,7 @@ public class TsRandomSampler {
      * @param args jdbc URL, username, password
      * @throws IOException if the sample query can't be loaded.
      */
-    public static void main(String args[]) throws IOException {
+    public static void main(String[] args) throws IOException {
         if (args.length != 3) {
             throw new RuntimeException("you must pass db url, username, and password for the "
                     + "query");
@@ -65,12 +65,12 @@ public class TsRandomSampler {
              PreparedStatement sampleStatement = conn.prepareStatement(sampleQuery);
              ResultSet dummy = setSession.executeQuery();
              ResultSet offices = officeStatement.executeQuery();
-             CSVPrinter printer = TS_SAMPLE_FORMAT.print(System.out);
+             CSVPrinter printer = TS_SAMPLE_FORMAT.print(System.out)
         ) {
             boolean headerPrinted = false;
             while (offices.next()) {
                 sampleStatement.setString(1, offices.getString("office_id"));
-                try (ResultSet sample = sampleStatement.executeQuery();) {
+                try (ResultSet sample = sampleStatement.executeQuery()) {
                     while (sample.next()) {
                         if (!headerPrinted) {
                             printer.printHeaders(sample);
@@ -106,7 +106,7 @@ public class TsRandomSampler {
         String stateInitial;
 
         public TsSample(CSVRecord csv) {
-            String tmp = null;
+            String tmp;
             line = csv.toString();
             officeId = csv.get("DB_OFFICE_ID");
             cwmsTsId = csv.get("CWMS_TS_ID");
@@ -237,7 +237,7 @@ public class TsRandomSampler {
                                         + "/create_timeseries.sql"),
                                 "UTF-8"
                         )
-                );
+                )
         ) {
 
             for (TsSample sample : samples) {

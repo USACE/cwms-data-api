@@ -19,9 +19,9 @@ import service.annotations.FormatService;
 
 @FormatService(contentType = Formats.XML, dataTypes = {Office.class, Catalog.class})
 public class XMLv1 implements OutputFormatter {
-    private static Logger logger = Logger.getLogger(XMLv1.class.getName());
-    private JAXBContext context;
-    private Marshaller mar;
+    private static final Logger logger = Logger.getLogger(XMLv1.class.getName());
+    private final JAXBContext context;
+    private final Marshaller mar;
 
     public XMLv1() throws InternalServerErrorResponse {
         try {
@@ -52,10 +52,12 @@ public class XMLv1 implements OutputFormatter {
             }
             return sw.toString();
         } catch (JAXBException jaxb) {
-            String msg = dto != null ?
-                    "Error rendering '" + dto.toString() + "' to XML"
-                    :
-                    "Null element passed to formatter";
+            String msg;
+            if (dto != null) {
+                msg = "Error rendering '" + dto + "' to XML";
+            } else {
+                msg = "Null element passed to formatter";
+            }
             logger.log(Level.WARNING, msg, jaxb);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }

@@ -8,12 +8,12 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @JsonDeserialize(builder = StandardTextCatalog.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -54,6 +54,7 @@ public class StandardTextCatalog extends CwmsDTO {
         return retval;
     }
 
+    @Nullable
     public Collection<StandardTextValue> getValues() {
         if (values == null) {
             return null;
@@ -64,7 +65,7 @@ public class StandardTextCatalog extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
-
+        // nothing to validate
     }
 
     @JsonPOJOBuilder
@@ -80,8 +81,8 @@ public class StandardTextCatalog extends CwmsDTO {
         /**
          * Replaces the list of values.
          *
-         * @param newValues
-         * @return
+         * @param newValues the new list of values
+         * @return the builder
          */
         public Builder withValues(List<StandardTextValue> newValues) {
 

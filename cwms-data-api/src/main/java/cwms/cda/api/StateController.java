@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,12 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -39,14 +45,11 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 /**
  * Handles all state CRUD methods.
@@ -74,17 +77,18 @@ public class StateController implements CrudHandler {
 
     @OpenApi(
             responses = {
-                    @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
-                            description = "A list of states.",
-                            content = {
-                                    @OpenApiContent(from = State.class, isArray = true, type = Formats.JSONV2),
-                            }),
+                @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
+                        description = "A list of states.",
+                        content = {
+                            @OpenApiContent(from = State.class, isArray = true,
+                                    type = Formats.JSONV2),
+                        }),
             },
             tags = {"States"}
     )
     @Override
-    public void getAll(Context ctx) {
-        try (Timer.Context timeContext = markAndTime(GET_ALL)){
+    public void getAll(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             StateDao dao = new StateDao(dsl);
@@ -103,25 +107,25 @@ public class StateController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String state) {
+    public void getOne(@NotNull Context ctx, @NotNull String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void create(Context ctx) {
+    public void create(@NotNull Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String state) {
+    public void update(@NotNull Context ctx, @NotNull String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String state) {
+    public void delete(@NotNull Context ctx, @NotNull String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 

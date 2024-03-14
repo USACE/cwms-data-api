@@ -264,7 +264,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
             Jooq names this one:   call_STORE_TS_TEXT__2  - this is what we use
          */
 
-        if(textId != null && textValue != null){
+        if (textId != null && textValue != null){
             // There are two storeTs methods.  You either:
             // 1.  store a textValue at specific times but you don't care about what the textId is.
             // 2.  make an existing textId apply at the specified times - you don't care about the current textId to textValue.
@@ -299,7 +299,7 @@ public class RegularTimeSeriesTextDao extends JooqDao {
                     Timestamp.from(startTime),
                     Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
-                    "UTC", maxVersion?"T":"F", minAttribute,
+                    "UTC", OracleTypeMap.formatBool(maxVersion), minAttribute,
                     maxAttribute, officeId);
         });
     }

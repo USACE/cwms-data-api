@@ -38,6 +38,7 @@ import cwms.cda.data.dao.CountyDao;
 import cwms.cda.data.dto.County;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -92,6 +93,9 @@ public class CountyController implements CrudHandler {
             List<County> counties = dao.getCounties();
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader);
+            if (contentType == null) {
+                throw new FormattingException("Format header could not be parsed");
+            }
             String result = Formats.format(contentType, counties, County.class);
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());

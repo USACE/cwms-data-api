@@ -15,9 +15,8 @@ public class DirectUserPreparer implements ConnectionPreparer {
     @Override
     public Connection prepare(Connection conn) {
         if (user != null) {
-            try (
-                PreparedStatement setApiUser = conn.prepareStatement("begin cwms_env.set_session_user_direct(upper(?)); end;");
-                ) {                
+            String sql = "begin cwms_env.set_session_user_direct(upper(?)); end;";
+            try (PreparedStatement setApiUser = conn.prepareStatement(sql)) {
                 setApiUser.setString(1,user);
                 setApiUser.execute();                
             } catch (Exception e) {

@@ -1,27 +1,27 @@
 package cwms.cda.security;
 
-import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.spi.CdaAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
-
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class KeyAccessManager extends CdaAccessManager {
-    private static final String AUTH_HEADER = "Authorization";
+
+    public static final String AUTH_HEADER = "Authorization";
 
     private static AuthDao authDao;
 
 
     @Override
-    public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+    public void manage(Handler handler, @NotNull Context ctx, @NotNull Set<RouteRole> routeRoles) throws Exception {
         init(ctx);
         String key = getApiKey(ctx);
         DataApiPrincipal p = authDao.getByApiKey(key);
@@ -31,7 +31,8 @@ public class KeyAccessManager extends CdaAccessManager {
     }
 
     private void init(Context ctx) {
-        authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
+        authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),
+                ctx.attribute(ApiServlet.OFFICE_ID));
     }
 
     private String getApiKey(Context ctx) {
@@ -54,8 +55,10 @@ public class KeyAccessManager extends CdaAccessManager {
                     .scheme("apikey")
                     .type(Type.APIKEY)
                     .in(In.HEADER)
-                    .description("Key value as generated from the /auth/keys endpoint. NOTE: you MUST manually prefix your key with 'apikey ' (without the single quotes).")
-                    .name("Authorization");
+                    .description("Key value as generated from the /auth/keys endpoint. "
+                            + "NOTE: you MUST manually prefix your key with 'apikey ' "
+                            + "(without the single quotes).")
+                    .name(AUTH_HEADER);
     }
 
     @Override
@@ -65,7 +68,7 @@ public class KeyAccessManager extends CdaAccessManager {
 
     @Override
     public boolean canAuth(Context ctx, Set<RouteRole> roles) {
-        String header = ctx.header("Authorization");
+        String header = ctx.header(AUTH_HEADER);
         if (header == null) {
             return false;
         }
