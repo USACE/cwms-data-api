@@ -212,6 +212,7 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam("office", OFFICE)
             .queryParam("begin", BEGIN_STR)
             .queryParam("end", END_STR)
+            .queryParam("office", OFFICE)
             .delete("/timeseries/binary/" + tsId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)

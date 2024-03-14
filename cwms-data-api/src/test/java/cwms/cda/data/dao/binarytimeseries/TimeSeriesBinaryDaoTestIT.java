@@ -18,13 +18,11 @@ import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 
 @Tag("integration")
-@Disabled("I can't get my debugger to actually stop in this file to see WTF is going on.")
 public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
 
     private static final String officeId = "SPK";
@@ -69,10 +67,10 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
             boolean storeNonExisting = true;
             boolean replaceAll = true;
 
-            Long attr = null;
+
 
             dao.store(officeId, tsId, data, binaryType, startInstant, endInstant, versionInstant,
-                    maxVersion, storeExisting, storeNonExisting, replaceAll, attr);
+                    maxVersion, storeExisting, storeNonExisting, replaceAll);
 
             List<BinaryTimeSeriesRow> records = dao.retrieveRows(officeId, tsId, mask,
                     startInstant, endInstant, versionInstant, maxVersion, retrieveBinary,
@@ -86,7 +84,6 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
 
     @Test
     void test_bts_store_retrieve() throws SQLException {
-        Long attr = 23L;
 
         ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T08:00:00Z");
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T14:00:00Z");
@@ -105,10 +102,9 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
 
             String nowStr = Instant.now().toString();
             BinaryTimeSeriesRow row = new BinaryTimeSeriesRow.Builder()
-                    .withAttribute(attr)
                     .withDateTime(startZDT.toInstant())
                     .withBinaryValue(nowStr.getBytes())
-                    .withFileExtension(".bin")
+                    .withFilename("file.bin")
                     .withMediaType("application/octet-stream")
                     .build();
             BinaryTimeSeries bts = new BinaryTimeSeries.Builder()

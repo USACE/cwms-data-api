@@ -3,6 +3,7 @@ package cwms.cda.data.dto.binarytimeseries;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+
 import java.util.Date;
 import org.junit.jupiter.api.Test;
 
@@ -20,40 +21,34 @@ class BinaryTimeSeriesRowTest {
     void testCreateNulls(){
         BinaryTimeSeriesRow.Builder builder = new BinaryTimeSeriesRow.Builder();
         BinaryTimeSeriesRow row = builder.withDateTime(null)
-                .withVersionDate(null)
                 .withDataEntryDate(null)
-                .withBinaryId(null)
-                .withAttribute(null)
                 .withMediaType(null)
-                .withFileExtension(null)
+                .withFilename(null)
                 .withBinaryValue(null)
+                .withValueUrl(null)
                 .build();
         assertNotNull(row);
 
     }
 
     @Test
-    void testCreate(){
+    void testCreate()  {
         BinaryTimeSeriesRow.Builder builder = new BinaryTimeSeriesRow.Builder();
         BinaryTimeSeriesRow row = builder
                 .withDateTime(new Date(3333333333L).toInstant())
-                .withVersionDate(new Date(1111111111L).toInstant())
                 .withDataEntryDate(new Date(2222222222L).toInstant())
-                .withBinaryId("binaryId")
-                .withAttribute(34L)
                 .withMediaType("mediaType")
-                .withFileExtension(".bin")
+                .withFilename("file.bin")
                 .withBinaryValue("binaryData".getBytes())
+                .withDestFlag(0)
+                .withValueUrl("http://somehost:80/path?thequery")
                 .build();
         assertNotNull(row);
-
         assertEquals(3333333333L, Date.from(row.getDateTime()).getTime());
-        assertEquals(1111111111L, Date.from(row.getVersionDate()).getTime());
         assertEquals(2222222222L, Date.from(row.getDataEntryDate()).getTime());
-        assertEquals("binaryId", row.getBinaryId());
-        assertEquals(34L, row.getAttribute());
+
         assertEquals("mediaType", row.getMediaType());
-        assertEquals(".bin", row.getFileExtension());
+        assertEquals("file.bin", row.getFilename());
         assertEquals("binaryData", new String(row.getBinaryValue()));
     }
 

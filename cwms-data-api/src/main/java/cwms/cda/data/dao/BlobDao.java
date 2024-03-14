@@ -2,6 +2,8 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
@@ -117,8 +120,8 @@ public class BlobDao extends JooqDao<Blob> {
     @Override
     public List<Blob> getAll(String officeId) {
         String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID\n"
-                + " FROM CWMS_20.AT_BLOB \n" +
-                "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
+                + " FROM CWMS_20.AT_BLOB \n"
+                + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
                 ;
 
@@ -167,8 +170,8 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
-        String pFailIfExists = getBoolean(failIfExists);
-        String pIgnoreNulls = getBoolean(ignoreNulls);
+        String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
+        String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
                 getDslContext(c, blob.getOfficeId()).configuration(),
                 blob.getValue(),
@@ -180,15 +183,15 @@ public class BlobDao extends JooqDao<Blob> {
                 blob.getOfficeId()));
     }
 
-    @NotNull
-    public static String getBoolean(boolean failIfExists) {
-        String pFailIfExists;
-        if (failIfExists) {
-            pFailIfExists = "T";
-        } else {
-            pFailIfExists = "F";
+
+    public static byte[] readFully(@NotNull InputStream stream) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        while ((bytesRead = stream.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
         }
-        return pFailIfExists;
+        return output.toByteArray();
     }
 
 
