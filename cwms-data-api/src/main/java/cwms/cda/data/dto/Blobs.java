@@ -41,7 +41,7 @@ public class Blobs extends CwmsDTOPaginated {
     }
 
     public static class Builder {
-        private Blobs workingBlobs = null;
+        private Blobs workingBlobs;
         public Builder( String cursor, int pageSize, int total){
             workingBlobs = new Blobs(cursor, pageSize, total);
         }

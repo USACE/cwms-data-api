@@ -53,7 +53,7 @@ public class Clobs extends CwmsDTOPaginated {
     }
 
     public static class Builder {
-        private Clobs workingClobs = null;
+        private Clobs workingClobs;
         public Builder( String cursor, int pageSize, int total){
             workingClobs = new Clobs(cursor, pageSize, total);
         }
