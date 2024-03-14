@@ -220,11 +220,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String startInclusive = null;
         String endInclusive = null;
         String previous = null;
-        String next= null;
+        String next = null;
         Long versionDateMilli = null;
         String maxVersion = null;
 
-        if(versionDate != null) {
+        if (versionDate != null) {
             versionDateMilli = versionDate.toInstant().toEpochMilli();
         } else {
             maxVersion = "T";
@@ -232,7 +232,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // Query based on versionDate or query max aggregate
         // to_timestamp will allow null in the next schema release
-        if(versionDate != null) {
+        if (versionDate != null) {
             retrieveSelectData = DSL.sql(
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTs",
@@ -670,15 +670,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (dquRecord != null) {
             retval = dquRecord.map(r -> {
                 usace.cwms.db.jooq.codegen.tables.records.AV_TSV_DQU dqu = r.into(view);
-                TsvDqu tsv = null;
-                if (r != null) {
-                    TsvDquId id = new TsvDquId(dqu.getOFFICE_ID(), dqu.getTS_CODE(),
-                            dqu.getUNIT_ID(), dqu.getDATE_TIME());
-                    tsv = new TsvDqu(id, dqu.getCWMS_TS_ID(), dqu.getVERSION_DATE(),
-                            dqu.getDATA_ENTRY_DATE(), dqu.getVALUE(), dqu.getQUALITY_CODE(),
-                            dqu.getSTART_DATE(), dqu.getEND_DATE());
-                }
-                return tsv;
+                return new TsvDqu(
+                        new TsvDquId(dqu.getOFFICE_ID(), dqu.getTS_CODE(),
+                        dqu.getUNIT_ID(), dqu.getDATE_TIME()),
+                        dqu.getCWMS_TS_ID(), dqu.getVERSION_DATE(),
+                        dqu.getDATA_ENTRY_DATE(), dqu.getVALUE(), dqu.getQUALITY_CODE(),
+                        dqu.getSTART_DATE(), dqu.getEND_DATE());
             });
         }
 
