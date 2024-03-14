@@ -26,6 +26,9 @@ package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +39,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Schema(description = "A representation of a timeseries group")
 @XmlRootElement(name="timeseries-group")
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 public class TimeSeriesGroup extends CwmsDTO {
 	private String id;
 	private TimeSeriesCategory timeSeriesCategory;

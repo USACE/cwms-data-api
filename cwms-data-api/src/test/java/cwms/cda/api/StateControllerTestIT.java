@@ -60,6 +60,24 @@ public class StateControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_state_catalog_with_app_json()  {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].name", equalTo("Unknown State or State N/A"))
+            .body("[0].state-initial", equalTo("00"));
+    }
+
+    @Test
     void test_state_has_ETag_and_Cache_Control()  {
         String matcher;
         given()

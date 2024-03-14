@@ -13,10 +13,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 
 @XmlRootElement(name = "location-levels")
 @XmlSeeAlso(LocationLevel.class)
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class LocationLevels extends CwmsDTOPaginated {
     @XmlElementWrapper
     @XmlElement(name = "location-level")
