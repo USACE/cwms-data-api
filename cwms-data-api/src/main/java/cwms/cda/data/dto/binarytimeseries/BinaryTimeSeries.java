@@ -127,7 +127,7 @@ public class BinaryTimeSeries extends CwmsDTO {
                 if (entriesMap == null) {
                     entriesMap = new TreeMap<>(new DateDateComparator());
                 }
-                entriesMap.put(new DateDateKey(Date.from(row.getDateTime()), Date.from(row.getDataEntryDate())), row);
+                entriesMap.put(new DateDateKey(row.getDateTime()==null?null:Date.from(row.getDateTime()), row.getDataEntryDate()==null?null:Date.from(row.getDataEntryDate())), row);
             }
             return this;
         }

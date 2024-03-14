@@ -104,13 +104,11 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // create/store
         String testValue = EXPECTED_TEXT_VALUE;
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
-                .withDateTime(TimeSeriesTextDao.getDate(startInstant))
-
-                .withAttribute(420L)
+                .withDateTime(startInstant)
                 .withTextValue(testValue)
                 .build();
 
-        dao.storeRow(officeId, tsId, row, true, true);
+        dao.storeRow(officeId, tsId, row, true, true, versionInstant);
 
 
         // retrieve and verify
@@ -252,9 +250,10 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T04:00:00Z");
         Instant startInstant = startZDT.toInstant();
         Instant endInstant = endZDT.toInstant();
+        Instant versionInstant = null;
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startInstant, endInstant, null,
+                startInstant, endInstant, versionInstant,
                 false, null, null);
 
         Assertions.assertNotNull(tts);
@@ -274,20 +273,17 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
                 .from(first)
                 .withTextValue(updatedValue)
-                .withTextId(null)  // we want to update the value and we don't care what the id is.
-                .withVersionDate(null)  // I don't think we care about the 1111 CE date
-                .withAttribute((Long) null)
                 .build();
 
         // fyi the date.toSTring is: "Fri Dec 31 19:00:00 PST 2004" or: 2004-12-31T19:00:00
         // .000-0800  which matches up to 3am 1/1 2005 in UTC.  looks right.
         // pl/sql default for maxVersion is true
         // and for replaceAll its false;  But we do want it to replaceAll to update the value.
-        dao.storeRow(officeId, tsId, row, true, true);
+        dao.storeRow(officeId, tsId, row, true, true, versionInstant);
 
         // Step 3: retrieve it again and verify its updated
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startInstant, endInstant, null,
+                startInstant, endInstant, versionInstant,
                 true, null, null);
         Assertions.assertNotNull(tts);
         regRows = tts.getRegularTextValues();
@@ -365,26 +361,5 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         });
     }
 
-
-    @Test
-    void testBadStore() {
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        assertThrows(IllegalArgumentException.class, () -> {
-            databaseLink.connection(c -> {
-                DSLContext dsl = getDslContext(c, officeId);
-                RegularTimeSeriesTextDao dao = new RegularTimeSeriesTextDao(dsl);
-
-                RegularTextTimeSeriesRow row = new RegularTextTimeSeriesRow.Builder()
-                        .withTextValue("my new textValue")
-                        .withTextId("we want this id")
-                        .withDateTime(TimeSeriesTextDao.getDate(Instant.now()))
-                        .withVersionDate(null)
-                        .withAttribute((Long) null)
-                        .build();
-
-                dao.storeRow(officeId, tsId, row, true, true);
-            });
-        });
-    }
 
 }
