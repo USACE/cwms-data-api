@@ -11,11 +11,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @XmlRootElement(name="blobs")
 @XmlSeeAlso(Blob.class)
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Blobs extends CwmsDTOPaginated {
     @XmlElementWrapper
     @XmlElement(name="blob")

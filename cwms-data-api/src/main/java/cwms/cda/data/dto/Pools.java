@@ -13,10 +13,14 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 
 @XmlRootElement(name="pools")
 @XmlSeeAlso(Pool.class)
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Pools extends CwmsDTOPaginated {
     @XmlElementWrapper
     @XmlElement(name="pool")

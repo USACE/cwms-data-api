@@ -1,37 +1,24 @@
 package cwms.cda.formatters.xml;
 
-import cwms.cda.data.dto.Clobs;
-import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.OutputFormatter;
-import io.javalin.http.InternalServerErrorResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.XMLV2, dataTypes = {TimeSeries.class, Clobs.class})
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.OutputFormatter;
+import io.javalin.http.InternalServerErrorResponse;
+
 public class XMLv2 implements OutputFormatter {
-    private static final Logger logger = Logger.getLogger(XMLv2.class.getName());
-    private JAXBContext context;
-    private Marshaller mar;
+    private static Logger logger = Logger.getLogger(XMLv2.class.getName());
 
-    public XMLv2() throws InternalServerErrorResponse {
-        try {
-            context = JAXBContext.newInstance(TimeSeries.class,Clobs.class);
-            mar = context.createMarshaller();
-            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
-        } catch( JAXBException jaxb ){
-            logger.log(Level.SEVERE, "Unable to build XML Marshaller", jaxb);
-            throw new InternalServerErrorResponse("Internal error");
-        }
-
+    public XMLv2() {
     }
 
     @Override
@@ -42,17 +29,19 @@ public class XMLv2 implements OutputFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
+            final JAXBContext context = JAXBContext.newInstance(dto.getClass());
+            final Marshaller mar = context.createMarshaller();
+            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
+
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             mar.marshal(dto,pw);
             return sw.toString();
         } catch (JAXBException jaxb) {
-            String msg;
-            if (dto != null) {
-                msg = "Error rendering '" + dto + "' to XML";
-            } else {
-                msg = "Null element passed to formatter";
-            }
+            String msg = dto != null ?
+                    "Error rendering '" + dto.toString() + "' to XML"
+                    :
+                    "Null element passed to formatter";
             logger.log(Level.WARNING, msg, jaxb);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }

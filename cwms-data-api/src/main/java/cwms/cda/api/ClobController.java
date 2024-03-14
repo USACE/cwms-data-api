@@ -66,7 +66,7 @@ import org.jooq.DSLContext;
 
 public class ClobController implements CrudHandler {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
-    private static final int defaultPageSize = 20;
+    private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Clob";
     public static final String TEXT_PLAIN = "text/plain";
     private final MetricRegistry metrics;
@@ -90,37 +90,33 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE,
-                            description = "Specifies the owning office. If this field is not "
-                                    + "specified, matching information from all offices shall be "
-                                    + "returned."),
-                    @OpenApiParam(name = PAGE,
-                            description = "This end point can return a lot of data, this "
-                                    + "identifies where in the request you are. This is an opaque"
-                                    + " value, and can be obtained from the 'next-page' value in "
-                                    + "the response."
-                    ),
-                    @OpenApiParam(name = PAGE_SIZE,
-                            type = Integer.class,
-                            description = "How many entries per page returned. Default "
-                                    + defaultPageSize + "."
-                    ),
-                    @OpenApiParam(name = INCLUDE_VALUES,
-                            type = Boolean.class,
-                            description = "Do you want the value associated with this particular "
-                                    + "clob (default: false)"
-                    ),
-                    @OpenApiParam(name = LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
-                    )
+                @OpenApiParam(name = OFFICE,
+                        description = "Specifies the owning office. If this field is not "
+                                + "specified, matching information from all offices shall be "
+                                + "returned."),
+                @OpenApiParam(name = PAGE,
+                        description = "This end point can return a lot of data, this "
+                                + "identifies where in the request you are. This is an opaque"
+                                + " value, and can be obtained from the 'next-page' value in "
+                                + "the response."),
+                @OpenApiParam(name = PAGE_SIZE,
+                        type = Integer.class,
+                        description = "How many entries per page returned. Default "
+                                + DEFAULT_PAGE_SIZE + "."),
+                @OpenApiParam(name = INCLUDE_VALUES,
+                        type = Boolean.class,
+                        description = "Do you want the value associated with this particular "
+                                + "clob (default: false)"),
+                @OpenApiParam(name = LIKE,
+                        description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                                + "matching against the id")
             },
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of clobs.",
                     content = {
-                            @OpenApiContent(type = Formats.JSONV2, from = Clobs.class),
-                            @OpenApiContent(type = Formats.XMLV2, from = Clobs.class)
-                    }
-            )
+                        @OpenApiContent(type = Formats.JSONV2, from = Clobs.class),
+                        @OpenApiContent(type = Formats.XMLV2, from = Clobs.class)
+                    })
             },
             tags = {TAG}
     )
@@ -130,7 +126,6 @@ public class ClobController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
-            Optional<String> officeOpt = Optional.ofNullable(office);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
@@ -144,7 +139,7 @@ public class ClobController implements CrudHandler {
                 return;
             }
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE}, Integer.class, defaultPageSize, metrics,
+            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE}, Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(ClobController.class.getName(), GET_ALL));
 
             boolean includeValues = queryParamAsClass(ctx, new String[]{INCLUDE_VALUES},
@@ -153,7 +148,7 @@ public class ClobController implements CrudHandler {
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             ClobDao dao = new ClobDao(dsl);
-            Clobs clobs = dao.getClobs(cursor, pageSize, officeOpt, includeValues, like);
+            Clobs clobs = dao.getClobs(cursor, pageSize, office, includeValues, like);
             String result = Formats.format(contentType, clobs);
 
             ctx.result(result);
@@ -165,28 +160,27 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             description = "Get a single clob.  "
-                    + "If the accept header is set to " + TEXT_PLAIN + ", the raw value is returned as the response body. "
-                    + "Responses to " + TEXT_PLAIN + " requests are streamed and support the Range header.  "
-                    + "When the accept header is set to "+ Formats.JSONV2 + " the clob will be returned as a serialized Clob "
-                    + "object with fields for office-id, id, description and value.",
+                + "If the accept header is set to " + TEXT_PLAIN + ", the raw value is returned as the response body. "
+                + "Responses to " + TEXT_PLAIN + " requests are streamed and support the Range header.  "
+                + "When the accept header is set to " + Formats.JSONV2 + " the clob will be returned as a serialized Clob "
+                + "object with fields for office-id, id, description and value.",
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
-                    @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                            + "is ignored and the value of the query parameter is used.   "
-                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                            + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
-                            + "When using this query parameter a valid path parameter must still be provided for the request"
-                            + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
-                            + "parameter and also specify the id path parameter because firewall and/or server rules will "
-                            + "deny the request even though you are specifying this override. \"ignored\" is suggested." )
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                    + "When using this query parameter a valid path parameter must still be provided for the request"
+                    + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
+                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                    + "deny the request even though you are specifying this override. \"ignored\" is suggested.")
             },
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "Returns requested clob.",
                     content = {
-                            @OpenApiContent(type = Formats.JSONV2, from = Clob.class),
-                            @OpenApiContent(type = TEXT_PLAIN),
-                    }
-            )
+                        @OpenApiContent(type = Formats.JSONV2, from = Clob.class),
+                        @OpenApiContent(type = TEXT_PLAIN),
+                    })
             },
             tags = {TAG}
     )
@@ -203,7 +197,7 @@ public class ClobController implements CrudHandler {
 
             DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
-            Optional<String> office = Optional.ofNullable(ctx.queryParam(OFFICE));
+            String office = ctx.queryParam(OFFICE);
 
             if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
@@ -218,7 +212,7 @@ public class ClobController implements CrudHandler {
                     }
                 };
 
-                dao.getClob(clobId, office.orElse(null), streamConsumer);
+                dao.getClob(clobId, office, streamConsumer);
             } else {
                 Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
@@ -244,13 +238,13 @@ public class ClobController implements CrudHandler {
             description = "Create new Clob",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true")
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                        description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
             tags = {TAG}
@@ -322,20 +316,20 @@ public class ClobController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = CLOB_ID, required = true,
+                @OpenApiParam(name = CLOB_ID, required = true,
                             description = "Specifies the id of the clob to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
-                            description = "If true, null and empty fields in the provided clob "
-                                    + "will be ignored and the existing value of those fields "
-                                    + "left in place. Default: true")
+                @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                        description = "If true, null and empty fields in the provided clob "
+                                + "will be ignored and the existing value of those fields "
+                                + "left in place. Default: true")
             },
             requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
-                    },
+                content = {
+                    @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
+                    @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
+                },
                     required = true),
             description = "Update clob",
             method = HttpMethod.PATCH,
@@ -412,7 +406,7 @@ public class ClobController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String clobId) {
+    public void delete(@NotNull Context ctx, @NotNull String clobId) {
         String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {

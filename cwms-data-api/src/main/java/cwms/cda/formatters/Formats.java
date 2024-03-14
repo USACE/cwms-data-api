@@ -26,7 +26,9 @@ package cwms.cda.formatters;
 
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.helpers.ResourceHelper;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,7 +63,7 @@ public class Formats {
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
 
 
-    private static final List<ContentType> contentTypeList = new ArrayList<>();
+    private static List<ContentType> contentTypeList = new ArrayList<>();
 
     static {
         contentTypeList.addAll(
@@ -69,7 +72,7 @@ public class Formats {
                         .collect(Collectors.toList()));
     }
 
-    private static final Map<String, String> typeMap = new LinkedHashMap<>();
+    private static Map<String, String> typeMap = new LinkedHashMap<>();
 
     static {
         typeMap.put("json", Formats.JSON);
@@ -83,52 +86,11 @@ public class Formats {
     }
 
 
-    private Map<ContentType, Map<Class<CwmsDTO>, OutputFormatter>> formatters;
+    private Map<ContentType, Map<Class<? extends CwmsDTOBase>, OutputFormatter>> formatters = new LinkedHashMap<>();
 
-    private static Formats formats = null;
+    private static Formats formats = new Formats();
 
-    private Formats() throws IOException {
-        formatters = new LinkedHashMap<>();
-        InputStream formatList = ResourceHelper.getResourceAsStream("/formats.list",
-                this.getClass());
-        BufferedReader br = new BufferedReader(new InputStreamReader(formatList));
-        while (br.ready()) {
-            String line = br.readLine();
-            logger.finest(line);
-            String[] typeFormatterClasses = line.split(":");
-
-            ContentType type = new ContentType(typeFormatterClasses[0]);
-            logger.finest(() -> "Adding links for content-type: " + type);
-
-            try {
-                @SuppressWarnings("unchecked")
-                Class<OutputFormatter> formatter =
-                        (Class<OutputFormatter>) Class.forName(typeFormatterClasses[1]);
-                OutputFormatter formatterInstance;
-                logger.finest(() -> "Formatter class: " + typeFormatterClasses[1]);
-
-                formatterInstance = formatter.getDeclaredConstructor().newInstance();
-                Map<Class<CwmsDTO>, OutputFormatter> tmp = new HashMap<>();
-
-                for (String clazz : typeFormatterClasses[2].split(";")) {
-                    logger.finest(() -> "\tFor Class: " + clazz);
-
-                    @SuppressWarnings("unchecked")
-                    Class<CwmsDTO> formatForClass = (Class<CwmsDTO>) Class.forName(clazz);
-                    tmp.put(formatForClass, formatterInstance);
-                }
-
-                formatters.put(type, tmp);
-            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                     | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                throw new IOException("Failed to load format list, formatter for "
-                        + typeFormatterClasses[0] + " point to a class with an invalid constructor", e);
-            } catch (ClassNotFoundException e) {
-                throw new IOException("Failed to find class referenced for formatter "
-                        + typeFormatterClasses[0], e);
-            }
-        }
-
+    private Formats() {
     }
 
 
@@ -147,10 +109,36 @@ public class Formats {
 
     }
 
+    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTOBase> klass) {
+        OutputFormatter outputFormatter = null;
+        Map<Class<? extends CwmsDTOBase>, OutputFormatter> contentFormatters = formatters.get(type);
+        if (contentFormatters != null && contentFormatters.containsKey(klass)) {
+            outputFormatter = contentFormatters.get(klass);
+        } else { // not in the list, look it up.
+            FormattableWith[] annotationsByType = klass.getAnnotationsByType(FormattableWith.class);
+            for (FormattableWith fw: annotationsByType) {
+                ContentType fwCt = new ContentType(fw.contentType());
+                if (type.equals(fwCt)) {
+                    try {
+                        outputFormatter = fw.formatter()
+                                            .getDeclaredConstructor()
+                                            .newInstance();
+                        formatters.computeIfAbsent(type, k -> new HashMap<Class<? extends CwmsDTOBase>, OutputFormatter>())
+                                  .put(klass,outputFormatter);
+                    } catch (Exception ex) {
+                        logger.log(Level.SEVERE, "Unable to create formatter.", ex);
+                        return null;
+                    }
+                }
+            }
+        }
+        return outputFormatter;
+    }
+
     private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
         for (ContentType key : formatters.keySet()) {
-            logger.finest(key::toString);
+            logger.finest(() -> key.toString());
         }
 
         OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
@@ -159,41 +147,17 @@ public class Formats {
             return outputFormatter.format(dtos);
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
-                    type.toString(), dtos.get(0).getClass().getName());
+                            type.toString(), dtos.get(0).getClass().getName());
             throw new FormattingException(message);
         }
     }
 
-    private OutputFormatter getOutputFormatter(ContentType type, Class<? extends CwmsDTOBase> klass) {
-        OutputFormatter outputFormatter = null;
-        Map<Class<CwmsDTO>, OutputFormatter> contentFormatters = formatters.get(type);
-        if (contentFormatters != null) {
-            outputFormatter = contentFormatters.get(klass);
-        }
-        return outputFormatter;
-    }
-
-    private static void init() {
-        if (formats == null) {
-            logger.finest("creating instance");
-            try {
-                formats = new Formats();
-            } catch (IOException err) {
-                throw new FormattingException("Failed to load format map", err);
-            }
-        }
-    }
-
     public static String format(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
-        logger.finest("formats");
-        init();
         return formats.getFormatted(type, toFormat);
     }
 
     public static String format(ContentType type, List<? extends CwmsDTOBase> toFormat, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
-        logger.finest("format list");
-        init();
         return formats.getFormatted(type, toFormat, rootType);
     }
 
@@ -254,7 +218,7 @@ public class Formats {
 
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
-            logger.finest(() -> "Finding handlers " + all.length);
+            logger.finest("Finding handlers " + all.length);
             for (String ct : all) {
                 logger.finest(ct);
                 contentTypes.add(new ContentType(ct));
