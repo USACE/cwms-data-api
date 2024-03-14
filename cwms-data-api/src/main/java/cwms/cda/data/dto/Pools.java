@@ -1,5 +1,10 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,30 +16,24 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
-
-@XmlRootElement(name="pools")
+@XmlRootElement(name = "pools")
 @XmlSeeAlso(Pool.class)
 @XmlAccessorType(XmlAccessType.FIELD)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Pools extends CwmsDTOPaginated {
     @XmlElementWrapper
-    @XmlElement(name="pool")
+    @XmlElement(name = "pool")
 
     @Schema(description = "List of retrieved pools")
     List<Pool> pools;
 
     @SuppressWarnings("unused") // for JAXB to handle marshalling
-    private Pools(){}
+    private Pools() {
+    }
 
     private int offset;
 
-    public Pools(int offset, int pageSize, Integer total)
-    {
+    public Pools(int offset, int pageSize, Integer total) {
         super(Integer.toString(offset), pageSize, total);
         pools = new ArrayList<>();
         this.offset = offset;
@@ -48,29 +47,30 @@ public class Pools extends CwmsDTOPaginated {
     public static class Builder {
         private Pools workingPools;
 
-        public Builder(int offset, int pageSize, Integer total){
+        public Builder(int offset, int pageSize, Integer total) {
             workingPools = new Pools(offset, pageSize, total);
         }
 
-        public Pools build(){
-            if( this.workingPools.pools.size() == this.workingPools.pageSize){
+        public Pools build() {
+            if (this.workingPools.pools.size() == this.workingPools.pageSize) {
 
-                String cursor = Integer.toString(this.workingPools.offset + this.workingPools.pools.size());
+                String cursor =
+                        Integer.toString(this.workingPools.offset + this.workingPools.pools.size());
                 this.workingPools.nextPage = encodeCursor(cursor,
-                            this.workingPools.pageSize,
-                            this.workingPools.total);
+                        this.workingPools.pageSize,
+                        this.workingPools.total);
             } else {
                 this.workingPools.nextPage = null;
             }
             return workingPools;
         }
 
-        public Builder add(Pool pool){
+        public Builder add(Pool pool) {
             this.workingPools.pools.add(pool);
             return this;
         }
 
-        public Builder addAll(Collection<? extends Pool> pools){
+        public Builder addAll(Collection<? extends Pool> pools) {
             this.workingPools.pools.addAll(pools);
             return this;
         }
@@ -82,8 +82,6 @@ public class Pools extends CwmsDTOPaginated {
         // TODO Auto-generated method stub
 
     }
-
-
 
 
 }
