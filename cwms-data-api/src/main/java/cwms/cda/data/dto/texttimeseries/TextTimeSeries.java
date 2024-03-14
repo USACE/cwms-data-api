@@ -11,6 +11,9 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.data.dto.binarytimeseries.DateDateComparator;
 import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import hec.data.timeSeriesText.DateDateKey;
@@ -30,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 @JsonDeserialize(builder = TextTimeSeries.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class TextTimeSeries extends CwmsDTO {
 
 

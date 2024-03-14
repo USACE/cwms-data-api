@@ -1,7 +1,11 @@
 package cwms.cda.data.dto;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.Formats;
 
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class SpecifiedLevel extends CwmsDTO
 {
 	private String id;

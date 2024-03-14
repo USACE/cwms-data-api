@@ -17,6 +17,5 @@ include 'services:webservice'
 
 rootProject.name = 'cwms-data-api'
 
-include ":annotations"
 include ":access-manager-api"
 include ":cwms-data-api"
