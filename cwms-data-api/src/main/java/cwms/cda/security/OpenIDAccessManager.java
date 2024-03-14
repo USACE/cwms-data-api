@@ -1,35 +1,12 @@
 package cwms.cda.security;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPublicKeySpec;
-import java.sql.SQLException;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Base64.Decoder;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-
-import cwms.cda.spi.CdaAccessManager;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.spi.CdaAccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -41,15 +18,32 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
+import java.time.ZonedDateTime;
+import java.util.Base64;
+import java.util.Base64.Decoder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This is currently more a placeholder for example than actual implementation
  */
 public class OpenIDAccessManager extends CdaAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
+    public static final String AUTHORIZATION = "Authorization";
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
-    private DataSource dataSource = null;
 
 
     public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout, String authUrl) {
@@ -65,7 +59,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
     }
 
     @Override
-    public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+    public void manage(Handler handler, @NotNull Context ctx, @NotNull Set<RouteRole> routeRoles) throws Exception {
         DataApiPrincipal p = getUserFromToken(ctx);
         AuthDao.isAuthorized(ctx,p,routeRoles);
         AuthDao.prepareContextWithUser(ctx, p);
@@ -77,7 +71,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             String username = token.getBody().get("preferred_username",String.class);
             AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-            String edipiStr = username.substring(username.lastIndexOf(".")+1);
+            String edipiStr = username.substring(username.lastIndexOf(".") + 1);
             long edipi = Long.parseLong(edipiStr);
             return dao.getPrincipalFromEdipi(edipi);
         } catch (NumberFormatException | JwtException ex) {
@@ -86,8 +80,17 @@ public class OpenIDAccessManager extends CdaAccessManager {
     }
 
     private String getToken(Context ctx) {
-        String header = ctx.header("Authorization");
-        return header.split("\\s+")[1];
+        String header = ctx.header(AUTHORIZATION);
+        if (header == null) {
+            throw new IllegalStateException(AUTHORIZATION + " not found");
+        } else {
+            String[] parts = header.split("\\s+");
+            if (parts.length >= 2) {
+                return parts[1];
+            } else {
+                throw new IllegalArgumentException(String.format(AUTHORIZATION + " header:%s could not be split.", header));
+            }
+        }
     }
 
     /**
@@ -105,7 +108,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
     @Override
     public boolean canAuth(Context ctx, Set<RouteRole> roles) {
-        String header = ctx.header("Authorization");
+        String header = ctx.header(AUTHORIZATION);
         if (header == null) {
             return false;
         }
@@ -114,10 +117,10 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
 
     private static class UrlResolver extends SigningKeyResolverAdapter {
-        private URL jwksUrl;
+        private final URL jwksUrl;
         private ZonedDateTime lastCheck;
-        private HashMap<String,Key> realmPublicKeys = new HashMap<>();
-        private int realmPublicKeyTimeoutMinutes;
+        private final Map<String,Key> realmPublicKeys = new HashMap<>();
+        private final int realmPublicKeyTimeoutMinutes;
         private KeyFactory keyFactory = null;
 
         public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
@@ -151,8 +154,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
         private void updateSigningKey() throws IOException, InvalidKeySpecException {
             HttpURLConnection http = null;
-            try
-            {
+            try {
                 http = (HttpURLConnection)jwksUrl.openConnection();
                 http.setRequestMethod("GET");
                 http.setInstanceFollowRedirects(true);
@@ -160,7 +162,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
                 if (status == 200) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
-                    for(JsonNode key: keys) {
+                    for (JsonNode key: keys) {
                         String kid = key.get("kid").textValue();
                         Decoder b64 = Base64.getUrlDecoder(); // https://datatracker.ietf.org/doc/id/draft-jones-json-web-key-01.html#RFC4648
                         String nStr = key.get("n").textValue();

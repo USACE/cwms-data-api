@@ -17,6 +17,7 @@ import cwms.cda.data.dao.BasinDao;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.json.NamedPgJsonFormatter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -52,27 +53,27 @@ public class BasinController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
-                            + " owning office of the basin whose data is to be included in the "
-                            + "response. If this field is not specified, matching basin "
-                            + "information from all offices shall be returned."),
-                    @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
-                            + "unit or unit system of the response. Valid values for the unit "
-                            + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
-                            + "values will be in the default English units for their parameters. "
-                            + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
-                            + " SI unit system. Basin values will be in the default SI units for "
-                            + "their parameters."),
+                @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
+                        + " owning office of the basin whose data is to be included in the "
+                        + "response. If this field is not specified, matching basin "
+                        + "information from all offices shall be returned."),
+                @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
+                        + "unit or unit system of the response. Valid values for the unit "
+                        + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
+                        + "values will be in the default English units for their parameters. "
+                        + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
+                        + " SI unit system. Basin values will be in the default SI units for "
+                        + "their parameters."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
-                            }),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a basin."),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                            + "implemented")
+                @OpenApiResponse(status = STATUS_200,
+                        content = {
+                            @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
+                        }),
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
+                        + "parameters did not find a basin."),
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
+                        + "implemented")
             },
             description = "Returns CWMS Basin Data",
             tags = {TAG}
@@ -80,7 +81,7 @@ public class BasinController implements CrudHandler {
     @Override
     public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL) ) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
@@ -88,6 +89,9 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
+            if (contentType == null) {
+                throw new FormattingException("Format header could not be parsed");
+            }
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
@@ -103,27 +107,27 @@ public class BasinController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
-                            + " owning office of the basin whose data is to be included in the "
-                            + "response. If this field is not specified, matching basin "
-                            + "information from all offices shall be returned."),
-                    @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
-                            + "unit or unit system of the response. Valid values for the unit "
-                            + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
-                            + "values will be in the default English units for their parameters. "
-                            + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
-                            + " SI unit system. Basin values will be in the default SI units for "
-                            + "their parameters."),
+                @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
+                        + " owning office of the basin whose data is to be included in the "
+                        + "response. If this field is not specified, matching basin "
+                        + "information from all offices shall be returned."),
+                @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
+                        + "unit or unit system of the response. Valid values for the unit "
+                        + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
+                        + "values will be in the default English units for their parameters. "
+                        + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
+                        + " SI unit system. Basin values will be in the default SI units for "
+                        + "their parameters."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
-                            }),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a basin."),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                            + "implemented")
+                @OpenApiResponse(status = STATUS_200,
+                        content = {
+                            @OpenApiContent(from = Basin.class, type = Formats.NAMED_PGJSON)
+                        }),
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
+                        + "parameters did not find a basin."),
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
+                        + "implemented")
             },
             description = "Returns CWMS Basin Data",
             tags = {TAG}
@@ -139,6 +143,9 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
+            if (contentType == null) {
+                throw new FormattingException("Format header could not be parsed");
+            }
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);

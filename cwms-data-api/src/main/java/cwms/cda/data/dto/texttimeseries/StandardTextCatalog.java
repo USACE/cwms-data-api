@@ -8,23 +8,29 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @JsonDeserialize(builder = StandardTextCatalog.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties("office-id")  // This blocks office-id from the super!
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class StandardTextCatalog extends CwmsDTO {
 
     private final NavigableMap<StandardTextId, StandardTextValue> values;
 
 
-    private StandardTextCatalog(Builder builder) {
-        super(builder == null ? null : getOffice(builder.values));
+    private StandardTextCatalog(@NotNull Builder builder) {
+        super(getOffice(builder.values));
 
         if (builder.values != null) {
             values = new java.util.TreeMap<>(new StandardTextIdComparator());
@@ -53,6 +59,7 @@ public class StandardTextCatalog extends CwmsDTO {
         return retval;
     }
 
+    @Nullable
     public Collection<StandardTextValue> getValues() {
         if (values == null) {
             return null;
@@ -63,7 +70,7 @@ public class StandardTextCatalog extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
-
+        // nothing to validate
     }
 
     @JsonPOJOBuilder
@@ -79,8 +86,8 @@ public class StandardTextCatalog extends CwmsDTO {
         /**
          * Replaces the list of values.
          *
-         * @param newValues
-         * @return
+         * @param newValues the new list of values
+         * @return the builder
          */
         public Builder withValues(List<StandardTextValue> newValues) {
 

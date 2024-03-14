@@ -10,8 +10,8 @@ public class ContentType implements Comparable<ContentType> {
     public static final String PARAM_DELIM = ";";
     public static final String ELEM_DELIM = "=";
     public static final String CHARSET = "charset";
-    private String mediaType;
-    private Map<String, String> parameters;
+    private final String mediaType;
+    private final Map<String, String> parameters;
 
     private String charset = null;
 
@@ -21,10 +21,10 @@ public class ContentType implements Comparable<ContentType> {
         mediaType = parts[0];
         if (parts.length > 1) {
             for (int i = 1; i < parts.length; i++) {
-                String[] key_val = parts[i].split(ELEM_DELIM);
-                if (key_val.length == 2) {
-                    String key = key_val[0].trim();
-                    String value = key_val[1].trim();
+                String[] keyVal = parts[i].split(ELEM_DELIM);
+                if (keyVal.length == 2) {
+                    String key = keyVal[0].trim();
+                    String value = keyVal[1].trim();
                     if (CHARSET.equalsIgnoreCase(key)) {
                         charset = value;
                     } else {
@@ -59,16 +59,20 @@ public class ContentType implements Comparable<ContentType> {
     @Override
     public boolean equals(Object other) {
         logger.atFinest().log("Checking %s vs %s", this, other);
-        if (!(other instanceof ContentType)) return false;
+        if (!(other instanceof ContentType)) {
+            return false;
+        }
         ContentType o = (ContentType) other;
-        if (!(mediaType.equals(o.mediaType))) return false;
+        if (!(mediaType.equals(o.mediaType))) {
+            return false;
+        }
 
         /** We loop through instead of using contains key. 
          *  Content-type parameter names are not case sensitive.
          */
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             String key = entry.getKey();
-            if( "version".equalsIgnoreCase(key) ) {
+            if ("version".equalsIgnoreCase(key)) {
                 return entry.getValue().equals(o.parameters.get(key));
             }
         }
@@ -82,12 +86,16 @@ public class ContentType implements Comparable<ContentType> {
     }
 
     @Override
-    public int compareTo(ContentType o) {
+    public int compareTo(ContentType other) {
         float myPriority = Float.parseFloat(parameters.getOrDefault("q", "1"));
-        float otherPriority = Float.parseFloat(parameters.getOrDefault("q", "1"));
-        if (myPriority == otherPriority) return 0;
-        else if (myPriority > otherPriority) return 1;
-        else return -1;
+        float otherPriority = Float.parseFloat(other.parameters.getOrDefault("q", "1"));
+        if (myPriority == otherPriority) {
+            return 0;
+        } else if (myPriority > otherPriority) {
+            return 1;
+        } else {
+            return -1;
+        }
     }
 
     @Override
@@ -96,7 +104,9 @@ public class ContentType implements Comparable<ContentType> {
 
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             String key = entry.getKey();
-            if (key.equals("q")) continue;
+            if (key.equals("q")) {
+                continue;
+            }
             builder.append(PARAM_DELIM).append(key).append(ELEM_DELIM).append(entry.getValue());
         }
 
@@ -107,11 +117,11 @@ public class ContentType implements Comparable<ContentType> {
      * Used for quick comparisons where we don't further need the content type
      * so we can streamline the code a little.
      *      
-     * @param a
-     * @param b
+     * @param a first content type to check
+     * @param b second content type to check
      * @return whether they are equivalent
      */
-    final public static boolean equivalent(String a, String b) {
+    public static boolean equivalent(String a, String b) {
         Objects.requireNonNull(a, "Cannot determine equivalency of null content-types");
         Objects.requireNonNull(b, "Cannot determine equivalency of null content-types");
         ContentType ctA = new ContentType(a);

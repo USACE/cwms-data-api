@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 import hec.data.timeSeriesText.DateDateComparator;
 import hec.data.timeSeriesText.DateDateKey;
 import hec.data.timeSeriesText.TextTimeSeriesRow;
@@ -22,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 @JsonDeserialize(builder = TextTimeSeries.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class TextTimeSeries extends CwmsDTO {
 
     private final String name;
