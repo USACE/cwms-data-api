@@ -41,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class OpenIDAccessManager extends CdaAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
+    public static final String AUTHORIZATION = "Authorization";
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
 
@@ -79,15 +80,15 @@ public class OpenIDAccessManager extends CdaAccessManager {
     }
 
     private String getToken(Context ctx) {
-        String header = ctx.header("Authorization");
+        String header = ctx.header(AUTHORIZATION);
         if (header == null) {
-            throw new IllegalArgumentException("Authorization not found");
+            throw new IllegalStateException(AUTHORIZATION + " not found");
         } else {
             String[] parts = header.split("\\s+");
             if (parts.length >= 2) {
                 return parts[1];
             } else {
-                throw new IllegalArgumentException(String.format("Authorization header:%s could not be split.", header));
+                throw new IllegalArgumentException(String.format(AUTHORIZATION + " header:%s could not be split.", header));
             }
         }
     }
@@ -107,7 +108,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
 
     @Override
     public boolean canAuth(Context ctx, Set<RouteRole> roles) {
-        String header = ctx.header("Authorization");
+        String header = ctx.header(AUTHORIZATION);
         if (header == null) {
             return false;
         }
