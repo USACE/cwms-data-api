@@ -113,7 +113,7 @@ public class LevelsController implements CrudHandler {
 
     private final Histogram requestResultSize;
 
-    private static final int defaultPageSize = 100;
+    private static final int DEFAULT_PAGE_SIZE = 100;
 
 
     public LevelsController(MetricRegistry metrics) {
@@ -141,7 +141,7 @@ public class LevelsController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(CREATE)) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -196,7 +196,7 @@ public class LevelsController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
 
-        try (final Timer.Context timeContext = markAndTime(DELETE)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
             String dateString = queryParamAsClass(ctx,
@@ -230,7 +230,7 @@ public class LevelsController implements CrudHandler {
                         + "the default SI units for their parameters.\r\n3. Other. Any unit "
                         + "returned in the response to the units URI request that is "
                         + "appropriate for the requested parameters.  The " + Formats.JSONV2
-                        + " format currently only supports SI." ),
+                        + " format currently only supports SI."),
                 @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                         + " the response. This field affects only elevation location levels. "
                         + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
@@ -262,7 +262,7 @@ public class LevelsController implements CrudHandler {
                         + "request you are. This is an opaque value, and can be obtained from "
                         + "the 'next-page' value in the response."),
                 @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
-                        + "many entries per page returned. Default " + defaultPageSize + ".")},
+                        + "many entries per page returned. Default " + DEFAULT_PAGE_SIZE + ".")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON),
@@ -274,7 +274,7 @@ public class LevelsController implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
@@ -283,8 +283,8 @@ public class LevelsController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format);
             String version = contentType.getParameters().get(VERSION);
 
-            String levelIdMask = queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK,
-                    NAME}, String.class, null, metrics,
+            String levelIdMask = queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK, NAME},
+                    String.class, null, metrics,
                     name(LevelsController.class.getName(), GET_ALL));
 
             String office = ctx.queryParam(OFFICE);
@@ -298,18 +298,18 @@ public class LevelsController implements CrudHandler {
 
             if ("2".equals(version)) {
 
-                if (unit == null){
+                if (unit == null) {
                     // The dao currently only supports SI.
                     unit = UnitSystem.SI.getValue();
                 }
-                if(!UnitSystem.SI.getValue().equals(unit)) {
+                if (!UnitSystem.SI.getValue().equals(unit)) {
                     throw new IllegalArgumentException("Levels Version 2 currently only supports SI");
                 }
 
                 String cursor = ctx.queryParamAsClass(PAGE, String.class)
                         .getOrDefault("");
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
-                        .getOrDefault(defaultPageSize);
+                        .getOrDefault(DEFAULT_PAGE_SIZE);
 
                 ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
 
@@ -397,7 +397,7 @@ public class LevelsController implements CrudHandler {
             tags = {"Levels"}
     )
     @Override
-    public void getOne(Context ctx, @NotNull String levelId) {
+    public void getOne(@NotNull Context ctx, @NotNull String levelId) {
         String office = requiredParam(ctx, OFFICE);
         String units = ctx.queryParam(UNIT);
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
@@ -406,7 +406,7 @@ public class LevelsController implements CrudHandler {
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                 .getOrDefault("UTC");
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone);
 
@@ -439,7 +439,7 @@ public class LevelsController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldLevelId) {
-        try (final Timer.Context timeContext = markAndTime(UPDATE)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -465,10 +465,12 @@ public class LevelsController implements CrudHandler {
                 String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
                     name(LevelsController.class.getName(), UPDATE));
-                if(dateString == null) {
-                    throw new IllegalArgumentException("Cannot update location level effective date if no date is specified");
+                if (dateString == null) {
+                    throw new IllegalArgumentException("Cannot update location level "
+                            + "effective date if no date is specified");
                 }
-                ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, ZoneId.systemDefault().getId());
+                ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString,
+                        ZoneId.systemDefault().getId());
                 //retrieveLocationLevel will throw an error if level does not exist
                 LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(oldLevelId,
                     UnitSystem.EN.getValue(), unmarshalledDateTime, officeId);
@@ -685,11 +687,12 @@ public class LevelsController implements CrudHandler {
     )
     public void getLevelAsTimeSeries(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime("getLevelAsTimeSeries")) {
+        try (final Timer.Context ignored = markAndTime("getLevelAsTimeSeries")) {
             DSLContext dsl = getDslContext(ctx);
             Validator<String> pathParam = ctx.pathParamAsClass(LEVEL_ID, String.class);
             if (!pathParam.hasValue()) {
-                throw new IllegalArgumentException(LEVEL_ID + " path parameter can not be null when retrieving levels as time series");
+                throw new IllegalArgumentException(LEVEL_ID + " path parameter can not be null "
+                        + "when retrieving levels as time series");
             }
             String levelId = pathParam.get();
             String office = requiredParam(ctx, OFFICE);
@@ -709,9 +712,11 @@ public class LevelsController implements CrudHandler {
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             Interval interval = IntervalFactory.findAny(IntervalFactory.equalsName(intervalParameter))
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid interval string: " + intervalParameter + " for location level as timeseries"));
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid interval string: "
+                            + intervalParameter + " for location level as timeseries"));
             JDomLocationLevelRef levelRef = new JDomLocationLevelRef(office, levelId);
-            TimeSeries timeSeries = levelsDao.retrieveLocationLevelAsTimeSeries(levelRef, beginZdt.toInstant(), endZdt.toInstant(), interval, units);
+            TimeSeries timeSeries = levelsDao.retrieveLocationLevelAsTimeSeries(levelRef,
+                    beginZdt.toInstant(), endZdt.toInstant(), interval, units);
             ctx.json(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
