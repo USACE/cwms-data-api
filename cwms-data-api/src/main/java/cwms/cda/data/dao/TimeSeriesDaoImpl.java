@@ -112,7 +112,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
                                        ZonedDateTime beginTime, ZonedDateTime endTime,
-                                    ZonedDateTime versionDate) {
+                                    ZonedDateTime versionDate, boolean shouldTrim) {
         TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
@@ -216,7 +216,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
-        String trim = null;
+        String trim = OracleTypeMap.formatBool(shouldTrim);
         String startInclusive = null;
         String endInclusive = null;
         String previous = null;
