@@ -1,7 +1,6 @@
 package cwms.cda.data.dto.texttimeseries;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,12 +24,13 @@ class RegularTextTimeSeriesRowTest {
 //        Date specificDate = df.parse("2023-01-01 12:00:00");
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-        builder.withDateTime(df.parse("2023-01-03 12:05:00"));
-        builder.withVersionDate(df.parse("2023-05-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-05-02 12:05:00"));
-        builder.withAttribute(420L);
+        builder.withDateTime(df.parse("2023-01-03 12:05:00").toInstant());
+        builder.withDataEntryDate(df.parse("2023-05-02 12:05:00").toInstant());
+        builder.withMediaType("text/plain");
+        builder.withQualityCode(1L);
+        builder.withDestFlag(2);
+        builder.withFilename("myFile.txt");
 
-        builder.withTextId("theId");
         builder.withTextValue("stdText");
 
         RegularTextTimeSeriesRow row = builder.build();
@@ -41,8 +41,6 @@ class RegularTextTimeSeriesRowTest {
         assertNotNull(json);
 
         assertTrue(json.contains("stdText"));
-        assertTrue(json.contains("420"));
-
     }
 
     @Test
@@ -51,13 +49,14 @@ class RegularTextTimeSeriesRowTest {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-        builder.withDateTime(df.parse("2023-01-01 12:05:00"));
-        builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
-        builder.withAttribute(420L);
+        builder.withDateTime(df.parse("2023-01-01 12:05:00").toInstant());
 
-//        builder.withTextId("theId");
+        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00").toInstant());
         builder.withTextValue("my awesome text ts");
+        builder.withMediaType("text/plain");
+        builder.withQualityCode(420L);
+        builder.withDestFlag(2);
+        builder.withFilename("myFile.txt");
 
         RegularTextTimeSeriesRow row = builder.build();
         assertNotNull(row);
@@ -69,12 +68,15 @@ class RegularTextTimeSeriesRowTest {
         RegularTextTimeSeriesRow row2 = objectMapper.readValue(json, RegularTextTimeSeriesRow.class);
         assertNotNull(row2);
 
-        assertEquals(row.getAttribute(), row2.getAttribute());
+
         assertEquals(row.getDateTime(), row2.getDateTime());
         assertEquals(row.getDataEntryDate(), row2.getDataEntryDate());
-        assertEquals(row.getVersionDate(), row2.getVersionDate());
-        assertEquals(row.getTextId(), row2.getTextId());
         assertEquals(row.getTextValue(), row2.getTextValue());
+        assertEquals(row.getMediaType(), row2.getMediaType());
+        assertEquals(row.getQualityCode(), row2.getQualityCode());
+        assertEquals(row.getDestFlag(), row2.getDestFlag());
+        assertEquals(row.getFilename(), row2.getFilename());
+        assertEquals(row.getValueUrl(), row2.getValueUrl());
 
 
     }
@@ -96,13 +98,14 @@ class RegularTextTimeSeriesRowTest {
     static RegularTextTimeSeriesRow buildRow() throws ParseException {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder();
-
-        builder.withDateTime(df.parse("2023-01-03 12:05:00"));
-        builder.withVersionDate(df.parse("2023-02-02 12:05:00"));
-        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00"));
-        builder.withAttribute(420L);
-
+        builder.withDateTime(df.parse("2023-01-03 12:05:00").toInstant());
+        builder.withDataEntryDate(df.parse("2023-03-03 12:05:00").toInstant());
         builder.withTextValue("my awesome text ts");
+        builder.withMediaType("text/plain");
+        builder.withQualityCode(420L);
+        builder.withDestFlag(2);
+        builder.withFilename("myFile.txt");
+        builder.withValueUrl("http://example.com/cwms-data/timeseries/text/ignored?text-id=someId&office-id=SPK&value=true");
 
         return builder.build();
     }

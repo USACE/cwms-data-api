@@ -6,9 +6,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OutputFormatter;
-import service.annotations.FormatService;
 
-@FormatService(contentType = Formats.TAB, dataTypes = {Office.class})
 public class TabV1 implements OutputFormatter {
 
     @Override

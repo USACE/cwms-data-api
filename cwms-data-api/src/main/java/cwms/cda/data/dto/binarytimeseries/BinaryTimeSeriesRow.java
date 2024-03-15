@@ -13,56 +13,57 @@ import java.util.Arrays;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class BinaryTimeSeriesRow {
     private final Instant dateTime;
-    private final Instant versionDate;
     private final Instant dataEntryDate;
-    private final String binaryId;
-    private final Long attribute;
     private final String mediaType;
-    private final String fileExtension;
+    private final String filename;
+    private final Integer destFlag;
     private final byte[] binaryValue;
+    private final String valueUrl;
+    private final Long qualityCode;
 
 
     private BinaryTimeSeriesRow(Builder builder) {
         this.dateTime = builder.dateTime;
-        this.versionDate = builder.versionDate;
         this.dataEntryDate = builder.dataEntryDate;
-        this.binaryId = builder.binaryId;
-        this.attribute = builder.attribute;
         this.mediaType = builder.mediaType;
-        this.fileExtension = builder.fileExtension;
+        this.filename = builder.filename;
         this.binaryValue = builder.binaryValue;
+        this.destFlag = builder.destFlag;
+        this.valueUrl = builder.valueUrl;
+        this.qualityCode = builder.qualityCode;
+
     }
 
     public Instant getDateTime() {
         return dateTime;
     }
 
-    public Instant getVersionDate() {
-        return versionDate;
-    }
-
     public Instant getDataEntryDate() {
         return dataEntryDate;
-    }
-
-    public String getBinaryId() {
-        return binaryId;
-    }
-
-    public Long getAttribute() {
-        return attribute;
     }
 
     public String getMediaType() {
         return mediaType;
     }
 
-    public String getFileExtension() {
-        return fileExtension;
+    public String getFilename() {
+        return filename;
     }
 
     public byte[] getBinaryValue() {
         return binaryValue;
+    }
+
+    public Integer getDestFlag() {
+        return destFlag;
+    }
+
+    public String getValueUrl() {
+        return valueUrl;
+    }
+
+    public Long getQualityCode() {
+        return qualityCode;
     }
 
     public BinaryTimeSeriesRow copy(){
@@ -78,17 +79,13 @@ public class BinaryTimeSeriesRow {
 
         if (getDateTime() != null ? !getDateTime().equals(that.getDateTime()) : that.getDateTime() != null)
             return false;
-        if (getVersionDate() != null ? !getVersionDate().equals(that.getVersionDate()) : that.getVersionDate() != null)
-            return false;
+
         if (getDataEntryDate() != null ? !getDataEntryDate().equals(that.getDataEntryDate()) : that.getDataEntryDate() != null)
             return false;
-        if (getBinaryId() != null ? !getBinaryId().equals(that.getBinaryId()) : that.getBinaryId() != null)
-            return false;
-        if (getAttribute() != null ? !getAttribute().equals(that.getAttribute()) : that.getAttribute() != null)
-            return false;
+
         if (getMediaType() != null ? !getMediaType().equals(that.getMediaType()) : that.getMediaType() != null)
             return false;
-        if (getFileExtension() != null ? !getFileExtension().equals(that.getFileExtension()) : that.getFileExtension() != null)
+        if (getFilename() != null ? !getFilename().equals(that.getFilename()) : that.getFilename() != null)
             return false;
         return Arrays.equals(getBinaryValue(), that.getBinaryValue());
     }
@@ -96,12 +93,9 @@ public class BinaryTimeSeriesRow {
     @Override
     public int hashCode() {
         int result = getDateTime() != null ? getDateTime().hashCode() : 0;
-        result = 31 * result + (getVersionDate() != null ? getVersionDate().hashCode() : 0);
         result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
-        result = 31 * result + (getBinaryId() != null ? getBinaryId().hashCode() : 0);
-        result = 31 * result + (getAttribute() != null ? getAttribute().hashCode() : 0);
         result = 31 * result + (getMediaType() != null ? getMediaType().hashCode() : 0);
-        result = 31 * result + (getFileExtension() != null ? getFileExtension().hashCode() : 0);
+        result = 31 * result + (getFilename() != null ? getFilename().hashCode() : 0);
         result = 31 * result + Arrays.hashCode(getBinaryValue());
         return result;
     }
@@ -111,13 +105,13 @@ public class BinaryTimeSeriesRow {
     public static class Builder {
 
         private Instant dateTime;
-        private Instant versionDate;
         private Instant dataEntryDate;
-        private String binaryId;
-        private Long attribute;
+        private String filename;
         private String mediaType;
-        private String fileExtension;
+        private Long qualityCode;
+        private String valueUrl;
         private byte[] binaryValue;
+        private Integer destFlag = 0;
 
         public Builder(){
 
@@ -134,15 +128,6 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
-        public Builder withVersionDate(Instant versionDate){
-            this.versionDate = versionDate;
-            return this;
-        }
-
-        public Builder withVersionDate(long versionDateEpochMillis){
-            this.versionDate = Instant.ofEpochMilli(versionDateEpochMillis);
-            return this;
-        }
 
         public Builder withDataEntryDate(Instant dataEntryDate){
             this.dataEntryDate = dataEntryDate;
@@ -154,23 +139,14 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
-        public Builder withBinaryId(String binaryId){
-            this.binaryId = binaryId;
-            return this;
-        }
-
-        public Builder withAttribute(Long attribute){
-            this.attribute = attribute;
-            return this;
-        }
 
         public Builder withMediaType(String mediaType){
             this.mediaType = mediaType;
             return this;
         }
 
-        public Builder withFileExtension(String fileExtension){
-            this.fileExtension = fileExtension;
+        public Builder withFilename(String filename){
+            this.filename = filename;
             return this;
         }
 
@@ -179,25 +155,42 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
+        public Builder withDestFlag(Integer destFlag){
+            this.destFlag = destFlag;
+            return this;
+        }
+
+        public Builder withValueUrl(String valueUrl){
+            this.valueUrl = valueUrl;
+            return this;
+        }
+
+        public Builder withQualityCode(Long qualityCode){
+            this.qualityCode = qualityCode;
+            return this;
+        }
+
         public Builder from(BinaryTimeSeriesRow row){
             if(row == null){
                 return withDateTime(null)
                         .withDataEntryDate(null)
-                        .withVersionDate(null)
-                        .withBinaryId(null)
                         .withBinaryValue(null)
-                        .withFileExtension(null)
+                        .withFilename(null)
                         .withMediaType(null)
-                        .withAttribute(null);
+                        .withDestFlag(null)
+                        .withValueUrl(null)
+                        .withQualityCode(null)
+                        ;
             } else {
                 return withDateTime(row.dateTime)
                         .withDataEntryDate(row.dataEntryDate)
-                        .withVersionDate(row.versionDate)
-                        .withBinaryId(row.binaryId)
                         .withBinaryValue(row.binaryValue)
-                        .withFileExtension(row.fileExtension)
+                        .withFilename(row.filename)
                         .withMediaType(row.mediaType)
-                        .withAttribute(row.attribute);
+                        .withDestFlag(row.destFlag)
+                        .withValueUrl(row.valueUrl)
+                        .withQualityCode(row.qualityCode)
+                        ;
             }
         }
 

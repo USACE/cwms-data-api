@@ -36,12 +36,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 
-public class TimeSeriesControllerTest extends ControllerTest {
+class TimeSeriesControllerTest extends ControllerTest {
 
 
 
     @Test
-    public void testDaoMock() throws JsonProcessingException     {
+    void testDaoMock() throws JsonProcessingException     {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries expected = buildTimeSeries(officeId, tsId);
@@ -57,10 +57,11 @@ public class TimeSeriesControllerTest extends ControllerTest {
         //    ZonedDateTime begin,
         //    ZonedDateTime end,
         //    ZonedDateTime versionDate
+        //    boolean trim
 
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull() )).thenReturn(expected);
+                         isNotNull(), isNotNull(), isNull(), eq(false) )).thenReturn(expected);
 
 
         // build mock request and response
@@ -106,7 +107,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull());
+                         isNotNull(), isNotNull(), isNull(), eq(false));
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -133,7 +134,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesJaxb() throws IOException {
+    void testDeserializeTimeSeriesJaxb() throws IOException {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
@@ -148,7 +149,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesXmlUTC() throws IOException {
+    void testDeserializeTimeSeriesXmlUTC() throws IOException {
         TimeZone aDefault = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -167,7 +168,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesXml() throws IOException {
+    void testDeserializeTimeSeriesXml() throws IOException {
             String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
 			 // Should this be XMLv2?
@@ -180,7 +181,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesJSON() throws IOException     {
+    void testDeserializeTimeSeriesJSON() throws IOException     {
         String jsonV2 = loadResourceAsString("cwms/cda/api/timeseries_create.json");
         assertNotNull(jsonV2);
         TimeSeries ts = TimeSeriesController.deserializeTimeSeries(jsonV2, Formats.JSONV2);
@@ -223,7 +224,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testGetIds(){
+    void testGetIds(){
         String input = "a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c";
         List<String> tsIds = TimeSeriesController.getTsIds(input);
         assertNotNull(tsIds);

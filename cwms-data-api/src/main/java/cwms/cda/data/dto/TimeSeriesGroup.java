@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,148 +26,145 @@ package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @Schema(description = "A representation of a timeseries group")
-@XmlRootElement(name="timeseries-group")
+@XmlRootElement(name = "timeseries-group")
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 public class TimeSeriesGroup extends CwmsDTO {
-	private String id;
-	private TimeSeriesCategory timeSeriesCategory;
-	private String description;
+    private String id;
+    private TimeSeriesCategory timeSeriesCategory;
+    private String description;
 
-	private String sharedAliasId;
-	private String sharedRefTsId;
+    private String sharedAliasId;
+    private String sharedRefTsId;
 
-	@JsonInclude(JsonInclude.Include.NON_NULL)
-	private List<AssignedTimeSeries> assignedTimeSeries = new ArrayList<>();
-
-
-	public TimeSeriesGroup() {
-		super(null);
-	}
-
-	public TimeSeriesGroup(TimeSeriesCategory cat, String grpOfficeId, String grpId, String grpDesc,
-						   String sharedTsAliasId, String sharedRefTsId)
-	{
-		super(grpOfficeId);
-		this.timeSeriesCategory = new TimeSeriesCategory(cat);
-		this.id = grpId;
-		this.description = grpDesc;
-		this.sharedAliasId = sharedTsAliasId;
-		this.sharedRefTsId = sharedRefTsId;
-
-	}
-
-	public TimeSeriesGroup(TimeSeriesGroup group)
-	{
-		super(group.getOfficeId());
-		this.timeSeriesCategory = new TimeSeriesCategory(group.timeSeriesCategory);
-		this.id = group.id;
-		this.description = group.description;
-		this.sharedAliasId = group.sharedAliasId;
-		this.sharedRefTsId = group.sharedRefTsId;
-	}
-
-	public TimeSeriesGroup(TimeSeriesGroup group, List<AssignedTimeSeries> timeSeries){
-		this(group);
-		if(timeSeries != null && !timeSeries.isEmpty()){
-			this.assignedTimeSeries = new ArrayList<>(timeSeries);
-		}
-	}
-
-	public String getId()
-	{
-		return id;
-	}
-
-	public TimeSeriesCategory getTimeSeriesCategory()
-	{
-		return timeSeriesCategory;
-	}
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<AssignedTimeSeries> assignedTimeSeries = new ArrayList<>();
 
 
-	public String getDescription()
-	{
-		return description;
-	}
+    public TimeSeriesGroup() {
+        super(null);
+    }
 
-	public String getSharedAliasId()
-	{
-		return sharedAliasId;
-	}
+    public TimeSeriesGroup(TimeSeriesCategory cat, String grpOfficeId, String grpId, String grpDesc,
+                           String sharedTsAliasId, String sharedRefTsId) {
+        super(grpOfficeId);
+        this.timeSeriesCategory = new TimeSeriesCategory(cat);
+        this.id = grpId;
+        this.description = grpDesc;
+        this.sharedAliasId = sharedTsAliasId;
+        this.sharedRefTsId = sharedRefTsId;
 
-	public String getSharedRefTsId()
-	{
-		return sharedRefTsId;
-	}
+    }
 
-	public List<AssignedTimeSeries> getAssignedTimeSeries()
-	{
-		return assignedTimeSeries;
-	}
+    public TimeSeriesGroup(TimeSeriesGroup group) {
+        super(group.getOfficeId());
+        this.timeSeriesCategory = new TimeSeriesCategory(group.timeSeriesCategory);
+        this.id = group.id;
+        this.description = group.description;
+        this.sharedAliasId = group.sharedAliasId;
+        this.sharedRefTsId = group.sharedRefTsId;
+        if (group.assignedTimeSeries != null) {
+            if (group.assignedTimeSeries.isEmpty()) {
+                this.assignedTimeSeries = new ArrayList<>();
+            } else {
+                this.assignedTimeSeries = new ArrayList<>(group.assignedTimeSeries);
+            }
+        } else {
+            this.assignedTimeSeries = null;
+        }
 
-	@Override
-	public boolean equals(Object o)
-	{
-		if(this == o)
-		{
-			return true;
-		}
-		if(o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
+    }
 
-		final TimeSeriesGroup that = (TimeSeriesGroup) o;
+    public TimeSeriesGroup(TimeSeriesGroup group, List<AssignedTimeSeries> timeSeries) {
+        this(group);
+        if (timeSeries != null && !timeSeries.isEmpty()) {
+            this.assignedTimeSeries = new ArrayList<>(timeSeries);
+        }
+    }
 
-		if(getId() != null ? !getId().equals(that.getId()) : that.getId() != null)
-		{
-			return false;
-		}
-		if(getTimeSeriesCategory() != null ? !getTimeSeriesCategory().equals(
-				that.getTimeSeriesCategory()) : that.getTimeSeriesCategory() != null)
-		{
-			return false;
-		}
-		if(getOfficeId() != null ? !getOfficeId().equals(that.getOfficeId()) : that.getOfficeId() != null)
-		{
-			return false;
-		}
-		if(getSharedAliasId() != null ? !getSharedAliasId().equals(
-				that.getSharedAliasId()) : that.getSharedAliasId() != null)
-		{
-			return false;
-		}
-		if(getSharedRefTsId() != null ? !getSharedRefTsId().equals(
-				that.getSharedRefTsId()) : that.getSharedRefTsId() != null)
-		{
-			return false;
-		}
-		return assignedTimeSeries != null ? assignedTimeSeries.equals(
-				that.assignedTimeSeries) : that.assignedTimeSeries == null;
-	}
+    public String getId() {
+        return id;
+    }
 
-	@Override
-	public int hashCode()
-	{
-		int result = getId() != null ? getId().hashCode() : 0;
-		result = 31 * result + (getTimeSeriesCategory() != null ? getTimeSeriesCategory().hashCode() : 0);
-		result = 31 * result + (getOfficeId() != null ? getOfficeId().hashCode() : 0);
-		result = 31 * result + (getSharedAliasId() != null ? getSharedAliasId().hashCode() : 0);
-		result = 31 * result + (getSharedRefTsId() != null ? getSharedRefTsId().hashCode() : 0);
-		result = 31 * result + (assignedTimeSeries != null ? assignedTimeSeries.hashCode() : 0);
-		return result;
-	}
+    public TimeSeriesCategory getTimeSeriesCategory() {
+        return timeSeriesCategory;
+    }
 
-	@Override
-	public void validate() throws FieldException {
-		// TODO Auto-generated method stub
+    public String getDescription() {
+        return description;
+    }
 
-	}
+    public String getSharedAliasId() {
+        return sharedAliasId;
+    }
+
+    public String getSharedRefTsId() {
+        return sharedRefTsId;
+    }
+
+    public List<AssignedTimeSeries> getAssignedTimeSeries() {
+        return assignedTimeSeries;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final TimeSeriesGroup that = (TimeSeriesGroup) o;
+
+        if (getId() != null ? !getId().equals(that.getId()) : that.getId() != null) {
+            return false;
+        }
+        if (getTimeSeriesCategory() != null ? !getTimeSeriesCategory().equals(
+                that.getTimeSeriesCategory()) : that.getTimeSeriesCategory() != null) {
+            return false;
+        }
+        if (getOfficeId() != null ? !getOfficeId().equals(that.getOfficeId()) :
+				that.getOfficeId() != null) {
+            return false;
+        }
+        if (getSharedAliasId() != null ? !getSharedAliasId().equals(
+                that.getSharedAliasId()) : that.getSharedAliasId() != null) {
+            return false;
+        }
+        if (getSharedRefTsId() != null ? !getSharedRefTsId().equals(
+                that.getSharedRefTsId()) : that.getSharedRefTsId() != null) {
+            return false;
+        }
+        return Objects.equals(assignedTimeSeries, that.assignedTimeSeries);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getId() != null ? getId().hashCode() : 0;
+        result = 31 * result + (getTimeSeriesCategory() != null ?
+				getTimeSeriesCategory().hashCode() : 0);
+        result = 31 * result + (getOfficeId() != null ? getOfficeId().hashCode() : 0);
+        result = 31 * result + (getSharedAliasId() != null ? getSharedAliasId().hashCode() : 0);
+        result = 31 * result + (getSharedRefTsId() != null ? getSharedRefTsId().hashCode() : 0);
+        result = 31 * result + (assignedTimeSeries != null ? assignedTimeSeries.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        // Nothing to validate
+    }
 }

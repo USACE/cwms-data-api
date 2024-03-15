@@ -25,6 +25,8 @@
 package cwms.cda.data.dao;
 
 import static java.util.stream.Collectors.toList;
+import static org.jooq.impl.DSL.noCondition;
+
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
@@ -42,6 +44,7 @@ import kotlin.Pair;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
@@ -77,8 +80,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @param groupId The group id to use for the query.
      * @return An optional location group.
      */
-    public Optional<LocationGroup> getLocationGroup(String officeId, String categoryId,
-                                                    String groupId) {
+    public Optional<LocationGroup> getLocationGroup(@NotNull String officeId, @NotNull String categoryId,
+                                                    @NotNull String groupId) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -203,7 +206,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @return A list of all location groups for the given office and category.
      */
-    public List<LocationGroup> getLocationGroups(String officeId, boolean includeAssigned, String locCategoryLike) {
+    public List<LocationGroup> getLocationGroups(@Nullable String officeId,
+                                                 boolean includeAssigned,
+                                                 @Nullable String locCategoryLike) {
         if (includeAssigned) {
             return getLocationGroups(officeId, locCategoryLike);
         } else {
@@ -253,11 +258,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                             .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
 
-        Condition condition;
+        Condition condition = noCondition();
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
             condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
-        } else {
-            condition = DSL.trueCondition();
         }
 
         if (officeId != null) {
@@ -295,7 +298,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         return retVal;
     }
 
-    private List<LocationGroup> getGroupsWithoutAssignedLocations(String officeId, String locCategoryLike) {
+    private List<LocationGroup> getGroupsWithoutAssignedLocations(
+            @Nullable String officeId, @Nullable String locCategoryLike) {
         List<LocationGroup> retVal;
         AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -306,10 +310,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         SelectJoinStep<Record> step = dsl.selectDistinct(columns).from(table);
 
-        Condition condition = DSL.trueCondition();
+        Condition condition = table.LOC_GROUP_ID.isNotNull();
         if (officeId != null && !officeId.isEmpty()) {
             condition = condition.and(table.GRP_DB_OFFICE_ID.eq(officeId));
         }
+
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
             condition = condition.and(caseInsensitiveLikeRegex(table.LOC_CATEGORY_ID, locCategoryLike));
         }
@@ -340,7 +345,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         grpAssgnFields.retainAll(fieldsInRecord);
 
         Map<String, Object> grpProps = new LinkedHashMap<>();
-        grpAssgnFields.stream().forEach(f -> grpProps.put(f.getName(), avLocRecord.getValue(f)));
+        grpAssgnFields.forEach(f -> grpProps.put(f.getName(), avLocRecord.getValue(f)));
 
         Feature feature = LocationsDaoImpl.buildFeatureFromAvLocRecord(avLocRecord);
         Map<String, Object> props = feature.getProperties();
@@ -431,10 +436,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     public void unassignAllLocs(LocationGroup group) {
         String office = group.getOfficeId();
+        LocationCategory cat = group.getLocationCategory();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            CWMS_LOC_PACKAGE.call_UNASSIGN_LOC_GROUP(dslContext.configuration(), group.getLocationCategory().getId(),
-                    group.getId(), null, "T", office);
+            CWMS_LOC_PACKAGE.call_UNASSIGN_LOC_GROUP(dslContext.configuration(),
+                    cat.getId(), group.getId(), null, "T", office);
         });
     }
 
@@ -447,10 +453,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
 
             String office = group.getOfficeId();
+            LocationCategory cat = group.getLocationCategory();
             connection(dsl, conn -> {
                 DSLContext dslContext = getDslContext(conn, office);
-                CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dslContext.configuration(), group.getLocationCategory().getId(),
-                        group.getId(), assignedLocs, office);
+                CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dslContext.configuration(),
+                        cat.getId(), group.getId(), assignedLocs, office);
             });
         }
     }

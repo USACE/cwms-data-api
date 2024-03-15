@@ -4,8 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Blob extends CwmsDTO
 {
 	@JsonProperty(required=true)

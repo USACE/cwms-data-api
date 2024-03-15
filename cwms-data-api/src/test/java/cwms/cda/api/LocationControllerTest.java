@@ -2,6 +2,7 @@ package cwms.cda.api;
 
 import java.io.IOException;
 import java.util.HashMap;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,6 +20,7 @@ import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
 import org.junit.jupiter.api.Test;
 
+import static cwms.cda.api.DataApiTestIT.getResourceTemplateStatic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -43,14 +45,16 @@ class LocationControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeLocationJSON() throws IOException
+    void testDeserializeLocationJSON() throws Exception
     {
-        String json = loadResourceAsString("cwms/cda/api/location_create.json");
+        final String OFFICE = "SPK";
+        final String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+
         assertNotNull(json);
         Location location = LocationController.deserializeLocation(json, Formats.JSON);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
-        assertEquals("LRL", location.getOfficeId());
+        assertEquals(OFFICE, location.getOfficeId());
         assertEquals("NGVD-29", location.getHorizontalDatum());
         assertEquals("UTC", location.getTimezoneName());
         assertEquals(Nation.US, location.getNation());

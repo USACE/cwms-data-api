@@ -40,6 +40,7 @@ import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
@@ -104,20 +105,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retVal;
     }
 
-    private static Connection setClientInfo(Context ctx, Connection connection) {
-        try {
-            connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.VERSION);
-            connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
-            connection.setClientInfo("OCSID.ACTION", ctx.method());
-            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
-        } catch (SQLClientInfoException ex) {
-            logger.atWarning()
-                    .withCause(ex)
-                    .log("Unable to set client info on connection.");
-        }
-        return connection;
-    }
-
     public static DSLContext getDslContext(Connection connection, String officeId) {
         // Because this dsl is constructed with a connection, jOOQ will reuse the provided
         // connection and not get new connections from a DataSource.  See:
@@ -134,13 +121,27 @@ public abstract class JooqDao<T> extends Dao<T> {
         return dsl;
     }
 
+    private static Connection setClientInfo(Context ctx, Connection connection) {
+        try {
+            connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.VERSION);
+            connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
+            connection.setClientInfo("OCSID.ACTION", ctx.method());
+            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
+        } catch (SQLClientInfoException ex) {
+            logger.atWarning()
+                    .withCause(ex)
+                    .log("Unable to set client info on connection.");
+        }
+        return connection;
+    }
+
     @Override
-    public List<T> getAll(Optional<String> limitToOffice) {
+    public List<T> getAll(String officeId) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public Optional<T> getByUniqueName(String uniqueName, Optional<String> limitToOffice) {
+    public Optional<T> getByUniqueName(String uniqueName, String officeId) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -179,7 +180,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * A null regex will return a condition that always evaluates to true
      */
     public static Condition caseInsensitiveLikeRegexNullTrue(Field<String> field, String regex) {
-        if(regex == null) {
+        if (regex == null) {
             return DSL.trueCondition();
         }
         return caseInsensitiveLikeRegex(field, regex);
@@ -222,7 +223,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (cause instanceof SQLException) {
             return Optional.of((SQLException) cause);
-        } else if(cause instanceof DataAccessException) {
+        } else if (cause instanceof DataAccessException) {
             return getSqlException(cause); // There might be nested DataAccessExceptions
         } else {
             return Optional.empty();
@@ -272,8 +273,8 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20019);
-            List<String> segments = Arrays.asList("INVALID_ITEM");
+            List<Integer> codes = Collections.singletonList(20019);
+            List<String> segments = Collections.singletonList("INVALID_ITEM");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
         }
@@ -296,7 +297,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new NotFoundException(parts[0]);
+                exception = new NotFoundException(parts[0], cause);
             }
         }
         return exception;
@@ -310,8 +311,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             // 20998 is the code we're getting but that is the generic error code.
             // We'll need to use hasCode_AND_Message or this will trigger on other errors.
-            List<Integer> codes = Arrays.asList(20998);
-            List<String> segments = Arrays.asList("does not have any assigned privileges");
+            List<Integer> codes = Collections.singletonList(20998);
+            List<String> segments = Collections.singletonList("does not have any assigned privileges");
 
             retVal = hasCodeAndMessage(sqlException, codes, segments);  // _AND_
         }
@@ -361,7 +362,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new AlreadyExists(parts[0]);
+                exception = new AlreadyExists(parts[0], cause);
             }
         }
         return exception;
@@ -373,7 +374,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
-            List<Integer> codes = Arrays.asList(20244);
+            List<Integer> codes = Collections.singletonList(20244);
             List<String> segments = Arrays.asList("NULL_ARGUMENT", " already exists.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
@@ -395,7 +396,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new IllegalArgumentException(parts[0]);
+                exception = new IllegalArgumentException(parts[0], cause);
             }
         }
         return exception;
@@ -416,7 +417,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new InvalidItemException(parts[0]);
+                exception = new InvalidItemException(parts[0], cause);
             }
         }
         return exception;
