@@ -67,32 +67,32 @@ public class JsonV1 implements OutputFormatter {
     }
 
     @Override
-    public String format(List<? extends CwmsDTOBase> daoList) {
-        Object wrapped = buildFormatting(daoList);
+    public String format(List<? extends CwmsDTOBase> dtoList) {
+        Object wrapped = buildFormatting(dtoList);
         try {
             return om.writeValueAsString(wrapped);
         } catch (JsonProcessingException e) {
-            throw new FormattingException("Could not format list:" + daoList, e);
+            throw new FormattingException("Could not format list:" + dtoList, e);
         }
     }
 
-    private Object buildFormatting(CwmsDTOBase dao) {
+    private Object buildFormatting(CwmsDTOBase dto) {
         Object retVal = null;
 
-        if (dao instanceof Office) {
-            List<Office> offices = Arrays.asList((Office) dao);
+        if (dto instanceof Office) {
+            List<Office> offices = Arrays.asList((Office) dto);
             retVal = new OfficeFormatV1(offices);
-        } else if (dao != null && isFormattableWith(dao.getClass())) {
+        } else if (dto != null && isFormattableWith(dto.getClass())) {
             // Any types that have to be handle as special cases
             // should be in else if branches before this
             // If the class is in the annotation assume we can just return it.
-            retVal = dao;
+            retVal = dto;
         }
 
         if (retVal == null) {
             String klassName = "unknown";
-            if (dao != null) {
-                klassName = dao.getClass().getName();
+            if (dto != null) {
+                klassName = dto.getClass().getName();
             }
             throw new BadRequestResponse(
                     String.format("Format %s not implemented for data of class:%s",
@@ -139,6 +139,9 @@ public class JsonV1 implements OutputFormatter {
                 throw new BadRequestResponse(String.format("Format %s not implemented for data of"
 						+ " class:%s", getContentType(), klassName));
             }
+        } else if (daoList != null) {
+            // If the list is empty we can just return an empty array.
+            retVal = new Object[0];
         }
         return retVal;
     }
