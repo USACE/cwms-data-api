@@ -119,6 +119,78 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 names, format, unit, datum, begin, end, timezone, office);
     }
 
+    @Override
+    public LocationLevels getLocationLevels(String cursor, int pageSize,
+                                            String levelIdMask, String office, @NotNull String unit,
+                                            String datum, ZonedDateTime beginZdt,
+                                            ZonedDateTime endZdt) {
+        Integer total = null;
+        int offset = 0;
+
+        if (cursor != null && !cursor.isEmpty()) {
+            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+
+            if (parts.length > 2) {
+                offset = Integer.parseInt(parts[0]);
+                if (!"null".equals(parts[1])) {
+                    try {
+                        total = Integer.valueOf(parts[1]);
+                    } catch (NumberFormatException e) {
+                        logger.log(Level.INFO, "Could not parse {0}", parts[1]);
+                    }
+                }
+                pageSize = Integer.parseInt(parts[2]);
+            }
+        }
+
+        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+
+
+        Condition whereCondition = DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase());  // Only supports SI for now. Controller will throw an exception if not SI.
+
+        if (office != null && !office.isEmpty()) {
+            whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
+        }
+
+        if (levelIdMask != null && !levelIdMask.isEmpty()) {
+            whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
+                    view.LOCATION_LEVEL_ID, levelIdMask));
+        }
+
+        if (beginZdt != null) {
+            whereCondition = whereCondition.and(view.LEVEL_DATE.greaterOrEqual(
+                    Timestamp.from(beginZdt.toInstant())));
+        }
+        if (endZdt != null) {
+            whereCondition = whereCondition.and(view.LEVEL_DATE.lessThan(
+                    Timestamp.from(endZdt.toInstant())));
+        }
+
+        Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new LinkedHashMap<>();
+
+        SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(getAddSeasonalValueFields())
+                .from(view)
+                .where(whereCondition)
+                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
+                        view.LEVEL_DATE, view.CALENDAR_OFFSET
+                )
+                .offset(offset)
+                .limit(pageSize);
+
+        // logger.fine(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+
+        query.stream().forEach(r -> addSeasonalValue(r, levelMap));
+
+        List<LocationLevel> levels = new java.util.ArrayList<>();
+        for (JDomLocationLevelImpl levelImpl : levelMap.values()) {
+            LocationLevel level = new LocationLevel.Builder(levelImpl).build();
+            levels.add(level);
+        }
+
+        LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
+        builder.addAll(levels);
+        return builder.build();
+    }
 
     @Override
     public void storeLocationLevel(LocationLevel locationLevel, ZoneId zoneId) {
@@ -314,78 +386,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .build();
     }
 
-    @Override
-    public LocationLevels getLocationLevels(String cursor, int pageSize,
-                                            String levelIdMask, String office, @NotNull String unit,
-                                            String datum, ZonedDateTime beginZdt,
-                                            ZonedDateTime endZdt) {
-        Integer total = null;
-        int offset = 0;
-
-        if (cursor != null && !cursor.isEmpty()) {
-            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
-
-            if (parts.length > 2) {
-                offset = Integer.parseInt(parts[0]);
-                if (!"null".equals(parts[1])) {
-                    try {
-                        total = Integer.valueOf(parts[1]);
-                    } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse {0}", parts[1]);
-                    }
-                }
-                pageSize = Integer.parseInt(parts[2]);
-            }
-        }
-
-        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
-
-
-        Condition whereCondition = DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase());  // Only supports SI for now. Controller will throw an exception if not SI.
-
-        if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
-        }
-
-        if (levelIdMask != null && !levelIdMask.isEmpty()) {
-            whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
-                    view.LOCATION_LEVEL_ID, levelIdMask));
-        }
-
-        if (beginZdt != null) {
-            whereCondition = whereCondition.and(view.LEVEL_DATE.greaterOrEqual(
-                    Timestamp.from(beginZdt.toInstant())));
-        }
-        if (endZdt != null) {
-            whereCondition = whereCondition.and(view.LEVEL_DATE.lessThan(
-                    Timestamp.from(endZdt.toInstant())));
-        }
-
-        Map<JDomLocationLevelImpl, JDomLocationLevelImpl> levelMap = new LinkedHashMap<>();
-
-        SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(getAddSeasonalValueFields())
-                .from(view)
-                .where(whereCondition)
-                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
-                        view.LEVEL_DATE, view.CALENDAR_OFFSET
-                )
-                .offset(offset)
-                .limit(pageSize);
-
-        // logger.fine(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
-
-        query.stream().forEach(r -> addSeasonalValue(r, levelMap));
-
-        List<LocationLevel> levels = new java.util.ArrayList<>();
-        for (JDomLocationLevelImpl levelImpl : levelMap.values()) {
-            LocationLevel level = new LocationLevel.Builder(levelImpl).build();
-            levels.add(level);
-        }
-
-        LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
-        builder.addAll(levels);
-        return builder.build();
-    }
 
     // These are all the fields that we need to pull out of jOOQ record for addSeasonalValue
     private Collection<TableField> getAddSeasonalValueFields(){
