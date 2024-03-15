@@ -146,7 +146,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
 
 
-        Condition whereCondition = DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase());  // Only supports SI for now. Controller will throw an exception if not SI.
+        // Only supports SI for now. Controller will throw an exception if not SI.
+        Condition whereCondition = DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase());
 
         if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
@@ -283,6 +284,28 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .build();
     }
 
+    @NotNull
+    private static JDomSeasonalValueImpl buildSeasonalValue(JDomLocationLevelImpl locationLevelImpl,
+                        String levelSiUnit, Double dSeasLevel, JDomSeasonalIntervalImpl newSeasonalOffset) {
+        // create new seasonal value with current record information
+        JDomSeasonalValueImpl newSeasonalValue = new JDomSeasonalValueImpl();
+
+        newSeasonalValue.setOffset(newSeasonalOffset);
+        newSeasonalValue.setPrototypeParameterType(locationLevelImpl.getPrototypeLevel());
+
+        // make sure that it is in the correct units.
+        String parameterUnits = locationLevelImpl.getParameter().getUnitsString();
+        if (Units.canConvertBetweenUnits(levelSiUnit, parameterUnits)) {
+            dSeasLevel = Units.convertUnits(dSeasLevel, levelSiUnit, parameterUnits);
+            // constant value
+            newSeasonalValue.setSiParameterUnitsValue(dSeasLevel);
+            locationLevelImpl.setUnits(parameterUnits);
+        } else {
+            newSeasonalValue.setSiParameterUnitsValue(dSeasLevel);
+        }
+        return newSeasonalValue;
+    }
+
     @Override
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
                                     String officeId, Boolean cascadeDelete) {
@@ -388,7 +411,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
 
     // These are all the fields that we need to pull out of jOOQ record for addSeasonalValue
-    private Collection<TableField> getAddSeasonalValueFields(){
+    private Collection<TableField> getAddSeasonalValueFields() {
         Set<TableField> retval = new LinkedHashSet<>();
 
         retval.add(AV_LOCATION_LEVEL.OFFICE_ID);
@@ -505,7 +528,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     // These are all the fields that we need to pull out of jOOQ record for parseSeasonalValues
-    private Collection<TableField> getParseSeasonalValuesFields(){
+    private Collection<TableField> getParseSeasonalValuesFields() {
         Set<TableField> retval = new LinkedHashSet<>();
 
         retval.add(AV_LOCATION_LEVEL.SEASONAL_LEVEL);
@@ -553,27 +576,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             seasonalValues.add(newSeasonalValue);
             seasonalValuesImpl.setSeasonalValues(seasonalValues);
         }
-    }
-
-    @NotNull
-    private static JDomSeasonalValueImpl buildSeasonalValue(JDomLocationLevelImpl locationLevelImpl, String levelSiUnit, Double dSeasLevel, JDomSeasonalIntervalImpl newSeasonalOffset) {
-        // create new seasonal value with current record information
-        JDomSeasonalValueImpl newSeasonalValue = new JDomSeasonalValueImpl();
-
-        newSeasonalValue.setOffset(newSeasonalOffset);
-        newSeasonalValue.setPrototypeParameterType(locationLevelImpl.getPrototypeLevel());
-
-        // make sure that it is in the correct units.
-        String parameterUnits = locationLevelImpl.getParameter().getUnitsString();
-        if (Units.canConvertBetweenUnits(levelSiUnit, parameterUnits)) {
-            dSeasLevel = Units.convertUnits(dSeasLevel, levelSiUnit, parameterUnits);
-            // constant value
-            newSeasonalValue.setSiParameterUnitsValue(dSeasLevel);
-            locationLevelImpl.setUnits(parameterUnits);
-        } else {
-            newSeasonalValue.setSiParameterUnitsValue(dSeasLevel);
-        }
-        return newSeasonalValue;
     }
 
     @NotNull
@@ -652,7 +654,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         ZTSV_ARRAY locLvlValues = call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
                 specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
-                "UTC", officeId );
+                "UTC", officeId);
 
         if (locLvlValues.isEmpty()) {
             throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);
@@ -670,8 +672,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database/browse/schema/src/cwms/cwms_level_pkg.sql#1507,1770,1775,1786,1825,1830,1841
             N specifies results from non-virtual (normal) location levels only
             V specifies results from virtual location levels only
-            NV specifies results from non-virtual (normal) location levels where they exist, with virtual location levels allowed where non-virtual levels don't exist
-            VN (default) specifies results from virtual location levels where they exist, with non-virtual location levels allowed where virtual levels don't exist
+            NV specifies results from non-virtual (normal) location levels where they exist,
+                with virtual location levels allowed where non-virtual levels don't exist
+            VN (default) specifies results from virtual location levels where they exist,
+                with non-virtual location levels allowed where virtual levels don't exist
          */
         String levelPrecedence = "VN";
         return CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOC_LVL_VALUES3(configuration,
