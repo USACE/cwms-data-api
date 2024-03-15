@@ -65,6 +65,7 @@ import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
+import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -367,6 +368,10 @@ public class TimeSeriesController implements CrudHandler {
                         + "response. If this field is not specified, the default time zone "
                         + "of UTC shall be used.\r\nIgnored if begin was specified with "
                         + "offset and timezone."),
+                @OpenApiParam(name = Controllers.TRIM, description = "Specifies whether to trim missing "
+                        + "values from the beginning and end of the retrieved values. "
+                        + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
+                        + "Default is false."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
                         + " encoding format of the response. Valid values for the format "
                         + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
@@ -416,6 +421,7 @@ public class TimeSeriesController implements CrudHandler {
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            Validator<Boolean> trim = ctx.queryParamAsClass(Controllers.TRIM, Boolean.class);
 
             ZonedDateTime versionDate = queryParamAsZdt(ctx, VERSION_DATE);
 
@@ -444,11 +450,12 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
                 if (datum != null) {
-                    throw new IllegalArgumentException("Datum is not supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2);
+                    throw new IllegalArgumentException(String.format("Datum is not supported for:%s and %s",
+                            Formats.JSONV2, Formats.XMLV2));
                 }
 
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
-                        beginZdt, endZdt, versionDate);
+                        beginZdt, endZdt, versionDate, trim.getOrDefault(false));
 
                 results = Formats.format(contentType, ts);
 
@@ -470,15 +477,20 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results).contentType(contentType.toString());
             } else {
                 if (versionDate != null) {
-                    throw new IllegalArgumentException("Version date is only supported for" + Formats.JSONV2 + " and " + Formats.XMLV2);
+                    throw new IllegalArgumentException(String.format("Version date is only supported for%s and %s",
+                            Formats.JSONV2, Formats.XMLV2));
+                }
+
+                if (trim.hasValue()) {
+                    throw new IllegalArgumentException(String.format("Trim is only supported for:%s and %s",
+                            Formats.JSONV2, Formats.XMLV2));
                 }
 
                 if (format == null || format.isEmpty()) {
                     format = "json";
                 }
 
-                results = dao.getTimeseries(format, names, office, unit, datum,
-                        beginZdt, endZdt, tz);
+                results = dao.getTimeseries(format, names, office, unit, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
