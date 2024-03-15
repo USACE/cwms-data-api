@@ -161,7 +161,6 @@ public class LevelsController implements CrudHandler {
                             + "shall be used."),
                     },
             method = HttpMethod.DELETE,
-            path = "/levels",
             tags = {"Levels"})
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
@@ -199,7 +198,8 @@ public class LevelsController implements CrudHandler {
                             + "Specifies the SI unit system.  Location level values will be in "
                             + "the default SI units for their parameters.\r\n3. Other. Any unit "
                             + "returned in the response to the units URI request that is "
-                            + "appropriate for the requested parameters."),
+                            + "appropriate for the requested parameters.  The " + Formats.JSONV2
+                            + " format currently only supports SI." ),
                     @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                             + " the response. This field affects only elevation location levels. "
                             + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
@@ -267,6 +267,14 @@ public class LevelsController implements CrudHandler {
                     .getOrDefault("UTC");
 
             if ("2".equals(version)) {
+
+                if (unit == null){
+                    // The dao currently only supports SI.
+                    unit = UnitSystem.SI.getValue();
+                }
+                if(!UnitSystem.SI.getValue().equals(unit)) {
+                    throw new IllegalArgumentException("Levels Version 2 currently only supports SI");
+                }
 
                 String cursor = ctx.queryParamAsClass(PAGE, String.class)
                         .getOrDefault("");
@@ -397,7 +405,6 @@ public class LevelsController implements CrudHandler {
                     required = true),
             description = "Update CWMS Location Level",
             method = HttpMethod.PATCH,
-            path = "/levels",
             tags = {"Levels"}
     )
     @Override
