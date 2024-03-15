@@ -17,6 +17,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
@@ -371,4 +372,106 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
         ;
     }
+
+    @Test
+    void test_lrl_trim() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource,"UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        try {
+            createLocation(location,true,officeId);
+
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+            // inserting the time series
+            given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",officeId)
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+
+
+            // The ts we created has   two values 1675335600000, 1675422000000,
+
+            // get it back
+            String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or 1675335600000
+
+            ZonedDateTime beginZdt = ZonedDateTime.parse(firstPoint);
+            ZonedDateTime dayBeforeFirst = beginZdt.minusDays(1);
+
+            // without trim we should get extra null point
+            given()
+                    .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",officeId)
+                    .queryParam("units","F")
+                    .queryParam("name",ts.get("name").asText())
+                    .queryParam("begin", dayBeforeFirst.toInstant().toString())
+                    .queryParam("end", firstPoint)
+                    .queryParam("trim", false)
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                    .body("values.size()", equalTo(2))
+                    .body("values[0].size()", equalTo(3))  // time, value, quality
+                    .body("values[1][0]",equalTo(1675335600000L)) // time
+                    .body("values[0][1]",nullValue())
+                    .body("values[1][1]",closeTo(35,0.0001));
+
+                    // with trim the null should get trimmed.
+            given()
+                    .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",officeId)
+                    .queryParam("units","F")
+                    .queryParam("name",ts.get("name").asText())
+                    .queryParam("begin", dayBeforeFirst.toInstant().toString())
+                    .queryParam("end", firstPoint)
+                    .queryParam("trim", true)
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                    .body("values.size()", equalTo(1))
+                    .body("values[0].size()", equalTo(3))  // time, value, quality
+                    .body("values[0][0]",equalTo(1675335600000L)) // time
+                    .body("values[0][1]",closeTo(35,0.0001))
+            ;
+        } catch( SQLException ex) {
+            throw new RuntimeException("Unable to create location for TS",ex);
+        }
+    }
+
 }
