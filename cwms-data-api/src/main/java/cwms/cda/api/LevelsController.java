@@ -24,6 +24,41 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE;
+import static cwms.cda.api.Controllers.DATE_FORMAT;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.EXAMPLE_DATE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INTERVAL;
+import static cwms.cda.api.Controllers.LEVEL_ID;
+import static cwms.cda.api.Controllers.LEVEL_ID_MASK;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -62,20 +97,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.math.BigDecimal;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.math.BigDecimal;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.List;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public class LevelsController implements CrudHandler {
     private final MetricRegistry metrics;
@@ -99,8 +130,8 @@ public class LevelsController implements CrudHandler {
             description = "Create new CWMS Location Level",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
+                        @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
+                        @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             method = HttpMethod.POST,
@@ -143,23 +174,23 @@ public class LevelsController implements CrudHandler {
     @OpenApi(
             description = "Delete CWMS Location Level",
             pathParams = {
-                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies the "
-                            + "location level id of the Location Level to be deleted"),
+                @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies the "
+                        + "location level id of the Location Level to be deleted"),
             },
             queryParams = {
-                    @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class),
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
-                            + "the location level whose data is to be deleted. If this field is "
-                            + "not specified, matching location level information will be deleted"
-                            + " from all offices."),
-                    @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
-                            + "effective date of the level to be deleted. If not provided will "
-                            + "delete all data and reference to the location level."),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
-                            + "the value of the effective date field (unless otherwise "
-                            + "specified).If this field is not specified, the default time zone of UTC "
-                            + "shall be used."),
-                    },
+                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class),
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                        + "the location level whose data is to be deleted. If this field is "
+                        + "not specified, matching location level information will be deleted"
+                        + " from all offices."),
+                @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
+                        + "effective date of the level to be deleted. If not provided will "
+                        + "delete all data and reference to the location level."),
+                @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                        + "the value of the effective date field (unless otherwise "
+                        + "specified).If this field is not specified, the default time zone of UTC "
+                        + "shall be used."),
+            },
             method = HttpMethod.DELETE,
             tags = {"Levels"})
     @Override
@@ -184,61 +215,60 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
-                            + "the location level(s) whose data is to be included in the response. "
-                            + "Uses * for all."),
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning "
-                            + "office of the location level(s) whose data is to be included in the"
-                            + " response. If this field is not specified, matching location level "
-                            + "information from all offices shall be returned."),
-                    @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                            + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                            + "  Specifies English unit system.  Location level values will be in"
-                            + " the default English units for their parameters.\r\n2. SI.   "
-                            + "Specifies the SI unit system.  Location level values will be in "
-                            + "the default SI units for their parameters.\r\n3. Other. Any unit "
-                            + "returned in the response to the units URI request that is "
-                            + "appropriate for the requested parameters.  The " + Formats.JSONV2
-                            + " format currently only supports SI." ),
-                    @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
-                            + " the response. This field affects only elevation location levels. "
-                            + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
-                            + "values will in the specified or default units above the NAVD-88 "
-                            + "datum.\r\n2. NGVD29.  The elevation values will be in the "
-                            + "specified or default units above the NGVD-29 datum."),
-                    @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
-                            + "window for data to be included in the response. If this field is "
-                            + "not specified, any required time window begins 24 hours prior to "
-                            + "the specified or default end time."),
-                    @OpenApiParam(name = END, description = "Specifies the end of the time "
-                            + "window for data to be included in the response. If this field is "
-                            + "not specified, any required time window ends at the current time"),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
-                            + "the values of the begin and end fields (unless otherwise "
-                            + "specified), as well as the time zone of any times in the response."
-                            + " If this field is not specified, the default time zone of UTC "
-                            + "shall be used."),
-                    @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
-                            + "of the response. Requests specifying an Accept header:"
-                            + Formats.JSONV2 + " must not include this field. "
-                            + "Valid format field values for this URI are:\r\n"
-                            + "1.    tab\r\n"
-                            + "2.    csv\r\n"
-                            + "3.    xml\r\n"
-                            + "4.    wml2 (only if name field is specified)\r\n"
-                            + "5.    json (default)\r\n"),
-                    @OpenApiParam(name = PAGE, description = "This identifies where in the "
-                            + "request you are. This is an opaque value, and can be obtained from "
-                            + "the 'next-page' value in the response."),
-                    @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
-                            + "many entries per page returned. Default " + defaultPageSize + ".")},
+                @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
+                        + "the location level(s) whose data is to be included in the response. "
+                        + "Uses * for all."),
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning "
+                        + "office of the location level(s) whose data is to be included in the"
+                        + " response. If this field is not specified, matching location level "
+                        + "information from all offices shall be returned."),
+                @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
+                        + " of the response. Valid values for the unit field are:\r\n 1. EN. "
+                        + "  Specifies English unit system.  Location level values will be in"
+                        + " the default English units for their parameters.\r\n2. SI.   "
+                        + "Specifies the SI unit system.  Location level values will be in "
+                        + "the default SI units for their parameters.\r\n3. Other. Any unit "
+                        + "returned in the response to the units URI request that is "
+                        + "appropriate for the requested parameters.  The " + Formats.JSONV2
+                        + " format currently only supports SI." ),
+                @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
+                        + " the response. This field affects only elevation location levels. "
+                        + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
+                        + "values will in the specified or default units above the NAVD-88 "
+                        + "datum.\r\n2. NGVD29.  The elevation values will be in the "
+                        + "specified or default units above the NGVD-29 datum."),
+                @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
+                        + "window for data to be included in the response. If this field is "
+                        + "not specified, any required time window begins 24 hours prior to "
+                        + "the specified or default end time."),
+                @OpenApiParam(name = END, description = "Specifies the end of the time "
+                        + "window for data to be included in the response. If this field is "
+                        + "not specified, any required time window ends at the current time"),
+                @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                        + "the values of the begin and end fields (unless otherwise "
+                        + "specified), as well as the time zone of any times in the response."
+                        + " If this field is not specified, the default time zone of UTC "
+                        + "shall be used."),
+                @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
+                        + "of the response. Requests specifying an Accept header:"
+                        + Formats.JSONV2 + " must not include this field. "
+                        + "Valid format field values for this URI are:\r\n"
+                        + "1.    tab\r\n"
+                        + "2.    csv\r\n"
+                        + "3.    xml\r\n"
+                        + "4.    wml2 (only if name field is specified)\r\n"
+                        + "5.    json (default)\r\n"),
+                @OpenApiParam(name = PAGE, description = "This identifies where in the "
+                        + "request you are. This is an opaque value, and can be obtained from "
+                        + "the 'next-page' value in the response."),
+                @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
+                        + "many entries per page returned. Default " + defaultPageSize + ".")},
             responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(type = Formats.JSON),
-                            @OpenApiContent(type = ""),
-                            @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
-                        }
-                    )
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(type = Formats.JSON),
+                    @OpenApiContent(type = ""),
+                    @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
+                })
             },
             tags = {"Levels"})
     @Override
@@ -342,26 +372,26 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies"
-                            + " the requested location level."),
+                @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies"
+                        + " the requested location level."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "office of the Location Level to be returned"),
-                    @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
-                            + "the effective date of Location Level to be returned"),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
-                            + "the values of the effective date field (unless otherwise "
-                            + "specified), as well as the time zone of any times in the response."
-                            + " If this field is not specified, the default time zone of UTC "
-                            + "shall be used."),
-                    @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
-                            + "the values retrieved.")
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "office of the Location Level to be returned"),
+                @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
+                        + "the effective date of Location Level to be returned"),
+                @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                        + "the values of the effective date field (unless otherwise "
+                        + "specified), as well as the time zone of any times in the response."
+                        + " If this field is not specified, the default time zone of UTC "
+                        + "shall be used."),
+                @OpenApiParam(name = UNIT, required = false, description = "Desired unit for "
+                        + "the values retrieved.")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,content = {
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSONV2),
-                    })
+                @OpenApiResponse(status = STATUS_200,content = {
+                    @OpenApiContent(from = LocationLevel.class, type = Formats.JSONV2),
+                })
             },
             description = "Retrieves requested Location Level",
             tags = {"Levels"}
@@ -390,17 +420,17 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies the "
-                            + "location level id of the Location Level to be updated"),
+                @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies the "
+                        + "location level id of the Location Level to be updated"),
             },
             queryParams = {
-                    @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies "
-                            + "the effective date of Location Level that will be updated")
+                @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies "
+                        + "the effective date of Location Level that will be updated")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
-                            @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
+                        @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
+                        @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             description = "Update CWMS Location Level",
@@ -600,54 +630,53 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies"
-                            + " the requested location level."),
+                @OpenApiParam(name = LEVEL_ID, required = true, description = "Specifies"
+                        + " the requested location level."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "office of the Location Level to be returned"),
-                    @OpenApiParam(name = INTERVAL, description = "Interval time step for"
-                            + " the returned time series. Pseudo-regular interval definitions"
-                            + " will be treated like local regular. Irregular interval will generate daily time steps."
-                            + " Default: 0"),
-                    @OpenApiParam(name = BEGIN, description = "Specifies the "
-                            + "start of the time window for data to be included in the response. "
-                            + "If this field is not specified, any required time window begins 24"
-                            + " hours prior to the specified or default end time. The format for "
-                            + "this field is ISO 8601 extended, with optional offset and "
-                            + "timezone, i.e., '"
-                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = END,  description = "Specifies the "
-                            + "end of the time window for data to be included in the response. If"
-                            + " this field is not specified, any required time window ends at the"
-                            + " current time. The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., '"
-                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified), as well as the time zone of any times in the"
-                            + " response. If this field is not specified, the default time zone "
-                            + "of UTC shall be used.\r\nIgnored if begin was specified with "
-                            + "offset and timezone."),
-                    @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
-                            + "the values retrieved."),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "office of the Location Level to be returned"),
+                @OpenApiParam(name = INTERVAL, description = "Interval time step for"
+                        + " the returned time series. Pseudo-regular interval definitions"
+                        + " will be treated like local regular. Irregular interval will generate daily time steps."
+                        + " Default: 0"),
+                @OpenApiParam(name = BEGIN, description = "Specifies the "
+                        + "start of the time window for data to be included in the response. "
+                        + "If this field is not specified, any required time window begins 24"
+                        + " hours prior to the specified or default end time. The format for "
+                        + "this field is ISO 8601 extended, with optional offset and "
+                        + "timezone, i.e., '"
+                        + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                @OpenApiParam(name = END,  description = "Specifies the "
+                        + "end of the time window for data to be included in the response. If"
+                        + " this field is not specified, any required time window ends at the"
+                        + " current time. The format for this field is ISO 8601 extended, "
+                        + "with optional timezone, i.e., '"
+                        + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                        + "the time zone of the values of the begin and end fields (unless "
+                        + "otherwise specified), as well as the time zone of any times in the"
+                        + " response. If this field is not specified, the default time zone "
+                        + "of UTC shall be used.\r\nIgnored if begin was specified with "
+                        + "offset and timezone."),
+                @OpenApiParam(name = UNIT, required = true, description = "Desired unit for "
+                        + "the values retrieved."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            description = "A CWMS Time Series representation of the specified location level.",
-                            content = {
-                                    @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
-                                    @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2),
-                                    @OpenApiContent(from = TimeSeries.class, type = Formats.XML),
-                                    @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
-                                    @OpenApiContent(from = TimeSeries.class, type = ""),
-                            }
-                    ),
-                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a timeseries."),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                            + "implemented")
+                @OpenApiResponse(status = STATUS_200,
+                        description = "A CWMS Time Series representation of the specified location level.",
+                        content = {
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.XML),
+                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                            @OpenApiContent(from = TimeSeries.class, type = ""),
+                        }),
+                @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
+                        + "parameters did not find a timeseries."),
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
+                        + "implemented")
             },
             description = "Retrieves requested Location Level",
             tags = {"Levels"},
