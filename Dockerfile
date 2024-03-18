@@ -13,11 +13,11 @@ RUN apk add --no-cache bash
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz && \
-    echo "06e239d15ff7b72017c1d0752ddb1be4651374f7c1391631ec5619f4981cb2911267bc6b044d6c71a2a74738f70d433b96418951439848121f1d874862ddd3de *apache-tomcat-9.0.85.tar.gz" > checksum.txt && \
+    wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.87/bin/apache-tomcat-9.0.87.tar.gz && \
+    echo "71a64fe805aab89ef4798571d860a3c9a4f751f808921559a9249305abb205836de33ab89bb33b625a77f799f193d6bffbe94aadf293866df756d708f5bfb933 *apache-tomcat-9.0.87.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-9.0.85 /usr/local/tomcat/ && \
+    mv apache-tomcat-9.0.87 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
