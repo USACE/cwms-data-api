@@ -10,8 +10,6 @@ import java.util.List;
 
 public interface TimeSeriesDao {
 
-    Timestamp NON_VERSIONED = null;
-
     Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office);
 
     Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office, String idLike,
@@ -21,18 +19,17 @@ public interface TimeSeriesDao {
     void create(TimeSeries input);
 
     void create(TimeSeries input,
-                Timestamp versionDate,
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
-    void store(TimeSeries timeSeries, Timestamp versionDate, boolean createAsLrts,
+    void store(TimeSeries timeSeries, boolean createAsLrts,
                StoreRule replaceAll, boolean overrideProtection);
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
-                             String unit, String datum, ZonedDateTime begin, ZonedDateTime end,
-                             ZoneId timezone);
+                             String unit, ZonedDateTime begin, ZonedDateTime end,
+                             ZonedDateTime versionDate, boolean trim);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);

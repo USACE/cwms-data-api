@@ -1,31 +1,5 @@
 package cwms.cda.api;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import cwms.cda.data.dao.TimeSeriesDao;
-import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,12 +11,37 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TimeSeriesControllerTest extends ControllerTest {
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.data.dao.TimeSeriesDao;
+import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+import org.junit.jupiter.api.Test;
+
+class TimeSeriesControllerTest extends ControllerTest {
 
 
 
     @Test
-    public void testDaoMock() throws JsonProcessingException     {
+    void testDaoMock() throws JsonProcessingException     {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries expected = buildTimeSeries(officeId, tsId);
@@ -50,10 +49,19 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // build a mock dao that returns a pre-built ts when called a certain way
         TimeSeriesDao dao = mock(TimeSeriesDao.class);
 
+        //    String cursor,
+        //    int pageSize,
+        //    String names,
+        //    String office,
+        //    String unit,
+        //    ZonedDateTime begin,
+        //    ZonedDateTime end,
+        //    ZonedDateTime versionDate
+        //    boolean trim
+
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(),
-                        isNotNull(), isNotNull(), isNotNull())).thenReturn(expected);
+                         isNotNull(), isNotNull(), isNull(), eq(false) )).thenReturn(expected);
 
 
         // build mock request and response
@@ -99,7 +107,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                        isNull(), isNotNull(), isNotNull(), isNotNull());
+                         isNotNull(), isNotNull(), isNull(), eq(false));
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -126,7 +134,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesJaxb() throws IOException {
+    void testDeserializeTimeSeriesJaxb() throws IOException {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
@@ -141,7 +149,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesXmlUTC() throws IOException {
+    void testDeserializeTimeSeriesXmlUTC() throws IOException {
         TimeZone aDefault = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -160,7 +168,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesXml() throws IOException {
+    void testDeserializeTimeSeriesXml() throws IOException {
             String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
 			 // Should this be XMLv2?
@@ -173,7 +181,7 @@ public class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    public void testDeserializeTimeSeriesJSON() throws IOException     {
+    void testDeserializeTimeSeriesJSON() throws IOException     {
         String jsonV2 = loadResourceAsString("cwms/cda/api/timeseries_create.json");
         assertNotNull(jsonV2);
         TimeSeries ts = TimeSeriesController.deserializeTimeSeries(jsonV2, Formats.JSONV2);
@@ -183,7 +191,6 @@ public class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
         assertSimilar(fakeTs, ts);
     }
-
 
     @NotNull
     private TimeSeries buildTimeSeries(String officeId, String tsId) {
@@ -216,7 +223,38 @@ public class TimeSeriesControllerTest extends ControllerTest {
         return ts;
     }
 
+    @Test
+    void testGetIds(){
+        String input = "a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c";
+        List<String> tsIds = TimeSeriesController.getTsIds(input);
+        assertNotNull(tsIds);
+        assertEquals(3, tsIds.size());
 
+        assertEquals("a.b.c.e.f", tsIds.get(0));
+        assertEquals("2a.2b.2c.2d", tsIds.get(1));
+        assertEquals("3a.3b.3c", tsIds.get(2));
+
+        // input can have double quotes too
+        input = "\"a.b.c.e.f\",2a.2b.2c.2d,\"3a.3b.3c\"";
+        tsIds = TimeSeriesController.getTsIds(input);
+        assertNotNull(tsIds);
+        assertEquals(3, tsIds.size());
+        // but you will get them back
+        assertEquals("\"a.b.c.e.f\"", tsIds.get(0));
+        assertEquals("2a.2b.2c.2d", tsIds.get(1));
+        assertEquals("\"3a.3b.3c\"", tsIds.get(2));
+
+        // input can have brackets too
+        input = "[a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c]";
+        tsIds = TimeSeriesController.getTsIds(input);
+        assertNotNull(tsIds);
+        assertEquals(3, tsIds.size());
+
+        assertEquals("a.b.c.e.f", tsIds.get(0));
+        assertEquals("2a.2b.2c.2d", tsIds.get(1));
+        assertEquals("3a.3b.3c", tsIds.get(2));
+
+    }
 
 
 }

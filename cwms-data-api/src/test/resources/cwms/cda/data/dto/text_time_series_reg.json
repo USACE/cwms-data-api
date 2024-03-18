@@ -1,0 +1,32 @@
+{
+  "office-id": "SPK",
+  "name": "TsTextTestLoc.Flow.Inst.1Hour.0.raw",
+  "version-date": -27079718400000,
+  "regular-text-values": [
+    {
+      "date-time": 1104548400000,
+      "data-entry-date": 1706028410476,
+      "text-value": "my awesome text ts"
+    },
+    {
+      "date-time": 1104552000000,
+      "data-entry-date": 1706028410476,
+      "text-value": "my awesome text ts"
+    },
+    {
+      "date-time": 1104555600000,
+      "data-entry-date": 1706028410476,
+      "text-value": "my awesome text ts"
+    },
+    {
+      "date-time": 1104559200000,
+      "data-entry-date": 1706028410476,
+      "text-value": "my awesome text ts"
+    },
+    {
+      "date-time": 1104562800000,
+      "data-entry-date": 1706028410476,
+      "text-value": "my awesome text ts"
+    }
+  ]
+}

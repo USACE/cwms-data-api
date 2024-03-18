@@ -4,6 +4,11 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -15,6 +20,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "catalog")
 @XmlAccessorType(XmlAccessType.FIELD)
+@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Catalog extends CwmsDTOPaginated {
     @Schema(
             oneOf = {

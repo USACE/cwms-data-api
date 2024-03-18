@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static org.jooq.SQLDialect.ORACLE;
+
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import cwms.cda.ApiServlet;
@@ -33,6 +35,16 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.ConnectionCallable;
@@ -46,18 +58,6 @@ import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.jooq.SQLDialect.ORACLE;
 
 public abstract class JooqDao<T> extends Dao<T> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -105,9 +105,24 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retVal;
     }
 
+    public static DSLContext getDslContext(Connection connection, String officeId) {
+        // Because this dsl is constructed with a connection, jOOQ will reuse the provided
+        // connection and not get new connections from a DataSource.  See:
+        //   https://www.jooq.org/doc/latest/manual/sql-building/dsl-context/connection-vs-datasource/
+        // This also means
+        // that jOOQ will not automatically return the connection to the pool for each statement.
+        // So it is safe for us to set the session office id.
+        // Everything that uses the returned dsl after this method will reuse this connection.
+        // This method should probably be called from within a connection{  } block and jOOQ
+        // code within the block should use the returned DSLContext or the connection.
+        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+
+        return dsl;
+    }
+
     private static Connection setClientInfo(Context ctx, Connection connection) {
         try {
-            //logger.atInfo().log("Path : " + ctx.url());
             connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.VERSION);
             connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
             connection.setClientInfo("OCSID.ACTION", ctx.method());
@@ -120,20 +135,13 @@ public abstract class JooqDao<T> extends Dao<T> {
         return connection;
     }
 
-    public static DSLContext getDslContext(Connection database, String officeId) {
-        DSLContext dsl = DSL.using(database, SQLDialect.ORACLE18C);
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-
-        return dsl;
-    }
-
     @Override
-    public List<T> getAll(Optional<String> limitToOffice) {
+    public List<T> getAll(String officeId) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public Optional<T> getByUniqueName(String uniqueName, Optional<String> limitToOffice) {
+    public Optional<T> getByUniqueName(String uniqueName, String officeId) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -162,6 +170,20 @@ public abstract class JooqDao<T> extends Dao<T> {
                 }
             }
         };
+    }
+
+    /**
+     * Oracle supports case insensitive regexp search but the syntax for calling it is a
+     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
+     * an easy to read manner without having to worry about the syntax.
+     * <p/>
+     * A null regex will return a condition that always evaluates to true
+     */
+    public static Condition caseInsensitiveLikeRegexNullTrue(Field<String> field, String regex) {
+        if (regex == null) {
+            return DSL.trueCondition();
+        }
+        return caseInsensitiveLikeRegex(field, regex);
     }
 
     /**
@@ -201,19 +223,27 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (cause instanceof SQLException) {
             return Optional.of((SQLException) cause);
-        } else if(cause instanceof DataAccessException) {
+        } else if (cause instanceof DataAccessException) {
             return getSqlException(cause); // There might be nested DataAccessExceptions
         } else {
             return Optional.empty();
         }
     }
 
-    private static boolean matches(SQLException sqlException,
-                                   List<Integer> codes, List<String> segments) {
+    private static boolean hasCodeOrMessage(SQLException sqlException,
+                                            List<Integer> codes, List<String> segments) {
         final String localizedMessage = sqlException.getLocalizedMessage();
 
         return codes.contains(sqlException.getErrorCode())
                 || segments.stream().anyMatch(localizedMessage::contains);
+    }
+
+    private static boolean hasCodeAndMessage(SQLException sqlException,
+                                            List<Integer> codes, List<String> segments) {
+        final String localizedMessage = sqlException.getLocalizedMessage();
+
+        return codes.contains(sqlException.getErrorCode())
+                && segments.stream().anyMatch(localizedMessage::contains);
     }
 
 
@@ -231,7 +261,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
-            retVal = matches(sqlException, codes, segments);
+            retVal = hasCodeOrMessage(sqlException, codes, segments);
         }
         return retVal;
     }    
@@ -243,10 +273,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20019);
-            List<String> segments = Arrays.asList("INVALID_ITEM");
+            List<Integer> codes = Collections.singletonList(20019);
+            List<String> segments = Collections.singletonList("INVALID_ITEM");
 
-            retVal = matches(sqlException, codes, segments);
+            retVal = hasCodeOrMessage(sqlException, codes, segments);
         }
         return retVal;
     }
@@ -267,7 +297,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new NotFoundException(parts[0]);
+                exception = new NotFoundException(parts[0], cause);
             }
         }
         return exception;
@@ -279,10 +309,12 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20998);
-            List<String> segments = Arrays.asList("does not have any assigned privileges");
+            // 20998 is the code we're getting but that is the generic error code.
+            // We'll need to use hasCode_AND_Message or this will trigger on other errors.
+            List<Integer> codes = Collections.singletonList(20998);
+            List<String> segments = Collections.singletonList("does not have any assigned privileges");
 
-            retVal = matches(sqlException, codes, segments);
+            retVal = hasCodeAndMessage(sqlException, codes, segments);  // _AND_
         }
         return retVal;
     }
@@ -297,9 +329,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        CwmsAuthException exception = new CwmsAuthException("User not authorized for this office.", cause,
+        return new CwmsAuthException("User not authorized for this office.", cause,
                                             HttpServletResponse.SC_UNAUTHORIZED, false);
-        return exception;
     }
 
     public static boolean isAlreadyExists(RuntimeException input) {
@@ -311,7 +342,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             List<Integer> codes = Arrays.asList(20003, 20020, 20026);
             List<String> segments = Arrays.asList("ALREADY_EXISTS", " already exists.");
 
-            retVal = matches(sqlException, codes, segments);
+            retVal = hasCodeOrMessage(sqlException, codes, segments);
 
         }
         return retVal;
@@ -331,7 +362,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new AlreadyExists(parts[0]);
+                exception = new AlreadyExists(parts[0], cause);
             }
         }
         return exception;
@@ -343,10 +374,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
-            List<Integer> codes = Arrays.asList(20244);
+            List<Integer> codes = Collections.singletonList(20244);
             List<String> segments = Arrays.asList("NULL_ARGUMENT", " already exists.");
 
-            retVal = matches(sqlException, codes, segments);
+            retVal = hasCodeOrMessage(sqlException, codes, segments);
 
         }
         return retVal;
@@ -365,7 +396,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new IllegalArgumentException(parts[0]);
+                exception = new IllegalArgumentException(parts[0], cause);
             }
         }
         return exception;
@@ -386,7 +417,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new InvalidItemException(parts[0]);
+                exception = new InvalidItemException(parts[0], cause);
             }
         }
         return exception;
@@ -399,7 +430,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @param dslContext the DSLContext to use
      * @param cr the ConnectionRunnable to run with the connection
      */
-    void connection(DSLContext dslContext, ConnectionRunnable cr) {
+    protected static void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
             dslContext.connection(cr);
         } catch (RuntimeException e) {
@@ -414,7 +445,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @param dslContext the DSLContext to use
      * @param var1 the ConnectionCallable to run with the connection
      */
-    <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
+    protected static <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
             return dslContext.connectionResult(var1);
         } catch (RuntimeException e) {

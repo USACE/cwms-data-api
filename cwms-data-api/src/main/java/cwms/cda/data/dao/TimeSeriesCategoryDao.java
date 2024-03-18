@@ -77,20 +77,23 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
     }
 
     public void delete(String categoryId, boolean cascadeDelete, String office) {
-        this.setOffice(office);
-        dsl.connection((c)->
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
             CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(
-                getDslContext(c,office).configuration(), categoryId,
-                OracleTypeMap.formatBool(cascadeDelete), office)
-        );
+                    dslContext.configuration(), categoryId,
+                    OracleTypeMap.formatBool(cascadeDelete), office);
+        });
+
     }
 
     public void create(TimeSeriesCategory category, boolean failIfExists) {
-        this.setOffice(category);
-        dsl.connection((c) ->
+        String office = category.getOfficeId();
+
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
             CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(
-                getDslContext(c,category.getOfficeId()).configuration(), category.getId(), category.getDescription(),
-                OracleTypeMap.formatBool(failIfExists), "T", category.getOfficeId())
-        );
+                dslContext.configuration(), category.getId(), category.getDescription(),
+                OracleTypeMap.formatBool(failIfExists), "T", office);
+        });
     }
 }

@@ -91,7 +91,7 @@ class ClobDaoTest {
 
         ClobDao dao = new ClobDao(dsl);
 
-        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(OFFICE));
+        Optional<Clob> found = dao.getByUniqueName(id, OFFICE);
         assertFalse(found.isPresent());
 
 
@@ -108,7 +108,7 @@ class ClobDaoTest {
         ClobDao dao = new ClobDao(dsl);
 
         // try and fail to find it
-        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(OFFICE));
+        Optional<Clob> found = dao.getByUniqueName(id, OFFICE);
         assertFalse(found.isPresent());
 
         // create it
@@ -116,7 +116,7 @@ class ClobDaoTest {
         dao.create(clob, true);
 
         // try and find it
-        found = dao.getByUniqueName(id, Optional.of(OFFICE));
+        found = dao.getByUniqueName(id, OFFICE);
         assertTrue(found.isPresent());
 
 
@@ -134,7 +134,7 @@ class ClobDaoTest {
         ClobDao dao = new ClobDao(dsl);
 
         // try and fail to find it
-        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
+        Optional<Clob> found = dao.getByUniqueName(id, office);
         assertFalse(found.isPresent());
 
         // create it
@@ -142,14 +142,14 @@ class ClobDaoTest {
         dao.create(clob, true);
 
         // try and find it
-        found = dao.getByUniqueName(id, Optional.of(office));
+        found = dao.getByUniqueName(id, office);
         assertTrue(found.isPresent());
 
         // delete it
         dao.delete(office, id);
 
         // try and fail to find it
-        found = dao.getByUniqueName(id, Optional.of(office));
+        found = dao.getByUniqueName(id, office);
         assertFalse(found.isPresent());
 
 
@@ -211,7 +211,7 @@ class ClobDaoTest {
         dao.update(clob, false);
 
         // find it
-        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
+        Optional<Clob> found = dao.getByUniqueName(id, office);
         assertTrue(found.isPresent());
         Clob foundClob = found.get();
         assertEquals("NEW description", foundClob.getDescription());
@@ -243,7 +243,7 @@ class ClobDaoTest {
         dao.update(clob, false);
 
         // find it
-        Optional<Clob> found = dao.getByUniqueName(id, Optional.of(office));
+        Optional<Clob> found = dao.getByUniqueName(id, office);
         assertTrue(found.isPresent());
         Clob foundClob = found.get();
         assertNull(foundClob.getDescription());
@@ -263,7 +263,7 @@ class ClobDaoTest {
         }
 
         // find it again
-        found = dao.getByUniqueName(id, Optional.of(office));
+        found = dao.getByUniqueName(id, office);
         assertTrue(found.isPresent());
         foundClob = found.get();
         assertNull(foundClob.getDescription());
@@ -281,7 +281,7 @@ class ClobDaoTest {
                     + "allowed to be null"));
         }
 
-        found = dao.getByUniqueName(id, Optional.of(office));
+        found = dao.getByUniqueName(id, office);
         assertTrue(found.isPresent());
         foundClob = found.get();
         assertEquals(newValue, foundClob.getValue());
@@ -291,7 +291,7 @@ class ClobDaoTest {
         clob = new Clob(office, id, " ", " ");
         dao.update(clob, false);
 
-        found = dao.getByUniqueName(id, Optional.of(office));
+        found = dao.getByUniqueName(id, office);
         assertTrue(found.isPresent());
         foundClob = found.get();
         // empty is apparently treated the same as null, too bad.  Space is not.

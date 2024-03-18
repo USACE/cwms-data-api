@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,12 @@
 
 package cwms.cda;
 
+import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.prefixPath;
+import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static java.lang.String.format;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -32,6 +38,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BasinController;
+import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
@@ -49,7 +56,9 @@ import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
+import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
+import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
@@ -65,6 +74,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -91,21 +101,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.concurrent.TimeUnit;
-import org.apache.http.entity.ContentType;
-import org.jetbrains.annotations.NotNull;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
-
-import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -117,9 +112,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
-
-import static io.javalin.apibuilder.ApiBuilder.*;
+import javax.annotation.Resource;
+import javax.management.ServiceNotFoundException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import org.apache.http.entity.ContentType;
+import org.jetbrains.annotations.NotNull;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 
 
 /**
@@ -144,7 +151,8 @@ import static io.javalin.apibuilder.ApiBuilder.*;
         "/blobs/*",
         "/clobs/*",
         "/pools/*",
-        "/specified-levels/*"
+        "/specified-levels/*",
+        "/standard-text-id/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -198,6 +206,7 @@ public class ApiServlet extends HttpServlet {
     public void init() {
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
@@ -242,6 +251,11 @@ public class ApiServlet extends HttpServlet {
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
                 })
+                .exception(RequiredQueryParameterException.class, (e, ctx) -> {
+                    CdaError re = new CdaError("Bad Request", e.getDetails());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request");
                     logger.atInfo().withCause(e).log(re.toString());
@@ -284,7 +298,7 @@ public class ApiServlet extends HttpServlet {
                     switch (e.getAuthFailCode()) {
                         case 401:
                         {
-                            String msg = e.suppressMessage() == false ? e.getLocalizedMessage() : "Invalid User";
+                            String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
                             re = new CdaError(msg,true);
                             break;
                         }
@@ -373,6 +387,12 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, tsController::getRecent);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
+                new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache("/timeseries/text/{timeseries}",
+                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/binary/{timeseries}",
+                new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
@@ -400,6 +420,7 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
     }
 
     /**
@@ -515,7 +536,7 @@ public class ApiServlet extends HttpServlet {
         CdaAccessManager am = buildAccessManager(provider);
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        am.getContainedManagers().forEach((manager)->{
+        am.getContainedManagers().forEach(manager -> {
             components.addSecuritySchemes(manager.getName(),manager.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
@@ -534,9 +555,7 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
-                });
+                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
                 return api;
             })
             .defaultDocumentation(doc -> {
