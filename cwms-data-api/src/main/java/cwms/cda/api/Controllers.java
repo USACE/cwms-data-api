@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,20 @@
 
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.VersionType;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
+import io.javalin.http.Context;
+import java.time.ZonedDateTime;
+import org.jetbrains.annotations.Nullable;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 
 public final class Controllers {
@@ -105,6 +111,7 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
+
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
     public static final String OVERRIDE_PROTECTION = "override-protection";
@@ -122,6 +129,7 @@ public final class Controllers {
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
     public static final String ID_MASK = "id-mask";
+    public static final String OFFICE_MASK = "office-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -138,9 +146,18 @@ public final class Controllers {
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
+    public static final String TEXT_MASK = "text-mask";
+    public static final String DELETE_MODE = "delete-mode";
+    public static final String MIN_ATTRIBUTE = "min-attribute";
+    public static final String MAX_ATTRIBUTE = "max-attribute";
+    public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
+    public static final String STANDARD_TEXT_ID = "standard-text-id";
+    public static final String TRIM = "trim";
+
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
     }
 
     private Controllers() {
@@ -245,8 +262,56 @@ public final class Controllers {
         JooqDao.DeleteMethod retval = null;
 
         if (input != null) {
+            input = input.replace(' ', '_');
             retval = JooqDao.DeleteMethod.valueOf(input.toUpperCase());
         }
         return retval;
     }
+
+    /**
+     * Returns the first matching query param or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param name Query parameter name
+     * @return value of the parameter
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static String requiredParam(io.javalin.http.Context ctx, String name) {
+        String param = ctx.queryParam(name);
+        if (param == null || param.isEmpty()) {
+            throw new RequiredQueryParameterException(name);
+        }
+        return param;
+    }
+
+    @Nullable
+    public static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
+        ZonedDateTime beginZdt = null;
+        String begin = ctx.queryParam(param);
+        if (begin != null) {
+            beginZdt = DateUtils.parseUserDate(begin, timezone);
+        }
+        return beginZdt;
+    }
+
+    @Nullable
+    public static ZonedDateTime queryParamAsZdt(Context ctx, String param) {
+        return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+    }
+
+    /**
+     * Parses the named parameters as ZonedDateTime or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param param Query parameter name
+     * @return ZonedDateTime
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static ZonedDateTime requiredZdt(Context ctx, String param) {
+        ZonedDateTime zdt = queryParamAsZdt(ctx, param);
+        if (zdt == null) {
+            throw new RequiredQueryParameterException(param);
+        }
+        return zdt;
+    }
+
+
 }

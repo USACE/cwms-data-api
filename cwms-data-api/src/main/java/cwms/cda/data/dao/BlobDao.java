@@ -2,6 +2,8 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
@@ -33,16 +36,16 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     @Override
-    public Optional<Blob> getByUniqueName(String id, Optional<String> limitToOffice) {
+    public Optional<Blob> getByUniqueName(String id, String limitToOffice) {
         String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID, AT_BLOB.VALUE \n"
                 + "FROM CWMS_20.AT_BLOB \n"
                 + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
                 + "WHERE ID = ?";
         ResultQuery<Record> query;
-        if (limitToOffice.isPresent()) {
+        if (limitToOffice != null && !limitToOffice.isEmpty()) {
             queryStr = queryStr + " and CWMS_OFFICE.OFFICE_ID = ?";
-            query = dsl.resultQuery(queryStr, id, limitToOffice.get());
+            query = dsl.resultQuery(queryStr, id, limitToOffice);
         } else {
             query = dsl.resultQuery(queryStr, id);
         }
@@ -96,7 +99,7 @@ public class BlobDao extends JooqDao<Blob> {
                     if (resultSet.next()) {
                         handleResultSet(resultSet, consumer);
                     } else {
-                        throw new NotFoundException("Unable to find blob with id " + id );
+                        throw new NotFoundException("Unable to find blob with id " + id);
                     }
                 }
             }
@@ -115,18 +118,17 @@ public class BlobDao extends JooqDao<Blob> {
 
 
     @Override
-    public List<Blob> getAll(Optional<String> limitToOffice)
-    {
+    public List<Blob> getAll(String officeId) {
         String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID\n"
-                + " FROM CWMS_20.AT_BLOB \n" +
-                "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
+                + " FROM CWMS_20.AT_BLOB \n"
+                + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
                 ;
 
         ResultQuery<Record> query;
-        if (limitToOffice.isPresent()) {
+        if (officeId != null) {
             queryStr = queryStr + " and upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
-            query = dsl.resultQuery(queryStr, limitToOffice.get());
+            query = dsl.resultQuery(queryStr, officeId);
         } else {
             query = dsl.resultQuery(queryStr);
         }
@@ -141,20 +143,18 @@ public class BlobDao extends JooqDao<Blob> {
         });
     }
 
-    public List<Blob> getAll(Optional<String> limitToOffice, String like)
-    {
+    public List<Blob> getAll(String  officeId, String like) {
         String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID\n"
-                + " FROM CWMS_20.AT_BLOB \n" +
-                "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
+                + " FROM CWMS_20.AT_BLOB \n"
+                + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
                 + " where REGEXP_LIKE (upper(AT_BLOB.ID), upper(?))"
                 ;
 
-
         ResultQuery<Record> query;
-        if (limitToOffice.isPresent()) {
+        if (officeId != null) {
             queryStr = queryStr + " and upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
-            query = dsl.resultQuery(queryStr, like, limitToOffice.get());
+            query = dsl.resultQuery(queryStr, like, officeId);
         } else {
             query = dsl.resultQuery(queryStr, like);
         }
@@ -170,9 +170,9 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
-        String pFailIfExists = getBoolean(failIfExists);
-        String pIgnoreNulls = getBoolean(ignoreNulls);
-        dsl.connection(c-> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+        String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
+        String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
+        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
                 getDslContext(c, blob.getOfficeId()).configuration(),
                 blob.getValue(),
                 blob.getId(),
@@ -183,15 +183,15 @@ public class BlobDao extends JooqDao<Blob> {
                 blob.getOfficeId()));
     }
 
-    @NotNull
-    public static String getBoolean(boolean failIfExists) {
-        String pFailIfExists;
-        if (failIfExists) {
-            pFailIfExists = "T";
-        } else {
-            pFailIfExists = "F";
+
+    public static byte[] readFully(@NotNull InputStream stream) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        while ((bytesRead = stream.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
         }
-        return pFailIfExists;
+        return output.toByteArray();
     }
 
 

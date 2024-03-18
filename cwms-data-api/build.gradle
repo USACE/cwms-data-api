@@ -107,10 +107,7 @@ dependencies {
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
 
-    // Now using the FormatService annotation in runtime in JsonV1 too.
-    implementation project(":annotations")
     implementation project(":access-manager-api")
-    annotationProcessor project(":annotations")
 
     implementation(libs.bundles.metrics)
 
@@ -140,6 +137,7 @@ dependencies {
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
+    testImplementation(libs.apache.freemarker)
 
     webjars(libs.swagger.ui) {
         transitive = false
@@ -218,6 +216,7 @@ task generateConfig(type: Copy) {
 }
 
 task run(type: JavaExec) {
+    group "application"
     dependsOn generateConfig
     dependsOn war
 

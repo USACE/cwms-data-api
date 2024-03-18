@@ -50,10 +50,10 @@ public class LocationControllerTestIT extends DataApiTestIT {
     @Test
     public void test_location_create_get_delete() throws Exception {
         String officeId = "SPK";
-        String json = loadResourceAsString("cwms/cda/api/location_create.json");
+        String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
         Location location = new Location.Builder(LocationController.deserializeLocation(json, Formats.JSON))
                 .withOfficeId(officeId)
-                .withName(getClass().getSimpleName())
+                //withName(getClass().getSimpleName())
                 .build();
         String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
 
@@ -137,6 +137,29 @@ public class LocationControllerTestIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    public void test_delete_location_that_does_not_exist() throws Exception
+    {
+        final String officeId = "SPK";
+        final String locationName = "I do not exit";
+        final KeyUser user = KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/{loc}", locationName)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()

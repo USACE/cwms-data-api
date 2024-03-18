@@ -6,24 +6,30 @@ public class TestAccounts {
 
 
     public enum KeyUser {
-        NONE("none",null,null,null,null), // Used for annotations
-        GUEST("guest",null,null,null,null), // USED as marker label for tests
-        SPK_NORMAL("l2hectest","l2hectest","1234567890","l2userkey","ATotallyRandomString","CWMS Users", "cac_user"),
-        SPK_NO_ROLES("user2","user2",null,"User2key","user2SEssion");
+        NONE("none",null,null,null,null, null), // Used for annotations
+        GUEST("guest",null,null,null, null, null), // USED as marker label for tests
+        SPK_NORMAL("l2hectest","l2hectest","1234567890","l2userkey","ATotallyRandomStringL2hectest","SPK", "CWMS Users", "cac_user"),
+        SWT_NORMAL("m5hectest","swt99db","1234567890","testkey2","ATotallyRandomStringM5hectest","SWT", "CWMS Users", "cac_user"),
+        SPK_NO_ROLES("user2","user2",null,"User2key","user2SEssion", "SPK");
 
         private final String name; // username
         private final String edipi; // CAC # value
         private final String apikey; //
         private final String jSessionId;
         private final String password; // used for Keycloak login to get JWT
+        /**
+         * Primary operating office for this user. Tests may use other offices and assign more privs as needed.
+         */
+        private final String operatingOffice;
         private final String[] roles;
 
-        private KeyUser(String name, String password, String edipi, String key, String jSessionId, String... roles) {
+        private KeyUser(String name, String password, String edipi, String key, String jSessionId, String operatingOffice, String... roles) {
             this.name = name;
             this.edipi = edipi;
             this.password = password;
             this.apikey = key;
             this.jSessionId = jSessionId;
+            this.operatingOffice = operatingOffice;
             this.roles = roles;
         }
 
@@ -49,6 +55,10 @@ public class TestAccounts {
 
         public String getApikey() {
             return apikey;
+        }
+
+        public String getOperatingOffice() {
+            return operatingOffice;
         }
 
         public String[] getRoles() {

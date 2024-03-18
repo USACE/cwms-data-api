@@ -25,18 +25,15 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
-
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,22 +42,30 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 /**
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
@@ -77,17 +82,23 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
-    protected static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?)";
+    protected static String createTimeseriesOffsetQuery = null;
+    protected final static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
+    protected final static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
+
+    protected final static Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
 
+    static {
+        freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
+    }
 
     /**
      * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
      * can be an anonymous function if more detail is required.
-     * @param resource
+     * @param resource Resource path to SQL file.  Example: "cwms/cda/data/sql/create_location.sql"
      * @throws Exception
      */
     protected static void loadSqlDataFromResource(String resource) throws Exception {
@@ -97,12 +108,16 @@ public class DataApiTestIT {
                     .getResourceAsStream(resource),"UTF-8");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(sql);) {
+            try(PreparedStatement stmt = c.prepareStatement(sql)) {
                 stmt.execute();
             } catch (SQLException ex) {
                 throw new RuntimeException("Unable to process SQL",ex);
             }
         }, "cwms_20");
+    }
+
+    private static Template loadTemplateFromResource(String resource) throws Exception {
+        return freemarkerConfig.getTemplate(resource);
     }
 
     @BeforeAll
@@ -117,6 +132,13 @@ public class DataApiTestIT {
                                     .getClassLoader()
                                     .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries.sql"),"UTF-8"
                             );
+
+        createTimeseriesOffsetQuery = IOUtils.toString(
+                TimeseriesControllerTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries_offset.sql"),"UTF-8"
+        );
+
         deleteLocationQuery = IOUtils.toString(
                                 TimeseriesControllerTestIT.class
                                     .getClassLoader()
@@ -138,13 +160,13 @@ public class DataApiTestIT {
                     continue;
                 }
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(registerApiKey);) {
+                    try(PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
                         stmt.setString(1,user.getName());
                         stmt.setString(2,user.getName()+"TestKey");
                         stmt.setString(3,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to register user",ex);
+                        throw new RuntimeException("Unable to register user:" + user.getName() ,ex);
                     }
                 },"cwms_20");
 
@@ -186,7 +208,7 @@ public class DataApiTestIT {
                 Location location = it.next();
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery);) {
+                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery)) {
                         stmt.setString(1,location.getName());
                         stmt.setString(2,location.getOfficeId());
                         stmt.execute();
@@ -215,8 +237,9 @@ public class DataApiTestIT {
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
                 db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys);) {
+                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys)) {
                         stmt.setString(1,user.getName());
+                        stmt.setString(2,user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to delete api key",ex);
@@ -256,7 +279,7 @@ public class DataApiTestIT {
         }
 
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery);) {
+            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
                 stmt.setString(1,location);
                 stmt.setString(2,active ? "T" : "F");
                 stmt.setString(3,office);
@@ -307,13 +330,31 @@ public class DataApiTestIT {
     protected static void createTimeseries(String office, String timeseries) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery);) {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
                 stmt.setString(1,office);
                 stmt.setString(2,timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
-                    return; // TS already exists. that's find for these tests.
+                    return; // TS already exists. that's fine for these tests.
+                }
+                throw new RuntimeException("Unable to create timeseries",ex);
+            }
+        }, "cwms_20");
+    }
+
+
+    protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c)-> {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+                stmt.setString(1, office);
+                stmt.setString(2, timeseries);
+                stmt.setInt(3, offset);
+                stmt.execute();
+            } catch (SQLException ex) {
+                if (ex.getErrorCode() == 20003) {
+                    return; // TS already exists. that's fine for these tests.
                 }
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
@@ -331,7 +372,7 @@ public class DataApiTestIT {
     protected static void addUserToGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
-            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;");) {
+            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;")) {
                 stmt.setString(1,user);
                 stmt.setString(2,group);
                 stmt.setString(3,office);
@@ -353,7 +394,7 @@ public class DataApiTestIT {
     protected static void removeUserFromGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection( (c) -> {
-            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;");) {
+            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;")) {
                 stmt.setString(1,user);
                 stmt.setString(2,group);
                 stmt.setString(3,office);
@@ -389,7 +430,6 @@ public class DataApiTestIT {
         Path path = new File(resource.getFile()).toPath();
         return String.join("\n", Files.readAllLines(path));
     }
-
 
     /**
      * Let the infrastructure know a group is getting created so it can
@@ -428,7 +468,7 @@ public class DataApiTestIT {
                     delGroup.setString(1,g.getId());
                     delGroup.setString(2,g.getOfficeId());
                     delGroup.executeUpdate();
-                };
+                }
             } catch (SQLException ex) {
                 if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
                     throw new RuntimeException("Failed to remove group in test cleanup/", ex);
@@ -452,12 +492,116 @@ public class DataApiTestIT {
                     delGroup.setString(1,cat.getId());
                     delGroup.setString(2,cat.getOfficeId());
                     delGroup.executeUpdate();
-                };
+                }
             } catch (SQLException ex) {
                 if (!ex.getLocalizedMessage().toLowerCase().contains("not exist")) {
                     throw new RuntimeException("Failed to remove group in test cleanup/", ex);
                 } // otherwise we don't get it was successfully deleted in the test
             }
         });
+    }
+
+
+    // Resource Template operations
+    /**
+     * Get a FluentTemplate to handle our operations of setting up the data model before rendering.
+     * The non static version provides a default data model based on the active CDA and Database Instance
+     *
+     * @param resource
+     * @return A fluent template that can have its data model be expanded, if needed, and then rendered.
+     * @throws Exception
+     */
+    public FluentTemplate getResourceTemplate(String resource) throws Exception {
+        final Template template = loadTemplateFromResource(resource);
+        final CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        return new FluentTemplate(template)
+                    .with("office", cwmsDb.getOfficeId())
+                    .with("boundingOffice", cwmsDb.getOfficeId())
+                    .with("dbOffice", cwmsDb.getOfficeId())
+                    .with("dbTestUser",cwmsDb.getUsername())
+                    .with("cdaUrl", CwmsDataApiSetupCallback.httpUrl());
+
+    }
+
+    /**
+     * Get a FluentTemplate for use outside the integration test system.
+     * The default model uses HQ for the office and otherwise in valid values for
+     *
+     * @param resource
+     * @return
+     * @throws Exception
+     */
+    public static FluentTemplate getResourceTemplateStatic(String resource) throws Exception {
+        final Template template = loadTemplateFromResource(resource);
+        return new FluentTemplate(template)
+                    .with("office", "HQ")
+                    .with("boundingOffice", "HQ")
+                    .with("dbOffice", "HQ")
+                    .with("dbTestUser", "not-active")
+                    .with("cdaUrl", "no-url");
+    }
+
+
+
+    public String getResourceFromTemplate(String resource, Map<String, Object> dataModel) throws Exception {
+        return getResourceTemplate(resource).render();
+    }
+
+    /**
+     * A simple helper to make setting up models to render easier.
+     */
+    public static class FluentTemplate {
+        final Map<String, Object> dataModel = new HashMap<>();
+        final Template template;
+
+        public FluentTemplate(Template template) {
+            this.template = template;
+        }
+
+        /**
+         * Add a value to the data model
+         * @param fieldName
+         * @param field
+         * @return
+         */
+        public FluentTemplate with(String fieldName, Object field) {
+            dataModel.put(fieldName, field);
+            return this;
+        }
+
+        /**
+         * Add additional values, they may overwrite defaults to the data model.
+         * @param model
+         * @return
+         */
+        public FluentTemplate with(Map<String, Object> model) {
+            dataModel.putAll(model);
+            return this;
+        }
+
+        public FluentTemplate withUser(TestAccounts.KeyUser user) {
+            dataModel.put("user", user);
+            return this;
+        }
+
+        /**
+         * Render the template to string using the internal data model
+         * @return
+         * @throws TemplateException
+         * @throws IOException
+         */
+        public String render() throws TemplateException, IOException {
+            final StringWriter out = new StringWriter();
+            template.process(dataModel, out);
+            return out.toString();
+        }
+
+        /**
+         * Get a copy of the Data Model. The returned Map is read only.
+         * @return
+         */
+        public Map<String, Object> getModel() {
+            return Collections.unmodifiableMap(dataModel);
+        }
     }
 }

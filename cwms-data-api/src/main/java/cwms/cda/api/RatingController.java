@@ -24,6 +24,34 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.AT;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE_FORMAT;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.EXAMPLE_DATE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RATING_ID;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.STORE_TEMPLATE;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -48,20 +76,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class RatingController implements CrudHandler {
@@ -100,12 +124,12 @@ public class RatingController implements CrudHandler {
     @Override
     @OpenApi(description = "Create new RatingSet",
             requestBody = @OpenApiRequestBody(content = {
-                    @OpenApiContent(type = Formats.XMLV2),
-                    @OpenApiContent(type = Formats.JSONV2)},
+                @OpenApiContent(type = Formats.XMLV2),
+                @OpenApiContent(type = Formats.JSONV2)},
             required = true),
             queryParams = {
-                    @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
-                            description = "Also store updates to the rating template. Default: true")
+                @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
+                        description = "Also store updates to the rating template. Default: true")
             },
             method = HttpMethod.POST, path = "/ratings", tags = {TAG})
     public void create(@NotNull Context ctx) {
@@ -183,8 +207,8 @@ public class RatingController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String ratingSpecId) {
-        try (Timer.Context ignored = markAndTime(DELETE)){
+    public void delete(@NotNull Context ctx, @NotNull String ratingSpecId) {
+        try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
@@ -198,52 +222,52 @@ public class RatingController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = NAME, description = "Specifies the "
-                    + "name(s) of the rating whose data is to be included in the response."
-                    + " A case insensitive comparison is used to match names."),
-            @OpenApiParam(name = OFFICE,  description = "Specifies the "
-                    + "owning office of the Rating(s) whose data is to be included in "
-                    + "the response. If this field is not specified, matching rating "
-                    + "information from all offices shall be returned."),
-            @OpenApiParam(name = UNIT,  description = "Specifies the "
-                    + "unit or unit system of the response. Valid values for the unit "
-                    + "field are:\r\n"
-                    + "1. EN.   Specifies English unit system.  Rating "
-                    + "values will be in the default English units for their "
-                    + "parameters.\r\n"
-                    + "2. SI.   Specifies the SI unit system.  Rating values "
-                    + "will be in the default SI units for their parameters.\r\n"
-                    + "3. Other. Any unit returned in the response to the units URI request "
-                    + "that is appropriate for the requested parameters."),
-            @OpenApiParam(name = DATUM,  description = "Specifies the "
-                    + "elevation datum of the response. This field affects only elevation"
-                    + " Ratings. Valid values for this field are:\r\n1. NAVD88.  The "
-                    + "elevation values will in the specified or default units above the "
-                    + "NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the "
-                    + "specified or default units above the NGVD-29 datum."),
-            @OpenApiParam(name = AT,  description = "Specifies the "
-                    + "start of the time window for data to be included in the response. "
-                    + "If this field is not specified, any required time window begins 24"
-                    + " hours prior to the specified or default end time."),
-            @OpenApiParam(name = END,  description = "Specifies the "
-                    + "end of the time window for data to be included in the response. If"
-                    + " this field is not specified, any required time window ends at the"
-                    + " current time"),
-            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                    + "the time zone of the values of the begin and end fields (unless "
-                    + "otherwise specified), as well as the time zone of any times in the"
-                    + " response. If this field is not specified, the default time zone "
-                    + "of UTC shall be used."),
-            @OpenApiParam(name = FORMAT,  description = "Specifies the"
-                    + " encoding format of the response. Valid values for the format "
-                    + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
-                    + "xml\r\n4.    json (default)")},
+        @OpenApiParam(name = NAME, description = "Specifies the "
+                + "name(s) of the rating whose data is to be included in the response."
+                + " A case insensitive comparison is used to match names."),
+        @OpenApiParam(name = OFFICE,  description = "Specifies the "
+                + "owning office of the Rating(s) whose data is to be included in "
+                + "the response. If this field is not specified, matching rating "
+                + "information from all offices shall be returned."),
+        @OpenApiParam(name = UNIT,  description = "Specifies the "
+                + "unit or unit system of the response. Valid values for the unit "
+                + "field are:\r\n"
+                + "1. EN.   Specifies English unit system.  Rating "
+                + "values will be in the default English units for their "
+                + "parameters.\r\n"
+                + "2. SI.   Specifies the SI unit system.  Rating values "
+                + "will be in the default SI units for their parameters.\r\n"
+                + "3. Other. Any unit returned in the response to the units URI request "
+                + "that is appropriate for the requested parameters."),
+        @OpenApiParam(name = DATUM,  description = "Specifies the "
+                + "elevation datum of the response. This field affects only elevation"
+                + " Ratings. Valid values for this field are:\r\n1. NAVD88.  The "
+                + "elevation values will in the specified or default units above the "
+                + "NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the "
+                + "specified or default units above the NGVD-29 datum."),
+        @OpenApiParam(name = AT,  description = "Specifies the "
+                + "start of the time window for data to be included in the response. "
+                + "If this field is not specified, any required time window begins 24"
+                + " hours prior to the specified or default end time."),
+        @OpenApiParam(name = END,  description = "Specifies the "
+                + "end of the time window for data to be included in the response. If"
+                + " this field is not specified, any required time window ends at the"
+                + " current time"),
+        @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                + "the time zone of the values of the begin and end fields (unless "
+                + "otherwise specified), as well as the time zone of any times in the"
+                + " response. If this field is not specified, the default time zone "
+                + "of UTC shall be used."),
+        @OpenApiParam(name = FORMAT,  description = "Specifies the"
+                + " encoding format of the response. Valid values for the format "
+                + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
+                + "xml\r\n4.    json (default)")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                        @OpenApiContent(type = Formats.JSON),
-                        @OpenApiContent(type = Formats.XML),
-                        @OpenApiContent(type = Formats.TAB),
-                        @OpenApiContent(type = Formats.CSV)
+                    @OpenApiContent(type = Formats.JSON),
+                    @OpenApiContent(type = Formats.XML),
+                    @OpenApiContent(type = Formats.TAB),
+                    @OpenApiContent(type = Formats.CSV)
                 }),
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a rating table."),
@@ -251,9 +275,9 @@ public class RatingController implements CrudHandler {
                             + "implemented")},
             tags = {TAG})
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
@@ -307,31 +331,31 @@ public class RatingController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be retrieve. "),
+                @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be retrieve. "),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description =
-                            "Specifies the owning office of the ratingset to be included in the "
-                                    + "response."),
-                    @OpenApiParam(name = BEGIN, description = "Specifies the "
-                            + "start of the time window for data to be included in the response. "
-                            + "If this field is not specified no start time will be used."),
-                    @OpenApiParam(name = END, description = "Specifies the "
-                            + "end of the time window for data to be included in the response. If"
-                            + " this field is not specified no end time will be used."),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified), as well as the time zone of any times in the"
-                            + " response. If this field is not specified, the default time zone "
-                            + "of UTC shall be used."),
-                    @OpenApiParam(name = METHOD, description = "Specifies "
-                            + "the retrieval method used.  If no method is provided EAGER will be used.",
-                            type = RatingSet.DatabaseLoadMethod.class),
+                @OpenApiParam(name = OFFICE, required = true, description =
+                        "Specifies the owning office of the ratingset to be included in the "
+                                + "response."),
+                @OpenApiParam(name = BEGIN, description = "Specifies the "
+                        + "start of the time window for data to be included in the response. "
+                        + "If this field is not specified no start time will be used."),
+                @OpenApiParam(name = END, description = "Specifies the "
+                        + "end of the time window for data to be included in the response. If"
+                        + " this field is not specified no end time will be used."),
+                @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                        + "the time zone of the values of the begin and end fields (unless "
+                        + "otherwise specified), as well as the time zone of any times in the"
+                        + " response. If this field is not specified, the default time zone "
+                        + "of UTC shall be used."),
+                @OpenApiParam(name = METHOD, description = "Specifies "
+                        + "the retrieval method used.  If no method is provided EAGER will be used.",
+                        type = RatingSet.DatabaseLoadMethod.class),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(type = Formats.JSONV2),
-                            @OpenApiContent(type = Formats.XMLV2)})},
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(type = Formats.JSONV2),
+                    @OpenApiContent(type = Formats.XMLV2)})},
             description = "Returns CWMS Rating Data",
             tags = {TAG})
 
@@ -385,7 +409,7 @@ public class RatingController implements CrudHandler {
                     if (ratingSet != null) {
                         if (Formats.JSONV2.equals(acceptHeader)) {
                             retval = JsonRatingUtils.toJson(ratingSet);
-                        } else if (Formats.XMLV2.equals(acceptHeader)) {
+                        } else {
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
                         }
                     } else {
@@ -420,7 +444,7 @@ public class RatingController implements CrudHandler {
                                    String officeId, String rating, Instant begin,
                                    Instant end) throws IOException, RatingException {
         RatingSet ratingSet;
-        try (final Timer.Context ignored = markAndTime("getRatingSet")){
+        try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
@@ -433,22 +457,23 @@ public class RatingController implements CrudHandler {
     @Override
     @OpenApi(description = "Update a RatingSet",
             requestBody = @OpenApiRequestBody(content = {
-                    @OpenApiContent(type = Formats.XMLV2),
-                    @OpenApiContent(type = Formats.JSONV2)
+                @OpenApiContent(type = Formats.XMLV2),
+                @OpenApiContent(type = Formats.JSONV2)
             }, required = true),
             queryParams = {
-                    @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
-                            description = "Also store updates to the rating template. Default: true")
+                @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
+                        description = "Also store updates to the rating template. Default: true")
             },
             method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
-        try (final Timer.Context ignored = markAndTime(UPDATE)){
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
 
-            boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
+            boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class)
+                    .getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx);
             ratingDao.store(ratingSet, storeTemplate);
             ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated RatingSet");
