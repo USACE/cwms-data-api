@@ -24,27 +24,8 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.queryParamAsZdt;
-import static cwms.cda.api.Controllers.requiredParam;
-import static cwms.cda.api.Controllers.requiredZdt;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
@@ -52,24 +33,29 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.time.ZonedDateTime;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static cwms.cda.api.Controllers.*;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class TextTimeSeriesController implements CrudHandler {
@@ -78,26 +64,26 @@ public class TextTimeSeriesController implements CrudHandler {
 
     public static final String REPLACE_ALL = "replace-all";
 
-
-    private final MetricRegistry metrics;
-
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
-    private final String contextPath;
 
-    public static final String CONTEXT_TOKEN = "{context-path}";
-    public static final String OFFICE_TOKEN = "{office}";
-    public static final String CLOB_TOKEN = "{clob-id}";
-    public final static String clobTemplate = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
-
+    private static final String CONTEXT_TOKEN = "{context-path}";
+    private static final String OFFICE_TOKEN = "{office}";
+    private static final String CLOB_TOKEN = "{clob-id}";
+    private static final String URL_TEMPLATE = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
+    private final MetricRegistry metrics;
+    private final ReplaceUtils.OperatorBuilder urlBuilder;
     public TextTimeSeriesController(MetricRegistry metrics, String contextPath) {
         this.metrics = metrics;
-        this.contextPath = contextPath;  // like /spk-data
+        urlBuilder = new ReplaceUtils.OperatorBuilder()
+                .withTemplate(URL_TEMPLATE)
+                .withOperatorKey(CLOB_TOKEN)
+                .replace(CONTEXT_TOKEN, contextPath, false);
     }
 
     @NotNull
     protected TimeSeriesTextDao getDao(DSLContext dsl) {
-        return new TimeSeriesTextDao(dsl, clobTemplate );
+        return new TimeSeriesTextDao(dsl);
     }
 
 
@@ -118,9 +104,9 @@ public class TextTimeSeriesController implements CrudHandler {
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window."),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.  If not specified, the maximum version date is used."),
-                    @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value to retrieve. If not specified, no minimum value is used."),
-                    @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value to retrieve. If not specified, no maximum value is used."),
+                    @OpenApiParam(name = LENGTH_LIMIT, description = "Maximum number of kilobytes to return for each row in the initial payload. " +
+                            "Text values over this threshold can be streamed using a URL reference in the row level DTO. " +
+                            "The default is 64 kilobytes.", type = Integer.class)
 
             },
             responses = {
@@ -136,15 +122,10 @@ public class TextTimeSeriesController implements CrudHandler {
 
         String office = requiredParam(ctx, OFFICE);
         String tsId = requiredParam(ctx, NAME);
-        ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
-        ZonedDateTime endZdt = requiredZdt(ctx, END);
-        ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
-        boolean maxVersion = versionZdt == null;
-
-        Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
-        Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
-
-
+        Instant begin = requiredInstant(ctx, BEGIN);
+        Instant end = requiredInstant(ctx, END);
+        Instant version = queryParamAsInstant(ctx, VERSION_DATE);
+        int kiloByteLimit = ctx.queryParamAsClass(LENGTH_LIMIT, Integer.class).getOrDefault(64);
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -153,19 +134,9 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String textMask = "*";
 
-//            String contextPath = this.contextPath;
-//            String protocol = ctx.protocol();// HTTP/1.1
-//            String host = ctx.host();// localhost:7000
-//            String requestURI = ctx.req.getRequestURI();// /spk-data/timeseries/text
-//            String pathInfo = ctx.req.getPathInfo();// "/text"
-//            String servletPath = ctx.req.getServletPath();// "/timeseries"
-
-            String requestTemplate = ReplaceUtils.replace(clobTemplate, CONTEXT_TOKEN, contextPath, false);
-            requestTemplate = ReplaceUtils.replace(requestTemplate, OFFICE_TOKEN, office);
-            Function<String, String> idToUrl = ReplaceUtils.replace(requestTemplate, CLOB_TOKEN);
-            TextTimeSeries textTimeSeries = dao.retrieveFromDao( office, tsId, textMask,
-                    beginZdt, endZdt, versionZdt,
-                    maxVersion, minAttr, maxAttr, idToUrl);
+            urlBuilder.replace(OFFICE_TOKEN, office);
+            TextTimeSeries textTimeSeries = dao.retrieveFromDao(office, tsId, textMask,
+                    begin, end, version, kiloByteLimit, urlBuilder);
 
             ctx.contentType(contentType.toString());
 
@@ -210,9 +181,8 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            String body = ctx.body();
 
-            TextTimeSeries tts = deserialize(body, formatHeader);
+            TextTimeSeries tts = deserializeBody(ctx, formatHeader);
             TimeSeriesTextDao dao = getDao(dsl);
 
             boolean maxVersion = true;
@@ -220,10 +190,8 @@ public class TextTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_CREATE_REPLACE_ALL);
             dao.create(tts, maxVersion, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException ex) {
+            throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
         }
     }
 
@@ -252,18 +220,14 @@ public class TextTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            String body = ctx.body();
-
-            TextTimeSeries tts = deserialize(body, formatHeader);
+            TextTimeSeries tts = deserializeBody(ctx, formatHeader);
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesTextDao dao = getDao(dsl);
             dao.store(tts,maxVersion, replaceAll);
 
-        } catch (JsonProcessingException e) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException e) {
+            throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
         }
     }
 
@@ -310,32 +274,34 @@ public class TextTimeSeriesController implements CrudHandler {
             String mask = requiredParam(ctx, Controllers.TEXT_MASK);
 
 
-            ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
-            ZonedDateTime endZdt = requiredZdt(ctx, END);
-            ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
+            Instant begin = requiredInstant(ctx, BEGIN);
+            Instant end = requiredInstant(ctx, END);
+            Instant version = queryParamAsInstant(ctx, VERSION_DATE);
 
-            boolean maxVersion = versionZdt == null;
+            boolean maxVersion = version == null;
 
             Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
             Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
 
             TimeSeriesTextDao dao = getDao(dsl);
 
-            dao.delete( office, textTimeSeriesId, mask, beginZdt, endZdt, versionZdt, maxVersion, minAttr, maxAttr);
+            dao.delete( office, textTimeSeriesId, mask, begin, end, version, maxVersion, minAttr, maxAttr);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
-    private static TextTimeSeries deserialize(String body, String format) throws JsonProcessingException {
-        TextTimeSeries retval;
-        if (ContentType.equivalent(Formats.JSONV2, format)) {
+    private static TextTimeSeries deserializeBody(@NotNull Context ctx, String formatHeader) throws IOException {
+        TextTimeSeries tts;
+
+        if (ContentType.equivalent(Formats.JSONV2, formatHeader)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, TextTimeSeries.class);
+            tts = om.readValue(ctx.bodyAsInputStream(), TextTimeSeries.class);
         } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
+            throw new IllegalArgumentException("Unsupported format: " + formatHeader);
         }
-        return retval;
+
+        return tts;
     }
 
 }

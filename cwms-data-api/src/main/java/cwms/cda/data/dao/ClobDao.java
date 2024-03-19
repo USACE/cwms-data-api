@@ -9,9 +9,15 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -249,7 +255,7 @@ public class ClobDao extends JooqDao<Clob> {
      * @param officeId the office
      * @param clobConsumer a consumer that should be handed the input stream and the length of the stream.
      */
-    public void getClob(String clobId, String officeId, BiConsumer<InputStream, Long> clobConsumer) {
+    public void getClob(String clobId, String officeId, ClobConsumer clobConsumer) {
         // Not using jOOQ here because we want the java.sql.Clob and not an automatic field binding.  We want
         // clob so that we can pull out a stream to the data and pass that to javalin.
         // If the request included Content-Ranges Javalin can have the stream skip to the correct
@@ -269,9 +275,9 @@ public class ClobDao extends JooqDao<Clob> {
                     if (resultSet.next()) {
                         java.sql.Clob clob = resultSet.getClob("VALUE");
                         if (clob != null) {
-                            clobConsumer.accept(clob.getAsciiStream(), clob.length());
+                            clobConsumer.accept(clob);
                         } else {
-                            clobConsumer.accept(null, 0L);
+                            clobConsumer.accept(null);
                         }
                     } else {
                         throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
@@ -279,5 +285,22 @@ public class ClobDao extends JooqDao<Clob> {
                 }
             }
         });
+    }
+
+    public static String readFully(java.sql.Clob clob) throws IOException, SQLException {
+        try(Reader reader = clob.getCharacterStream();
+            BufferedReader br = new BufferedReader(reader)) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while(null != (line = br.readLine())) {
+                sb.append(line);
+            }
+            return sb.toString();
+        }
+    }
+
+    @FunctionalInterface
+    public interface ClobConsumer {
+        void accept(java.sql.Clob blob) throws SQLException;
     }
 }

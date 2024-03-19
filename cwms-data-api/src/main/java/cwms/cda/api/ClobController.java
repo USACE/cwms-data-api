@@ -203,17 +203,14 @@ public class ClobController implements CrudHandler {
             if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
                 // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
-
-                BiConsumer<InputStream, Long> streamConsumer = (stream, length) -> {
-                    if (stream == null) {
+                dao.getClob(clobId, office, c -> {
+                    if (c == null) {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                                 + "clob based on given parameters"));
                     } else {
-                        ctx.seekableStream(stream, TEXT_PLAIN, length);
+                        ctx.seekableStream(c.getAsciiStream(), TEXT_PLAIN, c.length());
                     }
-                };
-
-                dao.getClob(clobId, office, streamConsumer);
+                });
             } else {
                 Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 

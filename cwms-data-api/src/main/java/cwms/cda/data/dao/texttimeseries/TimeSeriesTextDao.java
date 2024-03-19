@@ -4,15 +4,7 @@ import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import cwms.cda.helpers.ReplaceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Configuration;
@@ -20,39 +12,29 @@ import org.jooq.DSLContext;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
-// based on https://bitbucket.hecdev.net/projects/CWMS/repos/hec-cwms-data-access/browse/hec-db-jdbc/src/main/java/wcds/dbi/oracle/cwms/CwmsTimeSeriesTextJdbcDao.java
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+
 public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
-    public static final String OFFICE_ID = "OFFICE_ID";
-    private String clobTemplate = "/clob/ignored?clob-id={clob-id}&office-id={office}";
-
+    public static final int TEXT_DOES_NOT_EXIST_ERROR_CODE = 20034;
+    public static final int TEXT_ID_DOES_NOT_EXIST_ERROR_CODE = 20001;
 
     public TimeSeriesTextDao(DSLContext dsl) {
         super(dsl);
     }
 
-    public TimeSeriesTextDao(DSLContext dsl, String clobTemplate) {
-        super(dsl);
-        this.clobTemplate = clobTemplate;
-    }
-
-    public TextTimeSeries retrieveFromDao(
-                                          @NotNull String officeId, @NotNull String tsId, String textMask,
-                                          @NotNull ZonedDateTime startTime, @NotNull ZonedDateTime endTime,
-                                          @Nullable ZonedDateTime versionDate,
-                                          boolean maxVersion,
-                                          @Nullable Long minAttribute, @Nullable Long maxAttribute
-    ) {
+    public TextTimeSeries retrieveFromDao(@NotNull String officeId, @NotNull String tsId,
+            String textMask, @NotNull Instant startTime, @NotNull Instant endTime,
+            @Nullable Instant versionDate, int kiloByteLimit, ReplaceUtils.OperatorBuilder urlBuilder) {
         List<RegularTextTimeSeriesRow> regRows;
 
-        RegularTimeSeriesTextDao regDao = getRegularDao();
-        Instant instant = null;
-        if (versionDate != null) {
-            instant = versionDate.toInstant();
-        }
+        RegularTimeSeriesTextDao regDao = new RegularTimeSeriesTextDao(dsl);
         regRows = regDao.retrieveRows(officeId, tsId, textMask,
-                startTime.toInstant(), endTime.toInstant(), instant,
-                maxVersion, minAttribute, maxAttribute);
+                startTime, endTime, versionDate, kiloByteLimit, urlBuilder);
 
         VersionType versionType = getVersionType(tsId, officeId, versionDate != null);
 
@@ -90,25 +72,25 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
 
     public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
-        ZonedDateTime versionDate = tts.getVersionDate();
+        Instant versionDate = tts.getVersionDate();
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
             regDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, regRows,
-                    versionDate == null ? null : versionDate.toInstant());
+                    versionDate);
         }
     }
     
     public void store(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
 
-        ZonedDateTime versionDate = tts.getVersionDate();
+        Instant versionDate = tts.getVersionDate();
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
 
             for (RegularTextTimeSeriesRow regRow : regRows) {
                 regDao.storeRow(tts.getOfficeId(), tts.getName(), regRow, maxVersion, replaceAll,
-                        versionDate == null ? null : versionDate.toInstant());
+                        versionDate);
             }
 
         }
@@ -117,25 +99,14 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     
 
     public void delete(String officeId, String textTimeSeriesId, String textMask,
-                       @NotNull ZonedDateTime start, @NotNull ZonedDateTime end,
-                        @Nullable ZonedDateTime versionDate, boolean maxVersion,
+                       @NotNull Instant start, @NotNull Instant end,
+                        @Nullable Instant versionDate, boolean maxVersion,
                         Long minAttribute, Long maxAttribute) {
-        Instant versionInstant = null;
-        if (versionDate != null) {
-            versionInstant = versionDate.toInstant();
-        }
 
         RegularTimeSeriesTextDao regDao = getRegularDao();
         regDao.delete(officeId, textTimeSeriesId, textMask,
-                start.toInstant(), end.toInstant(), versionInstant,
+                start, end, versionDate,
                 maxVersion, minAttribute, maxAttribute);
-    }
-
-
-    @NotNull
-    private RegularTimeSeriesTextDao getRegularDao(Function <String,String> idToUrl){
-
-        return new RegularTimeSeriesTextDao(dsl, idToUrl);
     }
 
     @NotNull
