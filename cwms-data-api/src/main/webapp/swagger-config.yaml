@@ -8,6 +8,13 @@ info:
     name: Support
     url: https://github.com/usace/cwms-data-api
 host: https://cmws-data.usace.army.mil
+servers: 
+  - url: https://cwms-data.usace.army.mil
+    description: PRIMARY production server
+  - url: https://water.usace.army.mil,
+    description: Alias for the PRIMARY production server
+  - url: https://cwms.sec.usace.army.mil,
+    description: CWBI Production Server
 url: /cwms-data/swagger-docs
 basePath: /cwms-data
 schemes:
