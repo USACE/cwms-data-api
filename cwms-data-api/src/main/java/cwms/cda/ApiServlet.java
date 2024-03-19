@@ -24,6 +24,7 @@
 
 package cwms.cda;
 
+import static cwms.cda.api.Controllers.NAME;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
@@ -39,6 +40,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BinaryTimeSeriesController;
+import cwms.cda.api.BinaryTimeSeriesValueController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
@@ -60,6 +62,7 @@ import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.TextTimeSeriesController;
+import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
@@ -388,14 +391,20 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
-        String contextPath = getServletConfig().getServletContext().getContextPath();  // like: /cwms-data or /spk-data
-
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache("/timeseries/text/{timeseries}",
-                new TextTimeSeriesController(metrics, contextPath), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/binary/{timeseries}",
-                new BinaryTimeSeriesController(metrics, contextPath), requiredRoles,5, TimeUnit.MINUTES);
+        String textTsPath = format("/timeseries/text/{%s}", NAME);
+        cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String textValuePath = textTsPath + "/value";
+        get(textValuePath, new TextTimeSeriesValueController(metrics));
+        addCacheControl(textValuePath, 1, TimeUnit.DAYS);
+
+        String binTsPath = format("/timeseries/binary/{%s}", NAME);
+        cdaCrudCache(binTsPath, new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String textBinaryValuePath = binTsPath + "/value";
+        get(textBinaryValuePath, new BinaryTimeSeriesValueController(metrics));
+        addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
+
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",

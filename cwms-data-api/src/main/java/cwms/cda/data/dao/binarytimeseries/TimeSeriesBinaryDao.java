@@ -1,5 +1,6 @@
 package cwms.cda.data.dao.binarytimeseries;
 
+import cwms.cda.api.Controllers;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
@@ -17,6 +18,8 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,6 +35,7 @@ import java.util.TimeZone;
 
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
+import static java.lang.String.format;
 import static usace.cwms.db.dao.util.OracleTypeMap.formatBool;
 
 public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
@@ -40,7 +44,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final String VALUE = "VALUE"; // Old
     private static final String ID = "ID";  //Old
     private static final String BLOB = "BLOB";
-    private static final String MEDIA_TYPE = "MEDIA_TYPE";
+    private static final String MEDIA_TYPE = "MEDIA_TYPE_ID";
     private static final String FILENAME = "FILENAME";
     private static final  String QUALITY = "QUALITY";
     private static final  String DEST_FLAG = "DEST_FLAG";
@@ -104,8 +108,8 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
      * @param endStamp The last time for the binary data. If specified the binary data is
      *                 associated with all times from p_start_time to p_end_time (inclusive). Times
      *                 must already exist for irregular time series.
-     * @param verStamp The version date for the time series.  If not specified or NULL, the minimum
-     *                 or maximum version date (depending on p_max_version) is used.
+     * @param verStamp The version date for the time series.  If not specified or NULL, the
+     *                 maximum version date is used.
      * @param timeZone The time zone for p_start_time, p_end_time, and p_version_date. If not
      *                 specified or NULL, the local time zone of the time series' location is used.
      * @param maxVersion A flag specifying whether to use the maximum version date if
@@ -209,7 +213,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 List<BinaryTimeSeriesRow> rows = new ArrayList<>();
                 try(ResultSet rs = (ResultSet) stmt.getObject(1)) {
                     while (rs.next()) {
-                        BinaryTimeSeriesRow row = buildRow(officeId, tsId, byteLimit, urlBuilder, rs);
+                        BinaryTimeSeriesRow row = buildRow(byteLimit, urlBuilder, rs);
                         rows.add(row);
                     }
                 }
@@ -217,7 +221,9 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
             } catch (SQLException e) {
                 int errorCode = e.getErrorCode();
                 if (errorCode == TEXT_DOES_NOT_EXIST_ERROR_CODE || errorCode == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
-                    throw new NoDataFoundException("No data found for binary timeseries: " + tsId);
+                    NoDataFoundException ex = new NoDataFoundException("No data found for binary timeseries: " + tsId);
+                    ex.initCause(e);
+                    throw ex;
                 } else {
                     throw new DataAccessException("Error retrieving binary timeseries: " + tsId, e);
                 }
@@ -225,33 +231,33 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         });
     }
 
-    private BinaryTimeSeriesRow buildRow(String officeId, String tsId, long byteLimit,
-            ReplaceUtils.OperatorBuilder urlBuilder, ResultSet rs) throws SQLException {
+    private BinaryTimeSeriesRow buildRow(long byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, ResultSet rs)
+            throws SQLException, IOException {
+        //Implementation will change with new CWMS schema
+        //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
         Instant dateTime = rs.getTimestamp(DATE_TIME, UTC_CALENDAR).toInstant();
         Instant dataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, UTC_CALENDAR).toInstant();
-        String binaryId = rs.getString(ID);
+        String mediaType = rs.getString(MEDIA_TYPE);
         BinaryTimeSeriesRow.Builder builder = new BinaryTimeSeriesRow.Builder()
                 .withDateTime(dateTime)
                 .withDataEntryDate(dataEntryDate)
                 .withFilename(dateTime.getEpochSecond() + ".bin")
-                .withMediaType("application/octet-stream")
+                .withMediaType(mediaType)
                 .withQualityCode(0L)
                 .withDestFlag(0);
-        BlobDao blobDao = new BlobDao(dsl);
-        blobDao.getBlob(binaryId, officeId, (b, m) -> {
-            builder.withMediaType(m);
-            if (b.length() > byteLimit) {
-                String url = urlBuilder.build().apply(dateTime.toString());
-                builder.withValueUrl(url);
-            } else {
-                try (InputStream is = b.getBinaryStream()) {
-                    byte[] bytes = BlobDao.readFully(is);
-                    builder.withBinaryValue(bytes);
-                } catch (IOException ex) {
-                    throw new DataAccessException("Error reading BLOB data for timeseries: " + tsId, ex);
-                }
+        Blob b = rs.getBlob(VALUE);
+        if (b.length() > byteLimit) {
+            String binaryId = rs.getString(ID);
+            String url = urlBuilder.build().apply(dateTime.toString())
+                    //Hard-coding for now. Will be removed with schema update
+                    + format("&%s=%s", Controllers.BLOB_ID, URLEncoder.encode(binaryId, "UTF-8"));
+            builder.withValueUrl(url);
+        } else {
+            try (InputStream is = b.getBinaryStream()) {
+                byte[] bytes = BlobDao.readFully(is);
+                builder.withBinaryValue(bytes);
             }
-        });
+        }
         return builder.build();
     }
 
@@ -261,9 +267,9 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
         stmt.setString(2, tsId);
         stmt.setString(3, mask);
-        stmt.setTimestamp(4, pStartTime);
-        stmt.setTimestamp(5, pEndTime);
-        stmt.setTimestamp(6, pVersionDate);
+        stmt.setTimestamp(4, pStartTime, UTC_CALENDAR);
+        stmt.setTimestamp(5, pEndTime, UTC_CALENDAR);
+        stmt.setTimestamp(6, pVersionDate, UTC_CALENDAR);
         stmt.setString(7, pTimeZone);
         stmt.setString(8, "T");
         stmt.setString(9, "T");

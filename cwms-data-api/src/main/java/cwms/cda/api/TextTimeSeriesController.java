@@ -45,11 +45,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,18 +71,10 @@ public class TextTimeSeriesController implements CrudHandler {
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
 
-    private static final String CONTEXT_TOKEN = "{context-path}";
-    private static final String OFFICE_TOKEN = "{office}";
-    private static final String CLOB_TOKEN = "{clob-id}";
-    private static final String URL_TEMPLATE = String.format("%s/clob/ignored?clob-id=%s&office-id=%s", CONTEXT_TOKEN, CLOB_TOKEN, OFFICE_TOKEN);
     private final MetricRegistry metrics;
-    private final ReplaceUtils.OperatorBuilder urlBuilder;
-    public TextTimeSeriesController(MetricRegistry metrics, String contextPath) {
+
+    public TextTimeSeriesController(MetricRegistry metrics) {
         this.metrics = metrics;
-        urlBuilder = new ReplaceUtils.OperatorBuilder()
-                .withTemplate(URL_TEMPLATE)
-                .withOperatorKey(CLOB_TOKEN)
-                .replace(CONTEXT_TOKEN, contextPath, false);
     }
 
     @NotNull
@@ -93,6 +89,9 @@ public class TextTimeSeriesController implements CrudHandler {
 
 
     @OpenApi(
+            summary = "Retrieve text time series values for a provided time window and date version." +
+                    "If individual values exceed 64 kilobytes, a URL to a separate download is provided " +
+                    "instead of being included in the returned payload from this request.",
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Text TimeSeries whose data is to be included in the response."),
@@ -103,10 +102,7 @@ public class TextTimeSeriesController implements CrudHandler {
                             + "otherwise specified). If this field is not specified, "
                             + "the default time zone of UTC shall be used."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time window."),
-                    @OpenApiParam(name = LENGTH_LIMIT, description = "Maximum number of kilobytes to return for each row in the initial payload. " +
-                            "Text values over this threshold can be streamed using a URL reference in the row level DTO. " +
-                            "The default is 64 kilobytes.", type = Integer.class)
+                    @OpenApiParam(name = END, required = true, description = "The end of the time window.")
 
             },
             responses = {
@@ -125,7 +121,7 @@ public class TextTimeSeriesController implements CrudHandler {
         Instant begin = requiredInstant(ctx, BEGIN);
         Instant end = requiredInstant(ctx, END);
         Instant version = queryParamAsInstant(ctx, VERSION_DATE);
-        int kiloByteLimit = ctx.queryParamAsClass(LENGTH_LIMIT, Integer.class).getOrDefault(64);
+        int kiloByteLimit = Integer.parseInt(System.getProperty("cda.api.ts.text.max.length.kB", "64"));
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -134,7 +130,18 @@ public class TextTimeSeriesController implements CrudHandler {
 
             String textMask = "*";
 
-            urlBuilder.replace(OFFICE_TOKEN, office);
+            String dateToken = "{date_token}";
+            String url = new URIBuilder(ctx.fullUrl())
+                    .setPath(ctx.path() + "/" + tsId + "/value")
+                    .clearParameters()
+                    .addParameter(OFFICE, office)
+                    .addParameter(VERSION_DATE, ctx.queryParam(VERSION_DATE))
+                    .addParameter(DATE, dateToken)
+                    .build()
+                    .toString();
+            ReplaceUtils.OperatorBuilder urlBuilder = new ReplaceUtils.OperatorBuilder()
+                    .withTemplate(url)
+                    .withOperatorKey(URLEncoder.encode(dateToken, "UTF-8"));
             TextTimeSeries textTimeSeries = dao.retrieveFromDao(office, tsId, textMask,
                     begin, end, version, kiloByteLimit, urlBuilder);
 
@@ -144,7 +151,7 @@ public class TextTimeSeriesController implements CrudHandler {
             ctx.result(result);
 
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (Exception ex) {
+        } catch (URISyntaxException | UnsupportedEncodingException ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -185,10 +192,8 @@ public class TextTimeSeriesController implements CrudHandler {
             TextTimeSeries tts = deserializeBody(ctx, formatHeader);
             TimeSeriesTextDao dao = getDao(dsl);
 
-            boolean maxVersion = true;
-
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_CREATE_REPLACE_ALL);
-            dao.create(tts, maxVersion, replaceAll);
+            dao.create(tts, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
         } catch (IOException ex) {
             throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
@@ -216,7 +221,6 @@ public class TextTimeSeriesController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
@@ -224,7 +228,7 @@ public class TextTimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesTextDao dao = getDao(dsl);
-            dao.store(tts,maxVersion, replaceAll);
+            dao.store(tts, replaceAll);
 
         } catch (IOException e) {
             throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
@@ -255,13 +259,7 @@ public class TextTimeSeriesController implements CrudHandler {
                         + " window"),
                 @OpenApiParam(name = END, required = true, description = "The end of the time window." ),
                 @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
-                        + "series.  If not specified, maximum version date is used."),
-                @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description =
-                        "The minimum attribute value to delete. If not specified, no minimum "
-                                + "value is used."),
-                @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description =
-                        "The maximum attribute value to delete. If not specified, no maximum "
-                                + "value is used.")
+                        + "series.  If not specified, maximum version date is used.")
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
@@ -278,14 +276,9 @@ public class TextTimeSeriesController implements CrudHandler {
             Instant end = requiredInstant(ctx, END);
             Instant version = queryParamAsInstant(ctx, VERSION_DATE);
 
-            boolean maxVersion = version == null;
-
-            Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
-            Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
-
             TimeSeriesTextDao dao = getDao(dsl);
 
-            dao.delete( office, textTimeSeriesId, mask, begin, end, version, maxVersion, minAttr, maxAttr);
+            dao.delete( office, textTimeSeriesId, mask, begin, end, version);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
@@ -303,5 +296,4 @@ public class TextTimeSeriesController implements CrudHandler {
 
         return tts;
     }
-
 }

@@ -12,10 +12,8 @@ import org.jooq.DSLContext;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
@@ -71,28 +69,22 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
     }
 
 
-    public void create(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
+    public void create(TextTimeSeries tts, boolean replaceAll) {
         Instant versionDate = tts.getVersionDate();
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
-            regDao.storeRows(tts.getOfficeId(), tts.getName(), maxVersion, replaceAll, regRows,
-                    versionDate);
+            regDao.storeRows(tts.getOfficeId(), tts.getName(), replaceAll, regRows, versionDate);
         }
     }
     
-    public void store(TextTimeSeries tts, boolean maxVersion, boolean replaceAll) {
+    public void store(TextTimeSeries tts, boolean replaceAll) {
 
         Instant versionDate = tts.getVersionDate();
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
         if (regRows != null) {
             RegularTimeSeriesTextDao regDao = getRegularDao();
-
-            for (RegularTextTimeSeriesRow regRow : regRows) {
-                regDao.storeRow(tts.getOfficeId(), tts.getName(), regRow, maxVersion, replaceAll,
-                        versionDate);
-            }
-
+            regDao.storeRows(tts.getOfficeId(), tts.getName(), replaceAll, regRows, versionDate);
         }
 
     }
@@ -100,39 +92,15 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
 
     public void delete(String officeId, String textTimeSeriesId, String textMask,
                        @NotNull Instant start, @NotNull Instant end,
-                        @Nullable Instant versionDate, boolean maxVersion,
-                        Long minAttribute, Long maxAttribute) {
+                        @Nullable Instant versionDate) {
 
         RegularTimeSeriesTextDao regDao = getRegularDao();
         regDao.delete(officeId, textTimeSeriesId, textMask,
-                start, end, versionDate,
-                maxVersion, minAttribute, maxAttribute);
+                start, end, versionDate);
     }
 
     @NotNull
     private RegularTimeSeriesTextDao getRegularDao(){
         return new RegularTimeSeriesTextDao(dsl);
-    }
-
-    @Nullable
-    public static Date getDate(@Nullable Instant startTime) {
-        Date startDate;
-        if (startTime != null) {
-            startDate = Date.from(startTime);
-        } else {
-            startDate = null;
-        }
-        return startDate;
-    }
-
-    @Nullable
-    public static Date getDate(@Nullable Timestamp startTime) {
-        Date startDate;
-        if (startTime != null) {
-            startDate = new Date(startTime.getTime());
-        } else {
-            startDate = null;
-        }
-        return startDate;
     }
 }

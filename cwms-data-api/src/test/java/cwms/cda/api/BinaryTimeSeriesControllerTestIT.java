@@ -1,62 +1,62 @@
 package cwms.cda.api;
 
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
-import cwms.cda.helpers.DateUtils;
-import fixtures.CwmsDataApiSetupCallback;
+import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Date;
-import javax.servlet.http.HttpServletResponse;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import io.restassured.response.ResponseBody;
 import org.apache.commons.io.IOUtils;
-import org.jooq.DSLContext;
-import org.junit.jupiter.api.AfterEach;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+
+import static cwms.cda.api.Controllers.BLOB_ID;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static io.restassured.RestAssured.given;
+import static java.util.stream.Collectors.toMap;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";
     private static final String locationId = "TsBinTestLoc";
-    private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
+    private static byte[] LARGE_BYTES;
     public static final String BEGIN_STR = "2008-05-01T15:00:00Z";
     public static final String END_STR = "2008-05-01T23:00:00Z";
+    private String tsId;
 
     @BeforeAll
     public static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
-        createTimeseries(OFFICE, tsId, 0);
+        LARGE_BYTES = new byte[1024 * 100];
+        Random random = new Random();
+        random.nextBytes(LARGE_BYTES);
     }
 
-    @AfterEach
-    public void cleanup() throws Exception {
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
-                    DSLContext dsl = getDslContext(c, OFFICE);
-
-            ZonedDateTime startZdt = DateUtils.parseUserDate(BEGIN_STR, "UTC");
-            ZonedDateTime endZdt = DateUtils.parseUserDate(END_STR, "UTC");
-
-            CWMS_TEXT_PACKAGE.call_DELETE_TS_BINARY(dsl.configuration(),
-                    tsId, "*", Timestamp.from(startZdt.toInstant()), Timestamp.from(endZdt.toInstant()), null, "UTC",
-                   "T", null, null, OFFICE)
-                   ;
-                }
-        );
+    @BeforeEach
+    public void setup() throws Exception {
+        tsId = locationId + ".Flow.Inst.1Hour.0." + Instant.now().getEpochSecond() + (int)(Math.random() * 100);
+        createTimeseries(OFFICE, tsId, 0);
     }
 
 
@@ -78,7 +78,6 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam("name", tsId)
             .queryParam("begin", BEGIN_STR)
             .queryParam("end", END_STR)
-            .queryParam("max-version","false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -86,17 +85,14 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
+                .statusCode(is(HttpServletResponse.SC_OK))
                 .body("binary-values.size()", equalTo(0))
         ;
 
         // Step 2)
         // Create the binary time series
 
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assertNotNull(tsData);
+        String tsData = getTsBody();
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -125,7 +121,6 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam("name", tsId)
             .queryParam("begin", BEGIN_STR)
             .queryParam("end", END_STR)
-            .queryParam("max-version","false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -135,10 +130,57 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("binary-values.size()", equalTo(3))
-
         ;
 
 
+    }
+
+    @NotNull
+    private String getTsBody() throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        bts = new BinaryTimeSeries.Builder()
+                .withBinaryValues(bts.getBinaryValues())
+                .withName(tsId)
+                .withOfficeId(OFFICE)
+                .withTimeZone(bts.getTimeZone())
+                .withDateVersionType(bts.getDateVersionType())
+                .withVersionDate(bts.getVersionDate())
+                .withIntervalOffset(bts.getIntervalOffset())
+                .build();
+        return om.writeValueAsString(bts);
+    }
+
+    @NotNull
+    private String getTsBodyLarge() throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_large_value.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        BinaryTimeSeriesRow row1 = bts.getBinaryValues().iterator().next();
+
+        bts = new BinaryTimeSeries.Builder()
+                .withBinaryValue(new BinaryTimeSeriesRow.Builder()
+                        .withDateTime(row1.getDateTime())
+                        .withBinaryValue(LARGE_BYTES)
+                        .withMediaType(row1.getMediaType())
+                        .build())
+                .withName(tsId)
+                .withOfficeId(OFFICE)
+                .withTimeZone(bts.getTimeZone())
+                .withDateVersionType(bts.getDateVersionType())
+                .withVersionDate(bts.getVersionDate())
+                .withIntervalOffset(bts.getIntervalOffset())
+                .build();
+        return om.writeValueAsString(bts);
     }
 
     @Test
@@ -155,10 +197,7 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Step 1)
         // Create the binary time series
 
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assertNotNull(tsData);
+        String tsData = getTsBody();
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -175,7 +214,8 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
 
         // Step 2)
         // Retrieve the binary time series and assert that it exists
@@ -187,7 +227,6 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam("name", tsId)
             .queryParam("begin", BEGIN_STR)
             .queryParam("end", END_STR)
-            .queryParam("max-version","false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -260,79 +299,72 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Retrieve a binary time series and assert that it does not exist
         //Read
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam("name", tsId)
-                .queryParam("begin", BEGIN_STR)
-                .queryParam("end", END_STR)
-                .queryParam("max-version","false")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/binary/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("binary-values.size()", equalTo(0))
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("binary-values.size()", equalTo(0))
         ;
 
 
         // Step 2)
         // Create the binary time series
 
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assertNotNull(tsData);
+        String tsData = getTsBody();
+        InputStream resource;
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization", user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/binary/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // Step 3)
         // Retrieve the binary time series and assert that it exists
 
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.BEGIN, BEGIN_STR)
-                .queryParam(Controllers.END, END_STR)
-
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/binary/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("binary-values.size()", equalTo(3))
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("binary-values.size()", equalTo(3))
         ;
 
         // Step 4)
         // Update the binary time series
 
-        resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_update.json");
-        assertNotNull(resource);
-        tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assertNotNull(tsData);
+        tsData = getTsUpdateBody();
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -361,7 +393,6 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam("name", tsId)
             .queryParam("begin", BEGIN_STR)
             .queryParam("end", END_STR)
-//                .queryParam("version-date", versionDateStr)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -373,6 +404,150 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("binary-values.size()", equalTo(3))
             .body("binary-values[1].binary-value", equalTo(newValue))
         ;
+    }
+
+    @NotNull
+    private String getTsUpdateBody() throws IOException {
+        InputStream resource;
+        String tsData;
+        resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_update.json");
+        assertNotNull(resource);
+        tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        bts = new BinaryTimeSeries.Builder()
+                .withBinaryValues(bts.getBinaryValues())
+                .withName(tsId)
+                .withOfficeId(OFFICE)
+                .withTimeZone(bts.getTimeZone())
+                .withDateVersionType(bts.getDateVersionType())
+                .withVersionDate(bts.getVersionDate())
+                .withIntervalOffset(bts.getIntervalOffset())
+                .build();
+        return om.writeValueAsString(bts);
+    }
+
+    @Test
+    void test_large_data_url() throws Exception {
+
+        // Structure of test:
+        // 1)Retrieve a binary time series and assert that it does not exist
+        // 2)Create the binary time series with a large binary value
+        // 3)Retrieve the binary time series and assert that it gives me back a new url to retrieve with
+        // 4)Retrieve the single value from the new url
+
+        // Step 1)
+        // Retrieve a binary time series and assert that it does not exist
+        //Read
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam("name", tsId)
+            .queryParam("begin", BEGIN_STR)
+            .queryParam("end", END_STR)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("binary-values.size()", equalTo(0))
+        ;
+
+        // Step 2)
+        // Create the binary time series
+
+        String tsData = getTsBodyLarge();
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 3)
+        // Retrieve the binary time series and assert that it exists
+
+        String valueUrl = given()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                            .accept(Formats.JSONV2)
+                            .queryParam("office", OFFICE)
+                            .queryParam("name", tsId)
+                            .queryParam("begin", BEGIN_STR)
+                            .queryParam("end", END_STR)
+                        .when()
+                            .redirects().follow(true)
+                            .redirects().max(3)
+                            .get("/timeseries/binary/")
+                        .then()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                        .assertThat()
+                            .statusCode(is(HttpServletResponse.SC_OK))
+                            .body("binary-values.size()", equalTo(1))
+                            .body("binary-values[0].binary-value", is(nullValue()))
+                            .body("binary-values[0].value-url", is(notNullValue()))
+                            .extract()
+                            .response()
+                            .path("binary-values[0].value-url");
+        // Step 4)
+        // Use the URL returned in the JSON to download the large byte[]
+        URIBuilder builder = new URIBuilder(valueUrl);
+        assertTrue(builder.getPath().contains("timeseries/binary/" + tsId + "/value"));
+        assertTrue(builder.getQueryParams().stream()
+                .anyMatch(v -> v.getName().equals(Controllers.OFFICE) && v.getValue().equals(OFFICE)));
+        assertTrue(builder.getQueryParams().stream()
+                .anyMatch(v -> v.getName().equals(VERSION_DATE)));
+        assertTrue(builder.getQueryParams().stream()
+                .anyMatch(v -> v.getName().equals(BLOB_ID)));
+        Map<String, String> params = builder.getQueryParams()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(s -> s.getName() != null)
+                .filter(s -> s.getValue() != null)
+                .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
+        ResponseBody body = given()
+                                .log().ifValidationFails(LogDetail.ALL, true)
+                                .accept(Formats.JSONV2)
+                                .queryParams(params)
+                                .basePath("")
+                            .when()
+                                .redirects().follow(true)
+                                .redirects().max(3)
+                                .get(builder.getPath())
+                            .then()
+                                .log().ifValidationFails(LogDetail.ALL, true)
+                            .assertThat()
+                                .statusCode(is(HttpServletResponse.SC_OK))
+                                .header("Transfer-Encoding", equalTo("chunked"))
+                                .contentType(equalTo("application/octet-stream"))
+                                .extract()
+                                .response()
+                                .body();
+
+        byte[] data = new byte[LARGE_BYTES.length];
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+             InputStream is = body.asInputStream()) {
+            int nRead;
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+            assertArrayEquals(LARGE_BYTES, buffer.toByteArray());
+        }
     }
 
 }

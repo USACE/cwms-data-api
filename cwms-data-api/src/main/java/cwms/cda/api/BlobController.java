@@ -1,24 +1,8 @@
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -45,15 +29,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import javax.servlet.http.HttpServletResponse;
-import kotlin.Triple;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.*;
 
 
 /**
