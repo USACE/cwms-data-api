@@ -11,6 +11,7 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
+import cwms.cda.helpers.ReplaceUtils;
 import fixtures.CwmsDataApiSetupCallback;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -92,8 +93,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         Long maxAttr = null;
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
-                startInstant, endInstant, versionInstant,
-                maxVersion, minAttr, maxAttr);
+                startInstant, endInstant, versionInstant, 64, new ReplaceUtils.OperatorBuilder());
 
         Assertions.assertNotNull(tts);
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
@@ -114,7 +114,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // retrieve and verify
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, versionInstant,
-                maxVersion, minAttr, maxAttr);
+                64, new ReplaceUtils.OperatorBuilder());
 
         Assertions.assertNotNull(tts);
         regRows = tts.getRegularTextValues();
@@ -153,7 +153,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, null,
-                maxVersion, minAttr, maxAttr);
+                64, new ReplaceUtils.OperatorBuilder());
 
         Assertions.assertNotNull(tts);
 
@@ -203,7 +203,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, null,
-                maxVersion, minAttr, maxAttr);
+                64, new ReplaceUtils.OperatorBuilder());
 
         Assertions.assertNotNull(tts);
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
@@ -217,7 +217,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // Step 3: retrieve it again and verify its gone
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, versionInstant,
-                maxVersion, minAttr, maxAttr);
+                64, new ReplaceUtils.OperatorBuilder());
         Assertions.assertNotNull(tts);
         regRows = tts.getRegularTextValues();
         assertNotNull(regRows);
@@ -254,7 +254,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
         TextTimeSeries tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, versionInstant,
-                false, null, null);
+                64, new ReplaceUtils.OperatorBuilder());
 
         Assertions.assertNotNull(tts);
         Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
@@ -284,7 +284,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // Step 3: retrieve it again and verify its updated
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
                 startInstant, endInstant, versionInstant,
-                true, null, null);
+                64, new ReplaceUtils.OperatorBuilder());
         Assertions.assertNotNull(tts);
         regRows = tts.getRegularTextValues();
         Assertions.assertNotNull(regRows);
@@ -316,7 +316,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 dao.retrieveTimeSeriesText(officeId, "ASDFASFDASDF.Flow"
                                 + ".Inst.1Hour.0.raw", "*",
                         startInstant, endInstant, null,
-                        maxVersion, minAttr, maxAttr);
+                        64, new ReplaceUtils.OperatorBuilder());
             });
 
             Throwable cause = thrown.getCause();
@@ -350,7 +350,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
 
                 dao.retrieveTimeSeriesText(officeId, badFId, "*",
                         startInstant, endInstant, null,
-                        maxVersion, minAttr, maxAttr);
+                        64, new ReplaceUtils.OperatorBuilder());
             });
 
             Throwable cause = thrown.getCause();
