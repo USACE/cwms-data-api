@@ -34,6 +34,8 @@ import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
+
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
 
@@ -111,6 +113,7 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
+    public static final String LENGTH_LIMIT = "length-limit";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
@@ -298,6 +301,16 @@ public final class Controllers {
         return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
+    @Nullable
+    public static Instant queryParamAsInstant(Context ctx, String param) {
+        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+        Instant retval = null;
+        if(zonedDateTime != null) {
+            retval = zonedDateTime.toInstant();
+        }
+        return retval;
+    }
+
     /**
      * Parses the named parameters as ZonedDateTime or throws RequiredQueryParameterException.
      * @param ctx Request Context
@@ -311,6 +324,21 @@ public final class Controllers {
             throw new RequiredQueryParameterException(param);
         }
         return zdt;
+    }
+
+    /**
+     * Parses the named parameters as Instant or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param param Query parameter name
+     * @return Instant
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static Instant requiredInstant(Context ctx, String param) {
+        Instant retval = queryParamAsInstant(ctx, param);
+        if (retval == null) {
+            throw new RequiredQueryParameterException(param);
+        }
+        return retval;
     }
 
 

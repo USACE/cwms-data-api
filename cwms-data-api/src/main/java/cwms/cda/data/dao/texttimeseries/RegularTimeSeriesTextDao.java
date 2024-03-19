@@ -1,28 +1,11 @@
 package cwms.cda.data.dao.texttimeseries;
 
-import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.getDate;
-
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.NavigableSet;
-import java.util.TimeZone;
-import java.util.TreeSet;
+import cwms.cda.helpers.ReplaceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -32,7 +15,27 @@ import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
-public class RegularTimeSeriesTextDao extends JooqDao {
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.TimeZone;
+import java.util.TreeSet;
+
+public final class RegularTimeSeriesTextDao extends JooqDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final TimeZone DEFAULT_TIME_ZONE = TimeZone.getDefault();
@@ -50,20 +53,12 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     private static final String FILENAME = "FILENAME";
     public static final  String QUALITY = "QUALITY";
     public static final  String DEST_FLAG = "DEST_FLAG";
+    private static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 
 
     private static final int TEXT_DOES_NOT_EXIST_ERROR_CODE = 20034;
     private static final int TEXT_ID_DOES_NOT_EXIST_ERROR_CODE = 20001;
-
-    private static final List<String> timeSeriesTextColumnsList;
-
-    static {
-        String[] array = new String[]{DATE_TIME, VERSION_DATE, DATA_ENTRY_DATE, CLOB, QUALITY, FILENAME, MEDIA_TYPE, DEST_FLAG};
-        Arrays.sort(array);
-        timeSeriesTextColumnsList = Arrays.asList(array);
-    }
-
 
     public RegularTimeSeriesTextDao(DSLContext dsl) {
         super(dsl);
@@ -104,153 +99,104 @@ public class RegularTimeSeriesTextDao extends JooqDao {
     }
 
 
-    private ResultSet retrieveTsTextF(String pTsid, String textMask,
-                                     Date startTime, Date endTime, Date versionDate,
-                                     TimeZone timeZone, boolean maxVersion,
-                                     Long minAttribute, Long maxAttribute, String officeId) {
+    private ResultSet retrieveTsTextF(String pTsid, String textMask, Date startTime, Date endTime,
+            Date versionDate, String officeId) {
         Timestamp pStartTime = createTimestamp(startTime);
         Timestamp pEndTime = createTimestamp(endTime);
         Timestamp pVersionDate = createTimestamp(versionDate);
-        String pTimeZone = createTimeZoneId(timeZone);
-        String pMaxVersion = OracleTypeMap.formatBool(maxVersion);
-        return CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_TEXT_F(dsl.configuration(),
-                pTsid, textMask,
-                pStartTime,
-                pEndTime,
-                pVersionDate,
-                pTimeZone,
-                pMaxVersion, minAttribute, maxAttribute, officeId).intoResultSet();
+        String pTimeZone = OracleTypeMap.GMT_TIME_ZONE.getID();
+        String pMaxVersion = "T";
+        return CWMS_TEXT_PACKAGE.call_RETRIEVE_TS_TEXT_F(dsl.configuration(), pTsid, textMask,
+                pStartTime, pEndTime, pVersionDate, pTimeZone, pMaxVersion, null, null,
+                officeId).intoResultSet();
     }
 
 
     protected TextTimeSeries retrieveTimeSeriesText(
             String officeId, String tsId, String textMask,
             Instant startTime, Instant endTime, Instant versionDate,
-            boolean maxVersion, Long minAttribute, Long maxAttribute)  {
+            int kiloByteLimit, ReplaceUtils.OperatorBuilder urlBuilder)  {
 
         List<RegularTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, textMask,
-                startTime, endTime, versionDate, maxVersion, minAttribute, maxAttribute);
-
-        ZonedDateTime versionZdt = versionDate == null ? null : versionDate.atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId());
+                startTime, endTime, versionDate, kiloByteLimit, urlBuilder);
 
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
         return builder.withName(tsId)
                 .withOfficeId(officeId)
                 .withRegularTextValues(rows)
-                .withVersionDate(versionZdt)
+                .withVersionDate(versionDate)
                 .build();
     }
 
     public List<RegularTextTimeSeriesRow> retrieveRows(
             String officeId, String tsId, String textMask,
             Instant startTime, Instant endTime, Instant versionDate,
-            boolean maxVersion, Long minAttribute, Long maxAttribute)  {
-        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
-        List<RegularTextTimeSeriesRow> rows;
-
-        try (ResultSet retrieveTsTextF = retrieveTsTextF(tsId, textMask,
-                getDate(startTime), getDate(endTime), getDate(versionDate), timeZone,
-                maxVersion, minAttribute, maxAttribute,
-                officeId)) {
-            rows = buildRows(retrieveTsTextF, officeId);
-        } catch (SQLException e) {
-            if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
-                throw new NoDataFoundException();
-            } else {
-                throw new RuntimeException(e);  // TODO: wrap with something else.
+            int kiloByteLimit, ReplaceUtils.OperatorBuilder urlBuilder)  {
+        return connectionResult(dsl, conn -> {
+            // Making the call from jOOQ package codegen does not work
+            // b/c jOOQ MockResultSet eagerly loads the CLOB
+            // we want to only load CLOB's under kiloByteLimit size.
+            try (CallableStatement stmt = conn.prepareCall("{call CWMS_TEXT.RETRIEVE_TS_STD_TEXT(?,?,?,?,?,?,?,?,?,?,?,?)}")) {
+                parameterizeRetrieveTsStdText(stmt, tsId, textMask, startTime, endTime, versionDate, officeId);
+                stmt.execute();
+                ResultSet rs = (ResultSet) stmt.getObject(1);
+                //UTF-16 conversion and assumes 2 bytes per character
+                long characterLimit = kiloByteLimit * 1024L / 2;
+                List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
+                while (rs.next()) {
+                    RegularTextTimeSeriesRow row = buildRow(rs, characterLimit, urlBuilder);
+                    rows.add(row);
+                }
+                return rows;
+            } catch (SQLException e) {
+                if (e.getErrorCode() == TEXT_DOES_NOT_EXIST_ERROR_CODE || e.getErrorCode() == TEXT_ID_DOES_NOT_EXIST_ERROR_CODE) {
+                    throw new NoDataFoundException();
+                } else {
+                    throw new RuntimeException(e);  // TODO: wrap with something else.
+                }
             }
-        }
-        return rows;
+        });
     }
 
-    @NotNull
-    private List<RegularTextTimeSeriesRow> buildRows(ResultSet rs, String office) throws SQLException {
-//        OracleTypeMap.checkMetaData(rs.getMetaData(), timeSeriesTextColumnsList, TYPE);
-        List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
-
-        while (rs.next()) {
-            RegularTextTimeSeriesRow row = buildRow(rs, office);
-            rows.add(row);
-        }
-        return rows;
+    private static void parameterizeRetrieveTsStdText(CallableStatement stmt, String tsId, String textMask,
+            Instant pStartTime, Instant pEndTime, Instant pVersionDate,
+            String officeId) throws SQLException {
+        stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
+        stmt.setString(2, tsId);
+        stmt.setString(3, textMask);
+        stmt.setTimestamp(4,Timestamp.from(pStartTime));
+        stmt.setTimestamp(5, Timestamp.from(pEndTime));
+        stmt.setTimestamp(6, pVersionDate == null ?  null : Timestamp.from(pVersionDate));
+        stmt.setString(7, "UTC");
+        stmt.setString(8, "T");
+        stmt.setString(9, "T");
+        stmt.setNull(10, Types.NUMERIC);
+        stmt.setNull(11, Types.NUMERIC);
+        stmt.setString(12, officeId);
     }
 
-    private RegularTextTimeSeriesRow buildRow(ResultSet rs, String office) throws SQLException {
-        Instant tsDateTime = getInstant(rs.getTimestamp(DATE_TIME));
-        Instant tsDataEntryDate = getInstant(rs.getTimestamp(DATA_ENTRY_DATE));
+    private RegularTextTimeSeriesRow buildRow(ResultSet rs, long characterLimit,
+            ReplaceUtils.OperatorBuilder urlBuilder) throws SQLException, IOException {
+        Instant dateTime = rs.getTimestamp(DATE_TIME, UTC_CALENDAR).toInstant();
+        Instant dataEntryDate = rs.getTimestamp(DATA_ENTRY_DATE, UTC_CALENDAR).toInstant();
 
         RegularTextTimeSeriesRow.Builder builder = new RegularTextTimeSeriesRow.Builder()
-                .withDateTime(tsDateTime)
-                .withDataEntryDate(tsDataEntryDate);
-
-        ResultSetMetaData metaData = rs.getMetaData();
-
-        String filename = null;
-        if (OracleTypeMap.containsColumnIgnoreCase(metaData, FILENAME)) {
-            filename = rs.getString(FILENAME);
+                .withDateTime(dateTime)
+                .withDataEntryDate(dataEntryDate)
+                .withFilename(dateTime.getEpochSecond() + ".txt")
+                .withMediaType("text/plain");
+        String textId = rs.getString(TEXT_ID);
+        Clob clob = rs.getClob(TEXT);
+        if (clob.length() > characterLimit) {
+            String url = urlBuilder.build().apply(dateTime.toString())
+                    //Hard-coding for now. Will be removed with schema update
+                    + "&text-id=" + URLEncoder.encode(textId, "UTF-8");
+            builder.withValueUrl(url);
+        } else {
+            builder.withTextValue(ClobDao.readFully(clob));
         }
-        if (filename == null) {
-            filename = buildDefaultFilename(rs, metaData, office);
-        }
-        builder = builder.withFilename(filename);
-
-        String mediaType = null;
-        if (OracleTypeMap.containsColumnIgnoreCase(metaData, MEDIA_TYPE)) {
-            mediaType = rs.getString(MEDIA_TYPE);
-        }
-        if (mediaType == null) {
-            mediaType = "text/plain";
-        }
-        builder = builder.withMediaType(mediaType);
-
-        String clobString = null;
-        if (OracleTypeMap.containsColumnIgnoreCase(metaData, CLOB)) {
-            clobString = rs.getString(CLOB);
-        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT)) {  // Old column
-            clobString = rs.getString(TEXT);
-        }
-        if (clobString != null) {
-            builder = builder.withTextValue(clobString);
-        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT_ID)) { //Old column
-            String textId = rs.getString(TEXT_ID);
-            if (textId != null && !textId.isEmpty()) {
-                ClobDao clobDao = new ClobDao(dsl);
-                RegularTextTimeSeriesRow.Builder finalBuilder = builder;
-                clobDao.getByUniqueName(textId, office)
-                        .ifPresent(clob -> finalBuilder.withTextValue(clob.getValue()));
-            }
-        }
-
-        if (OracleTypeMap.containsColumnIgnoreCase(metaData, QUALITY)) {
-            long qualityCode = rs.getLong(QUALITY);
-            builder = builder.withQualityCode(qualityCode);
-        }
-
-        if (OracleTypeMap.containsColumnIgnoreCase(metaData, DEST_FLAG)) {
-            Integer destFlag = rs.getObject(DEST_FLAG, Integer.class);  // nullable
-            builder = builder.withDestFlag(destFlag);
-        }
-
         return builder.build();
     }
-
-    protected String buildDefaultFilename(ResultSet rs, ResultSetMetaData metaData, String office)
-            throws SQLException {
-        String retval = "unknown.txt";
-        Instant tsDateTime = getInstant(rs.getTimestamp(DATE_TIME));
-
-        if (tsDateTime != null) {
-            retval =  tsDateTime.getEpochSecond() + ".txt";
-        } else if (OracleTypeMap.containsColumnIgnoreCase(metaData, TEXT_ID)) {
-            String textId = rs.getString(TEXT_ID);
-            if (textId != null && !textId.isEmpty()) {
-                retval = sanitizeFilename(textId);
-            }
-        }
-
-        return retval;
-    }
-
 
     @NotNull
     public static String sanitizeFilename(@Nullable String inputName) {
@@ -281,17 +227,6 @@ public class RegularTimeSeriesTextDao extends JooqDao {
         }
 
         return retval + ".txt";
-    }
-
-    @Nullable
-    private static Instant getInstant(Timestamp dateTime) {
-        Instant dateTimeInstant = null;
-        if (dateTime != null) {
-            dateTimeInstant = dateTime.toLocalDateTime()
-                    .atZone(OracleTypeMap.GMT_TIME_ZONE.toZoneId())
-                    .toInstant();
-        }
-        return dateTimeInstant;
     }
 
     public void storeRows(String officeId, String id, boolean maxVersion, boolean replaceAll,

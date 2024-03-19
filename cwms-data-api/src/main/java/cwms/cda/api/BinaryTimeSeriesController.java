@@ -24,26 +24,8 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.requiredParam;
-import static cwms.cda.api.Controllers.requiredZdt;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.binarytimeseries.TimeSeriesBinaryDao;
@@ -51,23 +33,29 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.time.ZonedDateTime;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jooq.DSLContext;
+
+import static cwms.cda.api.Controllers.*;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class BinaryTimeSeriesController implements CrudHandler {
@@ -77,12 +65,24 @@ public class BinaryTimeSeriesController implements CrudHandler {
     public static final String REPLACE_ALL = "replace-all";
     private static final String DEFAULT_BIN_TYPE_MASK = "*" ;
     public static final String BINARY_TYPE_MASK = "binary-type-mask";
+    private static final String CONTEXT_TOKEN = "{context-path}";
+    private static final String OFFICE_TOKEN = "{office}";
+    private static final String NAME_TOKEN = "{name}";
+    private static final String VERSION_DATE_TOKEN = "{version-date}";
+    private static final String DATE_TOKEN = "{date}";
+    private static final String URL_TEMPLATE = String.format("%s/blob/ignored?%s=%s&%s=%s&%s=%s&%s=%s",
+            CONTEXT_TOKEN, OFFICE, OFFICE_TOKEN, NAME, NAME_TOKEN, VERSION_DATE, VERSION_DATE_TOKEN,
+            DATE, DATE_TOKEN);
     private final MetricRegistry metrics;
+    private final ReplaceUtils.OperatorBuilder urlBuilder;
 
 
-
-    public BinaryTimeSeriesController(MetricRegistry metrics) {
+    public BinaryTimeSeriesController(MetricRegistry metrics, String contextPath) {
         this.metrics = metrics;
+        urlBuilder = new ReplaceUtils.OperatorBuilder()
+                .withTemplate(URL_TEMPLATE)
+                .withOperatorKey(DATE_TOKEN)
+                .replace(CONTEXT_TOKEN, contextPath, false);
     }
 
     @NotNull
@@ -114,8 +114,9 @@ public class BinaryTimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window"),
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series."),
-                    @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description = "The minimum attribute value. If not specified, no minimum value is used."),
-                    @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description = "The maximum attribute value. If not specified, no maximum value is used."),
+                    @OpenApiParam(name = LENGTH_LIMIT, description = "Maximum number of kilobytes to return for each row in the initial payload. " +
+                            "Binary values over this threshold can be streamed using a URL reference in the row level DTO. " +
+                            "The default is 64 kilobytes.", type = Integer.class)
 
             },
             responses = {
@@ -130,31 +131,26 @@ public class BinaryTimeSeriesController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         String office = requiredParam(ctx, OFFICE);
         String tsId = requiredParam(ctx, NAME);
-
-        ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
-        ZonedDateTime endZdt = requiredZdt(ctx, END);
-        ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
-        boolean maxVersion = true;
-        Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
-        Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
-
+        Instant begin = requiredInstant(ctx, BEGIN);
+        Instant end = requiredInstant(ctx, END);
+        Instant version = queryParamAsInstant(ctx, VERSION_DATE);
         String binTypeMask = ctx.queryParamAsClass(BINARY_TYPE_MASK, String.class).getOrDefault(DEFAULT_BIN_TYPE_MASK);
-
-        boolean retrieveBinary = true;
+        int kiloByteLimit = ctx.queryParamAsClass(LENGTH_LIMIT, Integer.class).getOrDefault(64);
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
+            urlBuilder.replace(OFFICE_TOKEN, office)
+                    .replace(NAME_TOKEN, tsId)
+                    .replace(VERSION_DATE_TOKEN, ctx.queryParam(VERSION_DATE));
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesBinaryDao dao = getDao(dsl);
 
             BinaryTimeSeries binaryTimeSeries = dao.retrieve(office, tsId, binTypeMask,
-                    beginZdt.toInstant(),
-                    endZdt.toInstant(),
-                    versionZdt==null? null: versionZdt.toInstant(),
-                    maxVersion,
-                    retrieveBinary,
-                    minAttr, maxAttr);
+                    begin,
+                    end,
+                    version==null? null: version,
+                    kiloByteLimit, urlBuilder);
 
             ctx.contentType(contentType.toString());
 
@@ -168,22 +164,6 @@ public class BinaryTimeSeriesController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
-    }
-
-    @Nullable
-    private static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
-        ZonedDateTime beginZdt = null;
-        String begin = ctx.queryParam(param);
-        if (begin != null) {
-            beginZdt = DateUtils.parseUserDate(begin, timezone);
-        }
-        return beginZdt;
-    }
-
-    @Nullable
-    private static ZonedDateTime queryParamAsZdt(Context ctx, String param) {
-        return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
     @OpenApi(ignore = true)
@@ -213,8 +193,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            String body = ctx.body();
-            BinaryTimeSeries tts = deserialize(body, formatHeader);
+            BinaryTimeSeries tts = deserializeBody(ctx, formatHeader);
             TimeSeriesBinaryDao dao = getDao(dsl);
 
             boolean maxVersion = true;
@@ -222,10 +201,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             dao.store(tts, maxVersion, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException ex) {
+            throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
         }
     }
 
@@ -256,17 +233,14 @@ public class BinaryTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            String body = ctx.body();
-            BinaryTimeSeries tts = deserialize(body, formatHeader);
+            BinaryTimeSeries tts = deserializeBody(ctx, formatHeader);
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesBinaryDao dao = getDao(dsl);
             dao.store(tts,maxVersion, replaceAll);
 
-        } catch (JsonProcessingException e) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException e) {
+            throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
         }
     }
 
@@ -293,14 +267,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
                     @OpenApiParam(name = END, required = true, description = "The end of the time window. "),
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                             + "series.  If not specified, the minimum or maximum version date "
-                            + "(depending on p_max_version) is used."),
-
-                    @OpenApiParam(name = Controllers.MIN_ATTRIBUTE, type = Long.class, description =
-                            "The minimum attribute value to delete. If not specified, no minimum "
-                                    + "value is used."),
-                    @OpenApiParam(name = Controllers.MAX_ATTRIBUTE, type = Long.class, description =
-                            "The maximum attribute value to delete. If not specified, no maximum "
-                                    + "value is used.")
+                            + "(depending on p_max_version) is used.")
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
@@ -313,32 +280,57 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             String mask = ctx.queryParamAsClass(BINARY_TYPE_MASK, String.class).getOrDefault(DEFAULT_BIN_TYPE_MASK);
 
-            boolean maxVersion = true;
-
-            ZonedDateTime beginZdt = requiredZdt(ctx, BEGIN);
-            ZonedDateTime endZdt = requiredZdt(ctx, END);
-            ZonedDateTime versionZdt = queryParamAsZdt(ctx, VERSION_DATE);
-
-            Long minAttr = ctx.queryParamAsClass(Controllers.MIN_ATTRIBUTE, Long.class).getOrDefault(null);
-            Long maxAttr = ctx.queryParamAsClass(Controllers.MAX_ATTRIBUTE, Long.class).getOrDefault(null);
+            Instant begin = requiredInstant(ctx, BEGIN);
+            Instant end = requiredInstant(ctx, END);
+            Instant version = queryParamAsInstant(ctx, VERSION_DATE);
 
             TimeSeriesBinaryDao dao = getDao(dsl);
 
-            dao.delete(office, binaryTimeSeriesId, mask, beginZdt, endZdt, versionZdt, maxVersion, minAttr, maxAttr);
+            dao.delete(office, binaryTimeSeriesId, mask, begin, end, version);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
+    private static BinaryTimeSeries deserializeBody(@NotNull Context ctx, String formatHeader) throws IOException {
+        BinaryTimeSeries bts;
 
-    private static BinaryTimeSeries deserialize(String body, String format) throws JsonProcessingException {
-        BinaryTimeSeries retval;
-        if (ContentType.equivalent(Formats.JSONV2, format)) {
+
+        if (ContentType.equivalent(Formats.JSONV2, formatHeader)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, BinaryTimeSeries.class);
+
+             /*
+              If the body is more than 1Mb then this:
+              bts = om.readValue(ctx.body(), BinaryTimeSeries.class) generates a warning that
+              looks like:  WARNING [http-nio-auto-1-exec-3] io.javalin.core.util.JavalinLogger.warn Body greater than max size (1000000 bytes)
+              Javalin will then automatically return 413 and close the connection.
+                 HTTP/1.1 413
+                 Strict-Transport-Security: max-age=31536000;includeSubDomains
+                 X-Frame-Options: SAMEORIGIN
+                 X-Content-Type-Options: nosniff
+                 X-XSS-Protection: 1; mode=block
+                 Content-Type: application/json
+                 Content-Length: 138
+                 Date: Wed, 28 Feb 2024 21:27:33 GMT
+                 Connection: close
+                 {
+                     "title": "Payload Too Large",
+                     "status": 413,
+                     "type": "https://javalin.io/documentation#error-responses",
+                     "details": {
+                     }
+                 }
+                 In ApiServlet we can adjust the maxRequest size via code like:
+                  config.maxRequestSize = 2000000L;  but that just sets the bar slightly higher.
+                  Javalin doesn't want to read big bodies b/c I think it holds on to them.
+                  We know this end-point can potentially deal with big bodies so the solution is
+                  just read the object from the body as an input stream.
+              */
+            bts = om.readValue(ctx.bodyAsInputStream(), BinaryTimeSeries.class);
         } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
+            throw new IllegalArgumentException("Unsupported format: " + formatHeader);
         }
-        return retval;
+
+        return bts;
     }
 
 }

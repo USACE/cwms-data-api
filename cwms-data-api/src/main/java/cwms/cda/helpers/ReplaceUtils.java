@@ -93,6 +93,9 @@ public class ReplaceUtils {
         }
 
         public OperatorBuilder replace(String key, String value, boolean encode) {
+            if(value == null) {
+                value = "";
+            }
             if (encode) {
                 try {
                     value = URLEncoder.encode(value, "UTF-8");

@@ -165,16 +165,15 @@ public class BlobController implements CrudHandler {
             String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);
 
-            Consumer<Triple<InputStream, Long, String>> tripleConsumer = triple -> {
-                InputStream is = triple.getFirst();
-                Long size = triple.getSecond();
-                String mediaType = triple.getThird();
+            BlobDao.BlobConsumer tripleConsumer = (blob, mediaType) -> {
 
-                if (is == null) {
+                if (blob == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
+                    long size = blob.length();
                     requestResultSize.update(size);
+                    InputStream is = blob.getBinaryStream();
                     ctx.seekableStream(is, mediaType, size);
                 }
             };

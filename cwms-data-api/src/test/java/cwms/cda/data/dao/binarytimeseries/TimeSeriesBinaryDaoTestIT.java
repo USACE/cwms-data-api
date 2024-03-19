@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
+import cwms.cda.helpers.ReplaceUtils;
 import fixtures.CwmsDataApiSetupCallback;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -53,10 +54,6 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
             Instant endInstant = endZDT.toInstant();
             Instant versionInstant = null;
 
-            boolean retrieveBinary = true;
-            Long minAttribute = null;
-            Long maxAttribute = null;
-
             byte[] data = "digital data".getBytes();
             String binaryType = "application/octet-stream";
 
@@ -72,9 +69,9 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
             dao.store(officeId, tsId, data, binaryType, startInstant, endInstant, versionInstant,
                     maxVersion, storeExisting, storeNonExisting, replaceAll);
 
+            ReplaceUtils.OperatorBuilder urlBuilder = new ReplaceUtils.OperatorBuilder();
             List<BinaryTimeSeriesRow> records = dao.retrieveRows(officeId, tsId, mask,
-                    startInstant, endInstant, versionInstant, maxVersion, retrieveBinary,
-                    minAttribute, maxAttribute);
+                    startInstant, endInstant, versionInstant, 64, urlBuilder);
             assertNotNull(records);
             assertFalse(records.isEmpty());
             BinaryTimeSeriesRow firstRecord = records.get(0);
@@ -86,24 +83,24 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
     @Test
     void test_bts_store_retrieve() throws SQLException {
 
-        ZonedDateTime startZDT = ZonedDateTime.parse("2005-01-01T08:00:00Z");
-        ZonedDateTime endZDT = ZonedDateTime.parse("2005-01-01T14:00:00Z");
+        Instant start = ZonedDateTime.parse("2005-01-01T08:00:00Z").toInstant();
+        Instant end = ZonedDateTime.parse("2005-01-01T14:00:00Z").toInstant();
 
         CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
         cwmsDb.connection(c -> {
             DSLContext dsl = getDslContext(c, "SPK");
             TimeSeriesBinaryDao dao = new TimeSeriesBinaryDao(dsl);
 
-            dao.delete(officeId, tsId, "*", startZDT, endZDT, null, true, null, null);
+            dao.delete(officeId, tsId, "*", start, end, null);
 
-            BinaryTimeSeries got = dao.retrieve(officeId, tsId, "*", startZDT.toInstant(), endZDT.toInstant(), null, true, true, null, null);
+            BinaryTimeSeries got = dao.retrieve(officeId, tsId, "*", start, end, null, 64, new ReplaceUtils.OperatorBuilder());
             assertNotNull(got);
             Collection<BinaryTimeSeriesRow> brows = got.getBinaryValues();
             assertTrue(brows == null || brows.isEmpty());  // its empty - but should it be?
 
             String nowStr = Instant.now().toString();
             BinaryTimeSeriesRow row = new BinaryTimeSeriesRow.Builder()
-                    .withDateTime(startZDT.toInstant())
+                    .withDateTime(start)
                     .withBinaryValue(nowStr.getBytes())
                     .withFilename("file.bin")
                     .withMediaType("application/octet-stream")
@@ -115,7 +112,7 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
                     .build();
             dao.store(bts, true, true );
 
-            got = dao.retrieve(officeId, tsId, "*bin", startZDT.toInstant(), endZDT.toInstant(), null, true, true, null, null);
+            got = dao.retrieve(officeId, tsId, "*bin", start, end, null, 64, new ReplaceUtils.OperatorBuilder());
             assertNotNull(got);
 
             Collection<BinaryTimeSeriesRow> rows = got.getBinaryValues();

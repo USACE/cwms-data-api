@@ -60,6 +60,7 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 public abstract class JooqDao<T> extends Dao<T> {
+    protected static final int ORACLE_CURSOR_TYPE = -10;
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     static ExecuteListener listener = new ExceptionWrappingListener();
