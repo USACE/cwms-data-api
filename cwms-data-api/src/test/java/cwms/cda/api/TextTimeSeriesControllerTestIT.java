@@ -24,27 +24,44 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static java.util.stream.Collectors.toMap;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
+import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DateUtils;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.ResponseBody;
 import io.restassured.response.ValidatableResponse;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,6 +85,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
 
     public static final String AUTHORIZATION = "Authorization";
+    private static String LARGE_STRING;
 
     @BeforeAll
     public static void create() throws Exception {
@@ -80,6 +98,15 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(dsl.configuration(), tsId, "T", OFFICE);
         });
 
+        // considering 1 character = 2 bytes in Java, hence dividing by 2 to get character count for 100KB size
+        int size = 1024 * 100 / 2;
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(size);
+        for (int i = 0; i < size; i++) {
+            // assuming only ascii characters.
+            sb.append((char) (random.nextInt(26) + 'a'));
+        }
+        LARGE_STRING = sb.toString();
     }
 
     @BeforeEach
@@ -357,4 +384,138 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
 
+    @Test
+    void test_large_data_url() throws Exception {
+
+        // Structure of test:
+        // 1)Retrieve a text time series and assert that it does not exist
+        // 2)Create the text time series with a large binary value
+        // 3)Retrieve the text time series and assert that it gives me back a new url to retrieve with
+        // 4)Retrieve the single value from the new url
+
+        String startStr = "2005-01-01T08:00:00Z";
+        String endStr = "2005-01-01T14:00:00Z";
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .body("regular-text-values", is(empty()))
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // create
+        String tsData = getTsBodyLarge();
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTHORIZATION, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //retrieve and verify
+        String valueUrl = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, startStr)
+            .queryParam(Controllers.END, endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .body("regular-text-values.size()", equalTo(1))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("regular-text-values[0].text-value", is(nullValue()))
+            .body("regular-text-values[0].value-url", is(notNullValue()))
+            .extract()
+            .response()
+            .path("regular-text-values[0].value-url");
+        // Use the URL returned in the JSON to download the large String
+        URIBuilder builder = new URIBuilder(valueUrl);
+        assertTrue(builder.getPath().contains("timeseries/text/" + tsId + "/value"));
+        assertTrue(builder.getQueryParams().stream()
+                .anyMatch(v -> v.getName().equals(Controllers.OFFICE) && v.getValue().equals(OFFICE)));
+        assertTrue(builder.getQueryParams().stream()
+                .anyMatch(v -> v.getName().equals(VERSION_DATE)));
+        assertTrue(builder.getQueryParams().stream()
+                .anyMatch(v -> v.getName().equals(CLOB_ID)));
+        Map<String, String> params = builder.getQueryParams()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(s -> s.getName() != null)
+                .filter(s -> s.getValue() != null)
+                .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
+        ResponseBody body = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParams(params)
+            .basePath("")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(builder.getPath())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .header("Transfer-Encoding", equalTo("chunked"))
+            .contentType(equalTo("text/plain"))
+            .extract()
+            .response()
+            .body();
+        try (InputStream is = body.asInputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+            assertEquals(LARGE_STRING, reader.readLine());
+        }
+    }
+
+
+    @NotNull
+    private String getTsBodyLarge() throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_large_value.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        TextTimeSeries textTs = om.readValue(tsData, TextTimeSeries.class);
+        RegularTextTimeSeriesRow row1 = textTs.getRegularTextValues().iterator().next();
+
+        textTs = new TextTimeSeries.Builder()
+                .withRegRow(new RegularTextTimeSeriesRow.Builder()
+                        .withDateTime(row1.getDateTime())
+                        .withTextValue(LARGE_STRING)
+                        .withMediaType(row1.getMediaType())
+                        .build())
+                .withName(tsId)
+                .withOfficeId(OFFICE)
+                .withTimeZone(textTs.getTimeZone())
+                .withDateVersionType(textTs.getDateVersionType())
+                .withVersionDate(textTs.getVersionDate())
+                .withIntervalOffset(textTs.getIntervalOffset())
+                .build();
+        return om.writeValueAsString(textTs);
+    }
 }

@@ -79,6 +79,7 @@ public final class Controllers {
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
+    public static final String BLOB_ID = "blob-id";
     public static final String INCLUDE_VALUES = "include-values";
     public static final String FAIL_IF_EXISTS = "fail-if-exists";
     public static final String IGNORE_NULLS = "ignore-nulls";
@@ -113,7 +114,6 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
-    public static final String LENGTH_LIMIT = "length-limit";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";

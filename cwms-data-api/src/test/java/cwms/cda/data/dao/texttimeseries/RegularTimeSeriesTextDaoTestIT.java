@@ -1,31 +1,32 @@
 package cwms.cda.data.dao.texttimeseries;
 
 
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.helpers.ReplaceUtils;
 import fixtures.CwmsDataApiSetupCallback;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Collection;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+import org.jooq.exception.NoDataFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.sql.SQLException;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.Collections;
+
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
@@ -108,7 +109,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 .withTextValue(testValue)
                 .build();
 
-        dao.storeRow(officeId, tsId, row, true, true, versionInstant);
+        dao.storeRows(officeId, tsId, true, Collections.singletonList(row), versionInstant);
 
 
         // retrieve and verify
@@ -212,7 +213,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
                 + "by store_reg_text_timeseries.sql");
 
         // Step 2: delete it
-        dao.delete(officeId, tsId, "*", startInstant, endInstant, null, false, null, null);
+        dao.delete(officeId, tsId, "*", startInstant, endInstant, null);
 
         // Step 3: retrieve it again and verify its gone
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
@@ -279,7 +280,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
         // .000-0800  which matches up to 3am 1/1 2005 in UTC.  looks right.
         // pl/sql default for maxVersion is true
         // and for replaceAll its false;  But we do want it to replaceAll to update the value.
-        dao.storeRow(officeId, tsId, row, true, true, versionInstant);
+        dao.storeRows(officeId, tsId, true, Collections.singletonList(row), versionInstant);
 
         // Step 3: retrieve it again and verify its updated
         tts = dao.retrieveTimeSeriesText(officeId, tsId, "*",
@@ -307,12 +308,7 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
             Instant startInstant = startZDT.toInstant();
             Instant endInstant = endZDT.toInstant();
 
-            boolean maxVersion = false;
-
-            Long minAttr = null;
-            Long maxAttr = null;
-
-            DataAccessException thrown = assertThrows(DataAccessException.class, () -> {
+            NotFoundException thrown = assertThrows(NotFoundException.class, () -> {
                 dao.retrieveTimeSeriesText(officeId, "ASDFASFDASDF.Flow"
                                 + ".Inst.1Hour.0.raw", "*",
                         startInstant, endInstant, null,
@@ -339,14 +335,9 @@ class RegularTimeSeriesTextDaoTestIT extends DataApiTestIT {
             Instant startInstant = startZDT.toInstant();
             Instant endInstant = endZDT.toInstant();
 
-            boolean maxVersion = false;
-
-            Long minAttr = null;
-            Long maxAttr = null;
-
             String badFId = tsId.replace(".raw", ".asdfasdf");
 
-            DataAccessException thrown = assertThrows(DataAccessException.class, () -> {
+            NotFoundException thrown = assertThrows(NotFoundException.class, () -> {
 
                 dao.retrieveTimeSeriesText(officeId, badFId, "*",
                         startInstant, endInstant, null,

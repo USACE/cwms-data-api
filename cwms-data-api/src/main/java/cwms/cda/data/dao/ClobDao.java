@@ -1,26 +1,10 @@
 package cwms.cda.data.dao;
 
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
-import static org.jooq.impl.DSL.noCondition;
-
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.BiConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -35,6 +19,17 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CLOB;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+
+import static org.jooq.impl.DSL.*;
 
 public class ClobDao extends JooqDao<Clob> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();

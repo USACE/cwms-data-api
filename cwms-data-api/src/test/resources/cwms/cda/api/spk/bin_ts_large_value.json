@@ -1,0 +1,12 @@
+{
+  "office-id": "SPK",
+  "name": "TsBinTestLoc.Flow.Inst.1Hour.0.raw",
+  "interval-offset": 0,
+  "time-zone": "PST",
+  "binary-values": [
+    {
+      "date-time": 1209654000000,
+      "media-type": "application/octet-stream"
+    }
+  ]
+}

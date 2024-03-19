@@ -2,6 +2,13 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.ResultQuery;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,14 +17,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import kotlin.Triple;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.ResultQuery;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
 
