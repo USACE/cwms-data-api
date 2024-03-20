@@ -44,6 +44,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
@@ -63,6 +64,7 @@ import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
+import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.auth.ApiKeyController;
@@ -376,15 +378,14 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
         cdaCrudCache("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles,60, TimeUnit.MINUTES);
-        LevelsController levelsController = new LevelsController(metrics);
         cdaCrudCache("/levels/{" + Controllers.LEVEL_ID + "}",
-                levelsController, requiredRoles,5, TimeUnit.MINUTES);
+                new LevelsController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         String levelTsPath = "/levels/{" + Controllers.LEVEL_ID + "}/timeseries";
-        get(levelTsPath, levelsController::getLevelAsTimeSeries);
+        get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         String recentPath = "/timeseries/recent/{group-id}";
-        get(recentPath, tsController::getRecent);
+        get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
