@@ -154,6 +154,8 @@ public final class Controllers {
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String TRIM = "trim";
 
+    public static final String FORECAST_SPEC = "forecast-spec";
+
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
