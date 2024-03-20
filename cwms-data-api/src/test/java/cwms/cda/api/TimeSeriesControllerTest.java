@@ -226,7 +226,7 @@ class TimeSeriesControllerTest extends ControllerTest {
     @Test
     void testGetIds(){
         String input = "a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c";
-        List<String> tsIds = TimeSeriesController.getTsIds(input);
+        List<String> tsIds = TimeSeriesRecentController.getTsIds(input);
         assertNotNull(tsIds);
         assertEquals(3, tsIds.size());
 
@@ -236,7 +236,7 @@ class TimeSeriesControllerTest extends ControllerTest {
 
         // input can have double quotes too
         input = "\"a.b.c.e.f\",2a.2b.2c.2d,\"3a.3b.3c\"";
-        tsIds = TimeSeriesController.getTsIds(input);
+        tsIds = TimeSeriesRecentController.getTsIds(input);
         assertNotNull(tsIds);
         assertEquals(3, tsIds.size());
         // but you will get them back
@@ -246,7 +246,7 @@ class TimeSeriesControllerTest extends ControllerTest {
 
         // input can have brackets too
         input = "[a.b.c.e.f,2a.2b.2c.2d,3a.3b.3c]";
-        tsIds = TimeSeriesController.getTsIds(input);
+        tsIds = TimeSeriesRecentController.getTsIds(input);
         assertNotNull(tsIds);
         assertEquals(3, tsIds.size());
 
