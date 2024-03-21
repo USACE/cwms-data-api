@@ -79,7 +79,8 @@ public class TimeSeriesBinaryDaoTestIT extends DataApiTestIT {
             assertFalse(records.isEmpty());
             BinaryTimeSeriesRow firstRecord = records.get(0);
             assertNotNull(firstRecord);
-        });
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
