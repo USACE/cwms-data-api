@@ -1,0 +1,18 @@
+{
+  "spec-id": "spec",
+  "date-time": 1624284010000,
+  "issue-date-time": 1653221020000,
+  "first-date-time": 1692702150000,
+  "last-date-time": 1727017260000,
+  "max-age": 5,
+  "time-series-count": 3,
+  "notes": "test notes",
+  "metadata": {
+    "key1": "value1",
+    "key2": "value2",
+    "key3": "value3"
+  },
+  "filename": "testFilename.txt",
+  "file-description": "test file description",
+  "file-data": "dGVzdCBmaWxlIGNvbnRlbnQ="
+}
