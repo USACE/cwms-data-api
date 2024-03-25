@@ -967,10 +967,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     SQLException cause = (SQLException)e.getCause();
 
                     if (cause.getErrorCode() != TS_ID_MISSING_CODE) {
-                        throw cause;
+                        throw e;
                     }
                     // Ignore tsId not found exceptions. tsDao.store() will create tsId if it is not found
                     logger.log(Level.FINER, e, () -> "TS ID: " + tsId + " not found at office: " + officeId);
+                } else {
+                    throw e;
                 }
             }
         }
