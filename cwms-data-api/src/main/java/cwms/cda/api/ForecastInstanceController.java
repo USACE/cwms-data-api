@@ -18,7 +18,7 @@ import static cwms.cda.api.Controllers.SIZE;
 public class ForecastInstanceController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(ForecastInstanceController.class.getName());
 
-    public static final String TAG = "ForecastInstance";
+    public static final String TAG = "Forecast";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
