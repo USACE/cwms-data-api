@@ -36,10 +36,12 @@ import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.LOCATION;
 import static cwms.cda.api.Controllers.LOCATION_MASK;
 import static cwms.cda.api.Controllers.MAX_VERSION;
+import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
 import static cwms.cda.api.Controllers.SPEC_ID;
@@ -92,7 +94,9 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -115,7 +119,9 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String forecastSpecId) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -149,7 +155,9 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -182,7 +190,9 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -205,8 +215,9 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
-
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
 }

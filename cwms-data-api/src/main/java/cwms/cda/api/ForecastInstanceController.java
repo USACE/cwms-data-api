@@ -21,10 +21,12 @@ import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.FORECAST_DATE_TIME;
+import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.ISSUE_DATE_TIME;
 import static cwms.cda.api.Controllers.LOCATION;
 import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
@@ -71,7 +73,9 @@ public class ForecastInstanceController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -101,7 +105,9 @@ public class ForecastInstanceController implements CrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String forecastSpecId) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -134,16 +140,18 @@ public class ForecastInstanceController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
             description = "Used to get all forecast instances for a given forecast spec",
             queryParams = {
                     @OpenApiParam(name = FORECAST_DATE_TIME, required = true, description = "Specifies the " +
-                            "owning office of the forecast instance to be retrieved."),
+                            "forecast date time of the forecast instance to be retrieved."),
                     @OpenApiParam(name = ISSUE_DATE_TIME, required = true, description = "Specifies the " +
-                            "owning office of the forecast instance to be retrieved."),
+                            "issue date time of the forecast instance to be retrieved."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
                             "owning office of the forecast spec whose forecast instance is to be " +
                             "included in the response."),
@@ -171,7 +179,9 @@ public class ForecastInstanceController implements CrudHandler {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
     @OpenApi(
@@ -191,8 +201,9 @@ public class ForecastInstanceController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
-
-
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        }
     }
 
 }
