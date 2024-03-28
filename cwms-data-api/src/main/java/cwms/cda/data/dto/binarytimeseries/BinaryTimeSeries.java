@@ -1,6 +1,5 @@
 package cwms.cda.data.dto.binarytimeseries;
 
-import static cwms.cda.data.dto.TimeSeries.ZONED_DATE_TIME_FORMAT;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -44,7 +43,7 @@ public class BinaryTimeSeries extends CwmsDTO {
     VersionType dateVersionType;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @Schema(description = "The version date of the time series trace")
     ZonedDateTime versionDate;
 

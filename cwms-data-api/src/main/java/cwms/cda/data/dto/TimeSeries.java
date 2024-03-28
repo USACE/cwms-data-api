@@ -21,7 +21,6 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import cwms.cda.api.enums.VersionType;
@@ -67,7 +66,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     VersionType dateVersionType;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = Shape.STRING)
     @Schema(description = "The version date of the time series trace")
     ZonedDateTime versionDate;
 
@@ -81,7 +80,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     Duration interval;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
             description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
@@ -89,7 +88,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     ZonedDateTime begin;
 
     @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
             description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"

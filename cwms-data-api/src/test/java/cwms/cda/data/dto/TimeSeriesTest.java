@@ -1,6 +1,9 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.formatters.json.JsonV2;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -43,6 +46,7 @@ public class TimeSeriesTest
 		assertTrue(ts.getEnd().isEqual(ts2.getEnd()));
 		assertEquals(ts.getUnits(), ts2.getUnits());
 		assertEquals(ts.getValues(), ts2.getValues());
+		assertEquals(ts.getVersionDate().toInstant(), ts2.getVersionDate().toInstant());
 		assertNull(ts.getVerticalDatumInfo());
 	}
 
@@ -85,8 +89,8 @@ public class TimeSeriesTest
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-
-		return new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, null, null);
+		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+		return new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, versionDate, null);
 	}
 
 	VerticalDatumInfo buildVerticalDatumInfo()
@@ -112,7 +116,7 @@ public class TimeSeriesTest
 	@NotNull
 	public static ObjectMapper buildObjectMapper()
 	{
-		return buildObjectMapper(new ObjectMapper());
+		return JsonV2.buildObjectMapper();
 	}
 
 	@NotNull
