@@ -124,6 +124,12 @@ public final class Controllers {
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
 
+    public static final String SPEC_ID = "spec-id";
+    public static final String LOCATION = "location";
+    public static final String SOURCE_ENTITY = "source-entity";
+    public static final String FORECAST_DATE_TIME = "forecast-date-time";
+    public static final String ISSUE_DATE_TIME = "issue-date-time";
+
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
@@ -131,8 +137,9 @@ public final class Controllers {
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
-    public static final String ID_MASK = "id-mask";
     public static final String OFFICE_MASK = "office-mask";
+    public static final String ID_MASK = "id-mask";
+    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -156,6 +163,8 @@ public final class Controllers {
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String TRIM = "trim";
+
+    public static final String FORECAST_SPEC = "forecast-spec";
 
 
     static {
