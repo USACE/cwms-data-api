@@ -82,7 +82,7 @@ public class ForecastSpecController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
                             "owning office of the forecast spec whose data is to be deleted."),
                     @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
-                            "spec if of the forecast spec whose data is to be deleted."),
+                            "spec id of the forecast spec whose data is to be deleted."),
                     @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
                             "location of the forecast spec whose data is to be deleted."),
             },
