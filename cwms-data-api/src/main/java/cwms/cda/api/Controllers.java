@@ -124,6 +124,8 @@ public final class Controllers {
     public static final String SPEC_ID = "spec-id";
     public static final String LOCATION = "location";
     public static final String SOURCE_ENTITY = "source-entity";
+    public static final String FORECAST_DATE_TIME = "forecast-date-time";
+    public static final String ISSUE_DATE_TIME = "issue-date-time";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
