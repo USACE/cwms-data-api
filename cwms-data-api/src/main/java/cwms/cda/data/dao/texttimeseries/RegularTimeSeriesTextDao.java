@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 import static java.lang.String.format;
+import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 
 public final class RegularTimeSeriesTextDao extends JooqDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -203,9 +204,11 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
         String textValue = regularTextTimeSeriesRow.getTextValue();
         Instant dateTime = regularTextTimeSeriesRow.getDateTime();
 
-        CWMS_TEXT_PACKAGE.call_STORE_TS_TEXT(configuration, tsId, textValue, Timestamp.from(dateTime), Timestamp.from(dateTime),
+        DATE_TABLE_TYPE dateTableType = new DATE_TABLE_TYPE();
+        dateTableType.add(Timestamp.from(dateTime));
+        CWMS_TEXT_PACKAGE.call_STORE_TS_TEXT__2(configuration, tsId, textValue, dateTableType,
                 versionDate == null ? null : Timestamp.from(versionDate), "UTC",
-                "T", "T", "T", OracleTypeMap.formatBool(replaceAll), null, officeId);
+                "T", OracleTypeMap.formatBool(replaceAll), null, officeId);
     }
 
     public void delete(String officeId, String tsId, String textMask,
