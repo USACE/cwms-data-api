@@ -121,8 +121,6 @@ public final class Controllers {
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
 
-    public static final String LOCATION = "location";
-
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
     public static final String FORECAST_DATE = "forecast-date";
