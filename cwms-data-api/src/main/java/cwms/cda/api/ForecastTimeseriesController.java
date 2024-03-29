@@ -18,15 +18,15 @@ import org.jooq.DSLContext;
 import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.FORECAST_DATE_TIME;
+import static cwms.cda.api.Controllers.FORECAST_DATE;
 import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ISSUE_DATE_TIME;
-import static cwms.cda.api.Controllers.LOCATION;
+import static cwms.cda.api.Controllers.ISSUE_DATE;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SPEC_ID;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
 
 public class ForecastTimeseriesController implements CrudHandler {
@@ -56,19 +56,19 @@ public class ForecastTimeseriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                    @OpenApiParam(name = FORECAST_DATE_TIME, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the " +
                             "forecast date time of the forecast instance to be associated with the created" +
                             "forecast timeseries."),
-                    @OpenApiParam(name = ISSUE_DATE_TIME, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the " +
                             "issue date time of the forecast instance to be associated with the created " +
                             "forecast timeseries."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
                             "owning office of the forecast spec whose forecast instance will be " +
                             "associated with the created forecast timeseries."),
-                    @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
                             "spec id of the forecast spec whose forecast instance will be " +
                             "associated with the created forecast timeseries."),
-                    @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
                             "location of the forecast spec whose forecast instance will be" +
                             "associated with the created forecast timeseries."),
                     @OpenApiParam(name = TIMESERIES_ID, required = true, description = "Id of timeseries " +

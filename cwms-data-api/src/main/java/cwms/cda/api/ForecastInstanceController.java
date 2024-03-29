@@ -20,18 +20,15 @@ import org.jooq.DSLContext;
 import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.FORECAST_DATE_TIME;
+import static cwms.cda.api.Controllers.FORECAST_DATE;
 import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ID_MASK;
-import static cwms.cda.api.Controllers.ISSUE_DATE_TIME;
-import static cwms.cda.api.Controllers.LOCATION;
-import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.ISSUE_DATE;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SOURCE_ENTITY;
-import static cwms.cda.api.Controllers.SPEC_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.api.Controllers.STATUS_404;
@@ -81,18 +78,18 @@ public class ForecastInstanceController implements CrudHandler {
     @OpenApi(
             description = "Used to delete forecast instance data based on unique fields",
             queryParams = {
-                    @OpenApiParam(name = FORECAST_DATE_TIME, required = true, description = "Specifies the " +
-                            "owning office of the forecast instance to be deleted."),
-                    @OpenApiParam(name = ISSUE_DATE_TIME, required = true, description = "Specifies the " +
-                            "owning office of the forecast instance to be deleted."),
+                    @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the " +
+                            "forecast date time of the forecast instance to be deleted."),
+                    @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the " +
+                            "issue date time of the forecast instance to be deleted."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
-                            "owning office of the forecast spec associated with the forecast instance" +
+                            "owning office of the forecast spec associated with the forecast instance " +
                             "to be deleted."),
-                    @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
                             "spec id of the forecast spec associated with the forecast instance" +
                             "to be deleted."),
-                    @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
-                            "location of the forecast spec associated with the forecast instance" +
+                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
+                            "location of the forecast spec associated with the forecast instance " +
                             "to be deleted."),
             },
             responses = {
@@ -113,15 +110,15 @@ public class ForecastInstanceController implements CrudHandler {
     @OpenApi(
             description = "Used to get all forecast instances for a given forecast spec",
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = OFFICE, description = "Specifies the " +
                             "owning office of the forecast spec whose forecast instance is to be " +
-                            "included in the response."),
-                    @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
+                            "included in the response. Default will be all offices."),
+                    @OpenApiParam(name = NAME, description = "Specifies the " +
                             "spec id of the forecast spec whose forecast instance data is to be " +
-                            "included in the response."),
-                    @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
+                            "included in the response. Default will be all names."),
+                    @OpenApiParam(name = LOCATION_ID, description = "Specifies the " +
                             "location of the forecast spec whose forecast instance data to be included " +
-                            "in the response."),
+                            "in the response. Default will be all locations."),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -129,8 +126,6 @@ public class ForecastInstanceController implements CrudHandler {
                             content = {
                                     @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)}),
                     @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a forecast instance."),
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
@@ -148,17 +143,17 @@ public class ForecastInstanceController implements CrudHandler {
     @OpenApi(
             description = "Used to get all forecast instances for a given forecast spec",
             queryParams = {
-                    @OpenApiParam(name = FORECAST_DATE_TIME, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the " +
                             "forecast date time of the forecast instance to be retrieved."),
-                    @OpenApiParam(name = ISSUE_DATE_TIME, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the " +
                             "issue date time of the forecast instance to be retrieved."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
                             "owning office of the forecast spec whose forecast instance is to be " +
                             "included in the response."),
-                    @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
                             "spec id of the forecast spec whose forecast instance data is to be " +
                             "included in the response."),
-                    @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
                             "location of the forecast spec whose forecast instance data to be included " +
                             "in the response."),
             },
@@ -185,7 +180,8 @@ public class ForecastInstanceController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Update a forecast instance with provided values",
+            description = "Update a forecast instance with new max age, notes, forecast file" +
+                    "and forecast info key/value pairs.",
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)

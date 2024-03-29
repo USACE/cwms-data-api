@@ -3,9 +3,13 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -16,17 +20,24 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
-import static cwms.cda.api.Controllers.LOCATION;
+import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.SPEC_ID;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.SOURCE_ENTITY;
@@ -34,6 +45,8 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
 
 public class ForecastSpecController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(ForecastSpecController.class.getName());
@@ -71,8 +84,13 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
+            ctx.status(HttpServletResponse.SC_OK);
+        } catch (IOException | DataAccessException ex) {
+            CdaError re = new CdaError("Internal Error");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -81,9 +99,9 @@ public class ForecastSpecController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
                             "owning office of the forecast spec whose data is to be deleted."),
-                    @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
                             "spec id of the forecast spec whose data is to be deleted."),
-                    @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
                             "location of the forecast spec whose data is to be deleted."),
             },
             responses = {
@@ -96,7 +114,11 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String forecastSpecId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+        String office = requiredParam(ctx, OFFICE);
+        String specId = requiredParam(ctx, NAME);
+        String locationId = requiredParam(ctx, LOCATION_ID);
+
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
     }
@@ -104,13 +126,13 @@ public class ForecastSpecController implements CrudHandler {
     @OpenApi(
             description = "Used to query multiple forecast specs",
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = OFFICE, description = "Specifies the " +
                             "owning office of the forecast spec whose data is to be included in the " +
                             "response."),
-                    @OpenApiParam(name = ID_MASK, required = true, description = "Posix "
+                    @OpenApiParam(name = ID_MASK, description = "Posix "
                             + "<a href=\"regexp.html\">regular expression</a>  that specifies "
                             + "the spec IDs to be included in the response."),
-                    @OpenApiParam(name = LOCATION_MASK, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = LOCATION_MASK, description = "Specifies the " +
                             "location of the forecast spec whose data to be included in the response."),
                     @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity " +
                             "of the forecast spec whose data is to be included in the response.")
@@ -121,8 +143,6 @@ public class ForecastSpecController implements CrudHandler {
                             content = {
                                     @OpenApiContent(from = ForecastSpec.class, type = Formats.JSONV2)}),
                     @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a forecast spec."),
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
@@ -132,7 +152,11 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            String office = ctx.queryParam(OFFICE);
+            String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
+            String location = ctx.queryParam(LOCATION_MASK);
+            String sourceEntity = ctx.queryParam(SOURCE_ENTITY);
             throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
     }
@@ -143,12 +167,10 @@ public class ForecastSpecController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
                             "owning office of the forecast spec whose data is to be included in the " +
                             "response."),
-                    @OpenApiParam(name = SPEC_ID, required = true, description = "Specifies the " +
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
                             "spec id of the forecast spec whose data is to be included in the response."),
-                    @OpenApiParam(name = LOCATION, required = true, description = "Specifies the " +
-                            "location of the forecast spec whose data to be included in the response."),
-                    @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity " +
-                            "of the forecast spec whose data is to be included in the response.")
+                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
+                            "location of the forecast spec whose data to be included in the response.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -168,6 +190,9 @@ public class ForecastSpecController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            String office = ctx.queryParam(OFFICE);
+            String names = ctx.queryParam(NAME);
+            String location = ctx.queryParam(LOCATION_ID);
             throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
     }
@@ -175,7 +200,7 @@ public class ForecastSpecController implements CrudHandler {
     @OpenApi(
             description = "Update a forecast spec with provided values",
             pathParams = {
-                    @OpenApiParam(name = SPEC_ID, description = "Forecast spec id to be updated")
+                    @OpenApiParam(name = NAME, description = "Forecast spec id to be updated")
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -192,9 +217,42 @@ public class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
             throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        } catch (IOException | DataAccessException ex) {
+            CdaError re = new CdaError("Internal Error");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    private ForecastSpec deserializeForecastSpec(Context ctx) throws IOException {
+        return deserializeForecastSpec(ctx.body(), getUserDataContentType(ctx));
+    }
+
+    private ForecastSpec deserializeForecastSpec(String body, ContentType contentType)
+            throws IOException {
+        return deserializeForecastSpec(body, contentType.toString());
+    }
+
+    public static ForecastSpec deserializeForecastSpec(String body, String contentType)
+            throws IOException {
+        ForecastSpec retval;
+
+        if ((Formats.JSONV2).equals(contentType)) {
+            ObjectMapper om = JsonV2.buildObjectMapper();
+            retval = om.readValue(body, ForecastSpec.class);
+        } else {
+            throw new IOException("Unexpected format:" + contentType);
+        }
+
+        return retval;
+    }
+
+    private ContentType getUserDataContentType(@NotNull Context ctx) {
+        String contentTypeHeader = ctx.req.getContentType();
+        return Formats.parseHeader(contentTypeHeader);
     }
 
 }
