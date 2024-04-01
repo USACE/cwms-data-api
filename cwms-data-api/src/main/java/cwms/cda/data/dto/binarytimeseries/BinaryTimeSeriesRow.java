@@ -122,23 +122,10 @@ public class BinaryTimeSeriesRow {
             return this;
         }
 
-
-        public Builder withDateTime(long dateTimeEpochMillis){
-            this.dateTime = Instant.ofEpochMilli(dateTimeEpochMillis);
-            return this;
-        }
-
-
         public Builder withDataEntryDate(Instant dataEntryDate){
             this.dataEntryDate = dataEntryDate;
             return this;
         }
-
-        public Builder withDataEntryDate(long dataEntryDateEpochMillis){
-            this.dataEntryDate = Instant.ofEpochMilli(dataEntryDateEpochMillis);
-            return this;
-        }
-
 
         public Builder withMediaType(String mediaType){
             this.mediaType = mediaType;

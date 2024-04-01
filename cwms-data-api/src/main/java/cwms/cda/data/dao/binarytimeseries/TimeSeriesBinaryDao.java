@@ -143,10 +143,10 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     public void store(BinaryTimeSeries tts, boolean maxVersion, boolean storeExisting,
                       boolean storeNonExisting, boolean replaceAll) {
 
-        ZonedDateTime versionDateZdt = tts.getVersionDate();
+        Instant versionDateZdt = tts.getVersionDate();
         storeRows(tts.getOfficeId(), tts.getName(), tts.getBinaryValues(), maxVersion,
                 storeExisting, storeNonExisting, replaceAll,
-                versionDateZdt == null ? null : versionDateZdt.toInstant());
+                versionDateZdt);
     }
 
 
