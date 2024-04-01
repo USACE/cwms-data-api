@@ -10,20 +10,17 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import hec.data.timeSeriesText.DateDateKey;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.jetbrains.annotations.Nullable;
 
 @JsonDeserialize(builder = BinaryTimeSeries.Builder.class)
@@ -42,10 +39,8 @@ public class BinaryTimeSeries extends CwmsDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     VersionType dateVersionType;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @Schema(description = "The version date of the time series trace")
-    ZonedDateTime versionDate;
+    Instant versionDate;
 
     private final NavigableMap<DateDateKey, BinaryTimeSeriesRow> entries;
 
@@ -82,7 +77,7 @@ public class BinaryTimeSeries extends CwmsDTO {
         return dateVersionType;
     }
 
-    public ZonedDateTime getVersionDate() {
+    public Instant getVersionDate() {
         return versionDate;
     }
 
@@ -110,7 +105,7 @@ public class BinaryTimeSeries extends CwmsDTO {
         private Long intervalOffset;
         private String timeZone;
         private VersionType dateVersionType;
-        private ZonedDateTime versionDate;
+        private Instant versionDate;
 
         NavigableMap<DateDateKey, BinaryTimeSeriesRow> entriesMap = null;
 
@@ -142,7 +137,7 @@ public class BinaryTimeSeries extends CwmsDTO {
             return this;
         }
 
-        public Builder withVersionDate(ZonedDateTime versionDate) {
+        public Builder withVersionDate(Instant versionDate) {
             this.versionDate = versionDate;
             return this;
         }
