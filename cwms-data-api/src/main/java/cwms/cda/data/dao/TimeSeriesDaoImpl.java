@@ -331,7 +331,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-        VersionType finalDateVersionType = getVersionType(names, office, versionDate != null);
+        VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
             String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
@@ -385,27 +385,39 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    @NotNull
-    private VersionType getVersionType(String names, String office, boolean versionDateProvided) {
+    public static String parseLocFromTimeSeriesId(String tsId) {
+        String[] parts = tsId.split("\\.");
+        return parts[0];
+    }
+
+    public static String getTimeZoneId(DSLContext dsl, String tsId, String officeId) {
+        return dsl.connectionResult(c -> {
+            Configuration config = getDslContext(c, officeId).configuration();
+            String locationId = TimeSeriesDaoImpl.parseLocFromTimeSeriesId(tsId);
+            return CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(config, locationId, officeId);
+        });
+    }
+
+    public static VersionType getVersionType(DSLContext dsl, String names, String office, boolean dateProvided) {
         VersionType dateVersionType;
-        // need to determine type of time series from db when version date is null
 
-        if (versionDateProvided) {
-            dateVersionType = VersionType.SINGLE_VERSION;
-        } else {
-            boolean isVersioned = isVersioned(names, office);
+        if (!dateProvided) {
+            boolean isVersioned = isVersioned(dsl, names, office);
 
-            if(isVersioned) {
+            if (isVersioned) {
                 dateVersionType = VersionType.MAX_AGGREGATE;
             } else {
                 dateVersionType = VersionType.UNVERSIONED;
             }
+
+        } else {
+            dateVersionType = VersionType.SINGLE_VERSION;
         }
 
         return dateVersionType;
     }
 
-    private boolean isVersioned(String names, String office) {
+    private static boolean isVersioned(DSLContext dsl, String names, String office) {
         return connectionResult(dsl, connection -> {
             Configuration configuration = getDslContext(connection, office).configuration();
             return OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
