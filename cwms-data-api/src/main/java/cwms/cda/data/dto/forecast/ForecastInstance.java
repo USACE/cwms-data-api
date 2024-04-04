@@ -1,6 +1,10 @@
 package cwms.cda.data.dto.forecast;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.xml.bind.annotation.*;
@@ -9,7 +13,8 @@ import java.util.Map;
 
 @XmlRootElement(name = "forecast-instance")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ForecastInstance {
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+public class ForecastInstance extends CwmsDTO {
 
   // unique identifier: specId + issueDateTime
 
@@ -55,12 +60,15 @@ public class ForecastInstance {
   private byte[] fileData;
 
   @SuppressWarnings("unused") // required so JAXB can initialize and marshal
-  private ForecastInstance() {}
+  private ForecastInstance() {
+      super(null);
+  }
 
   public ForecastInstance(String specId, Instant dateTime, Instant issueDateTime,
                           Instant firstDateTime, Instant lastDateTime, Integer maxAge, Integer timeSeriesCount,
                           String notes, Map<String, String> metadata, String filename, String fileDescription,
                           byte[] fileData) {
+    super(null);
     this.specId = specId;
     this.dateTime = dateTime;
     this.issueDateTime = issueDateTime;
