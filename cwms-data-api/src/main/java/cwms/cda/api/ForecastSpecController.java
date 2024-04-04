@@ -3,10 +3,11 @@ package cwms.cda.api;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.DESIGNATOR;
+import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
-import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.LOCATION_MASK;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -108,8 +109,8 @@ public class ForecastSpecController implements CrudHandler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose data is to be deleted."),
-                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the "
-                        + "location of the forecast spec whose data is to be deleted."),
+                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                        + "designator of the forecast spec whose data is to be deleted."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
@@ -121,13 +122,13 @@ public class ForecastSpecController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String locationId = requiredParam(ctx, LOCATION_ID);
+        String designator = requiredParam(ctx, DESIGNATOR);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
-            dao.delete(office, name, locationId);
+            dao.delete(office, name, designator);
         }
     }
 
@@ -140,6 +141,8 @@ public class ForecastSpecController implements CrudHandler {
                 @OpenApiParam(name = ID_MASK, description = "Posix "
                         + "<a href=\"regexp.html\">regular expression</a>  that specifies "
                         + "the spec IDs to be included in the response."),
+                    @OpenApiParam(name = DESIGNATOR_MASK, description = "Specifies the "
+                            + "designator of the forecast spec whose data to be included in the response."),
                 @OpenApiParam(name = LOCATION_MASK, description = "Specifies the "
                         + "location of the forecast spec whose data to be included in the response."),
                 @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity "
@@ -162,13 +165,15 @@ public class ForecastSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
+            String designator = ctx.queryParam(DESIGNATOR);
             String location = ctx.queryParam(LOCATION_MASK);
             String sourceEntity = ctx.queryParam(SOURCE_ENTITY);
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
-            List<ForecastSpec> specs = dao.getForecastSpecs(office, names, location, sourceEntity);
+            List<ForecastSpec> specs = dao.getForecastSpecs(office, names, designator,
+                    location, sourceEntity);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
@@ -191,8 +196,8 @@ public class ForecastSpecController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose data is to be included in the "
                         + "response."),
-                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the "
-                        + "location of the forecast spec whose data to be included in the response.")
+                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                        + "designator of the forecast spec whose data to be included in the response.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -212,12 +217,12 @@ public class ForecastSpecController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String office = requiredParam(ctx, OFFICE);
-            String location = requiredParam(ctx, LOCATION_ID);
+            String designator = requiredParam(ctx, DESIGNATOR);
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
-            ForecastSpec spec = dao.getForecastSpec(office, name, location);
+            ForecastSpec spec = dao.getForecastSpec(office, name, designator);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
@@ -242,7 +247,7 @@ public class ForecastSpecController implements CrudHandler {
                     required = true),
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                        + "inputs provided the location was not found.")
+                        + "inputs provided the forecaskspec was not found.")
             },
             method = HttpMethod.PATCH,
             tags = TAG

@@ -18,16 +18,17 @@ public class ForecastSpecDao extends JooqDao<ForecastSpec> {
 
     }
 
-    public void delete(String office, String specId, String locationId) {
+    public void delete(String office, String specId, String designator) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
     public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex,
-                                               String location, String sourceEntity) {
+                                               String designator, String location,
+                                               String sourceEntity) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
-    public ForecastSpec getForecastSpec(String office, String name, String location) {
+    public ForecastSpec getForecastSpec(String office, String name, String designator) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 

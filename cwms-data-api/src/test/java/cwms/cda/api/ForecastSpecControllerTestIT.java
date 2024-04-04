@@ -23,6 +23,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";
     private static final String SPEC_ID = "test-spec";
     private static final String locationId = "TsBinTestLoc";
+    private static final String designator = "designator";
 
     public static final String PATH = "/forecast/spec/";
 
@@ -48,7 +49,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, SPEC_ID)
-            .queryParam(Controllers.LOCATION_ID, locationId)
+            .queryParam(Controllers.DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -92,7 +93,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
-                .queryParam(Controllers.LOCATION_ID, locationId)
+                .queryParam(Controllers.DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -149,7 +150,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
-                .queryParam(Controllers.LOCATION_ID, locationId)
+                .queryParam(Controllers.DESIGNATOR, designator)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -169,7 +170,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
-                .queryParam(Controllers.LOCATION_ID, locationId)
+                .queryParam(Controllers.DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -186,7 +187,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, SPEC_ID)
-            .queryParam(Controllers.LOCATION_ID, locationId)
+            .queryParam(Controllers.DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -217,7 +218,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
-                .queryParam(Controllers.LOCATION_ID, locationId)
+                .queryParam(Controllers.DESIGNATOR, designator)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -260,7 +261,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
-                .queryParam(Controllers.LOCATION_ID, locationId)
+                .queryParam(Controllers.DESIGNATOR, designator)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -302,7 +303,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
-                .queryParam(Controllers.LOCATION_ID, locationId)
+                .queryParam(Controllers.DESIGNATOR, designator)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
