@@ -1,17 +1,38 @@
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FORECAST_DATE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.ISSUE_DATE;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.data.dao.ForecastInstanceDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastInstance;
-import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -19,37 +40,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FORECAST_DATE;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ID_MASK;
-import static cwms.cda.api.Controllers.ISSUE_DATE;
-import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.LOCATION_MASK;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SOURCE_ENTITY;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
 
 public class ForecastInstanceController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(ForecastInstanceController.class.getName());
@@ -82,13 +80,15 @@ public class ForecastInstanceController implements CrudHandler {
                     required = true
             ),
             method = HttpMethod.POST,
-            path = "/forecast-instance",
             tags = TAG
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
+            ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
+
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
+            dao.create(forecastInstance);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException | DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
@@ -120,7 +120,6 @@ public class ForecastInstanceController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                         + "parameters did not find a forecast instance."),
             },
-            path = "/forecast-instance",
             method = HttpMethod.DELETE,
             tags = TAG
     )
@@ -132,8 +131,8 @@ public class ForecastInstanceController implements CrudHandler {
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         try (final Timer.Context ignored = markAndTime(DELETE)) {
-
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+            ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
+            dao.delete(office, name, locationId, forecastDate, issueDate);
         }
     }
 
@@ -159,7 +158,6 @@ public class ForecastInstanceController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                         + "implemented")
             },
-            path = "/forecast-instance/all",
             method = HttpMethod.GET,
             tags = TAG
     )
@@ -169,7 +167,17 @@ public class ForecastInstanceController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String location = ctx.queryParam(LOCATION_MASK);
             String name = ctx.queryParam(NAME);
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+
+            ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
+            List<ForecastInstance> instances = dao.getForecastInstances(office, name, location);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            String result = Formats.format(contentType, instances, ForecastInstance.class);
+
+            ctx.result(result).contentType(contentType.toString());
+            requestResultSize.update(result.length());
+
+            ctx.status(HttpServletResponse.SC_OK);
         }
     }
 
@@ -203,7 +211,6 @@ public class ForecastInstanceController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                         + "implemented")
             },
-            path = "/forecast-instance",
             method = HttpMethod.GET,
             tags = TAG
     )
@@ -214,7 +221,16 @@ public class ForecastInstanceController implements CrudHandler {
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+            ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
+            ForecastInstance instance = dao.getForecastInstance(office, name, locationId, forecastDate, issueDate);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            String result = Formats.format(contentType, instance);
+
+            ctx.result(result).contentType(contentType.toString());
+            requestResultSize.update(result.length());
+
+            ctx.status(HttpServletResponse.SC_OK);
         }
     }
 
@@ -235,14 +251,14 @@ public class ForecastInstanceController implements CrudHandler {
                         + "inputs provided the location was not found.")
             },
             method = HttpMethod.PATCH,
-            path = "/forecast-instance",
             tags = TAG
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+            ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
+            dao.update(forecastInstance);
         } catch (IOException | DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
