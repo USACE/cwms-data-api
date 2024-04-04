@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 public class ForecastInstanceControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";
     private static final String SPEC_ID = "test-spec";
-    private static final String locationId = "TsBinTestLoc";
+    private static final String locationId = "FcstInstTestLoc";
     private static final String forecastDate = "2021-06-21T14:00:10+00:00";
     private static final String issueDate = "2022-05-22T12:03:40+00:00";
     public static final String PATH = "/forecast-instance/";
