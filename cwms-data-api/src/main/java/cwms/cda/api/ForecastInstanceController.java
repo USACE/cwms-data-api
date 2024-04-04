@@ -77,7 +77,7 @@ public class ForecastInstanceController implements CrudHandler {
             description = "Used to create and save a forecast instance",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)
+                        @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)
                     },
                     required = true
             ),
@@ -99,33 +99,35 @@ public class ForecastInstanceController implements CrudHandler {
 
     @OpenApi(
             description = "Used to delete forecast instance data based on unique fields",
+            pathParams = {
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the "
+                            + "spec id of the forecast spec associated with the forecast instance"
+                            + "to be deleted."),
+            },
             queryParams = {
-                    @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the " +
-                            "forecast date time of the forecast instance to be deleted."),
-                    @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the " +
-                            "issue date time of the forecast instance to be deleted."),
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
-                            "owning office of the forecast spec associated with the forecast instance " +
-                            "to be deleted."),
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
-                            "spec id of the forecast spec associated with the forecast instance" +
-                            "to be deleted."),
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
-                            "location of the forecast spec associated with the forecast instance " +
-                            "to be deleted."),
+                @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the "
+                        + "forecast date time of the forecast instance to be deleted."),
+                @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the "
+                        + "issue date time of the forecast instance to be deleted."),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the forecast spec associated with the forecast instance "
+                        + "to be deleted."),
+                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the "
+                        + "location of the forecast spec associated with the forecast instance "
+                        + "to be deleted."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a forecast instance."),
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
+                        + "parameters did not find a forecast instance."),
             },
             path = "/forecast-instance",
             method = HttpMethod.DELETE,
             tags = TAG
     )
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String forecastInstance) {
+    public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String specId = requiredParam(ctx, NAME);
+
         String locationId = requiredParam(ctx, LOCATION_ID);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
@@ -138,24 +140,24 @@ public class ForecastInstanceController implements CrudHandler {
     @OpenApi(
             description = "Used to get all forecast instances for a given forecast spec",
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the " +
-                            "owning office of the forecast spec whose forecast instance is to be " +
-                            "included in the response. Default will be all offices."),
-                    @OpenApiParam(name = NAME, description = "Specifies the " +
-                            "spec id of the forecast spec whose forecast instance data is to be " +
-                            "included in the response. Default will be all names."),
-                    @OpenApiParam(name = LOCATION_ID, description = "Specifies the " +
-                            "location of the forecast spec whose forecast instance data to be included " +
-                            "in the response. Default will be all locations."),
+                @OpenApiParam(name = OFFICE, description = "Specifies the "
+                        + "owning office of the forecast spec whose forecast instance is to be "
+                        + "included in the response. Default will be all offices."),
+                @OpenApiParam(name = NAME, description = "Specifies the "
+                        + "spec id of the forecast spec whose forecast instance data is to be "
+                        + "included in the response. Default will be all names."),
+                @OpenApiParam(name = LOCATION_ID, description = "Specifies the "
+                        + "location of the forecast spec whose forecast instance data to be included "
+                        + "in the response. Default will be all locations."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            description = "A list of elements of the data set you've selected.",
-                            content = {
-                                    @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)}),
-                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                            + "implemented")
+                @OpenApiResponse(status = STATUS_200,
+                        description = "A list of elements of the data set you've selected.",
+                        content = {
+                            @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)}),
+                @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
+                        + "implemented")
             },
             path = "/forecast-instance/all",
             method = HttpMethod.GET,
@@ -173,40 +175,41 @@ public class ForecastInstanceController implements CrudHandler {
 
     @OpenApi(
             description = "Used to get all forecast instances for a given forecast spec",
+            pathParams = {
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the "
+                        + "spec id of the forecast spec whose forecast instance data is to be "
+                        + "included in the response."),
+            },
             queryParams = {
-                    @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the " +
-                            "forecast date time of the forecast instance to be retrieved."),
-                    @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the " +
-                            "issue date time of the forecast instance to be retrieved."),
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
-                            "owning office of the forecast spec whose forecast instance is to be " +
-                            "included in the response."),
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
-                            "spec id of the forecast spec whose forecast instance data is to be " +
-                            "included in the response."),
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
-                            "location of the forecast spec whose forecast instance data to be included " +
-                            "in the response."),
+                @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the "
+                        + "forecast date time of the forecast instance to be retrieved."),
+                @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the "
+                        + "issue date time of the forecast instance to be retrieved."),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the forecast spec whose forecast instance is to be "
+                        + "included in the response."),
+                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the "
+                        + "location of the forecast spec whose forecast instance data to be included "
+                        + "in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            description = "A list of elements of the data set you've selected.",
-                            content = {
-                                    @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)}),
-                    @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                            + "parameters did not find a forecast instance."),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                            + "implemented")
+                @OpenApiResponse(status = STATUS_200,
+                        description = "A list of elements of the data set you've selected.",
+                        content = {
+                            @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)}),
+                @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
+                        + "parameters did not find a forecast instance."),
+                @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
+                        + "implemented")
             },
             path = "/forecast-instance",
             method = HttpMethod.GET,
             tags = TAG
     )
     @Override
-    public void getOne(@NotNull Context ctx, @NotNull String id) {
+    public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String specId = requiredParam(ctx, NAME);
         String locationId = requiredParam(ctx, LOCATION_ID);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
@@ -216,23 +219,27 @@ public class ForecastInstanceController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Update a forecast instance with new max age, notes, forecast file" +
-                    "and forecast info key/value pairs.",
+            description = "Update a forecast instance with new max age, notes, forecast file"
+                    + "and forecast info key/value pairs.",
+            pathParams = {
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the "
+                        + "spec id of the forecast spec to be updated."),
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)
+                        @OpenApiContent(from = ForecastInstance.class, type = Formats.JSONV2)
                     },
                     required = true),
             responses = {
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the location was not found.")
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the location was not found.")
             },
             method = HttpMethod.PATCH,
             path = "/forecast-instance",
             tags = TAG
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String id) {
+    public void update(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
