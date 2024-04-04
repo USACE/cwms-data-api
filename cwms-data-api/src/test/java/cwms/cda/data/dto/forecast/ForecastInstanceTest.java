@@ -17,6 +17,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ForecastInstanceTest {
 
+  public static final String OFFICE = "SPK";
+  public static final String LOCATION = "BIG_BEND";
+
   @Test
   void testRoundTripJson() throws JsonProcessingException
   {
@@ -76,17 +79,28 @@ public class ForecastInstanceTest {
     metadata.put("key2", "value2");
     metadata.put("key3", "value3");
 
-    return new ForecastInstance("spec", dateTime, issueDateTime,
-            firstDateTime, lastDateTime, 5, 3, "test notes",
-            metadata, "testFilename.txt", "test file description",
-            "test file content".getBytes(StandardCharsets.UTF_8));
+    return new ForecastInstance.Builder().withOfficeId(OFFICE)
+            .withSpecId("spec")
+            .withLocationId(LOCATION)
+            .withDateTime( dateTime)
+            .withIssueDateTime( issueDateTime)
+            .withFirstDateTime( firstDateTime)
+            .withLastDateTime( lastDateTime)
+            .withMaxAge( 5)
+            .withTimeSeriesCount(3)
+            .withNotes("test notes")
+            .withMetadata(metadata)
+            .withFilename("testFilename.txt")
+            .withFileDescription("test file description")
+            .withFileData("test file content".getBytes(StandardCharsets.UTF_8))
+            .withFileDataUrl( null)
+            .build()
+            ;
   }
 
   @NotNull
   private ForecastInstance buildEmptyForecastInstance() {
-    return new ForecastInstance(null, null, null, null,
-            null, null, null, null, null, null,
-            null, null);
+    return new ForecastInstance.Builder().build();
   }
 
   @NotNull
