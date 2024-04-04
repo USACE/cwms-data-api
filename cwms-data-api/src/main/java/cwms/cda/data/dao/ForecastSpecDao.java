@@ -22,14 +22,13 @@ public class ForecastSpecDao extends JooqDao<ForecastSpec> {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
-    public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex, String location, String sourceEntity) {
+    public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex,
+                                               String location, String sourceEntity) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
     public ForecastSpec getForecastSpec(String office, String name, String location) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-
-
     }
 
     public void update(ForecastSpec forecastSpec) {
