@@ -2,9 +2,11 @@ package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import java.util.ArrayList;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -87,9 +89,10 @@ public class ForecastInstanceTest {
         metadata.put("key2", "value2");
         metadata.put("key3", "value3");
 
-        return new ForecastInstance.Builder().withOfficeId(OFFICE)
-                .withSpecId("spec")
-                .withLocationId(LOCATION)
+        ForecastSpec spec = buildForecastSpec();
+
+        return new ForecastInstance.Builder()
+                .withSpec(spec)
                 .withDateTime(dateTime)
                 .withIssueDateTime(issueDateTime)
                 .withFirstDateTime(firstDateTime)
@@ -102,6 +105,17 @@ public class ForecastInstanceTest {
                 .withFileDescription("test file description")
                 .withFileData("test file content".getBytes(StandardCharsets.UTF_8))
                 .withFileDataUrl(null)
+                .build()
+                ;
+    }
+
+    @NotNull
+    private ForecastSpec buildForecastSpec() {
+        return new ForecastSpec.Builder()
+                .withSpecId("spec")
+                .withOfficeId("office")
+                .withLocationId("location")
+                .withDesignator("designator")
                 .build()
                 ;
     }

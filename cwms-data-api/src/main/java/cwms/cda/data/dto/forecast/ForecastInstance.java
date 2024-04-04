@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -25,19 +26,11 @@ import javax.xml.bind.annotation.XmlRootElement;
 @JsonDeserialize(builder = ForecastInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class ForecastInstance extends CwmsDTO {
+public class ForecastInstance implements CwmsDTOBase {
 
-    // unique identifier: spec + issueDateTime
-    // to find spec we need officeId, specId and locationId
-    // we get officeId from CwmsDTO
-
-    @Schema(description = "Forecast Spec ID")
-    @XmlElement(name = "spec-id")
-    private final String specId;
-
-    @Schema(description = "Location ID")
-    @XmlElement(name = "location-id")
-    private final String locationId;
+    @Schema(description = "Forecast Spec")
+    @XmlElement(name = "spec")
+    private final ForecastSpec spec;
 
     @XmlAttribute(name = "date-time")
     private final Instant dateTime;
@@ -82,9 +75,8 @@ public class ForecastInstance extends CwmsDTO {
 
 
     private ForecastInstance(ForecastInstance.Builder builder) {
-        super(builder.officeId);
-        this.specId = builder.specId;
-        this.locationId = builder.locationId;
+
+        this.spec = builder.spec;
         this.dateTime = builder.dateTime;
         this.issueDateTime = builder.issueDateTime;
         this.firstDateTime = builder.firstDateTime;
@@ -99,13 +91,10 @@ public class ForecastInstance extends CwmsDTO {
         this.fileDataUrl = builder.fileDataUrl;
     }
 
-    public String getSpecId() {
-        return specId;
+    public ForecastSpec getSpec() {
+        return spec;
     }
 
-    public String getLocationId() {
-        return locationId;
-    }
 
     public Instant getDateTime() {
         return dateTime;
@@ -162,9 +151,7 @@ public class ForecastInstance extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private String officeId;
-        private String specId;
-        private String locationId;
+        private ForecastSpec spec;
         private Instant dateTime;
         private Instant issueDateTime;
         private Instant firstDateTime;
@@ -181,20 +168,12 @@ public class ForecastInstance extends CwmsDTO {
         public Builder() {
         }
 
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
+
+        public Builder withSpec(ForecastSpec spec) {
+            this.spec = spec;
             return this;
         }
 
-        public Builder withSpecId(String specId) {
-            this.specId = specId;
-            return this;
-        }
-
-        public Builder withLocationId(String locationId) {
-            this.locationId = locationId;
-            return this;
-        }
 
         public Builder withDateTime(Instant dateTime) {
             this.dateTime = dateTime;
@@ -257,9 +236,11 @@ public class ForecastInstance extends CwmsDTO {
         }
 
         public Builder from(ForecastInstance other) {
-            return withOfficeId(other.officeId)
-                    .withSpecId(other.specId)
-                    .withLocationId(other.locationId)
+            ForecastSpec otherSpec = other.spec;
+            if(otherSpec != null) {
+                otherSpec = new ForecastSpec.Builder().from(otherSpec).build();
+            }
+            return withSpec(otherSpec)
                     .withDateTime(other.dateTime)
                     .withIssueDateTime(other.issueDateTime)
                     .withFirstDateTime(other.firstDateTime)

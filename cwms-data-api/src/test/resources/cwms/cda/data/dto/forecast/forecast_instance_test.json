@@ -1,5 +1,10 @@
 {
-  "spec-id": "spec",
+  "spec": {
+    "office-id": "office",
+    "spec-id": "spec",
+    "designator": "designator",
+    "location-id": "location"
+  },
   "date-time": 1624284010000,
   "issue-date-time": 1653221020000,
   "first-date-time": 1692702150000,

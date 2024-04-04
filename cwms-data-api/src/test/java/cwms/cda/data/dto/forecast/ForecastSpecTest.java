@@ -81,13 +81,16 @@ public class ForecastSpecTest {
     tsids.add(new TimeSeriesIdentifierDescriptor.Builder().withTimeSeriesId("tsid2").build());
     tsids.add(new TimeSeriesIdentifierDescriptor.Builder().withTimeSeriesId("tsid3").build());
 
-    return new ForecastSpec("spec", "office", "location", "sourceEntity",
-            "designator", "description", tsids);
+    return new ForecastSpec.Builder().withSpecId("spec").withOfficeId("office").withLocationId("location")
+            .withSourceEntityId( "sourceEntity").withDesignator(         "designator")
+            .withDescription("description")
+            .withTimeSeriesIds( tsids)
+            .build();
   }
 
   @NotNull
   private ForecastSpec buildEmptyForecastSpec() {
-    return new ForecastSpec(null, null, null, null, null, null, null);
+    return new ForecastSpec.Builder().build();
   }
 
   @NotNull
