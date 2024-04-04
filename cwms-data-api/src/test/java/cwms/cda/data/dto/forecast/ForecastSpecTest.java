@@ -1,20 +1,21 @@
 package cwms.cda.data.dto.forecast;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 public class ForecastSpecTest {
 
@@ -32,6 +33,14 @@ public class ForecastSpecTest {
     assertNotNull(s2);
 
     assertForecastSpecEquals(s1, s2);
+  }
+
+  @Test
+  void testFormatsSerialization(){
+    ForecastSpec s1 = buildForecastSpec();
+    ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+    String jsonStr = Formats.format(contentType, s1);
+    assertNotNull(jsonStr);
   }
 
   @Test
