@@ -193,6 +193,7 @@ public class LevelsController implements CrudHandler {
                         + "shall be used."),
             },
             method = HttpMethod.DELETE,
+            path = "/levels",
             tags = TAG)
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
@@ -436,6 +437,7 @@ public class LevelsController implements CrudHandler {
                     required = true),
             description = "Update CWMS Location Level",
             method = HttpMethod.PATCH,
+            path = "/levels",
             tags = TAG
     )
     @Override
