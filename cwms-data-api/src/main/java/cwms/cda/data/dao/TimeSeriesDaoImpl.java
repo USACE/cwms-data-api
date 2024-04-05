@@ -757,7 +757,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // won't map into AV_TSV.AV_TSV
             dsl.select(fields)
                     .from(innerSelect)
-                    .where(field("DATE_TIME").eq(innerSelect.field("max_date_time")))
+                    .where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time")))
                     .forEach(jrecord -> {
                         RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
                         retval.add(recentValue);
@@ -809,55 +809,70 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
     public List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
-                                                Timestamp pastLimit, Timestamp futureLimit) {
+                                                @NotNull Timestamp pastLimit,
+                                                @NotNull Timestamp futureLimit) {
+
+        AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
+        // possible use 30D view?
+
+        AV_TS_GRP_ASSGN tsView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+
+        Condition whereCondition =
+                tsvView.VALUE.isNotNull()
+                        .and(tsvView.DATE_TIME.lt(futureLimit))
+                        .and(tsvView.DATE_TIME.gt(pastLimit))
+                        .and(tsvView.START_DATE.le(futureLimit))
+                        .and(tsvView.END_DATE.gt(pastLimit));
+
+        if (office != null) {
+            whereCondition = whereCondition.and(tsView.DB_OFFICE_ID.eq(office));
+        }
+
+        if (categoryId != null) {
+            whereCondition = whereCondition.and(tsView.CATEGORY_ID.eq(categoryId));
+        }
+
+        if (groupId != null) {
+            whereCondition = whereCondition.and(tsView.GROUP_ID.eq(groupId));
+        }
+
+        SelectConditionStep<? extends Record> innerSelect
+                = dsl.select(tsvView.OFFICE_ID, tsvView.TS_CODE,
+                        tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
+                        tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
+                        tsvView.UNIT_ID, tsView.ATTRIBUTE,
+                        max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
+                                "max_date_time"), tsView.TS_ID)
+                .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
+                .where(whereCondition);
+
+        Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
+                tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
+                tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
+                tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
+
+        List<Field<Object>> fields = Arrays.stream(queryFields)
+                .map(Field::getName)
+                .map(DSL::field).collect(
+                        Collectors.toList());
+
+        // I want to select tsvView.asterisk but we are selecting from an inner select and
+        // even though the inner select selects tsvView.asterisk it isn't the same.
+        // So we will just select the fields we want.
+        // Unfortunately that means our results won't map into AV_TSV.AV_TSV
+
         List<RecentValue> retVal = new ArrayList<>();
 
-        if (categoryId != null && groupId != null) {
-            AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
-            // possible use 30D view?
+        dsl.select(fields)
+                .from(innerSelect)
+                .where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time"
+                )))
+                .orderBy(field(tsView.ATTRIBUTE.getName()))
+                .forEach(jrecord -> {
+                    RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
+                    retVal.add(recentValue);
+                });
 
-            AV_TS_GRP_ASSGN tsView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
-
-            SelectConditionStep<Record> innerSelect
-                    = dsl.select(tsvView.asterisk(), tsView.TS_ID, tsView.ATTRIBUTE,
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
-                                    "max_date_time"), tsView.TS_ID)
-                    .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
-                    .where(
-                            tsView.DB_OFFICE_ID.eq(office)
-                                    .and(tsView.CATEGORY_ID.eq(categoryId))
-                                    .and(tsView.GROUP_ID.eq(groupId))
-                                    .and(tsvView.VALUE.isNotNull())
-                                    .and(tsvView.DATE_TIME.lt(futureLimit))
-                                    .and(tsvView.DATE_TIME.gt(pastLimit))
-                                    .and(tsvView.START_DATE.le(futureLimit))
-                                    .and(tsvView.END_DATE.gt(pastLimit)));
-
-            Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
-                    tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
-                    tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
-                    tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
-
-            List<Field<Object>> fields = Arrays.stream(queryFields)
-                    .map(Field::getName)
-                    .map(DSL::field).collect(
-                            Collectors.toList());
-
-
-            // I want to select tsvView.asterisk but we are selecting from an inner select and
-            // even though the inner select selects tsvView.asterisk it isn't the same.
-            // So we will just select the fields we want.
-            // Unfortunately that means our results won't map into AV_TSV.AV_TSV
-            dsl.select(fields)
-                    .from(innerSelect)
-                    .where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time"
-                    )))
-                    .orderBy(field(tsView.ATTRIBUTE.getName()))
-                    .forEach(jrecord -> {
-                        RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
-                        retVal.add(recentValue);
-                    });
-        }
         return retVal;
     }
 
