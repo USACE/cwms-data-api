@@ -400,7 +400,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         } else {
             boolean isVersioned = isVersioned(names, office);
 
-            if(isVersioned) {
+            if (isVersioned) {
                 dateVersionType = VersionType.MAX_AGGREGATE;
             } else {
                 dateVersionType = VersionType.UNVERSIONED;
@@ -729,9 +729,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (tsIds != null && !tsIds.isEmpty()) {
             AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;
             AV_CWMS_TS_ID2 tsView = AV_CWMS_TS_ID2;
-            SelectConditionStep<Record> innerSelect = dsl.select(
-                            tsvView.asterisk(),
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as("max_date_time"))
+            String tsFieldName = "TSVIEW_CWMS_TS_ID";
+            Field<String> tsField = tsView.CWMS_TS_ID.as(tsFieldName);
+            SelectConditionStep<? extends Record> innerSelect = dsl.select(
+                            tsvView.OFFICE_ID, tsvView.CWMS_TS_ID, tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME,
+                            tsvView.VERSION_DATE,
+                            tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
+                            tsvView.START_DATE, tsvView.END_DATE,
+                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as("max_date_time"),
+                            tsField
+                    )
                     .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
                     .where(
                             tsView.CWMS_TS_ID.in(tsIds)
@@ -742,10 +749,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     .and(tsvView.END_DATE.gt(pastdate)));
 
 
-            Field[] queryFields = new Field[]{tsView.CWMS_TS_ID, tsvView.OFFICE_ID,
+            Field[] queryFields = new Field[]{tsvView.CWMS_TS_ID, tsvView.OFFICE_ID,
                 tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
                 tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
-                tsvView.START_DATE, tsvView.END_DATE,};
+                tsvView.START_DATE, tsvView.END_DATE, tsField};
 
             // look them back up by name b/c we are using them on results of innerselect.
             List<Field<Object>> fields = Arrays.stream(queryFields)
@@ -761,18 +768,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .from(innerSelect)
                     .where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time")))
                     .forEach(jrecord -> {
-                        RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
+                        RecentValue recentValue = buildRecentValue(tsvView, jrecord, tsFieldName);
                         retval.add(recentValue);
                     });
         }
         return retval;
-    }
-
-    @NotNull
-    private RecentValue buildRecentValue(AV_TSV_DQU tsvView,
-                                         usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2 tsView,
-                                         Record jrecord) {
-        return buildRecentValue(tsvView, jrecord, tsView.CWMS_TS_ID.getName());
     }
 
     @NotNull
