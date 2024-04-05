@@ -138,26 +138,27 @@ import org.owasp.html.PolicyFactory;
  * Setup all the information required so we can serve the request.
  *
  */
-@WebServlet(urlPatterns = { "/catalog/*",
-        "/auth/*",
-        "/swagger-docs",
-        "/timeseries/*",
-        "/offices/*",
-        "/states/*",
-        "/counties/*",
-        "/location/*",
-        "/locations/*",
-        "/parameters/*",
-        "/timezones/*",
-        "/units/*",
-        "/ratings/*",
-        "/levels/*",
-        "/basins/*",
-        "/blobs/*",
-        "/clobs/*",
-        "/pools/*",
-        "/specified-levels/*",
-        "/standard-text-id/*"
+@WebServlet(urlPatterns = {
+    "/catalog/*",
+    "/auth/*",
+    "/swagger-docs",
+    "/timeseries/*",
+    "/offices/*",
+    "/states/*",
+    "/counties/*",
+    "/location/*",
+    "/locations/*",
+    "/parameters/*",
+    "/timezones/*",
+    "/units/*",
+    "/ratings/*",
+    "/levels/*",
+    "/basins/*",
+    "/blobs/*",
+    "/clobs/*",
+    "/pools/*",
+    "/specified-levels/*",
+    "/standard-text-id/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -277,7 +278,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
                 .exception(DeleteConflictException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Cannot perform requested delete. Data is referenced elsewhere in CWMS.", e.getDetails());
+                    CdaError re = new CdaError("Cannot perform requested delete. "
+                            + "Data is referenced elsewhere in CWMS.", e.getDetails());
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
@@ -464,7 +466,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
-        if(timeUnit != null && duration > 0) {
+        if (timeUnit != null && duration > 0) {
             staticInstance().after(path, ctx -> {
                 String method = ctx.req.getMethod();  // "GET"
                 if (ctx.status() == HttpServletResponse.SC_OK
@@ -510,7 +512,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     /**
-     * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
+     * Given a path like "/location/category/{category-id}" this method returns "{category-id}".
      * @param fullPath
      * @return
      */
@@ -610,7 +612,7 @@ public class ApiServlet extends HttpServlet {
         // If something is set in the environment, make that the new default.
         // This is useful because Docker makes it easy to set environment variables.
         String envProvider = System.getenv(PROVIDER_KEY_OLD);
-        if( envProvider == null) {
+        if (envProvider == null) {
             envProvider = System.getenv(PROVIDER_KEY);
         }
         if (envProvider != null) {
@@ -623,7 +625,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
         totalRequests.mark();
         try {
             String office = officeFromContext(req.getContextPath());
