@@ -729,12 +729,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (tsIds != null && !tsIds.isEmpty()) {
             AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;
             AV_CWMS_TS_ID2 tsView = AV_CWMS_TS_ID2;
-            SelectConditionStep<Record> innerSelect
-                    = dsl.select(
+            SelectConditionStep<Record> innerSelect = dsl.select(
                             tsvView.asterisk(),
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
-                                    "max_date_time"),
-                            tsView.CWMS_TS_ID)
+                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as("max_date_time"))
                     .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
                     .where(
                             tsView.CWMS_TS_ID.in(tsIds)
