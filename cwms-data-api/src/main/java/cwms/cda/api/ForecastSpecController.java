@@ -141,9 +141,11 @@ public class ForecastSpecController implements CrudHandler {
                 @OpenApiParam(name = ID_MASK, description = "Posix "
                         + "<a href=\"regexp.html\">regular expression</a>  that specifies "
                         + "the spec IDs to be included in the response."),
-                    @OpenApiParam(name = DESIGNATOR_MASK, description = "Specifies the "
-                            + "designator of the forecast spec whose data to be included in the response."),
-                @OpenApiParam(name = LOCATION_MASK, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR_MASK, description = "Posix "
+                        + "<a href=\"regexp.html\">regular expression</a>  that specifies the "
+                        + "designator of the forecast spec whose data to be included in the response."),
+                @OpenApiParam(name = LOCATION_MASK, description = "Posix "
+                        + "<a href=\"regexp.html\">regular expression</a>  that specifies the "
                         + "location of the forecast spec whose data to be included in the response."),
                 @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity "
                         + "of the forecast spec whose data is to be included in the response.")
