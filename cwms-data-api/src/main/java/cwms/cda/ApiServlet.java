@@ -388,11 +388,12 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
         String recentPath = "/timeseries/recent/{group-id}";
-        get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
+        get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
+
         String textTsPath = format("/timeseries/text/{%s}", NAME);
         cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         String textValuePath = textTsPath + "/value";
