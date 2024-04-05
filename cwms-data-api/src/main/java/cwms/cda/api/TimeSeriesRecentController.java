@@ -100,9 +100,9 @@ public class TimeSeriesRecentController implements Handler {
                         + "of the timeseries to be included in the response.  Optional."),
                 @OpenApiParam(name = GROUP_ID, description = "Specifies the group id "
                         + "of the timeseries to be included in the response.  Optional."),
-                @OpenApiParam(name = TS_IDS, description = "Specifies a list of timeseries "
-                        + "ids to be included in the response.  Optional. Cannot be used in "
-                        + "combination with category_id and group_id."),
+                @OpenApiParam(name = TS_IDS, description = "Accepts a comma separated list of "
+                        + "timeseries ids to be included in the response.  Optional. "
+                        + "Cannot be used in combination with category_id and group_id."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -141,7 +141,7 @@ public class TimeSeriesRecentController implements Handler {
             Timestamp pastLimit = Timestamp.from(gregorianCalendar.toInstant());
 
             boolean hasTsGroupInfo = categoryId != null && !categoryId.isEmpty()
-                    && groupId != null && !groupId.isEmpty();
+                    || groupId != null && !groupId.isEmpty();
             List<String> tsIds = getTsIds(tsIdsParam);
             boolean hasTsIds = tsIds != null && !tsIds.isEmpty();
 
@@ -164,8 +164,7 @@ public class TimeSeriesRecentController implements Handler {
                 return;
             } else if (hasTsGroupInfo) {
                 // just group provided
-                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit,
-                        futureLimit);
+                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit);
             } else {
                 latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit);
             }
