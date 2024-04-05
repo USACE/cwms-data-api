@@ -159,8 +159,8 @@ public final class Controllers {
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String TRIM = "trim";
-
-    public static final String FORECAST_SPEC = "forecast-spec";
+    public static final String DESIGNATOR = "designator";
+    public static final String DESIGNATOR_MASK = "designator-mask";
 
 
     static {
