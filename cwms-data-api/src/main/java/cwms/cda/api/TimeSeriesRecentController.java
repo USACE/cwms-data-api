@@ -131,7 +131,7 @@ public class TimeSeriesRecentController implements Handler {
 
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
-            String groupId = ctx.pathParamAsClass(GROUP_ID, String.class).allowNullable().get();
+            String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).allowNullable().get();
             String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).allowNullable().get();
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
