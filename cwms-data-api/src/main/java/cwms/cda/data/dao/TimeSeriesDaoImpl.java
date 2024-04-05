@@ -234,13 +234,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // to_timestamp will allow null in the next schema release
         if (versionDate != null) {
             retrieveSelectData = DSL.sql(
-                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),"
+                            + "cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTs",
                     tsId, unit, beginTimeMilli, endTimeMilli,
                     trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion, officeId);
         } else {
             retrieveSelectData = DSL.sql(
-                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),"
+                            + "cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
                     tsId, unit, beginTimeMilli, endTimeMilli,
                     trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,officeId);
@@ -270,7 +272,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 retrieveSelectCount = select(
                         dateTimeCol, valueCol, qualityCol
                 ).from(DSL.sql(
-                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),"
+                                + "cwms_20.cwms_util.to_timestamp(?),"
                                 + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTsTotal",
                         valid.field("tsid", String.class),
                         valid.field("units", String.class),
@@ -283,7 +286,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 retrieveSelectCount = select(
                         dateTimeCol, valueCol, qualityCol
                 ).from(DSL.sql(
-                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),"
+                                + "cwms_20.cwms_util.to_timestamp(?),"
                                 + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
                         valid.field("tsid", String.class),
                         valid.field("units", String.class),
@@ -363,7 +367,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                             tsCursor.toInstant().toEpochMilli()),
                                                     DSL.val(beginTime.toInstant().toEpochMilli())))))
                             .and(dateTimeCol
-                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
+                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.val(endTime.toInstant().toEpochMilli())))
                             );
 
             if (pageSize > 0) {
@@ -741,9 +746,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
             Field[] queryFields = new Field[]{tsView.CWMS_TS_ID, tsvView.OFFICE_ID,
-                    tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
-                    tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
-                    tsvView.START_DATE, tsvView.END_DATE,};
+                tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
+                tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
+                tsvView.START_DATE, tsvView.END_DATE,};
 
             // look them back up by name b/c we are using them on results of innerselect.
             List<Field<Object>> fields = Arrays.stream(queryFields)
@@ -847,9 +852,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .where(whereCondition);
 
         Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
-                tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
-                tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
-                tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
+            tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
+            tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
+            tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
 
         List<Field<Object>> fields = Arrays.stream(queryFields)
                 .map(Field::getName)
