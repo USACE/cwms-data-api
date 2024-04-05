@@ -389,7 +389,7 @@ public class ApiServlet extends HttpServlet {
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        String recentPath = "/timeseries/recent/{group-id}";
+        String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
