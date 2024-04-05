@@ -3,12 +3,12 @@ package cwms.cda.api;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.DESIGNATOR;
+import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
 import static cwms.cda.api.Controllers.FORECAST_DATE;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ISSUE_DATE;
-import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.LOCATION_MASK;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
@@ -112,8 +112,8 @@ public class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec associated with the forecast instance "
                         + "to be deleted."),
-                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the "
-                        + "location of the forecast spec associated with the forecast instance "
+                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                        + "designator of the forecast spec associated with the forecast instance "
                         + "to be deleted."),
             },
             responses = {
@@ -127,12 +127,12 @@ public class ForecastInstanceController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
 
-        String locationId = requiredParam(ctx, LOCATION_ID);
+        String designator = requiredParam(ctx, DESIGNATOR);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            dao.delete(office, name, locationId, forecastDate, issueDate);
+            dao.delete(office, name, designator, forecastDate, issueDate);
         }
     }
 
@@ -145,9 +145,9 @@ public class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = NAME, description = "Specifies the "
                         + "spec id of the forecast spec whose forecast instance data is to be "
                         + "included in the response. Default will be all names."),
-                @OpenApiParam(name = LOCATION_ID, description = "Specifies the "
-                        + "location of the forecast spec whose forecast instance data to be included "
-                        + "in the response. Default will be all locations."),
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
+                        + "designator of the forecast spec whose forecast instance data to be included "
+                        + "in the response. "),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -165,11 +165,11 @@ public class ForecastInstanceController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
-            String location = ctx.queryParam(LOCATION_MASK);
+            String desionatorMask = ctx.queryParam(DESIGNATOR_MASK);
             String name = ctx.queryParam(NAME);
 
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            List<ForecastInstance> instances = dao.getForecastInstances(office, name, location);
+            List<ForecastInstance> instances = dao.getForecastInstances(office, name, desionatorMask);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
             String result = Formats.format(contentType, instances, ForecastInstance.class);
@@ -196,8 +196,8 @@ public class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose forecast instance is to be "
                         + "included in the response."),
-                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the "
-                        + "location of the forecast spec whose forecast instance data to be included "
+                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                        + "designator of the forecast spec whose forecast instance data to be included "
                         + "in the response."),
             },
             responses = {
@@ -217,12 +217,12 @@ public class ForecastInstanceController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String locationId = requiredParam(ctx, LOCATION_ID);
+        String designator = requiredParam(ctx, DESIGNATOR);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            ForecastInstance instance = dao.getForecastInstance(office, name, locationId, forecastDate, issueDate);
+            ForecastInstance instance = dao.getForecastInstance(office, name, designator, forecastDate, issueDate);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
             String result = Formats.format(contentType, instance);
@@ -248,7 +248,7 @@ public class ForecastInstanceController implements CrudHandler {
                     required = true),
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                        + "inputs provided the location was not found.")
+                        + "inputs provided the ForecastInstance was not found.")
             },
             method = HttpMethod.PATCH,
             tags = TAG

@@ -16,11 +16,12 @@ public class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
-    public List<ForecastInstance> getForecastInstances(String office, String name, String location) {
+    public List<ForecastInstance> getForecastInstances(String office, String name, String designator) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
-    public ForecastInstance getForecastInstance(String office, String name, String locationId, String forecastDate, String issueDate) {
+    public ForecastInstance getForecastInstance(String office, String name, String designator,
+                                                String forecastDate, String issueDate) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
@@ -28,7 +29,8 @@ public class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
-    public void delete(String office, String name, String locationId, String forecastDate, String issueDate) {
+    public void delete(String office, String name, String designator,
+                       String forecastDate, String issueDate) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
     }
 
