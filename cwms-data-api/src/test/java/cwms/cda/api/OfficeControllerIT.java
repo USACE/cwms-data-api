@@ -86,4 +86,47 @@ public class OfficeControllerIT extends DataApiTestIT {
         ;
 
     }
+
+    @Test
+    void test_get_one_xmlv2()  {
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.XMLV2)
+                .contentType(Formats.XMLV2)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/" + OFFICE)
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header(Header.ETAG, not(isEmptyOrNullString()))
+                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+                .body("office.long-name", containsString("Sacramento"))
+        ;
+    }
+
+    @Test
+    void test_get_one_xmlv1()  {
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.XML)
+                .contentType(Formats.XML)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/" + OFFICE)
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header(Header.ETAG, not(isEmptyOrNullString()))
+                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+                .body("office.long-name", containsString("Sacramento"))
+        ;
+
+    }
 }
