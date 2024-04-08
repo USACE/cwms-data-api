@@ -22,6 +22,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.csv.CsvV1Office;
 import cwms.cda.formatters.tab.TabV1Office;
+import cwms.cda.formatters.xml.XMLv1Office;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -83,9 +84,7 @@ public class OfficeController implements CrudHandler {
                     @OpenApiContent(from = OfficeFormatV1.class, type = ""),
                     @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
                     @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
-                    @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
-                    @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
-                    @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
+                    @OpenApiContent(from = XMLv1Office.class, type = Formats.XML)
             }),
         }, tags = { "Offices" }
     )
@@ -128,13 +127,10 @@ public class OfficeController implements CrudHandler {
                     description = "A list of offices.",
                     content = {
                         @OpenApiContent(from = OfficeFormatV1.class, type = ""),
-                        @OpenApiContent(from = Office.class, 
-                            isArray = true, 
-                            type = Formats.JSONV2),
+                        @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
                         @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
-                        @OpenApiContent(from = TabV1Office.class, type = Formats.TAB),
-                        @OpenApiContent(from = CsvV1Office.class, type = Formats.CSV),
-                        @OpenApiContent(from = CsvV1Office.class, type = Formats.XML)
+                        @OpenApiContent(from = Office.class, type = Formats.XML),
+                        @OpenApiContent(from = Office.class, type = Formats.XMLV2)
                     })
             }, tags = { "Offices" })
     @Override
