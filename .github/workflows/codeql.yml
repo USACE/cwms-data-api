@@ -25,6 +25,7 @@ jobs:
         with:
           java-version: '8'
           java-package: jdk
+          distribution: 'temurin'
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3.1.0
         with:
