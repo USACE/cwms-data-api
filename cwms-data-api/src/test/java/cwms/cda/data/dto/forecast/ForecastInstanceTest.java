@@ -7,6 +7,7 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import java.util.ArrayList;
+import java.util.Collections;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -114,7 +115,7 @@ public class ForecastInstanceTest {
         return new ForecastSpec.Builder()
                 .withSpecId("spec")
                 .withOfficeId("office")
-                .withLocationId("location")
+                .withLocationIds(Collections.singleton("location"))
                 .withDesignator("designator")
                 .build()
                 ;

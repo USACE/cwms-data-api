@@ -12,12 +12,16 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import org.jetbrains.annotations.Nullable;
 
 @XmlRootElement(name = "forecast-spec")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -34,9 +38,9 @@ public class ForecastSpec extends CwmsDTO {
     @XmlAttribute
     private final String designator;
 
-    @Schema(description = "Location ID")
-    @XmlElement(name = "location-id")
-    private final String locationId;
+    @Schema(description = "Location IDs")
+    @XmlElement(name = "location-ids")
+    private final Set<String> locationIds;
 
     @Schema(description = "Source Entity ID")
     @XmlElement(name = "source-entity-id")
@@ -55,7 +59,13 @@ public class ForecastSpec extends CwmsDTO {
         super(builder.officeId);
         this.specId = builder.specId;
         this.designator = builder.designator;
-        this.locationId = builder.locationId;
+
+        if (builder.locationIds != null) {
+            this.locationIds = new LinkedHashSet<>(builder.locationIds);
+        } else {
+            this.locationIds = null;
+        }
+
         this.sourceEntityId = builder.sourceEntityId;
         this.description = builder.description;
         this.timeSeriesIds = builder.timeSeriesIds;
@@ -65,8 +75,13 @@ public class ForecastSpec extends CwmsDTO {
         return specId;
     }
 
-    public String getLocationId() {
-        return locationId;
+    @Nullable
+    public Set<String> getLocationIds() {
+        if (locationIds == null) {
+            return null;
+        } else {
+            return Collections.unmodifiableSet(locationIds);
+        }
     }
 
     public String getSourceEntityId() {
@@ -95,12 +110,12 @@ public class ForecastSpec extends CwmsDTO {
         private String officeId;
         private String specId;
         private String designator;
-        private String locationId;
+        private Set<String> locationIds;
         private String sourceEntityId;
         private String description;
         private List<TimeSeriesIdentifierDescriptor> timeSeriesIds;
 
-        public Builder(){
+        public Builder() {
 
         }
 
@@ -119,8 +134,8 @@ public class ForecastSpec extends CwmsDTO {
             return this;
         }
 
-        public Builder withLocationId(String locationId) {
-            this.locationId = locationId;
+        public Builder withLocationIds(Set<String> locationIds) {
+            this.locationIds = locationIds;
             return this;
         }
 
@@ -144,7 +159,7 @@ public class ForecastSpec extends CwmsDTO {
             return withOfficeId(forecastSpec.getOfficeId())
                     .withSpecId(forecastSpec.getSpecId())
                     .withDesignator(forecastSpec.getDesignator())
-                    .withLocationId(forecastSpec.getLocationId())
+                    .withLocationIds(forecastSpec.getLocationIds())
                     .withSourceEntityId(forecastSpec.getSourceEntityId())
                     .withDescription(forecastSpec.getDescription())
                     .withTimeSeriesIds(forecastSpec.getTimeSeriesIds());
