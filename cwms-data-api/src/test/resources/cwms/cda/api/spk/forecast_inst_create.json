@@ -1,9 +1,9 @@
 {
   "spec": {
-    "office-id": "office",
-    "spec-id": "spec",
+    "office-id": "SPK",
+    "spec-id": "test-spec",
     "designator": "designator",
-    "location-ids": ["location"]
+    "location-id": "FcstInstTestLoc"
   },
   "date-time": 1624284010000,
   "issue-date-time": 1653221020000,
