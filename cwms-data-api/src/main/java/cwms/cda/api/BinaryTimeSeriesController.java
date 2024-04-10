@@ -132,7 +132,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String dateToken = "{date_token}";
             String url = new URIBuilder(ctx.fullUrl())
-                    .setPath(ctx.path() + tsId + "/value")
+                    .setPath(ctx.path() + "/" + tsId + "/value")
                     .clearParameters()
                     .addParameter(OFFICE, office)
                     .addParameter(VERSION_DATE, ctx.queryParam(VERSION_DATE))
