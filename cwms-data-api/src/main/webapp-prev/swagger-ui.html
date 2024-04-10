@@ -1,0 +1,80 @@
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CWMS Data API for Data Retrieval - Swagger UI</title>
+        <meta name="Description" content="CWMS Data API for CWMS Data Retrieval" />
+        <link rel="stylesheet" type="text/css" href="./swagger-ui.css">
+        <link rel="stylesheet" href="./css/body.css" />
+        <link rel="stylesheet" href="./css/HEC.sidebar.css" />
+        <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+        <script type="text/javascript" src="./js/util.js"></script>
+        <style>
+            html {
+                box-sizing: border-box;
+                overflow: -moz-scrollbars-vertical;
+                overflow-y: scroll;
+            }
+
+            *,
+            *:before,
+            *:after {
+                box-sizing: inherit;
+            }
+
+            body {
+                margin: 0;
+                background: #fafafa;
+            }
+        </style>
+        <script src="./swagger-ui-bundle.js" charset="UTF-8"> </script>
+        <script src="./swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
+        <script defer>
+            window.addEventListener("load", function () {
+                // Begin Swagger UI call region
+                const ui = SwaggerUIBundle({
+                    url: "./swagger-docs",
+                    dom_id: "#swagger-ui",
+                    configUrl: "./swagger-config.yaml",
+                    deepLinking: false,
+                    presets: [
+                        SwaggerUIBundle.presets.apis
+                    ],
+                    plugins: [
+                        SwaggerUIBundle.plugins.DownloadUrl
+                    ]
+                }
+                );
+                // End Swagger UI call region
+
+                window.ui = ui
+            });
+        </script>
+        <script defer type="text/javascript">
+            load('header', './templates/HEC.header.html')
+            load('footer', './templates/HEC.footer.html')
+        </script>
+    </head>
+
+    <body>
+        <div id="page-container">
+            <header id="header" style="display: none;"></header>
+            <div class="page-wrap">
+                <div class="container-fluid">
+                    <div class="page-content">
+                        <div id="topPane" class="col-md backend-cp-collapsible" style="padding: 0;">
+                            <div id="swagger-ui"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer id="footer" style="display: none;"></footer>
+    </body>
+
+</html>

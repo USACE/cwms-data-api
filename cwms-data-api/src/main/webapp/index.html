@@ -1,69 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CDA - CWMS Data API</title>
-        <meta name="Description" content="CDA CWMS Data API" />
-        <link rel="stylesheet" href="./css/body.css" />
-        <link rel="stylesheet" href="./css/HEC.sidebar.css"/>
-        <link rel="stylesheet" href="./css/cda.css"/>
-        <script type="text/javascript" src="./js/util.js"></script>
-        <script defer type="text/javascript">
-            // Load the page templates into the DOM
-            window.addEventListener("load", function () {
-                load('header', './templates/HEC.header.html')
-                load('footer', './templates/HEC.footer.html')
-            })
-        </script>
-    </head>
-    <body>
-        <div id="page-container">
-            <header id="header" style="display: none;">
-            </header>
-            <div class="page-wrap">
-                <div class="container-fluid">
-                    <div class="page-content">
-                        <div id="topPane" class="col-md backend-cp-collapsible">
-                            <div class="box-usace">
-                                <h2 class="box-header-striped">
-                                    <span class="titleLabel title">Introduction</span>
-                                    <span class="rss"></span>
-                                </h2>
-                                <div class="box-content" style="background-color:white;margin:auto">
-                                    <div class="content">
-                                        Welcome to the US Army Corps of Engineers Corps Water Management System Data API.
-                                        At the Swagger UI link above you will find a REST styled interface for retrieving any data available publicly.									</div>
-                                </div>
-                            </div>
-                            <div class="box-usace">
-                                <h2 class="box-header-striped">
-                                    <span class="titleLabel title">Some Quick notes</span>
-                                    <span class="rss"></span>
-                                </h2>
-                                <div class="box-content" style="background-color:white;margin:auto">
-                                    <div class="content">
-                                        <ul>
-                                            <li>Dates and Intervals/Durations are always in either the ISO 8601 or milliseconds since the unix epoch.</li>
-                                            <li>The interval is the time between two different measurements.
-                                                <ul>
-                                                    <li>An interval of 0 and irregular are equivalent and mean that there is no fixed interval between measurements</li>
-                                                </ul>
-                                            </li>
-                                            <li>The Duration is used for aggregating calculations (Sums over time, Averages) and indicates the time window over which samples are gathered to
-                                                generate a value.
-                                            </li>
-                                            <li>Errors are always returned as JSON objects</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <footer id="footer" style="display: none;"></footer>
-    </body>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDA - CWMS Data API</title>
+    <meta name="Description" content="CDA CWMS Data API" />
+    <link rel="stylesheet" href="./css/body.css" />
+    <link rel="stylesheet" href="./css/HEC.sidebar.css" />
+    <link rel="stylesheet" href="./css/cda.css" />
+    <script type="text/javascript" src="./js/util.js"></script>
+    <script type="module" crossorigin src="/assets/index-JqALkGJB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Db7ISEKL.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

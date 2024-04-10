@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CDA - CWMS Data API</title>
+        <meta name="Description" content="CDA CWMS Data API" />
+        <link rel="stylesheet" href="./css/body.css" />
+        <link rel="stylesheet" href="./css/HEC.sidebar.css"/>
+        <link rel="stylesheet" href="./css/cda.css"/>
+        <script type="text/javascript" src="./js/util.js"></script>
+        <script defer type="text/javascript">
+            // Load the page templates into the DOM
+            window.addEventListener("load", function () {
+                load('header', './templates/HEC.header.html')
+                load('footer', './templates/HEC.footer.html')
+            })
+        </script>
+    </head>
+    <body>
+        <div id="page-container">
+            <header id="header" style="display: none;">
+            </header>
+            <div class="page-wrap">
+                <div class="container-fluid">
+                    <div class="page-content">
+                        <div id="topPane" class="col-md backend-cp-collapsible">
+                            <div class="box-usace">
+                                <h2 class="box-header-striped">
+                                    <span class="titleLabel title">Regular Expressions</span>
+                                    <span class="rss"></span>
+                                </h2>
+                                <div class="box-content" style="background-color:white;margin:auto">
+                                    <div class="content">
+                                        Several of the Data API endpoints will filter the results by user provided Regular Expressions.
+                                        Regular Expressions (regex) are a powerful tool for matching patterns in text.<br>The wikipedia page
+                                        on regex is a good place to start learning about them: <a href="https://en.wikipedia.org/wiki/Regular_expression">https://en.wikipedia.org/wiki/Regular_expression</a>
+                                        <br>
+                                        Various languages have different implementations of regex.  Not every regular expression feature is supported in each implementation.
+                                        Data API forwards regular expressions to the database, which is currently Oracle.
+                                        <br>See the Oracle documentation for a precise description of the supported features:
+                                        <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/adfns/regexp.html">https://docs.oracle.com/en/database/oracle/oracle-database/19/adfns/regexp.html</a>
+                                        <br>
+                                        In Data API case-insensitive regular expressions are used.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="box-usace">
+                                <h2 class="box-header-striped">
+                                    <span class="titleLabel title">Regular Expression examples</span>
+                                    <span class="rss"></span>
+                                </h2>
+                                <div class="box-content" style="background-color:white;margin:auto">
+                                    <div class="content">
+
+                                        Examples:<br>
+                                        The location_group end-point can return a large number of location assignments.  The end-point allows the user to specify
+                                        a regex on the location_category to filter the results.  Given the following location categories:<br>
+                                        <ul>
+                                            <li>cat145057</li>
+                                            <li>cat191378</li>
+                                            <li>cat344740</li>
+                                            <li>cat357836</li>
+                                            <li>cat402365</li>
+                                            <li>locCat035226</li>
+                                            <li>locCat043814</li>
+                                            <li>locCat091201</li>
+                                            <li>locCat100478</li>
+                                        </ul>
+
+                                        Providing a regex of "cat" will match all of the above categories.  This may be surprising. The regex does not need to match the entire string.
+                                        It only needs to match a portion of the string.  The regex "cat" will match all of the above categories because they all contain the string "cat".
+                                        "CAT" will also match all the categories because the regex is case-insensitive.<br>
+                                        <br>
+                                        ^ matches the beginning of the string.<br>
+                                        $ matches the end of the string.<br>
+                                        <br>
+                                        If you want to match only the categories that start with "cat", you can use the regex "^cat".  The "^" character is a special character that
+                                        matches the beginning of the string.  The regex "^cat" will match the first 5 categories in the list above.
+                                        <br>
+                                        . matches any character<br>
+                                        <br>
+                                        To find categories that start with cat and contain a 6 in any position you could use the regex "^cat.*6"<br>
+                                        <br>
+                                        Sometimes you want to match a literal period character and don't want it to be interpreted as a wildcard.  To match a literal period character
+                                        you can escape it with a backslash.  To match the string "CWMS 3.3" you can use the regex "CWMS 3\.3"
+                                        To match the string "ALBT.Stage" you can use the regex "ALBT\.Stage" or "ALBT[.]Stage" or ALBT[\.]Stage<br>
+                                        <br>
+                                        To match cat145057 and locCat043814 you can build a regular expression with the "|" character which is the OR operator.
+                                        The regex "^cat145057$|^locCat043814$" will match both of those categories and only those two categories.<br>
+                                        <br>
+                                        It's possible to match ranges of characters.  The regex "cat[0-3]" will match any category that contains "cat" followed by a 0,1,2 or 3
+                                        This will not match cat402365 because the 4 is not in the range 0-3.<br>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer id="footer" style="display: none;"></footer>
+    </body>
+</html>
