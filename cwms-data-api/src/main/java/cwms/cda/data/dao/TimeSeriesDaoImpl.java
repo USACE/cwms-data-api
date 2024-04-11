@@ -217,10 +217,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
         String trim = OracleTypeMap.formatBool(shouldTrim);
-        String startInclusive = null;
-        String endInclusive = null;
-        String previous = null;
-        String next = null;
+        String startInclusive = "T";
+        String endInclusive = "T";
+        String previous = "F";
+        String next = "F";
         Long versionDateMilli = null;
         String maxVersion = null;
 
