@@ -2,7 +2,6 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
 import static cwms.cda.api.Controllers.CURSOR;
@@ -15,7 +14,6 @@ import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.GROUP_ID;
 import static cwms.cda.api.Controllers.MAX_VERSION;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
@@ -33,7 +31,6 @@ import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_RULE;
 import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.TS_IDS;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
@@ -55,9 +52,7 @@ import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
-import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.Tsv;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -82,21 +77,8 @@ import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.MatchResult;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -225,7 +207,7 @@ public class TimeSeriesController implements CrudHandler {
 
     @NotNull
     protected TimeSeriesDao getTimeSeriesDao(DSLContext dsl) {
-        return new TimeSeriesDaoImpl(dsl);
+        return new TimeSeriesDaoImpl(dsl, metrics);
     }
 
     @OpenApi(

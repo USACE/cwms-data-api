@@ -11,6 +11,11 @@ import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheStats;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -43,6 +48,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -50,6 +56,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.Configuration;
@@ -89,13 +96,39 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
+    public static final String PROP_BASE = "cwms.cda.data.dao.ts";
 
+    public static final String VERSIONED_NAME = "isVersioned";
+
+    private static final Cache<List<String>, Boolean> isVersionedCache = CacheBuilder.newBuilder()
+            .maximumSize(Integer.getInteger(PROP_BASE + "." + VERSIONED_NAME
+                    + ".maxSize", 32000))
+            .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSIONED_NAME
+                            + ".expireAfterSeconds", 600), TimeUnit.SECONDS)
+            .recordStats()
+            .build();
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
-        super(dsl);
-
+        this(dsl, null);
     }
 
+    public TimeSeriesDaoImpl(DSLContext dsl, @Nullable MetricRegistry metrics) {
+        super(dsl);
+
+        if (metrics != null) {
+            CacheStats stats = isVersionedCache.stats();
+            String hrName = MetricRegistry.name(this.getClass().getName(), VERSIONED_NAME, "hit-rate");
+            if (metrics.getGauges().get(hrName) == null) {
+                MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
+                metrics.gauge(hrName, hr);
+            }
+            String mrName = MetricRegistry.name(this.getClass().getName(),VERSIONED_NAME, "miss-rate");
+            if (metrics.getGauges().get(mrName) == null) {
+                MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
+                metrics.gauge(mrName, mr);
+            }
+        }
+    }
 
     public String getTimeseries(String format, String names, String office, String units,
                                 String datum,
@@ -209,10 +242,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
 
 
-        // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
-        // internal table from it so we can manipulate it further
-        // This code assumes the database timezone is in UTC (per Oracle recommendation)
-        SQL retrieveSelectData = null;
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
@@ -230,21 +259,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             maxVersion = "T";
         }
 
-        // Query based on versionDate or query max aggregate
-        // to_timestamp will allow null in the next schema release
-        if (versionDate != null) {
-            retrieveSelectData = DSL.sql(
-                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                            + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTs",
-                    tsId, unit, beginTimeMilli, endTimeMilli,
-                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion, officeId);
-        } else {
-            retrieveSelectData = DSL.sql(
-                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                            + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
-                    tsId, unit, beginTimeMilli, endTimeMilli,
-                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,officeId);
-}
+        // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
+        // internal table from it so we can manipulate it further
+        // This code assumes the database timezone is in UTC (per Oracle recommendation)
+        SQL retrieveSelectData = DSL.sql(
+                "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
+                        + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
+                        + "?,?,?,?,?,"
+                        + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
+                tsId, unit,
+                beginTimeMilli, endTimeMilli,  //tz hardcoded
+                trim, startInclusive, endInclusive, previous, next,
+                versionDateMilli, maxVersion, officeId);
 
         Field<String> tzName;
         if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
@@ -262,37 +288,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Total is only an estimate, as it can change if fetching current data,
             // or the timeseries otherwise changes between queries.
 
-            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = null;
-
-            // Query based on versionDate or query max aggregate
-            // to_timestamp will allow null in the next schema release
-            if(versionDate != null) {
-                retrieveSelectCount = select(
-                        dateTimeCol, valueCol, qualityCol
-                ).from(DSL.sql(
-                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                                + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTsTotal",
-                        valid.field("tsid", String.class),
-                        valid.field("units", String.class),
-                        beginTimeMilli,
-                        endTimeMilli,
-                        trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
-                        valid.field("office_id", String.class)
-                ));
-            } else {
-                retrieveSelectCount = select(
-                        dateTimeCol, valueCol, qualityCol
-                ).from(DSL.sql(
-                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                                + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
-                        valid.field("tsid", String.class),
-                        valid.field("units", String.class),
-                        beginTimeMilli,
-                        endTimeMilli,
-                        trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
-                        valid.field("office_id", String.class)
-                ));
-            }
+            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = select(
+                    dateTimeCol, valueCol, qualityCol
+            ).from(DSL.sql(
+                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
+                            + "cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                            + "'UTC',?,?,?,?,?," + getVersionPart(versionDate) + ",?,?) ) retrieveTsTotal",
+                    valid.field("tsid", String.class),
+                    valid.field("units", String.class),
+                    beginTimeMilli,
+                    endTimeMilli,
+                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
+                    valid.field("office_id", String.class)
+            ));
 
             totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
         }
@@ -363,7 +371,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                             tsCursor.toInstant().toEpochMilli()),
                                                     DSL.val(beginTime.toInstant().toEpochMilli())))))
                             .and(dateTimeCol
-                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
+                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.val(endTime.toInstant().toEpochMilli())))
                             );
 
             if (pageSize > 0) {
@@ -383,6 +392,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         return retVal;
+    }
+
+    private static String getVersionPart(ZonedDateTime versionDate) {
+        if (versionDate != null) {
+            return "cwms_20.cwms_util.to_timestamp(?)";
+        }
+        return "?";
     }
 
     public static String parseLocFromTimeSeriesId(String tsId) {
@@ -417,12 +433,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return dateVersionType;
     }
 
-    private static boolean isVersioned(DSLContext dsl, String names, String office) {
-        return connectionResult(dsl, connection -> {
-            Configuration configuration = getDslContext(connection, office).configuration();
-            return OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                    names, office));
-        });
+    private static boolean isVersioned(DSLContext dsl, String tsId, String office) {
+        final List<String> cacheKey = Arrays.asList(office, tsId);
+
+        Boolean cachedValue = isVersionedCache.getIfPresent(cacheKey);
+        if (cachedValue == null) {
+            cachedValue = connectionResult(dsl, connection -> {
+                Configuration configuration = getDslContext(connection, office).configuration();
+                boolean isVersioned =
+                        OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
+                                tsId, office));
+                isVersionedCache.put(cacheKey, isVersioned);
+                return isVersioned;
+            });
+        }
+        return cachedValue;
     }
 
     // datumInfo comes back like:
@@ -753,9 +778,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
             Field[] queryFields = new Field[]{tsView.CWMS_TS_ID, tsvView.OFFICE_ID,
-                    tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
-                    tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
-                    tsvView.START_DATE, tsvView.END_DATE,};
+                tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
+                tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
+                tsvView.START_DATE, tsvView.END_DATE,};
 
             // look them back up by name b/c we are using them on results of innerselect.
             List<Field<Object>> fields = Arrays.stream(queryFields)
@@ -846,9 +871,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     .and(tsvView.END_DATE.gt(pastLimit)));
 
             Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
-                    tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
-                    tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
-                    tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
+                tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
+                tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
+                tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
 
             List<Field<Object>> fields = Arrays.stream(queryFields)
                     .map(Field::getName)

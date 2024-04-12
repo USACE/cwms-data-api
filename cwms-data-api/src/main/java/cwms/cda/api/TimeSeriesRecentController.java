@@ -24,6 +24,17 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TS_IDS;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -43,10 +54,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -63,9 +70,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 public class TimeSeriesRecentController implements Handler {
     private static final Logger logger = Logger.getLogger(TimeSeriesRecentController.class.getName());
@@ -87,7 +94,7 @@ public class TimeSeriesRecentController implements Handler {
 
     @NotNull
     private TimeSeriesDao getTimeSeriesDao(DSLContext dsl) {
-        return new TimeSeriesDaoImpl(dsl);
+        return new TimeSeriesDaoImpl(dsl, metrics);
     }
 
     @OpenApi(
@@ -120,9 +127,7 @@ public class TimeSeriesRecentController implements Handler {
     public void handle(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("getRecent")) {
-            DSLContext dsl = getDslContext(ctx);
 
-            TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
@@ -144,6 +149,9 @@ public class TimeSeriesRecentController implements Handler {
                     && groupId != null && !groupId.isEmpty();
             List<String> tsIds = getTsIds(tsIdsParam);
             boolean hasTsIds = tsIds != null && !tsIds.isEmpty();
+
+            DSLContext dsl = getDslContext(ctx);
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             List<RecentValue> latestValues;
             if (hasTsGroupInfo && hasTsIds) {
