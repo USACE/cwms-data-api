@@ -1,0 +1,22 @@
+{
+  "spec-id": "test-spec",
+  "office-id": "SPK",
+  "location-id": "location",
+  "source-entity-id": "anotherEntity",
+  "designator": "Hi Hi",
+  "description": "different description",
+  "time-series-ids": [
+    {
+      "time-series-id": "tsid4",
+      "active": true
+    },
+    {
+      "time-series-id": "tsid5",
+      "active": true
+    },
+    {
+      "time-series-id": "tsid6",
+      "active": true
+    }
+  ]
+}

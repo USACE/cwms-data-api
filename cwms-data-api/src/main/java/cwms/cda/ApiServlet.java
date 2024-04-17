@@ -46,6 +46,8 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.ForecastInstanceController;
+import cwms.cda.api.ForecastSpecController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
@@ -138,27 +140,28 @@ import org.owasp.html.PolicyFactory;
  * Setup all the information required so we can serve the request.
  *
  */
-@WebServlet(urlPatterns = {
-    "/catalog/*",
-    "/auth/*",
-    "/swagger-docs",
-    "/timeseries/*",
-    "/offices/*",
-    "/states/*",
-    "/counties/*",
-    "/location/*",
-    "/locations/*",
-    "/parameters/*",
-    "/timezones/*",
-    "/units/*",
-    "/ratings/*",
-    "/levels/*",
-    "/basins/*",
-    "/blobs/*",
-    "/clobs/*",
-    "/pools/*",
-    "/specified-levels/*",
-    "/standard-text-id/*"
+@WebServlet(urlPatterns = { "/catalog/*",
+        "/auth/*",
+        "/swagger-docs",
+        "/timeseries/*",
+        "/offices/*",
+        "/states/*",
+        "/counties/*",
+        "/location/*",
+        "/locations/*",
+        "/parameters/*",
+        "/timezones/*",
+        "/units/*",
+        "/ratings/*",
+        "/levels/*",
+        "/basins/*",
+        "/blobs/*",
+        "/clobs/*",
+        "/pools/*",
+        "/specified-levels/*",
+//        "/forecast-spec/*",
+//        "/forecast-instance/*",
+        "/standard-text-id/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -435,6 +438,11 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+//        cdaCrudCache("/forecast-instance/{" + Controllers.NAME + "}",
+//                new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+//        cdaCrudCache("/forecast-spec/{" + Controllers.NAME + "}",
+//                new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
 
     }
 

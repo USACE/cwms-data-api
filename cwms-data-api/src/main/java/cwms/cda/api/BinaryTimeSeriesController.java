@@ -131,8 +131,13 @@ public class BinaryTimeSeriesController implements CrudHandler {
         ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String dateToken = "{date_token}";
+            String path = ctx.path();
+            if(!path.endsWith("/"))  {
+                path += "/";
+            }
+            path += tsId + "/value";
             String url = new URIBuilder(ctx.fullUrl())
-                    .setPath(ctx.path() + tsId + "/value")
+                    .setPath(path)
                     .clearParameters()
                     .addParameter(OFFICE, office)
                     .addParameter(VERSION_DATE, ctx.queryParam(VERSION_DATE))

@@ -4,6 +4,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.helpers.ReplaceUtils;
@@ -13,8 +14,8 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -143,10 +143,10 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     public void store(BinaryTimeSeries tts, boolean maxVersion, boolean storeExisting,
                       boolean storeNonExisting, boolean replaceAll) {
 
-        ZonedDateTime versionDateZdt = tts.getVersionDate();
+        Instant versionDateZdt = tts.getVersionDate();
         storeRows(tts.getOfficeId(), tts.getName(), tts.getBinaryValues(), maxVersion,
                 storeExisting, storeNonExisting, replaceAll,
-                versionDateZdt == null ? null : versionDateZdt.toInstant());
+                versionDateZdt);
     }
 
 
@@ -156,42 +156,16 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         List<BinaryTimeSeriesRow> binRows = retrieveRows(officeId, tsId, mask, startTime, endTime,
                 versionInstant, kiloByteLimit, urlBuilder);
 
-        VersionType versionType = getVersionType(tsId, officeId, versionInstant != null);
-
+        VersionType versionType = TimeSeriesDaoImpl.getVersionType(dsl, tsId, officeId, versionInstant != null);
+        String timeZoneId = TimeSeriesDaoImpl.getTimeZoneId(dsl, tsId, officeId);
         return new BinaryTimeSeries.Builder()
                 .withOfficeId(officeId)
                 .withName(tsId)
                 .withBinaryValues(binRows)
                 .withDateVersionType(versionType)
+                .withVersionDate(versionInstant)
+                .withTimeZone(timeZoneId)
                 .build();
-    }
-
-    @NotNull
-    private VersionType getVersionType(String names, String office, boolean dateProvided) {
-        VersionType dateVersionType;
-
-        if (!dateProvided) {
-            boolean isVersioned = isVersioned(names, office);
-
-            if (isVersioned) {
-                dateVersionType = VersionType.MAX_AGGREGATE;
-            } else {
-                dateVersionType = VersionType.UNVERSIONED;
-            }
-
-        } else {
-            dateVersionType = VersionType.SINGLE_VERSION;
-        }
-
-        return dateVersionType;
-    }
-
-    private boolean isVersioned(String names, String office) {
-        return connectionResult(dsl, connection -> {
-            Configuration configuration = getDslContext(connection, office).configuration();
-            return OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                    names, office));
-        });
     }
 
     public List<BinaryTimeSeriesRow> retrieveRows(String officeId, String tsId, String mask,

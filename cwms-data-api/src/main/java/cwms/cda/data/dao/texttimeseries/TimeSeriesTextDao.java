@@ -2,15 +2,13 @@ package cwms.cda.data.dao.texttimeseries;
 
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.helpers.ReplaceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -34,38 +32,16 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
         regRows = regDao.retrieveRows(officeId, tsId, textMask,
                 startTime, endTime, versionDate, kiloByteLimit, urlBuilder);
 
-        VersionType versionType = getVersionType(tsId, officeId, versionDate != null);
-
+        VersionType versionType = TimeSeriesDaoImpl.getVersionType(dsl, tsId, officeId, versionDate != null);
+        String timeZoneId = TimeSeriesDaoImpl.getTimeZoneId(dsl, tsId, officeId);
         return new TextTimeSeries.Builder()
                 .withOfficeId(officeId)
                 .withName(tsId)
                 .withRegularTextValues(regRows)
                 .withVersionDate(versionDate)
                 .withDateVersionType(versionType)
+                .withTimeZone(timeZoneId)
                 .build();
-    }
-
-    @NotNull
-    private VersionType getVersionType(String names, String office, boolean versionDateProvided) {
-        VersionType dateVersionType;
-
-        if (versionDateProvided) {
-            dateVersionType = VersionType.SINGLE_VERSION;
-        } else {
-            boolean isVersioned = connectionResult(dsl, connection -> {
-                Configuration configuration = getDslContext(connection, office).configuration();
-                return OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                        names, office));
-            });
-
-            if (isVersioned) {
-                dateVersionType = VersionType.MAX_AGGREGATE;
-            } else {
-                dateVersionType = VersionType.UNVERSIONED;
-            }
-        }
-
-        return dateVersionType;
     }
 
 

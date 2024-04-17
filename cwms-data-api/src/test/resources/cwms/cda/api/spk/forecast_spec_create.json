@@ -1,7 +1,7 @@
 {
-  "spec-id": "spec",
-  "office-id": "office",
-  "location-ids": ["location"],
+  "spec-id": "test-spec",
+  "office-id": "SPK",
+  "location-id": "location",
   "source-entity-id": "sourceEntity",
   "designator": "designator",
   "description": "description",
