@@ -19,7 +19,6 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
-import cwms.cda.data.dto.TsvDquId;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
@@ -264,7 +263,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Total is only an estimate, as it can change if fetching current data,
             // or the timeseries otherwise changes between queries.
 
-            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = null;
+            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount;
 
             // Query based on versionDate or query max aggregate
             // to_timestamp will allow null in the next schema release
@@ -377,7 +376,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-            query.fetchInto(tsRecord -> timeseries.addValue(
+            query.forEach(tsRecord -> timeseries.addValue(
                             tsRecord.getValue(dateTimeCol),
                             tsRecord.getValue(valueCol),
                             tsRecord.getValue(qualityNormCol).intValue()
@@ -448,7 +447,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
                 retVal = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
             } catch (JAXBException e) {
-                logger.log(Level.WARNING, "Failed to parse:" + body, e);
+                logger.log(Level.WARNING, e, () -> "Failed to parse:" + body);
             }
         }
         return retVal;
@@ -674,24 +673,35 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         String maxFieldName = "MAX_DATE_TIME";
-        SelectHavingStep<Record1<Timestamp>> select =
-                dsl.select(max(view.DATE_TIME).as(maxFieldName)).from(
-                        view).where(nestedCondition).groupBy(view.TS_CODE);
+        SelectHavingStep<Record1<Timestamp>> maxSelect =
+                dsl.select(max(view.DATE_TIME).as(maxFieldName))
+                        .from(view)
+                        .where(nestedCondition)
+                        .groupBy(view.TS_CODE);
 
-        Record dquRecord = dsl.select(asterisk()).from(view).where(view.DATE_TIME.in(select)).and(
-                view.CWMS_TS_ID.eq(tsId)).and(view.OFFICE_ID.eq(tOfficeId)).and(view.UNIT_ID.eq(unit)).and(
-                view.VALUE.isNotNull()).and(view.ALIASED_ITEM.isNull()).fetchOne();
+        Record dquRecord = dsl.select(asterisk())
+                .from(view)
+                .where(view.DATE_TIME.in(maxSelect))
+                .and(view.CWMS_TS_ID.eq(tsId))
+                .and(view.OFFICE_ID.eq(tOfficeId))
+                .and(view.UNIT_ID.eq(unit))
+                .and(view.VALUE.isNotNull())
+                .and(view.ALIASED_ITEM.isNull())
+                .fetchOne();
 
         if (dquRecord != null) {
-            retval = dquRecord.map(r -> {
-                usace.cwms.db.jooq.codegen.tables.records.AV_TSV_DQU dqu = r.into(view);
-                return new TsvDqu(
-                        new TsvDquId(dqu.getOFFICE_ID(), dqu.getTS_CODE(),
-                        dqu.getUNIT_ID(), dqu.getDATE_TIME()),
-                        dqu.getCWMS_TS_ID(), dqu.getVERSION_DATE(),
-                        dqu.getDATA_ENTRY_DATE(), dqu.getVALUE(), dqu.getQUALITY_CODE(),
-                        dqu.getSTART_DATE(), dqu.getEND_DATE());
-            });
+            retval = dquRecord.map(jrecord -> new TsvDqu.Builder()
+                    .withOfficeId(jrecord.getValue(view.OFFICE_ID.getName(), String.class))
+                    .withCwmsTsId(jrecord.getValue(view.CWMS_TS_ID.getName(), String.class))
+                    .withUnitId(jrecord.getValue(view.UNIT_ID.getName(), String.class))
+                    .withDateTime(jrecord.getValue(view.DATE_TIME.getName(), Timestamp.class))
+                    .withVersionDate(jrecord.getValue(view.VERSION_DATE.getName(), Timestamp.class))
+                    .withDataEntryDate(jrecord.getValue(view.DATA_ENTRY_DATE.getName(), Timestamp.class))
+                    .withValue(jrecord.getValue(view.VALUE.getName(), Double.class))
+                    .withQualityCode(jrecord.getValue(view.QUALITY_CODE.getName(), Long.class))
+                    .withStartDate(jrecord.getValue(view.START_DATE.getName(), Timestamp.class))
+                    .withEndDate(jrecord.getValue(view.END_DATE.getName(), Timestamp.class))
+                    .build());
         }
 
         return retval;
@@ -811,14 +821,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @NotNull
     private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, Timestamp dataEntryDate) {
-        TsvDquId id = buildDquId(tsvView, jrecord);
 
-        return new TsvDqu(id, jrecord.getValue(tsvView.CWMS_TS_ID.getName(), String.class),
-                jrecord.getValue(tsvView.VERSION_DATE.getName(), Timestamp.class), dataEntryDate,
-                jrecord.getValue(tsvView.VALUE.getName(), Double.class),
-                jrecord.getValue(tsvView.QUALITY_CODE.getName(), Long.class),
-                jrecord.getValue(tsvView.START_DATE.getName(), Timestamp.class),
-                jrecord.getValue(tsvView.END_DATE.getName(), Timestamp.class));
+        return new TsvDqu.Builder()
+                .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID.getName(), String.class))
+                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID.getName(), String.class))
+                .withUnitId(jrecord.getValue(tsvView.UNIT_ID.getName(), String.class))
+                .withDateTime(jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class))
+                .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE.getName(), Timestamp.class))
+                .withDataEntryDate(dataEntryDate)
+                .withValue(jrecord.getValue(tsvView.VALUE.getName(), Double.class))
+                .withQualityCode(jrecord.getValue(tsvView.QUALITY_CODE.getName(), Long.class))
+                .withStartDate(jrecord.getValue(tsvView.START_DATE.getName(), Timestamp.class))
+                .withEndDate(jrecord.getValue(tsvView.END_DATE.getName(), Timestamp.class))
+                .build()
+        ;
     }
 
 
@@ -890,13 +906,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    @NotNull
-    private TsvDquId buildDquId(AV_TSV_DQU tsvView, Record jrecord) {
-        return new TsvDquId(jrecord.getValue(tsvView.OFFICE_ID.getName(), String.class),
-                jrecord.getValue(tsvView.TS_CODE.getName(), Long.class),
-                jrecord.getValue(tsvView.UNIT_ID.getName(), String.class),
-                jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class));
-    }
 
     @Override
     public void create(TimeSeries input) {
