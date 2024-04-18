@@ -24,7 +24,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ForecastInstanceDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastInstance;
@@ -44,15 +43,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 
 public final class ForecastInstanceController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(ForecastInstanceController.class.getName());
 
     public static final String TAG = "Forecast";
     private final MetricRegistry metrics;
@@ -92,10 +87,8 @@ public final class ForecastInstanceController implements CrudHandler {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             dao.create(forecastInstance);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException | DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to deserialize forecast instance from content body");
         }
     }
 
@@ -265,10 +258,8 @@ public final class ForecastInstanceController implements CrudHandler {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
             dao.update(forecastInstance);
-        } catch (IOException | DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to deserialize forecast instance from content body");
         }
     }
 
