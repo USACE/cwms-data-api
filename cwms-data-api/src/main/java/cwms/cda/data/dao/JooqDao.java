@@ -177,7 +177,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     protected static Condition filterExact(Field<String> field, String filter) {
         if (filter == null) {
-            return DSL.trueCondition();
+            return DSL.noCondition();
         } else {
             return field.eq(filter);
         }
@@ -192,7 +192,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      */
     public static Condition caseInsensitiveLikeRegexNullTrue(Field<String> field, String regex) {
         if (regex == null) {
-            return DSL.trueCondition();
+            return DSL.noCondition();
         }
         return caseInsensitiveLikeRegex(field, regex);
     }

@@ -217,9 +217,19 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         String designator = forecastInst.getSpec().getDesignator();
         Instant forecastDate = forecastInst.getDateTime();
         Instant issueDate = forecastInst.getIssueDateTime();
-        ForecastInstance fromDb = getForecastInstance(officeId, specId, designator, forecastDate, issueDate);
-        if (fromDb == null) {
-            throw new IllegalArgumentException("Forecast instance not found: " + forecastInst);
+        AV_FCST_INST inst = AV_FCST_INST.AV_FCST_INST;
+        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
+        Record16<String, String, String, String, String, String,
+                Timestamp, Timestamp, Integer, String, String, String, String,
+                Timestamp, Timestamp, JSON> fetch = instanceQuery()
+                .where(spec.OFFICE_ID.eq(officeId))
+                .and(spec.FCST_SPEC_ID.eq(specId))
+                .and(spec.FCST_DESIGNATOR.eq(designator))
+                .and(inst.FCST_DATE_TIME_UTC.eq(Timestamp.from(forecastDate)))
+                .and(inst.ISSUE_DATE_TIME_UTC.eq(Timestamp.from(issueDate)))
+                .fetchOne();
+        if (fetch == null) {
+            throw new NotFoundException("Forecast instance not found: " + forecastInst);
         }
         create(forecastInst);
     }

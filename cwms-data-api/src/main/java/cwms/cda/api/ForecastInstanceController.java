@@ -86,7 +86,7 @@ public final class ForecastInstanceController implements CrudHandler {
 
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             dao.create(forecastInstance);
-            ctx.status(HttpServletResponse.SC_OK);
+            ctx.status(HttpServletResponse.SC_CREATED);
         } catch (IOException ex) {
             throw new IllegalArgumentException("Unable to deserialize forecast instance from content body");
         }
@@ -130,6 +130,7 @@ public final class ForecastInstanceController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
             dao.delete(office, name, designator, forecastInstant, issueInstant);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
@@ -258,6 +259,7 @@ public final class ForecastInstanceController implements CrudHandler {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
             dao.update(forecastInstance);
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException ex) {
             throw new IllegalArgumentException("Unable to deserialize forecast instance from content body");
         }
