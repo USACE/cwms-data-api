@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -85,7 +84,7 @@ public class ForecastSpecTest {
         return new ForecastSpec.Builder()
                 .withSpecId("spec")
                 .withOfficeId("office")
-                .withLocationIds(Collections.singleton("location"))
+                .withLocationId("location")
                 .withSourceEntityId("sourceEntity").withDesignator("designator")
                 .withDescription("description")
                 .withTimeSeriesIds(tsids)
