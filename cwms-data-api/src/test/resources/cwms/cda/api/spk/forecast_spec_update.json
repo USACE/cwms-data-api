@@ -1,9 +1,8 @@
 {
   "spec-id": "TEST-SPEC",
   "office-id": "SPK",
-  "location-id": "TsBinTestLoc",
   "source-entity-id": "USGS",
-  "designator": "Hi Hi",
+  "designator": "designator",
   "description": "different description",
   "time-series-ids": [
     "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid4",

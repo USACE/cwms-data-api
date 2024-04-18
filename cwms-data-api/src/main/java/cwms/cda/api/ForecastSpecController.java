@@ -70,7 +70,7 @@ public final class ForecastSpecController implements CrudHandler {
 
             dao.create(forecastSpec);
 
-            ctx.status(HttpServletResponse.SC_OK);
+            ctx.status(HttpServletResponse.SC_CREATED);
         } catch (IOException ex) {
             throw new IllegalArgumentException("Unable to deserialize forecast spec from content body");
         }
@@ -125,6 +125,7 @@ public final class ForecastSpecController implements CrudHandler {
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
             dao.delete(office, name, designator, deleteRule);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
@@ -250,12 +251,10 @@ public final class ForecastSpecController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
-
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
-
             dao.update(forecastSpec);
-
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (IOException ex) {
             throw new IllegalArgumentException("Unable to deserialize forecast spec from content body");
         }
