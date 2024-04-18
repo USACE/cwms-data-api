@@ -52,7 +52,7 @@ public class ForecastSpec extends CwmsDTO {
 
     @Schema(description = "List of Time Series IDs belonging to this Forecast Spec")
     @XmlAttribute(name = "time-series-ids")
-    private final List<TimeSeriesIdentifierDescriptor> timeSeriesIds;
+    private final List<String> timeSeriesIds;
 
 
     private ForecastSpec(Builder builder) {
@@ -96,12 +96,25 @@ public class ForecastSpec extends CwmsDTO {
         return description;
     }
 
-    public List<TimeSeriesIdentifierDescriptor> getTimeSeriesIds() {
+    public List<String> getTimeSeriesIds() {
         return timeSeriesIds;
     }
 
     public void validate() throws FieldException {
         //TODO
+    }
+
+    @Override
+    public String toString() {
+        return "ForecastSpec{" +
+                "specId='" + specId + '\'' +
+                ", designator='" + designator + '\'' +
+                ", locationIds=" + locationIds +
+                ", sourceEntityId='" + sourceEntityId + '\'' +
+                ", description='" + description + '\'' +
+                ", timeSeriesIds=" + timeSeriesIds +
+                ", officeId='" + officeId + '\'' +
+                '}';
     }
 
     @JsonPOJOBuilder
@@ -113,7 +126,7 @@ public class ForecastSpec extends CwmsDTO {
         private Set<String> locationIds;
         private String sourceEntityId;
         private String description;
-        private List<TimeSeriesIdentifierDescriptor> timeSeriesIds;
+        private List<String> timeSeriesIds;
 
         public Builder() {
 
@@ -149,7 +162,7 @@ public class ForecastSpec extends CwmsDTO {
             return this;
         }
 
-        public Builder withTimeSeriesIds(List<TimeSeriesIdentifierDescriptor> timeSeriesIds) {
+        public Builder withTimeSeriesIds(List<String> timeSeriesIds) {
             this.timeSeriesIds = timeSeriesIds;
             return this;
         }

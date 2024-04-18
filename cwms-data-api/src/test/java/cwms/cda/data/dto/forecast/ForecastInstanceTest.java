@@ -99,7 +99,6 @@ public class ForecastInstanceTest {
                 .withFirstDateTime(firstDateTime)
                 .withLastDateTime(lastDateTime)
                 .withMaxAge(5)
-                .withTimeSeriesCount(3)
                 .withNotes("test notes")
                 .withMetadata(metadata)
                 .withFilename("testFilename.txt")
