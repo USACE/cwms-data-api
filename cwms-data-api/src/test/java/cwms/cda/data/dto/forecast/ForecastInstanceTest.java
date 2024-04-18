@@ -2,12 +2,10 @@ package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import java.util.ArrayList;
-import java.util.Collections;
+
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -114,7 +112,7 @@ public class ForecastInstanceTest {
         return new ForecastSpec.Builder()
                 .withSpecId("spec")
                 .withOfficeId("office")
-                .withLocationIds(Collections.singleton("location"))
+                .withLocationId("location")
                 .withDesignator("designator")
                 .build()
                 ;

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -39,8 +38,8 @@ public class ForecastSpec extends CwmsDTO {
     private final String designator;
 
     @Schema(description = "Location IDs")
-    @XmlElement(name = "location-ids")
-    private final Set<String> locationIds;
+    @XmlElement(name = "location-id")
+    private final String locationId;
 
     @Schema(description = "Source Entity ID")
     @XmlElement(name = "source-entity-id")
@@ -59,13 +58,7 @@ public class ForecastSpec extends CwmsDTO {
         super(builder.officeId);
         this.specId = builder.specId;
         this.designator = builder.designator;
-
-        if (builder.locationIds != null) {
-            this.locationIds = new LinkedHashSet<>(builder.locationIds);
-        } else {
-            this.locationIds = null;
-        }
-
+        this.locationId = builder.locationId;
         this.sourceEntityId = builder.sourceEntityId;
         this.description = builder.description;
         this.timeSeriesIds = builder.timeSeriesIds;
@@ -76,12 +69,8 @@ public class ForecastSpec extends CwmsDTO {
     }
 
     @Nullable
-    public Set<String> getLocationIds() {
-        if (locationIds == null) {
-            return null;
-        } else {
-            return Collections.unmodifiableSet(locationIds);
-        }
+    public String getLocationId() {
+        return locationId;
     }
 
     public String getSourceEntityId() {
@@ -109,7 +98,7 @@ public class ForecastSpec extends CwmsDTO {
         return "ForecastSpec{" +
                 "specId='" + specId + '\'' +
                 ", designator='" + designator + '\'' +
-                ", locationIds=" + locationIds +
+                ", locationId=" + locationId +
                 ", sourceEntityId='" + sourceEntityId + '\'' +
                 ", description='" + description + '\'' +
                 ", timeSeriesIds=" + timeSeriesIds +
@@ -123,7 +112,7 @@ public class ForecastSpec extends CwmsDTO {
         private String officeId;
         private String specId;
         private String designator;
-        private Set<String> locationIds;
+        private String locationId;
         private String sourceEntityId;
         private String description;
         private List<String> timeSeriesIds;
@@ -147,8 +136,8 @@ public class ForecastSpec extends CwmsDTO {
             return this;
         }
 
-        public Builder withLocationIds(Set<String> locationIds) {
-            this.locationIds = locationIds;
+        public Builder withLocationId(String locationId) {
+            this.locationId = locationId;
             return this;
         }
 
@@ -172,7 +161,7 @@ public class ForecastSpec extends CwmsDTO {
             return withOfficeId(forecastSpec.getOfficeId())
                     .withSpecId(forecastSpec.getSpecId())
                     .withDesignator(forecastSpec.getDesignator())
-                    .withLocationIds(forecastSpec.getLocationIds())
+                    .withLocationId(forecastSpec.getLocationId())
                     .withSourceEntityId(forecastSpec.getSourceEntityId())
                     .withDescription(forecastSpec.getDescription())
                     .withTimeSeriesIds(forecastSpec.getTimeSeriesIds());

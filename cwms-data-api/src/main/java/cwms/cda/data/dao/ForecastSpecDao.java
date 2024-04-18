@@ -4,11 +4,12 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import org.jooq.DSLContext;
 import org.jooq.Record2;
-import org.jooq.Record6;
+import org.jooq.Record7;
 import org.jooq.SelectOnConditionStep;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_FCST_LOCATION;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_SPEC;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_TIME_SERIES;
 
@@ -29,27 +30,16 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
 
 
     public void create(ForecastSpec forecastSpec) {
-        Set<String> locationIds = forecastSpec.getLocationIds();
-        if (locationIds == null) {
-            locationIds = new HashSet<>();
-        } else if (locationIds.size() > 1) {
-            throw new IllegalArgumentException("CWMS Database currently only supports storing a single location id per forecast spec");
-        }
-        String locationId = locationIds
-                .stream()
-                .findAny()
-                .orElse(null);
-        List<String> tsIds = forecastSpec.getTimeSeriesIds();
-        if (tsIds == null) {
-            tsIds = new ArrayList<>();
-        }
-        String timeSeriesIds = String.join("\n", tsIds);
         connection(dsl, conn -> {
             setOffice(conn, forecastSpec.getOfficeId());
 
+            String timeSeriesIds = null;
+            if (forecastSpec.getTimeSeriesIds() != null) {
+                timeSeriesIds = String.join("\n", forecastSpec.getTimeSeriesIds());
+            }
             CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(dsl.configuration(), forecastSpec.getSpecId(),
                     forecastSpec.getDesignator(), forecastSpec.getSourceEntityId(),
-                    forecastSpec.getDescription(), locationId,
+                    forecastSpec.getDescription(), forecastSpec.getLocationId(),
                     timeSeriesIds, "F", "F", forecastSpec.getOfficeId());
         });
     }
@@ -75,10 +65,11 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                         .map(ForecastSpecDao::map));
     }
 
-    private static SelectOnConditionStep<Record6<String, String, String, String, String, String>> forecastSpecQuery(
+    private static SelectOnConditionStep<Record7<String, String, String, String, String, String, String>> forecastSpecQuery(
             DSLContext dsl) {
         AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
         AV_FCST_TIME_SERIES timeSeries = AV_FCST_TIME_SERIES.AV_FCST_TIME_SERIES;
+        AV_FCST_LOCATION loc = AV_FCST_LOCATION.AV_FCST_LOCATION;
         //Group all the timeseries ids into a "\n" delimited list
         Table<Record2<String, String>> tsidTable = dsl.select(timeSeries.FCST_SPEC_CODE,
                         DSL.listAgg(timeSeries.CWMS_TS_ID, "\n")
@@ -88,13 +79,15 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                 .groupBy(timeSeries.FCST_SPEC_CODE)
                 .asTable("tsids");
         return dsl.select(spec.FCST_SPEC_ID, spec.DESCRIPTION, spec.FCST_DESIGNATOR,
-                        spec.OFFICE_ID, tsidTable.field("time_series_list", String.class), spec.ENTITY_ID)
+                        spec.OFFICE_ID, tsidTable.field("time_series_list", String.class), spec.ENTITY_ID, loc.LOCATION_ID)
                 .from(spec)
                 .leftJoin(tsidTable)
-                .on(spec.FCST_SPEC_CODE.eq(tsidTable.field("FCST_SPEC_CODE", String.class)));
+                .on(spec.FCST_SPEC_CODE.eq(tsidTable.field("FCST_SPEC_CODE", String.class)))
+                .leftJoin(loc)
+                .on(spec.FCST_SPEC_CODE.eq(loc.FCST_SPEC_CODE));
     }
 
-    private static ForecastSpec map(Record6<String, String, String, String, String, String> r) {
+    private static ForecastSpec map(Record7<String, String, String, String, String, String, String> r) {
         List<String> timeSeriesIdentifiers = new ArrayList<>();
         if (r.value5() != null) {
             timeSeriesIdentifiers = Arrays.stream(r.value5().split("\n")).collect(toList());
@@ -106,8 +99,7 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                 .withOfficeId(r.value4())
                 .withTimeSeriesIds(timeSeriesIdentifiers)
                 .withSourceEntityId(r.value6())
-                //Need to get the list of locations as well
-                .withLocationIds(new HashSet<>())
+                .withLocationId(r.value7())
                 .build();
     }
 
@@ -115,7 +107,7 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
         AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
         return connectionResult(dsl, conn -> {
             setOffice(conn, office);
-            Record6<String, String, String, String, String, String> fetch = forecastSpecQuery(dsl)
+            Record7<String, String, String, String, String, String, String> fetch = forecastSpecQuery(dsl)
                     .where(spec.OFFICE_ID.eq(office))
                     .and(spec.FCST_SPEC_ID.eq(name))
                     .and(spec.FCST_DESIGNATOR.eq(designator))
