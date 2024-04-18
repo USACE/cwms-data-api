@@ -55,7 +55,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         BLOB_FILE_T blob = new BLOB_FILE_T(forecastInst.getFilename(), null, OffsetDateTime.now(), 0L, fileData);
         connection(dsl, conn -> {
             setOffice(conn, officeId);
-            CWMS_FCST_PACKAGE.call_STORE_FCST(dsl.configuration(), forecastInst.getSpec().getSpecId(),
+            CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
                     forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
                     "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
                     blob, "F", "T", officeId);
@@ -80,15 +80,11 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public List<ForecastInstance> getForecastInstances(String office, String name, String designator) {
-        return connectionResult(dsl, conn -> {
-            setOffice(conn, office);
-            AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-
-            return instanceQuery().where(JooqDao.filterExact(spec.OFFICE_ID, office))
-                    .and(JooqDao.filterExact(spec.FCST_SPEC_ID, name))
-                    .and(JooqDao.filterExact(spec.FCST_DESIGNATOR, designator))
-                    .fetch().map(ForecastInstanceDao::map);
-        });
+        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
+        return instanceQuery().where(JooqDao.filterExact(spec.OFFICE_ID, office))
+                .and(JooqDao.filterExact(spec.FCST_SPEC_ID, name))
+                .and(JooqDao.filterExact(spec.FCST_DESIGNATOR, designator))
+                .fetch().map(ForecastInstanceDao::map);
     }
 
     private static ForecastInstance map(Record16<String, String, String, String, String, String, Timestamp, Timestamp,
@@ -194,27 +190,25 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
     public ForecastInstance getForecastInstance(String office, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-        return connectionResult(dsl, conn -> {
-            setOffice(conn, office);
-            AV_FCST_INST inst = AV_FCST_INST.AV_FCST_INST;
-            AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-            Record16<String, String, String, String, String, String,
-                    Timestamp, Timestamp, Integer, String, String, String, String,
-                    Timestamp, Timestamp, JSON> fetch = instanceQuery()
-                    .where(spec.OFFICE_ID.eq(office))
-                    .and(spec.FCST_SPEC_ID.eq(name))
-                    .and(spec.FCST_DESIGNATOR.eq(designator))
-                    .and(inst.FCST_DATE_TIME_UTC.eq(Timestamp.from(forecastDate)))
-                    .and(inst.ISSUE_DATE_TIME_UTC.eq(Timestamp.from(issueDate)))
-                    .fetchOne();
-            if (fetch == null) {
-                String message = format("Could not find forecast instance for " +
-                                "office id: %s, spec id: %s, designator: %s, forecast date: %s, issue date: %s",
-                        office, name, designator, forecastDate, issueDate);
-                throw new NotFoundException(message);
-            }
-            return map(fetch);
-        });
+
+        AV_FCST_INST inst = AV_FCST_INST.AV_FCST_INST;
+        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
+        Record16<String, String, String, String, String, String,
+                Timestamp, Timestamp, Integer, String, String, String, String,
+                Timestamp, Timestamp, JSON> fetch = instanceQuery()
+                .where(spec.OFFICE_ID.eq(office))
+                .and(spec.FCST_SPEC_ID.eq(name))
+                .and(spec.FCST_DESIGNATOR.eq(designator))
+                .and(inst.FCST_DATE_TIME_UTC.eq(Timestamp.from(forecastDate)))
+                .and(inst.ISSUE_DATE_TIME_UTC.eq(Timestamp.from(issueDate)))
+                .fetchOne();
+        if (fetch == null) {
+            String message = format("Could not find forecast instance for " +
+                            "office id: %s, spec id: %s, designator: %s, forecast date: %s, issue date: %s",
+                    office, name, designator, forecastDate, issueDate);
+            throw new NotFoundException(message);
+        }
+        return map(fetch);
     }
 
     public void update(ForecastInstance forecastInst) {
@@ -234,7 +228,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             Instant forecastDate, Instant issueDate) {
         connection(dsl, conn -> {
             setOffice(conn, office);
-            CWMS_FCST_PACKAGE.call_DELETE_FCST(dsl.configuration(), name, designator, Timestamp.from(forecastDate),
+            CWMS_FCST_PACKAGE.call_DELETE_FCST(DSL.using(conn).configuration(), name, designator, Timestamp.from(forecastDate),
                     Timestamp.from(issueDate), "UTC", office);
         });
     }

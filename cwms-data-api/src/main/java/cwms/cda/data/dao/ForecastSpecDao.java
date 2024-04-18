@@ -15,9 +15,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_FCST_TIME_SERIES;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -37,7 +35,7 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
             if (forecastSpec.getTimeSeriesIds() != null) {
                 timeSeriesIds = String.join("\n", forecastSpec.getTimeSeriesIds());
             }
-            CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(dsl.configuration(), forecastSpec.getSpecId(),
+            CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(DSL.using(conn).configuration(), forecastSpec.getSpecId(),
                     forecastSpec.getDesignator(), forecastSpec.getSourceEntityId(),
                     forecastSpec.getDescription(), forecastSpec.getLocationId(),
                     timeSeriesIds, "F", "F", forecastSpec.getOfficeId());
@@ -47,7 +45,7 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
     public void delete(String office, String specId, String designator, DeleteRule deleteRule) {
         connection(dsl, conn -> {
             setOffice(conn, office);
-            CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(dsl.configuration(), specId, designator,
+            CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(DSL.using(conn).configuration(), specId, designator,
                     deleteRule.getRule(), office);
         });
     }
@@ -55,18 +53,17 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
     public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex,
             String designator, String sourceEntity) {
         AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        return connectionResult(dsl, conn ->
-                forecastSpecQuery(dsl)
-                        .where(JooqDao.caseInsensitiveLikeRegex(spec.OFFICE_ID, office))
-                        .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_SPEC_ID, specIdRegex))
-                        .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_DESIGNATOR, designator))
-                        .and(JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntity))
-                        .fetch()
-                        .map(ForecastSpecDao::map));
+        return forecastSpecQuery(dsl)
+                .where(JooqDao.caseInsensitiveLikeRegex(spec.OFFICE_ID, office))
+                .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_SPEC_ID, specIdRegex))
+                .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_DESIGNATOR, designator))
+                .and(JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntity))
+                .fetch()
+                .map(ForecastSpecDao::map);
     }
 
-    private static SelectOnConditionStep<Record7<String, String, String, String, String, String, String>> forecastSpecQuery(
-            DSLContext dsl) {
+    private static SelectOnConditionStep<Record7<String, String, String, String,
+            String, String, String>> forecastSpecQuery(DSLContext dsl) {
         AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
         AV_FCST_TIME_SERIES timeSeries = AV_FCST_TIME_SERIES.AV_FCST_TIME_SERIES;
         AV_FCST_LOCATION loc = AV_FCST_LOCATION.AV_FCST_LOCATION;
@@ -105,20 +102,18 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
 
     public ForecastSpec getForecastSpec(String office, String name, String designator) {
         AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        return connectionResult(dsl, conn -> {
-            setOffice(conn, office);
-            Record7<String, String, String, String, String, String, String> fetch = forecastSpecQuery(dsl)
-                    .where(spec.OFFICE_ID.eq(office))
-                    .and(spec.FCST_SPEC_ID.eq(name))
-                    .and(spec.FCST_DESIGNATOR.eq(designator))
-                    .fetchOne();
-            if (fetch == null) {
-                throw new NotFoundException(
-                        format("Could not find forecast instance for office id: %s, spec id: %s, designator: %s",
-                                office, name, designator));
-            }
-            return map(fetch);
-        });
+
+        Record7<String, String, String, String, String, String, String> fetch = forecastSpecQuery(dsl)
+                .where(spec.OFFICE_ID.eq(office))
+                .and(spec.FCST_SPEC_ID.eq(name))
+                .and(spec.FCST_DESIGNATOR.eq(designator))
+                .fetchOne();
+        if (fetch == null) {
+            throw new NotFoundException(
+                    format("Could not find forecast instance for office id: %s, spec id: %s, designator: %s",
+                            office, name, designator));
+        }
+        return map(fetch);
     }
 
     public void update(ForecastSpec forecastSpec) {
