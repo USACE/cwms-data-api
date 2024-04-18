@@ -31,6 +31,7 @@ import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -41,6 +42,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,7 +51,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
-public class ForecastInstanceController implements CrudHandler {
+public final class ForecastInstanceController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(ForecastInstanceController.class.getName());
 
     public static final String TAG = "Forecast";
@@ -130,9 +132,11 @@ public class ForecastInstanceController implements CrudHandler {
         String designator = requiredParam(ctx, DESIGNATOR);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
+        Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
+        Instant issueInstant = DateUtils.parseUserDate(issueDate, "UTC").toInstant();
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            dao.delete(office, name, designator, forecastDate, issueDate);
+            dao.delete(office, name, designator, forecastInstant, issueInstant);
         }
     }
 
@@ -220,9 +224,11 @@ public class ForecastInstanceController implements CrudHandler {
         String designator = requiredParam(ctx, DESIGNATOR);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
+        Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
+        Instant issueInstant = DateUtils.parseUserDate(issueDate, "UTC").toInstant();
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            ForecastInstance instance = dao.getForecastInstance(office, name, designator, forecastDate, issueDate);
+            ForecastInstance instance = dao.getForecastInstance(office, name, designator, forecastInstant, issueInstant);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
             String result = Formats.format(contentType, instance);
@@ -272,18 +278,13 @@ public class ForecastInstanceController implements CrudHandler {
 
     private ForecastInstance deserializeForecastInstance(String body, ContentType contentType)
             throws IOException {
-        return deserializeForecastInstance(body, contentType.toString());
-    }
-
-    public static ForecastInstance deserializeForecastInstance(String body, String contentType)
-            throws IOException {
         ForecastInstance retval;
-
-        if ((Formats.JSONV2).equals(contentType)) {
+        String type = contentType.getType();
+        if ((Formats.JSONV2).equals(type)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
             retval = om.readValue(body, ForecastInstance.class);
         } else {
-            throw new IOException("Unexpected format:" + contentType);
+            throw new IOException("Unexpected format:" + type);
         }
 
         return retval;
