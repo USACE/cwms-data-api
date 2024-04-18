@@ -6,7 +6,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.formatters.Formats;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
@@ -14,14 +17,19 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.jooq.exception.DataAccessException;
+import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 
 @Tag("integration")
 public class ForecastInstanceControllerTestIT extends DataApiTestIT {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE = "SPK";
-    private static final String SPEC_ID = "test-spec";
+    private static final String SPEC_ID = "TEST-SPEC";
+    private static final String designator = "designator";
     private static final String locationId = "FcstInstTestLoc";
     private static final String forecastDate = "2021-06-21T14:00:10+00:00";
     private static final String issueDate = "2022-05-22T12:03:40+00:00";
@@ -30,6 +38,15 @@ public class ForecastInstanceControllerTestIT extends DataApiTestIT {
     @BeforeAll
     public static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
+        try {
+            CwmsDataApiSetupCallback.getDatabaseLink()
+                    .connection(c -> {
+                        CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, designator,
+                                DeleteRule.DELETE_ALL.getRule(), OFFICE);
+                    });
+        } catch(DataAccessException e) {
+            LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
+        }
     }
 
     @Test

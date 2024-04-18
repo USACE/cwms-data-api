@@ -94,7 +94,8 @@ public final class ForecastSpecController implements CrudHandler {
                         + "owning office of the forecast spec whose data is to be deleted."),
                 @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
                         + "designator of the forecast spec whose data is to be deleted."),
-                @OpenApiParam(name = METHOD, description = "Specifies the delete method used.",
+                @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
+                        "Defaults to \"DELETE_KEY\"",
                         type = JooqDao.DeleteMethod.class)
             },
             responses = {
