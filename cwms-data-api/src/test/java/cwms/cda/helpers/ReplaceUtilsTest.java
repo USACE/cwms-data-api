@@ -34,13 +34,12 @@ class ReplaceUtilsTest {
 
     @Test
     void replaceWithNullKey() {
-        assertThrows(NullPointerException.class, () -> ReplaceUtils.replace("{key}", null, "testValue"));
-
+        assertEquals("{key}", ReplaceUtils.replace("{key}", null, "testValue"));
     }
 
     @Test
     void replaceWithNullBoth() {
-        assertThrows(NullPointerException.class, () -> ReplaceUtils.replace(null, null, "testValue"));
+        assertNull(ReplaceUtils.replace(null, null, "testValue"));
     }
 
     @Test
