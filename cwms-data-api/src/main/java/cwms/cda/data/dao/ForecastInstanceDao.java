@@ -131,6 +131,9 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     private static String mapToJson(Map<String, String> metadata) {
+        if(metadata == null) {
+            return null;
+        }
         try {
             return JsonV2.buildObjectMapper().writeValueAsString(metadata);
         } catch (JsonProcessingException e) {
@@ -153,9 +156,13 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         String query = INSTANCE_QUERY + GET_ALL_CONDITIONS;
         return connectionResult(dsl, (Connection c) -> {
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
+                //redundant variables for null checks within the condition
                 preparedStatement.setString(1, office);
-                preparedStatement.setString(2, name);
-                preparedStatement.setString(3, designator);
+                preparedStatement.setString(2, office);
+                preparedStatement.setString(3, name);
+                preparedStatement.setString(4, name);
+                preparedStatement.setString(5, designator);
+                preparedStatement.setString(6, designator);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     List<ForecastInstance> instances = new ArrayList<>();
                     while (resultSet.next()) {
@@ -171,7 +178,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         List<String> timeSeriesIdentifiers = new ArrayList<>();
         String tsIds = resultSet.getString(5);
         if (tsIds != null) {
-            timeSeriesIdentifiers = Arrays.stream(tsIds.split("\n")).collect(toList());
+            timeSeriesIdentifiers = Arrays.stream(tsIds.split("\\\\n")).collect(toList());
         }
         Map<String, String> forecastInfo = new HashMap<>();
         String json = resultSet.getString(15);
