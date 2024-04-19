@@ -38,7 +38,7 @@ public class ReplaceUtils {
      * @return the modified string template with the key replaced by the value
      * @throws NullPointerException if the template is null
      */
-    public static String replace(@NotNull String template, @NotNull String key, String value, boolean encode){
+    public static String replace(@NotNull String template, String key, String value, boolean encode){
         String result = null;
 
         try {
@@ -46,7 +46,11 @@ public class ReplaceUtils {
                 value = URLEncoder.encode(value, "UTF-8");
             }
 
-            result = template.replace(key, value);
+            if (key != null && value != null) {
+                result = template.replace(key, value);
+            } else {
+                result = template;
+            }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

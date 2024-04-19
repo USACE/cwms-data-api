@@ -2,45 +2,112 @@ package cwms.cda.data.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.json.JsonV2;
-import org.jetbrains.annotations.NotNull;
+import cwms.cda.helpers.ReplaceUtils;
 import org.jooq.DSLContext;
-import org.jooq.JSON;
-import org.jooq.Record;
-import org.jooq.Record16;
-import org.jooq.Record2;
-import org.jooq.Record3;
-import org.jooq.Record4;
-import org.jooq.SelectOnConditionStep;
-import org.jooq.Table;
 import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultBinding;
+import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_FCST_INST;
-import usace.cwms.db.jooq.codegen.tables.AV_FCST_LOCATION;
-import usace.cwms.db.jooq.codegen.tables.AV_FCST_SPEC;
-import usace.cwms.db.jooq.codegen.tables.AV_FCST_TIME_SERIES;
-import usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC;
 import usace.cwms.db.jooq.codegen.udt.records.BLOB_FILE_T;
 
-import java.math.BigInteger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Struct;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.table;
 
 public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
+
+    private static final Calendar UTC_CALENDAR = Calendar.getInstance(OracleTypeMap.GMT_TIME_ZONE);
+    private static final String INSTANCE_QUERY = "select spec_id," +
+            "       spec_description," +
+            "       spec_designator," +
+            "       spec_office_id," +
+            "       time_series_list," +
+            "       spec_source_entity," +
+            "       inst.FCST_DATE_TIME," +
+            "       inst.ISSUE_DATE_TIME," +
+            "       inst.MAX_AGE," +
+            "       inst.BLOB_FILE," +
+            "       inst.NOTES," +
+            "       loc.LOCATION_ID," +
+            "       first_date_time," +
+            "       last_date_time," +
+            "       fcst_info_json" +
+            " from CWMS_20.AT_FCST_INST inst" +
+            "         left outer join (select CWMS_20.AT_FCST_SPEC.FCST_SPEC_ID AS spec_id," +
+            "                                 CWMS_20.AT_FCST_SPEC.DESCRIPTION AS spec_description," +
+            "                                 CWMS_20.AT_FCST_SPEC.FCST_DESIGNATOR AS spec_designator," +
+            "                                 CWMS_20.CWMS_UTIL.GET_DB_OFFICE_ID_FROM_CODE(CWMS_20.AT_FCST_SPEC.OFFICE_CODE) AS spec_office_id," +
+            "                                 CWMS_20.AT_FCST_SPEC.FCST_SPEC_CODE," +
+            "                                 tsids.time_series_list AS time_series_list," +
+            "                                 (SELECT ENTITY_ID" +
+            "                                  FROM CWMS_20.AT_ENTITY" +
+            "                                  WHERE ENTITY_CODE = CWMS_20.AT_FCST_SPEC.SOURCE_ENTITY)                       AS spec_source_entity" +
+            "                          from CWMS_20.AT_FCST_SPEC" +
+            "                                   left outer join (select CWMS_20.AV_FCST_TIME_SERIES.FCST_SPEC_CODE," +
+            "                                                           listagg(CWMS_20.AV_FCST_TIME_SERIES.CWMS_TS_ID, '\\n')" +
+            "                                                                   within group (order by CWMS_20.AV_FCST_TIME_SERIES.CWMS_TS_ID) time_series_list" +
+            "                                                    from CWMS_20.AV_FCST_TIME_SERIES" +
+            "                                                    group by CWMS_20.AV_FCST_TIME_SERIES.FCST_SPEC_CODE) tsids" +
+            "                                                   on CWMS_20.AT_FCST_SPEC.FCST_SPEC_CODE = tsids.FCST_SPEC_CODE) spec" +
+            "                         on inst.FCST_SPEC_CODE = spec.FCST_SPEC_CODE" +
+            "         left outer join CWMS_20.AV_FCST_LOCATION loc" +
+            "                         on inst.FCST_SPEC_CODE = loc.FCST_SPEC_CODE" +
+            "         left outer join (select CWMS_20.AT_FCST_TIME_SERIES.FCST_SPEC_CODE  extents_spec_code," +
+            "                                 min(CWMS_20.AT_TS_EXTENTS.EARLIEST_TIME) first_date_time," +
+            "                                 max(CWMS_20.AT_TS_EXTENTS.LATEST_TIME) last_date_time" +
+            "                          from CWMS_20.AT_FCST_TIME_SERIES" +
+            "                                   left outer join CWMS_20.AT_TS_EXTENTS" +
+            "                                                   on CWMS_20.AT_FCST_TIME_SERIES.TS_CODE =" +
+            "                                                      CWMS_20.AT_TS_EXTENTS.TS_CODE" +
+            "                          group by CWMS_20.AT_FCST_TIME_SERIES.FCST_SPEC_CODE) extents" +
+            "                         on inst.FCST_SPEC_CODE = extents_spec_code" +
+            "         left outer join (select info.FCST_INST_CODE AS info_inst_code," +
+            "                                 json_objectagg(key info.KEY value info.VALUE) fcst_info_json" +
+            "                          from CWMS_20.AT_FCST_INFO info" +
+            "                          group by info.FCST_INST_CODE) fcst_info" +
+            "                         on (inst.FCST_INST_CODE = info_inst_code)";
+
+    private static final String FILE_QUERY = "select inst.BLOB_FILE" +
+            " from CWMS_20.AT_FCST_INST inst" +
+            "         left outer join CWMS_20.AT_FCST_SPEC spec on inst.FCST_SPEC_CODE = spec.FCST_SPEC_CODE";
+
+    private static final String GET_ALL_CONDITIONS = " WHERE (? IS NULL OR spec_office_id = ?)" +
+            " AND (? IS NULL OR spec_id = ?)" +
+            " AND (? IS NULL OR spec_designator = ?)";
+    private static final String GET_ONE_CONDITIONS = " WHERE (spec_office_id = ?)" +
+            " AND (spec_id = ?)" +
+            " AND (spec_designator = ?)" +
+            " AND (inst.FCST_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))" +
+            " AND (inst.ISSUE_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))";
+    private static final String FILE_CONDITIONS = " WHERE (spec.OFFICE_CODE = CWMS_UTIL.GET_DB_OFFICE_CODE(?))" +
+            " AND (spec.FCST_SPEC_ID = ?)" +
+            " AND (spec.FCST_DESIGNATOR = ?)" +
+            " AND (inst.FCST_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))" +
+            " AND (inst.ISSUE_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))";
 
     public ForecastInstanceDao(DSLContext dsl) {
         super(dsl);
@@ -52,9 +119,10 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
         String forecastInfo = mapToJson(forecastInst.getMetadata());
         byte[] fileData = forecastInst.getFileData();
-        BLOB_FILE_T blob = new BLOB_FILE_T(forecastInst.getFilename(), null, OffsetDateTime.now(), 0L, fileData);
+        BLOB_FILE_T blob = new BLOB_FILE_T(forecastInst.getFilename(), forecastInst.getFileMediaType(), OffsetDateTime.now(), 0L, fileData);
         connection(dsl, conn -> {
             setOffice(conn, officeId);
+            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
             CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
                     forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
                     "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
@@ -79,136 +147,120 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         }
     }
 
-    public List<ForecastInstance> getForecastInstances(String office, String name, String designator) {
-        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        return instanceQuery().where(JooqDao.filterExact(spec.OFFICE_ID, office))
-                .and(JooqDao.filterExact(spec.FCST_SPEC_ID, name))
-                .and(JooqDao.filterExact(spec.FCST_DESIGNATOR, designator))
-                .fetch().map(ForecastInstanceDao::map);
+    public List<ForecastInstance> getForecastInstances(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
+            String office, String name, String designator) {
+
+        String query = INSTANCE_QUERY + GET_ALL_CONDITIONS;
+        return connectionResult(dsl, (Connection c) -> {
+            try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
+                preparedStatement.setString(1, office);
+                preparedStatement.setString(2, name);
+                preparedStatement.setString(3, designator);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    List<ForecastInstance> instances = new ArrayList<>();
+                    while (resultSet.next()) {
+                        instances.add(map(byteLimit, urlBuilder, resultSet));
+                    }
+                    return instances;
+                }
+            }
+        });
     }
 
-    private static ForecastInstance map(Record16<String, String, String, String, String, String, Timestamp, Timestamp,
-            Integer, String, String, String, String, Timestamp, Timestamp, JSON> r) {
+    private static ForecastInstance map(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, ResultSet resultSet) throws SQLException, IOException {
         List<String> timeSeriesIdentifiers = new ArrayList<>();
-        if (r.value5() != null) {
-            timeSeriesIdentifiers = Arrays.stream(r.value5().split("\n")).collect(toList());
+        String tsIds = resultSet.getString(5);
+        if (tsIds != null) {
+            timeSeriesIdentifiers = Arrays.stream(tsIds.split("\n")).collect(toList());
         }
-        Instant forecastDate = r.value7().toInstant();
-        Instant issueDate = r.value8().toInstant();
         Map<String, String> forecastInfo = new HashMap<>();
-        JSON json = r.value16();
+        String json = resultSet.getString(15);
         if (json != null) {
-            forecastInfo = mapFromJson(json.data());
+            forecastInfo = mapFromJson(json);
+        }
+        String officeId = resultSet.getString(4);
+        String specId = resultSet.getString(1);
+        String designator = resultSet.getString(3);
+        Instant forecastDate = resultSet.getTimestamp(7, UTC_CALENDAR).toInstant();
+        Instant issueDate = resultSet.getTimestamp(8, UTC_CALENDAR).toInstant();
+        Timestamp earliesetTimestamp = resultSet.getTimestamp(13, UTC_CALENDAR);
+        Timestamp latestTimestamp = resultSet.getTimestamp(14, UTC_CALENDAR);
+        Instant firstDateTime = Optional.ofNullable(earliesetTimestamp).map(Timestamp::toInstant).orElse(null);
+        Instant lastDateTime = Optional.ofNullable(latestTimestamp).map(Timestamp::toInstant).orElse(null);
+        Struct blobFile = resultSet.getObject(10, Struct.class);
+        byte[] fileData = null;
+        String url = null;
+        String fileName = null;
+        String mediaType = null;
+        if (blobFile != null) {
+            Object[] attributes = blobFile.getAttributes();
+            if (attributes != null) {
+                fileName = (String) attributes[0];
+                mediaType = (String) attributes[1];
+                Blob blob = (Blob) attributes[4];
+                if (blob.length() > byteLimit) {
+                    String param = "&%s=%s";
+                    String utf8 = "UTF-8";
+                    url = urlBuilder.build().apply(specId) + "?"
+                            + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
+                            + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
+                            + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
+                            + format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8))
+                            + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
+                } else {
+                    try (InputStream is = blob.getBinaryStream()) {
+                        fileData = BlobDao.readFully(is);
+                    }
+                }
+            }
         }
         return new ForecastInstance.Builder()
                 .withSpec(new ForecastSpec.Builder()
-                        .withSpecId(r.value1())
-                        .withDescription(r.value2())
-                        .withDesignator(r.value3())
-                        .withOfficeId(r.value4())
+                        .withSpecId(specId)
+                        .withDescription(resultSet.getString(2))
+                        .withDesignator(designator)
+                        .withOfficeId(officeId)
                         .withTimeSeriesIds(timeSeriesIdentifiers)
-                        .withSourceEntityId(r.value6())
-                        .withLocationId(r.value13())
+                        .withSourceEntityId(resultSet.getString(6))
+                        .withLocationId(resultSet.getString(12))
                         .build())
                 .withDateTime(forecastDate)
                 .withIssueDateTime(issueDate)
-                .withMaxAge(r.value9())
-                .withFilename(r.value10())
-                .withFileMediaType(r.value11())
-                .withNotes(r.value12())
-                //Currently the views don't provide us with this information
-                .withFirstDateTime(r.value14().toInstant())
-                .withLastDateTime(r.value15().toInstant())
+                .withMaxAge(resultSet.getInt(9))
+                .withFileDataUrl(url)
+                .withFileData(fileData)
+                .withFilename(fileName)
+                .withFileMediaType(mediaType)
+                .withNotes(resultSet.getString(11))
+                .withFirstDateTime(firstDateTime)
+                .withLastDateTime(lastDateTime)
                 .withMetadata(forecastInfo)
                 .build();
     }
 
-    private @NotNull SelectOnConditionStep<Record16<String, String, String, String, String, String,
-            Timestamp, Timestamp, Integer, String, String, String,
-            String, Timestamp, Timestamp, JSON>> instanceQuery() {
-        AV_FCST_INST inst = AV_FCST_INST.AV_FCST_INST;
-        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        AV_FCST_TIME_SERIES timeSeries = AV_FCST_TIME_SERIES.AV_FCST_TIME_SERIES;
-        AV_TS_EXTENTS_UTC extentsUtc = AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
-        AV_FCST_LOCATION loc = AV_FCST_LOCATION.AV_FCST_LOCATION;
-
-        //Group all the timeseries ids into a "\n" delimited list so we can take them apart later
-        Table<Record2<String, String>> tsidTable = dsl
-                .select(spec.FCST_SPEC_CODE,
-                        DSL.listAgg(timeSeries.CWMS_TS_ID, "\n").withinGroupOrderBy(timeSeries.CWMS_TS_ID)
-                                .as("time_series_list"))
-                .from(timeSeries)
-                .groupBy(timeSeries.FCST_SPEC_CODE)
-                .asTable("tsids");
-        Table<Record3<String, String, String>> extentsTable = dsl
-                .select(spec.FCST_SPEC_CODE,
-                        DSL.min(timeSeries.CWMS_TS_ID).as("first_date_time"),
-                        DSL.max(timeSeries.CWMS_TS_ID).as("last_date_time"))
-                .from(timeSeries)
-                .leftJoin(extentsUtc)
-                .on(timeSeries.TS_CODE.coerce(BigInteger.class).eq(extentsUtc.TS_CODE))
-                .groupBy(timeSeries.FCST_SPEC_CODE)
-                .asTable("extents");
-        Table<Record4<String, Timestamp, Timestamp, JSON>> infoTable = dsl
-                .select(field("AT_FCST_INST.FCST_SPEC_CODE", String.class),
-                        field("AT_FCST_INST.FCST_DATE_TIME", Timestamp.class),
-                        field("AT_FCST_INST.ISSUE_DATE_TIME", Timestamp.class),
-                        DSL.jsonObjectAgg(field("AT_FCST_INFO.KEY", String.class),
-                                        field("AT_FCST_INFO.VALUE", String.class))
-                                .as("fcst_info"))
-                .from(table("AT_FCST_INST"))
-                .leftJoin(table("AT_FCST_INFO"))
-                .on(field("AT_FCST_INST.FCST_INST_CODE").eq("AT_FCST_INFO.FCST_INST_CODE"))
-                .groupBy(field("AT_FCST_INST.FCST_INST_CODE"))
-                .asTable("info");
-        Table<Record> specTable = dsl.select(spec.FCST_SPEC_ID, spec.DESCRIPTION, spec.FCST_DESIGNATOR,
-                        spec.OFFICE_ID, tsidTable.field("time_series_list", String.class), spec.ENTITY_ID)
-                .select(tsidTable.field("time_series_list"))
-                .from(spec)
-                .leftJoin(tsidTable)
-                .on(spec.FCST_SPEC_CODE.eq(tsidTable.field("FCST_SPEC_CODE", String.class)))
-                .asTable("spec");
-        return dsl.select(spec.FCST_SPEC_ID, spec.DESCRIPTION,
-                        spec.FCST_DESIGNATOR, spec.OFFICE_ID, tsidTable.field("time_series_list", String.class),
-                        spec.ENTITY_ID, inst.FCST_DATE_TIME_UTC, inst.ISSUE_DATE_TIME_UTC, inst.VALID_HOURS,
-                        inst.FILE_NAME, inst.FILE_MEDIA_TYPE, inst.NOTES, loc.LOCATION_ID,
-                        extentsTable.field("first_date_time", Timestamp.class),
-                        extentsTable.field("last_date_time", Timestamp.class),
-                        infoTable.field("fcst_info", JSON.class))
-                .from(inst)
-                .leftJoin(specTable)
-                .on(spec.FCST_SPEC_ID.eq(specTable.field("FCST_SPEC_ID", String.class)))
-                .leftJoin(loc)
-                .on(spec.FCST_SPEC_CODE.eq(loc.FCST_SPEC_CODE))
-                .leftJoin(extentsTable)
-                .on(spec.FCST_SPEC_CODE.eq(extentsTable.field("FCST_SPEC_CODE", String.class)))
-                .leftJoin(infoTable)
-                .on(spec.FCST_SPEC_CODE.eq(field("info.FCST_SPEC_CODE", String.class)))
-                .and(inst.FCST_DATE_TIME_UTC.eq(field("info.FCST_DATE_TIME", Timestamp.class)))
-                .and(inst.ISSUE_DATE_TIME_UTC.eq(field("info.ISSUE_DATE_TIME", Timestamp.class)));
-    }
-
-    public ForecastInstance getForecastInstance(String office, String name, String designator,
+    public ForecastInstance getForecastInstance(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
+            String office, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-
-        AV_FCST_INST inst = AV_FCST_INST.AV_FCST_INST;
-        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        Record16<String, String, String, String, String, String,
-                Timestamp, Timestamp, Integer, String, String, String, String,
-                Timestamp, Timestamp, JSON> fetch = instanceQuery()
-                .where(spec.OFFICE_ID.eq(office))
-                .and(spec.FCST_SPEC_ID.eq(name))
-                .and(spec.FCST_DESIGNATOR.eq(designator))
-                .and(inst.FCST_DATE_TIME_UTC.eq(Timestamp.from(forecastDate)))
-                .and(inst.ISSUE_DATE_TIME_UTC.eq(Timestamp.from(issueDate)))
-                .fetchOne();
-        if (fetch == null) {
-            String message = format("Could not find forecast instance for " +
-                            "office id: %s, spec id: %s, designator: %s, forecast date: %s, issue date: %s",
-                    office, name, designator, forecastDate, issueDate);
-            throw new NotFoundException(message);
-        }
-        return map(fetch);
+        String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
+        return connectionResult(dsl, c -> {
+            try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
+                preparedStatement.setString(1, office);
+                preparedStatement.setString(2, name);
+                preparedStatement.setString(3, designator);
+                preparedStatement.setLong(4, forecastDate.toEpochMilli());
+                preparedStatement.setLong(5, issueDate.toEpochMilli());
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return map(byteLimit, urlBuilder, resultSet);
+                    } else {
+                        String message = format("Could not find forecast instance for " +
+                                        "office id: %s, spec id: %s, designator: %s, forecast date: %s, issue date: %s",
+                                office, name, designator, forecastDate, issueDate);
+                        throw new NotFoundException(message);
+                    }
+                }
+            }
+        });
     }
 
     public void update(ForecastInstance forecastInst) {
@@ -217,20 +269,10 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         String designator = forecastInst.getSpec().getDesignator();
         Instant forecastDate = forecastInst.getDateTime();
         Instant issueDate = forecastInst.getIssueDateTime();
-        AV_FCST_INST inst = AV_FCST_INST.AV_FCST_INST;
-        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        Record16<String, String, String, String, String, String,
-                Timestamp, Timestamp, Integer, String, String, String, String,
-                Timestamp, Timestamp, JSON> fetch = instanceQuery()
-                .where(spec.OFFICE_ID.eq(officeId))
-                .and(spec.FCST_SPEC_ID.eq(specId))
-                .and(spec.FCST_DESIGNATOR.eq(designator))
-                .and(inst.FCST_DATE_TIME_UTC.eq(Timestamp.from(forecastDate)))
-                .and(inst.ISSUE_DATE_TIME_UTC.eq(Timestamp.from(issueDate)))
-                .fetchOne();
-        if (fetch == null) {
-            throw new NotFoundException("Forecast instance not found: " + forecastInst);
-        }
+        //Will throw a NotFoundException if instance doesn't exist
+        ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
+                .withOperatorKey("{noop}");
+        getForecastInstance(0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
         create(forecastInst);
     }
 
@@ -238,9 +280,42 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             Instant forecastDate, Instant issueDate) {
         connection(dsl, conn -> {
             setOffice(conn, office);
-            CWMS_FCST_PACKAGE.call_DELETE_FCST(DSL.using(conn).configuration(), name, designator, Timestamp.from(forecastDate),
-                    Timestamp.from(issueDate), "UTC", office);
+            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
+            CWMS_FCST_PACKAGE.call_DELETE_FCST(DSL.using(conn).configuration(), name, designator,
+                    Timestamp.from(forecastDate), Timestamp.from(issueDate), "UTC", office);
         });
     }
 
+    public void getFileBlob(String office, String name, String designator,
+            Instant forecastDate, Instant issueDate, BlobDao.BlobConsumer consumer) {
+
+        String query = FILE_QUERY + FILE_CONDITIONS;
+        connection(dsl, c -> {
+            try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
+                preparedStatement.setString(1, office);
+                preparedStatement.setString(2, name);
+                preparedStatement.setString(3, designator);
+                preparedStatement.setLong(4, forecastDate.toEpochMilli());
+                preparedStatement.setLong(5, issueDate.toEpochMilli());
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        Struct blobFile = resultSet.getObject(1, Struct.class);
+                        if (blobFile != null) {
+                            Object[] attributes = blobFile.getAttributes();
+                            if (attributes != null) {
+                                String mediaType = (String) attributes[1];
+                                if (mediaType == null) {
+                                    mediaType = "application/octet-stream";
+                                }
+                                Blob blob = (Blob) attributes[4];
+                                consumer.accept(blob, mediaType);
+                                return;
+                            }
+                        }
+                    }
+                    consumer.accept(null, null);
+                }
+            }
+        });
+    }
 }

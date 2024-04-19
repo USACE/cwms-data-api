@@ -46,6 +46,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
@@ -440,6 +441,9 @@ public class ApiServlet extends HttpServlet {
                 new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/forecast-spec/{" + Controllers.NAME + "}",
                 new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String forecastFilePath = "/forecast-instance/{" + NAME + "}/file-data";
+        get(forecastFilePath, new ForecastFileController(metrics));
+        addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
 
     }

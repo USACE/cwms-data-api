@@ -117,15 +117,8 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
     }
 
     public void update(ForecastSpec forecastSpec) {
-        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-        Record7<String, String, String, String, String, String, String> fetch = forecastSpecQuery(dsl)
-                .where(spec.OFFICE_ID.eq(forecastSpec.getOfficeId()))
-                .and(spec.FCST_SPEC_ID.eq(forecastSpec.getSpecId()))
-                .and(spec.FCST_DESIGNATOR.eq(forecastSpec.getDesignator()))
-                .fetchOne();
-        if (fetch == null) {
-            throw new NotFoundException("Forecast spec not found: " + forecastSpec);
-        }
+        //Will throw NotFoundException is spec does not exist
+        getForecastSpec(forecastSpec.getOfficeId(), forecastSpec.getSpecId(), forecastSpec.getDesignator());
         create(forecastSpec);
     }
 }

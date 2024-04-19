@@ -72,6 +72,7 @@ public class ForecastInstance implements CwmsDTOBase {
     private final byte[] fileData;
 
     @Schema(description = "Link to Forecast File binary data")
+    @XmlElement(name = "file-data-url")
     @XmlAttribute
     private final String fileDataUrl;
 
