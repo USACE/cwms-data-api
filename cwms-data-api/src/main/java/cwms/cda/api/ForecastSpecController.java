@@ -161,8 +161,8 @@ public final class ForecastSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
-            String designator = ctx.queryParam(DESIGNATOR);
-            String sourceEntity = ctx.queryParam(SOURCE_ENTITY);
+            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).getOrDefault("*");
+            String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
