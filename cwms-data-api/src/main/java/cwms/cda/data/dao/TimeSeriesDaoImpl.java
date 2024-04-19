@@ -222,7 +222,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String previous = "F";
         String next = "F";
         Long versionDateMilli = null;
-        String maxVersion = null;
+        String maxVersion = "F";
 
         if (versionDate != null) {
             versionDateMilli = versionDate.toInstant().toEpochMilli();
