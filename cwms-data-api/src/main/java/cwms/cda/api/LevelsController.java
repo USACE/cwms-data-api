@@ -44,15 +44,12 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LocationLevels;
 import cwms.cda.data.dto.SeasonalValueBean;
-import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.helpers.DateUtils;
-import hec.data.level.JDomLocationLevelRef;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
-import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.HttpResponseException;
@@ -62,8 +59,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import mil.army.usace.hec.metadata.Interval;
-import mil.army.usace.hec.metadata.IntervalFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -194,18 +189,23 @@ public class LevelsController implements CrudHandler {
                             + " response. If this field is not specified, matching location level "
                             + "information from all offices shall be returned."),
                     @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                            + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                            + "  Specifies English unit system.  Location level values will be in"
-                            + " the default English units for their parameters.\r\n2. SI.   "
+                            + " of the response. Valid values for the unit field are:"
+                            + "\n* `EN`  "
+                            + "Specifies English unit system.  Location level values will be in"
+                            + " the default English units for their parameters."
+                            + "\n* `SI`  "
                             + "Specifies the SI unit system.  Location level values will be in "
-                            + "the default SI units for their parameters.\r\n3. Other. Any unit "
-                            + "returned in the response to the units URI request that is "
+                            + "the default SI units for their parameters."
+                            + "\n* `Other`  "
+                            + "Any unit returned in the response to the units URI request that is "
                             + "appropriate for the requested parameters."),
                     @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                             + " the response. This field affects only elevation location levels. "
-                            + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
+                            + "Valid values for this field are:"
+                            + "\n* `NAVD88`  The elevation "
                             + "values will in the specified or default units above the NAVD-88 "
-                            + "datum.\r\n2. NGVD29.  The elevation values will be in the "
+                            + "datum."
+                            + "\n* `NGVD29`  The elevation values will be in the "
                             + "specified or default units above the NGVD-29 datum."),
                     @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
                             + "window for data to be included in the response. If this field is "
@@ -222,12 +222,12 @@ public class LevelsController implements CrudHandler {
                     @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
                             + "of the response. Requests specifying an Accept header:"
                             + Formats.JSONV2 + " must not include this field. "
-                            + "Valid format field values for this URI are:\r\n"
-                            + "1.    tab\r\n"
-                            + "2.    csv\r\n"
-                            + "3.    xml\r\n"
-                            + "4.    wml2 (only if name field is specified)\r\n"
-                            + "5.    json (default)\r\n"),
+                            + "Valid format field values for this URI are:"
+                            + "\n* `tab`"
+                            + "\n* `csv`"
+                            + "\n* `xml`"
+                            + "\n* `wml2` (only if name field is specified)"
+                            + "\n* `json` (default)"),
                     @OpenApiParam(name = PAGE, description = "This identifies where in the "
                             + "request you are. This is an opaque value, and can be obtained from "
                             + "the 'next-page' value in the response."),

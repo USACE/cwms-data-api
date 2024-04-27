@@ -2,7 +2,6 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
 import static cwms.cda.api.Controllers.CURSOR;
@@ -15,7 +14,6 @@ import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.GROUP_ID;
 import static cwms.cda.api.Controllers.MAX_VERSION;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
@@ -33,7 +31,6 @@ import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_RULE;
 import static cwms.cda.api.Controllers.TIMESERIES;
 import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.TS_IDS;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
@@ -55,9 +52,7 @@ import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
-import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.Tsv;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -82,21 +77,8 @@ import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.MatchResult;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -327,13 +309,15 @@ public class TimeSeriesController implements CrudHandler {
                         + " level information from all offices shall be returned."),
                 @OpenApiParam(name = UNIT,  description = "Specifies the "
                         + "unit or unit system of the response. Valid values for the unit "
-                        + "field are:\r\n 1. EN.   (default) Specifies English unit system.  "
+                        + "field are: "
+                        + "\n* `EN`  (default) Specifies English unit system.  "
                         + "Location level values will be in the default English units for "
-                        + "their parameters.\r\n2. SI.   Specifies the SI unit system.  "
+                        + "their parameters."
+                        + "\n* `SI`  Specifies the SI unit system.  "
                         + "Location level values will be in the default SI units for their "
-                        + "parameters.\r\n3. Other. Any unit returned in the response to the "
-                        + "units URI request that is appropriate for the requested parameters"
-                        + "."),
+                        + "parameters."
+                        + "\n* `Other`  Any unit returned in the response to the units URI "
+                        + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
                         + "time series trace to be selected. The format for this field is ISO 8601 "
                         + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
@@ -341,9 +325,10 @@ public class TimeSeriesController implements CrudHandler {
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
                 @OpenApiParam(name = DATUM,  description = "Specifies the "
                         + "elevation datum of the response. This field affects only elevation"
-                        + " location levels. Valid values for this field are:\r\n1. NAVD88.  "
-                        + "The elevation values will in the specified or default units above "
-                        + "the NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in "
+                        + " location levels. Valid values for this field are:"
+                        + "\n* `NAVD88`  The elevation values will in the specified or default units above "
+                        + "the NAVD-88 datum."
+                        + "\n* `NGVD29`  The elevation values will be in "
                         + "the specified or default units above the NGVD-29 datum.  "
                         + "This parameter is not supported for:" + Formats.JSONV2 + " or " + Formats.XMLV2),
                 @OpenApiParam(name = BEGIN,  description = "Specifies the "
@@ -374,9 +359,12 @@ public class TimeSeriesController implements CrudHandler {
                         + "Default is false."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
                         + " encoding format of the response. Valid values for the format "
-                        + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
-                        + "xml\r\n4.  wml2 (only if name field is specified)\r\n5.    json "
-                        + "(default)"),
+                        + "field for this URI are:"
+                        + "\n* `tab`"
+                        + "\n* `csv`"
+                        + "\n* `xml`"
+                        + "\n* `wml2` (only if name field is specified)"
+                        + "\n* `json` (default)"),
                 @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "

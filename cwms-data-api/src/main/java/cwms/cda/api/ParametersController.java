@@ -59,8 +59,11 @@ public class ParametersController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = FORMAT, required = false, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
-                            + " for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json "
-                            + "(default)")
+                            + " for this URI are:"
+                            + "\n* `tab`"
+                            + "\n* `csv`"
+                            + "\n* `xml`"
+                            + "\n* `json` (default)")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200)

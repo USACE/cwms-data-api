@@ -20,8 +20,6 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OfficeFormatV1;
-import cwms.cda.formatters.csv.CsvV1Office;
-import cwms.cda.formatters.tab.TabV1Office;
 import cwms.cda.formatters.xml.XMLv1Office;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -69,7 +67,11 @@ public class OfficeController implements CrudHandler {
                 deprecated = true, 
                 description = "(Deprecated in favor of Accept header) Specifies the encoding "
                     + "format of the response. Valid value for the format field for this "
-                    + "URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json (default)"),
+                    + "URI are:\r\n"
+                        + "\n* `tab`\r\n"
+                        + "\n* `csv`\r\n "
+                        + "\n* `xml`\r\n"
+                        + "\n* `json` (default)"),
             @OpenApiParam(name = HAS_DATA,
                 description = "A flag ('True'/'False') "
                     + "When set to true this returns offices that have operational data. "
