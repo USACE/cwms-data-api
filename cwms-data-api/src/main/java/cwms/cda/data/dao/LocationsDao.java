@@ -27,10 +27,13 @@ package cwms.cda.data.dao;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.Location;
 import java.io.IOException;
+import java.util.List;
 import org.geojson.FeatureCollection;
 
 public interface LocationsDao {
     String getLocations(String names, String format, String units, String datum, String officeId);
+
+    List<Location> getLocations(String names, String units, String datum, String officeId);
 
     Location getLocation(String locationName, String unitSystem, String officeId) throws IOException;
 

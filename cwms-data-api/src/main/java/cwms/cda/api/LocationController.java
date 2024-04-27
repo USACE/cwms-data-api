@@ -39,6 +39,7 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -108,34 +109,45 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             queryParams = {
                 @OpenApiParam(name = NAMES, description = "Specifies the name(s) of the "
-                        + "location(s) whose data is to be included in the response"),
+                        + "location(s) whose data is to be included in the response.  "
+                        + "When the `" + FORMAT + "` parameter is not provided and `" + Formats.JSONV2
+                        + "` is specified in the accept header, this parameter is a "
+                        + "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"),
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                         + "the location level(s) whose data is to be included in the response"
                         + ". If this field is not specified, matching location level "
                         + "information from all offices shall be returned."),
                 @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                        + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                        + "  Specifies English unit system.  Location level values will be in"
-                        + " the default English units for their parameters.\r\n2. SI.   "
-                        + "Specifies the SI unit system.  Location level values will be in "
-                        + "the default SI units for their parameters.\r\n3. Other. Any unit "
+                        + " of the response. Valid values for the unit field are:"
+                        + "\n* `EN`  Specifies English unit system.  Location level values will be in"
+                        + " the default English units for their parameters."
+                        + "\n* `SI`  Specifies the SI unit system.  Location level values will be in "
+                        + "the default SI units for their parameters."
+                        + "\n* `Other`  Any unit "
                         + "returned in the response to the units URI request that is "
                         + "appropriate for the requested parameters."),
                 @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
-                        + " the response. This field affects only elevation location levels. "
-                        + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
+                        + " the response. This field affects only vertical datum. "
+                        + "Valid values for this field are:"
+                        + "\n* `NAVD88`  The elevation "
                         + "values will in the specified or default units above the NAVD-88 "
-                        + "datum.\r\n2. NGVD29.  The elevation values will be in the "
+                        + "datum."
+                        + "\n* `NGVD29`  The elevation values will be in the "
                         + "specified or default units above the NGVD-29 datum."),
                 @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
                         + "of the response. Valid values for the format field for this URI "
-                        + "are:\r\n1.    tab\r\n2.    csv\r\n3.    xml\r\n4.  wml2 (only if "
-                        + "name field is specified)\r\n5.    json (default)\n" + "6.    "
-                        + "geojson")
+                        + "are:\n"
+                        + "\n* `tab`"
+                        + "\n* `csv`"
+                        + "\n* `xml`"
+                        + "\n* `wml2` (only if name field is specified)"
+                        + "\n* `json` (default)\n"
+                        + "\n* `geojson`")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
                         content = {
+                            @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Location.class),
                             @OpenApiContent(type = Formats.JSON),
                             @OpenApiContent(type = Formats.TAB),
                             @OpenApiContent(type = Formats.CSV),
@@ -145,7 +157,8 @@ public class LocationController implements CrudHandler {
                             @OpenApiContent(type = "")
                         })
             },
-            description = "Returns CWMS Location Data",
+            description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
+                    + "retrieving lists of locations and can filter on additional fields.",
             tags = {"Locations"}
     )
     @Override
@@ -167,13 +180,21 @@ public class LocationController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             final String results;
-            if (contentType.getType().equals(Formats.GEOJSON)) {
+
+            String version = contentType.getParameters().get(VERSION);
+            if (version != null && version.equals("2")) {
+                List<Location> locations = locationsDao.getLocations(names, units, datum, office);
+                ObjectMapper om = getObjectMapperForFormat(contentType.getType());
+                results = om.writeValueAsString(locations);
+                ctx.result(results);
+                requestResultSize.update(results.length());
+            } else if (contentType.getType().equals(Formats.GEOJSON)) {
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units,
                         office);
                 ctx.json(collection);
 
                 requestResultSize.update(ctx.res.getBufferSize());
-            } else {
+            }else {
                 String format = getFormatFromContent(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
@@ -217,11 +238,12 @@ public class LocationController implements CrudHandler {
                         + "included in the response. If this field is not specified, matching"
                         + " location level information from all offices shall be returned."),
                 @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                        + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                        + "  Specifies English unit system.  Location values will be in the "
-                        + "default English units for their parameters.\r\n2. SI.   Specifies "
-                        + "the SI unit system.  Location values will be in the default SI "
-                        + "units for their parameters.\r\n3. Other. Any unit returned in the "
+                        + " of the response. Valid values for the unit field are: "
+                        + "\n* `EN`  Specifies English unit system.  Location values will be in the "
+                        + "default English units for their parameters."
+                        + "\n* `SI`  Specifies the SI unit system.  Location values will be in the "
+                        + "default SI units for their parameters."
+                        + "\n* `Other`  Any unit returned in the "
                         + "response to the units URI request that is appropriate for the "
                         + "requested parameters.")
             },
