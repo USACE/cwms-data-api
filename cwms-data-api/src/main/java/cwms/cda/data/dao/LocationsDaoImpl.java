@@ -106,15 +106,15 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
-        if(officeId != null) {
+        if (officeId != null) {
             whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
         }
 
-        if(unitSystem != null) {
+        if (unitSystem != null) {
             whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
         }
 
-        if(datum != null) {
+        if (datum != null) {
             whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
         }
 

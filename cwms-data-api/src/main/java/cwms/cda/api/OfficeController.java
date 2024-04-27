@@ -63,37 +63,37 @@ public class OfficeController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = FORMAT,
-                deprecated = true, 
-                description = "(Deprecated in favor of Accept header) Specifies the encoding "
-                    + "format of the response. Valid value for the format field for this "
-                    + "URI are:\r\n"
-                        + "\n* `tab`\r\n"
-                        + "\n* `csv`\r\n "
-                        + "\n* `xml`\r\n"
-                        + "\n* `json` (default)"),
-            @OpenApiParam(name = HAS_DATA,
-                description = "A flag ('True'/'False') "
-                    + "When set to true this returns offices that have operational data. "
-                    + "Default value is <b>False</b>,. "
-                    + "<a href=\"https://github.com/USACE/cwms-data-api/issues/321\" "
-                    + "target=\"_blank\">Feature #321</a>",
-                type = Boolean.class)
+        @OpenApiParam(name = FORMAT,
+            deprecated = true,
+            description = "(Deprecated in favor of Accept header) Specifies the encoding "
+                + "format of the response. Valid value for the format field for this "
+                + "URI are:\r\n"
+                    + "\n* `tab`\r\n"
+                    + "\n* `csv`\r\n "
+                    + "\n* `xml`\r\n"
+                    + "\n* `json` (default)"),
+        @OpenApiParam(name = HAS_DATA,
+            description = "A flag ('True'/'False') "
+                + "When set to true this returns offices that have operational data. "
+                + "Default value is <b>False</b>,. "
+                + "<a href=\"https://github.com/USACE/cwms-data-api/issues/321\" "
+                + "target=\"_blank\">Feature #321</a>",
+            type = Boolean.class)
         }, responses = {
             @OpenApiResponse(status = STATUS_200,
-            description = "A list of offices.", 
-            content = {
+                description = "A list of offices.",
+                content = {
                     @OpenApiContent(from = OfficeFormatV1.class, type = ""),
                     @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
                     @OpenApiContent(from = OfficeFormatV1.class, type = Formats.JSON),
                     @OpenApiContent(from = XMLv1Office.class, type = Formats.XML)
-            }),
+                }),
         }, tags = { "Offices" }
     )
     @Override
     public void getAll(Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             OfficeDao dao = new OfficeDao(dsl);
@@ -137,7 +137,7 @@ public class OfficeController implements CrudHandler {
             }, tags = { "Offices" })
     @Override
     public void getOne(Context ctx, String officeId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             OfficeDao dao = new OfficeDao(dsl);

@@ -194,7 +194,7 @@ public class LocationController implements CrudHandler {
                 ctx.json(collection);
 
                 requestResultSize.update(ctx.res.getBufferSize());
-            }else {
+            } else {
                 String format = getFormatFromContent(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
@@ -423,7 +423,8 @@ public class LocationController implements CrudHandler {
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);
             if (cause != null && cause.getErrorCode() == 20031) {
-                throw new DeleteConflictException("Unable to delete requested location: " + locationId + " for office: " + office, cause);
+                throw new DeleteConflictException("Unable to delete requested location: "
+                        + locationId + " for office: " + office, cause);
             }
             throw ex;
         }
