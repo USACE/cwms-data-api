@@ -1,16 +1,21 @@
 {
   "spec": {
+    "spec-id": "TEST-SPEC",
     "office-id": "SPK",
-    "spec-id": "test-spec",
+    "source-entity-id": "USGS",
     "designator": "designator",
-    "location-id": "FcstInstTestLoc"
+    "description": "description",
+    "time-series-ids": [
+      "FcstInstTestLoc.Flow.Ave.1Day.1Day.tsid1",
+      "FcstInstTestLoc.Flow.Ave.1Day.1Day.tsid2",
+      "FcstInstTestLoc.Flow.Ave.1Day.1Day.tsid3"
+    ]
   },
-  "date-time": 1624284010000,
-  "issue-date-time": 1653221020000,
-  "first-date-time": 1692702150000,
+  "date-time": 1624284000000,
+  "issue-date-time": 1653220980000,
+  "first-date-time": 1692702120000,
   "last-date-time": 1727017260000,
   "max-age": 5,
-  "time-series-count": 3,
   "notes": "test notes",
   "metadata": {
     "key1": "value1",
@@ -19,5 +24,6 @@
   },
   "filename": "testFilename.txt",
   "file-description": "test file description",
-  "file-data": "dGVzdCBmaWxlIGNvbnRlbnQ="
+  "file-data": "dGVzdCBmaWxlIGNvbnRlbnQ=",
+  "file-media-type": "text/plain"
 }

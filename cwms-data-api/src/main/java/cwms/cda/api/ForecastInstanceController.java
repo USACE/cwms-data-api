@@ -1,36 +1,21 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.DESIGNATOR;
-import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
-import static cwms.cda.api.Controllers.FORECAST_DATE;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ISSUE_DATE;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ForecastInstanceDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -41,21 +26,23 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.time.Instant;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 
-public class ForecastInstanceController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(ForecastInstanceController.class.getName());
+public final class ForecastInstanceController implements CrudHandler {
 
     public static final String TAG = "Forecast";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
+    private static final int KILO_BYTE_LIMIT = Integer.parseInt(System.getProperty("cda.api.forecast.file.max.length.kB", "64"));
 
     public ForecastInstanceController(MetricRegistry metrics) {
         this.metrics = metrics;
@@ -89,11 +76,9 @@ public class ForecastInstanceController implements CrudHandler {
 
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             dao.create(forecastInstance);
-            ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException | DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            ctx.status(HttpServletResponse.SC_CREATED);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to deserialize forecast instance from content body", ex);
         }
     }
 
@@ -130,9 +115,12 @@ public class ForecastInstanceController implements CrudHandler {
         String designator = requiredParam(ctx, DESIGNATOR);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
+        Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
+        Instant issueInstant = DateUtils.parseUserDate(issueDate, "UTC").toInstant();
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            dao.delete(office, name, designator, forecastDate, issueDate);
+            dao.delete(office, name, designator, forecastInstant, issueInstant);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
@@ -169,7 +157,21 @@ public class ForecastInstanceController implements CrudHandler {
             String name = ctx.queryParam(NAME);
 
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            List<ForecastInstance> instances = dao.getForecastInstances(office, name, desionatorMask);
+            String path = ctx.path();
+            if (!path.endsWith("/"))  {
+                path += "/";
+            }
+            path += "{spec-id}/file-data";
+            String url = new URIBuilder(ctx.fullUrl())
+                    .setPath(path)
+                    .clearParameters()
+                    .build()
+                    .toString();
+            ReplaceUtils.OperatorBuilder urlBuilder = new ReplaceUtils.OperatorBuilder()
+                    .withTemplate(url)
+                    .withOperatorKey("{spec-id}");
+            List<ForecastInstance> instances = dao.getForecastInstances(KILO_BYTE_LIMIT, urlBuilder,
+                    office, name, desionatorMask);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
             String result = Formats.format(contentType, instances, ForecastInstance.class);
@@ -178,6 +180,8 @@ public class ForecastInstanceController implements CrudHandler {
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+        } catch (URISyntaxException e) {
+            throw new FormattingException("Could not build file download URL", e);
         }
     }
 
@@ -220,9 +224,24 @@ public class ForecastInstanceController implements CrudHandler {
         String designator = requiredParam(ctx, DESIGNATOR);
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
+        Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
+        Instant issueInstant = DateUtils.parseUserDate(issueDate, "UTC").toInstant();
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            ForecastInstance instance = dao.getForecastInstance(office, name, designator, forecastDate, issueDate);
+            String path = ctx.path();
+            if (!path.endsWith("/"))  {
+                path += "/";
+            }
+            path += "file-data";
+            String url = new URIBuilder(ctx.fullUrl())
+                    .setPath(path)
+                    .clearParameters()
+                    .build()
+                    .toString();
+            ReplaceUtils.OperatorBuilder urlBuilder = new ReplaceUtils.OperatorBuilder()
+                    .withTemplate(url);
+            ForecastInstance instance = dao.getForecastInstance(KILO_BYTE_LIMIT, urlBuilder, office, name,
+                    designator, forecastInstant, issueInstant);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
             String result = Formats.format(contentType, instance);
@@ -231,6 +250,8 @@ public class ForecastInstanceController implements CrudHandler {
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+        } catch (URISyntaxException e) {
+            throw new FormattingException("Could not build file download URL", e);
         }
     }
 
@@ -259,10 +280,9 @@ public class ForecastInstanceController implements CrudHandler {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
             dao.update(forecastInstance);
-        } catch (IOException | DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            ctx.status(HttpServletResponse.SC_OK);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to deserialize forecast instance from content body", ex);
         }
     }
 
@@ -272,18 +292,13 @@ public class ForecastInstanceController implements CrudHandler {
 
     private ForecastInstance deserializeForecastInstance(String body, ContentType contentType)
             throws IOException {
-        return deserializeForecastInstance(body, contentType.toString());
-    }
-
-    public static ForecastInstance deserializeForecastInstance(String body, String contentType)
-            throws IOException {
         ForecastInstance retval;
-
-        if ((Formats.JSONV2).equals(contentType)) {
+        String type = contentType.toString();
+        if ((Formats.JSONV2).equals(type)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
             retval = om.readValue(body, ForecastInstance.class);
         } else {
-            throw new IOException("Unexpected format:" + contentType);
+            throw new IOException("Unexpected format:" + type);
         }
 
         return retval;

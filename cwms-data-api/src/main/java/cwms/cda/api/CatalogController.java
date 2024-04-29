@@ -90,67 +90,66 @@ public class CatalogController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = PAGE,
-                            description = "This end point can return a lot of data, this "
-                                    + "identifies where in the request you are."
-                    ),
+                @OpenApiParam(name = PAGE,
+                        description = "This end point can return a lot of data, this "
+                                + "identifies where in the request you are."
+                ),
 
-                    @OpenApiParam(name = PAGE_SIZE,
-                            type = Integer.class,
-                            description = "How many entires per page returned. Default 500."
-                    ),
-                    @OpenApiParam(name = UNIT_SYSTEM,
-                            type = UnitSystem.class,
-                            description = UnitSystem.DESCRIPTION
-                    ),
-                    @OpenApiParam(name = OFFICE,
-                            description = "3-4 letter office name representing the district you "
-                                    + "want to isolate data to."
-                    ),
-                    @OpenApiParam(name = LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
-                    ),
-                    @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
-                                    + "timeseries category id"
-                    ),
-                    @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
-                                    + "timeseries group id"
-                    ),
-                    @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                                    + " category id"
-                    ),
-                    @OpenApiParam(name = LOCATION_GROUP_LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                                    + " group id"
-                    ),
-                    @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                            + "matching against the location bounding office. "
-                            + "When this field is used items with no bounding office set will not be present in results."),
+                @OpenApiParam(name = PAGE_SIZE,
+                        type = Integer.class,
+                        description = "How many entries per page returned. Default 500."
+                ),
+                @OpenApiParam(name = UNIT_SYSTEM,
+                        type = UnitSystem.class,
+                        description = UnitSystem.DESCRIPTION
+                ),
+                @OpenApiParam(name = OFFICE,
+                        description = "3-4 letter office name representing the district you "
+                                + "want to isolate data to."
+                ),
+                @OpenApiParam(name = LIKE,
+                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
+                ),
+                @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
+                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
+                                + "timeseries category id"
+                ),
+                @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
+                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
+                                + "timeseries group id"
+                ),
+                @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
+                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
+                                + " category id"
+                ),
+                @OpenApiParam(name = LOCATION_GROUP_LIKE,
+                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
+                                + " group id"
+                ),
+                @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "matching against the location bounding office. "
+                        + "When this field is used items with no bounding office set will not be present in results."),
             },
             pathParams = {
-                    @OpenApiParam(name = "dataset",
-                            type = CatalogableEndpoint.class,
-                            description = "A list of what data? E.g. Timeseries, Locations, "
-                                    + "Ratings, etc")
+                @OpenApiParam(name = "dataset",
+                        type = CatalogableEndpoint.class,
+                        description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
             },
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of elements the data set you've selected.",
                     content = {
-                            @OpenApiContent(from = Catalog.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = Catalog.class, type = Formats.XML)
+                        @OpenApiContent(from = Catalog.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = Catalog.class, type = Formats.XML)
                     }
             )
             },
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, @NotNull String dataSet) {
+    public void getOne(@NotNull Context ctx, @NotNull String dataSet) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
-                DSLContext dsl = JooqDao.getDslContext(ctx);
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            DSLContext dsl = JooqDao.getDslContext(ctx);
 
             String valDataSet =
                     ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
@@ -192,7 +191,7 @@ public class CatalogController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
-                TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl);
+                TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl, metrics);
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
                         locGroupLike, tsCategoryLike, tsGroupLike, boundingOfficeLike);
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {

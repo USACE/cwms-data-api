@@ -53,11 +53,13 @@ import org.jooq.DSLContext;
 import org.jooq.ExecuteListener;
 import org.jooq.Field;
 import org.jooq.SQLDialect;
+import org.jooq.TableField;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.records.AV_FCST_SPEC;
 
 public abstract class JooqDao<T> extends Dao<T> {
     protected static final int ORACLE_CURSOR_TYPE = -10;
@@ -173,6 +175,14 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
+    protected static Condition filterExact(Field<String> field, String filter) {
+        if (filter == null) {
+            return DSL.noCondition();
+        } else {
+            return field.eq(filter);
+        }
+    }
+
     /**
      * Oracle supports case insensitive regexp search but the syntax for calling it is a
      * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
@@ -182,7 +192,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      */
     public static Condition caseInsensitiveLikeRegexNullTrue(Field<String> field, String regex) {
         if (regex == null) {
-            return DSL.trueCondition();
+            return DSL.noCondition();
         }
         return caseInsensitiveLikeRegex(field, regex);
     }

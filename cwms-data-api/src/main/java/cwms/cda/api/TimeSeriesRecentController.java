@@ -94,7 +94,7 @@ public class TimeSeriesRecentController implements Handler {
 
     @NotNull
     private TimeSeriesDao getTimeSeriesDao(DSLContext dsl) {
-        return new TimeSeriesDaoImpl(dsl);
+        return new TimeSeriesDaoImpl(dsl, metrics);
     }
 
     @OpenApi(
@@ -127,8 +127,6 @@ public class TimeSeriesRecentController implements Handler {
     public void handle(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("getRecent")) {
-            DSLContext dsl = getDslContext(ctx);
-
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
             String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).allowNullable().get();
@@ -150,7 +148,9 @@ public class TimeSeriesRecentController implements Handler {
             List<String> tsIds = getTsIds(tsIdsParam);
             boolean hasTsIds = tsIds != null && !tsIds.isEmpty();
 
+            DSLContext dsl = getDslContext(ctx);
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
+
             List<RecentValue> latestValues;
             if (hasTsGroupInfo && hasTsIds) {
                 // has both = this is an error

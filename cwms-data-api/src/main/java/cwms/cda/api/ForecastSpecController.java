@@ -1,31 +1,13 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.DESIGNATOR;
-import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ID_MASK;
-import static cwms.cda.api.Controllers.LOCATION_MASK;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SOURCE_ENTITY;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.api.errors.CdaError;
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.ForecastSpecDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
@@ -43,15 +25,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 
-public class ForecastSpecController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(ForecastSpecController.class.getName());
+public final class ForecastSpecController implements CrudHandler {
 
     public static final String TAG = "Forecast";
     private final MetricRegistry metrics;
@@ -92,11 +70,9 @@ public class ForecastSpecController implements CrudHandler {
 
             dao.create(forecastSpec);
 
-            ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException | DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            ctx.status(HttpServletResponse.SC_CREATED);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to deserialize forecast spec from content body", ex);
         }
     }
 
@@ -111,6 +87,9 @@ public class ForecastSpecController implements CrudHandler {
                         + "owning office of the forecast spec whose data is to be deleted."),
                 @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
                         + "designator of the forecast spec whose data is to be deleted."),
+                @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
+                        "Defaults to \"DELETE_KEY\"",
+                        type = JooqDao.DeleteMethod.class)
             },
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
@@ -124,11 +103,29 @@ public class ForecastSpecController implements CrudHandler {
         String office = requiredParam(ctx, OFFICE);
         String designator = requiredParam(ctx, DESIGNATOR);
 
+        JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
+                .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
+        DeleteRule deleteRule;
+        switch (deleteMethod) {
+            case DELETE_ALL:
+                deleteRule = DeleteRule.DELETE_ALL;
+                break;
+            case DELETE_DATA:
+                deleteRule = DeleteRule.DELETE_DATA;
+                break;
+            case DELETE_KEY:
+                deleteRule = DeleteRule.DELETE_KEY;
+                break;
+            default:
+                throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
+                        + deleteMethod);
+        }
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
-            dao.delete(office, name, designator);
+            dao.delete(office, name, designator, deleteRule);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
@@ -144,9 +141,6 @@ public class ForecastSpecController implements CrudHandler {
                 @OpenApiParam(name = DESIGNATOR_MASK, description = "Posix "
                         + "<a href=\"regexp.html\">regular expression</a>  that specifies the "
                         + "designator of the forecast spec whose data to be included in the response."),
-                @OpenApiParam(name = LOCATION_MASK, description = "Posix "
-                        + "<a href=\"regexp.html\">regular expression</a>  that specifies the "
-                        + "location of the forecast spec whose data to be included in the response."),
                 @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity "
                         + "of the forecast spec whose data is to be included in the response.")
             },
@@ -167,15 +161,14 @@ public class ForecastSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
-            String designator = ctx.queryParam(DESIGNATOR);
-            String location = ctx.queryParam(LOCATION_MASK);
-            String sourceEntity = ctx.queryParam(SOURCE_ENTITY);
+            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).getOrDefault("*");
+            String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
             List<ForecastSpec> specs = dao.getForecastSpecs(office, names, designator,
-                    location, sourceEntity);
+                    sourceEntity);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
@@ -249,7 +242,7 @@ public class ForecastSpecController implements CrudHandler {
                     required = true),
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                        + "inputs provided the forecaskspec was not found.")
+                        + "inputs provided the forecast spec was not found.")
             },
             method = HttpMethod.PATCH,
             tags = TAG
@@ -258,16 +251,12 @@ public class ForecastSpecController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
-
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
-
             dao.update(forecastSpec);
-
-        } catch (IOException | DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            ctx.status(HttpServletResponse.SC_OK);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to deserialize forecast spec from content body", ex);
         }
     }
 
@@ -277,20 +266,14 @@ public class ForecastSpecController implements CrudHandler {
 
     private ForecastSpec deserializeForecastSpec(String body, ContentType contentType)
             throws IOException {
-        return deserializeForecastSpec(body, contentType.toString());
-    }
-
-    public static ForecastSpec deserializeForecastSpec(String body, String contentType)
-            throws IOException {
         ForecastSpec retval;
-
-        if ((Formats.JSONV2).equals(contentType)) {
+        String type = contentType.toString();
+        if ((Formats.JSONV2).equals(type)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
             retval = om.readValue(body, ForecastSpec.class);
         } else {
-            throw new IOException("Unexpected format:" + contentType);
+            throw new IOException("Unexpected format:" + type);
         }
-
         return retval;
     }
 

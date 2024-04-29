@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -14,6 +13,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -75,15 +76,15 @@ public class ForecastSpecTest {
 
     @NotNull
     private ForecastSpec buildForecastSpec() {
-        ArrayList<TimeSeriesIdentifierDescriptor> tsids = new ArrayList<>();
-        tsids.add(new TimeSeriesIdentifierDescriptor.Builder().withTimeSeriesId("tsid1").build());
-        tsids.add(new TimeSeriesIdentifierDescriptor.Builder().withTimeSeriesId("tsid2").build());
-        tsids.add(new TimeSeriesIdentifierDescriptor.Builder().withTimeSeriesId("tsid3").build());
+        List<String> tsids = new ArrayList<>();
+        tsids.add("tsid1");
+        tsids.add("tsid2");
+        tsids.add("tsid3");
 
         return new ForecastSpec.Builder()
                 .withSpecId("spec")
                 .withOfficeId("office")
-                .withLocationIds(Collections.singleton("location"))
+                .withLocationId("location")
                 .withSourceEntityId("sourceEntity").withDesignator("designator")
                 .withDescription("description")
                 .withTimeSeriesIds(tsids)

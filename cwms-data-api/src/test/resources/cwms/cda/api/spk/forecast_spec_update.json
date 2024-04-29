@@ -1,22 +1,12 @@
 {
-  "spec-id": "test-spec",
+  "spec-id": "TEST-SPEC",
   "office-id": "SPK",
-  "location-id": "location",
-  "source-entity-id": "anotherEntity",
-  "designator": "Hi Hi",
+  "source-entity-id": "USGS",
+  "designator": "designator",
   "description": "different description",
   "time-series-ids": [
-    {
-      "time-series-id": "tsid4",
-      "active": true
-    },
-    {
-      "time-series-id": "tsid5",
-      "active": true
-    },
-    {
-      "time-series-id": "tsid6",
-      "active": true
-    }
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid4",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid5",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid6"
   ]
 }
