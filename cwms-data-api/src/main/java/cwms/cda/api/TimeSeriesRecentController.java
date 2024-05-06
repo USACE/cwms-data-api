@@ -34,10 +34,12 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TS_IDS;
+import static cwms.cda.api.Controllers.UNIT_SYSTEM;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -110,6 +112,9 @@ public class TimeSeriesRecentController implements Handler {
                 @OpenApiParam(name = TS_IDS, description = "Accepts a comma separated list of "
                         + "timeseries ids to be included in the response.  Optional. "
                         + "Cannot be used in combination with category_id and group_id."),
+                @OpenApiParam(name = UNIT_SYSTEM, type = UnitSystem.class, description = "Unit System desired in response. "
+                            + "Can be SI (International Scientific) or EN (Imperial.) If unspecified, "
+                            + "defaults to EN."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -131,6 +136,8 @@ public class TimeSeriesRecentController implements Handler {
             String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
             String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).allowNullable().get();
             String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).allowNullable().get();
+            UnitSystem unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, UnitSystem.class)
+                    .getOrDefault(UnitSystem.EN);
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
             gregorianCalendar.set(Calendar.HOUR, 0);
@@ -170,9 +177,9 @@ public class TimeSeriesRecentController implements Handler {
                 return;
             } else if (hasTsGroupInfo) {
                 // just group provided
-                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit);
+                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit, unitSystem);
             } else {
-                latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit);
+                latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit, unitSystem);
             }
 
             String formatHeader = ctx.header(Header.ACCEPT);
