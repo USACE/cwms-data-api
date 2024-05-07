@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
@@ -169,6 +170,7 @@ public final class Controllers {
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
     }
 
     private Controllers() {

@@ -350,7 +350,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "response. If this field is not specified, the default time zone "
                         + "of UTC shall be used.\r\nIgnored if begin was specified with "
                         + "offset and timezone."),
-                @OpenApiParam(name = Controllers.TRIM, description = "Specifies whether to trim missing "
+                @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies whether to trim missing "
                         + "values from the beginning and end of the retrieved values. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "Default is false."),

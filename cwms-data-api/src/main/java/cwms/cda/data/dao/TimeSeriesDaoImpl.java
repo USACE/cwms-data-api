@@ -16,6 +16,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -24,7 +25,6 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
-import cwms.cda.data.dto.TsvDquId;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
@@ -40,7 +40,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,7 +84,6 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
@@ -96,6 +94,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
+    public static final String MAX_DATE_TIME = "max_date_time";
+    public static final String DEFAULT_UNITS = "def_units";
     public static final String PROP_BASE = "cwms.cda.data.dao.ts";
 
     public static final String VERSIONED_NAME = "isVersioned";
@@ -107,6 +107,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             + ".expireAfterSeconds", 600), TimeUnit.SECONDS)
             .recordStats()
             .build();
+
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
         this(dsl, null);
@@ -381,7 +382,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-            query.fetchInto(tsRecord -> timeseries.addValue(
+            query.forEach(tsRecord -> timeseries.addValue(
                             tsRecord.getValue(dateTimeCol),
                             tsRecord.getValue(valueCol),
                             tsRecord.getValue(qualityNormCol).intValue()
@@ -468,7 +469,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
                 retVal = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
             } catch (JAXBException e) {
-                logger.log(Level.WARNING, "Failed to parse:" + body, e);
+                logger.log(Level.WARNING, e, () -> "Failed to parse:" + body);
             }
         }
         return retVal;
@@ -490,9 +491,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Catalog.CatalogPage catPage = null;
 
         Condition locJoinCondition = AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)
-                .and(AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_CWMS_TS_ID2.LOCATION_CODE.coerce(AV_LOC2.AV_LOC2.LOCATION_CODE)))
+                .and(AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_CWMS_TS_ID2.LOCATION_CODE
+                        .coerce(AV_LOC2.AV_LOC2.LOCATION_CODE)))
                 .and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull());
-
 
         if (page == null || page.isEmpty()) {
 
@@ -673,7 +674,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
     // Finds the single most recent TsvDqu within the time window.
-    public TsvDqu findMostRecent(String tOfficeId, String tsId, String unit,
+    public TsvDqu findMostRecent(String officeId, String tsId, String unit,
                                  Timestamp twoWeeksFromNow, Timestamp twoWeeksAgo) {
         TsvDqu retval = null;
 
@@ -682,7 +683,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Condition nestedCondition = view.ALIASED_ITEM.isNull()
                 .and(view.VALUE.isNotNull())
                 .and(view.CWMS_TS_ID.eq(tsId))
-                .and(view.OFFICE_ID.eq(tOfficeId));
+                .and(view.OFFICE_ID.eq(officeId));
 
         if (twoWeeksFromNow != null) {
             nestedCondition = nestedCondition.and(view.DATE_TIME.lt(twoWeeksFromNow));
@@ -693,25 +694,36 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             nestedCondition = nestedCondition.and(view.DATE_TIME.gt(twoWeeksAgo));
         }
 
-        String maxFieldName = "MAX_DATE_TIME";
-        SelectHavingStep<Record1<Timestamp>> select =
-                dsl.select(max(view.DATE_TIME).as(maxFieldName)).from(
-                        view).where(nestedCondition).groupBy(view.TS_CODE);
 
-        Record dquRecord = dsl.select(asterisk()).from(view).where(view.DATE_TIME.in(select)).and(
-                view.CWMS_TS_ID.eq(tsId)).and(view.OFFICE_ID.eq(tOfficeId)).and(view.UNIT_ID.eq(unit)).and(
-                view.VALUE.isNotNull()).and(view.ALIASED_ITEM.isNull()).fetchOne();
+        SelectHavingStep<Record1<Timestamp>> maxSelect =
+                dsl.select(max(view.DATE_TIME).as(MAX_DATE_TIME))
+                        .from(view)
+                        .where(nestedCondition)
+                        .groupBy(view.TS_CODE);
+
+        Record dquRecord = dsl.select(asterisk())
+                .from(view)
+                .where(view.DATE_TIME.in(maxSelect))
+                .and(view.CWMS_TS_ID.eq(tsId))
+                .and(view.OFFICE_ID.eq(officeId))
+                .and(view.UNIT_ID.eq(unit))
+                .and(view.VALUE.isNotNull())
+                .and(view.ALIASED_ITEM.isNull())
+                .fetchOne();
 
         if (dquRecord != null) {
-            retval = dquRecord.map(r -> {
-                usace.cwms.db.jooq.codegen.tables.records.AV_TSV_DQU dqu = r.into(view);
-                return new TsvDqu(
-                        new TsvDquId(dqu.getOFFICE_ID(), dqu.getTS_CODE(),
-                        dqu.getUNIT_ID(), dqu.getDATE_TIME()),
-                        dqu.getCWMS_TS_ID(), dqu.getVERSION_DATE(),
-                        dqu.getDATA_ENTRY_DATE(), dqu.getVALUE(), dqu.getQUALITY_CODE(),
-                        dqu.getSTART_DATE(), dqu.getEND_DATE());
-            });
+            retval = dquRecord.map(jrecord -> new TsvDqu.Builder()
+                    .withOfficeId(jrecord.getValue(view.OFFICE_ID.getName(), String.class))
+                    .withCwmsTsId(jrecord.getValue(view.CWMS_TS_ID.getName(), String.class))
+                    .withUnitId(jrecord.getValue(view.UNIT_ID.getName(), String.class))
+                    .withDateTime(jrecord.getValue(view.DATE_TIME.getName(), Timestamp.class))
+                    .withVersionDate(jrecord.getValue(view.VERSION_DATE.getName(), Timestamp.class))
+                    .withDataEntryDate(jrecord.getValue(view.DATA_ENTRY_DATE.getName(), Timestamp.class))
+                    .withValue(jrecord.getValue(view.VALUE.getName(), Double.class))
+                    .withQualityCode(jrecord.getValue(view.QUALITY_CODE.getName(), Long.class))
+                    .withStartDate(jrecord.getValue(view.START_DATE.getName(), Timestamp.class))
+                    .withEndDate(jrecord.getValue(view.END_DATE.getName(), Timestamp.class))
+                    .build());
         }
 
         return retval;
@@ -753,158 +765,184 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 into.getEND_DATE());
     }
 
-    // Finds single most recent value within the window for each of the tsCodes
+
+    @Override
     public List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastdate,
-                                                    Timestamp futuredate) {
-        final List<RecentValue> retval = new ArrayList<>();
+                                                    Timestamp futuredate, UnitSystem unitSystem) {
+        List<RecentValue> retval = Collections.emptyList();
 
         if (tsIds != null && !tsIds.isEmpty()) {
-            AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;
-            AV_CWMS_TS_ID2 tsView = AV_CWMS_TS_ID2;
-            SelectConditionStep<Record> innerSelect
-                    = dsl.select(
-                            tsvView.asterisk(),
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
-                                    "max_date_time"),
-                            tsView.CWMS_TS_ID)
-                    .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
+            String tsFieldName = "TSVIEW_CWMS_TS_ID";
+            Field<String> tsField = AV_CWMS_TS_ID2.CWMS_TS_ID.as(tsFieldName);
+
+            Field<Timestamp> maxDateField = max(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME)
+                    .over(partitionBy(AV_TSV_DQU.AV_TSV_DQU.TS_CODE))
+                    .as(MAX_DATE_TIME);
+
+            Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                    CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
+                    DSL.val(unitSystem, String.class))
+                    .as(DEFAULT_UNITS);
+
+            SelectConditionStep<? extends Record> innerSelect = dsl.select(
+                            AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID,
+                            AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID,
+                            AV_TSV_DQU.AV_TSV_DQU.TS_CODE,
+                            AV_TSV_DQU.AV_TSV_DQU.UNIT_ID,
+                            AV_TSV_DQU.AV_TSV_DQU.DATE_TIME,
+                            AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE,
+                            AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE,
+                            AV_TSV_DQU.AV_TSV_DQU.VALUE,
+                            AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE,
+                            AV_TSV_DQU.AV_TSV_DQU.START_DATE,
+                            AV_TSV_DQU.AV_TSV_DQU.END_DATE,
+                            defUnitsField,
+                            maxDateField,
+                            tsField
+                    )
+                    .from(AV_TSV_DQU.AV_TSV_DQU.join(AV_CWMS_TS_ID2)
+                            .on(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(
+                                    AV_CWMS_TS_ID2.TS_CODE.cast(Long.class))))
                     .where(
-                            tsView.CWMS_TS_ID.in(tsIds)
-                                    .and(tsvView.VALUE.isNotNull())
-                                    .and(tsvView.DATE_TIME.lt(futuredate))
-                                    .and(tsvView.DATE_TIME.gt(pastdate))
-                                    .and(tsvView.START_DATE.le(futuredate))
-                                    .and(tsvView.END_DATE.gt(pastdate)));
+                            AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.VALUE.isNotNull())
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.lt(futuredate))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.gt(pastdate))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.START_DATE.le(futuredate))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate)));
 
+            // We want to use some of the fields from the innerSelect statement in our WHERE clause
+            // Its cleaner if we call them out individually.
+            Field<Timestamp> dateTimeField = innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME);
+            Field<String> unitField = innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID);
 
-            Field[] queryFields = new Field[]{tsView.CWMS_TS_ID, tsvView.OFFICE_ID,
-                tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
-                tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
-                tsvView.START_DATE, tsvView.END_DATE,};
+            // We want to return fields from the innerSelect.
+            // Note: Although they are both fields, jOOQ treats
+            //      innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE)
+            //      differently than
+            //      AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE
+            // Using the innerSelect field makes DATA_ENTRY_DATE correctly map to Timestamp
+            // and the generated sql refers to columns from the alias_??? table.
+            Field[] queryFields = new Field[]{
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VALUE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.START_DATE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.END_DATE),
+                    unitField,
+                    dateTimeField,
+                    innerSelect.field(tsField)
+            };
 
-            // look them back up by name b/c we are using them on results of innerselect.
-            List<Field<Object>> fields = Arrays.stream(queryFields)
-                    .map(Field::getName)
-                    .map(DSL::field).collect(
-                            Collectors.toList());
-
-            // I want to select tsvView.asterisk but we are selecting from an inner select and
-            // even though the inner select selects tsvView.asterisk it isn't the same.
-            // So we will just select the fields we want.  Unfortunately that means our results
-            // won't map into AV_TSV.AV_TSV
-            dsl.select(fields)
+            SelectConditionStep<? extends Record> query = dsl.select(queryFields)
                     .from(innerSelect)
-                    .where(field("DATE_TIME").eq(innerSelect.field("max_date_time")))
-                    .forEach(jrecord -> {
-                        RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
-                        retval.add(recentValue);
-                    });
+                    .where(dateTimeField.eq(maxDateField).and(unitField.eq(defUnitsField)));
+
+            logger.fine(() -> query.getSQL(ParamType.INLINED));
+            retval = query.fetch(r -> buildRecentValue(AV_TSV_DQU.AV_TSV_DQU, r, tsFieldName));
         }
         return retval;
     }
 
-    @NotNull
-    private RecentValue buildRecentValue(AV_TSV_DQU tsvView,
-                                         usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2 tsView,
-                                         Record jrecord) {
-        return buildRecentValue(tsvView, jrecord, tsView.CWMS_TS_ID.getName());
-    }
-
-    @NotNull
-    private RecentValue buildRecentValue(AV_TSV_DQU tsvView, AV_TS_GRP_ASSGN tsView,
-                                         Record jrecord) {
-        return buildRecentValue(tsvView, jrecord, tsView.TS_ID.getName());
-    }
 
     @NotNull
     private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
-        Timestamp dataEntryDate;
-        // TODO:
-        // !!! skipping DATA_ENTRY_DATE for now.  Need to figure out how to fix mapping in jooq.
-        // !! dataEntryDate= jrecord.getValue("data_entry_date", Timestamp.class); // maps to
-        // oracle.sql.TIMESTAMP
-        // !!!
-        dataEntryDate = null;
-        // !!!
 
-        TsvDqu tsv = buildTsvDqu(tsvView, jrecord, dataEntryDate);
+        TsvDqu tsv = buildTsvDqu(tsvView, jrecord);
         String tsId = jrecord.getValue(tsColumnName, String.class);
         return new RecentValue(tsId, tsv);
     }
 
     @NotNull
-    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, Timestamp dataEntryDate) {
-        TsvDquId id = buildDquId(tsvView, jrecord);
-
-        return new TsvDqu(id, jrecord.getValue(tsvView.CWMS_TS_ID.getName(), String.class),
-                jrecord.getValue(tsvView.VERSION_DATE.getName(), Timestamp.class), dataEntryDate,
-                jrecord.getValue(tsvView.VALUE.getName(), Double.class),
-                jrecord.getValue(tsvView.QUALITY_CODE.getName(), Long.class),
-                jrecord.getValue(tsvView.START_DATE.getName(), Timestamp.class),
-                jrecord.getValue(tsvView.END_DATE.getName(), Timestamp.class));
+    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord) {
+        return new TsvDqu.Builder()
+                .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID))
+                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID))
+                .withUnitId(jrecord.getValue(tsvView.UNIT_ID))
+                .withDateTime(jrecord.getValue(tsvView.DATE_TIME))
+                .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE))
+                .withDataEntryDate(jrecord.getValue(tsvView.DATA_ENTRY_DATE))
+                .withValue(jrecord.getValue(tsvView.VALUE))
+                .withQualityCode(jrecord.getValue(tsvView.QUALITY_CODE))
+                .withStartDate(jrecord.getValue(tsvView.START_DATE))
+                .withEndDate(jrecord.getValue(tsvView.END_DATE))
+                .build();
     }
 
-
+    @Override
     public List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
-                                                Timestamp pastLimit, Timestamp futureLimit) {
-        List<RecentValue> retVal = new ArrayList<>();
+                                                @NotNull Timestamp pastLimit, @NotNull Timestamp futureLimit,
+                                                 @NotNull UnitSystem unitSystem) {
+        AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
+        // possible use 30D view?
 
-        if (categoryId != null && groupId != null) {
-            AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
-            // possible use 30D view?
+        Condition whereCondition =
+                tsvView.VALUE.isNotNull()
+                        .and(tsvView.DATE_TIME.lt(futureLimit))
+                        .and(tsvView.DATE_TIME.gt(pastLimit))
+                        .and(tsvView.START_DATE.le(futureLimit))
+                        .and(tsvView.END_DATE.gt(pastLimit));
 
-            AV_TS_GRP_ASSGN tsView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
-
-            SelectConditionStep<Record> innerSelect
-                    = dsl.select(tsvView.asterisk(), tsView.TS_ID, tsView.ATTRIBUTE,
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
-                                    "max_date_time"), tsView.TS_ID)
-                    .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
-                    .where(
-                            tsView.DB_OFFICE_ID.eq(office)
-                                    .and(tsView.CATEGORY_ID.eq(categoryId))
-                                    .and(tsView.GROUP_ID.eq(groupId))
-                                    .and(tsvView.VALUE.isNotNull())
-                                    .and(tsvView.DATE_TIME.lt(futureLimit))
-                                    .and(tsvView.DATE_TIME.gt(pastLimit))
-                                    .and(tsvView.START_DATE.le(futureLimit))
-                                    .and(tsvView.END_DATE.gt(pastLimit)));
-
-            Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
-                tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
-                tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
-                tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
-
-            List<Field<Object>> fields = Arrays.stream(queryFields)
-                    .map(Field::getName)
-                    .map(DSL::field).collect(
-                            Collectors.toList());
-
-
-            // I want to select tsvView.asterisk but we are selecting from an inner select and
-            // even though the inner select selects tsvView.asterisk it isn't the same.
-            // So we will just select the fields we want.
-            // Unfortunately that means our results won't map into AV_TSV.AV_TSV
-            dsl.select(fields)
-                    .from(innerSelect)
-                    .where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time"
-                    )))
-                    .orderBy(field(tsView.ATTRIBUTE.getName()))
-                    .forEach(jrecord -> {
-                        RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
-                        retVal.add(recentValue);
-                    });
+        if (office != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office));
         }
-        return retVal;
+
+        if (categoryId != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
+        }
+
+        if (groupId != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID.eq(groupId));
+        }
+
+        Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsvView.AV_TSV_DQU.TS_CODE),
+                        DSL.val(unitSystem, String.class))
+                .as(DEFAULT_UNITS);
+        Field<Timestamp> maxDateTimeField = max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE))
+                .as(MAX_DATE_TIME);
+
+        SelectConditionStep<? extends Record> innerSelect
+                = dsl.select(tsvView.OFFICE_ID, tsvView.TS_CODE, tsvView.DATE_TIME,
+                        tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE, tsvView.VALUE,
+                        tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE, tsvView.UNIT_ID,
+                        defUnitsField,
+                        maxDateTimeField,
+                        AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE,
+                        AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID)
+                .from(tsvView.join(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)
+                        .on(tsvView.TS_CODE.eq(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE.cast(Long.class))))
+                .where(whereCondition);
+
+        Field<Timestamp> dateTime = innerSelect.field(tsvView.DATE_TIME);
+        Field<String> unit = innerSelect.field(tsvView.UNIT_ID);
+
+        Field[] queryFields = new Field[]{
+                innerSelect.field(tsvView.OFFICE_ID),
+                innerSelect.field(tsvView.TS_CODE),
+                innerSelect.field(tsvView.VERSION_DATE),
+                innerSelect.field(tsvView.DATA_ENTRY_DATE),
+                innerSelect.field(tsvView.VALUE),
+                innerSelect.field(tsvView.QUALITY_CODE),
+                innerSelect.field(tsvView.START_DATE),
+                innerSelect.field(tsvView.END_DATE),
+                dateTime,
+                unit,
+                innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID),
+                innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE)};
+
+        return dsl.select(queryFields)
+                .from(innerSelect)
+                .where(dateTime.eq(maxDateTimeField).and(defUnitsField.eq(unit)))
+                .orderBy(field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE.getName()))
+                .fetch(r -> buildRecentValue(tsvView, r, AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName()))
+                ;
     }
 
-    @NotNull
-    private TsvDquId buildDquId(AV_TSV_DQU tsvView, Record jrecord) {
-        return new TsvDquId(jrecord.getValue(tsvView.OFFICE_ID.getName(), String.class),
-                jrecord.getValue(tsvView.TS_CODE.getName(), Long.class),
-                jrecord.getValue(tsvView.UNIT_ID.getName(), String.class),
-                jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class));
-    }
 
     @Override
     public void create(TimeSeries input) {
@@ -913,7 +951,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     /**
      * Create and save, or update existing Timeseries.
-     *
      * Required attributes of {@link TimeSeries Timeseries} are
      *
      * <ul>

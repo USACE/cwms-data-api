@@ -282,7 +282,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
                 .exception(DeleteConflictException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Cannot perform requested delete. Data is referenced elsewhere in CWMS.", e.getDetails());
+                    CdaError re = new CdaError("Cannot perform requested delete. "
+                            + "Data is referenced elsewhere in CWMS.", e.getDetails());
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
@@ -392,12 +393,13 @@ public class ApiServlet extends HttpServlet {
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        String recentPath = "/timeseries/recent/{group-id}";
-        get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
+        String recentPath = "/timeseries/recent/";
+        get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
+
         String textTsPath = format("/timeseries/text/{%s}", NAME);
         cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         String textValuePath = textTsPath + "/value";
@@ -476,7 +478,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
-        if(timeUnit != null && duration > 0) {
+        if (timeUnit != null && duration > 0) {
             staticInstance().after(path, ctx -> {
                 String method = ctx.req.getMethod();  // "GET"
                 if (ctx.status() == HttpServletResponse.SC_OK
@@ -522,7 +524,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     /**
-     * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
+     * Given a path like "/location/category/{category-id}" this method returns "{category-id}".
      * @param fullPath
      * @return
      */
@@ -622,7 +624,7 @@ public class ApiServlet extends HttpServlet {
         // If something is set in the environment, make that the new default.
         // This is useful because Docker makes it easy to set environment variables.
         String envProvider = System.getenv(PROVIDER_KEY_OLD);
-        if( envProvider == null) {
+        if (envProvider == null) {
             envProvider = System.getenv(PROVIDER_KEY);
         }
         if (envProvider != null) {
