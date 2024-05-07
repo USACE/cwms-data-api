@@ -118,6 +118,7 @@ import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -272,7 +273,17 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(InvalidItemException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request.");
+                    CdaError re;
+                    String message = e.getMessage();
+                    if (message != null) {
+                        Map<String, Object> details = new LinkedHashMap<>();
+                        details.put("message", message);
+
+                        re = new CdaError("Bad Request.", details);
+                    } else {
+                        re = new CdaError("Bad Request.");
+                    }
+
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })

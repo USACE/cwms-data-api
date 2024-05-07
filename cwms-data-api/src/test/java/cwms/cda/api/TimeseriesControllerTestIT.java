@@ -3,6 +3,7 @@ package cwms.cda.api;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
 import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -152,6 +153,47 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             throw new RuntimeException("Unable to create location for TS",ex);
         }
     }
+
+    @Test
+    void test_lrl_1day_bad_units() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/lrl/1day_offset_bad_units.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource,"UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        try {
+            createLocation(location,true,officeId);
+
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+            // inserting the time series
+            given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam("office", officeId)
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                    .body("details.message", containsString("The unit: m is not a recognized CWMS Database unit for the Temp Parameter"));
+
+        } catch( SQLException ex) {
+            throw new RuntimeException("Unable to create location for TS",ex);
+        }
+    }
+
 
     @Test
     void test_delete_ts() throws Exception {

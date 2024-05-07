@@ -53,13 +53,11 @@ import org.jooq.DSLContext;
 import org.jooq.ExecuteListener;
 import org.jooq.Field;
 import org.jooq.SQLDialect;
-import org.jooq.TableField;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.records.AV_FCST_SPEC;
 
 public abstract class JooqDao<T> extends Dao<T> {
     protected static final int ORACLE_CURSOR_TYPE = -10;
@@ -219,6 +217,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildInvalidItem(input);
         } else if (isCantSetSessionNoPermissions(input)) {
             retVal = buildNotAuthorizedForOffice(input);
+        } else if (isInvalidUnits(input)) {
+            retVal = buildInvalidUnits(input);
         }
 
         return retVal;
@@ -432,6 +432,47 @@ public abstract class JooqDao<T> extends Dao<T> {
             }
         }
         return exception;
+    }
+
+    public static boolean isInvalidUnits(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            String message = sqlException.getLocalizedMessage();
+            int errorCode = sqlException.getErrorCode();
+
+            retVal = errorCode == 20998 &&
+                    message.contains("ORA-20102: The unit") &&
+                    message.contains("is not a recognized CWMS Database unit for the")
+                ;
+        }
+        return retVal;
+    }
+
+    private static InvalidItemException buildInvalidUnits(RuntimeException input) {
+
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            // skip ahead in localizedMessage to "ORA-20102:"
+            int start = localizedMessage.indexOf("ORA-20102:");
+            if (start >= 0) {
+                localizedMessage = localizedMessage.substring(start);
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length >= 1) {
+                    localizedMessage = parts[0];
+                }
+            }
+        }
+
+        return new InvalidItemException(localizedMessage, cause);
     }
 
 
