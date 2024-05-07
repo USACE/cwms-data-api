@@ -200,8 +200,8 @@ public abstract class JooqDao<T> extends Dao<T> {
      * is one of several types of exception (e.q NotFound,
      * AlreadyExists, NullArg) that can be specially handled by ApiServlet
      * by returning specific HTTP codes or error messages.
-     * @param input
-     * @return
+     * @param input the observed exception
+     * @return An exception, possibly wrapped
      */
     public static RuntimeException wrapException(RuntimeException input) {
         RuntimeException retVal = input;
@@ -443,9 +443,9 @@ public abstract class JooqDao<T> extends Dao<T> {
             String message = sqlException.getLocalizedMessage();
             int errorCode = sqlException.getErrorCode();
 
-            retVal = errorCode == 20998 &&
-                    message.contains("ORA-20102: The unit") &&
-                    message.contains("is not a recognized CWMS Database unit for the")
+            retVal = errorCode == 20998
+                    && message.contains("ORA-20102: The unit")
+                    && message.contains("is not a recognized CWMS Database unit for the")
                 ;
         }
         return retVal;
