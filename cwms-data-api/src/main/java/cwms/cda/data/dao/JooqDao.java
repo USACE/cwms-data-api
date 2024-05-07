@@ -46,6 +46,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.ConnectionCallable;
 import org.jooq.ConnectionRunnable;
@@ -57,7 +58,10 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+
 
 public abstract class JooqDao<T> extends Dao<T> {
     protected static final int ORACLE_CURSOR_TYPE = -10;
@@ -422,16 +426,16 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        InvalidItemException exception = new InvalidItemException(cause);
+        String message = "Invalid Item.";
 
         String localizedMessage = cause.getLocalizedMessage();
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new InvalidItemException(parts[0], cause);
+                message = parts[0];
             }
         }
-        return exception;
+        return new InvalidItemException(message, cause);
     }
 
     public static boolean isInvalidUnits(RuntimeException input) {
@@ -462,9 +466,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         String localizedMessage = cause.getLocalizedMessage();
         if (localizedMessage != null) {
             // skip ahead in localizedMessage to "ORA-20102:"
-            int start = localizedMessage.indexOf("ORA-20102:");
+            String searchFor = "ORA-20102:";
+            int start = localizedMessage.indexOf(searchFor);
             if (start >= 0) {
-                localizedMessage = localizedMessage.substring(start);
+                localizedMessage = localizedMessage.substring(start + searchFor.length());
                 String[] parts = localizedMessage.split("\n");
                 if (parts.length >= 1) {
                     localizedMessage = parts[0];
@@ -472,7 +477,29 @@ public abstract class JooqDao<T> extends Dao<T> {
             }
         }
 
+        localizedMessage = sanitizeOrNull(localizedMessage);
+
+        if (localizedMessage == null || localizedMessage.isEmpty()) {
+            localizedMessage = "Invalid Units.";
+        }
+
         return new InvalidItemException(localizedMessage, cause);
+    }
+
+    private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
+        if (localizedMessage != null && !localizedMessage.isEmpty()) {
+            int length = localizedMessage.length();
+            PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
+            localizedMessage = sanitizer.sanitize(localizedMessage);
+            if (localizedMessage.length() != length) {
+                // The message was sanitized, it crops everything after the bad input.
+                // If the message was "The unit: BADUNIT is not a recognized...."  and the sanitizer
+                // decides it doesn't like the word "BADUNIT" then the message will be cropped to
+                // "The unit: ".  Which is weird to return.  Just return null.
+                localizedMessage = null;
+            }
+        }
+        return localizedMessage;
     }
 
 
