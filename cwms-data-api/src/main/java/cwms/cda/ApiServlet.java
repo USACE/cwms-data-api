@@ -637,7 +637,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+            throws ServletException, IOException {
         totalRequests.mark();
         try {
             String office = officeFromContext(req.getContextPath());
