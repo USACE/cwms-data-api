@@ -97,15 +97,21 @@ public class TimeSeriesController implements CrudHandler {
             + "<tr><td colspan=2>Store Rules</td></tr>\n"
             + "<tr>\n"
             + "    <td>Delete Insert</td>\n"
-            + "    <td>All existing data in the time window will be deleted and then replaced with the new dataset.</td>\n"
+            + "    <td>All existing data in the time window will be deleted and "
+            + "then replaced with the new dataset.</td>\n"
             + "</tr>\n"
             + "<tr>\n"
             + "    <td>Replace All</td>\n"
             + "    <td>\n"
             + "        <ul>\n"
-            + "            <li>When the new dataset's date/time exactly matches the date/time of an existing data value, the new data value will replace the existing data.</li>\n"
-            + "        <li>When the new dataset's data/time does not match an existing data/time (i.e., a new data/time - data value pair) then an insert to the database will occur.</li>\n"
-            + "            <li>When there's an existing \"data/time - data value pair\" without a corresponding date/time value pair, no change will happen to the existing date/time value pair.</li>\n"
+            + "            <li>When the new dataset's date/time exactly matches the date/time of "
+            + "an existing data value, the new data value will replace the existing data.</li>\n"
+            + "        <li>When the new dataset's data/time does not match an existing data/time "
+            + "(i.e., a new data/time - data value pair) then an insert to the database "
+            + "will occur.</li>\n"
+            + "            <li>When there's an existing \"data/time - data value pair\" without "
+            + "a corresponding date/time value pair, no change will happen to the existing "
+            + "date/time value pair.</li>\n"
             + "        </ul>\n"
             + "    </td>\n"
             + "</tr>\n"
@@ -113,23 +119,29 @@ public class TimeSeriesController implements CrudHandler {
             + "    <td>Replace With Non Missing</td>\n"
             + "    <td>\n"
             + "        <ul>\n"
-            + "            <li>New data is always inserted, i.e., an existing date/time-value pair does not already exist for the record.</li>\n"
-            + "            <li>If date/time-value pair does exist, then only non-missing value will replace the existing data value*.</li>\n"
+            + "            <li>New data is always inserted, i.e., an existing date/time-value "
+            + "pair does not already exist for the record.</li>\n"
+            + "            <li>If date/time-value pair does exist, then only non-missing value "
+            + "will replace the existing data value*.</li>\n"
             + "        </ul>\n"
             + "    </td>\n"
             + "<tr>\n"
             + "    <td>Replace Missing Values Only</td>\n"
             + "    <td>\n"
             + "        <ul>\n"
-            + "            <li>New data is always inserted, i.e., an existing date/time-value pair does not already exist for the record.</li>\n"
-            + "            <li>If date/time-value pair does exist, then only replace an existing data/time-value pair whose missing flag was set.</li>\n"
+            + "            <li>New data is always inserted, i.e., an existing date/time-value "
+            + "pair does not already exist for the record.</li>\n"
+            + "            <li>If date/time-value pair does exist, then only replace an existing "
+            + "data/time-value pair whose missing flag was set.</li>\n"
             + "        </ul>\n"
             + "    </td>\n"
             + "<tr>\n"
             + "    <td>Do Not Replace</td>\n"
             + "    <td>\n"
-            + "        Only inserts new data values if an existing date/time-value pair does not already exist.\n"
-            + "        Note: an existing date/time-value pair whose missing value quality bit is set will NOT be overwritten.\n"
+            + "        Only inserts new data values if an existing date/time-value pair does not "
+            + "already exist.\n"
+            + "        Note: an existing date/time-value pair whose missing value quality bit is "
+            + "set will NOT be overwritten.\n"
             + "    </td>\n"
             + "</tr>\n"
             + "</table>";
@@ -183,9 +195,12 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
-        StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
-        boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+        boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
+                .getOrDefault(false);
+        StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class)
+                .getOrDefault(StoreRule.REPLACE_ALL);
+        boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
+                .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -273,10 +288,14 @@ public class TimeSeriesController implements CrudHandler {
             }
 
             // FYI queryParamAsClass with Boolean.class returns a case-insensitive comparison to "true".
-            boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
-            boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(false);
-            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class).getOrDefault(true);
-            boolean opArg = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
+            boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class)
+                    .getOrDefault(true);
+            boolean endTimeInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class)
+                    .getOrDefault(false);
+            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, Boolean.class)
+                    .getOrDefault(true);
+            boolean opArg = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
+                    .getOrDefault(false);
 
             TimeSeriesDaoImpl.OverrideProtection op;
             if (opArg) {
@@ -305,8 +324,10 @@ public class TimeSeriesController implements CrudHandler {
                         + "response. A case insensitive comparison is used to match names."),
                 @OpenApiParam(name = OFFICE,  description = "Specifies the"
                         + " owning office of the time series(s) whose data is to be included "
-                        + "in the response. If this field is not specified, matching location"
-                        + " level information from all offices shall be returned."),
+                        + "in the response. "
+                        + "Required for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
+                        + "For other formats, if this field is not specified, matching location "
+                        + "level information from all offices shall be returned."),
                 @OpenApiParam(name = UNIT,  description = "Specifies the "
                         + "unit or unit system of the response. Valid values for the unit "
                         + "field are:\r\n 1. EN.   (default) Specifies English unit system.  "
@@ -350,8 +371,9 @@ public class TimeSeriesController implements CrudHandler {
                         + "response. If this field is not specified, the default time zone "
                         + "of UTC shall be used.\r\nIgnored if begin was specified with "
                         + "offset and timezone."),
-                @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies whether to trim missing "
-                        + "values from the beginning and end of the retrieved values. "
+                @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies "
+                        + "whether to trim missing values from the beginning and end of the "
+                        + "retrieved values. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "Default is false."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
@@ -396,13 +418,14 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = requiredParam(ctx, NAME);
-            String office = ctx.queryParam(OFFICE);
+
             String unit = ctx.queryParamAsClass(UNIT, String.class)
                     .getOrDefault(UnitSystem.EN.getValue());
             String datum = ctx.queryParam(DATUM);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
-            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
+                    .getOrDefault("UTC");
             Validator<Boolean> trim = ctx.queryParamAsClass(Controllers.TRIM, Boolean.class);
 
             ZonedDateTime versionDate = queryParamAsZdt(ctx, VERSION_DATE);
@@ -431,11 +454,13 @@ public class TimeSeriesController implements CrudHandler {
                     : ZonedDateTime.now(tz);
 
             if (version != null && version.equals("2")) {
+
                 if (datum != null) {
                     throw new IllegalArgumentException(String.format("Datum is not supported for:%s and %s",
                             Formats.JSONV2, Formats.XMLV2));
                 }
 
+                String office = requiredParam(ctx, OFFICE);
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
                         beginZdt, endZdt, versionDate, trim.getOrDefault(false));
 
@@ -459,7 +484,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.result(results).contentType(contentType.toString());
             } else {
                 if (versionDate != null) {
-                    throw new IllegalArgumentException(String.format("Version date is only supported for%s and %s",
+                    throw new IllegalArgumentException(String.format("Version date is only supported for:%s and %s",
                             Formats.JSONV2, Formats.XMLV2));
                 }
 
@@ -472,6 +497,7 @@ public class TimeSeriesController implements CrudHandler {
                     format = "json";
                 }
 
+                String office = ctx.queryParam(OFFICE);
                 results = dao.getTimeseries(format, names, office, unit, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
@@ -535,9 +561,12 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
-            boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class).getOrDefault(false);
-            StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
-            boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+            boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
+                    .getOrDefault(false);
+            StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class)
+                    .getOrDefault(StoreRule.REPLACE_ALL);
+            boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
+                    .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
             dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
 
