@@ -35,6 +35,11 @@ export default [
                 id: "github-issues",
                 text: "Report Issues",
                 href: "https://github.com/USACE/cwms-data-api/issues",
+            },
+            {
+                id: "regex",
+                text: "Regular Expressions",
+                href: "/cwms-data/regexp",
             }
         ],
     },
