@@ -9,7 +9,7 @@ export default function SwaggerUI() {
     document.title = "CWMS Data API for Data Retrieval - Swagger UI";
     // Begin Swagger UI call region
     SwaggerUIBundle({
-      url: "https://cwms-data.usace.army.mil/cwms-data/swagger-docs",
+      url: "./swagger-docs",
       dom_id: "#swagger-ui",
       configUrl: "./swagger-config.yaml",
       deepLinking: false,

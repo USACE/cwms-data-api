@@ -7,17 +7,17 @@ export default [
     {
         id: "swagger",
         text: "Swagger",
-        href: "/cwms-data/swagger-ui.html",
+        href: "./swagger-ui.html",
         children: [
             {
                 id: "swagger-ui",
                 text: "Swagger UI",
-                href: "/cwms-data/swagger-ui.html",
+                href: "./swagger-ui.html",
             },
             {
                 id: "swagger-schema",
                 text: "Swagger Docs Schema",
-                href: "/cwms-data/swagger-docs",
+                href: "./swagger-docs",
             },
         ],
     },
@@ -39,7 +39,7 @@ export default [
             {
                 id: "regex",
                 text: "Regular Expressions",
-                href: "/cwms-data/regexp",
+                href: "./regexp",
             }
         ],
     },
