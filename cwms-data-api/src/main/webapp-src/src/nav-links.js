@@ -46,11 +46,11 @@ export default [
             {
                 id: "github-devs",
                 text: "Developers",
-                href: "https://github.com/USACE/cwms-data-api/wiki",
+                href: "https://github.com/USACE/cwms-data-api/graphs/contributors",
             },
             {
                 id: "hec",
-                text: "HEC",
+                text: "Hydrologic Engineering Center (HEC)",
                 href: "https://www.hec.usace.army.mil/",
             }
         ],
