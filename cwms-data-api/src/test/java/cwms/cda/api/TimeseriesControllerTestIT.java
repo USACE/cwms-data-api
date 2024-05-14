@@ -8,7 +8,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.Formats;
@@ -556,6 +558,99 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
         }
+    }
+
+
+    @Test
+    void test_big_create() throws Exception {
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        String giantString = buildBigString(tsData, 200000);
+        // 200k points looked like about 6MB.
+
+        long bytes = giantString.getBytes().length;
+        assertTrue(bytes > 2000000, "The string should be over 2MB");
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(giantString)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+    }
+
+    /**
+     * Input looks like:
+     * {
+     *     "name": "Buckhorn.Temp-Water.Inst.1Day.0.cda-test",
+     *     "office-id": "SPK",
+     *     "units": "F",
+     *     "values": [
+     *         [
+     *             1675335600000,
+     *             35,
+     *             0
+     *         ],
+     *         [
+     *             1675422000000,
+     *             36,
+     *             0
+     *         ]
+     *     ]
+     * }
+     *
+     * @param tsData  input json data
+     * @return a new json string that has inserted the specified number of additional points.
+     */
+    private String buildBigString(String tsData, int count) throws JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode ts = mapper.readTree(tsData);
+
+        // get the first value in the second array entry of values
+        long start1 = ts.get("values").get(0).get(0).asLong();
+        long start2 = ts.get("values").get(1).get(0).asLong();
+        long diff = start2 - start1;
+
+
+        // From the back of the string find the last } and then the last ] before that
+        int lastBrace = tsData.lastIndexOf("}");
+        int lastBracket = tsData.lastIndexOf("]", lastBrace);
+
+        String prefix = tsData.substring(0, lastBracket -1);
+
+        // Now we insert a massive number of additional points
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            long time = start2 + (diff * (i+1));
+            sb.append(String.format(",\n [ %d, %d,  %d]", time, count, 0));
+        }
+
+        return prefix + sb + "\n ]\n}";
     }
 
 }
