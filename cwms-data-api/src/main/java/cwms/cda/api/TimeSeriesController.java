@@ -69,7 +69,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -579,38 +579,31 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
-        return deserializeTimeSeries(ctx.body(), getUserDataContentType(ctx));
+        return deserializeTimeSeries(ctx.bodyAsInputStream(), getUserDataContentType(ctx).toString());
     }
 
-    private TimeSeries deserializeTimeSeries(String body, ContentType contentType)
-            throws IOException {
-        return deserializeTimeSeries(body, contentType.toString());
-    }
-
-    public static TimeSeries deserializeTimeSeries(String body, String contentType)
+    public static TimeSeries deserializeTimeSeries(InputStream inputStream, String contentType)
             throws IOException {
         TimeSeries retval;
 
         if ((Formats.XMLV2).equals(contentType)) {
-            retval = deserializeJaxb(body);
+            TimeSeries result;
+            try {
+                JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
+                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+                result = (TimeSeries) unmarshaller.unmarshal(inputStream);
+            } catch (JAXBException e) {
+                throw new IOException(e);
+            }
+            retval = result;
         } else if ((Formats.JSONV2).equals(contentType)) {
             ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, TimeSeries.class);
+            retval = om.readValue(inputStream, TimeSeries.class);
         } else {
             throw new IOException("Unexpected format:" + contentType);
         }
 
         return retval;
-    }
-
-    public static TimeSeries deserializeJaxb(String body) throws IOException {
-        try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
-            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            return (TimeSeries) unmarshaller.unmarshal(new StringReader(body));
-        } catch (JAXBException e) {
-            throw new IOException(e);
-        }
     }
 
     private ContentType getUserDataContentType(@NotNull Context ctx) {
