@@ -2,17 +2,17 @@ export default [
     {
         id: "home",
         text: "Home",
-        href: "/",
+        href: "./",
     },
     {
         id: "swagger",
-        text: "Swagger",
-        href: "./swagger-ui.html",
+        text: "API Docs",
+        href: "./swagger-ui",
         children: [
             {
                 id: "swagger-ui",
                 text: "Swagger UI",
-                href: "./swagger-ui.html",
+                href: "./swagger-ui",
             },
             {
                 id: "swagger-schema",
@@ -57,6 +57,28 @@ export default [
                 id: "hec",
                 text: "Hydrologic Engineering Center (HEC)",
                 href: "https://www.hec.usace.army.mil/",
+            }
+        ],
+    },
+    {
+        id: "client-libs",
+        text: "Client Libraries",
+        href: "#",
+        children: [
+            {
+                id: "cwmsjs",
+                text: "JavaScript/TypeScript",
+                href: "https://hydrologicengineeringcenter.github.io/cwms-data-api-client-javascript/",
+            },
+            {
+                id: "python",
+                text: "Python",
+                href: "https://github.com/HydrologicEngineeringCenter/cwms-python/tree/main",
+            },
+            {
+                id: "java",
+                text: "Java",
+                href: "https://github.com/hydrologicengineeringcenter/cwms-data-api-client",
             }
         ],
     }
