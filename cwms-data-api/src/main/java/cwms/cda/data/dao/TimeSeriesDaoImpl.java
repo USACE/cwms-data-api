@@ -511,7 +511,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             SelectConditionStep<Record1<Integer>> totalQuery = dsl.select(countDistinct(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE))
                     .from(buildFromTable(inputParams))
                     .where(buildWhereConditions(inputParams));
-            logger.info(() -> totalQuery.getSQL(ParamType.INLINED));
+            logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
             total = totalQuery.fetchOne(0, int.class);
         } else {
             logger.fine("getting non-default page");
@@ -574,7 +574,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
                         DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID));
 
-        logger.info(() -> overallQuery.getSQL(ParamType.INLINED));
+        logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();

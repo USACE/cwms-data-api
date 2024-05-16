@@ -44,7 +44,37 @@ begin
                              l_office
     );
 
-    cwms_loc.create_location('Wet Meadows',
+    -- need to call store_location2 to set the bounding office id
+    /**
+     * Stores (inserts or updates) a location in the database
+     *
+     * @param p_location_id         The location identifier
+     * @param p_location_type       A user-defined type for the location
+     * @param p_elevation           The elevation of the location
+     * @param p_elev_unit_id        The elevation unit
+     * @param p_vertical_datum      The datum of the elevation
+     * @param p_latitude            The actual latitude of the location
+     * @param p_longitude           The actual longitude of the location
+     * @param p_horizontal_datum    The datum for the latitude and longitude
+     * @param p_public_name         The public name for the location
+     * @param p_long_name           The long name for the location
+     * @param p_description         A description of the location
+     * @param p_time_zone_id        The time zone name for the location
+     * @param p_county_name         The name of the county that the location is in
+     * @param p_state_initial       The two letter abbreviation of the state that the location is in
+     * @param p_active              A flag ('T' or 'F') that specifies whether the location is marked as active
+     * @param p_location_kind_id    THIS PARAMETER IS IGNORED. A site created with this procedure will have a location kind of SITE.
+     * @param p_map_label           A label to be used on maps for location
+     * @param p_published_latitude  The published latitude for the location
+     * @param p_published_longitude The published longitude for the location
+     * @param p_bounding_office_id  The office whose boundary encompasses the location
+     * @param p_nation_id           The nation that the location is in
+     * @param p_nearest_city        The name of the city nearest to the location
+     * @param p_ignorenulls         A flag ('T' or 'F') that specifies whether to ignore NULL parameters. If 'F', existing data will be updated with NULL parameter values.
+     * @param p_db_office_id        The office that owns the location. If not specified or NULL, the session user's default office will be used
+     */
+--     PROCEDURE store_location2 (
+    cwms_loc.store_location2('Wet Meadows',
                              null,
                              1000,
                              'ft',
@@ -59,7 +89,15 @@ begin
                              'Lassen',
                              'CA',
                              'T',
-                             l_office
+                             l_office,
+                              'map label goes here',
+                              41.0,
+                              -121.0,
+        'SPK',
+        null,
+        null,
+        'F',
+    'SPK'
     );
 
     -- create some timeseries

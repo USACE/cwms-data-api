@@ -1,5 +1,12 @@
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
+import static cwms.cda.api.Controllers.LIKE;
+import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
@@ -42,6 +49,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         // Complicated
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
+
+
     }
 
     @AfterAll
@@ -53,7 +62,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_no_aliased_results_returned() {
         given().accept(Formats.JSONV2)
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam("office", "SPK")
+            .queryParam(OFFICE, "SPK")
             .queryParam("like",".*-cda$")
         .when()
             .get("/catalog/TIMESERIES")
@@ -156,11 +165,11 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // filter by loc group and ts group should find the intersection
         given()
                 .accept("application/json;version=2")
-                .queryParam("office", "SPK")
-                .queryParam("location-category-like","Test Category")
-                .queryParam("location-group-like", nToZ)
-                .queryParam("timeseries-category-like","Test Category")
-                .queryParam("timeseries-group-like", evens)
+                .queryParam(OFFICE, "SPK")
+                .queryParam(LOCATION_CATEGORY_LIKE,"Test Category")
+                .queryParam(LOCATION_GROUP_LIKE, nToZ)
+                .queryParam(TIMESERIES_CATEGORY_LIKE,"Test Category")
+                .queryParam(TIMESERIES_GROUP_LIKE, evens)
             .when()
                 .get("/catalog/TIMESERIES")
             .then()
@@ -186,9 +195,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // filter by just loc group
         given()
                 .accept("application/json;version=2")
-                .queryParam("office", "SPK")
-                .queryParam("location-category-like","Test Category")
-                .queryParam("location-group-like", aToM)
+                .queryParam(OFFICE, "SPK")
+                .queryParam(LOCATION_CATEGORY_LIKE,"Test Category")
+                .queryParam(LOCATION_GROUP_LIKE, aToM)
                 .when()
                 .get("/catalog/TIMESERIES")
                 .then()
@@ -208,9 +217,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // filter by just loc group
         given()
                 .accept("application/json;version=2")
-                .queryParam("office", "SPK")
-                .queryParam("location-category-like","Test Category")
-                .queryParam("location-group-like", nToZ)
+                .queryParam(OFFICE, "SPK")
+                .queryParam(LOCATION_CATEGORY_LIKE,"Test Category")
+                .queryParam(LOCATION_GROUP_LIKE, nToZ)
                 .when()
                 .get("/catalog/TIMESERIES")
                 .then()
@@ -235,6 +244,30 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
     }
 
+
+    @Test
+    void test_ts_with_bounding() {
+
+
+        // we create Wet Meadows with a bounding office of SPK
+        given()
+                .accept("application/json;version=2")
+                .queryParam(BOUNDING_OFFICE_LIKE, "SPK")
+                .queryParam(LIKE, "^Wet Meadows.*")
+                .when()
+                .get("/catalog/TIMESERIES")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(200))
+                .body("$", hasKey("total"))
+                .body("total", greaterThan(3))
+                .body("$", hasKey("entries"))
+                .body("entries.size()",greaterThan(3))
+                .body("entries.name",everyItem(startsWith("Wet Meadows")))
+        ;
+
+    }
 
 
 }
