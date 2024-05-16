@@ -44,7 +44,7 @@ public class PoolDao extends JooqDao<PoolType> {
 		return dsl.select(DSL.asterisk()).from(view)
 				.where(condition)
 				.orderBy(view.DEFINITION_TYPE,
-						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
+						view.OFFICE_ID, DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
 				.stream()
 				.map(r -> toPool(r, true))
 				.collect(toList());
@@ -205,7 +205,7 @@ public class PoolDao extends JooqDao<PoolType> {
 		List<Pool> pools = dsl.select(DSL.asterisk()).from(view)
 				.where(condition)
 				.orderBy(view.DEFINITION_TYPE,
-						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
+						view.OFFICE_ID, DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
 				.offset(offset)
 				.limit(pageSize)
 				.stream().map(r -> toPool(r, true)).collect(toList());

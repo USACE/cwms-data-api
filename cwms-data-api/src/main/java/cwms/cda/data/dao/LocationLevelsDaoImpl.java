@@ -47,7 +47,6 @@ import hec.data.level.JDomSeasonalValuesImpl;
 import hec.data.location.LocationTemplate;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
-import mil.army.usace.hec.metadata.Version;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,7 +70,6 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -346,7 +344,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Condition whereCondition = siAndTsIdNull.or(tsIdNotNull);
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
+            whereCondition = whereCondition.and(view.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
@@ -368,9 +366,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(asterisk())
                 .from(view)
                 .where(whereCondition)
-                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
-                        view.LEVEL_DATE
-                )
+                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID), view.LEVEL_DATE)
                 .offset(offset)
                 .limit(pageSize);
 
@@ -595,7 +591,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         ZTSV_ARRAY locLvlValues = call_RETRIEVE_LOC_LVL_VALUES3(dsl.configuration(),
                 specifiedTimes, locationLevelId, levelUnits, attributeId, attributeValue, attributeUnits,
-                "UTC", officeId );
+                "UTC", officeId);
 
         if (locLvlValues.isEmpty()) {
             throw new NotFoundException("No time series found for: " + levelRef + " between start time: " + start + " and end time: " + end);

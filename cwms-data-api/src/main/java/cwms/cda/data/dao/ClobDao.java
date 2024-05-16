@@ -19,7 +19,6 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CLOB;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -107,7 +106,7 @@ public class ClobDao extends JooqDao<Clob> {
                             .from(v_clob)
                             .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
                             .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID, idRegex))
-                            .and(officeLike == null ? noCondition() : DSL.upper(v_office.OFFICE_ID).like(officeLike.toUpperCase()));
+                            .and(officeLike == null ? noCondition() : v_office.OFFICE_ID.like(officeLike.toUpperCase()));
 
             total = count.fetchOne().value1();
         } else {
@@ -167,7 +166,7 @@ public class ClobDao extends JooqDao<Clob> {
 
         Condition cond = DSL.upper(ac.ID).like(idLike.toUpperCase());
         if (office != null && !office.isEmpty()) {
-            cond = cond.and(DSL.upper(ao.OFFICE_ID).eq(office.toUpperCase()));
+            cond = cond.and(ao.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         RecordMapper<Record, Clob> mapper = joinRecord ->
@@ -283,11 +282,11 @@ public class ClobDao extends JooqDao<Clob> {
     }
 
     public static String readFully(java.sql.Clob clob) throws IOException, SQLException {
-        try(Reader reader = clob.getCharacterStream();
+        try (Reader reader = clob.getCharacterStream();
             BufferedReader br = new BufferedReader(reader)) {
             StringBuilder sb = new StringBuilder();
             String line;
-            while(null != (line = br.readLine())) {
+            while (null != (line = br.readLine())) {
                 sb.append(line);
             }
             return sb.toString();
