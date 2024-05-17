@@ -4,9 +4,12 @@ Due to the nature of the needs of this system it is not possible to just up and 
 
 ## Here are the following pre-steps
 1. Add `<real host ip> cwms-data.test auth.test traefik.test` to the /etc/hosts file  (**Warning: 127.0.0.1 doesn't work!**)
-2. Install java.  It is needed for the keytool command used in the next step.
-3. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
-4. Create an environment file with appropriate references for your environment and testing.
+2. Install java.  It is needed for the keytool command used in the next step.  
+3. In the `compose_files/pki` directory run `./genall.sh`. This will create the initial PKI infrastructure.  
+  **NOTE:** *The compose_files directory comes from cloning CDA source from github and `cd` into the directory:*  
+  a. `git clone https://github.com/USACE/cwms-data-api.git`  
+  b. `cd cwms-data-api`  
+4. Create an environment file with appropriate references for your environment and testing.  
 
 
 ## Starting the system
