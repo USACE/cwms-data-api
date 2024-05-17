@@ -7,16 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "clean-webapps": "rd /Q /S ..\\webapp\\assets && del ..\\webapp\\index.html",
+    "copy-webapps": "xcopy .\\dist ..\\webapp\\ /s /e /y",
+    "build-cda": "cd ../../../../ && .\\gradlew build && cd cwms-data-api\\src\\main\\webapp-src",
+    "deploy": "rd /Q /S dist && npm run clean-webapps && npm run build && npm run copy-webapps && npm run build-cda"
   },
   "dependencies": {
     "@usace/groundwork": "^2.3.1",
-    "bootstrap": "^5.3.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
-    "redux-bundler": "^28.1.0",
-    "redux-bundler-hook": "^1.0.3",
     "swagger-ui-dist": "^5.17.7"
   },
   "devDependencies": {
