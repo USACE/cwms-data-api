@@ -157,7 +157,7 @@ public class LevelsController implements CrudHandler {
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level, timezoneId);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location Level");
+            ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
         }
     }
 
@@ -200,7 +200,7 @@ public class LevelsController implements CrudHandler {
                     DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json(levelId + " Deleted");
+            ctx.status(HttpServletResponse.SC_OK).json(levelId + " Deleted");
         }
     }
 
@@ -457,7 +457,7 @@ public class LevelsController implements CrudHandler {
             if (!oldLevelId.equals(newLevelId)) {
                 //if name changed then delete location with old name
                 levelsDao.renameLocationLevel(oldLevelId, newLevelId, officeId);
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Renamed Location Level");
+                ctx.status(HttpServletResponse.SC_OK).json("Renamed Location Level");
             } else {
                 String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
@@ -479,7 +479,7 @@ public class LevelsController implements CrudHandler {
                 updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
                     .withLevelDate(unmarshalledDateTime).build();
                 levelsDao.storeLocationLevel(updatedLocationLevel, unmarshalledDateTime.getZone());
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location Level");
+                ctx.status(HttpServletResponse.SC_OK).json("Updated Location Level");
             }
         } catch (JsonProcessingException ex) {
             throw new FormattingException("Failed to format location level update request", ex);
