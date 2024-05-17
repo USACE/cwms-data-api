@@ -1,0 +1,11 @@
+@startuml
+participant "Oracle Queue" as OQ
+participant "Apache Camel" as AC
+participant "Artemis Server" as AS
+participant "Artemis Client API" as ACA
+
+OQ -> AC: Produce Message (AQAPI)
+AC -> AS: Consume/Transform/Route Message
+AS -> ACA: Deliver Message (JMS)
+ACA --> AS: Acknowledge Receipt (JMS)
+@enduml

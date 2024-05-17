@@ -99,6 +99,7 @@ import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.datasource.DelegatingDataSource;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
@@ -128,9 +129,12 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,6 +144,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
+import javax.jms.ConnectionFactory;
+import javax.jms.TopicConnectionFactory;
 import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -148,6 +154,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+
+import oracle.jdbc.driver.OracleConnection;
+import oracle.jms.AQjmsFactory;
+import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.ActiveMQServers;
+import org.apache.activemq.artemis.jms.client.ActiveMQJMSConnectionFactory;
+import org.apache.camel.CamelContext;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.jms.JmsComponent;
+import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -237,7 +254,7 @@ public class ApiServlet extends HttpServlet {
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
-    public void init() {
+    public void init() throws ServletException {
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
 
@@ -375,6 +392,55 @@ public class ApiServlet extends HttpServlet {
 
                 .routes(this::configureRoutes)
                 .javalinServlet();
+        setupQueuing();
+    }
+
+    private void setupQueuing() throws ServletException {
+        try {
+            //TODO: determine how the port is configured
+            String activeMqUrl = "tcp://" + InetAddress.getLocalHost().getHostName() + ":61616";
+            //wrapped DelegatingDataSource is used because internally AQJMS casts the returned connection
+            //as an OracleConnection, but the JNDI pool is returning us a proxy, so unwrap it
+            CamelContext camelContext = new DefaultCamelContext();
+            TopicConnectionFactory connectionFactory = AQjmsFactory.getTopicConnectionFactory(new DelegatingDataSource(cwms)
+            {
+                @Override
+                public Connection getConnection() throws SQLException {
+                    return super.getConnection().unwrap(OracleConnection.class);
+                }
+
+                @Override
+                public Connection getConnection(String username, String password) throws SQLException {
+                    return super.getConnection(username, password).unwrap(OracleConnection.class);
+                }
+            }, true);
+            camelContext.addComponent("oracleAQ", JmsComponent.jmsComponent(connectionFactory));
+            ActiveMQServer server = ActiveMQServers.newActiveMQServer(new ConfigurationImpl()
+                    .setPersistenceEnabled(false)
+                    .addAcceptorConfiguration("default", activeMqUrl)
+                    .setJournalDirectory("target/data/journal")
+                    //Need to update to verify roles
+                    .setSecurityEnabled(false)
+                    .addAcceptorConfiguration("invm", "vm://0"));
+            ConnectionFactory artemisConnectionFactory = new ActiveMQJMSConnectionFactory("vm://0");
+            camelContext.addComponent("artemis", JmsComponent.jmsComponent(artemisConnectionFactory));
+            camelContext.addRoutes(new RouteBuilder() {
+                public void configure() {
+                    //TODO: configure Oracle Queue name for office
+                    //TODO: determine durable subscription name - should be unique to CDA instance?
+                    //TODO: determine clientId - should be unique to CDA version?
+                    from("oracleAQ:topic:CWMS_20.SWT_TS_STORED?durableSubscriptionName=CDA_SWT_TS_STORED&clientId=CDA")
+                            .log("Received message from ActiveMQ.Queue : ${body}")
+                            //TODO: define standard naming
+                            //TODO: register artemis queue names with Swagger UI
+                            .to("artemis:queue:ActiveMQ.Queue");
+                }
+            });
+            server.start();
+            camelContext.start();
+        } catch (Exception e) {
+            throw new ServletException("Unable to setup Queues", e);
+        }
     }
 
     private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
