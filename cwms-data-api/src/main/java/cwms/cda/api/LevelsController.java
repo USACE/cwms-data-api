@@ -79,15 +79,12 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LocationLevels;
 import cwms.cda.data.dto.SeasonalValueBean;
-import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.helpers.DateUtils;
-import hec.data.level.JDomLocationLevelRef;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
-import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.HttpResponseException;
@@ -97,6 +94,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -217,54 +217,58 @@ public class LevelsController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
-                        + "the location level(s) whose data is to be included in the response. "
-                        + "Uses * for all."),
-                @OpenApiParam(name = OFFICE, description = "Specifies the owning "
-                        + "office of the location level(s) whose data is to be included in the"
-                        + " response. If this field is not specified, matching location level "
-                        + "information from all offices shall be returned."),
-                @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                        + " of the response. Valid values for the unit field are:\r\n 1. EN. "
-                        + "  Specifies English unit system.  Location level values will be in"
-                        + " the default English units for their parameters.\r\n2. SI.   "
-                        + "Specifies the SI unit system.  Location level values will be in "
-                        + "the default SI units for their parameters.\r\n3. Other. Any unit "
-                        + "returned in the response to the units URI request that is "
-                        + "appropriate for the requested parameters.  The " + Formats.JSONV2
-                        + " format currently only supports SI."),
-                @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
-                        + " the response. This field affects only elevation location levels. "
-                        + "Valid values for this field are:\r\n1. NAVD88.  The elevation "
-                        + "values will in the specified or default units above the NAVD-88 "
-                        + "datum.\r\n2. NGVD29.  The elevation values will be in the "
-                        + "specified or default units above the NGVD-29 datum."),
-                @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
-                        + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window begins 24 hours prior to "
-                        + "the specified or default end time."),
-                @OpenApiParam(name = END, description = "Specifies the end of the time "
-                        + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window ends at the current time"),
-                @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
-                        + "the values of the begin and end fields (unless otherwise "
-                        + "specified), as well as the time zone of any times in the response."
-                        + " If this field is not specified, the default time zone of UTC "
-                        + "shall be used."),
-                @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
-                        + "of the response. Requests specifying an Accept header:"
-                        + Formats.JSONV2 + " must not include this field. "
-                        + "Valid format field values for this URI are:\r\n"
-                        + "1.    tab\r\n"
-                        + "2.    csv\r\n"
-                        + "3.    xml\r\n"
-                        + "4.    wml2 (only if name field is specified)\r\n"
-                        + "5.    json (default)\r\n"),
-                @OpenApiParam(name = PAGE, description = "This identifies where in the "
-                        + "request you are. This is an opaque value, and can be obtained from "
-                        + "the 'next-page' value in the response."),
-                @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
-                        + "many entries per page returned. Default " + DEFAULT_PAGE_SIZE + ".")},
+                    @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
+                            + "the location level(s) whose data is to be included in the response. "
+                            + "Uses * for all."),
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning "
+                            + "office of the location level(s) whose data is to be included in the"
+                            + " response. If this field is not specified, matching location level "
+                            + "information from all offices shall be returned."),
+                    @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
+                            + " of the response. Valid values for the unit field are:"
+                            + "\n* `EN`  "
+                            + "Specifies English unit system.  Location level values will be in"
+                            + " the default English units for their parameters."
+                            + "\n* `SI`  "
+                            + "Specifies the SI unit system.  Location level values will be in "
+                            + "the default SI units for their parameters."
+                            + "\n* `Other`  "
+                            + "Any unit returned in the response to the units URI request that is "
+                            + "appropriate for the requested parameters."),
+                    @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
+                            + " the response. This field affects only elevation location levels. "
+                            + "Valid values for this field are:"
+                            + "\n* `NAVD88`  The elevation "
+                            + "values will in the specified or default units above the NAVD-88 "
+                            + "datum."
+                            + "\n* `NGVD29`  The elevation values will be in the "
+                            + "specified or default units above the NGVD-29 datum."),
+                    @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
+                            + "window for data to be included in the response. If this field is "
+                            + "not specified, any required time window begins 24 hours prior to "
+                            + "the specified or default end time."),
+                    @OpenApiParam(name = END, description = "Specifies the end of the time "
+                            + "window for data to be included in the response. If this field is "
+                            + "not specified, any required time window ends at the current time"),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
+                            + "the values of the begin and end fields (unless otherwise "
+                            + "specified), as well as the time zone of any times in the response."
+                            + " If this field is not specified, the default time zone of UTC "
+                            + "shall be used."),
+                    @OpenApiParam(name = FORMAT, description = "Specifies the encoding format "
+                            + "of the response. Requests specifying an Accept header:"
+                            + Formats.JSONV2 + " must not include this field. "
+                            + "Valid format field values for this URI are:"
+                            + "\n* `tab`"
+                            + "\n* `csv`"
+                            + "\n* `xml`"
+                            + "\n* `wml2` (only if name field is specified)"
+                            + "\n* `json` (default)"),
+                    @OpenApiParam(name = PAGE, description = "This identifies where in the "
+                            + "request you are. This is an opaque value, and can be obtained from "
+                            + "the 'next-page' value in the response."),
+                    @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
+                            + "many entries per page returned. Default " + defaultPageSize + ".")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON),

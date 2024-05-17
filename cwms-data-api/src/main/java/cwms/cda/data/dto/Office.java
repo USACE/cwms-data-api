@@ -14,12 +14,14 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.tab.TabV1;
 import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a CWMS office")
 @XmlRootElement(name="office")
 @XmlAccessorType(XmlAccessType.FIELD)
 @FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)

@@ -1,0 +1,12 @@
+{
+  "spec-id": "TEST-SPEC",
+  "office-id": "SPK",
+  "source-entity-id": "USGS",
+  "designator": "designator",
+  "description": "different description",
+  "time-series-ids": [
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid4",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid5",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid6"
+  ]
+}

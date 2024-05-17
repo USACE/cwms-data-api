@@ -1,8 +1,7 @@
 package cwms.cda.data.dao;
 
 import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.condition;
-import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.name;
@@ -11,6 +10,12 @@ import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheStats;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -19,7 +24,6 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
-import cwms.cda.data.dto.TsvDquId;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
@@ -43,6 +47,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -50,13 +56,12 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.JoinType;
-import org.jooq.Operator;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
@@ -66,8 +71,11 @@ import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
-import org.jooq.SelectQuery;
+import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.TableLike;
+import org.jooq.TableOnConditionStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -78,8 +86,9 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
-import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -89,13 +98,42 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
+    public static final String MAX_DATE_TIME = "max_date_time";
+    public static final String DEFAULT_UNITS = "def_units";
+    public static final String PROP_BASE = "cwms.cda.data.dao.ts";
+
+    public static final String VERSIONED_NAME = "isVersioned";
+
+    private static final Cache<List<String>, Boolean> isVersionedCache = CacheBuilder.newBuilder()
+            .maximumSize(Integer.getInteger(PROP_BASE + "." + VERSIONED_NAME
+                    + ".maxSize", 32000))
+            .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSIONED_NAME
+                            + ".expireAfterSeconds", 600), TimeUnit.SECONDS)
+            .recordStats()
+            .build();
 
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
-        super(dsl);
-
+        this(dsl, null);
     }
 
+    public TimeSeriesDaoImpl(DSLContext dsl, @Nullable MetricRegistry metrics) {
+        super(dsl);
+
+        if (metrics != null) {
+            CacheStats stats = isVersionedCache.stats();
+            String hrName = MetricRegistry.name(this.getClass().getName(), VERSIONED_NAME, "hit-rate");
+            if (metrics.getGauges().get(hrName) == null) {
+                MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
+                metrics.gauge(hrName, hr);
+            }
+            String mrName = MetricRegistry.name(this.getClass().getName(),VERSIONED_NAME, "miss-rate");
+            if (metrics.getGauges().get(mrName) == null) {
+                MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
+                metrics.gauge(mrName, mr);
+            }
+        }
+    }
 
     public String getTimeseries(String format, String names, String office, String units,
                                 String datum,
@@ -209,20 +247,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
 
 
-        // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
-        // internal table from it so we can manipulate it further
-        // This code assumes the database timezone is in UTC (per Oracle recommendation)
-        SQL retrieveSelectData = null;
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
         String trim = OracleTypeMap.formatBool(shouldTrim);
-        String startInclusive = null;
-        String endInclusive = null;
-        String previous = null;
-        String next = null;
+        String startInclusive = "T";
+        String endInclusive = "T";
+        String previous = "F";
+        String next = "F";
         Long versionDateMilli = null;
-        String maxVersion = null;
+        String maxVersion = "F";
 
         if (versionDate != null) {
             versionDateMilli = versionDate.toInstant().toEpochMilli();
@@ -230,21 +264,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             maxVersion = "T";
         }
 
-        // Query based on versionDate or query max aggregate
-        // to_timestamp will allow null in the next schema release
-        if (versionDate != null) {
-            retrieveSelectData = DSL.sql(
-                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                            + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTs",
-                    tsId, unit, beginTimeMilli, endTimeMilli,
-                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion, officeId);
-        } else {
-            retrieveSelectData = DSL.sql(
-                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                            + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTs",
-                    tsId, unit, beginTimeMilli, endTimeMilli,
-                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,officeId);
-}
+        // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
+        // internal table from it so we can manipulate it further
+        // This code assumes the database timezone is in UTC (per Oracle recommendation)
+        SQL retrieveSelectData = DSL.sql(
+                "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
+                        + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
+                        + "?,?,?,?,?,"
+                        + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
+                tsId, unit,
+                beginTimeMilli, endTimeMilli,  //tz hardcoded
+                trim, startInclusive, endInclusive, previous, next,
+                versionDateMilli, maxVersion, officeId);
 
         Field<String> tzName;
         if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
@@ -262,37 +293,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Total is only an estimate, as it can change if fetching current data,
             // or the timeseries otherwise changes between queries.
 
-            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = null;
-
-            // Query based on versionDate or query max aggregate
-            // to_timestamp will allow null in the next schema release
-            if(versionDate != null) {
-                retrieveSelectCount = select(
-                        dateTimeCol, valueCol, qualityCol
-                ).from(DSL.sql(
-                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                                + "'UTC',?,?,?,?,?,cwms_20.cwms_util.to_timestamp(?),?,?) ) retrieveTsTotal",
-                        valid.field("tsid", String.class),
-                        valid.field("units", String.class),
-                        beginTimeMilli,
-                        endTimeMilli,
-                        trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
-                        valid.field("office_id", String.class)
-                ));
-            } else {
-                retrieveSelectCount = select(
-                        dateTimeCol, valueCol, qualityCol
-                ).from(DSL.sql(
-                        "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
-                                + "'UTC',?,?,?,?,?,?,?,?) ) retrieveTsTotal",
-                        valid.field("tsid", String.class),
-                        valid.field("units", String.class),
-                        beginTimeMilli,
-                        endTimeMilli,
-                        trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
-                        valid.field("office_id", String.class)
-                ));
-            }
+            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = select(
+                    dateTimeCol, valueCol, qualityCol
+            ).from(DSL.sql(
+                    "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
+                            + "cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
+                            + "'UTC',?,?,?,?,?," + getVersionPart(versionDate) + ",?,?) ) retrieveTsTotal",
+                    valid.field("tsid", String.class),
+                    valid.field("units", String.class),
+                    beginTimeMilli,
+                    endTimeMilli,
+                    trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
+                    valid.field("office_id", String.class)
+            ));
 
             totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
         }
@@ -331,7 +344,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-        VersionType finalDateVersionType = getVersionType(names, office, versionDate != null);
+        VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
             String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
@@ -363,7 +376,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                             tsCursor.toInstant().toEpochMilli()),
                                                     DSL.val(beginTime.toInstant().toEpochMilli())))))
                             .and(dateTimeCol
-                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTime.toInstant().toEpochMilli())))
+                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.val(endTime.toInstant().toEpochMilli())))
                             );
 
             if (pageSize > 0) {
@@ -372,7 +386,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-            query.fetchInto(tsRecord -> timeseries.addValue(
+            query.forEach(tsRecord -> timeseries.addValue(
                             tsRecord.getValue(dateTimeCol),
                             tsRecord.getValue(valueCol),
                             tsRecord.getValue(qualityNormCol).intValue()
@@ -385,32 +399,60 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    @NotNull
-    private VersionType getVersionType(String names, String office, boolean versionDateProvided) {
+    private static String getVersionPart(ZonedDateTime versionDate) {
+        if (versionDate != null) {
+            return "cwms_20.cwms_util.to_timestamp(?)";
+        }
+        return "?";
+    }
+
+    public static String parseLocFromTimeSeriesId(String tsId) {
+        String[] parts = tsId.split("\\.");
+        return parts[0];
+    }
+
+    public static String getTimeZoneId(DSLContext dsl, String tsId, String officeId) {
+        return dsl.connectionResult(c -> {
+            Configuration config = getDslContext(c, officeId).configuration();
+            String locationId = TimeSeriesDaoImpl.parseLocFromTimeSeriesId(tsId);
+            return CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(config, locationId, officeId);
+        });
+    }
+
+    public static VersionType getVersionType(DSLContext dsl, String names, String office, boolean dateProvided) {
         VersionType dateVersionType;
-        // need to determine type of time series from db when version date is null
 
-        if (versionDateProvided) {
-            dateVersionType = VersionType.SINGLE_VERSION;
-        } else {
-            boolean isVersioned = isVersioned(names, office);
+        if (!dateProvided) {
+            boolean isVersioned = isVersioned(dsl, names, office);
 
-            if(isVersioned) {
+            if (isVersioned) {
                 dateVersionType = VersionType.MAX_AGGREGATE;
             } else {
                 dateVersionType = VersionType.UNVERSIONED;
             }
+
+        } else {
+            dateVersionType = VersionType.SINGLE_VERSION;
         }
 
         return dateVersionType;
     }
 
-    private boolean isVersioned(String names, String office) {
-        return connectionResult(dsl, connection -> {
-            Configuration configuration = getDslContext(connection, office).configuration();
-            return OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                    names, office));
-        });
+    private static boolean isVersioned(DSLContext dsl, String tsId, String office) {
+        final List<String> cacheKey = Arrays.asList(office, tsId);
+
+        Boolean cachedValue = isVersionedCache.getIfPresent(cacheKey);
+        if (cachedValue == null) {
+            cachedValue = connectionResult(dsl, connection -> {
+                Configuration configuration = getDslContext(connection, office).configuration();
+                boolean isVersioned =
+                        OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
+                                tsId, office));
+                isVersionedCache.put(cacheKey, isVersioned);
+                return isVersioned;
+            });
+        }
+        return cachedValue;
     }
 
     // datumInfo comes back like:
@@ -431,189 +473,132 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
                 retVal = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
             } catch (JAXBException e) {
-                logger.log(Level.WARNING, "Failed to parse:" + body, e);
+                logger.log(Level.WARNING, e, () -> "Failed to parse:" + body);
             }
         }
         return retVal;
     }
 
     @Override
-    public Catalog getTimeSeriesCatalog(String page, int pageSize, String office) {
-        return getTimeSeriesCatalog(page, pageSize, office, ".*", null, null, null, null, null);
-    }
-
-    @Override
     public Catalog getTimeSeriesCatalog(String page, int pageSize, String office,
                                         String idLike, String locCategoryLike, String locGroupLike,
                                         String tsCategoryLike, String tsGroupLike, String boundingOfficeLike) {
+
+        if (".*".equals(idLike)) {
+            idLike = null;
+        }
+
+        CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
+                .withOffice(office)
+                .withIdLike(idLike)
+                .withLocCatLike(locCategoryLike)
+                .withLocGroupLike(locGroupLike)
+                .withTsCatLike(tsCategoryLike)
+                .withTsGroupLike(tsGroupLike)
+                .withBoundingOfficeLike(boundingOfficeLike)
+                .withIncludeExtents(true)
+                .build();
+
+        return getTimeSeriesCatalog(page, pageSize, parameters);
+    }
+
+    public Catalog getTimeSeriesCatalog(String page, int pageSize, CatalogRequestParameters inputParams) {
         int total;
-        String tsCursor = "*";
-        String searchOffice = office;
-        String curOffice = null;
+        String cursorTsId = "*";
+        String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
-
-        Condition locJoinCondition = AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(AV_CWMS_TS_ID2.DB_OFFICE_ID)
-                .and(AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_CWMS_TS_ID2.LOCATION_CODE.coerce(AV_LOC2.AV_LOC2.LOCATION_CODE)))
-                .and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull());
-
-
         if (page == null || page.isEmpty()) {
-
-            Condition condition = caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.CWMS_TS_ID, idLike)
-                    .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
-            if (searchOffice != null) {
-                condition = condition.and(DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).eq(searchOffice.toUpperCase()));
-            }
-
-            if (locCategoryLike != null) {
-                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY, locCategoryLike));
-            }
-
-            if (locGroupLike != null) {
-                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP, locGroupLike));
-            }
-
-            if (tsCategoryLike != null) {
-                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY, tsCategoryLike));
-            }
-
-            if (tsGroupLike != null) {
-                condition = condition.and(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_GROUP, tsGroupLike));
-            }
-
-            SelectJoinStep<Record1<Integer>> selectCountFrom;
-            if (boundingOfficeLike == null) {
-                selectCountFrom = dsl.select(count(asterisk())).from(AV_CWMS_TS_ID2);
-            } else {
-                condition = condition.and(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID, boundingOfficeLike));
-                condition = condition.and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.eq("EN"));
-
-                selectCountFrom = dsl.select(count(asterisk()))
-                        .from(AV_CWMS_TS_ID2)
-                        .innerJoin(AV_LOC2.AV_LOC2)
-                        .on(locJoinCondition);
-            }
-            total = selectCountFrom.where(condition).fetchOne().value1();
+            SelectConditionStep<Record1<Integer>> totalQuery = dsl.select(countDistinct(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE))
+                    .from(buildFromTable(inputParams))
+                    .where(buildWhereConditions(inputParams));
+            logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
+            total = totalQuery.fetchOne(0, int.class);
         } else {
             logger.fine("getting non-default page");
             // Information provided by the page value overrides anything provided
             catPage = new Catalog.CatalogPage(page);
-            tsCursor = catPage.getCursorId();
             total = catPage.getTotal();
             pageSize = catPage.getPageSize();
-            searchOffice = catPage.getSearchOffice();
-            curOffice = catPage.getCurOffice();
-            idLike = catPage.getIdLike();
-            locCategoryLike = catPage.getLocCategoryLike();
-            locGroupLike = catPage.getLocGroupLike();
-            tsCategoryLike = catPage.getTsCategoryLike();
-            tsGroupLike = catPage.getTsGroupLike();
-            boundingOfficeLike = catPage.getBoundingOfficeLike();
-        }
-        SelectQuery<?> primaryDataQuery = dsl.selectQuery();
-        primaryDataQuery.addSelect(AV_CWMS_TS_ID2.DB_OFFICE_ID);
-        primaryDataQuery.addSelect(AV_CWMS_TS_ID2.CWMS_TS_ID);
-        primaryDataQuery.addSelect(AV_CWMS_TS_ID2.TS_CODE);
-        primaryDataQuery.addSelect(AV_CWMS_TS_ID2.UNIT_ID);
-        primaryDataQuery.addSelect(AV_CWMS_TS_ID2.INTERVAL_ID);
-        primaryDataQuery.addSelect(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            primaryDataQuery.addSelect(AV_CWMS_TS_ID2.TIME_ZONE_ID);
-        }
+            cursorTsId = catPage.getCursorId();  // cursor cwms_id
+            cursorOffice = catPage.getCurOffice();  // cursor office
 
-        if (boundingOfficeLike != null) {
-            primaryDataQuery.addFrom(AV_CWMS_TS_ID2
-                    .innerJoin(AV_LOC2.AV_LOC2)
-                    .on(locJoinCondition));
-        } else {
-            primaryDataQuery.addFrom(AV_CWMS_TS_ID2);
+            inputParams = CatalogRequestParameters.Builder.from(inputParams)
+                    .withOffice(catPage.getSearchOffice())
+                    .withIdLike(catPage.getIdLike())
+                    .withLocCatLike(catPage.getLocCategoryLike())
+                    .withLocGroupLike(catPage.getLocGroupLike())
+                    .withTsCatLike(catPage.getTsCategoryLike())
+                    .withTsGroupLike(catPage.getTsGroupLike())
+                    .withBoundingOfficeLike(catPage.getBoundingOfficeLike())
+                    .build();
+        }
+        final CatalogRequestParameters params = inputParams;
+
+        List<TableField> pageEntryFields = new ArrayList<>(getCwmsTsIdFields());
+        if (params.needs(AV_TS_EXTENTS_UTC)) {
+            pageEntryFields.addAll(getExtentsFields());
         }
 
-        primaryDataQuery.addConditions(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
-
-        // add the regexp_like clause. reg fd
-        primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.CWMS_TS_ID, idLike));
-
-        if (searchOffice != null) {
-            primaryDataQuery.addConditions(DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).eq(office.toUpperCase()));
+        TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
+        if (params.needs(AV_TS_EXTENTS_UTC)) {
+            fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID.leftJoin(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC)
+                    .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
+                            .eq(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC.TS_CODE
+                                    .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
         }
 
-        if (locCategoryLike != null) {
-            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_CATEGORY, locCategoryLike));
-        }
+        List<Condition> whereConditions = buildWhereConditions(params);
+        List<Condition> pagingConditions = buildPagingConditions(cursorOffice, cursorTsId);
 
-        if (locGroupLike != null) {
-            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.LOC_ALIAS_GROUP, locGroupLike));
-        }
 
-        if (tsCategoryLike != null) {
-            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY, tsCategoryLike));
-        }
+        TableLike innerFrom = buildFromTable(params);
+        Field codeField = innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE);
 
-        if (tsGroupLike != null) {
-            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.TS_ALIAS_GROUP, tsGroupLike));
-        }
+        SelectSeekStep2<? extends Record, String, String> innerSelect = dsl.select(codeField)
+                .from(innerFrom)
+                .where(whereConditions).and(DSL.and(pagingConditions))
+                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
+                        DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID));
 
-        if (boundingOfficeLike != null) {
-            primaryDataQuery.addConditions(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID, boundingOfficeLike));
-        }
+        Field codeField2 = innerSelect.field(codeField);
 
-        if (curOffice != null) {
-            Condition officeEqualCur = DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).eq(curOffice.toUpperCase());
-            Condition curOfficeTsIdGreater = DSL.upper(AV_CWMS_TS_ID2.CWMS_TS_ID).gt(tsCursor);
-            Condition officeGreaterThanCur = DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID).gt(curOffice.toUpperCase());
-            primaryDataQuery.addConditions(Operator.AND,
-                    officeEqualCur.and(curOfficeTsIdGreater).or(officeGreaterThanCur));
-        } else {
-            primaryDataQuery.addConditions(DSL.upper(AV_CWMS_TS_ID2.CWMS_TS_ID).gt(tsCursor));
-        }
+        SelectConditionStep codes = dsl.select(codeField2)
+                .from(innerSelect)
+                .where(field("rownum").lessOrEqual(pageSize));
 
-        primaryDataQuery.addOrderBy(DSL.upper(AV_CWMS_TS_ID2.DB_OFFICE_ID), DSL.upper(AV_CWMS_TS_ID2.CWMS_TS_ID));
-        Table<?> dataTable = primaryDataQuery.asTable("data");
-        SelectQuery<?> limitQuery = dsl.selectQuery();
-        limitQuery.addSelect(dataTable.fields());
-        limitQuery.addFrom(dataTable);
-        limitQuery.addConditions(field("rownum").lessOrEqual(pageSize));
-
-        Table<?> limitTable = limitQuery.asTable("limiter");
-
-        SelectQuery<?> overallQuery = dsl.selectQuery();
-        overallQuery.addSelect(limitTable.fields());
-        overallQuery.addSelect(AV_TS_EXTENTS_UTC.VERSION_TIME);
-        overallQuery.addSelect(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
-        overallQuery.addSelect(AV_TS_EXTENTS_UTC.LATEST_TIME);
-        overallQuery.addSelect(AV_TS_EXTENTS_UTC.LAST_UPDATE);
-        overallQuery.addFrom(limitTable);
-        overallQuery.addJoin(AV_TS_EXTENTS_UTC, JoinType.LEFT_OUTER_JOIN,
-                condition("\"CWMS_20\".\"AV_TS_EXTENTS_UTC\".\"TS_CODE\" = " + field("\"limiter\""
-                        + ".\"TS_CODE\"")));
-
-        overallQuery.addOrderBy(limitTable.field("DB_OFFICE_ID").upper(), limitTable.field("CWMS_TS_ID").upper());
+        SelectSeekStep2<Record, String, String> overallQuery = dsl.select(pageEntryFields)
+                .from(fromTable)
+                .where(
+                        codeField.in(codes)
+                )
+                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
+                        DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID));
 
         logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
-        // NOTE: leave as separate, eventually this will include aliases which
-        // will at extra rows per TS
-        LinkedHashMap<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
+        Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
         result.forEach(row -> {
-            String officeTsId = row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID)
+            String officeTsId = row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID)
                     + "/"
-                    + row.get(AV_CWMS_TS_ID2.CWMS_TS_ID);
+                    + row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
             if (!tsIdExtentMap.containsKey(officeTsId)) {
                 TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
-                        .officeId(row.get(AV_CWMS_TS_ID2.DB_OFFICE_ID))
-                        .cwmsTsId(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
-                        .units(row.get(AV_CWMS_TS_ID2.UNIT_ID))
-                        .interval(row.get(AV_CWMS_TS_ID2.INTERVAL_ID))
-                        .intervalOffset(row.get(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET));
+                        .officeId(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID))
+                        .cwmsTsId(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                        .units(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID))
+                        .interval(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID))
+                        .intervalOffset(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET));
                 if (this.getDbVersion() > Dao.CWMS_21_1_1) {
                     builder.timeZone(row.get("TIME_ZONE_ID", String.class));
+                }
+                if (params.needs(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC)) {
+                    builder.withExtents(new ArrayList<>());
                 }
                 tsIdExtentMap.put(officeTsId, builder);
             }
 
-            if (row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null) {
+            if (params.needs(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC) && row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null) {
                 //tsIdExtentMap.get(tsId)
                 TimeSeriesExtents extents =
                         new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
@@ -628,15 +613,154 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
                 .map(e -> e.getValue().build())
                 .collect(Collectors.toList());
+
         return new Catalog(catPage != null ? catPage.toString() : null,
-                total, pageSize, entries, office,
-                idLike, locCategoryLike, locGroupLike,
-                tsCategoryLike, tsGroupLike);
+                total, pageSize, entries, params.getOffice(),
+                params.getIdLike(),params.getLocCatLike(), params.getLocGroupLike(),
+                params.getTsCatLike(), params.getTsGroupLike());
     }
 
+    private static @NotNull List<Condition> buildPagingConditions(String cursorOffice, String cursorTsId) {
+        List<Condition> pagingConditions = new ArrayList<>();
+
+        // Can't do the rownum thing here b/c we want global ordering, not ordering within the page.
+        pagingConditions.add(DSL.noCondition());
+
+        if (cursorOffice != null){
+            Condition moreInSameOffice = AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID
+                    .eq(cursorOffice.toUpperCase())
+                    .and(DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
+                            .greaterThan(cursorTsId));
+            Condition nextOffice = AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID
+                    .greaterThan(cursorOffice.toUpperCase());
+            pagingConditions.add(moreInSameOffice.or(nextOffice));
+        }
+        return pagingConditions;
+    }
+
+    private static @NotNull List<TableField> getExtentsFields() {
+        List<TableField> extentsFields = new ArrayList<>();
+        extentsFields.add(AV_TS_EXTENTS_UTC.VERSION_TIME);
+        extentsFields.add(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
+        extentsFields.add(AV_TS_EXTENTS_UTC.LATEST_TIME);
+        extentsFields.add(AV_TS_EXTENTS_UTC.LAST_UPDATE);
+        return extentsFields;
+    }
+
+    private @NotNull List<TableField> getCwmsTsIdFields() {
+        List<TableField> cwmsTsIdFields = new ArrayList<>();
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID);
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID);
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID);
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET);
+        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
+            cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
+        }
+        return cwmsTsIdFields;
+    }
+
+    private @NotNull List<Condition> buildWhereConditions(CatalogRequestParameters params) {
+        List<Condition> conditions = new ArrayList<>();
+        conditions.addAll(buildCwmsTsIdConditions(params));
+        conditions.addAll(buildLocGrpAssgnConditions(params));
+        conditions.addAll(buildTsGrpAssgnConditions(params));
+        conditions.addAll(buildLocConditions(params));
+        return conditions;
+    }
+
+    private static @NotNull TableLike buildFromTable(CatalogRequestParameters params) {
+        TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
+        TableOnConditionStep<Record> on = null;
+
+        if (params.needs(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)) {
+            on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                    .join(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)
+                    .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE.eq(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE));
+            fromTable = on;
+        }
+
+        if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
+            if (on == null) {
+                on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                        .join(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
+                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                                .eq(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.LOCATION_CODE));
+            } else {
+                on = on
+                        .join(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
+                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                                .eq(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.LOCATION_CODE));
+            }
+            fromTable = on;
+        }
+
+        if (params.needs(AV_LOC.AV_LOC)) {
+            if (on == null) {
+                on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                        .join(AV_LOC.AV_LOC)
+                        .on(AV_LOC.AV_LOC.LOCATION_CODE
+                                .eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                                        .coerce(AV_LOC.AV_LOC.LOCATION_CODE)));
+            } else {
+                on = on
+                        .join(AV_LOC.AV_LOC)
+                        .on(AV_LOC.AV_LOC.LOCATION_CODE
+                                .eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                                        .coerce(AV_LOC.AV_LOC.LOCATION_CODE)));
+            }
+            fromTable = on;
+        }
+        return fromTable;
+    }
+
+    private Collection<? extends Condition> buildLocConditions(CatalogRequestParameters params) {
+        List<Condition> retval = new ArrayList<>();
+
+        if (params.needs(AV_LOC.AV_LOC)) {
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID, params.boundingOfficeLike));
+            // we could add location_type here too...
+            // or maybe conditions based on lat/lon
+            // or any bool fields.
+        }
+
+        return retval;
+    }
+
+    private Collection<? extends Condition> buildLocGrpAssgnConditions(CatalogRequestParameters params) {
+        List<Condition> retval = new ArrayList<>();
+
+        if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.GROUP_ID, params.locGroupLike));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.CATEGORY_ID, params.locCatLike));
+        }
+        return retval;
+    }
+
+    private Collection<? extends Condition> buildTsGrpAssgnConditions(CatalogRequestParameters params) {
+        List<Condition> retval = new ArrayList<>();
+
+        if (params.needs(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)) {
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID, params.tsGroupLike));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID, params.tsCatLike));
+        }
+        return retval;
+    }
+
+    private Collection<? extends Condition> buildCwmsTsIdConditions(CatalogRequestParameters params) {
+        List<Condition> retval = new ArrayList<>();
+
+        if (params.office != null) {
+            retval.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID.eq(params.office.toUpperCase()));
+        }
+
+        retval.add(caseInsensitiveLikeRegexNullTrue(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID, params.idLike));
+
+        return retval;
+    }
 
     // Finds the single most recent TsvDqu within the time window.
-    public TsvDqu findMostRecent(String tOfficeId, String tsId, String unit,
+    public TsvDqu findMostRecent(String officeId, String tsId, String unit,
                                  Timestamp twoWeeksFromNow, Timestamp twoWeeksAgo) {
         TsvDqu retval = null;
 
@@ -645,7 +769,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Condition nestedCondition = view.ALIASED_ITEM.isNull()
                 .and(view.VALUE.isNotNull())
                 .and(view.CWMS_TS_ID.eq(tsId))
-                .and(view.OFFICE_ID.eq(tOfficeId));
+                .and(view.OFFICE_ID.eq(officeId));
 
         if (twoWeeksFromNow != null) {
             nestedCondition = nestedCondition.and(view.DATE_TIME.lt(twoWeeksFromNow));
@@ -656,25 +780,36 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             nestedCondition = nestedCondition.and(view.DATE_TIME.gt(twoWeeksAgo));
         }
 
-        String maxFieldName = "MAX_DATE_TIME";
-        SelectHavingStep<Record1<Timestamp>> select =
-                dsl.select(max(view.DATE_TIME).as(maxFieldName)).from(
-                        view).where(nestedCondition).groupBy(view.TS_CODE);
 
-        Record dquRecord = dsl.select(asterisk()).from(view).where(view.DATE_TIME.in(select)).and(
-                view.CWMS_TS_ID.eq(tsId)).and(view.OFFICE_ID.eq(tOfficeId)).and(view.UNIT_ID.eq(unit)).and(
-                view.VALUE.isNotNull()).and(view.ALIASED_ITEM.isNull()).fetchOne();
+        SelectHavingStep<Record1<Timestamp>> maxSelect =
+                dsl.select(max(view.DATE_TIME).as(MAX_DATE_TIME))
+                        .from(view)
+                        .where(nestedCondition)
+                        .groupBy(view.TS_CODE);
+
+        Record dquRecord = dsl.select(asterisk())
+                .from(view)
+                .where(view.DATE_TIME.in(maxSelect))
+                .and(view.CWMS_TS_ID.eq(tsId))
+                .and(view.OFFICE_ID.eq(officeId))
+                .and(view.UNIT_ID.eq(unit))
+                .and(view.VALUE.isNotNull())
+                .and(view.ALIASED_ITEM.isNull())
+                .fetchOne();
 
         if (dquRecord != null) {
-            retval = dquRecord.map(r -> {
-                usace.cwms.db.jooq.codegen.tables.records.AV_TSV_DQU dqu = r.into(view);
-                return new TsvDqu(
-                        new TsvDquId(dqu.getOFFICE_ID(), dqu.getTS_CODE(),
-                        dqu.getUNIT_ID(), dqu.getDATE_TIME()),
-                        dqu.getCWMS_TS_ID(), dqu.getVERSION_DATE(),
-                        dqu.getDATA_ENTRY_DATE(), dqu.getVALUE(), dqu.getQUALITY_CODE(),
-                        dqu.getSTART_DATE(), dqu.getEND_DATE());
-            });
+            retval = dquRecord.map(jrecord -> new TsvDqu.Builder()
+                    .withOfficeId(jrecord.getValue(view.OFFICE_ID.getName(), String.class))
+                    .withCwmsTsId(jrecord.getValue(view.CWMS_TS_ID.getName(), String.class))
+                    .withUnitId(jrecord.getValue(view.UNIT_ID.getName(), String.class))
+                    .withDateTime(jrecord.getValue(view.DATE_TIME.getName(), Timestamp.class))
+                    .withVersionDate(jrecord.getValue(view.VERSION_DATE.getName(), Timestamp.class))
+                    .withDataEntryDate(jrecord.getValue(view.DATA_ENTRY_DATE.getName(), Timestamp.class))
+                    .withValue(jrecord.getValue(view.VALUE.getName(), Double.class))
+                    .withQualityCode(jrecord.getValue(view.QUALITY_CODE.getName(), Long.class))
+                    .withStartDate(jrecord.getValue(view.START_DATE.getName(), Timestamp.class))
+                    .withEndDate(jrecord.getValue(view.END_DATE.getName(), Timestamp.class))
+                    .build());
         }
 
         return retval;
@@ -716,158 +851,184 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 into.getEND_DATE());
     }
 
-    // Finds single most recent value within the window for each of the tsCodes
+
+    @Override
     public List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastdate,
-                                                    Timestamp futuredate) {
-        final List<RecentValue> retval = new ArrayList<>();
+                                                    Timestamp futuredate, UnitSystem unitSystem) {
+        List<RecentValue> retval = Collections.emptyList();
 
         if (tsIds != null && !tsIds.isEmpty()) {
-            AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;
-            AV_CWMS_TS_ID2 tsView = AV_CWMS_TS_ID2;
-            SelectConditionStep<Record> innerSelect
-                    = dsl.select(
-                            tsvView.asterisk(),
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
-                                    "max_date_time"),
-                            tsView.CWMS_TS_ID)
-                    .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
+            String tsFieldName = "TSVIEW_CWMS_TS_ID";
+            Field<String> tsField = AV_CWMS_TS_ID2.CWMS_TS_ID.as(tsFieldName);
+
+            Field<Timestamp> maxDateField = max(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME)
+                    .over(partitionBy(AV_TSV_DQU.AV_TSV_DQU.TS_CODE))
+                    .as(MAX_DATE_TIME);
+
+            Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                    CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
+                    DSL.val(unitSystem, String.class))
+                    .as(DEFAULT_UNITS);
+
+            SelectConditionStep<? extends Record> innerSelect = dsl.select(
+                            AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID,
+                            AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID,
+                            AV_TSV_DQU.AV_TSV_DQU.TS_CODE,
+                            AV_TSV_DQU.AV_TSV_DQU.UNIT_ID,
+                            AV_TSV_DQU.AV_TSV_DQU.DATE_TIME,
+                            AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE,
+                            AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE,
+                            AV_TSV_DQU.AV_TSV_DQU.VALUE,
+                            AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE,
+                            AV_TSV_DQU.AV_TSV_DQU.START_DATE,
+                            AV_TSV_DQU.AV_TSV_DQU.END_DATE,
+                            defUnitsField,
+                            maxDateField,
+                            tsField
+                    )
+                    .from(AV_TSV_DQU.AV_TSV_DQU.join(AV_CWMS_TS_ID2)
+                            .on(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(
+                                    AV_CWMS_TS_ID2.TS_CODE.cast(Long.class))))
                     .where(
-                            tsView.CWMS_TS_ID.in(tsIds)
-                                    .and(tsvView.VALUE.isNotNull())
-                                    .and(tsvView.DATE_TIME.lt(futuredate))
-                                    .and(tsvView.DATE_TIME.gt(pastdate))
-                                    .and(tsvView.START_DATE.le(futuredate))
-                                    .and(tsvView.END_DATE.gt(pastdate)));
+                            AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.VALUE.isNotNull())
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.lt(futuredate))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.gt(pastdate))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.START_DATE.le(futuredate))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate)));
 
+            // We want to use some of the fields from the innerSelect statement in our WHERE clause
+            // Its cleaner if we call them out individually.
+            Field<Timestamp> dateTimeField = innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME);
+            Field<String> unitField = innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID);
 
-            Field[] queryFields = new Field[]{tsView.CWMS_TS_ID, tsvView.OFFICE_ID,
-                    tsvView.TS_CODE, tsvView.UNIT_ID, tsvView.DATE_TIME, tsvView.VERSION_DATE,
-                    tsvView.DATA_ENTRY_DATE, tsvView.VALUE, tsvView.QUALITY_CODE,
-                    tsvView.START_DATE, tsvView.END_DATE,};
+            // We want to return fields from the innerSelect.
+            // Note: Although they are both fields, jOOQ treats
+            //      innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE)
+            //      differently than
+            //      AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE
+            // Using the innerSelect field makes DATA_ENTRY_DATE correctly map to Timestamp
+            // and the generated sql refers to columns from the alias_??? table.
+            Field[] queryFields = new Field[]{
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VALUE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.START_DATE),
+                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.END_DATE),
+                    unitField,
+                    dateTimeField,
+                    innerSelect.field(tsField)
+            };
 
-            // look them back up by name b/c we are using them on results of innerselect.
-            List<Field<Object>> fields = Arrays.stream(queryFields)
-                    .map(Field::getName)
-                    .map(DSL::field).collect(
-                            Collectors.toList());
-
-            // I want to select tsvView.asterisk but we are selecting from an inner select and
-            // even though the inner select selects tsvView.asterisk it isn't the same.
-            // So we will just select the fields we want.  Unfortunately that means our results
-            // won't map into AV_TSV.AV_TSV
-            dsl.select(fields)
+            SelectConditionStep<? extends Record> query = dsl.select(queryFields)
                     .from(innerSelect)
-                    .where(field("DATE_TIME").eq(innerSelect.field("max_date_time")))
-                    .forEach(jrecord -> {
-                        RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
-                        retval.add(recentValue);
-                    });
+                    .where(dateTimeField.eq(maxDateField).and(unitField.eq(defUnitsField)));
+
+            logger.fine(() -> query.getSQL(ParamType.INLINED));
+            retval = query.fetch(r -> buildRecentValue(AV_TSV_DQU.AV_TSV_DQU, r, tsFieldName));
         }
         return retval;
     }
 
-    @NotNull
-    private RecentValue buildRecentValue(AV_TSV_DQU tsvView,
-                                         usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2 tsView,
-                                         Record jrecord) {
-        return buildRecentValue(tsvView, jrecord, tsView.CWMS_TS_ID.getName());
-    }
-
-    @NotNull
-    private RecentValue buildRecentValue(AV_TSV_DQU tsvView, AV_TS_GRP_ASSGN tsView,
-                                         Record jrecord) {
-        return buildRecentValue(tsvView, jrecord, tsView.TS_ID.getName());
-    }
 
     @NotNull
     private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
-        Timestamp dataEntryDate;
-        // TODO:
-        // !!! skipping DATA_ENTRY_DATE for now.  Need to figure out how to fix mapping in jooq.
-        // !! dataEntryDate= jrecord.getValue("data_entry_date", Timestamp.class); // maps to
-        // oracle.sql.TIMESTAMP
-        // !!!
-        dataEntryDate = null;
-        // !!!
 
-        TsvDqu tsv = buildTsvDqu(tsvView, jrecord, dataEntryDate);
+        TsvDqu tsv = buildTsvDqu(tsvView, jrecord);
         String tsId = jrecord.getValue(tsColumnName, String.class);
         return new RecentValue(tsId, tsv);
     }
 
     @NotNull
-    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, Timestamp dataEntryDate) {
-        TsvDquId id = buildDquId(tsvView, jrecord);
-
-        return new TsvDqu(id, jrecord.getValue(tsvView.CWMS_TS_ID.getName(), String.class),
-                jrecord.getValue(tsvView.VERSION_DATE.getName(), Timestamp.class), dataEntryDate,
-                jrecord.getValue(tsvView.VALUE.getName(), Double.class),
-                jrecord.getValue(tsvView.QUALITY_CODE.getName(), Long.class),
-                jrecord.getValue(tsvView.START_DATE.getName(), Timestamp.class),
-                jrecord.getValue(tsvView.END_DATE.getName(), Timestamp.class));
+    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord) {
+        return new TsvDqu.Builder()
+                .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID))
+                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID))
+                .withUnitId(jrecord.getValue(tsvView.UNIT_ID))
+                .withDateTime(jrecord.getValue(tsvView.DATE_TIME))
+                .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE))
+                .withDataEntryDate(jrecord.getValue(tsvView.DATA_ENTRY_DATE))
+                .withValue(jrecord.getValue(tsvView.VALUE))
+                .withQualityCode(jrecord.getValue(tsvView.QUALITY_CODE))
+                .withStartDate(jrecord.getValue(tsvView.START_DATE))
+                .withEndDate(jrecord.getValue(tsvView.END_DATE))
+                .build();
     }
 
-
+    @Override
     public List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
-                                                Timestamp pastLimit, Timestamp futureLimit) {
-        List<RecentValue> retVal = new ArrayList<>();
+                                                @NotNull Timestamp pastLimit, @NotNull Timestamp futureLimit,
+                                                 @NotNull UnitSystem unitSystem) {
+        AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
+        // possible use 30D view?
 
-        if (categoryId != null && groupId != null) {
-            AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
-            // possible use 30D view?
+        Condition whereCondition =
+                tsvView.VALUE.isNotNull()
+                        .and(tsvView.DATE_TIME.lt(futureLimit))
+                        .and(tsvView.DATE_TIME.gt(pastLimit))
+                        .and(tsvView.START_DATE.le(futureLimit))
+                        .and(tsvView.END_DATE.gt(pastLimit));
 
-            AV_TS_GRP_ASSGN tsView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
-
-            SelectConditionStep<Record> innerSelect
-                    = dsl.select(tsvView.asterisk(), tsView.TS_ID, tsView.ATTRIBUTE,
-                            max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE)).as(
-                                    "max_date_time"), tsView.TS_ID)
-                    .from(tsvView.join(tsView).on(tsvView.TS_CODE.eq(tsView.TS_CODE.cast(Long.class))))
-                    .where(
-                            tsView.DB_OFFICE_ID.eq(office)
-                                    .and(tsView.CATEGORY_ID.eq(categoryId))
-                                    .and(tsView.GROUP_ID.eq(groupId))
-                                    .and(tsvView.VALUE.isNotNull())
-                                    .and(tsvView.DATE_TIME.lt(futureLimit))
-                                    .and(tsvView.DATE_TIME.gt(pastLimit))
-                                    .and(tsvView.START_DATE.le(futureLimit))
-                                    .and(tsvView.END_DATE.gt(pastLimit)));
-
-            Field[] queryFields = new Field[]{tsvView.OFFICE_ID, tsvView.TS_CODE,
-                    tsvView.DATE_TIME, tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE,
-                    tsvView.VALUE, tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE,
-                    tsvView.UNIT_ID, tsView.TS_ID, tsView.ATTRIBUTE};
-
-            List<Field<Object>> fields = Arrays.stream(queryFields)
-                    .map(Field::getName)
-                    .map(DSL::field).collect(
-                            Collectors.toList());
-
-
-            // I want to select tsvView.asterisk but we are selecting from an inner select and
-            // even though the inner select selects tsvView.asterisk it isn't the same.
-            // So we will just select the fields we want.
-            // Unfortunately that means our results won't map into AV_TSV.AV_TSV
-            dsl.select(fields)
-                    .from(innerSelect)
-                    .where(field(tsvView.DATE_TIME.getName()).eq(innerSelect.field("max_date_time"
-                    )))
-                    .orderBy(field(tsView.ATTRIBUTE.getName()))
-                    .forEach(jrecord -> {
-                        RecentValue recentValue = buildRecentValue(tsvView, tsView, jrecord);
-                        retVal.add(recentValue);
-                    });
+        if (office != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office));
         }
-        return retVal;
+
+        if (categoryId != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
+        }
+
+        if (groupId != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID.eq(groupId));
+        }
+
+        Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsvView.AV_TSV_DQU.TS_CODE),
+                        DSL.val(unitSystem, String.class))
+                .as(DEFAULT_UNITS);
+        Field<Timestamp> maxDateTimeField = max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE))
+                .as(MAX_DATE_TIME);
+
+        SelectConditionStep<? extends Record> innerSelect
+                = dsl.select(tsvView.OFFICE_ID, tsvView.TS_CODE, tsvView.DATE_TIME,
+                        tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE, tsvView.VALUE,
+                        tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE, tsvView.UNIT_ID,
+                        defUnitsField,
+                        maxDateTimeField,
+                        AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE,
+                        AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID)
+                .from(tsvView.join(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)
+                        .on(tsvView.TS_CODE.eq(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE.cast(Long.class))))
+                .where(whereCondition);
+
+        Field<Timestamp> dateTime = innerSelect.field(tsvView.DATE_TIME);
+        Field<String> unit = innerSelect.field(tsvView.UNIT_ID);
+
+        Field[] queryFields = new Field[]{
+                innerSelect.field(tsvView.OFFICE_ID),
+                innerSelect.field(tsvView.TS_CODE),
+                innerSelect.field(tsvView.VERSION_DATE),
+                innerSelect.field(tsvView.DATA_ENTRY_DATE),
+                innerSelect.field(tsvView.VALUE),
+                innerSelect.field(tsvView.QUALITY_CODE),
+                innerSelect.field(tsvView.START_DATE),
+                innerSelect.field(tsvView.END_DATE),
+                dateTime,
+                unit,
+                innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID),
+                innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE)};
+
+        return dsl.select(queryFields)
+                .from(innerSelect)
+                .where(dateTime.eq(maxDateTimeField).and(defUnitsField.eq(unit)))
+                .orderBy(field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE.getName()))
+                .fetch(r -> buildRecentValue(tsvView, r, AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName()))
+                ;
     }
 
-    @NotNull
-    private TsvDquId buildDquId(AV_TSV_DQU tsvView, Record jrecord) {
-        return new TsvDquId(jrecord.getValue(tsvView.OFFICE_ID.getName(), String.class),
-                jrecord.getValue(tsvView.TS_CODE.getName(), Long.class),
-                jrecord.getValue(tsvView.UNIT_ID.getName(), String.class),
-                jrecord.getValue(tsvView.DATE_TIME.getName(), Timestamp.class));
-    }
 
     @Override
     public void create(TimeSeries input) {
@@ -876,7 +1037,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     /**
      * Create and save, or update existing Timeseries.
-     *
      * Required attributes of {@link TimeSeries Timeseries} are
      *
      * <ul>
@@ -1162,5 +1322,168 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 return new DeleteOptions(this);
             }
         }
+    }
+
+    public static class CatalogRequestParameters {
+        private final String office;
+        private final String idLike;
+        private final String unitSystem;
+        private final String locCatLike;
+        private final String locGroupLike;
+        private final String tsCatLike;
+        private final String tsGroupLike;
+        private final String boundingOfficeLike;
+        private final boolean includeExtents;
+
+        private CatalogRequestParameters(Builder builder) {
+            this.office = builder.office;
+            this.idLike = builder.idLike;
+            this.unitSystem = builder.unitSystem;
+            this.locCatLike = builder.locCatLike;
+            this.locGroupLike = builder.locGroupLike;
+            this.tsCatLike = builder.tsCatLike;
+            this.tsGroupLike = builder.tsGroupLike;
+            this.boundingOfficeLike = builder.boundingOfficeLike;
+            this.includeExtents = builder.includeExtents;
+        }
+
+        public String getBoundingOfficeLike() {
+            return boundingOfficeLike;
+        }
+
+        public String getIdLike() {
+            return idLike;
+        }
+
+        public boolean isIncludeExtents() {
+            return includeExtents;
+        }
+
+        public String getLocCatLike() {
+            return locCatLike;
+        }
+
+        public String getLocGroupLike() {
+            return locGroupLike;
+        }
+
+        public String getOffice() {
+            return office;
+        }
+
+        public String getTsCatLike() {
+            return tsCatLike;
+        }
+
+        public String getTsGroupLike() {
+            return tsGroupLike;
+        }
+
+        public String getUnitSystem() {
+            return unitSystem;
+        }
+
+        public static class Builder {
+            String office;
+            String idLike;
+            String unitSystem;
+            String locCatLike;
+            String locGroupLike;
+            String tsCatLike;
+            String tsGroupLike;
+            String boundingOfficeLike;
+            boolean includeExtents;
+
+            public Builder() {
+
+            }
+
+            public Builder withOffice(String office) {
+                this.office = office;
+                return this;
+            }
+
+            public Builder withIdLike(String idLike) {
+                this.idLike = idLike;
+                return this;
+            }
+
+            public Builder withUnitSystem(String unitSystem) {
+                this.unitSystem = unitSystem;
+                return this;
+            }
+
+            public Builder withLocCatLike(String locCatLike) {
+                this.locCatLike = locCatLike;
+                return this;
+            }
+
+            public Builder withLocGroupLike(String locGroupLike) {
+                this.locGroupLike = locGroupLike;
+                return this;
+            }
+
+            public Builder withTsCatLike(String tsCatLike) {
+                this.tsCatLike = tsCatLike;
+                return this;
+            }
+
+            public Builder withTsGroupLike(String tsGroupLike) {
+                this.tsGroupLike = tsGroupLike;
+                return this;
+            }
+
+            public Builder withBoundingOfficeLike(String boundingOfficeLike) {
+                this.boundingOfficeLike = boundingOfficeLike;
+                return this;
+            }
+
+            public Builder withIncludeExtents(boolean includeExtents) {
+                this.includeExtents = includeExtents;
+                return this;
+            }
+
+            public static Builder from(CatalogRequestParameters params) {
+                // This NEEDS to include every field in the CatalogRequestParameters
+                return new CatalogRequestParameters.Builder()
+                        .withOffice(params.office)
+                        .withIdLike(params.idLike)
+                        .withUnitSystem(params.unitSystem)
+                        .withLocCatLike(params.locCatLike)
+                        .withLocGroupLike(params.locGroupLike)
+                        .withTsCatLike(params.tsCatLike)
+                        .withTsGroupLike(params.tsGroupLike)
+                        .withBoundingOfficeLike(params.boundingOfficeLike)
+                        .withIncludeExtents(params.includeExtents);
+            }
+
+
+            public CatalogRequestParameters build() {
+                return new CatalogRequestParameters(this);
+            }
+        }
+
+        // This is supposed to answer the question of whether the current set of request parameters
+        // needs the specified table to be joined into the query.
+        public boolean needs(Table table) {
+            if (table == AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN) {
+                return locCatLike != null || locGroupLike != null;
+            }
+
+            if (table == AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN) {
+                return tsCatLike != null || tsGroupLike != null;
+            }
+
+            if (table == AV_LOC.AV_LOC) {
+                return boundingOfficeLike != null;
+            }
+
+            if (table == AV_TS_EXTENTS_UTC) {
+                return includeExtents;
+            }
+
+            return false;
+        }
+
     }
 }

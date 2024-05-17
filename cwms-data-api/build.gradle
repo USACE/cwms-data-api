@@ -46,6 +46,7 @@ dependencies {
         exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.jooq.pro-java-8", module: "jooq"
     }
 
     implementation(libs.slf4j)

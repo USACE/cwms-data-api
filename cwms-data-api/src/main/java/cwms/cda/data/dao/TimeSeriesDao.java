@@ -1,5 +1,6 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
@@ -9,8 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface TimeSeriesDao {
-
-    Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office);
 
     Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office, String idLike,
                                  String locCategoryLike, String locGroupLike,
@@ -22,6 +21,7 @@ public interface TimeSeriesDao {
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
+
     void store(TimeSeries timeSeries, boolean createAsLrts,
                StoreRule replaceAll, boolean overrideProtection);
 
@@ -34,10 +34,10 @@ public interface TimeSeriesDao {
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);
 
-
     List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
-                                         Timestamp pastLimit, Timestamp futureLimit);
+                                         Timestamp pastLimit, Timestamp futureLimit, UnitSystem unitSystem);
 
-    List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastLimit, Timestamp futureLimit);
+    List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastLimit,
+                                             Timestamp futureLimit, UnitSystem unitSystem);
 
 }

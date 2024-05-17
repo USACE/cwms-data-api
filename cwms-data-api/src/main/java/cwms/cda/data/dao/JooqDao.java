@@ -46,6 +46,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.ConnectionCallable;
 import org.jooq.ConnectionRunnable;
@@ -57,7 +58,10 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+
 
 public abstract class JooqDao<T> extends Dao<T> {
     protected static final int ORACLE_CURSOR_TYPE = -10;
@@ -173,6 +177,14 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
+    protected static Condition filterExact(Field<String> field, String filter) {
+        if (filter == null) {
+            return DSL.noCondition();
+        } else {
+            return field.eq(filter);
+        }
+    }
+
     /**
      * Oracle supports case insensitive regexp search but the syntax for calling it is a
      * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
@@ -182,7 +194,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      */
     public static Condition caseInsensitiveLikeRegexNullTrue(Field<String> field, String regex) {
         if (regex == null) {
-            return DSL.trueCondition();
+            return DSL.noCondition();
         }
         return caseInsensitiveLikeRegex(field, regex);
     }
@@ -192,8 +204,8 @@ public abstract class JooqDao<T> extends Dao<T> {
      * is one of several types of exception (e.q NotFound,
      * AlreadyExists, NullArg) that can be specially handled by ApiServlet
      * by returning specific HTTP codes or error messages.
-     * @param input
-     * @return
+     * @param input the observed exception
+     * @return An exception, possibly wrapped
      */
     public static RuntimeException wrapException(RuntimeException input) {
         RuntimeException retVal = input;
@@ -209,6 +221,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildInvalidItem(input);
         } else if (isCantSetSessionNoPermissions(input)) {
             retVal = buildNotAuthorizedForOffice(input);
+        } else if (isInvalidUnits(input)) {
+            retVal = buildInvalidUnits(input);
         }
 
         return retVal;
@@ -412,16 +426,80 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        InvalidItemException exception = new InvalidItemException(cause);
+        String message = "Invalid Item.";
 
         String localizedMessage = cause.getLocalizedMessage();
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 1) {
-                exception = new InvalidItemException(parts[0], cause);
+                message = parts[0];
             }
         }
-        return exception;
+        return new InvalidItemException(message, cause);
+    }
+
+    public static boolean isInvalidUnits(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            String message = sqlException.getLocalizedMessage();
+            int errorCode = sqlException.getErrorCode();
+
+            retVal = errorCode == 20998
+                    && message.contains("ORA-20102: The unit")
+                    && message.contains("is not a recognized CWMS Database unit for the")
+                ;
+        }
+        return retVal;
+    }
+
+    private static InvalidItemException buildInvalidUnits(RuntimeException input) {
+
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            // skip ahead in localizedMessage to "ORA-20102:"
+            String searchFor = "ORA-20102:";
+            int start = localizedMessage.indexOf(searchFor);
+            if (start >= 0) {
+                localizedMessage = localizedMessage.substring(start + searchFor.length());
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length >= 1) {
+                    localizedMessage = parts[0];
+                }
+            }
+        }
+
+        localizedMessage = sanitizeOrNull(localizedMessage);
+
+        if (localizedMessage == null || localizedMessage.isEmpty()) {
+            localizedMessage = "Invalid Units.";
+        }
+
+        return new InvalidItemException(localizedMessage, cause);
+    }
+
+    private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
+        if (localizedMessage != null && !localizedMessage.isEmpty()) {
+            int length = localizedMessage.length();
+            PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
+            localizedMessage = sanitizer.sanitize(localizedMessage);
+            if (localizedMessage.length() != length) {
+                // The message was sanitized, it crops everything after the bad input.
+                // If the message was "The unit: BADUNIT is not a recognized...."  and the sanitizer
+                // decides it doesn't like the word "BADUNIT" then the message will be cropped to
+                // "The unit: ".  Which is weird to return.  Just return null.
+                localizedMessage = null;
+            }
+        }
+        return localizedMessage;
     }
 
 

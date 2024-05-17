@@ -231,19 +231,20 @@ public class RatingController implements CrudHandler {
                 + "information from all offices shall be returned."),
         @OpenApiParam(name = UNIT,  description = "Specifies the "
                 + "unit or unit system of the response. Valid values for the unit "
-                + "field are:\r\n"
-                + "1. EN.   Specifies English unit system.  Rating "
+                + "field are:"
+                + "\n* `EN`  Specifies English unit system.  Rating "
                 + "values will be in the default English units for their "
-                + "parameters.\r\n"
-                + "2. SI.   Specifies the SI unit system.  Rating values "
-                + "will be in the default SI units for their parameters.\r\n"
-                + "3. Other. Any unit returned in the response to the units URI request "
+                + "parameters."
+                + "\n* `SI`   Specifies the SI unit system.  Rating values "
+                + "will be in the default SI units for their parameters."
+                + "\n* `Other`  Any unit returned in the response to the units URI request "
                 + "that is appropriate for the requested parameters."),
         @OpenApiParam(name = DATUM,  description = "Specifies the "
                 + "elevation datum of the response. This field affects only elevation"
-                + " Ratings. Valid values for this field are:\r\n1. NAVD88.  The "
-                + "elevation values will in the specified or default units above the "
-                + "NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the "
+                + " Ratings. Valid values for this field are:"
+                + "\n* `NAVD88`  The elevation values will in the "
+                + "specified or default units above the NAVD-88 datum."
+                + "\n* `NGVD29`  The elevation values will be in the "
                 + "specified or default units above the NGVD-29 datum."),
         @OpenApiParam(name = AT,  description = "Specifies the "
                 + "start of the time window for data to be included in the response. "
@@ -260,8 +261,11 @@ public class RatingController implements CrudHandler {
                 + "of UTC shall be used."),
         @OpenApiParam(name = FORMAT,  description = "Specifies the"
                 + " encoding format of the response. Valid values for the format "
-                + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
-                + "xml\r\n4.    json (default)")},
+                + "field for this URI are:"
+                + "\n* `tab`"
+                + "\n* `csv`"
+                + "\n* `xml`"
+                + "\n* `json` (default)")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON),
@@ -381,9 +385,6 @@ public class RatingController implements CrudHandler {
             RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
-
-            // If we wanted to do async I think it would be like this
-            //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
 
             String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
             if (body != null) {

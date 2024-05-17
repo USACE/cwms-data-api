@@ -46,6 +46,9 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.ForecastFileController;
+import cwms.cda.api.ForecastInstanceController;
+import cwms.cda.api.ForecastSpecController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
@@ -115,6 +118,7 @@ import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -157,6 +161,8 @@ import org.owasp.html.PolicyFactory;
         "/clobs/*",
         "/pools/*",
         "/specified-levels/*",
+        "/forecast-spec/*",
+        "/forecast-instance/*",
         "/standard-text-id/*"
 })
 public class ApiServlet extends HttpServlet {
@@ -267,7 +273,17 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(InvalidItemException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request.");
+                    CdaError re;
+                    String message = e.getMessage();
+                    if (message != null) {
+                        Map<String, Object> details = new LinkedHashMap<>();
+                        details.put("message", message);
+
+                        re = new CdaError("Bad Request.", details);
+                    } else {
+                        re = new CdaError("Bad Request.");
+                    }
+
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
@@ -277,7 +293,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
                 .exception(DeleteConflictException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Cannot perform requested delete. Data is referenced elsewhere in CWMS.", e.getDetails());
+                    CdaError re = new CdaError("Cannot perform requested delete. "
+                            + "Data is referenced elsewhere in CWMS.", e.getDetails());
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
@@ -387,12 +404,13 @@ public class ApiServlet extends HttpServlet {
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        String recentPath = "/timeseries/recent/{group-id}";
-        get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
+        String recentPath = "/timeseries/recent/";
+        get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
+
         String textTsPath = format("/timeseries/text/{%s}", NAME);
         cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         String textValuePath = textTsPath + "/value";
@@ -432,6 +450,14 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/forecast-instance/{" + Controllers.NAME + "}",
+                new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/forecast-spec/{" + Controllers.NAME + "}",
+                new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String forecastFilePath = "/forecast-instance/{" + NAME + "}/file-data";
+        get(forecastFilePath, new ForecastFileController(metrics));
+        addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
+
 
     }
 
@@ -463,7 +489,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
-        if(timeUnit != null && duration > 0) {
+        if (timeUnit != null && duration > 0) {
             staticInstance().after(path, ctx -> {
                 String method = ctx.req.getMethod();  // "GET"
                 if (ctx.status() == HttpServletResponse.SC_OK
@@ -509,7 +535,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     /**
-     * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
+     * Given a path like "/location/category/{category-id}" this method returns "{category-id}".
      * @param fullPath
      * @return
      */
@@ -609,7 +635,7 @@ public class ApiServlet extends HttpServlet {
         // If something is set in the environment, make that the new default.
         // This is useful because Docker makes it easy to set environment variables.
         String envProvider = System.getenv(PROVIDER_KEY_OLD);
-        if( envProvider == null) {
+        if (envProvider == null) {
             envProvider = System.getenv(PROVIDER_KEY);
         }
         if (envProvider != null) {
