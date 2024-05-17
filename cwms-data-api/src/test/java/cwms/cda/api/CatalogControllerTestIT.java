@@ -4,7 +4,6 @@ import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,24 +27,33 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 public class CatalogControllerTestIT extends DataApiTestIT {
 
+    public static final String OFFICE = "SPK";
+
+    //// These have to match the groups in ts_catalog_setup.sql
+    public static final String A_TO_M = "A to M";
+    public static final String N_TO_Z = "N to Z";
+    public static final String EVENS = "Evens";
+    public static final String TEST_CATEGORY = "Test Category";
+    ////
+
     @BeforeAll
     public static void setup_data() throws Exception {
         // Create some locations and create some ts.
-        createLocation("Alder Springs",true,"SPK");
-        createLocation("Wet Meadows",true,"SPK");
-        createLocation("Pine Flat-Outflow",true,"SPK");
-        createTimeseries("SPK","Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
-        createTimeseries("SPK","Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.one");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.two");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.three");
-        createTimeseries("SPK","Pine Flat-Outflow.Stage.Inst.15Minutes.0.four");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.one");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.two");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.three");
-        createTimeseries("SPK","Wet Meadows.Depth-SWE.Inst.15Minutes.0.four");
+        createLocation("Alder Springs",true, OFFICE);
+        createLocation("Wet Meadows",true, OFFICE);
+        createLocation("Pine Flat-Outflow",true, OFFICE);
+        createTimeseries(OFFICE,"Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
+        createTimeseries(OFFICE,"Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
+        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
+        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.one");
+        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.two");
+        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.three");
+        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.four");
+        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda");
+        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.one");
+        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.two");
+        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.three");
+        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.four");
 
         // Complicated
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
@@ -62,8 +70,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_no_aliased_results_returned() {
         given().accept(Formats.JSONV2)
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(OFFICE, "SPK")
-            .queryParam("like",".*-cda$")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE,".*-cda$")
         .when()
             .get("/catalog/TIMESERIES")
         .then()
@@ -80,8 +88,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_queries_are_case_insensitive() {
         given()
             .accept("application/json;version=2")
-            .queryParam("office", "SPK")
-            .queryParam("like","alder spRINgs.*-CDA$")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE,"alder spRINgs.*-CDA$")
         .when()
             .get("/catalog/TIMESERIES")
         .then()
@@ -159,17 +167,14 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_loc_group_with_ts_group() {
 
 
-        String nToZ = "N to Z";
-        String evens = "Evens";
-
         // filter by loc group and ts group should find the intersection
         given()
                 .accept("application/json;version=2")
-                .queryParam(OFFICE, "SPK")
-                .queryParam(LOCATION_CATEGORY_LIKE,"Test Category")
-                .queryParam(LOCATION_GROUP_LIKE, nToZ)
-                .queryParam(TIMESERIES_CATEGORY_LIKE,"Test Category")
-                .queryParam(TIMESERIES_GROUP_LIKE, evens)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
+                .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
+                .queryParam(TIMESERIES_CATEGORY_LIKE, TEST_CATEGORY)
+                .queryParam(TIMESERIES_GROUP_LIKE, EVENS)
             .when()
                 .get("/catalog/TIMESERIES")
             .then()
@@ -190,14 +195,13 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     @Test
     void test_loc_group() {
 
-        String aToM = "A to M";
 
         // filter by just loc group
         given()
                 .accept("application/json;version=2")
-                .queryParam(OFFICE, "SPK")
-                .queryParam(LOCATION_CATEGORY_LIKE,"Test Category")
-                .queryParam(LOCATION_GROUP_LIKE, aToM)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
+                .queryParam(LOCATION_GROUP_LIKE, A_TO_M)
                 .when()
                 .get("/catalog/TIMESERIES")
                 .then()
@@ -212,14 +216,14 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                 .body("entries[1].name",equalTo("Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda"))
         ;
 
-        String nToZ = "N to Z";
+
 
         // filter by just loc group
         given()
                 .accept("application/json;version=2")
-                .queryParam(OFFICE, "SPK")
-                .queryParam(LOCATION_CATEGORY_LIKE,"Test Category")
-                .queryParam(LOCATION_GROUP_LIKE, nToZ)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
+                .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
                 .when()
                 .get("/catalog/TIMESERIES")
                 .then()
@@ -248,11 +252,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     @Test
     void test_ts_with_bounding() {
 
-
         // we create Wet Meadows with a bounding office of SPK
         given()
                 .accept("application/json;version=2")
-                .queryParam(BOUNDING_OFFICE_LIKE, "SPK")
+                .queryParam(BOUNDING_OFFICE_LIKE, OFFICE)
                 .queryParam(LIKE, "^Wet Meadows.*")
                 .when()
                 .get("/catalog/TIMESERIES")
@@ -266,7 +269,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                 .body("entries.size()",greaterThan(3))
                 .body("entries.name",everyItem(startsWith("Wet Meadows")))
         ;
-
     }
 
 
