@@ -140,7 +140,7 @@ public class RatingController implements CrudHandler {
             String ratingSet = deserializeRatingSet(ctx);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             ratingDao.create(ratingSet, storeTemplate);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
         } catch (IOException | RatingException ex) {
             CdaError re = new CdaError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -189,19 +189,24 @@ public class RatingController implements CrudHandler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be deleted. "),
+            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the "
+                    + "effective dates to be deleted. "),
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the ratings to be deleted."),
-            @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window to delete. "
-                + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
+                    + "the ratings to be deleted."),
+            @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
+                    + "window to delete. The format for this field is ISO 8601 extended, "
+                    + "with optional offset and timezone, i.e., '"
                 + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-            @OpenApiParam(name = END, required = true, description = "The end of the time window to delete."
-                + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+            @OpenApiParam(name = END, required = true, description = "The end of the time window"
+                    + " to delete. The format for this field is ISO 8601 extended, with optional "
+                    + "offset and timezone, i.e., '"
                 + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-            @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
-                + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include offset or time zone information. "
-                + "Defaults to UTC."),
+            @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
+                    + "timezone to be used if the format of the "
+                + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include "
+                    + "offset or time zone information. Defaults to UTC."),
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
@@ -477,7 +482,7 @@ public class RatingController implements CrudHandler {
                     .getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx);
             ratingDao.store(ratingSet, storeTemplate);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).json("Updated RatingSet");
         } catch (IOException | RatingException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);

@@ -54,6 +54,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesGroupController implements CrudHandler {
@@ -75,32 +76,32 @@ public class TimeSeriesGroupController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
-                    + "timeseries group(s) whose data is to be included in the response. If this "
-                    + "field is not specified, matching timeseries groups information from all "
-                    + "offices shall be returned."),
-            @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
-                    + " the assigned timeseries in the returned timeseries groups. (default: true)"),
-            @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                    + "matching against the timeseries category id"),
-            @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                    + "matching against the timeseries group id")
-    },
+    @OpenApi(
+            queryParams = {
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
+                        + "timeseries group(s) whose data is to be included in the response. If this "
+                        + "field is not specified, matching timeseries groups information from all "
+                        + "offices shall be returned."),
+                @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
+                        + " the assigned timeseries in the returned timeseries groups. (default: true)"),
+                @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "matching against the timeseries category id"),
+                @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "matching against the timeseries group id")
+            },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {@OpenApiContent(isArray = true, from =
-                                    TimeSeriesGroup.class, type = Formats.JSON)
-                            }
-                    ),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the timeseries group(s) were not found."),
-                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
-                            + "implemented")}, description = "Returns CWMS Timeseries Groups "
-            + "Data", tags = {TAG})
+                @OpenApiResponse(status = STATUS_200,
+                        content = {@OpenApiContent(isArray = true, from =
+                                TimeSeriesGroup.class, type = Formats.JSON)
+                        }),
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the timeseries group(s) were not found."),
+                @OpenApiResponse(status = STATUS_501, description = "request format is not "
+                        + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
+            tags = {TAG})
     @Override
-    public void getAll(Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+    public void getAll(@NotNull Context ctx) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
@@ -136,27 +137,26 @@ public class TimeSeriesGroupController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
-                            + "the timeseries group whose data is to be included in the response")
+                @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                        + "the timeseries group whose data is to be included in the response")
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the timeseries group whose data is to be included"
-                            + " in the response."),
-                    @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
-                            + " the category containing the timeseries group whose data is to be "
-                            + "included in the response."),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the timeseries group whose data is to be included"
+                        + " in the response."),
+                @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
+                        + " the category containing the timeseries group whose data is to be "
+                        + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
-                    }
-
-                    )},
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
+                })
+            },
             description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
     @Override
-    public void getOne(Context ctx, String groupId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+    public void getOne(@NotNull Context ctx, @NotNull String groupId) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
@@ -216,8 +216,8 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -264,9 +264,9 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void update(Context ctx, String oldGroupId) {
+    public void update(@NotNull Context ctx, String oldGroupId) {
 
-        try (Timer.Context ignored = markAndTime(CREATE)){
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -282,7 +282,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                 timeSeriesGroupDao.unassignAllTs(deserialize);
             }
             timeSeriesGroupDao.assignTs(deserialize);
-            ctx.status(HttpServletResponse.SC_ACCEPTED);
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (JsonProcessingException ex) {
             CdaError re = new CdaError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -305,8 +305,8 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NonNull String groupId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)){
+    public void delete(@NotNull Context ctx, @NonNull String groupId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);

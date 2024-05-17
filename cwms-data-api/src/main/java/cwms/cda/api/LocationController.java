@@ -321,7 +321,7 @@ public class LocationController implements CrudHandler {
             }
             Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
             locationsDao.storeLocation(locationFromBody);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created Location");
+            ctx.status(HttpServletResponse.SC_OK).json("Created Location");
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -370,10 +370,10 @@ public class LocationController implements CrudHandler {
             if (!updatedLocation.getName().equalsIgnoreCase(existingLocation.getName())) {
                 //if name changed then delete location with old name
                 locationsDao.renameLocation(locationId, updatedLocation);
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated and renamed Location");
+                ctx.status(HttpServletResponse.SC_OK).json("Updated and renamed Location");
             } else {
                 locationsDao.storeLocation(updatedLocation);
-                ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated Location");
+                ctx.status(HttpServletResponse.SC_OK).json("Updated Location");
             }
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -419,7 +419,7 @@ public class LocationController implements CrudHandler {
             LocationsDao locationsDao = getLocationsDao(dsl);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             locationsDao.deleteLocation(locationId, office, cascadeDelete);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json(locationId + " Deleted");
+            ctx.status(HttpServletResponse.SC_OK).json(locationId + " Deleted");
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);
             if (cause != null && cause.getErrorCode() == 20031) {
