@@ -11,8 +11,6 @@ import java.util.List;
 
 public interface TimeSeriesDao {
 
-    Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office);
-
     Catalog getTimeSeriesCatalog(String cursor, int pageSize, String office, String idLike,
                                  String locCategoryLike, String locGroupLike,
                                  String tsCategoryLike, String tsGroupLike, String boundingOfficeLike);
