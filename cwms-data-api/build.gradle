@@ -123,6 +123,9 @@ dependencies {
     implementation(libs.activemq.artemis.client) {
         exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
     }
+    implementation(libs.activemq.artemis.stomp) {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+    }
     implementation(libs.camel.core)
     implementation(libs.camel.jms)
 
@@ -256,14 +259,14 @@ task run(type: JavaExec) {
 }
 
 task integrationTests(type: Test) {
-    dependsOn test
+//    dependsOn test
     dependsOn generateConfig
     dependsOn war
 
     useJUnitPlatform() {
         includeTags "integration"
     }
-    shouldRunAfter test
+//    shouldRunAfter test
     classpath += configurations.baseLibs
     classpath += configurations.tomcatLibs
     // The before all extension will take care of these properties

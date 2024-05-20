@@ -100,6 +100,7 @@ import io.javalin.core.security.RouteRole;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -122,6 +123,7 @@ import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +143,10 @@ import javax.sql.DataSource;
 
 import oracle.jdbc.driver.OracleConnection;
 import oracle.jms.AQjmsFactory;
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.jms.client.ActiveMQJMSConnectionFactory;
@@ -369,8 +374,6 @@ public class ApiServlet extends HttpServlet {
 
     private void setupQueuing() throws ServletException {
         try {
-            //TODO: determine how the port is configured
-            String activeMqUrl = "tcp://" + InetAddress.getLocalHost().getHostName() + ":61616";
             //wrapped DelegatingDataSource is used because internally AQJMS casts the returned connection
             //as an OracleConnection, but the JNDI pool is returning us a proxy, so unwrap it
             CamelContext camelContext = new DefaultCamelContext();
@@ -387,10 +390,12 @@ public class ApiServlet extends HttpServlet {
                 }
             }, true);
             camelContext.addComponent("oracleAQ", JmsComponent.jmsComponent(connectionFactory));
+            //TODO: determine how the port is configured
+            String activeMqUrl = "tcp://" + InetAddress.getLocalHost().getHostName() + ":61616?protocols=STOMP,CORE";
             ActiveMQServer server = ActiveMQServers.newActiveMQServer(new ConfigurationImpl()
-                    .setPersistenceEnabled(false)
-                    .addAcceptorConfiguration("default", activeMqUrl)
-                    .setJournalDirectory("target/data/journal")
+                    .addAcceptorConfiguration("tcp", activeMqUrl)
+                    .setPersistenceEnabled(true)
+                    .setJournalDirectory("build/data/journal")
                     //Need to update to verify roles
                     .setSecurityEnabled(false)
                     .addAcceptorConfiguration("invm", "vm://0"));
@@ -405,7 +410,7 @@ public class ApiServlet extends HttpServlet {
                             .log("Received message from ActiveMQ.Queue : ${body}")
                             //TODO: define standard naming
                             //TODO: register artemis queue names with Swagger UI
-                            .to("artemis:queue:ActiveMQ.Queue");
+                            .to("artemis:topic:ActiveMQ.Queue");
                 }
             });
             server.start();
