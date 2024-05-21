@@ -20,15 +20,8 @@
 
     <filter>
         <filter-name>CorsFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
-        <init-param>
-            <param-name>cors.allowed.origins</param-name>
-            <param-value>*</param-value>
-        </init-param>
-        <init-param>
-            <param-name>cors.allowed.methods</param-name>
-            <param-value>GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS</param-value>
-        </init-param>
+        <filter-class>cwms.cda.api.SimpleCorsFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>CorsFilter</filter-name>

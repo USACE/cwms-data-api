@@ -116,16 +116,6 @@ dependencies {
 
     implementation(libs.aqapi)
     implementation(libs.jmscommon)
-    //For some reason the caffeine transitive dependency makes gradle angry
-    implementation(libs.activemq.artemis.server) {
-        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
-    }
-    implementation(libs.activemq.artemis.client) {
-        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
-    }
-    implementation(libs.activemq.artemis.stomp) {
-        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
-    }
     implementation(libs.camel.core)
     implementation(libs.camel.jms)
 
