@@ -1,0 +1,10 @@
+@startuml
+participant "Oracle Queue" as OQ
+participant "Apache Camel" as AC
+participant "MessageQueueHandlerTomcat" as HR
+participant "SSE" as SSE
+
+OQ -> AC: Produce Message (AQAPI)
+AC -> HR: Consume/Transform/Route Message
+HR -> SSE: Deliver Message (SSE)
+@enduml
