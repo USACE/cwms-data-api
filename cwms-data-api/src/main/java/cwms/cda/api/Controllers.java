@@ -165,6 +165,8 @@ public final class Controllers {
     public static final String TRIM = "trim";
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
+    public static final String INCLUDE_EXTENTS = "include-extents";
+    public static final String EXCLUDE_EMPTY_EXTENTS = "exclude-empty-extents";
 
 
     static {

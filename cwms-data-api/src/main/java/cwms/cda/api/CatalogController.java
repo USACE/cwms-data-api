@@ -129,6 +129,14 @@ public class CatalogController implements CrudHandler {
                 @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                         + "matching against the location bounding office. "
                         + "When this field is used items with no bounding office set will not be present in results."),
+                @OpenApiParam(name = Controllers.INCLUDE_EXTENTS, type = Boolean.class, description = "Whether the returned "
+                        + "catalog entries should include timeseries extents. Only valid for TIMESERIES. "
+                        + "Default is true."),
+                @OpenApiParam(name = Controllers.EXCLUDE_EMPTY_EXTENTS, type = Boolean.class, description = "Specifies "
+                        + "whether Timeseries that have only empty extents [null, null, null, null] "
+                        + "should be excluded from the results.  This does not control whether the "
+                        + "extents are returned to the user, only whether matching timeseries are "
+                        + "excluded. Only valid for TIMESERIES. Default is true."),
             },
             pathParams = {
                 @OpenApiParam(name = "dataset",
@@ -192,8 +200,24 @@ public class CatalogController implements CrudHandler {
             Catalog cat = null;
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl, metrics);
-                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, office, like, locCategoryLike,
-                        locGroupLike, tsCategoryLike, tsGroupLike, boundingOfficeLike);
+
+                boolean includeExtents = ctx.queryParamAsClass(Controllers.INCLUDE_EXTENTS, Boolean.class).getOrDefault(true);
+                boolean excludeExtents = ctx.queryParamAsClass(Controllers.EXCLUDE_EMPTY_EXTENTS, Boolean.class).getOrDefault(true);
+
+                TimeSeriesDaoImpl.CatalogRequestParameters parameters = new TimeSeriesDaoImpl.CatalogRequestParameters.Builder()
+                        .withOffice(office)
+                        .withIdLike(like)
+                        .withLocCatLike(locCategoryLike)
+                        .withLocGroupLike(locGroupLike)
+                        .withTsCatLike(tsCategoryLike)
+                        .withTsGroupLike(tsGroupLike)
+                        .withBoundingOfficeLike(boundingOfficeLike)
+                        .withIncludeExtents(includeExtents)
+                        .withExcludeEmptyExtents(excludeExtents)
+                        .build();
+
+                cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, parameters);
+
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
                 LocationsDao dao = new LocationsDaoImpl(dsl);
                 cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like,
