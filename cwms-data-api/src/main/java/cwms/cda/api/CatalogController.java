@@ -4,7 +4,9 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
 import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_EXTENTS;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATIONS;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
@@ -26,6 +28,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.data.dao.CatalogRequestParameters;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
@@ -42,6 +45,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -57,7 +64,7 @@ public class CatalogController implements CrudHandler {
 
     private final Histogram requestResultSize;
 
-    private final int defaultPageSize = 500;
+    private static final int DEFAULT_PAGE_SIZE = 500;
 
     public CatalogController(MetricRegistry metrics) {
         this.metrics = metrics;
@@ -129,10 +136,11 @@ public class CatalogController implements CrudHandler {
                 @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                         + "matching against the location bounding office. "
                         + "When this field is used items with no bounding office set will not be present in results."),
-                @OpenApiParam(name = Controllers.INCLUDE_EXTENTS, type = Boolean.class, description = "Whether the returned "
-                        + "catalog entries should include timeseries extents. Only valid for TIMESERIES. "
-                        + "Default is true."),
-                @OpenApiParam(name = Controllers.EXCLUDE_EMPTY_EXTENTS, type = Boolean.class, description = "Specifies "
+                @OpenApiParam(name = Controllers.INCLUDE_EXTENTS, type = Boolean.class,
+                        description = "Whether the returned catalog entries should include timeseries "
+                                + "extents. Only valid for TIMESERIES. Default is true."),
+                @OpenApiParam(name = Controllers.EXCLUDE_EMPTY, type = Boolean.class,
+                        description = "Specifies "
                         + "whether Timeseries that have only empty extents [null, null, null, null] "
                         + "should be excluded from the results.  This does not control whether the "
                         + "extents are returned to the user, only whether matching timeseries are "
@@ -166,7 +174,7 @@ public class CatalogController implements CrudHandler {
                     String.class, "", metrics, name(CatalogController.class.getName(), GET_ONE));
 
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE              },
-                    Integer.class, defaultPageSize, metrics,
+                    Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(CatalogController.class.getName(), GET_ONE));
 
             String unitSystem = queryParamAsClass(ctx,
@@ -201,10 +209,12 @@ public class CatalogController implements CrudHandler {
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl, metrics);
 
-                boolean includeExtents = ctx.queryParamAsClass(Controllers.INCLUDE_EXTENTS, Boolean.class).getOrDefault(true);
-                boolean excludeExtents = ctx.queryParamAsClass(Controllers.EXCLUDE_EMPTY_EXTENTS, Boolean.class).getOrDefault(true);
+                boolean includeExtents = ctx.queryParamAsClass(INCLUDE_EXTENTS, Boolean.class)
+                        .getOrDefault(true);
+                boolean excludeExtents = ctx.queryParamAsClass(EXCLUDE_EMPTY, Boolean.class)
+                        .getOrDefault(true);
 
-                TimeSeriesDaoImpl.CatalogRequestParameters parameters = new TimeSeriesDaoImpl.CatalogRequestParameters.Builder()
+                CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
                         .withOffice(office)
                         .withIdLike(like)
                         .withLocCatLike(locCategoryLike)
@@ -213,15 +223,38 @@ public class CatalogController implements CrudHandler {
                         .withTsGroupLike(tsGroupLike)
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withIncludeExtents(includeExtents)
-                        .withExcludeEmptyExtents(excludeExtents)
+                        .withExcludeEmpty(excludeExtents)
                         .build();
 
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, parameters);
 
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
+
+                Set<String> notSupported = new LinkedHashSet<>();
+                notSupported.add(TIMESERIES_CATEGORY_LIKE);
+                notSupported.add(TIMESERIES_GROUP_LIKE);
+                notSupported.add(EXCLUDE_EMPTY);
+                notSupported.add(INCLUDE_EXTENTS);
+
+                Map<String, List<String>> queryParamMap = ctx.queryParamMap();
+                notSupported.retainAll(queryParamMap.keySet());
+
+                if (!notSupported.isEmpty()) {
+                    throw new IllegalArgumentException("The following parameters are not yet "
+                            + "supported for location: " + notSupported);
+                }
+
+                CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
+                        .withUnitSystem(unitSystem)
+                        .withOffice(office)
+                        .withIdLike(like)
+                        .withLocCatLike(locCategoryLike)
+                        .withLocGroupLike(locGroupLike)
+                        .withBoundingOfficeLike(boundingOfficeLike)
+                        .build();
+
                 LocationsDao dao = new LocationsDaoImpl(dsl);
-                cat = dao.getLocationCatalog(cursor, pageSize, unitSystem, office, like,
-                        locCategoryLike, locGroupLike, boundingOfficeLike);
+                cat = dao.getLocationCatalog(cursor, pageSize, parameters);
             }
             if (cat != null) {
                 String data = Formats.format(contentType, cat);

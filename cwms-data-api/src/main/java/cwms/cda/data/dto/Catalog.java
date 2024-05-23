@@ -1,6 +1,7 @@
 package cwms.cda.data.dto;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dao.CatalogRequestParameters;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
@@ -39,22 +40,12 @@ public class Catalog extends CwmsDTOPaginated {
     }
 
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries) {
-        this(page, total, pageSize, entries,
-                null,
-                null, null, null,
-                null,
-                null, null,
-                false, true);
+        this(page, total, pageSize, entries, new CatalogRequestParameters.Builder().build());
     }
 
 
-    @SuppressWarnings("java:S107") // This just has this many parameters.
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries,
-                   String office,
-                   String idLike, String locCategoryLike, String locGroupLike,
-                   String tsCategoryLike,
-                   String tsGroupLike, String boundingOfficeLike,
-                   boolean includeExtents, boolean excludeEmpty) {
+                   CatalogRequestParameters param) {
         super(page, pageSize, total);
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
@@ -62,15 +53,7 @@ public class Catalog extends CwmsDTOPaginated {
         if (entries.size() == pageSize) {
             nextPage = encodeCursor(new CatalogPage(
                             entries.get(entries.size() - 1).getCursor(),
-                            office,
-                            idLike,
-                            locCategoryLike,
-                            locGroupLike,
-                            tsCategoryLike,
-                            tsGroupLike,
-                            boundingOfficeLike,
-                            includeExtents,
-                            excludeEmpty
+                            param
                     ).toString(),
                     pageSize, total);
 
@@ -114,8 +97,8 @@ public class Catalog extends CwmsDTOPaginated {
                         + "you are using a page variable from the catalog endpoint");
             }
             String[] idParts = parts[0].split("/");
-            curOffice = idParts[0];
-            cursorId = idParts[1];
+            curOffice = idParts[0];  // this is the cursor office
+            cursorId = idParts[1];   // this is the cursor id
             searchOffice = nullOrVal(parts[1]);
             idLike = nullOrVal(parts[2]);
             locCategoryLike = nullOrVal(parts[3]);
@@ -129,23 +112,22 @@ public class Catalog extends CwmsDTOPaginated {
             pageSize = Integer.parseInt(parts[11]);
         }
 
-        public CatalogPage(String curElement, String office, String idLike,
-                           String locCategoryLike, String locGroupLike,
-                           String tsCategoryLike, String tsGroupLike, String boundingLike,
-                           boolean includeExtents, boolean excludeEmpty) {
 
+
+        public CatalogPage(String curElement, CatalogRequestParameters params) {
             String[] parts = curElement.split("/");
             this.curOffice = parts[0];
             this.cursorId = parts[1];
-            this.searchOffice = office;
-            this.idLike = idLike;
-            this.locCategoryLike = locCategoryLike;
-            this.locGroupLike = locGroupLike;
-            this.tsCategoryLike = tsCategoryLike;
-            this.tsGroupLike = tsGroupLike;
-            this.boundingOfficeLike = boundingLike;
-            this.includeExtents = includeExtents;
-            this.excludeEmpty = excludeEmpty;
+
+            this.searchOffice = params.getOffice();
+            this.idLike = params.getIdLike();
+            this.locCategoryLike = params.getLocCatLike();
+            this.locGroupLike = params.getLocGroupLike();
+            this.tsCategoryLike = params.getTsCatLike();
+            this.tsGroupLike = params.getTsGroupLike();
+            this.boundingOfficeLike = params.getBoundingOfficeLike();
+            this.includeExtents = params.isIncludeExtents();
+            this.excludeEmpty = params.isExcludeEmpty();
         }
 
         private String nullOrVal(String val) {
