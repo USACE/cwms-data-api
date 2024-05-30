@@ -223,8 +223,7 @@ public class LevelsController implements CrudHandler {
                         + "the default SI units for their parameters."
                         + "\n* `Other`  "
                         + "Any unit returned in the response to the units URI request that is "
-                        + "appropriate for the requested parameters. The " + Formats.JSONV2
-                        + " format currently only supports SI."),
+                        + "appropriate for the requested parameters. "),
                 @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                         + " the response. This field affects only elevation location levels. "
                         + "Valid values for this field are:"
@@ -284,7 +283,7 @@ public class LevelsController implements CrudHandler {
                     name(LevelsController.class.getName(), GET_ALL));
 
             String office = ctx.queryParam(OFFICE);
-            String unit = ctx.queryParam(UNIT);
+            String unit = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.getValue());
             String datum = ctx.queryParam(DATUM);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
@@ -293,14 +292,6 @@ public class LevelsController implements CrudHandler {
                     .getOrDefault("UTC");
 
             if ("2".equals(version)) {
-
-                if (unit == null) {
-                    // The dao currently only supports SI.
-                    unit = UnitSystem.SI.getValue();
-                }
-                if (!UnitSystem.SI.getValue().equals(unit)) {
-                    throw new IllegalArgumentException("Levels Version 2 currently only supports SI");
-                }
 
                 String cursor = ctx.queryParamAsClass(PAGE, String.class)
                         .getOrDefault("");
