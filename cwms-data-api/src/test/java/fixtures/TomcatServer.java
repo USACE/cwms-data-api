@@ -1,7 +1,7 @@
 package fixtures;
 
-import java.io.File;
-
+import com.google.common.flogger.FluentLogger;
+import fixtures.tomcat.SingleSignOnWrapper;
 import org.apache.catalina.Container;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
@@ -14,9 +14,7 @@ import org.apache.catalina.startup.ExpandWar;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
 
-import com.google.common.flogger.FluentLogger;
-
-import fixtures.tomcat.SingleSignOnWrapper;
+import java.io.File;
 
 
 /**
@@ -73,6 +71,17 @@ public class TomcatServer {
             ExpandWar.delete(existingCda);
             ExpandWar.delete(new File(existingCda.getAbsolutePath()+".war"));
             ExpandWar.copy(cda, new File(tomcatInstance.getHost().getAppBaseFile(),contextName + ".war"));
+        } catch( Exception ex) {
+            throw new Exception("Unable to setup war",ex);
+        }
+
+
+        File artemis = new File("../artemis/build/libs/artemis-3.1.0.war");
+        try {
+            File existingAremis = new File(tomcatInstance.getHost().getAppBaseFile().getAbsolutePath(),"artemis");
+            ExpandWar.delete(existingAremis);
+            ExpandWar.delete(new File(existingAremis.getAbsolutePath()+".war"));
+            ExpandWar.copy(artemis, new File(tomcatInstance.getHost().getAppBaseFile(),"artemis" + ".war"));
         } catch( Exception ex) {
             throw new Exception("Unable to setup war",ex);
         }

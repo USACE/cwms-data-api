@@ -114,18 +114,6 @@ dependencies {
 
     implementation(libs.bundles.jackson)
 
-    implementation(libs.aqapi)
-    implementation(libs.jmscommon)
-    //For some reason the caffeine transitive dependency makes gradle angry
-    implementation(libs.activemq.artemis.server) {
-        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
-    }
-    implementation(libs.activemq.artemis.client) {
-        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
-    }
-    implementation(libs.camel.core)
-    implementation(libs.camel.jms)
-
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.mockito.core)
@@ -231,6 +219,8 @@ task generateConfig(type: Copy) {
 task run(type: JavaExec) {
     group "application"
     dependsOn generateConfig
+
+    dependsOn(':artemis:war')
     dependsOn war
 
     classpath += configurations.baseLibs

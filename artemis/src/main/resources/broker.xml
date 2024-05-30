@@ -1,0 +1,33 @@
+<configuration xmlns="urn:activemq"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+
+    <core xmlns="urn:activemq:core">
+
+        <name>ActiveMQServer</name>
+
+        <persistence-enabled>true</persistence-enabled>
+
+        <journal-directory>data/journal</journal-directory>
+        <bindings-directory>data/bindings</bindings-directory>
+        <large-messages-directory>data/large-messages</large-messages-directory>
+        <paging-directory>data/paging</paging-directory>
+
+        <security-settings>
+            <!-- Default security configuration -->
+        </security-settings>
+
+        <address-settings>
+            <!-- Default address configuration -->
+            <address-setting match="#">
+                <auto-create-queues>true</auto-create-queues>
+                <auto-create-addresses>true</auto-create-addresses>
+            </address-setting>
+        </address-settings>
+
+        <acceptors>
+            <acceptor name="in-vm">vm://0</acceptor>
+        </acceptors>
+        <security-enabled>false</security-enabled>
+    </core>
+</configuration>

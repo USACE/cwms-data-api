@@ -1,0 +1,23 @@
+plugins {
+    id 'cda.deps-conventions'
+    id 'cda.java-conventions'
+    id 'war'
+}
+dependencies {
+    //For some reason the caffeine transitive dependency makes gradle angry
+    implementation(libs.activemq.artemis.server) {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+    }
+    implementation(libs.activemq.artemis.rest) {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+        exclude group: "org.eclipse.jetty.websocket", module: "*"
+        exclude group: "javax.websocket", module: "*"
+        exclude group: "org.eclipse.jetty.aggregate", module: "jetty-all"
+    }
+    implementation(libs.aqapi)
+    implementation(libs.jmscommon)
+    implementation(libs.camel.core)
+    implementation(libs.camel.jms)
+    compileOnly(libs.javaee.web.api)
+    compileOnly(libs.oracle.jdbc.driver)
+}

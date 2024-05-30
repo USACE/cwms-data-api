@@ -467,8 +467,7 @@ public class LocationController implements CrudHandler {
         try {
             retVal = new Location.Builder(om.readValue(body, Location.class)).build();
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to deserialize location", e);
-            throw new IOException("Failed to deserialize location");
+            throw new IOException("Failed to deserialize location", e);
         }
         return retVal;
     }

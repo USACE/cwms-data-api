@@ -1,0 +1,35 @@
+<web-app>
+    <listener>
+        <listener-class>
+            org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
+        </listener-class>
+    </listener>
+
+    <listener>
+        <listener-class>
+            org.apache.activemq.artemis.rest.integration.ActiveMQBootstrapListener
+        </listener-class>
+    </listener>
+
+    <listener>
+        <listener-class>
+            org.apache.activemq.artemis.rest.integration.RestMessagingBootstrapListener
+        </listener-class>
+    </listener>
+
+    <listener>
+        <listener-class>cwms.messaging.CamelServletContextListener</listener-class>
+    </listener>
+
+    <filter>
+        <filter-name>Rest-Messaging</filter-name>
+        <filter-class>
+            org.jboss.resteasy.plugins.server.servlet.FilterDispatcher
+        </filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Rest-Messaging</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+</web-app>

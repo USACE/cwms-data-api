@@ -19,3 +19,4 @@ rootProject.name = 'cwms-data-api'
 
 include ":access-manager-api"
 include ":cwms-data-api"
+include ":artemis"
