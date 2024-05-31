@@ -1,0 +1,7 @@
+{
+  "category": "PropertyControllerIT",
+  "name": "test_update_does_not_exist",
+  "office-id": "SPK",
+  "value": "test value",
+  "comment": "integration test"
+}

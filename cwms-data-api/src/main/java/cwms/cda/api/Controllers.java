@@ -110,6 +110,7 @@ public final class Controllers {
     public static final String INTERVAL_OFFSET = "interval-offset";
     public static final String INTERVAL = "interval";
     public static final String CATEGORY_ID = "category-id";
+    public static final String CATEGORY_ID_MASK = "category-id-mask";
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
 
@@ -150,6 +151,7 @@ public final class Controllers {
     public static final String HAS_DATA = "has-data";
     public static final String STATUS_200 = "200";
     public static final String STATUS_201 = "201";
+    public static final String STATUS_204 = "204";
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
@@ -164,6 +166,7 @@ public final class Controllers {
     public static final String DESIGNATOR_MASK = "designator-mask";
     public static final String INCLUDE_EXTENTS = "include-extents";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
+    public static final String DEFAULT_VALUE = "default-value";
 
 
     static {
