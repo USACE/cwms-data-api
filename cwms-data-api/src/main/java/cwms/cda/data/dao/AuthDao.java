@@ -8,6 +8,7 @@ import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
 import cwms.cda.datasource.DirectUserPreparer;
 import cwms.cda.datasource.SessionOfficePreparer;
+import cwms.cda.datasource.SessionTimeZonePreparer;
 import cwms.cda.helpers.ResourceHelper;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
@@ -45,7 +46,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
     // At this level we just care that the user has permissions in *any* office
-    private static final String RETRIEVE_GROUPS_OF_USER = ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql",AuthDao.class);
+    private static final String RETRIEVE_GROUPS_OF_USER =
+            ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql", AuthDao.class);
 
     private static final String SET_API_USER_DIRECT = "begin "
         + "cwms_env.set_session_user_direct(upper(?));"
@@ -60,10 +62,14 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     private static final String USER_FOR_EDIPI =
         "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
 
-    public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys(userid,key_name,apikey,created,expires) values(UPPER(?),?,?,?,?)";
-    public static final String REMOVE_API_KEY = "delete from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
-    public static final String LIST_KEYS = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
-    public static final String GET_SINGLE_KEY = "select userid,key_name,created,expires from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys"
+            + "(userid, key_name, apikey, created, expires) values(UPPER(?),?,?,?,?)";
+    public static final String REMOVE_API_KEY = "delete from cwms_20.at_api_keys "
+            + "where UPPER(userid) = UPPER(?) and key_name = ?";
+    public static final String LIST_KEYS = "select userid, key_name, created, expires "
+            + "from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) order by created desc";
+    public static final String GET_SINGLE_KEY = "select userid, key_name, created, expires "
+            + "from cwms_20.at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
     public static final String ONLY_OWN_KEY_MESSAGE = "You may not create API keys for any user other than your own.";
 
     private static boolean hasCwmsEnvMultiOfficeAuthFix = false;
@@ -103,9 +109,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * Get Appropriate instance of the AuthDAO. Setup with the given DSLContext.
      * The instance of AuthDAO returned is local to a given servicing thread.
      *
-     * @param dsl
+     * @param dsl the DSLContext to use
      * @param defaultOffice can be null
-     * @return
+     * @return an instance of the AuthDAO
      */
     public static AuthDao getInstance(DSLContext dsl, String defaultOffice) {
         AuthDao dao = instance.get();
@@ -121,8 +127,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     /**
      * Used in sections of code that will always be called after the default office is set
      * but that still need to interact with this DAO.
-     * @param dsl
-     * @return
+     * @param dsl the DSLContext to use
+     * @return an instance of the AuthDAO
      */
     public static AuthDao getInstance(DSLContext dsl) {
         return getInstance(dsl, null);
@@ -135,7 +141,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     /**
      * Reserved for future use, get user principal by presented unique name and office.
-     * (Also required by Dao<dataApiPrincipal>)
+     * (Also required by Dao&lt;DataApiPrincipal&gt;)
      */
     @Override
     public Optional<DataApiPrincipal> getByUniqueName(String uniqueName, String limitToOffice) throws CwmsAuthException {
@@ -157,7 +163,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     /**
      * Setup session environment so we can query the required tables.
      * @param conn the connection to setup.
-     * @throws SQLException
+     * @throws SQLException if there is an issue setting up the session.
      */
     private void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
@@ -205,7 +211,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      *
      * @param edipi the edipi to look up.
      * @return the username for the given edipi.
-     * @throws CwmsAuthException
+     * @throws CwmsAuthException if the user is not in the database.
      */
     private String userForEdipi(long edipi) throws CwmsAuthException {
         try {
@@ -236,7 +242,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     /**
      * Build a DataApiPrincipal from a given EDIPI value.
      * @param edipi the Edipi value to look up.
-     * @return
+     * @return the DataApiPrincipal object for the given edipi.
+     * @throws CwmsAuthException if the user is not in the database.
      */
     public DataApiPrincipal getPrincipalFromEdipi(Long edipi) throws CwmsAuthException {
         String username = userForEdipi(edipi);
@@ -302,6 +309,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param ctx the context to check
      * @param p the principal to check
      * @param routeRoles the required roles
+     * @throws CwmsAuthException if the user is not authorized
      */
     public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles) throws CwmsAuthException {
         if (routeRoles == null || routeRoles.isEmpty()) {
@@ -326,9 +334,10 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      */
     public void prepareGuestContext(Context ctx) {
         DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        SessionTimeZonePreparer utcPrep = new SessionTimeZonePreparer();
         ConnectionPreparer officePreparer = new SessionOfficePreparer(defaultOffice);
         ConnectionPreparer userPreparer = new DirectUserPreparer(connectionUser);
-        ConnectionPreparer guestPreparer = new DelegatingConnectionPreparer(userPreparer,officePreparer);
+        ConnectionPreparer guestPreparer = new DelegatingConnectionPreparer(utcPrep, userPreparer, officePreparer);
 
         if (dataSource instanceof ConnectionPreparingDataSource) {
             ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
@@ -358,6 +367,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param p Principal object, to get the username
      * @param sourceData new key is created based on userId, keyname and expires info from this key.
      * @return The created ApiKey
+     * @throws CwmsAuthException if the key cannot be created.
      */
     public ApiKey createApiKey(DataApiPrincipal p, ApiKey sourceData) throws CwmsAuthException {
 
@@ -371,16 +381,24 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                                  .limit(256)
                                  .collect(StringBuilder::new,StringBuilder::appendCodePoint, StringBuilder::append)
                                  .toString();
-            final ApiKey newKey = new ApiKey(sourceData.getUserId().toUpperCase(),sourceData.getKeyName(),key,ZonedDateTime.now(ZoneId.of("UTC")),sourceData.getExpires());
+            final ApiKey newKey = new ApiKey(
+                    sourceData.getUserId().toUpperCase(),
+                    sourceData.getKeyName(),
+                    key,
+                    ZonedDateTime.now(ZoneId.of("UTC")),
+                    sourceData.getExpires()
+            );
             dsl.connection(c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
-                    createKey.setString(1,newKey.getUserId());
-                    createKey.setString(2,newKey.getKeyName());
-                    createKey.setString(3,newKey.getApiKey());
-                    createKey.setDate(4,new Date(newKey.getCreated().toInstant().toEpochMilli()),Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+                    createKey.setString(1, newKey.getUserId());
+                    createKey.setString(2, newKey.getKeyName());
+                    createKey.setString(3, newKey.getApiKey());
+                    createKey.setDate(4, new Date(newKey.getCreated().toInstant().toEpochMilli()),
+                            Calendar.getInstance(TimeZone.getTimeZone("UTC")));
                     if (newKey.getExpires() != null) {
-                        createKey.setDate(5,new Date(newKey.getExpires().toInstant().toEpochMilli()),Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+                        createKey.setDate(5, new Date(newKey.getExpires().toInstant().toEpochMilli()),
+                                Calendar.getInstance(TimeZone.getTimeZone("UTC")));
                     } else {
                         createKey.setDate(5,null);
                     }
@@ -389,14 +407,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             });
             return newKey;
         } catch (NoSuchAlgorithmException ex) {
-            throw new CwmsAuthException("Unable to generate appropriate key.", ex, HttpCode.INTERNAL_SERVER_ERROR.getStatus());
+            throw new CwmsAuthException("Unable to generate appropriate key.", ex,
+                    HttpCode.INTERNAL_SERVER_ERROR.getStatus());
         }
 
 
     }
 
     /**
-     * Return all API Keys for a given user
+     * Return all API Keys for a given user.
      * @param p User for which we want the keys
      * @return List of all the keys, with the actual key removed (only user,name,created, and expires)
      */
@@ -423,7 +442,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                 singleKey.setString(1,p.getName());
                 singleKey.setString(2,keyName);
                 try (ResultSet rs = singleKey.executeQuery()) {
-                    if(rs.next()) {
+                    if (rs.next()) {
                         return rs2ApiKey(rs);
                     } else {
                         return null;
@@ -442,7 +461,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     }
 
     /**
-     * Remove a given API Key
+     * Remove a given API Key.
      * @param p User principal to narrow and limit request
      * @param keyName name of the key to remove
      */
@@ -463,7 +482,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     }
 
     /**
-     * Used to avoid constant instancing of the AuthDao objects
+     * Used to avoid constant instancing of the AuthDao objects.
      * @param dslContext The jOOQ DSLContext
      */
     public void resetContext(DSLContext dslContext) {

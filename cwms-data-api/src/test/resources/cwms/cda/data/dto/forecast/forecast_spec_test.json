@@ -6,17 +6,8 @@
   "designator": "designator",
   "description": "description",
   "time-series-ids": [
-    {
-      "time-series-id": "tsid1",
-      "active": false
-    },
-    {
-      "time-series-id": "tsid2",
-      "active": false
-    },
-    {
-      "time-series-id": "tsid3",
-      "active": false
-    }
+    "tsid1",
+    "tsid2",
+    "tsid3"
   ]
 }

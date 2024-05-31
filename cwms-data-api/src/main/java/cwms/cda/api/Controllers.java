@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
@@ -34,6 +35,8 @@ import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
+
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,6 +80,7 @@ public final class Controllers {
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
+    public static final String BLOB_ID = "blob-id";
     public static final String INCLUDE_VALUES = "include-values";
     public static final String FAIL_IF_EXISTS = "fail-if-exists";
     public static final String IGNORE_NULLS = "ignore-nulls";
@@ -121,6 +125,11 @@ public final class Controllers {
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
 
+    public static final String LOCATION_ID = "location-id";
+    public static final String SOURCE_ENTITY = "source-entity";
+    public static final String FORECAST_DATE = "forecast-date";
+    public static final String ISSUE_DATE = "issue-date";
+
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
@@ -128,8 +137,9 @@ public final class Controllers {
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
-    public static final String ID_MASK = "id-mask";
     public static final String OFFICE_MASK = "office-mask";
+    public static final String ID_MASK = "id-mask";
+    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -153,11 +163,14 @@ public final class Controllers {
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String TRIM = "trim";
+    public static final String DESIGNATOR = "designator";
+    public static final String DESIGNATOR_MASK = "designator-mask";
 
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
     }
 
     private Controllers() {
@@ -298,6 +311,16 @@ public final class Controllers {
         return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
+    @Nullable
+    public static Instant queryParamAsInstant(Context ctx, String param) {
+        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+        Instant retval = null;
+        if(zonedDateTime != null) {
+            retval = zonedDateTime.toInstant();
+        }
+        return retval;
+    }
+
     /**
      * Parses the named parameters as ZonedDateTime or throws RequiredQueryParameterException.
      * @param ctx Request Context
@@ -311,6 +334,21 @@ public final class Controllers {
             throw new RequiredQueryParameterException(param);
         }
         return zdt;
+    }
+
+    /**
+     * Parses the named parameters as Instant or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param param Query parameter name
+     * @return Instant
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static Instant requiredInstant(Context ctx, String param) {
+        Instant retval = queryParamAsInstant(ctx, param);
+        if (retval == null) {
+            throw new RequiredQueryParameterException(param);
+        }
+        return retval;
     }
 
 

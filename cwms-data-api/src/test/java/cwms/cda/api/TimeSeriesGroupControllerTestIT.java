@@ -107,7 +107,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_group_CWMS() throws Exception {
+    void test_group_CWMS() {
 
         Response response = 
             given()
@@ -237,7 +237,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -288,12 +288,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     private static BigDecimal getTsCode(String officeId, String timeSeriesId) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        BigDecimal tsCode = db.connection((c) -> {
+        return db.connection((c) -> {
             Configuration configuration = OracleDSL.using(c).configuration();
             BigDecimal officeCode = CWMS_UTIL_PACKAGE.call_GET_OFFICE_CODE(configuration, officeId);
             return CWMS_TS_PACKAGE.call_GET_TS_CODE(configuration, timeSeriesId, officeCode);
         }, db.getPdUser());
-        return tsCode;
     }
 
     @Test
@@ -365,7 +364,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -406,7 +405,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -510,7 +509,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -551,7 +550,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)

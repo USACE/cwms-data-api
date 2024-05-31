@@ -1,13 +1,13 @@
 #name: cwms
 volumes:
-  oracle_data:
+  oracle_data_1:
   auth_data:
 services:
   db:
     # if using gvenzl/oracle-xe you'll need to adjust the environment below
     image: ${ORACLE_DOCKER_IMAGE}
     volumes:
-      - oracle_data:/opt/oracle/oradata
+      - oracle_data_1:/opt/oracle/oradata
     environment:
       - ORACLE_PDB=CWMS
       - ORACLE_PWD=badSYSpassword

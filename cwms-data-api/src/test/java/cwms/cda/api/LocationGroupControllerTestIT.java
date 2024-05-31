@@ -310,7 +310,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -416,7 +416,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_ACCEPTED));
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)

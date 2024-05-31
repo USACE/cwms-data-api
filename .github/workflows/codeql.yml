@@ -1,0 +1,37 @@
+name: "CodeQL"
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+  schedule:
+    - cron: '0 0 * * 0'
+
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3.24.10
+        with:
+          languages: 'java'
+      - name: setup java
+        uses: actions/setup-java@v4.2.1
+        with:
+          java-version: '8'
+          java-package: jdk
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3.1.0
+        with:
+          dependency-graph: generate-and-submit
+      - name: build and test
+        id: build
+        run: ./gradlew build --info --init-script init.gradle
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3.24.10

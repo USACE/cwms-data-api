@@ -24,9 +24,22 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TS_IDS;
+import static cwms.cda.api.Controllers.UNIT_SYSTEM;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -43,10 +56,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -63,9 +72,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 public class TimeSeriesRecentController implements Handler {
     private static final Logger logger = Logger.getLogger(TimeSeriesRecentController.class.getName());
@@ -87,7 +96,7 @@ public class TimeSeriesRecentController implements Handler {
 
     @NotNull
     private TimeSeriesDao getTimeSeriesDao(DSLContext dsl) {
-        return new TimeSeriesDaoImpl(dsl);
+        return new TimeSeriesDaoImpl(dsl, metrics);
     }
 
     @OpenApi(
@@ -100,9 +109,12 @@ public class TimeSeriesRecentController implements Handler {
                         + "of the timeseries to be included in the response.  Optional."),
                 @OpenApiParam(name = GROUP_ID, description = "Specifies the group id "
                         + "of the timeseries to be included in the response.  Optional."),
-                @OpenApiParam(name = TS_IDS, description = "Specifies a list of timeseries "
-                        + "ids to be included in the response.  Optional. Cannot be used in "
-                        + "combination with category_id and group_id."),
+                @OpenApiParam(name = TS_IDS, description = "Accepts a comma separated list of "
+                        + "timeseries ids to be included in the response.  Optional. "
+                        + "Cannot be used in combination with category_id and group_id."),
+                @OpenApiParam(name = UNIT_SYSTEM, type = UnitSystem.class, description = "Unit System desired in response. "
+                            + "Can be SI (International Scientific) or EN (Imperial.) If unspecified, "
+                            + "defaults to EN."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -120,14 +132,12 @@ public class TimeSeriesRecentController implements Handler {
     public void handle(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("getRecent")) {
-            DSLContext dsl = getDslContext(ctx);
-
-            TimeSeriesDao dao = getTimeSeriesDao(dsl);
-
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
-            String groupId = ctx.pathParamAsClass(GROUP_ID, String.class).allowNullable().get();
+            String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).allowNullable().get();
             String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).allowNullable().get();
+            UnitSystem unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, UnitSystem.class)
+                    .getOrDefault(UnitSystem.EN);
 
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
             gregorianCalendar.set(Calendar.HOUR, 0);
@@ -141,9 +151,12 @@ public class TimeSeriesRecentController implements Handler {
             Timestamp pastLimit = Timestamp.from(gregorianCalendar.toInstant());
 
             boolean hasTsGroupInfo = categoryId != null && !categoryId.isEmpty()
-                    && groupId != null && !groupId.isEmpty();
+                    || groupId != null && !groupId.isEmpty();
             List<String> tsIds = getTsIds(tsIdsParam);
             boolean hasTsIds = tsIds != null && !tsIds.isEmpty();
+
+            DSLContext dsl = getDslContext(ctx);
+            TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             List<RecentValue> latestValues;
             if (hasTsGroupInfo && hasTsIds) {
@@ -164,10 +177,9 @@ public class TimeSeriesRecentController implements Handler {
                 return;
             } else if (hasTsGroupInfo) {
                 // just group provided
-                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit,
-                        futureLimit);
+                latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit, unitSystem);
             } else {
-                latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit);
+                latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit, unitSystem);
             }
 
             String formatHeader = ctx.header(Header.ACCEPT);

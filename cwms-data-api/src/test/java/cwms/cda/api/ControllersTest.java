@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
@@ -313,6 +314,18 @@ class ControllersTest {
         assertEquals(VersionType.MAX_AGGREGATE, JavalinValidation.INSTANCE.convertValue(VersionType.class, "MAX_AGGREGATE"));
         assertEquals(VersionType.SINGLE_VERSION, JavalinValidation.INSTANCE.convertValue(VersionType.class, "SINGLE_VERSION"));
         assertEquals(VersionType.UNVERSIONED, JavalinValidation.INSTANCE.convertValue(VersionType.class, "UNVERSIONED"));
+    }
+
+    @Test
+    void testUnitSystemValidationRegistration() throws ClassNotFoundException {
+
+        // Trigger static initialization of Controllers class
+        Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
+        assertNotNull(ignored);
+
+        assertTrue(JavalinValidation.INSTANCE.hasConverter(UnitSystem.class));
+        assertEquals(UnitSystem.EN, JavalinValidation.INSTANCE.convertValue(UnitSystem.class, "EN"));
+        assertEquals(UnitSystem.SI, JavalinValidation.INSTANCE.convertValue(UnitSystem.class, "SI"));
     }
 
     @Test

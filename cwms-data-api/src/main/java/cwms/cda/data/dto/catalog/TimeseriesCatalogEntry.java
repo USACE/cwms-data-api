@@ -1,44 +1,36 @@
 package cwms.cda.data.dto.catalog;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import cwms.cda.data.dto.TimeSeriesExtents;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@XmlRootElement(name="entry")
+@XmlRootElement(name = "entry")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TimeseriesCatalogEntry extends CatalogEntry{
+public class TimeseriesCatalogEntry extends CatalogEntry {
     @XmlAttribute
     private String name;
 
     private String units;
     private String interval;
 
-    @Schema(description="Offset from top of interval")
-    @XmlElement(name="interval-offset")
+    @Schema(description = "Offset from top of interval")
+    @XmlElement(name = "interval-offset")
     private Long intervalOffset;
 
-    @XmlElement(name="time-zone")
+    @XmlElement(name = "time-zone")
     private String timeZone;
 
-    @XmlElementWrapper(name="extents")
-    @XmlElement(name="extents")
+    @XmlElementWrapper(name = "extents")
+    @XmlElement(name = "extents")
     private List<TimeSeriesExtents> extents;
 
 
@@ -55,23 +47,22 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         return intervalOffset;
     }
 
-    @Schema( description = "Only on 21.1.1 Database. The timezone the Interval Offset is from.")
+    @Schema(description = "Only on 21.1.1 Database. The timezone the Interval Offset is from.")
     public String getTimeZone() {
         return timeZone;
     }
 
-    public List<TimeSeriesExtents> getExtents()
-    {
+    public List<TimeSeriesExtents> getExtents() {
         return extents;
     }
 
+    private TimeseriesCatalogEntry() {
+        super(null);
+    }
 
-
-    private TimeseriesCatalogEntry(){ super(null);}
-
-    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, List<TimeSeriesExtents> extents){
+    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, List<TimeSeriesExtents> extents) {
         super(office);
-        this.name=name;
+        this.name = name;
         this.units = units;
         this.interval = interval;
         this.intervalOffset = intervalOffset;
@@ -79,15 +70,13 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         this.extents = extents;
     }
 
-    public String getUnits(){
+    public String getUnits() {
         return units;
     }
 
     @Override
-    public String toString(){
-        StringBuilder builder = new StringBuilder();
-        builder.append(getOffice()).append("/").append(name);
-        return builder.toString();
+    public String toString() {
+        return getOffice() + "/" + name;
     }
 
     @Override
@@ -104,7 +93,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
         private String timeZone = null;
         private ZonedDateTime earliestTime;
         private ZonedDateTime latestTime;
-        private ArrayList<TimeSeriesExtents> extents = new ArrayList<>();
+        private List<TimeSeriesExtents> extents = null;
 
         public Builder officeId(final String office) {
             this.office = office;
@@ -131,7 +120,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
             return this;
         }
 
-        public Builder intervalOffset( final BigDecimal intervalOffset ) {
+        public Builder intervalOffset(final BigDecimal intervalOffset) {
             return intervalOffset(intervalOffset.longValue());
         }
 
@@ -140,14 +129,25 @@ public class TimeseriesCatalogEntry extends CatalogEntry{
             return this;
         }
 
-        public Builder withExtent(final TimeSeriesExtents extent ) {
+        public Builder withExtent(final TimeSeriesExtents extent) {
+            if (extents == null) {
+                extents = new ArrayList<>();
+            }
             this.extents.add(extent);
             return this;
         }
 
+        public Builder withExtents(final List<TimeSeriesExtents> newExtents) {
+            if (newExtents == null) {
+                extents = null;
+            } else {
+                extents = new ArrayList<>();
+                extents.addAll(newExtents);
+            }
+            return this;
+        }
 
-
-        public TimeseriesCatalogEntry build(){
+        public TimeseriesCatalogEntry build() {
             return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone, extents);
         }
     }

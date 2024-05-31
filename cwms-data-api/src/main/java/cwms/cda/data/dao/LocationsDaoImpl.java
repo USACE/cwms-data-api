@@ -102,6 +102,29 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
+    public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
+
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
+
+        if (officeId != null) {
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+        }
+
+        if (unitSystem != null) {
+            whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
+        }
+
+        if (datum != null) {
+            whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
+        }
+
+        return dsl.select(AV_LOC.asterisk())
+                .from(AV_LOC)
+                .where(whereCondition)
+                .fetch(this::buildLocation);
+    }
+
+    @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
         Record loc = dsl.select(AV_LOC.asterisk())
                 .from(AV_LOC)

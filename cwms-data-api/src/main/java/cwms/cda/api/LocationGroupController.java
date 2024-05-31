@@ -78,29 +78,26 @@ public class LocationGroupController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
-                    + "location group(s) whose data is to be included in the response. If this "
-                    + "field is not specified, matching location groups information from all "
-                    + "offices shall be returned."),
-            @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
-                    + " the assigned locations in the returned location groups. (default: false)"),
-
-            @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                    + "matching against the location category id"), },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(isArray = true, from = LocationGroup.class,
-                                            type = Formats.JSON),
-                                    @OpenApiContent(isArray = true, from =
-                                            CsvV1LocationGroup.class, type = Formats.CSV)
-                            }
-                    )},
-            description = "Returns CWMS Location Groups Data", tags = {TAG})
+        @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
+                + "location group(s) whose data is to be included in the response. If this "
+                + "field is not specified, matching location groups information from all "
+                + "offices shall be returned."),
+        @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
+                + " the assigned locations in the returned location groups. (default: false)"),
+        @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                + "matching against the location category id"), },
+        responses = {
+            @OpenApiResponse(status = STATUS_200,
+                    content = {
+                        @OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
+                        @OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV)
+                    })
+        },
+        description = "Returns CWMS Location Groups Data", tags = {TAG})
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
 
@@ -137,31 +134,30 @@ public class LocationGroupController implements CrudHandler {
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
-                            + "the location_group whose data is to be included in the response")
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the location group whose data is to be included "
-                            + "in the response."),
-                    @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
-                            + " the category containing the location group whose data is to be "
-                            + "included in the response."),
-            },
-            responses = {@OpenApiResponse(status = STATUS_200,
-                    content = {
-                            @OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
-                            @OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV),
-                            @OpenApiContent(type = Formats.GEOJSON)
-                    }
-
-            )},
-            description = "Retrieves requested Location Group", tags = {TAG})
+        pathParams = {
+            @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                    + "the location_group whose data is to be included in the response")
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                    + "owning office of the location group whose data is to be included "
+                    + "in the response."),
+            @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
+                    + " the category containing the location group whose data is to be "
+                    + "included in the response."),
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200, content = {
+                @OpenApiContent(from = LocationGroup.class, type = Formats.JSON),
+                @OpenApiContent(from = CsvV1LocationGroup.class, type = Formats.CSV),
+                @OpenApiContent(type = Formats.GEOJSON)
+            })
+        },
+        description = "Retrieves requested Location Group", tags = {TAG})
     @Override
-    public void getOne(Context ctx, @NotNull String groupId) {
+    public void getOne(@NotNull Context ctx, @NotNull String groupId) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
             String office = ctx.queryParam(OFFICE);
@@ -213,8 +209,8 @@ public class LocationGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -260,9 +256,9 @@ public class LocationGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void update(Context ctx, String oldGroupId) {
+    public void update(@NotNull Context ctx, String oldGroupId) {
 
-        try (Timer.Context ignored = markAndTime(CREATE)){
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -279,7 +275,7 @@ public class LocationGroupController implements CrudHandler {
                 locationGroupDao.unassignAllLocs(deserialize);
             }
             locationGroupDao.assignLocs(deserialize);
-            ctx.status(HttpServletResponse.SC_ACCEPTED);
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (JsonProcessingException ex) {
             CdaError re = new CdaError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -298,14 +294,15 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the location group to be deleted"),
             @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
-                description = "Specifies whether to specifies whether to unassign any location assignments. Default: false"),
+                description = "Specifies whether to specifies whether to unassign any "
+                        + "location assignments. Default: false"),
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String groupId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)){
+    public void delete(@NotNull Context ctx, @NotNull String groupId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationGroupDao dao = new LocationGroupDao(dsl);

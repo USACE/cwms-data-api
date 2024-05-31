@@ -2,6 +2,13 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.ResultQuery;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,14 +17,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import kotlin.Triple;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.ResultQuery;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
 
@@ -62,7 +61,7 @@ public class BlobDao extends JooqDao<Blob> {
         return Optional.ofNullable(retVal);
     }
 
-    public void getBlob(String id, String office, Consumer<Triple<InputStream, Long, String>> consumer) {
+    public void getBlob(String id, String office, BlobConsumer consumer) {
         // Not using jOOQ here because we want the java.sql.Blob and not an automatic field binding.  We want
         // blob so that we can pull out a stream to the data and pass that to javalin.
         // If the request included Content-Ranges Javalin can have the stream skip to the correct
@@ -89,7 +88,7 @@ public class BlobDao extends JooqDao<Blob> {
         });
     }
 
-    public void getBlob(String id, Consumer<Triple<InputStream, Long, String>> consumer) {
+    public void getBlob(String id, BlobConsumer consumer) {
 
         dsl.connection(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_QUERY)) {
@@ -106,14 +105,10 @@ public class BlobDao extends JooqDao<Blob> {
         });
     }
 
-    private static void handleResultSet(ResultSet resultSet, Consumer<Triple<InputStream, Long, String>> consumer) throws SQLException {
+    private static void handleResultSet(ResultSet resultSet, BlobConsumer consumer) throws SQLException {
         String mediaType = resultSet.getString("MEDIA_TYPE_ID");
         java.sql.Blob blob = resultSet.getBlob("VALUE");
-        if (blob != null) {
-            consumer.accept(new Triple<>(blob.getBinaryStream(), blob.length(), mediaType));
-        } else {
-            consumer.accept(new Triple<>(null, 0L, null));
-        }
+        consumer.accept(blob, mediaType);
     }
 
 
@@ -194,5 +189,8 @@ public class BlobDao extends JooqDao<Blob> {
         return output.toByteArray();
     }
 
-
+    @FunctionalInterface
+    public interface BlobConsumer {
+        void accept(java.sql.Blob blob, String mediaType) throws SQLException;
+    }
 }

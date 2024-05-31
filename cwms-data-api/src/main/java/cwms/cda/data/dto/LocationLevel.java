@@ -47,12 +47,6 @@ public final class LocationLevel extends CwmsDTO {
             + "location level. Mutually exclusive with seasonalValues and "
             + "siParameterUnitsConstantValue")
     private final String seasonalTimeSeriesId;
-    @Schema(description = "List of Repeating seasonal values. The values repeater after the "
-            + "specified interval."
-            + " A yearly interval seasonable could have 12 different values, one for each month for"
-            + " example. Mutually exclusive with seasonalTimeSeriesId and "
-            + "siParameterUnitsConstantValue")
-    private final List<SeasonalValueBean> seasonalValues;
     @Schema(description = "Generic name of this location level. Common names are 'Top of Dam', "
             + "'Streambed', 'Bottom of Dam'.")
     private final String specifiedLevelId;
@@ -87,6 +81,13 @@ public final class LocationLevel extends CwmsDTO {
     private final String attributeParameterId;
     private final String attributeDurationId;
     private final String attributeComment;
+
+    @Schema(description = "List of Repeating seasonal values. The values repeater after the "
+            + "specified interval."
+            + " A yearly interval seasonable could have 12 different values, one for each month for"
+            + " example. Mutually exclusive with seasonalTimeSeriesId and "
+            + "siParameterUnitsConstantValue")
+    private final List<SeasonalValueBean> seasonalValues;
 
     private LocationLevel(Builder builder) {
         super(builder.officeId);

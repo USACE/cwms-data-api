@@ -1,8 +1,8 @@
 [versions]
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
-jooq-codegen = "23.03.16-1.0.2"
-jooq = "3.18.7-jdk8RC02"
+jooq-codegen = "99-99-99-CWDB-269-F0232-99-99-99-CWDB-269-F0232"
+jooq = "3.18.7-jdk8"
 hec-data-access = "9.8.0"
 slf4j = "1.7.36"
 hec-monolith = "3.3.20"
@@ -43,7 +43,7 @@ google-auto-service = { module = "com.google.auto.service:auto-service", version
 jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
-cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq.codegen" }
+cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq-codegen" }
 cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "hec-data-access" }
 cwms-db-jooq-base = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "hec-data-access" }
 jooq = { module = "org.jooq.pro-java-8:jooq", version.ref ="jooq" }
