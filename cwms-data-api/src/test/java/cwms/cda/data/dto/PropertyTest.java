@@ -43,12 +43,12 @@ final class PropertyTest {
     void createProperty_allFieldsProvided_success() {
         Property item = new Property.Builder()
                 .withCategory("TestCategory")
-                .withOffice("TestOffice")
+                .withOfficeId("TestOffice")
                 .withName("TestName")
                 .withValue("TestValue")
                 .build();
         assertAll(() -> assertEquals("TestCategory", item.getCategory(), "The category does not match the provided value"),
-                () -> assertEquals("TestOffice", item.getOffice(), "The office does not match the provided value"),
+                () -> assertEquals("TestOffice", item.getOfficeId(), "The office does not match the provided value"),
                 () -> assertEquals("TestName", item.getName(), "The name does not match the provided value"),
                 () -> assertEquals("TestValue", item.getValue(), "The value does not match the provided value"));
     }
@@ -71,7 +71,7 @@ final class PropertyTest {
                 () -> assertThrows(FieldException.class, () -> {
                     Property item = new Property.Builder()
                             // missing Category
-                            .withOffice("TestOffice")
+                            .withOfficeId("TestOffice")
                             .withName("TestName")
                             .withValue("TestValue")
                             .build();
@@ -82,7 +82,7 @@ final class PropertyTest {
                 () -> assertThrows(FieldException.class, () -> {
                     Property item = new Property.Builder()
                             .withCategory("TestCategory")
-                            .withOffice("TestOffice")
+                            .withOfficeId("TestOffice")
                             // missing Name
                             .withValue("TestValue")
                             .build();
@@ -91,7 +91,7 @@ final class PropertyTest {
                 // When Value is missing
                 () -> assertThrows(FieldException.class, () -> new Property.Builder()
                         .withCategory("TestCategory")
-                        .withOffice("TestOffice")
+                        .withOfficeId("TestOffice")
                         .withName("TestName")
                         // missing value
                         .build()
@@ -102,9 +102,10 @@ final class PropertyTest {
     void createProperty_serialize_roundtrip() throws Exception {
         Property property = new Property.Builder()
                 .withCategory("TestCategory")
-                .withOffice("TestOffice")
+                .withOfficeId("TestOffice")
                 .withName("TestName")
                 .withValue("TestValue")
+                .withComment("TestComment")
                 .build();
         String json = Formats.format(new ContentType(Formats.JSONV2), property);
         ObjectMapper om = JsonV2.buildObjectMapper();
@@ -116,9 +117,10 @@ final class PropertyTest {
     void createProperty_deserialize() throws Exception {
         Property property = new Property.Builder()
                 .withCategory("TestCategory")
-                .withOffice("TestOffice")
+                .withOfficeId("TestOffice")
                 .withName("TestName")
                 .withValue("TestValue")
+                .withComment("TestComment")
                 .build();
         ObjectMapper om = JsonV2.buildObjectMapper();
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/property.json");
