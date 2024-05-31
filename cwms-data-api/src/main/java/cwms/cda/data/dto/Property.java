@@ -48,14 +48,16 @@ public final class Property implements CwmsDTOBase {
 
     private final String category;
     private final String name;
-    private final String office;
+    private final String officeId;
     private final String value;
+    private final String comment; // added comment field
 
     private Property(Builder builder) {
         this.category = builder.category;
         this.name = builder.name;
-        this.office = builder.office;
+        this.officeId = builder.officeId;
         this.value = builder.value;
+        this.comment = builder.comment; // included comment in constructor
     }
     
     @Override
@@ -67,7 +69,7 @@ public final class Property implements CwmsDTOBase {
         if (this.name == null || this.name.trim().isEmpty()) {
             throw new FieldException("The 'name' field of a Property cannot be null or empty.");
         }
-        if (this.office == null || this.office.trim().isEmpty()) {
+        if (this.officeId == null || this.officeId.trim().isEmpty()) {
             throw new FieldException("The 'office' field of a Property cannot be null or empty.");
         }
         if (this.value == null || this.value.trim().isEmpty()) {
@@ -75,8 +77,8 @@ public final class Property implements CwmsDTOBase {
         }
     }
 
-    public String getOffice() {
-        return office;
+    public String getOfficeId() {
+        return officeId;
     }
 
     public String getName() {
@@ -91,6 +93,10 @@ public final class Property implements CwmsDTOBase {
         return value;
     }
 
+    public String getComment() {
+        return comment;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -103,24 +109,27 @@ public final class Property implements CwmsDTOBase {
         Property property = (Property) o;
         return Objects.equals(getCategory(), property.getCategory())
                 && Objects.equals(getName(), property.getName())
-                && Objects.equals(getOffice(), property.getOffice())
-                && Objects.equals(getValue(), property.getValue());
+                && Objects.equals(getOfficeId(), property.getOfficeId())
+                && Objects.equals(getValue(), property.getValue())
+                && Objects.equals(getComment(), property.getComment());
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hashCode(getCategory());
         result = 31 * result + Objects.hashCode(getName());
-        result = 31 * result + Objects.hashCode(getOffice());
+        result = 31 * result + Objects.hashCode(getOfficeId());
         result = 31 * result + Objects.hashCode(getValue());
+        result = 31 * result + Objects.hashCode(getComment()); // incorporated comment in hashcode
         return result;
     }
 
     public static class Builder {
         private String category;
         private String name;
-        private String office;
+        private String officeId;
         private String value;
+        private String comment; // added comment to builder
 
         public Builder withCategory(String category) {
             this.category = category;
@@ -132,13 +141,18 @@ public final class Property implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withOffice(String office) {
-            this.office = office;
+        public Builder withOfficeId(String office) {
+            this.officeId = office;
             return this;
         }
 
         public Builder withValue(String value) {
             this.value = value;
+            return this;
+        }
+
+        public Builder withComment(String comment) { // new method to include comment in builder
+            this.comment = comment;
             return this;
         }
 
