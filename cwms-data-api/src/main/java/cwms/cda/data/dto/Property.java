@@ -72,9 +72,6 @@ public final class Property implements CwmsDTOBase {
         if (this.officeId == null || this.officeId.trim().isEmpty()) {
             throw new FieldException("The 'office' field of a Property cannot be null or empty.");
         }
-        if (this.value == null || this.value.trim().isEmpty()) {
-            throw new FieldException("The 'value' field of a Property cannot be null or empty.");
-        }
     }
 
     public String getOfficeId() {
