@@ -50,8 +50,8 @@ public final class LocationLevel extends CwmsDTO {
     @Schema(description = "Generic name of this location level. Common names are 'Top of Dam', "
             + "'Streambed', 'Bottom of Dam'.")
     private final String specifiedLevelId;
-    @Schema(description = "To indicate if single or aggregate value", allowableValues = {"Inst",
-            "Ave", "Min", "Max", "Total"})
+    @Schema(description = "To indicate if single or aggregate value",
+            allowableValues = {"Inst", "Ave", "Min", "Max", "Total"})
     private final String parameterTypeId;
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
     private final String parameterId;
@@ -291,7 +291,7 @@ public final class LocationLevel extends CwmsDTO {
             withParameterId(copyFrom.getParameterId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
-            withSeasonalValues(copyFrom.getSeasonalValues());
+            withISeasonalValues(copyFrom.getSeasonalValues());
 
             IParameterTypedValue constantLevel = copyFrom.getConstantLevel();
             if (constantLevel != null) {
@@ -372,7 +372,8 @@ public final class LocationLevel extends CwmsDTO {
             return this;
         }
 
-        public Builder withSeasonalValues(ISeasonalValues values) {
+        @JsonIgnore
+        public Builder withISeasonalValues(ISeasonalValues values) {
             if (values != null) {
                 // TODO: handle values.offset and values.origin
                 withSeasonalValues(buildSeasonalValues(values));
@@ -396,11 +397,12 @@ public final class LocationLevel extends CwmsDTO {
             if (seasonalValue != null) {
                 IParameterTypedValue value = seasonalValue.getValue();
 
-                if(value != null){
-                    SeasonalValueBean.Builder builder = new SeasonalValueBean.Builder(value.getSiParameterUnitsValue());
+                if (value != null) {
+                    SeasonalValueBean.Builder builder =
+                            new SeasonalValueBean.Builder(value.getSiParameterUnitsValue());
 
-                ISeasonalInterval offset = seasonalValue.getOffset();
-                    if(offset != null){
+                    ISeasonalInterval offset = seasonalValue.getOffset();
+                    if (offset != null) {
                         builder.withOffsetMinutes(BigInteger.valueOf(offset.getTotalMinutes()))
                                 .withOffsetMonths(offset.getTotalMonths());
                     }
