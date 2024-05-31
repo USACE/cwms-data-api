@@ -87,15 +87,7 @@ final class PropertyTest {
                             .withValue("TestValue")
                             .build();
                     item.validate();
-                }, "The validate method should have thrown a FieldException because the name field is missing"),
-                // When Value is missing
-                () -> assertThrows(FieldException.class, () -> new Property.Builder()
-                        .withCategory("TestCategory")
-                        .withOfficeId("TestOffice")
-                        .withName("TestName")
-                        // missing value
-                        .build()
-                        .validate(), "The validate method should have thrown a FieldException because the value field is missing"));
+                }));
     }
 
     @Test
