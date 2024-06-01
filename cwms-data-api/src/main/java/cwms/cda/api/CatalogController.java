@@ -58,7 +58,8 @@ public class CatalogController implements CrudHandler {
 
     private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
     private static final String TAG = "Catalog";
-
+    public static final boolean INCLUDE_EXTENTS_DEFAULT = true;
+    public static final boolean EXCLUDE_EMPTY_DEFAULT = true;
 
     private final MetricRegistry metrics;
 
@@ -138,13 +139,17 @@ public class CatalogController implements CrudHandler {
                         + "When this field is used items with no bounding office set will not be present in results."),
                 @OpenApiParam(name = Controllers.INCLUDE_EXTENTS, type = Boolean.class,
                         description = "Whether the returned catalog entries should include timeseries "
-                                + "extents. Only valid for TIMESERIES. Default is true."),
+                                + "extents. Only valid for TIMESERIES. "
+                                + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
                 @OpenApiParam(name = Controllers.EXCLUDE_EMPTY, type = Boolean.class,
                         description = "Specifies "
-                        + "whether Timeseries that have only empty extents [null, null, null, null] "
-                        + "should be excluded from the results.  This does not control whether the "
-                        + "extents are returned to the user, only whether matching timeseries are "
-                        + "excluded. Only valid for TIMESERIES. Default is true."),
+                            + "whether Timeseries that have empty extents "
+                            + "should be excluded from the results.  For purposes of this parameter "
+                            + "'empty' is defined as VERSION_TIME, EARLIEST_TIME, LATEST_TIME "
+                            + "and LAST_UPDATE all being null. This parameter does not control "
+                            + "whether the extents are returned to the user, only whether matching "
+                            + "timeseries are excluded. Only valid for TIMESERIES. "
+                            + "Default is " + EXCLUDE_EMPTY_DEFAULT + "."),
             },
             pathParams = {
                 @OpenApiParam(name = "dataset",
@@ -210,9 +215,9 @@ public class CatalogController implements CrudHandler {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl, metrics);
 
                 boolean includeExtents = ctx.queryParamAsClass(INCLUDE_EXTENTS, Boolean.class)
-                        .getOrDefault(true);
+                        .getOrDefault(INCLUDE_EXTENTS_DEFAULT);
                 boolean excludeExtents = ctx.queryParamAsClass(EXCLUDE_EMPTY, Boolean.class)
-                        .getOrDefault(true);
+                        .getOrDefault(EXCLUDE_EMPTY_DEFAULT);
 
                 CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
                         .withOffice(office)
