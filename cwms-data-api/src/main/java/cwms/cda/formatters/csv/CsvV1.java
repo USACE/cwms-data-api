@@ -40,4 +40,15 @@ public class CsvV1 implements OutputFormatter {
         }
         return retVal;
     }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        T retVal = null;
+        if (type.isAssignableFrom(Office.class)) {
+            retVal = new CsvV1Office().parseContent(content, type);
+        } else if (type.isAssignableFrom(LocationGroup.class)) {
+            retVal = new CsvV1LocationGroup().parseContent(content, type);
+        }
+        return retVal;
+    }
 }

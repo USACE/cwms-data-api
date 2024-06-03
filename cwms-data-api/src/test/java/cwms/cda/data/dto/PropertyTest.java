@@ -24,11 +24,9 @@
 
 package cwms.cda.data.dto;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -99,9 +97,9 @@ final class PropertyTest {
                 .withValue("TestValue")
                 .withComment("TestComment")
                 .build();
-        String json = Formats.format(new ContentType(Formats.JSONV2), property);
-        ObjectMapper om = JsonV2.buildObjectMapper();
-        Property deserialized = om.readValue(json, Property.class);
+        ContentType contentType = new ContentType(Formats.JSON);
+        String json = Formats.format(contentType, property);
+        Property deserialized = Formats.parseContent(contentType, json, Property.class);
         assertEquals(property, deserialized, "Property deserialized from JSON doesn't equal original");
     }
 
@@ -114,11 +112,11 @@ final class PropertyTest {
                 .withValue("TestValue")
                 .withComment("TestComment")
                 .build();
-        ObjectMapper om = JsonV2.buildObjectMapper();
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/property.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        Property deserialized = om.readValue(json, Property.class);
+        ContentType contentType = new ContentType(Formats.JSON);
+        Property deserialized = Formats.parseContent(contentType, json, Property.class);
         assertEquals(property, deserialized, "Property deserialized from JSON doesn't equal original");
     }
 }

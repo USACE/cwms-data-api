@@ -53,6 +53,12 @@ public class CsvV1Office implements OutputFormatter {
         return builder.toString();
     }
 
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
+                + getContentType() + " not yet supported.");
+    }
+
     private String getOfficeTabHeader() {
         return "#Office Name,Long Name,Office Type,Reports To Office";
     }
