@@ -246,8 +246,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
                 DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
 
-
-
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
         String trim = OracleTypeMap.formatBool(shouldTrim);
@@ -480,35 +478,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @Override
-    public Catalog getTimeSeriesCatalog(String page, int pageSize, String office,
-                                        String idLike, String locCategoryLike, String locGroupLike,
-                                        String tsCategoryLike, String tsGroupLike, String boundingOfficeLike) {
-
-        if (".*".equals(idLike)) {
-            idLike = null;
-        }
-
-        CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
-                .withOffice(office)
-                .withIdLike(idLike)
-                .withLocCatLike(locCategoryLike)
-                .withLocGroupLike(locGroupLike)
-                .withTsCatLike(tsCategoryLike)
-                .withTsGroupLike(tsGroupLike)
-                .withBoundingOfficeLike(boundingOfficeLike)
-                .withIncludeExtents(true)
-                .build();
-
-        return getTimeSeriesCatalog(page, pageSize, parameters);
-    }
-
     public Catalog getTimeSeriesCatalog(String page, int pageSize, CatalogRequestParameters inputParams) {
         int total;
         String cursorTsId = "*";
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
-            SelectConditionStep<Record1<Integer>> totalQuery = dsl.select(countDistinct(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE))
+            SelectConditionStep<Record1<Integer>> totalQuery = dsl
+                    .select(countDistinct(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE))
                     .from(buildFromTable(inputParams))
                     .where(buildWhereConditions(inputParams));
             logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
@@ -530,20 +507,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .withTsCatLike(catPage.getTsCategoryLike())
                     .withTsGroupLike(catPage.getTsGroupLike())
                     .withBoundingOfficeLike(catPage.getBoundingOfficeLike())
+                    .withIncludeExtents(catPage.isIncludeExtents())
+                    .withExcludeEmpty(catPage.isExcludeEmpty())
                     .build();
         }
         final CatalogRequestParameters params = inputParams;
 
         List<TableField> pageEntryFields = new ArrayList<>(getCwmsTsIdFields());
-        if (params.needs(AV_TS_EXTENTS_UTC)) {
+        if (params.isIncludeExtents()) {
             pageEntryFields.addAll(getExtentsFields());
         }
 
         TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
         if (params.needs(AV_TS_EXTENTS_UTC)) {
-            fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID.leftJoin(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC)
+            fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID.leftJoin(AV_TS_EXTENTS_UTC)
                     .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
-                            .eq(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC.TS_CODE
+                            .eq(AV_TS_EXTENTS_UTC.TS_CODE
                                     .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
         }
 
@@ -592,14 +571,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 if (this.getDbVersion() > Dao.CWMS_21_1_1) {
                     builder.timeZone(row.get("TIME_ZONE_ID", String.class));
                 }
-                if (params.needs(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC)) {
+                if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
                 tsIdExtentMap.put(officeTsId, builder);
             }
 
-            if (params.needs(AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC) && row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME) != null) {
-                //tsIdExtentMap.get(tsId)
+            if (params.isIncludeExtents()) {
                 TimeSeriesExtents extents =
                         new TimeSeriesExtents(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME),
                                 row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME),
@@ -615,9 +593,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .collect(Collectors.toList());
 
         return new Catalog(catPage != null ? catPage.toString() : null,
-                total, pageSize, entries, params.getOffice(),
-                params.getIdLike(),params.getLocCatLike(), params.getLocGroupLike(),
-                params.getTsCatLike(), params.getTsGroupLike());
+                total, pageSize, entries, params);
     }
 
     private static @NotNull List<Condition> buildPagingConditions(String cursorOffice, String cursorTsId) {
@@ -626,7 +602,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // Can't do the rownum thing here b/c we want global ordering, not ordering within the page.
         pagingConditions.add(DSL.noCondition());
 
-        if (cursorOffice != null){
+        if (cursorOffice != null) {
             Condition moreInSameOffice = AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID
                     .eq(cursorOffice.toUpperCase())
                     .and(DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
@@ -666,6 +642,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         conditions.addAll(buildLocGrpAssgnConditions(params));
         conditions.addAll(buildTsGrpAssgnConditions(params));
         conditions.addAll(buildLocConditions(params));
+        conditions.addAll(buildExtentsConditions(params));
         return conditions;
     }
 
@@ -711,6 +688,24 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
             fromTable = on;
         }
+
+        if (params.isExcludeEmpty()) {
+            if (on == null) {
+                on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                        .leftJoin(AV_TS_EXTENTS_UTC)
+                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
+                                .eq(AV_TS_EXTENTS_UTC.TS_CODE
+                                        .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
+            } else {
+                on = on
+                        .leftJoin(AV_TS_EXTENTS_UTC)
+                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
+                                .eq(AV_TS_EXTENTS_UTC.TS_CODE
+                                        .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
+            }
+            fromTable = on;
+        }
+
         return fromTable;
     }
 
@@ -718,10 +713,24 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_LOC.AV_LOC)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID, params.boundingOfficeLike));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID,
+                    params.getBoundingOfficeLike()));
             // we could add location_type here too...
             // or maybe conditions based on lat/lon
             // or any bool fields.
+        }
+
+        return retval;
+    }
+
+    private Collection<? extends Condition> buildExtentsConditions(CatalogRequestParameters params) {
+        List<Condition> retval = new ArrayList<>();
+
+        if (params.isExcludeEmpty()) {
+            retval.add(DSL.or(AV_TS_EXTENTS_UTC.VERSION_TIME.isNotNull(),
+                    AV_TS_EXTENTS_UTC.EARLIEST_TIME.isNotNull(),
+                    AV_TS_EXTENTS_UTC.LATEST_TIME.isNotNull(),
+                    AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull()));
         }
 
         return retval;
@@ -731,8 +740,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.GROUP_ID, params.locGroupLike));
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.CATEGORY_ID, params.locCatLike));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.GROUP_ID,
+                    params.getLocGroupLike()));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.CATEGORY_ID,
+                    params.getLocCatLike()));
         }
         return retval;
     }
@@ -741,8 +752,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID, params.tsGroupLike));
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID, params.tsCatLike));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID,
+                    params.getTsGroupLike()));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID,
+                    params.getTsCatLike()));
         }
         return retval;
     }
@@ -750,11 +763,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private Collection<? extends Condition> buildCwmsTsIdConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
 
-        if (params.office != null) {
-            retval.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID.eq(params.office.toUpperCase()));
+        if (params.getOffice() != null) {
+            retval.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID.eq(params.getOffice().toUpperCase()));
         }
 
-        retval.add(caseInsensitiveLikeRegexNullTrue(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID, params.idLike));
+        retval.add(caseInsensitiveLikeRegexNullTrue(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID, params.getIdLike()));
 
         return retval;
     }
@@ -986,7 +999,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsvView.AV_TSV_DQU.TS_CODE),
+                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
                         DSL.val(unitSystem, String.class))
                 .as(DEFAULT_UNITS);
         Field<Timestamp> maxDateTimeField = max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE))
@@ -1324,166 +1337,4 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
     }
 
-    public static class CatalogRequestParameters {
-        private final String office;
-        private final String idLike;
-        private final String unitSystem;
-        private final String locCatLike;
-        private final String locGroupLike;
-        private final String tsCatLike;
-        private final String tsGroupLike;
-        private final String boundingOfficeLike;
-        private final boolean includeExtents;
-
-        private CatalogRequestParameters(Builder builder) {
-            this.office = builder.office;
-            this.idLike = builder.idLike;
-            this.unitSystem = builder.unitSystem;
-            this.locCatLike = builder.locCatLike;
-            this.locGroupLike = builder.locGroupLike;
-            this.tsCatLike = builder.tsCatLike;
-            this.tsGroupLike = builder.tsGroupLike;
-            this.boundingOfficeLike = builder.boundingOfficeLike;
-            this.includeExtents = builder.includeExtents;
-        }
-
-        public String getBoundingOfficeLike() {
-            return boundingOfficeLike;
-        }
-
-        public String getIdLike() {
-            return idLike;
-        }
-
-        public boolean isIncludeExtents() {
-            return includeExtents;
-        }
-
-        public String getLocCatLike() {
-            return locCatLike;
-        }
-
-        public String getLocGroupLike() {
-            return locGroupLike;
-        }
-
-        public String getOffice() {
-            return office;
-        }
-
-        public String getTsCatLike() {
-            return tsCatLike;
-        }
-
-        public String getTsGroupLike() {
-            return tsGroupLike;
-        }
-
-        public String getUnitSystem() {
-            return unitSystem;
-        }
-
-        public static class Builder {
-            String office;
-            String idLike;
-            String unitSystem;
-            String locCatLike;
-            String locGroupLike;
-            String tsCatLike;
-            String tsGroupLike;
-            String boundingOfficeLike;
-            boolean includeExtents;
-
-            public Builder() {
-
-            }
-
-            public Builder withOffice(String office) {
-                this.office = office;
-                return this;
-            }
-
-            public Builder withIdLike(String idLike) {
-                this.idLike = idLike;
-                return this;
-            }
-
-            public Builder withUnitSystem(String unitSystem) {
-                this.unitSystem = unitSystem;
-                return this;
-            }
-
-            public Builder withLocCatLike(String locCatLike) {
-                this.locCatLike = locCatLike;
-                return this;
-            }
-
-            public Builder withLocGroupLike(String locGroupLike) {
-                this.locGroupLike = locGroupLike;
-                return this;
-            }
-
-            public Builder withTsCatLike(String tsCatLike) {
-                this.tsCatLike = tsCatLike;
-                return this;
-            }
-
-            public Builder withTsGroupLike(String tsGroupLike) {
-                this.tsGroupLike = tsGroupLike;
-                return this;
-            }
-
-            public Builder withBoundingOfficeLike(String boundingOfficeLike) {
-                this.boundingOfficeLike = boundingOfficeLike;
-                return this;
-            }
-
-            public Builder withIncludeExtents(boolean includeExtents) {
-                this.includeExtents = includeExtents;
-                return this;
-            }
-
-            public static Builder from(CatalogRequestParameters params) {
-                // This NEEDS to include every field in the CatalogRequestParameters
-                return new CatalogRequestParameters.Builder()
-                        .withOffice(params.office)
-                        .withIdLike(params.idLike)
-                        .withUnitSystem(params.unitSystem)
-                        .withLocCatLike(params.locCatLike)
-                        .withLocGroupLike(params.locGroupLike)
-                        .withTsCatLike(params.tsCatLike)
-                        .withTsGroupLike(params.tsGroupLike)
-                        .withBoundingOfficeLike(params.boundingOfficeLike)
-                        .withIncludeExtents(params.includeExtents);
-            }
-
-
-            public CatalogRequestParameters build() {
-                return new CatalogRequestParameters(this);
-            }
-        }
-
-        // This is supposed to answer the question of whether the current set of request parameters
-        // needs the specified table to be joined into the query.
-        public boolean needs(Table table) {
-            if (table == AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN) {
-                return locCatLike != null || locGroupLike != null;
-            }
-
-            if (table == AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN) {
-                return tsCatLike != null || tsGroupLike != null;
-            }
-
-            if (table == AV_LOC.AV_LOC) {
-                return boundingOfficeLike != null;
-            }
-
-            if (table == AV_TS_EXTENTS_UTC) {
-                return includeExtents;
-            }
-
-            return false;
-        }
-
-    }
 }

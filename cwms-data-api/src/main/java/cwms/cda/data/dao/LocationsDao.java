@@ -47,7 +47,6 @@ public interface LocationsDao {
 
     FeatureCollection buildFeatureCollection(String names, String units, String officeId);
 
-    Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office,
-                               String idLike, String categoryLike, String groupLike,
-                               String boundingOfficeLike);
+    Catalog getLocationCatalog(String cursor, int pageSize, CatalogRequestParameters params);
+
 }

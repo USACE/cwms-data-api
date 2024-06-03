@@ -35,13 +35,10 @@ import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
-
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
-
 import static com.codahale.metrics.MetricRegistry.name;
-
 
 public final class Controllers {
 
@@ -165,6 +162,8 @@ public final class Controllers {
     public static final String TRIM = "trim";
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
+    public static final String INCLUDE_EXTENTS = "include-extents";
+    public static final String EXCLUDE_EMPTY = "exclude-empty";
 
 
     static {
@@ -313,9 +312,11 @@ public final class Controllers {
 
     @Nullable
     public static Instant queryParamAsInstant(Context ctx, String param) {
-        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param,
+                ctx.queryParamAsClass(TIMEZONE, String.class)
+                        .getOrDefault("UTC"));
         Instant retval = null;
-        if(zonedDateTime != null) {
+        if (zonedDateTime != null) {
             retval = zonedDateTime.toInstant();
         }
         return retval;

@@ -202,9 +202,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         connection(dsl, c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
             if (cascadeDelete) {
-                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC_CASCADE.getRule(), officeId);
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName,
+                        DELETE_LOC_CASCADE.getRule(), officeId);
             } else {
-                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC.getRule(), officeId);
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName,
+                        DELETE_LOC.getRule(), officeId);
             }
         });
     }
@@ -332,9 +334,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
 
-    @Override
-    public Catalog getLocationCatalog(String page, int pageSize, String unitSystem, String office,
-                                      String idLike, String categoryLike, String groupLike, String boundingOfficeLike) {
+
+    public Catalog getLocationCatalog(String page, int pageSize, CatalogRequestParameters param) {
 
         // Parse provided page and pull out the parameters
 
@@ -345,28 +346,38 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             // The cursor urlencodes the initial query parameters, We should decode them and use the cursor values.
             // If the user provides a page parameter and query parameters they should match.
             // If they don't match its weird and we will log it.
-            office = warnIfMismatch(OFFICE, catPage.getSearchOffice(), office);
-            idLike = warnIfMismatch(LIKE, catPage.getIdLike(), idLike);
-            categoryLike = warnIfMismatch(LOCATION_CATEGORY_LIKE, catPage.getLocCategoryLike(), categoryLike);
-            groupLike = warnIfMismatch(LOCATION_GROUP_LIKE, catPage.getLocGroupLike(), groupLike);
-            boundingOfficeLike = warnIfMismatch(BOUNDING_OFFICE_LIKE, catPage.getBoundingOfficeLike(), boundingOfficeLike);
+            CatalogRequestParameters.Builder.from(param)
+                    .withOffice(warnIfMismatch(OFFICE,
+                            catPage.getSearchOffice(), param.getOffice()))
+                    .withIdLike(warnIfMismatch(LIKE,
+                            catPage.getIdLike(), param.getIdLike()))
+                    .withLocCatLike(warnIfMismatch(LOCATION_CATEGORY_LIKE,
+                            catPage.getLocCategoryLike(), param.getLocCatLike()))
+                    .withLocGroupLike(warnIfMismatch(LOCATION_GROUP_LIKE,
+                            catPage.getLocGroupLike(), param.getLocGroupLike()))
+                    .withBoundingOfficeLike(warnIfMismatch(BOUNDING_OFFICE_LIKE,
+                            catPage.getBoundingOfficeLike(), param.getBoundingOfficeLike()))
+                    .build();
+
         }
 
-        return getLocationCatalog(catPage, pageSize, unitSystem, office, idLike, categoryLike, groupLike, boundingOfficeLike);
+        return getLocationCatalog(catPage, pageSize, param);
     }
 
-    private Catalog getLocationCatalog(Catalog.CatalogPage catPage, int pageSize, String unitSystem, String office,
-                                      String idLike, String categoryLike, String groupLike, String boundingOfficeLike) {
+    private Catalog getLocationCatalog(Catalog.CatalogPage catPage, int pageSize, CatalogRequestParameters params) {
 
         final AV_LOC2 avLoc2 = AV_LOC2.AV_LOC2;  // ref the view just shorten the jooq
         //Now querying against AV_LOC2 as it gives us back the same information as querying against
         //location group views. This makes the code clearer and improves performance.
         //If there is a performance improvement by switching back to location groups and querying against
         //location codes (previous implementation used location_id) for joins, feel free to implement.
-        Objects.requireNonNull(idLike, "A value must be provided for the idLike field. Specifiy .* if you don't care.");
+        Objects.requireNonNull(params.getIdLike(),
+                "A value must be provided for the idLike field. Specify .* if you don't care.");
 
         // "condition" needs to be used by the count query and the results query.
-        Condition condition = buildWhereCondition(unitSystem, office, idLike, categoryLike, groupLike, boundingOfficeLike);
+        Condition condition = buildWhereCondition(params.getUnitSystem(), params.getOffice(),
+                params.getIdLike(), params.getLocCatLike(), params.getLocGroupLike(),
+                params.getBoundingOfficeLike());
 
         int total;
         String cursorLocation; // The location-id of the cursor in the results
@@ -435,9 +446,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 return buildCatalogEntry(row, aliases);
             })
             .collect(toList());
-        return new Catalog(cursorLocation, total, pageSize, entries, office,
-                 idLike,  categoryLike,  groupLike,
-                 null, null, boundingOfficeLike);
+
+        return new Catalog(cursorLocation, total, pageSize, entries, params);
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation) {
