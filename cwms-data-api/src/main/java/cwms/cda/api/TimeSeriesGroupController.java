@@ -31,14 +31,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -50,7 +47,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -223,27 +219,13 @@ public class TimeSeriesGroupController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
-            TimeSeriesGroup deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             dao.create(deserialize, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private TimeSeriesGroup deserialize(String body, String format) throws JsonProcessingException {
-        TimeSeriesGroup retval;
-        if (ContentType.equivalent(Formats.JSON, format)) {
-            ObjectMapper om = JsonV1.buildObjectMapper();
-            retval = om.readValue(body, TimeSeriesGroup.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
     @OpenApi(
@@ -272,7 +254,8 @@ public class TimeSeriesGroupController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
-            TimeSeriesGroup deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
             boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class).getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
             if (!oldGroupId.equals(deserialize.getId())) {
@@ -283,10 +266,6 @@ public class TimeSeriesGroupController implements CrudHandler {
             }
             timeSeriesGroupDao.assignTs(deserialize);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

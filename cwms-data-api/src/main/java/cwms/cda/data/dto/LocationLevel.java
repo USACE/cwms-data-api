@@ -15,6 +15,7 @@ import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv1;
 import hec.data.level.ILocationLevelRef;
 import hec.data.level.IParameterTypedValue;
 import hec.data.level.ISeasonalInterval;
@@ -39,14 +40,15 @@ import rma.util.RMAConst;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
 public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
-    private final String locationLevelId;
+    private String locationLevelId;
     @Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
             + "location level. Mutually exclusive with seasonalValues and "
             + "siParameterUnitsConstantValue")
-    private final String seasonalTimeSeriesId;
+    private String seasonalTimeSeriesId;
     @Schema(description = "Generic name of this location level. Common names are 'Top of Dam', "
             + "'Streambed', 'Bottom of Dam'.")
     private final String specifiedLevelId;
@@ -54,33 +56,33 @@ public final class LocationLevel extends CwmsDTO {
             allowableValues = {"Inst", "Ave", "Min", "Max", "Total"})
     private final String parameterTypeId;
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
-    private final String parameterId;
+    private String parameterId;
     @Schema(description = "Single value for this location level. Mutually exclusive with "
             + "seasonableTimeSeriesId and seasonValues.")
-    private final Double constantValue;
+    private Double constantValue;
     @Schema(description = "Units the provided levels are in")
-    private final String levelUnitsId;
+    private String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private final ZonedDateTime levelDate;
-    private final String levelComment;
+    private ZonedDateTime levelDate;
+    private String levelComment;
     @Schema(description = "The start point of provided seasonal values")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private final ZonedDateTime intervalOrigin;
-    private final Integer intervalMonths;
-    private final Integer intervalMinutes;
+    private ZonedDateTime intervalOrigin;
+    private Integer intervalMonths;
+    private Integer intervalMinutes;
     @Schema(description = "Indicating whether or not to interpolate between seasonal values.",
             allowableValues = {"T", "F"})
-    private final String interpolateString;
+    private String interpolateString;
     @Schema(description = "0 if parameterTypeId is Inst. Otherwise duration indicating the time "
             + "window of the aggregate value.")
-    private final String durationId;
-    private final BigDecimal attributeValue;
-    private final String attributeUnitsId;
-    private final String attributeParameterTypeId;
-    private final String attributeParameterId;
-    private final String attributeDurationId;
-    private final String attributeComment;
+    private String durationId;
+    private BigDecimal attributeValue;
+    private String attributeUnitsId;
+    private String attributeParameterTypeId;
+    private String attributeParameterId;
+    private String attributeDurationId;
+    private String attributeComment;
 
     @Schema(description = "List of Repeating seasonal values. The values repeater after the "
             + "specified interval."
@@ -88,6 +90,10 @@ public final class LocationLevel extends CwmsDTO {
             + " example. Mutually exclusive with seasonalTimeSeriesId and "
             + "siParameterUnitsConstantValue")
     private final List<SeasonalValueBean> seasonalValues;
+
+    public LocationLevel() {
+        this(new Builder(null, null));
+    }
 
     private LocationLevel(Builder builder) {
         super(builder.officeId);

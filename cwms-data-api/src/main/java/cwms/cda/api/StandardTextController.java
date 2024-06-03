@@ -26,8 +26,6 @@ package cwms.cda.api;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.StandardTextDao;
@@ -35,7 +33,6 @@ import cwms.cda.data.dto.texttimeseries.StandardTextCatalog;
 import cwms.cda.data.dto.texttimeseries.StandardTextValue;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -174,13 +171,12 @@ public class StandardTextController implements CrudHandler {
             String body = ctx.body();
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
-            StandardTextValue tts = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            StandardTextValue tts = Formats.parseContent(contentType, body, StandardTextValue.class);
             DSLContext dsl = getDslContext(ctx);
             getDao(dsl).storeStandardText(tts.getId().getId(), tts.getStandardText(), tts.getId().getOfficeId(),
                     failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            throw new IllegalArgumentException(ex);
         }
     }
 
@@ -234,17 +230,6 @@ public class StandardTextController implements CrudHandler {
             getDao(dsl).deleteStandardText(stdTextId, office, deleteAction);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
-    }
-
-    private static StandardTextValue deserialize(String body, String format) throws JsonProcessingException {
-        StandardTextValue retval;
-        if (ContentType.equivalent(Formats.JSONV2, format)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, StandardTextValue.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
 }

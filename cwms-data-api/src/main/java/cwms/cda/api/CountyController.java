@@ -93,9 +93,6 @@ public class CountyController implements CrudHandler {
             List<County> counties = dao.getCounties();
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, County.class);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             String result = Formats.format(contentType, counties, County.class);
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());

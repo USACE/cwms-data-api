@@ -3,10 +3,6 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
@@ -17,12 +13,10 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -33,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
@@ -196,50 +189,26 @@ public class BlobController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
 
-            try {
-                ObjectMapper om = getObjectMapperForFormat(formatHeader);
-                Blob blob = om.readValue(ctx.bodyAsInputStream(), Blob.class);
-
-                if (blob.getOfficeId() == null) {
-                    throw new FormattingException("An officeId is required when creating a blob");
-                }
-
-                if (blob.getId() == null) {
-                    throw new FormattingException("An Id is required when creating a blob");
-                }
-
-                if (blob.getValue() == null) {
-                    throw new FormattingException("A non-empty value field is required when "
-                            + "creating a blob");
-                }
-
-                BlobDao dao = new BlobDao(dsl);
-                dao.create(blob, failIfExists, false);
-                ctx.status(HttpCode.CREATED);
-            } catch (IOException e) {
-                throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(), "Unable to "
-                        + "parse request body");
+            if (blob.getOfficeId() == null) {
+                throw new FormattingException("An officeId is required when creating a blob");
             }
-        }
-    }
 
-    private static ObjectMapper getObjectMapperForFormat(String format) {
-        ObjectMapper om;
+            if (blob.getId() == null) {
+                throw new FormattingException("An Id is required when creating a blob");
+            }
 
-        if (ContentType.equivalent(Formats.XMLV2,format)) {
-            JacksonXmlModule module = new JacksonXmlModule();
-            module.setDefaultUseWrapper(false);
-            om = new XmlMapper(module);
-        } else if (ContentType.equivalent(Formats.JSONV2,format)) {
-            om = JsonV2.buildObjectMapper();
-        } else {
-            FormattingException fe = new FormattingException("Format specified is not currently supported for Blob");
-            logger.atFine().withCause(fe).log("Format %s not supported",format);
-            throw fe;
+            if (blob.getValue() == null) {
+                throw new FormattingException("A non-empty value field is required when "
+                        + "creating a blob");
+            }
+
+            BlobDao dao = new BlobDao(dsl);
+            dao.create(blob, failIfExists, false);
+            ctx.status(HttpCode.CREATED);
         }
-        om.registerModule(new JavaTimeModule());
-        return om;
     }
 
     @OpenApi(ignore = true)
