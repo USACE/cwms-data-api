@@ -32,12 +32,13 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Connection;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -47,6 +48,7 @@ import java.util.TreeMap;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -66,7 +68,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .withLevelUnitsId("ac-ft")
                 .build();
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-                DSLContext dsl = dslContext((Connection) c, OFFICE);
+                DSLContext dsl = dslContext(c, OFFICE);
                 LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
                 dao.storeLocationLevel(level, level.getLevelDate().getZone());
             });
@@ -86,11 +88,11 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id",equalTo("m3"))
+            .body("level-units-id", equalTo("m3"))
             // I think we need to create a custom matcher.
             // This really shouldn't use equals but due to a quirk in
             // RestAssured it appears to be necessary.
-            .body("constant-value",equalTo(1233.4818f)); // 1 ac-ft to m3
+            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -129,7 +131,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .build();
             levels.put(level.getLevelDate().toInstant(), level);
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-                DSLContext dsl = dslContext((Connection) c, OFFICE);
+                DSLContext dsl = dslContext(c, OFFICE);
                 LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
                 dao.storeLocationLevel(level, level.getLevelDate().getZone());
             });
@@ -165,13 +167,181 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertEquals(24 * effectiveDateCount + 1, timeSeries.getTotal());
         List<TimeSeries.Record> values = timeSeries.getValues();
         for (int i = 0; i < values.size(); i++) {
-            TimeSeries.Record record = values.get(i);
-            assertEquals(time.plusHours(i).toInstant(), record.getDateTime().toInstant(), "Time check failed at iteration: " + i);
-            assertEquals(0, record.getQualityCode(), "Quality check failed at iteration: " + i);
-            Double constantValue = levels.floorEntry(record.getDateTime().toInstant())
+            TimeSeries.Record tsrec = values.get(i);
+            assertEquals(time.plusHours(i).toInstant(), tsrec.getDateTime().toInstant(), "Time check failed at iteration: " + i);
+            assertEquals(0, tsrec.getQualityCode(), "Quality check failed at iteration: " + i);
+            Double constantValue = levels.floorEntry(tsrec.getDateTime().toInstant())
                     .getValue()
                     .getConstantValue();
-            assertEquals(constantValue, record.getValue(), 0.0001, "Value check failed at iteration: " + i);
+            assertEquals(constantValue, tsrec.getValue(), 0.0001, "Value check failed at iteration: " + i);
         }
     }
+
+
+    @Test
+    void test_get_all_location_level() throws Exception {
+        String locId = "level_get_all_loc1";
+        String levelId = locId + ".Stor.Ave.1Day.Regulating";
+        createLocation(locId, true, OFFICE);
+        final ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America"
+                + "/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level = new LocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level, level.getLevelDate().getZone());
+        });
+
+        String locId2 = "level_get_all_loc2";
+        String levelId2 = locId2 + ".Stor.Ave.1Day.Regulating";
+        createLocation(locId2, true, OFFICE);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+
+            LocationLevel level = new LocationLevel.Builder(levelId2, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(2.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level, level.getLevelDate().getZone());
+        });
+
+        String startStr = "2023-06-01T00:00:00Z";
+        String endStr = "2023-06-02T00:00:00Z";
+
+
+
+        //Read level without unit
+        ExtractableResponse<Response> response = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(LEVEL_ID_MASK, "level_get_all.*")
+                .queryParam(BEGIN, startStr)
+                .queryParam(END, endStr)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/")
+            .then()
+            .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+                assertThat(response.path("levels.size()"),is(2));
+
+                assertThat(response.path("levels[0].office-id"),equalTo(OFFICE));
+                assertThat(response.path("levels[0].location-level-id"),equalTo(levelId));
+                assertThat(response.path("levels[0].specified-level-id"),equalTo("Regulating"));
+                assertThat(response.path("levels[0].parameter-type-id"),equalTo("Ave"));
+                assertThat(response.path("levels[0].parameter-id"),equalTo("Stor"));
+                assertThat(response.path("levels[0].level-units-id"),equalTo("m3"));
+                assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
+                assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
+                double actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
+                assertThat(actual0, closeTo(1233.0, 10.0));
+
+                assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
+                assertThat(response.path("levels[1].location-level-id"),equalTo(levelId2));
+                assertThat(response.path("levels[1].specified-level-id"),equalTo("Regulating"));
+                assertThat(response.path("levels[1].parameter-type-id"),equalTo("Ave"));
+                assertThat(response.path("levels[1].parameter-id"),equalTo("Stor"));
+                assertThat(response.path("levels[1].level-units-id"),equalTo("m3"));
+                assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
+                assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
+                double actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
+                assertThat(actual1, closeTo(2466.9636f, 1.0));
+
+        response = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(UNIT, "SI")
+                .queryParam(LEVEL_ID_MASK, "level_get_all.*")
+                .queryParam(BEGIN, startStr)
+                .queryParam(END, endStr)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/")
+                .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .extract();
+                assertThat(response.path("levels.size()"),is(2));
+
+                assertThat(response.path("levels[0].office-id"),equalTo(OFFICE));
+                assertThat(response.path("levels[0].location-level-id"),equalTo(levelId));
+                assertThat(response.path("levels[0].specified-level-id"),equalTo("Regulating"));
+                assertThat(response.path("levels[0].parameter-type-id"),equalTo("Ave"));
+                assertThat(response.path("levels[0].parameter-id"),equalTo("Stor"));
+                assertThat(response.path("levels[0].level-units-id"),equalTo("m3"));
+                assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
+                assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
+                actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
+                assertThat(actual0, closeTo(1233.4818, 1.0));
+
+                assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
+                assertThat(response.path("levels[1].location-level-id"),equalTo(levelId2));
+                assertThat(response.path("levels[1].specified-level-id"),equalTo("Regulating"));
+                assertThat(response.path("levels[1].parameter-type-id"),equalTo("Ave"));
+                assertThat(response.path("levels[1].parameter-id"),equalTo("Stor"));
+                assertThat(response.path("levels[1].level-units-id"),equalTo("m3"));
+                assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
+                assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
+                actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
+                assertThat(actual1, closeTo(2466.9636, 1.0));
+
+        response = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(UNIT, "EN")
+                .queryParam(LEVEL_ID_MASK, "level_get_all.*")
+                .queryParam(BEGIN, startStr)
+                .queryParam(END, endStr)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/")
+            .then()
+            .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .extract();
+                assertThat(response.path("levels.size()"),is(2));
+
+                assertThat(response.path("levels[0].office-id"),equalTo(OFFICE));
+                assertThat(response.path("levels[0].location-level-id"),equalTo(levelId));
+                assertThat(response.path("levels[0].specified-level-id"),equalTo("Regulating"));
+                assertThat(response.path("levels[0].parameter-type-id"),equalTo("Ave"));
+                assertThat(response.path("levels[0].parameter-id"),equalTo("Stor"));
+                assertThat(response.path("levels[0].level-units-id"),equalTo("ac-ft"));
+                assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
+                assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
+                actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
+                assertThat(actual0, closeTo(1.0, 0.01));
+
+                assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
+                assertThat(response.path("levels[1].location-level-id"),equalTo(levelId2));
+                assertThat(response.path("levels[1].specified-level-id"),equalTo("Regulating"));
+                assertThat(response.path("levels[1].parameter-type-id"),equalTo("Ave"));
+                assertThat(response.path("levels[1].parameter-id"),equalTo("Stor"));
+                assertThat(response.path("levels[1].level-units-id"),equalTo("ac-ft"));
+                assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
+                assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
+                actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
+                assertThat(actual1, closeTo(2.0, 0.01));
+    }
+
 }
