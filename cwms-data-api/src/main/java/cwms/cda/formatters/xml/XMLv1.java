@@ -37,8 +37,8 @@ public class XMLv1 implements OutputFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
-            final JAXBContext context = JAXBContext.newInstance(dto.getClass());
-            final Marshaller mar = context.createMarshaller();
+            JAXBContext context = JAXBContext.newInstance(dto.getClass());
+            Marshaller mar = context.createMarshaller();
             mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 
             StringWriter sw = new StringWriter();

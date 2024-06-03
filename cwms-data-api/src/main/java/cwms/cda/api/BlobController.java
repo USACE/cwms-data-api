@@ -85,8 +85,7 @@ public class BlobController implements CrudHandler {
         responses = {@OpenApiResponse(status = STATUS_200,
                 description = "A list of blobs.",
                 content = {
-                    @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                    @OpenApiContent(type = Formats.XMLV2, from = Blobs.class)
+                    @OpenApiContent(type = Formats.JSONV2, from = Blobs.class)
                 })
         },
         tags = {TAG}
@@ -169,8 +168,7 @@ public class BlobController implements CrudHandler {
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Blob.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
                     },
                     required = true),
             queryParams = {

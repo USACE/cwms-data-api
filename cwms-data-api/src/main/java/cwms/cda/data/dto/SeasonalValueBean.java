@@ -9,15 +9,26 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import java.math.BigInteger;
 
 @JsonDeserialize(builder = SeasonalValueBean.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@XmlAccessorType(XmlAccessType.FIELD)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class SeasonalValueBean {
-    private final Double value;
-    private final Integer offsetMonths;
-    private final BigInteger offsetMinutes;
+    @XmlElement(name = "value")
+    private Double value;
+    @XmlElement(name = "offset-months")
+    private Integer offsetMonths;
+    @XmlElement(name = "offset-minutes")
+    private BigInteger offsetMinutes;
+
+    private SeasonalValueBean() {
+        this(new Builder((Double) null));
+    }
 
     private SeasonalValueBean(Builder builder) {
         this.value = builder.value;
