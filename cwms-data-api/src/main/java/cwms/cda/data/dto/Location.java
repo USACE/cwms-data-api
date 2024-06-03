@@ -15,7 +15,11 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.formatters.xml.XMLv2;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,34 +27,62 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@XmlRootElement(name = "Location")
 @JsonDeserialize(builder = Location.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
+    @XmlElement(name = "name", required = true)
     private final String name;
+    @XmlElement(name = "latitude")
     private final Double latitude;
+    @XmlElement(name = "longitude")
     private final Double longitude;
+    @XmlElement(name = "active")
     private final Boolean active;
+    @XmlElement(name = "public-name")
     private final String publicName;
+    @XmlElement(name = "long-name")
     private final String longName;
+    @XmlElement(name = "description")
     private final String description;
+    @XmlElement(name = "timezone-name")
     private final String timezoneName;
+    @XmlElement(name = "location-type")
     private final String locationType;
+    @XmlElement(name = "location-kind")
     private final String locationKind;
+    @XmlElement(name = "nation")
     private final Nation nation;
+    @XmlElement(name = "state-initial")
     private final String stateInitial;
+    @XmlElement(name = "county-name")
     private final String countyName;
+    @XmlElement(name = "nearest-city")
     private final String nearestCity;
+    @XmlElement(name = "horizontal-datum")
     private final String horizontalDatum;
+    @XmlElement(name = "published-longitude")
     private final Double publishedLongitude;
+    @XmlElement(name = "published-latitude")
     private final Double publishedLatitude;
+    @XmlElement(name = "vertical-datum")
     private final String verticalDatum;
+    @XmlElement(name = "elevation")
     private final Double elevation;
+    @XmlElement(name = "map-label")
     private final String mapLabel;
+    @XmlElement(name = "bounding-office-id")
     private final String boundingOfficeId;
+
+    private Location() {
+        this(new Builder(null, null, null, null, null,null, null));
+    }
 
     private Location(Builder builder) {
         super(builder.officeId);
