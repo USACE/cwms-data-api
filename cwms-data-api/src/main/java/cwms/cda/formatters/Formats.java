@@ -26,6 +26,8 @@ package cwms.cda.formatters;
 
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
+
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -133,6 +135,20 @@ public class Formats {
         }
     }
 
+    private <T extends CwmsDTOBase> T parseContentFromType(ContentType type, InputStream content, Class<T> rootType)
+            throws FormattingException {
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        if (outputFormatter != null) {
+            T retval = outputFormatter.parseContent(content, rootType);
+            retval.validate();
+            return retval;
+        } else {
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                    type.toString(), rootType.getName());
+            throw new FormattingException(message);
+        }
+    }
+
     private OutputFormatter getOutputFormatter(ContentType type,
                                                Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
@@ -172,6 +188,11 @@ public class Formats {
     public static <T extends CwmsDTOBase> T parseContent(ContentType type, String content, Class<T> rootType)
             throws FormattingException {
         return formats.parseContentFromType(type, content, rootType);
+    }
+
+    public static <T extends CwmsDTOBase> T parseContent(ContentType type, InputStream inputStream, Class<T> rootType)
+            throws FormattingException {
+        return formats.parseContentFromType(type, inputStream, rootType);
     }
 
     /**
@@ -225,7 +246,6 @@ public class Formats {
         return retVal;
     }
 
-
     public static ContentType parseHeader(String header) {
         return parseHeader(header, null);
     }
@@ -265,6 +285,6 @@ public class Formats {
                 return new ContentType(Formats.JSON);
             }
         }
-        return null;
+        throw new FormattingException("Format header " + header + " could not be parsed");
     }
 }

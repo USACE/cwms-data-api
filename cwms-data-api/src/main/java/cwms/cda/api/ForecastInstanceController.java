@@ -6,14 +6,12 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.ForecastInstanceDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
@@ -27,7 +25,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -287,26 +284,10 @@ public final class ForecastInstanceController implements CrudHandler {
     }
 
     private ForecastInstance deserializeForecastInstance(Context ctx) throws IOException {
-        return deserializeForecastInstance(ctx.body(), getUserDataContentType(ctx));
-    }
-
-    private ForecastInstance deserializeForecastInstance(String body, ContentType contentType)
-            throws IOException {
-        ForecastInstance retval;
-        String type = contentType.toString();
-        if ((Formats.JSONV2).equals(type)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, ForecastInstance.class);
-        } else {
-            throw new IOException("Unexpected format:" + type);
-        }
-
-        return retval;
-    }
-
-    private ContentType getUserDataContentType(@NotNull Context ctx) {
-        String contentTypeHeader = ctx.req.getContentType();
-        return Formats.parseHeader(contentTypeHeader);
+        String reqContentType = ctx.req.getContentType();
+        String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+        ContentType contentType = Formats.parseHeader(formatHeader);
+        return Formats.parseContent(contentType, ctx.body(), ForecastInstance.class);
     }
 
 }

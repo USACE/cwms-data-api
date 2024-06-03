@@ -14,10 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class FormatsTest
 {
@@ -50,9 +47,7 @@ class FormatsTest
 	@Test
 	void testParseNullNull()
 	{
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
-			Formats.parseHeaderAndQueryParm(null, null);
-		});
+		assertThrows(FormattingException.class, () -> Formats.parseHeaderAndQueryParm(null, null));
 	}
 
 	@Test
@@ -83,7 +78,7 @@ class FormatsTest
 
 	@Test
 	void testParseHeaderAndQueryParmXML(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm(null, null);
 		});
 
@@ -109,7 +104,7 @@ class FormatsTest
 
 	@Test
 	void testParseBoth(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm("application/json", "json");
 		});
 
@@ -118,7 +113,7 @@ class FormatsTest
 
 	@Test
 	void testParseBothv2(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm("application/json;version=2", "json");
 		});
 
@@ -138,11 +133,9 @@ class FormatsTest
 		assertNotNull(contentType);
 		assertEquals("application/json", contentType.getType());
 
-		contentType = Formats.parseHeader(null);
-		assertNull(contentType);
+		assertThrows(FormattingException.class, () -> Formats.parseHeader(null));
 
-		contentType = Formats.parseHeader("");
-		assertNull(contentType);
+		assertThrows(FormattingException.class, () -> Formats.parseHeader(""));
 
 	}
 

@@ -51,10 +51,6 @@ import static cwms.cda.api.Controllers.requiredParam;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesIdentifierDescriptorDao;
@@ -62,7 +58,6 @@ import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -244,14 +239,16 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE)){
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             String body = ctx.body();
 
-            TimeSeriesIdentifierDescriptor tsid = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            TimeSeriesIdentifierDescriptor tsid = Formats.parseContent(contentType, body,
+                    TimeSeriesIdentifierDescriptor.class);
 
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
 
@@ -262,28 +259,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             dao.create(tsid, versioned, numForwards, numBackwards, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    public static TimeSeriesIdentifierDescriptor deserialize(String body, String format) throws JsonProcessingException {
-        TimeSeriesIdentifierDescriptor retval;
-        if (ContentType.equivalent(Formats.JSONV2, format)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, TimeSeriesIdentifierDescriptor.class);
-        } else if (ContentType.equivalent(Formats.XMLV2,format)) {
-            JacksonXmlModule module = new JacksonXmlModule();
-            module.setDefaultUseWrapper(false);
-            ObjectMapper om = new XmlMapper(module);
-            retval = om.readValue(body, TimeSeriesIdentifierDescriptor.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-
-        return retval;
     }
 
     @OpenApi(

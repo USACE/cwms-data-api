@@ -119,10 +119,4 @@ public final class PgJsonFormatter implements OutputFormatter {
         }
         return retVal.toString();
     }
-
-    @Override
-    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
-        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
-                + getContentType() + " not yet supported.");
-    }
 }

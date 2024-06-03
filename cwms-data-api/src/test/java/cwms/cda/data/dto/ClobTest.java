@@ -47,7 +47,7 @@ class ClobTest {
 
         assertNotNull(output);
 
-        Clob clob2 = ClobController.deserializeJAXB(output);
+        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), output, Clob.class);
 
         assertNotNull(clob2);
 
@@ -74,8 +74,7 @@ class ClobTest {
         //    <value>MYVALUE</value>
         // </clob>
 
-        ClobController controller = new ClobController(new MetricRegistry());
-        Clob clob2 = controller.deserialize(output, Formats.XMLV2);
+        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), output, Clob.class);
 
         assertNotNull(clob2);
 

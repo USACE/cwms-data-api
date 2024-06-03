@@ -156,11 +156,7 @@ public class RatingController implements CrudHandler {
     private ContentType getContentType(Context ctx) {
         String requestContent = ctx.req.getContentType();
         String formatHeader = requestContent != null ? requestContent : Formats.JSON;
-        ContentType contentType = Formats.parseHeader(formatHeader);
-        if (contentType == null) {
-            throw new FormattingException("Format header could not be parsed:" + formatHeader);
-        }
-        return contentType;
+        return Formats.parseHeader(formatHeader);
     }
 
     private String deserializeRatingSet(Context ctx) throws IOException, RatingException {

@@ -56,12 +56,6 @@ public class NamedPgJsonFormatter implements OutputFormatter {
         return retVal.toString();
     }
 
-    @Override
-    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
-        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
-                + getContentType() + " not yet supported.");
-    }
-
     private String formatNamedGraph(String name, Graph graph) throws JsonProcessingException {
         String retVal = getDefaultNamedPgJson(name);
         if (!graph.isEmpty()) {

@@ -6,14 +6,12 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.ForecastSpecDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -261,25 +259,10 @@ public final class ForecastSpecController implements CrudHandler {
     }
 
     private ForecastSpec deserializeForecastSpec(Context ctx) throws IOException {
-        return deserializeForecastSpec(ctx.body(), getUserDataContentType(ctx));
-    }
-
-    private ForecastSpec deserializeForecastSpec(String body, ContentType contentType)
-            throws IOException {
-        ForecastSpec retval;
-        String type = contentType.toString();
-        if ((Formats.JSONV2).equals(type)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, ForecastSpec.class);
-        } else {
-            throw new IOException("Unexpected format:" + type);
-        }
-        return retval;
-    }
-
-    private ContentType getUserDataContentType(@NotNull Context ctx) {
-        String contentTypeHeader = ctx.req.getContentType();
-        return Formats.parseHeader(contentTypeHeader);
+        String reqContentType = ctx.req.getContentType();
+        String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+        ContentType contentType = Formats.parseHeader(formatHeader);
+        return Formats.parseContent(contentType, ctx.body(), ForecastSpec.class);
     }
 
 }

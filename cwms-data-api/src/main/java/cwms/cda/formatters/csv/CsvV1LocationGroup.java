@@ -81,12 +81,6 @@ public class CsvV1LocationGroup implements OutputFormatter {
         return null;
     }
 
-    @Override
-    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
-        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
-                + getContentType() + " not yet supported.");
-    }
-
 
     // Mixin for LocationGroup
     // This class doesn't have to be related to LocationGroup, it just has to look like it.

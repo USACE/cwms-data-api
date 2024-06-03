@@ -95,9 +95,6 @@ public class StateController implements CrudHandler {
             List<State> states = dao.getStates();
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, State.class);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             String result = Formats.format(contentType, states, State.class);
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());

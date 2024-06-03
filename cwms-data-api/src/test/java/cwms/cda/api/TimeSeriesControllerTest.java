@@ -172,7 +172,7 @@ class TimeSeriesControllerTest extends ControllerTest {
             String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
             InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-            TimeSeries ts = TimeSeriesController.deserializeTimeSeries(inputStream, Formats.XMLV2);  // Should this be XMLv2?
+            TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), inputStream, TimeSeries.class);
 
             assertNotNull(ts);
 
@@ -189,7 +189,7 @@ class TimeSeriesControllerTest extends ControllerTest {
             assertNotNull(xml);
 			 // Should this be XMLv2?
         InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        TimeSeries ts = TimeSeriesController.deserializeTimeSeries(inputStream, Formats.XMLV2);
+        TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), inputStream, TimeSeries.class);
 
             assertNotNull(ts);
 
@@ -202,7 +202,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         String jsonV2 = loadResourceAsString("cwms/cda/api/timeseries_create.json");
         assertNotNull(jsonV2);
         InputStream inputStream = new ByteArrayInputStream(jsonV2.getBytes(StandardCharsets.UTF_8));
-        TimeSeries ts = TimeSeriesController.deserializeTimeSeries(inputStream, Formats.JSONV2);
+        TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), inputStream, TimeSeries.class);
 
         assertNotNull(ts);
 

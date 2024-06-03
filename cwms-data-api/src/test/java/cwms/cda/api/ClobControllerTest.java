@@ -63,9 +63,7 @@ public class ClobControllerTest extends ControllerTest {
         String input = "{\"office-id\":\"MYOFFICE\",\"id\":\"MYID\",\"description\":\"MYDESC\","
                 + "\"value\":\"MYVALUE\"}";
 
-        ClobController controller = new ClobController(new MetricRegistry());
-
-        Clob clob = controller.deserialize(input, Formats.JSONV2);
+        Clob clob = Formats.parseContent(Formats.parseHeader(Formats.JSONV2),input, Clob.class);
         assertNotNull(clob);
         assertEquals("MYOFFICE", clob.getOfficeId());
         assertEquals("MYID", clob.getId());

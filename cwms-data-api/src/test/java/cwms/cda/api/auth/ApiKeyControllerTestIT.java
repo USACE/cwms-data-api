@@ -220,7 +220,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     public void test_key_usage() throws Exception {
         createLocation("ApiKey-Test Location",true,"SPK");
         String json = loadResourceAsString("cwms/cda/api/location_create.json");
-        final Location location = new Location.Builder(LocationController.deserializeLocation(json, Formats.JSON))
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON), json, Location.class))
                 .withOfficeId("SPK")
                 .withName(getClass().getSimpleName())
                 .build();

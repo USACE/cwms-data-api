@@ -10,6 +10,7 @@ import com.codahale.metrics.MetricRegistry;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.formatters.Formats;
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
@@ -35,7 +36,7 @@ class LocationControllerTest extends ControllerTest
     {
         String xml = loadResourceAsString("cwms/cda/api/location_create.xml");
         assertNotNull(xml);
-        Location location = LocationController.deserializeLocation(xml, Formats.XML);
+        Location location = Formats.parseContent(Formats.parseHeader(Formats.XML), xml, Location.class);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
         assertEquals("LRL", location.getOfficeId());
@@ -51,7 +52,7 @@ class LocationControllerTest extends ControllerTest
         final String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
 
         assertNotNull(json);
-        Location location = LocationController.deserializeLocation(json, Formats.JSON);
+        Location location = Formats.parseContent(Formats.parseHeader(Formats.JSON), json, Location.class);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
         assertEquals(OFFICE, location.getOfficeId());
