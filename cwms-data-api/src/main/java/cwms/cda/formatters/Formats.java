@@ -118,6 +118,20 @@ public class Formats {
         }
     }
 
+    private <T extends CwmsDTOBase> T parseContentFromType(ContentType type, String content, Class<T> rootType)
+            throws FormattingException {
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        if (outputFormatter != null) {
+            T retval = outputFormatter.parseContent(content, rootType);
+            retval.validate();
+            return retval;
+        } else {
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                    type.toString(), rootType.getName());
+            throw new FormattingException(message);
+        }
+    }
+
     private OutputFormatter getOutputFormatter(ContentType type,
                                                Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
@@ -154,6 +168,10 @@ public class Formats {
         return formats.getFormatted(type, toFormat, rootType);
     }
 
+    public static <T extends CwmsDTOBase> T parseContent(ContentType type, String content, Class<T> rootType)
+            throws FormattingException {
+        return formats.parseContentFromType(type, content, rootType);
+    }
 
     /**
      * Parses the supplied header param or queryParam to determine the content type.

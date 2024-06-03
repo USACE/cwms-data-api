@@ -76,6 +76,15 @@ public class JsonV1 implements OutputFormatter {
         }
     }
 
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (JsonProcessingException e) {
+            throw new FormattingException("Could not deserialize:" + content, e);
+        }
+    }
+
     private Object buildFormatting(CwmsDTOBase dto) {
         Object retVal = null;
 

@@ -15,6 +15,8 @@ import cwms.cda.formatters.OutputFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static cwms.cda.formatters.Formats.NAMED_PGJSON;
+
 public class NamedPgJsonFormatter implements OutputFormatter {
     private final ObjectMapper om;
 
@@ -24,7 +26,7 @@ public class NamedPgJsonFormatter implements OutputFormatter {
 
     @Override
     public String getContentType() {
-        return Formats.NAMED_PGJSON;
+        return NAMED_PGJSON;
     }
 
     @Override
@@ -52,6 +54,12 @@ public class NamedPgJsonFormatter implements OutputFormatter {
             retVal.append(format(dto));
         }
         return retVal.toString();
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
+                + getContentType() + " not yet supported.");
     }
 
     private String formatNamedGraph(String name, Graph graph) throws JsonProcessingException {

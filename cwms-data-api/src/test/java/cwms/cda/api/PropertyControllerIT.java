@@ -25,8 +25,8 @@
 package cwms.cda.api;
 
 import cwms.cda.data.dto.Property;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import org.apache.commons.io.IOUtils;
@@ -55,7 +55,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
-        Property property = JsonV2.buildObjectMapper().readValue(json, Property.class);
+        Property property = Formats.parseContent(new ContentType(Formats.JSON), json, Property.class);
 
         // Structure of test:
         // 1)Create the Property
@@ -67,8 +67,8 @@ final class PropertyControllerIT extends DataApiTestIT {
         //Create the property
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -84,7 +84,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Retrieve the property and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
         .when()
@@ -105,7 +105,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Delete a Property
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -122,7 +122,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Retrieve a Property and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
         .when()
@@ -143,24 +143,24 @@ final class PropertyControllerIT extends DataApiTestIT {
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
-        Property property = JsonV2.buildObjectMapper().readValue(json, Property.class);
+        Property property = Formats.parseContent(new ContentType(Formats.JSON), json, Property.class);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         //Create the property
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(json)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/properties/" + property.getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/properties/" + property.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 
@@ -170,7 +170,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Delete a Property
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
             .queryParam(Controllers.CATEGORY_ID, Instant.now().toEpochMilli())
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -191,7 +191,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
-        Property property = JsonV2.buildObjectMapper().readValue(json, Property.class);
+        Property property = Formats.parseContent(new ContentType(Formats.JSON), json, Property.class);
 
         // Structure of test:
         // 1)Create the Property
@@ -202,8 +202,8 @@ final class PropertyControllerIT extends DataApiTestIT {
         //Create the property
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -219,7 +219,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Retrieve the property and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE_MASK, office)
             .queryParam(Controllers.CATEGORY_ID_MASK, property.getCategory())
             .queryParam(Controllers.NAME_MASK, property.getName())
@@ -241,7 +241,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Delete a Property
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
             .header(AUTH_HEADER, user.toHeaderValue())
