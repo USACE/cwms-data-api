@@ -75,4 +75,10 @@ public class XMLv1 implements OutputFormatter {
         throw new UnsupportedOperationException("Unable to process your request");
     }
 
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
+                + getContentType() + " not yet supported.");
+    }
+
 }

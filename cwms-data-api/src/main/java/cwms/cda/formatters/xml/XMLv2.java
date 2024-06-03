@@ -1,7 +1,11 @@
 package cwms.cda.formatters.xml;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
 import java.io.PrintWriter;
@@ -48,6 +52,19 @@ public class XMLv2 implements OutputFormatter {
     @Override
     public String format(List<? extends CwmsDTOBase> dtoList) {
         throw new UnsupportedOperationException("Unable to process your request");
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+
+        try {
+            JacksonXmlModule module = new JacksonXmlModule();
+            module.setDefaultUseWrapper(false);
+            XmlMapper om = new XmlMapper(module);
+            return om.readValue(content, type);
+        } catch (JsonProcessingException e) {
+            throw new FormattingException("Could not deserialize:" + content, e);
+        }
     }
 
 }

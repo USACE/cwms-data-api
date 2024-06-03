@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -40,7 +40,7 @@ import java.util.Objects;
 
 @XmlRootElement(name = "property")
 @XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @JsonDeserialize(builder = Property.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
