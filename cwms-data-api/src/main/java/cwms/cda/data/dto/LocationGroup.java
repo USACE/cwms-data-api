@@ -24,6 +24,9 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -32,13 +35,10 @@ import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 
 @Schema(description = "A representation of a location group")
-@XmlRootElement(name = "location_group")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("location_group")
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
 public class LocationGroup extends CwmsDTO {

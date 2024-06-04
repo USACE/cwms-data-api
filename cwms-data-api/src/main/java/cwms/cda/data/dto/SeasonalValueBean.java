@@ -1,6 +1,5 @@
 package cwms.cda.data.dto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,21 +8,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import java.math.BigInteger;
 
 @JsonDeserialize(builder = SeasonalValueBean.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@XmlAccessorType(XmlAccessType.FIELD)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class SeasonalValueBean {
-    @XmlElement(name = "value")
     private Double value;
-    @XmlElement(name = "offset-months")
     private Integer offsetMonths;
-    @XmlElement(name = "offset-minutes")
     private BigInteger offsetMinutes;
 
     private SeasonalValueBean() {
@@ -52,19 +44,21 @@ public class SeasonalValueBean {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private final Double value;
+        private Double value;
         private Integer offsetMonths;
         private BigInteger offsetMinutes;
 
+        public Builder() {
+            //No-op
+        }
 
-        public Builder(@JsonProperty(value = "value") Double value) {
+        public Builder(Double value) {
             this.value = value;
             this.offsetMonths = null;
             this.offsetMinutes = null;
         }
 
-        @JsonCreator
-        public Builder(@JsonProperty(value = "value") String value) {
+        public Builder(String value) {
             this.value = Double.valueOf(value);
             this.offsetMonths = null;
             this.offsetMinutes = null;
@@ -74,6 +68,11 @@ public class SeasonalValueBean {
             this.value = bean.getValue();
             this.offsetMonths = bean.getOffsetMonths();
             this.offsetMinutes = bean.getOffsetMinutes();
+        }
+
+        public Builder withValue(Double value) {
+            this.value = value;
+            return this;
         }
 
         public Builder withOffsetMinutes(BigInteger totalOffsetMinutes) {

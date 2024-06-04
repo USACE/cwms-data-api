@@ -1,11 +1,15 @@
 package cwms.cda.data.dto.catalog;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+
 import java.util.Collection;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
 
 
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class LocationCatalogEntry extends CatalogEntry {
     private String name;
     private String nearestCity;
@@ -29,8 +33,8 @@ public class LocationCatalogEntry extends CatalogEntry {
     private String boundingOffice;
     private String mapLabel;
     private boolean active;
-    @XmlElementWrapper(name = "aliases")
-    @XmlElement(name = "alias")
+    @JacksonXmlElementWrapper(localName = "aliases")
+    @JacksonXmlProperty(localName = "alias")
     private Collection<LocationAlias> aliases;
 
     private LocationCatalogEntry() {

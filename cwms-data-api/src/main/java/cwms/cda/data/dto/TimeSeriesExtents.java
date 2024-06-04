@@ -3,53 +3,35 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.TimeSeries.Record;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-@XmlRootElement(name = "extents")
+@JsonRootName("extents")
 @Schema(description = "TimeSeries extent information")
-@XmlSeeAlso(Record.class)
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @JsonPropertyOrder(alphabetic = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class TimeSeriesExtents {
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "TimeSeries version to which this extent information applies")
     @JsonFormat(shape = Shape.STRING)
     ZonedDateTime versionTime;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "Earliest value in the timeseries")
     @JsonFormat(shape = Shape.STRING)
-    @XmlElement(name = "earliest-time")
     ZonedDateTime earliestTime;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "Latest value in the timeseries")
     @JsonFormat(shape = Shape.STRING)
-    @XmlElement(name = "latest-time")
     ZonedDateTime latestTime;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "Last update in the timeseries")
     @JsonFormat(shape = Shape.STRING)
-    @XmlElement(name = "last-update")
     ZonedDateTime lastUpdate;
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal

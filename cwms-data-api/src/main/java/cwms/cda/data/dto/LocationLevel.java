@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -24,6 +25,8 @@ import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
 import hec.data.level.JDomLocationLevelImpl;
 import io.swagger.v3.oas.annotations.media.Schema;
+import rma.util.RMAConst;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.ZoneId;
@@ -35,84 +38,74 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import rma.util.RMAConst;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-@XmlRootElement(name = "LocationLevel")
+@JsonRootName("LocationLevel")
 @JsonDeserialize(builder = LocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@XmlAccessorType(XmlAccessType.FIELD)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
 public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
-    @XmlElement(name = "location-level-id", required = true)
+    
     private String locationLevelId;
     @Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
             + "location level. Mutually exclusive with seasonalValues and "
             + "siParameterUnitsConstantValue")
-    @XmlElement(name = "seasonal-time-series-id")
+    
     private String seasonalTimeSeriesId;
     @Schema(description = "Generic name of this location level. Common names are 'Top of Dam', "
             + "'Streambed', 'Bottom of Dam'.")
-    @XmlElement(name = "specified-level-id")
+    
     private final String specifiedLevelId;
     @Schema(description = "To indicate if single or aggregate value",
             allowableValues = {"Inst", "Ave", "Min", "Max", "Total"})
-    @XmlElement(name = "parameter-type-id")
+    
     private final String parameterTypeId;
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
-    @XmlElement(name = "parameter-id")
+    
     private String parameterId;
     @Schema(description = "Single value for this location level. Mutually exclusive with "
             + "seasonableTimeSeriesId and seasonValues.")
-    @XmlElement(name = "constant-value")
+    
     private Double constantValue;
     @Schema(description = "Units the provided levels are in")
-    @XmlElement(name = "level-units-id")
+    
     private String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @XmlElement(name = "level-date")
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
+
     private ZonedDateTime levelDate;
-    @XmlElement(name = "level-comment")
+    
     private String levelComment;
     @Schema(description = "The start point of provided seasonal values")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @XmlElement(name = "interval-origin")
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
+
     private ZonedDateTime intervalOrigin;
-    @XmlElement(name = "interval-months")
+    
     private Integer intervalMonths;
-    @XmlElement(name = "interval-minutes")
+    
     private Integer intervalMinutes;
     @Schema(description = "Indicating whether or not to interpolate between seasonal values.",
             allowableValues = {"T", "F"})
-    @XmlElement(name = "interpolate-string")
+    
     private String interpolateString;
     @Schema(description = "0 if parameterTypeId is Inst. Otherwise duration indicating the time "
             + "window of the aggregate value.")
-    @XmlElement(name = "duration-id")
+    
     private String durationId;
-    @XmlElement(name = "attribute-value")
+    
     private BigDecimal attributeValue;
-    @XmlElement(name = "attribute-units-id")
+    
     private String attributeUnitsId;
-    @XmlElement(name = "attribute-type-id")
+    
     private String attributeParameterTypeId;
-    @XmlElement(name = "attribute-parameter-id")
+    
     private String attributeParameterId;
-    @XmlElement(name = "attribute-duration-id")
+    
     private String attributeDurationId;
-    @XmlElement(name = "attribute-comment")
+    
     private String attributeComment;
 
     @Schema(description = "List of Repeating seasonal values. The values repeater after the "
@@ -120,7 +113,7 @@ public final class LocationLevel extends CwmsDTO {
             + " A yearly interval seasonable could have 12 different values, one for each month for"
             + " example. Mutually exclusive with seasonalTimeSeriesId and "
             + "siParameterUnitsConstantValue")
-    @XmlElement(name = "seasonal-values")
+    
     private final List<SeasonalValueBean> seasonalValues;
 
     private LocationLevel() {
