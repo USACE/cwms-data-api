@@ -37,6 +37,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.CountyDao;
 import cwms.cda.data.dto.County;
 import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.ContentTypeAliasMap;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
@@ -58,6 +59,13 @@ import org.jooq.DSLContext;
 public class CountyController implements CrudHandler {
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
+    private static final ContentTypeAliasMap CONTENT_TYPE_ALIAS_MAP = new ContentTypeAliasMap();
+
+    static
+    {
+        CONTENT_TYPE_ALIAS_MAP.addContentType(Formats.JSON, new ContentType(Formats.JSONV2));
+        CONTENT_TYPE_ALIAS_MAP.addContentType(Formats.DEFAULT, new ContentType(Formats.JSONV2));
+    }
 
     /**
      * Sets up county endpoint metrics for the controller.
@@ -92,7 +100,7 @@ public class CountyController implements CrudHandler {
             CountyDao dao = new CountyDao(dsl);
             List<County> counties = dao.getCounties();
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, CONTENT_TYPE_ALIAS_MAP);
             if (contentType == null) {
                 throw new FormattingException("Format header could not be parsed");
             }
