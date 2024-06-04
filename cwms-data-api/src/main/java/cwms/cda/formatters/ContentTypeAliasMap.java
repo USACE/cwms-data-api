@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class ContentTypeAliasMap
+final class ContentTypeAliasMap
 {
 	private final Map<String, ContentType> _contentTypeMap = new HashMap<>();
 	private static final Map<Class<? extends CwmsDTOBase>, ContentTypeAliasMap> ALIAS_MAP = new HashMap<>();

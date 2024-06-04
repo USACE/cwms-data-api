@@ -227,23 +227,26 @@ public class Formats {
 
 
     public static ContentType parseHeader(String header) {
-        return parseHeader(header, ContentTypeAliasMap.empty());
+        return parseHeader(header, null);
     }
-    public static ContentType parseHeader(String header, ContentTypeAliasMap aliasMap) {
+
+    public static ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
         ArrayList<ContentType> contentTypes = new ArrayList<>();
+        ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
+        if (klass != null) {
+            aliasMap = ContentTypeAliasMap.forDtoClass(klass);
+        }
 
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
             logger.log(Level.FINEST, "Finding handlers {0}", all.length);
             for (String ct : all) {
                 ContentType aliasType = aliasMap.getContentType(ct);
-                if (aliasType != null)
-                {
+                if (aliasType != null) {
                     logger.finest(() -> ct + " converted to " + aliasType);
                     contentTypes.add(aliasType);
                 }
-                else
-                {
+                else {
                     logger.finest(ct);
                     contentTypes.add(new ContentType(ct));
                 }
