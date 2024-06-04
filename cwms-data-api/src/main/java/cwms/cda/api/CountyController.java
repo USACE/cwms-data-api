@@ -59,13 +59,6 @@ import org.jooq.DSLContext;
 public class CountyController implements CrudHandler {
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
-    private static final ContentTypeAliasMap CONTENT_TYPE_ALIAS_MAP = new ContentTypeAliasMap();
-
-    static
-    {
-        CONTENT_TYPE_ALIAS_MAP.addContentType(Formats.JSON, new ContentType(Formats.JSONV2));
-        CONTENT_TYPE_ALIAS_MAP.addContentType(Formats.DEFAULT, new ContentType(Formats.JSONV2));
-    }
 
     /**
      * Sets up county endpoint metrics for the controller.
@@ -100,7 +93,7 @@ public class CountyController implements CrudHandler {
             CountyDao dao = new CountyDao(dsl);
             List<County> counties = dao.getCounties();
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, CONTENT_TYPE_ALIAS_MAP);
+            ContentType contentType = Formats.parseHeader(formatHeader, ContentTypeAliasMap.forDtoClass(County.class));
             if (contentType == null) {
                 throw new FormattingException("Format header could not be parsed");
             }

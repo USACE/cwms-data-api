@@ -227,7 +227,7 @@ public class Formats {
 
 
     public static ContentType parseHeader(String header) {
-        return parseHeader(header, new ContentTypeAliasMap());
+        return parseHeader(header, ContentTypeAliasMap.empty());
     }
     public static ContentType parseHeader(String header, ContentTypeAliasMap aliasMap) {
         ArrayList<ContentType> contentTypes = new ArrayList<>();
