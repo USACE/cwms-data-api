@@ -35,47 +35,26 @@ import java.util.function.Consumer;
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
-    @XmlElement(name = "name", required = true)
     private final String name;
-    @XmlElement(name = "latitude")
     private final Double latitude;
-    @XmlElement(name = "longitude")
     private final Double longitude;
-    @XmlElement(name = "active")
     private final Boolean active;
-    @XmlElement(name = "public-name")
     private final String publicName;
-    @XmlElement(name = "long-name")
     private final String longName;
-    @XmlElement(name = "description")
     private final String description;
-    @XmlElement(name = "timezone-name")
     private final String timezoneName;
-    @XmlElement(name = "location-type")
     private final String locationType;
-    @XmlElement(name = "location-kind")
     private final String locationKind;
-    @XmlElement(name = "nation")
     private final Nation nation;
-    @XmlElement(name = "state-initial")
     private final String stateInitial;
-    @XmlElement(name = "county-name")
     private final String countyName;
-    @XmlElement(name = "nearest-city")
     private final String nearestCity;
-    @XmlElement(name = "horizontal-datum")
     private final String horizontalDatum;
-    @XmlElement(name = "published-longitude")
     private final Double publishedLongitude;
-    @XmlElement(name = "published-latitude")
     private final Double publishedLatitude;
-    @XmlElement(name = "vertical-datum")
     private final String verticalDatum;
-    @XmlElement(name = "elevation")
     private final Double elevation;
-    @XmlElement(name = "map-label")
     private final String mapLabel;
-    @XmlElement(name = "bounding-office-id")
     private final String boundingOfficeId;
     private final String elevationUnits;
 
