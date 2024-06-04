@@ -1,39 +1,23 @@
 package cwms.cda.data.dto;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
-
+import cwms.cda.formatters.xml.XMLv1;
 import org.junit.jupiter.api.Test;
 
-import hec.data.VerticalDatumException;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static cwms.cda.data.dao.JsonRatingUtilsTest.readFully;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class VerticalDatumInfoTest
 {
 
 	@Test
-	void xml_deserialize () throws JAXBException
+	void xml_deserialize ()
 	{
 		String body = "<vertical-datum-info office=\"LRL\" unit=\"m\">\n"
 				+ "\t  <location>Buckhorn</location>\n"
@@ -45,19 +29,12 @@ class VerticalDatumInfoTest
 				+ "\t  </offset>\n"
 				+ "\t</vertical-datum-info>";
 
-		VerticalDatumInfo vdi = parseXml(body);
+		VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(body);
 		assertNotNull(vdi);
 
 		VerticalDatumInfo expected = buildVerticalDatumInfo();
 		assertVDIEquals(expected, vdi);
 
-	}
-
-	private VerticalDatumInfo parseXml(String body) throws JAXBException
-	{
-		JAXBContext jaxbContext = JAXBContext.newInstance(VerticalDatumInfo.class);
-		Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-		return (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
 	}
 
 	private void assertMatchesExpected(VerticalDatumInfo vdi)
@@ -117,27 +94,16 @@ class VerticalDatumInfoTest
 	}
 
 	@Test
-	void xml_serialize() throws JAXBException
+	void xml_serialize()
 	{
 		VerticalDatumInfo expected = buildVerticalDatumInfo();
 		assertNotNull(expected);
 
-		String body = getXml(expected);
+		String body = new XMLv1().format(expected);
 		assertNotNull(body);
 
-		VerticalDatumInfo actual = parseXml(body);
+		VerticalDatumInfo actual = TimeSeriesDaoImpl.parseVerticalDatumInfo(body);
 		assertVDIEquals(expected, actual);
-	}
-
-	private String getXml(VerticalDatumInfo vdi) throws JAXBException
-	{
-		JAXBContext context = JAXBContext.newInstance(VerticalDatumInfo.class);
-		Marshaller marshaller = context.createMarshaller();
-		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT,Boolean.TRUE);
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		marshaller.marshal(vdi,pw);
-		return sw.toString();
 	}
 
 	private VerticalDatumInfo parseJson(String body) throws JsonProcessingException {
@@ -170,7 +136,7 @@ class VerticalDatumInfoTest
 	}
 
 	@Test
-	void testVertDatum1() throws VerticalDatumException, IOException
+	void testVertDatum1() throws IOException
 	{
 		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert1.xml");
 		assertNotNull(stream);
@@ -182,14 +148,10 @@ class VerticalDatumInfoTest
 		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
 		assertNotNull(offsets);
 		assertEquals(1, offsets.length);
-
-//		VerticalDatumContainer vdc = new VerticalDatumContainer(v);
-//		assertNotNull(vdc);
-
 	}
 
 	@Test
-	void testVertDatum2() throws VerticalDatumException, IOException
+	void testVertDatum2() throws IOException
 	{
 		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert2.xml");
 		assertNotNull(stream);
@@ -201,14 +163,10 @@ class VerticalDatumInfoTest
 		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
 		assertNotNull(offsets);
 		assertEquals(2, offsets.length);
-
-//		// Should also be able to build the CWMS class from the same input.
-//		VerticalDatumContainer vdc = new VerticalDatumContainer(v);
-//		assertNotNull(vdc);
 	}
 
 	@Test
-	void testVertDatum3() throws VerticalDatumException, IOException, JAXBException
+	void testVertDatum3() throws IOException
 	{
 		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert3.xml");
 		assertNotNull(stream);
@@ -222,17 +180,14 @@ class VerticalDatumInfoTest
 		assertEquals(3, offsets.length);
 
 
-		String body = getXml(vdi);
-//		assertNotNull(body);
-//		assertThat(body, isIdenticalTo(new WhitespaceStrippedSource(Input.from(v).build())));
-
-		VerticalDatumInfo actual = parseXml(body);
+		String body = new XMLv1().format(vdi);
+		VerticalDatumInfo actual = TimeSeriesDaoImpl.parseVerticalDatumInfo(body);
 		assertVDIEquals(vdi, actual);
 
 	}
 
 	@Test
-	void xml_serialize_no_offsets() throws JAXBException
+	void xml_serialize_no_offsets()
 	{
 
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
@@ -243,15 +198,15 @@ class VerticalDatumInfoTest
 
 		assertNotNull(vdi);
 
-		String body = getXml(vdi);
+		String body = new XMLv1().format(vdi);
 		assertNotNull(body);
 
-		VerticalDatumInfo actual = parseXml(body);
+		VerticalDatumInfo actual = TimeSeriesDaoImpl.parseVerticalDatumInfo(body);
 		assertVDIEquals(vdi, actual);
 	}
 
 	@Test
-	void xml_serialize_empty_offsets() throws JAXBException
+	void xml_serialize_empty_offsets()
 	{
 
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
@@ -263,15 +218,15 @@ class VerticalDatumInfoTest
 
 		assertNotNull(vdi);
 
-		String body = getXml(vdi);
+		String body = new XMLv1().format(vdi);
 		assertNotNull(body);
 
-		VerticalDatumInfo actual = parseXml(body);
+		VerticalDatumInfo actual = TimeSeriesDaoImpl.parseVerticalDatumInfo(body);
 		assertVDIEquals(vdi, actual);
 	}
 
 	@Test
-	void json_serialize_empty_offsets() throws JAXBException, JsonProcessingException {
+	void json_serialize_empty_offsets() throws JsonProcessingException {
 
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
@@ -291,7 +246,7 @@ class VerticalDatumInfoTest
 	}
 
 	@Test
-	void json_serialize_not_set_offsets_is_empty() throws JAXBException, JsonProcessingException {
+	void json_serialize_not_set_offsets_is_empty() throws JsonProcessingException {
 
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
@@ -311,7 +266,7 @@ class VerticalDatumInfoTest
 	}
 
 	@Test
-	void json_serialize_null_means_null() throws JAXBException, JsonProcessingException {
+	void json_serialize_null_means_null() throws JsonProcessingException {
 
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")

@@ -55,6 +55,10 @@ import java.util.stream.Collectors;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
+import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.formatters.xml.XMLv2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
@@ -467,10 +471,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         VerticalDatumInfo retVal = null;
         if (body != null && !body.isEmpty()) {
             try {
-                JAXBContext jaxbContext = JAXBContext.newInstance(VerticalDatumInfo.class);
-                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-                retVal = (VerticalDatumInfo) unmarshaller.unmarshal(new StringReader(body));
-            } catch (JAXBException e) {
+                retVal = new XMLv1().parseContent(body, VerticalDatumInfo.class);
+            } catch (FormattingException e) {
                 logger.log(Level.WARNING, e, () -> "Failed to parse:" + body);
             }
         }

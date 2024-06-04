@@ -1,56 +1,47 @@
 package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.Nullable;
 
-@XmlRootElement(name = "forecast-spec")
-@XmlAccessorType(XmlAccessType.FIELD)
+import java.util.List;
+
+@JsonRootName("forecast-spec")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @JsonDeserialize(builder = ForecastSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class ForecastSpec extends CwmsDTO {
     @Schema(description = "Forecast Spec ID")
-    @XmlElement(name = "spec-id")
     private final String specId;
 
     @Schema(description = "Forecast Designator")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String designator;
 
     @Schema(description = "Location IDs")
-    @XmlElement(name = "location-id")
     private final String locationId;
 
     @Schema(description = "Source Entity ID")
-    @XmlElement(name = "source-entity-id")
     private final String sourceEntityId;
 
     @Schema(description = "Description of Forecast")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String description;
 
     @Schema(description = "List of Time Series IDs belonging to this Forecast Spec")
-    @XmlAttribute(name = "time-series-ids")
+    @JacksonXmlProperty(isAttribute = true)
     private final List<String> timeSeriesIds;
 
 

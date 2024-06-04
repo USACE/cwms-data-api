@@ -1,28 +1,27 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
 
-@XmlRootElement(name = "pools")
-@XmlSeeAlso(Pool.class)
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("pools")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Pools extends CwmsDTOPaginated {
-    @XmlElementWrapper
-    @XmlElement(name = "pool")
+    @JacksonXmlElementWrapper
+    @JacksonXmlProperty(localName = "pool")
 
     @Schema(description = "List of retrieved pools")
     List<Pool> pools;
