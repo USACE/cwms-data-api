@@ -47,7 +47,6 @@ public class CountyControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -60,5 +59,56 @@ public class CountyControllerTestIT extends DataApiTestIT {
             .body("[0].name", equalTo("Unknown County or County N/A for Unknown State or State N/A"))
             .body("[0].county-id", equalTo("000"))
             .body("[0].state-initial", equalTo("00"));
+    }
+
+    @Test
+    void test_county_catalog_default_content_type() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.DEFAULT)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/counties/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(equalTo(Formats.JSONV2));
+    }
+
+    @Test
+    void test_county_catalog_base_json_content_type() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/counties/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(equalTo(Formats.JSONV2));
+    }
+
+    @Test
+    void test_county_catalog_jsonv2_content_type() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/counties/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(equalTo(Formats.JSONV2));
     }
 }
