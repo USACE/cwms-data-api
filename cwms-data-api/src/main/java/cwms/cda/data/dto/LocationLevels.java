@@ -17,7 +17,7 @@ import java.util.List;
 @JsonRootName("location-levels")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class LocationLevels extends CwmsDTOPaginated {
-    @JacksonXmlElementWrapper(localName = "location-levels")
+    @JacksonXmlElementWrapper
     @JacksonXmlProperty(localName = "location-level")
     @Schema(description = "List of retrieved location levels")
     private List<LocationLevel> levels;

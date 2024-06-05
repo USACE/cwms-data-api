@@ -184,8 +184,7 @@ public class LocationController implements CrudHandler {
             String version = contentType.getParameters().get(VERSION);
             if (version != null && version.equals("2")) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
-                ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-                results = om.writeValueAsString(locations);
+                results = Formats.format(contentType, locations, Location.class);
                 ctx.result(results);
                 requestResultSize.update(results.length());
             } else if (contentType.getType().equals(Formats.GEOJSON)) {
@@ -274,8 +273,7 @@ public class LocationController implements CrudHandler {
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
             Location location = locationDao.getLocation(name, units, office);
-            ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-            String serializedLocation = om.writeValueAsString(location);
+            String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -293,8 +291,8 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Location.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Location.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Location.class, type = Formats.JSON),
+                        @OpenApiContent(from = Location.class, type = Formats.XML)
                     },
                     required = true),
             description = "Create new CWMS Location",
@@ -326,8 +324,8 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Location.class, type = Formats.XMLV2),
-                        @OpenApiContent(from = Location.class, type = Formats.JSONV2)
+                        @OpenApiContent(from = Location.class, type = Formats.XML),
+                        @OpenApiContent(from = Location.class, type = Formats.JSON)
                     },
                     required = true),
             description = "Update CWMS Location",

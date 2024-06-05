@@ -14,13 +14,9 @@ import java.math.BigInteger;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class SeasonalValueBean {
-    private Double value;
-    private Integer offsetMonths;
-    private BigInteger offsetMinutes;
-
-    private SeasonalValueBean() {
-        this(new Builder((Double) null));
-    }
+    private final Double value;
+    private final Integer offsetMonths;
+    private final BigInteger offsetMinutes;
 
     private SeasonalValueBean(Builder builder) {
         this.value = builder.value;
