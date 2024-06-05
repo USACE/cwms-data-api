@@ -33,13 +33,8 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
 
-@XmlRootElement(name = "lookupType")
-@XmlAccessorType(XmlAccessType.FIELD)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @JsonDeserialize(builder = LookupType.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
