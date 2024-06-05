@@ -15,7 +15,7 @@ import java.time.Instant;
 @JsonDeserialize(builder = Project.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
 public class Project extends CwmsDTO {
 
     private final String name;

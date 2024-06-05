@@ -14,7 +14,7 @@ import java.time.Instant;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-public class ProjectTest {
+class ProjectTest {
 
 
     @Test
