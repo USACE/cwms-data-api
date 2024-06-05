@@ -6,6 +6,7 @@ import java.util.Map;
 
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.State;
 import cwms.cda.formatters.annotations.FormattableWith;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -197,7 +198,12 @@ class FormatsTest
 	enum ParseHeaderClassAliasTest
 	{
 		COUNTY_DEFAULT(County.class, Formats.DEFAULT, Formats.JSONV2),
-		COUNTY_JSON(County.class, Formats.JSON, Formats.JSONV2);
+		COUNTY_JSON(County.class, Formats.JSON, Formats.JSONV2),
+		COUNTY_JSONV2(County.class, Formats.JSONV2, Formats.JSONV2),
+		STATE_DEFAULT(State.class, Formats.DEFAULT, Formats.JSONV2),
+		STATE_JSON(State.class, Formats.JSON, Formats.JSONV2),
+		STATE_JSONV2(State.class, Formats.JSONV2, Formats.JSONV2),
+		;
 
 		final Class<? extends CwmsDTOBase> _class;
 		final String _contentType;
