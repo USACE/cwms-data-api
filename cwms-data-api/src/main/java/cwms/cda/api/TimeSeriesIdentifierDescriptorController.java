@@ -155,7 +155,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     dao.getTimeSeriesIdentifiers(cursor, pageSize, office, idRegex);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            if ("*/*".equals(formatHeader)) {
+            if (Formats.DEFAULT.equals(formatHeader)) {
                 // parseHeaderAndQueryParm normally defaults to JSONV1 when the input is */*
                 formatHeader = Formats.JSONV2;
             }
@@ -203,7 +203,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            if ("*/*".equals(formatHeader)) {
+            if (Formats.DEFAULT.equals(formatHeader)) {
                 // parseHeaderAndQueryParm normally defaults to JSONV1 when the input is */*
                 formatHeader = Formats.JSONV2;
             }

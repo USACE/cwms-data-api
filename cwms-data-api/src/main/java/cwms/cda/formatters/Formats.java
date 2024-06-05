@@ -53,6 +53,7 @@ public class Formats {
     public static final String GEOJSON = "application/geo+json";
     public static final String PGJSON = "application/vnd.pg+json";
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
+    public static final String DEFAULT = "*/*";
 
 
     private static final List<ContentType> contentTypeList = new ArrayList<>();
@@ -184,7 +185,7 @@ public class Formats {
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
         if (queryParam != null && !queryParam.isEmpty()) {
-            if (header != null && !header.isEmpty() && !"*/*".equals(header.trim())) {
+            if (header != null && !header.isEmpty() && !DEFAULT.equals(header.trim())) {
                 // If the user supplies an accept header and also a format= parameter, which
                 // should we use?
                 // The older format= query parameters don't give us the option to supply a
@@ -226,14 +227,29 @@ public class Formats {
 
 
     public static ContentType parseHeader(String header) {
+        return parseHeader(header, null);
+    }
+
+    public static ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
         ArrayList<ContentType> contentTypes = new ArrayList<>();
+        ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
+        if (klass != null) {
+            aliasMap = ContentTypeAliasMap.forDtoClass(klass);
+        }
 
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
             logger.log(Level.FINEST, "Finding handlers {0}", all.length);
             for (String ct : all) {
-                logger.finest(ct);
-                contentTypes.add(new ContentType(ct));
+                ContentType aliasType = aliasMap.getContentType(ct);
+                if (aliasType != null) {
+                    logger.finest(() -> ct + " converted to " + aliasType);
+                    contentTypes.add(aliasType);
+                }
+                else {
+                    logger.finest(ct);
+                    contentTypes.add(new ContentType(ct));
+                }
             }
             Collections.sort(contentTypes);
         }
@@ -245,7 +261,7 @@ public class Formats {
             }
         }
         for (ContentType ct : contentTypes) {
-            if (ct.getType().equals("*/*")) {
+            if (ct.getType().equals(DEFAULT)) {
                 return new ContentType(Formats.JSON);
             }
         }
