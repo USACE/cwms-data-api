@@ -32,14 +32,12 @@ import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.ArrayList;
 
 @Schema(description = "A representation of a state")
 @JsonRootName("state")
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class, aliases = {Formats.JSON, Formats.DEFAULT})
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class State implements CwmsDTOBase {
