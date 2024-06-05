@@ -45,40 +45,51 @@ public class StateControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_state_catalog()  {
-        catalogStates()
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].name", equalTo("Unknown State or State N/A"))
             .body("[0].state-initial", equalTo("00"));
-    }
-
-    private ValidatableResponse catalogStates()
-    {
-        return catalogStatesWithContentType(Formats.JSONV2);
-    }
-
-    private ValidatableResponse catalogStatesWithContentType(String contentType)
-    {
-        return given()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSONV2)
-                .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .get("/states/")
-                .then()
-                    .assertThat().log().ifValidationFails(LogDetail.ALL, true)
-                    .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     @Test
     void test_state_catalog_with_app_json()  {
-        catalogStates()
-            .body("[0].name", equalTo("Unknown State or State N/A"))
-            .body("[0].state-initial", equalTo("00"));
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+        .body("[0].name", equalTo("Unknown State or State N/A"))
+        .body("[0].state-initial", equalTo("00"));
     }
 
     @Test
     void test_state_has_ETag_and_Cache_Control()  {
-        catalogStates()
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
             .header(Header.ETAG, not(isEmptyOrNullString()))
             .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="));
     }
@@ -86,14 +97,34 @@ public class StateControllerTestIT extends DataApiTestIT {
     @Test
     void test_state_catalog_default_content_type()
     {
-        catalogStatesWithContentType(Formats.DEFAULT)
-                .contentType(equalTo(Formats.JSONV2));
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.DEFAULT)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(equalTo(Formats.JSONV2));
     }
 
     @Test
     void test_state_catalog_JSON_content_type()
     {
-        catalogStatesWithContentType(Formats.JSON)
-                .contentType(equalTo(Formats.JSONV2));
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(equalTo(Formats.JSONV2));
     }
 }
