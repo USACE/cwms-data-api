@@ -41,8 +41,7 @@ import java.util.ArrayList;
 @Schema(description = "A representation of a state")
 @XmlRootElement(name="state")
 @XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON, Formats.DEFAULT})
 public class State implements CwmsDTOBase {
     @XmlElement(name="state-initial")
     private String stateInitial;
