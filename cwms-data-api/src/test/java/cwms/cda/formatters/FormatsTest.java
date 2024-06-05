@@ -196,27 +196,17 @@ class FormatsTest
 
 	enum ParseHeaderClassAliasTest
 	{
-		COUNTY_DEFAULT(County.class, Formats.DEFAULT),
-		COUNTY_JSON(County.class, Formats.JSON);
+		COUNTY_DEFAULT(County.class, Formats.DEFAULT, Formats.JSONV2),
+		COUNTY_JSON(County.class, Formats.JSON, Formats.JSONV2);
 
 		final Class<? extends CwmsDTOBase> _class;
 		final String _contentType;
 		final String _expectedType;
 
-		ParseHeaderClassAliasTest(Class<? extends CwmsDTOBase> aClass, String contentType)
+		ParseHeaderClassAliasTest(Class<? extends CwmsDTOBase> aClass, String contentType, String expectedType)
 		{
 			_class = aClass;
 			_contentType = contentType;
-
-			String expectedType = _contentType;
-
-			for (FormattableWith formattableWith : _class.getAnnotationsByType(FormattableWith.class))
-			{
-				if (Arrays.asList(formattableWith.aliases()).contains(_contentType))
-				{
-					expectedType = formattableWith.contentType();
-				}
-			}
 			_expectedType = expectedType;
 		}
 	}
