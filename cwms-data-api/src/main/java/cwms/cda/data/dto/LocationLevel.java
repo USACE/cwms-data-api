@@ -49,12 +49,12 @@ public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
     
-    private String locationLevelId;
+    private final String locationLevelId;
     @Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
             + "location level. Mutually exclusive with seasonalValues and "
             + "siParameterUnitsConstantValue")
     
-    private String seasonalTimeSeriesId;
+    private final String seasonalTimeSeriesId;
     @Schema(description = "Generic name of this location level. Common names are 'Top of Dam', "
             + "'Streambed', 'Bottom of Dam'.")
     
@@ -65,48 +65,48 @@ public final class LocationLevel extends CwmsDTO {
     private final String parameterTypeId;
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
     
-    private String parameterId;
+    private final String parameterId;
     @Schema(description = "Single value for this location level. Mutually exclusive with "
             + "seasonableTimeSeriesId and seasonValues.")
     
-    private Double constantValue;
+    private final Double constantValue;
     @Schema(description = "Units the provided levels are in")
     
-    private String levelUnitsId;
+    private final String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
 
-    private ZonedDateTime levelDate;
+    private final ZonedDateTime levelDate;
     
-    private String levelComment;
+    private final String levelComment;
     @Schema(description = "The start point of provided seasonal values")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
 
-    private ZonedDateTime intervalOrigin;
+    private final ZonedDateTime intervalOrigin;
     
-    private Integer intervalMonths;
+    private final Integer intervalMonths;
     
-    private Integer intervalMinutes;
+    private final Integer intervalMinutes;
     @Schema(description = "Indicating whether or not to interpolate between seasonal values.",
             allowableValues = {"T", "F"})
     
-    private String interpolateString;
+    private final String interpolateString;
     @Schema(description = "0 if parameterTypeId is Inst. Otherwise duration indicating the time "
             + "window of the aggregate value.")
     
-    private String durationId;
+    private final String durationId;
     
-    private BigDecimal attributeValue;
+    private final BigDecimal attributeValue;
     
-    private String attributeUnitsId;
+    private final String attributeUnitsId;
     
-    private String attributeParameterTypeId;
+    private final String attributeParameterTypeId;
     
-    private String attributeParameterId;
+    private final String attributeParameterId;
     
-    private String attributeDurationId;
+    private final String attributeDurationId;
     
-    private String attributeComment;
+    private final String attributeComment;
 
     @Schema(description = "List of Repeating seasonal values. The values repeater after the "
             + "specified interval."
@@ -115,10 +115,6 @@ public final class LocationLevel extends CwmsDTO {
             + "siParameterUnitsConstantValue")
     
     private final List<SeasonalValueBean> seasonalValues;
-
-    private LocationLevel() {
-        this(new Builder(null, null));
-    }
 
     private LocationLevel(Builder builder) {
         super(builder.officeId);

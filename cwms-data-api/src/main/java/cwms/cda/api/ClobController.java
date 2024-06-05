@@ -223,7 +223,7 @@ public class ClobController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
