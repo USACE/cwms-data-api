@@ -9,13 +9,21 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Project;
 import cwms.cda.data.dto.Projects;
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
+import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
+import org.jooq.SelectLimitPercentStep;
+import org.jooq.conf.ParamType;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
 import usace.cwms.db.dao.ifc.loc.LocationType;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -27,6 +35,90 @@ import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 import usace.cwms.db.jooq.dao.util.LocationTypeUtil;
 
 public class ProjectDao extends JooqDao<Project> {
+    private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
+
+    private final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+    private final String firstQuery =  "select project.office_id,\n"
+            + "       project.location_id as project_id,\n"
+            + "       project.COST_YEAR,\n"
+            + "       project.federal_cost,\n"
+            + "       project.nonfederal_cost,\n"
+            + "       project.FEDERAL_OM_COST,\n"
+            + "       project.NONFEDERAL_OM_COST,\n"
+            + "       project.authorizing_law,\n"
+            + "       project.project_owner,\n"
+            + "       project.hydropower_description,\n"
+            + "       project.sedimentation_description,\n"
+            + "       project.downstream_urban_description,\n"
+            + "       project.bank_full_capacity_description,\n"
+            + "       pumpback.location_id as pump_back_location_id,\n"
+            + "       pumpback.p_office_id as pump_back_office_id,\n"
+            + "       neargage.location_id as near_gage_location_id,\n"
+            + "       neargage.n_office_id as near_gage_office_id,\n"
+            + "       project.yield_time_frame_start,\n"
+            + "       project.yield_time_frame_end,\n"
+            + "       project.project_remarks\n"
+            + "from ( select o.office_id as office_id,\n"
+            + "              bl.base_location_id\n"
+            + "                  ||substr('-', 1, length(pl.sub_location_id))\n"
+            + "                  ||pl.sub_location_id as location_id,\n"
+            + "              p.COST_YEAR,\n"
+            + "              p.federal_cost,\n"
+            + "              p.nonfederal_cost,\n"
+            + "              p.FEDERAL_OM_COST,\n"
+            + "              p.NONFEDERAL_OM_COST,\n"
+            + "              p.authorizing_law,\n"
+            + "              p.project_owner,\n"
+            + "              p.hydropower_description,\n"
+            + "              p.sedimentation_description,\n"
+            + "              p.downstream_urban_description,\n"
+            + "              p.bank_full_capacity_description,\n"
+            + "              p.pump_back_location_code,\n"
+            + "              p.near_gage_location_code,\n"
+            + "              p.yield_time_frame_start,\n"
+            + "              p.yield_time_frame_end,\n"
+            + "              p.project_remarks\n"
+            + "       from cwms_20.cwms_office o,\n"
+            + "            cwms_20.at_base_location bl,\n"
+            + "            cwms_20.at_physical_location pl,\n"
+            + "            cwms_20.at_project p\n"
+            + "       where bl.db_office_code = o.office_code\n"
+            + "         and pl.base_location_code = bl.base_location_code\n"
+            + "         and p.project_location_code = pl.location_code\n"
+            + "     ) project\n"
+            + "         left outer join\n"
+            + "     ( select pl.location_code,\n"
+            + "              o.office_id as p_office_id,\n"
+            + "              bl.base_location_id\n"
+            + "                  ||substr('-', 1, length(pl.sub_location_id))\n"
+            + "                  ||pl.sub_location_id as location_id\n"
+            + "       from cwms_20.cwms_office o,\n"
+            + "            cwms_20.at_base_location bl,\n"
+            + "            cwms_20.at_physical_location pl,\n"
+            + "            cwms_20.at_project p\n"
+            + "       where bl.db_office_code = o.office_code\n"
+            + "         and pl.base_location_code = bl.base_location_code\n"
+            + "         and p.project_location_code = pl.location_code\n"
+            + "     ) pumpback on pumpback.location_code = project.pump_back_location_code\n"
+            + "         left outer join\n"
+            + "     ( select pl.location_code,\n"
+            + "              o.office_id as n_office_id,\n"
+            + "              bl.base_location_id\n"
+            + "                  ||substr('-', 1, length(pl.sub_location_id))\n"
+            + "                  ||pl.sub_location_id as location_id\n"
+            + "       from cwms_20.cwms_office o,\n"
+            + "            cwms_20.at_base_location bl,\n"
+            + "            cwms_20.at_physical_location pl,\n"
+            + "            cwms_20.at_project p\n"
+            + "       where bl.db_office_code = o.office_code\n"
+            + "         and pl.base_location_code = bl.base_location_code\n"
+            + "         and p.project_location_code = pl.location_code\n"
+            + "     ) neargage on neargage.location_code = project.near_gage_location_code\n"
+            + "where ((regexp_like(project.location_id, ?, 'i')) and\n"
+            + "       office_id = ?)\n"
+            + "order by office_id, project_id fetch next ? rows only";
+
     public ProjectDao(DSLContext dsl) {
         super(dsl);
     }
@@ -126,22 +218,43 @@ public class ProjectDao extends JooqDao<Project> {
         }
 
         return builder.build();
-
     }
 
     private static Project buildProject(usace.cwms.db.jooq.codegen.tables.records.AV_PROJECT r) {
-        Project.Builder builder = new Project.Builder()
-                .withOfficeId(r.getOFFICE_ID())
-                .withName(r.getPROJECT_ID());
+        Project.Builder builder = new Project.Builder();
+        builder.withOfficeId(r.getOFFICE_ID());
+        builder.withName(r.getPROJECT_ID());
+        //builder.withPumpBackOfficeId(r.getPUMP_BACK_OFFICE_ID());
+        builder.withPumpBackOfficeId(r.getOFFICE_ID());  // Can we assume same office?
         builder.withPumpBackLocationId(r.getPUMP_BACK_LOCATION_ID());
+        //builder.withNearGageOfficeId(r.getNEAR_GAGE_OFFICE_ID());
+        builder.withNearGageOfficeId(r.getOFFICE_ID());  // Can we assume same office?
         builder.withNearGageLocationId(r.getNEAR_GAGE_LOCATION_ID());
         builder.withAuthorizingLaw(r.getAUTHORIZING_LAW());
-        builder.withFederalCost(r.getFEDERAL_COST().doubleValue());
-        builder.withNonFederalCost(r.getNONFEDERAL_COST().doubleValue());
-        // TODO: This isn't fully built out yet.  need to figure out where
-        // some of these fields come from
-//                    builder.withFederalOAndMCost(r.getFEDERAL_OM_COST().doubleValue());
-//                    builder.withNonFederalOAndMCost(r.getNONFEDERAL_OM_COST().doubleValue());
+        builder.withProjectRemarks(r.getPROJECT_REMARKS());
+        builder.withProjectOwner(r.getPROJECT_OWNER());
+        builder.withHydropowerDesc(r.getHYDROPOWER_DESCRIPTION());
+        builder.withSedimentationDesc(r.getSEDIMENTATION_DESCRIPTION());
+        builder.withDownstreamUrbanDesc(r.getDOWNSTREAM_URBAN_DESCRIPTION());
+        builder.withBankFullCapacityDesc(r.getBANK_FULL_CAPACITY_DESCRIPTION());
+        BigDecimal federalCost = r.getFEDERAL_COST();
+        if(federalCost != null) {
+            builder.withFederalCost(federalCost.doubleValue());
+        }
+        BigDecimal nonfederalCost = r.getNONFEDERAL_COST();
+        if(nonfederalCost != null) {
+            builder.withNonFederalCost(nonfederalCost.doubleValue());
+        }
+        Timestamp yieldTimeFrameStart = r.getYIELD_TIME_FRAME_START();
+        if(yieldTimeFrameStart != null) {
+            builder.withYieldTimeFrameStart(yieldTimeFrameStart.toInstant());
+        }
+        Timestamp yieldTimeFrameEnd = r.getYIELD_TIME_FRAME_END();
+        if(yieldTimeFrameEnd != null){
+            builder.withYieldTimeFrameEnd(yieldTimeFrameEnd.toInstant());
+        }
+
+        // The view is missing cost-year, fed_om_cat and nonfed_om_cost and the pump office and near gage office.
 
         return builder.build();
     }
@@ -151,7 +264,7 @@ public class ProjectDao extends JooqDao<Project> {
         return hasSub ? base + "-" + sub : base;
     }
 
-    public Projects retrieveProjects(String cursor, int pageSize, String projectIdMask, String office) {
+    public Projects retrieveProjectsFromView(String cursor, int pageSize, String projectIdMask, String office) {
 
         Condition whereClause = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_PROJECT.AV_PROJECT.PROJECT_ID, projectIdMask);
         if (office != null) {
@@ -162,6 +275,58 @@ public class ProjectDao extends JooqDao<Project> {
         String cursorProjectId = null;
         int total = 0;
         if (cursor == null || cursor.isEmpty()) {
+            logger.info("where like:" + whereClause.toString());
+            SelectConditionStep<Record1<Integer>> count =
+                    dsl.select(count(asterisk()))
+                            .from(AV_PROJECT.AV_PROJECT)
+                            .where(whereClause);
+            logger.info(() -> count.getSQL(ParamType.INLINED));
+            total = count.fetchOne().value1();
+        } else {
+            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+            if (parts.length == 4) {
+                cursorOffice = parts[0];
+                cursorProjectId = parts[1];
+                pageSize = Integer.parseInt(parts[2]);
+                total = Integer.parseInt(parts[3]);
+            }
+        }
+
+        Condition pagingCondition = noCondition();
+        if (cursorOffice != null || cursorProjectId != null) {
+            Condition inSameOffice = AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(cursorOffice)
+                    .and(AV_PROJECT.AV_PROJECT.PROJECT_ID.gt(cursorProjectId));
+            Condition nextOffice = AV_PROJECT.AV_PROJECT.OFFICE_ID.gt(cursorOffice);
+            pagingCondition = inSameOffice.or(nextOffice);
+        }
+
+        SelectLimitPercentStep<usace.cwms.db.jooq.codegen.tables.records.AV_PROJECT> querry = dsl.selectFrom(AV_PROJECT.AV_PROJECT)
+                .where(whereClause.and(pagingCondition))
+                .orderBy(AV_PROJECT.AV_PROJECT.OFFICE_ID, AV_PROJECT.AV_PROJECT.PROJECT_ID)
+                .limit(pageSize);
+
+        logger.info(() -> querry.getSQL(ParamType.INLINED));
+
+        List<Project> projs = querry.fetch().map(r -> buildProject(r));
+
+        Projects.Builder builder = new Projects.Builder(cursor, pageSize, total);
+        builder.addAll(projs);
+        return builder.build();
+    }
+
+    public Projects retrieveProjectsFromTable(String cursor, int pageSize, String projectIdMask, String office) {
+
+
+        Condition whereClause = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_PROJECT.AV_PROJECT.PROJECT_ID, projectIdMask);
+        if (office != null) {
+            whereClause = whereClause.and(AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(office));
+        }
+
+        String cursorOffice = null;
+        String cursorProjectId = null;
+        int total = 0;
+        if (cursor == null || cursor.isEmpty()) {
+
             SelectConditionStep<Record1<Integer>> count =
                     dsl.select(count(asterisk()))
                             .from(AV_PROJECT.AV_PROJECT)
@@ -184,14 +349,74 @@ public class ProjectDao extends JooqDao<Project> {
                     .and(AV_PROJECT.AV_PROJECT.PROJECT_ID.gt(cursorProjectId));
             Condition nextOffice = AV_PROJECT.AV_PROJECT.OFFICE_ID.gt(cursorOffice);
             pagingCondition = inSameOffice.or(nextOffice);
+
+            // lets log this so we can see whhat it looks like
+            logger.info(whereClause.and(pagingCondition).toString());
         }
 
-        List<Project> projs = dsl.selectFrom(AV_PROJECT.AV_PROJECT)
-                .where(whereClause.and(pagingCondition))
-                .orderBy(AV_PROJECT.AV_PROJECT.OFFICE_ID, AV_PROJECT.AV_PROJECT.PROJECT_ID)
-                .limit(pageSize)
-                .fetch()
-                .map(r -> buildProject(r));
+        int finalPageSize = pageSize;
+        List<Project> projs = connectionResult(dsl, c -> {
+            List<Project> projects = null;
+            try (PreparedStatement ps = c.prepareStatement(firstQuery)) {
+                ps.setString(1, projectIdMask);
+                ps.setString(2, office);
+                ps.setInt(3, finalPageSize);
+
+                try (ResultSet resultSet = ps.executeQuery()) {
+                    projects = new ArrayList<>();
+                    while (resultSet.next()) {
+                        Project.Builder builder = new Project.Builder();
+                        builder.withOfficeId(resultSet.getString("office_id"));
+                        builder.withName(resultSet.getString("project_id"));
+                        Timestamp costStamp = resultSet.getTimestamp("COST_YEAR", UTC_CALENDAR);
+                        if(costStamp != null) {
+                            builder.withCostYear(costStamp.toInstant());
+                        }
+                        BigDecimal federalCost = resultSet.getBigDecimal("federal_cost");
+                        if(federalCost != null) {
+                            builder.withFederalCost(federalCost.doubleValue());
+                        }
+
+                        BigDecimal nonfederalCost = resultSet.getBigDecimal("nonfederal_cost");
+                        if(nonfederalCost != null) {
+                            builder.withNonFederalCost(nonfederalCost.doubleValue());
+                        }
+
+                        BigDecimal federalOmCost = resultSet.getBigDecimal("FEDERAL_OM_COST");
+                        if(federalOmCost != null) {
+                            builder.withFederalOAndMCost(federalOmCost.doubleValue());
+                        }
+                        BigDecimal nonfederalOmCost = resultSet.getBigDecimal("NONFEDERAL_OM_COST");
+                        if(nonfederalOmCost != null) {
+                            builder.withNonFederalOAndMCost(nonfederalOmCost.doubleValue());
+                        }
+                        builder.withAuthorizingLaw(resultSet.getString("authorizing_law"));
+                        builder.withProjectOwner(resultSet.getString("project_owner"));
+                        builder.withHydropowerDesc(resultSet.getString("hydropower_description"));
+                        builder.withSedimentationDesc(resultSet.getString("sedimentation_description"));
+                        builder.withDownstreamUrbanDesc(resultSet.getString("downstream_urban_description"));
+                        builder.withBankFullCapacityDesc(resultSet.getString("bank_full_capacity_description"));
+                        builder.withPumpBackLocationId(resultSet.getString("pump_back_location_id"));
+                        builder.withPumpBackOfficeId(resultSet.getString("pump_back_office_id"));
+                        builder.withNearGageLocationId(resultSet.getString("near_gage_location_id"));
+                        builder.withNearGageOfficeId(resultSet.getString("near_gage_office_id"));
+                        Timestamp yieldTimeFrameStart = resultSet.getTimestamp("yield_time_frame_start", UTC_CALENDAR);
+                        if (yieldTimeFrameStart != null) {
+                            builder.withYieldTimeFrameStart(yieldTimeFrameStart.toInstant());
+                        }
+                        Timestamp yieldTimeFrameEnd = resultSet.getTimestamp("yield_time_frame_end", UTC_CALENDAR);
+                        if(yieldTimeFrameEnd != null) {
+                            builder.withYieldTimeFrameEnd(yieldTimeFrameEnd.toInstant());
+                        }
+                        builder.withProjectRemarks(resultSet.getString("project_remarks"));
+
+                        projects.add(builder.build());
+                    }
+                }
+            }
+            return projects;
+        });
+
 
         Projects.Builder builder = new Projects.Builder(cursor, pageSize, total);
         builder.addAll(projs);

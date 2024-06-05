@@ -28,7 +28,6 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import cwms.cda.data.dto.Project;
@@ -119,7 +118,6 @@ final class ProjectControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
-
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -127,8 +125,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("value", nullValue())
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 
@@ -210,9 +207,15 @@ final class ProjectControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
+
         String office = project.getOfficeId();
 
+        long expectedCostYear = 1717282800000L;
+
         // Retrieve the project and assert that it exists
+        long expectedStart = 1717282800000L;
+        long expectedEnd = 1717308000000L;
+
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
@@ -226,8 +229,28 @@ final class ProjectControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].office-id", equalTo(office))
-            .body("[0].name", equalTo(project.getName()))
+            .body("projects[0].office-id", equalTo(office))
+            .body("projects[0].name", equalTo(project.getName()))
+            .body("projects[0].federal-cost", equalTo(100.0f))
+            .body("projects[0].non-federal-cost", equalTo(50.0f))
+            .body("projects[0].federal-o-and-m-cost", equalTo(10.0f))
+            .body("projects[0].non-federal-o-and-m-cost", equalTo(5.0f))
+            .body("projects[0].authorizing-law", equalTo("Authorizing Law"))
+            .body("projects[0].project-owner", equalTo("Project Owner"))
+            .body("projects[0].hydropower-desc", equalTo("Hydropower Description"))
+            .body("projects[0].sedimentation-desc", equalTo("Sedimentation Description"))
+            .body("projects[0].downstream-urban-desc", equalTo("Downstream Urban Description"))
+            .body("projects[0].bank-full-capacity-desc", equalTo("Bank Full Capacity Description"))
+            .body("projects[0].project-remarks", equalTo("Remarks"))
+            .body("projects[0].yield-time-frame-start", equalTo(expectedStart))
+            .body("projects[0].yield-time-frame-end", equalTo(expectedEnd))
+            .body("projects[0].cost-year", equalTo(expectedCostYear))
+// TODO:           .body("projects[0].pump-back-location-id", equalTo("Pumpback Location Id"))
+// TODO:           .body("projects[0].pump-back-office-id", equalTo("SPK"))
+// TODO:           .body("projects[0].near-gage-location-id", equalTo("Near Gage Location Id"))
+// TODO:           .body("projects[0].near-gage-office-id", equalTo("SPK"))
+// TODO:           .body("projects[0].cost-unit", equalTo("$"))
+
         ;
 
         // Delete a Project

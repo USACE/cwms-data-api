@@ -108,7 +108,7 @@ public class ProjectController implements CrudHandler {
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(ProjectController.class.getName(), GET_ALL));
 
-            Projects projects = dao.retrieveProjects(cursor, pageSize, projectIdMask, office);
+            Projects projects = dao.retrieveProjectsFromTable(cursor, pageSize, projectIdMask, office);
 
             ContentType contentType = getContentType(ctx);
             ctx.contentType(contentType.toString());
