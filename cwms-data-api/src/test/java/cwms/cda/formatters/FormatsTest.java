@@ -6,6 +6,7 @@ import java.util.Map;
 
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
 import cwms.cda.formatters.annotations.FormattableWith;
 import org.junit.jupiter.api.Assertions;
@@ -139,19 +140,11 @@ class FormatsTest
 
 	}
 
-	@Test
-	void testParseQueryParam(){
-		ContentType contentType;
-		contentType	= Formats.parseQueryParam("json");
-		assertNotNull(contentType);
-		assertEquals("application/json", contentType.getType());
-
-		contentType	= Formats.parseQueryParam("");
-		assertNull(contentType);
-
-		contentType	= Formats.parseQueryParam(null);
-		assertNull(contentType);
-
+	@EnumSource(ParseQueryParamTest.class)
+	@ParameterizedTest
+	void testParseQueryParam(ParseQueryParamTest test){
+		ContentType contentType = Formats.parseQueryParam(test._contentType, test._class);
+		assertEquals(test._expectedType, contentType);
 	}
 
 	@Test
@@ -203,6 +196,25 @@ class FormatsTest
 		final String _expectedType;
 
 		ParseHeaderClassAliasTest(Class<? extends CwmsDTOBase> aClass, String contentType, String expectedType)
+		{
+			_class = aClass;
+			_contentType = contentType;
+			_expectedType = expectedType;
+		}
+	}
+
+	enum ParseQueryParamTest
+	{
+		JSON(null, "json", new ContentType(Formats.JSON)),
+		NULL(null, null, null),
+		EMPTY(null, "", null),
+		OFFICE(Office.class, "json", new ContentType(Formats.JSONV2)),
+		;
+		final Class<? extends CwmsDTOBase> _class;
+		final String _contentType;
+		final ContentType _expectedType;
+
+		ParseQueryParamTest(Class<? extends CwmsDTOBase> aClass, String contentType, ContentType expectedType)
 		{
 			_class = aClass;
 			_contentType = contentType;
