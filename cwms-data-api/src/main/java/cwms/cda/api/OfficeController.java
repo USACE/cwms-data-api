@@ -125,10 +125,10 @@ public class OfficeController implements CrudHandler {
                     description = "(CWMS-Data-Format-Deprecated: 2024-11-01 in favor of Accept header)"
                             + " Specifies the encoding format of the response. Valid value for the format "
                             + "field for this URI are:\r\n"
-                                + "1. `tab`\r\n"
-                                + "2. `csv`\r\n"
-                                + "3. `xml`\r\n"
-                                + "4. `json` (default)"
+                                + "* `tab`\r\n"
+                                + "* `csv`\r\n"
+                                + "* `xml`\r\n"
+                                + "* `json` (default)"
             ),
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "A list of offices.",
