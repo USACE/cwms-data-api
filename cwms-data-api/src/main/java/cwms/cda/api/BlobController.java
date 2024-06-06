@@ -85,8 +85,8 @@ public class BlobController implements CrudHandler {
         responses = {@OpenApiResponse(status = STATUS_200,
                 description = "A list of blobs.",
                 content = {
+                    @OpenApiContent(type = Formats.JSON, from = Blobs.class),
                     @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                    @OpenApiContent(type = Formats.XMLV2, from = Blobs.class)
                 })
         },
         tags = {TAG}
@@ -115,7 +115,7 @@ public class BlobController implements CrudHandler {
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
             BlobDao dao = new BlobDao(dsl);
             List<Blob> blobList = dao.getAll(office, like);
@@ -169,8 +169,7 @@ public class BlobController implements CrudHandler {
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Blob.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
                     },
                     required = true),
             queryParams = {
@@ -189,7 +188,7 @@ public class BlobController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
 
             if (blob.getOfficeId() == null) {
