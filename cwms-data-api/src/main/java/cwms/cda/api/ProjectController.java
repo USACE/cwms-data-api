@@ -75,12 +75,11 @@ public class ProjectController implements CrudHandler {
         @OpenApiParam(name = PAGE,
                 description = "This end point can return a lot of data, this identifies where"
                         + " in the request you are. This is an opaque value, and can be"
-                        + " obtained from the 'next-page' value in the response."
-        ),
+                        + " obtained from the 'next-page' value in the response."),
         @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                 description = "How many entries per page returned. "
-                        + "Default " + DEFAULT_PAGE_SIZE + "."
-        ),},
+                        + "Default " + DEFAULT_PAGE_SIZE + ".")
+        },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
                 @OpenApiContent(type = Formats.JSON, from = Projects.class)}),
@@ -141,11 +140,8 @@ public class ProjectController implements CrudHandler {
                         + " response."),
             },
             responses = {
-                @OpenApiResponse(status = STATUS_200,
-                    content = {
-                        @OpenApiContent(from = Project.class, type = Formats.JSON)
-                    }
-                ),
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(from = Project.class, type = Formats.JSON)}),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the Project was not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
@@ -187,11 +183,8 @@ public class ProjectController implements CrudHandler {
 
     @OpenApi(
             description = "Create new Project",
-            requestBody = @OpenApiRequestBody(
-                content = {
-                        @OpenApiContent(from = Project.class, type = Formats.JSON)
-                },
-                required = true
+            requestBody = @OpenApiRequestBody(required = true,
+                    content = {@OpenApiContent(from = Project.class, type = Formats.JSON)}
             ),
             method = HttpMethod.POST,
             tags = {TAG}
@@ -220,13 +213,13 @@ public class ProjectController implements CrudHandler {
     @OpenApi(
             description = "Updates a text timeseries",
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "The id of the text timeseries to be updated"),
+                @OpenApiParam(name = NAME, description = "The id of the text timeseries to be updated"),
             },
             requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Project.class, type = Formats.JSON),
-                    },
-                    required = true
+                content = {
+                    @OpenApiContent(from = Project.class, type = Formats.JSON),
+                },
+                required = true
             ),
             method = HttpMethod.PATCH,
             tags = {TAG}

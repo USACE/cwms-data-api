@@ -28,13 +28,18 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.Project;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -269,4 +274,115 @@ final class ProjectControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
     }
+
+    @Test
+    void test_get_all_paged() throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/project.json");
+        assertNotNull(resource);
+        String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(json);
+        Project project = Formats.parseContent(new ContentType(Formats.JSON), json, Project.class);
+
+        // Structure of test:
+        // 1)Create Projects
+        // 2)Retrieve the Project with getAll and assert that it exists
+        // 3)Delete the Projects
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+
+        for (int i = 0; i < 15; i++) {
+            Project.Builder builder = new Project.Builder();
+            builder.from(project)
+                    .withName(String.format("PageTest%2d", i));
+            Project build = builder.build();
+            String projJson = om.writeValueAsString(build);
+
+            //Create the project
+            given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .contentType(Formats.JSON)
+                    .body(projJson)
+                    .header(AUTH_HEADER, user.toHeaderValue())
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/projects/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_CREATED));
+        }
+
+        String office = project.getOfficeId();
+        try {
+            ExtractableResponse<Response> extractableResponse = given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .queryParam(Controllers.OFFICE, office)
+                    .queryParam(Controllers.PAGE_SIZE, 5)
+                    .queryParam(Controllers.ID_MASK, "^PageTest.*$")
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("projects/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                    .body("projects[0].office-id", equalTo(office))
+                    .body("projects[0].name", equalTo("PageTest 0"))
+                    .body("projects[1].name", equalTo("PageTest 1"))
+                    .body("projects[2].name", equalTo("PageTest 2"))
+                    .body("projects[3].name", equalTo("PageTest 3"))
+                    .body("projects[4].name", equalTo("PageTest 4"))
+                    .extract();
+
+            String next = extractableResponse.path("next-page");
+            assertNotNull(next);
+            assertFalse(next.isEmpty());
+
+            given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .queryParam(Controllers.OFFICE, office)
+                    .queryParam(Controllers.PAGE, next)
+                    .queryParam(Controllers.PAGE_SIZE, 5)
+                    .queryParam(Controllers.ID_MASK, "^PageTest.*$")
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("projects/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                    .body("projects[0].office-id", equalTo(office))
+                    .body("projects[0].name", equalTo("PageTest 5"))
+                    .body("projects[1].name", equalTo("PageTest 6"))
+                    .body("projects[2].name", equalTo("PageTest 7"))
+                    .body("projects[3].name", equalTo("PageTest 8"))
+                    .body("projects[4].name", equalTo("PageTest 9"))
+                    .extract();
+        } finally {
+            for (int i = 0; i < 15; i++) {
+                // Delete the Projects
+                given()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                        .accept(Formats.JSON)
+                        .queryParam(Controllers.OFFICE, office)
+                        .header(AUTH_HEADER, user.toHeaderValue())
+                        .when()
+                        .redirects().follow(true)
+                        .redirects().max(3)
+                        .delete(String.format("projects/PageTest%2d", i))
+                        .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                ;
+
+            }
+        }
+    }
+
 }
