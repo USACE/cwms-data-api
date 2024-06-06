@@ -112,6 +112,7 @@ class LocationTest
 				.withPublishedLatitude(50.0)
 				.withPublishedLongitude(50.0)
 				.withDescription("for testing")
+				.withElevationUnits("m")
 				.build();
 	}
 

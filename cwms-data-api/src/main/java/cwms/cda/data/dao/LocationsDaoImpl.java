@@ -169,6 +169,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         )
                 .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
                 .withElevation(loc.get(AV_LOC.ELEVATION))
+                .withElevationUnits(loc.get(AV_LOC.UNIT_ID))
                 .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
                 .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
                 .withLongName(loc.get(AV_LOC.LONG_NAME))
@@ -218,7 +219,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             connection(dsl, c -> {
                 setOffice(c,location);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = Unit.METER.getValue();
+                String elevationUnits = location.getElevationUnits() == null ?
+                        Unit.METER.getValue() : location.getElevationUnits();
                 locJooq.store(c, location.getOfficeId(), location.getName(),
                         location.getStateInitial(), location.getCountyName(),
                         location.getTimezoneName(), location.getLocationType(),
@@ -246,7 +248,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             connection(dsl, c -> {
                 setOffice(c,renamedLocation);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = Unit.METER.getValue();
+                String elevationUnits = renamedLocation.getElevationUnits() == null ?
+                        Unit.METER.getValue() : renamedLocation.getElevationUnits();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,
                         renamedLocation.getName(), renamedLocation.getStateInitial(),
                         renamedLocation.getCountyName(), renamedLocation.getTimezoneName(),
