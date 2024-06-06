@@ -46,10 +46,12 @@ public class Formats {
     public static final String PLAIN = "text/plain";    // Only used as a constant, not for any
     // data mapping
     public static final String JSON = "application/json";
+    public static final String JSONV1 = "application/json;version=1";
+    public static final String JSONV2 = "application/json;version=2";
     public static final String XML = "application/xml";
+    public static final String XMLV1 = "application/xml;version=1";
     public static final String XMLV2 = "application/xml;version=2";
     public static final String WML2 = "application/vnd.opengis.waterml+xml";
-    public static final String JSONV2 = "application/json;version=2";
     public static final String TAB = "text/tab-separated-values";
     public static final String CSV = "text/csv";
     public static final String GEOJSON = "application/geo+json";
@@ -205,6 +207,21 @@ public class Formats {
      * @throws FormattingException if the header and queryParam are both supplied or neither are
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
+        return parseHeaderAndQueryParm(header, queryParam, null);
+    }
+
+    /**
+     * Parses the supplied header param or queryParam to determine the content type.
+     * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
+     *
+     * @param header     Accept header value
+     * @param queryParam format query parameter value
+     * @param klass      DTO object class, used for identifying content type aliases from the DTO's
+     *                   <code>FormattableWith</code> annotations.
+     * @return an appropriate standard mimetype for lookup
+     * @throws FormattingException if the header and queryParam are both supplied or neither are
+     */
+    public static ContentType parseHeaderAndQueryParm(String header, String queryParam, Class<? extends CwmsDTOBase> klass) {
         if (queryParam != null && !queryParam.isEmpty()) {
             if (header != null && !header.isEmpty() && !DEFAULT.equals(header.trim())) {
                 // If the user supplies an accept header and also a format= parameter, which
@@ -216,7 +233,7 @@ public class Formats {
                         + "present, this is not supported.");
             }
 
-            ContentType ct = parseQueryParam(queryParam);
+            ContentType ct = parseQueryParam(queryParam, klass);
             if (ct != null) {
                 return ct;
             } else {
@@ -225,7 +242,7 @@ public class Formats {
         } else if (header == null) {
             throw new FormattingException("no content type or format specified");
         } else {
-            ContentType ct = parseHeader(header);
+            ContentType ct = parseHeader(header, klass);
             if (ct != null) {
                 return ct;
             }
@@ -233,13 +250,24 @@ public class Formats {
         throw new FormattingException("Content-Type " + header + " is not available");
     }
 
+    public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
+    {
+        ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
+        if (klass != null) {
+            aliasMap = ContentTypeAliasMap.forDtoClass(klass);
+        }
 
-    public static ContentType parseQueryParam(String queryParam) {
         ContentType retVal = null;
-        if (queryParam != null && !queryParam.isEmpty()) {
+        if (queryParam != null && !queryParam.isEmpty())
+        {
             String val = typeMap.get(queryParam);
-            if (val != null) {
-                retVal = new ContentType(val);
+            if (val != null)
+            {
+                retVal = aliasMap.getContentType(val);
+                if (retVal == null)
+                {
+                    retVal = new ContentType(val);
+                }
             }
         }
 
