@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dao;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.LookupType;
 import static java.util.stream.Collectors.toList;
 import org.jooq.DSLContext;
@@ -74,6 +75,20 @@ public final class LookupTypeDao extends JooqDao<LookupType> {
             return null;
         });
 
+    }
+
+    /**
+     * Update a lookup type
+     * @param category - the category of the lookup type
+     * @param prefix - the prefix of the lookup type
+     * @param lookupType - the lookup type to update
+     */
+    public void updateLookupType(String category, String prefix, LookupType lookupType) {
+        List<LookupType> lookupTypes = retrieveLookupTypes(category, prefix, lookupType.getOfficeId());
+        if (lookupTypes.isEmpty() || lookupTypes.stream().noneMatch(lt -> lt.getDisplayValue().equals(lookupType.getDisplayValue()))) {
+            throw new NotFoundException("Could not find lookup type to update.");
+        }
+        storeLookupType(category, prefix, lookupType);
     }
 
     /**

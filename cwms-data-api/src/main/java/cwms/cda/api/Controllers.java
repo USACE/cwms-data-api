@@ -167,6 +167,8 @@ public final class Controllers {
     public static final String INCLUDE_EXTENTS = "include-extents";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
+    public static final String CATEGORY = "category";
+    public static final String PREFIX = "prefix";
 
 
     static {
