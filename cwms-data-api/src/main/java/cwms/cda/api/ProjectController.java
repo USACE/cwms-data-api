@@ -136,7 +136,7 @@ public class ProjectController implements CrudHandler {
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the"
-                        + " owning office of the Pool whose data is to be included in the"
+                        + " owning office of the Project whose data is to be included in the"
                         + " response."),
             },
             responses = {
@@ -211,9 +211,9 @@ public class ProjectController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Updates a text timeseries",
+            description = "Updates a project",
             pathParams = {
-                @OpenApiParam(name = NAME, description = "The id of the text timeseries to be updated"),
+                @OpenApiParam(name = NAME, description = "The id of the project to be updated"),
             },
             requestBody = @OpenApiRequestBody(
                 content = {
@@ -245,13 +245,13 @@ public class ProjectController implements CrudHandler {
 
 
     @OpenApi(
-            description = "Deletes requested text timeseries id",
+            description = "Deletes requested reservoir project",
             pathParams = {
                 @OpenApiParam(name = NAME, description = "The project identifier to be deleted"),
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                        + "owning office of the timeseries identifier to be deleted"),
+                        + "owning office of the project to be deleted"),
                 @OpenApiParam(name = METHOD, type = JooqDao.DeleteMethod.class,
                         description = "Specifies the delete method used. "
                                 + "Defaults to \"DELETE_KEY\"")
