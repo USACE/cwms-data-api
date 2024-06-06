@@ -15,9 +15,9 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonRootName("clobs")
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public class Clobs extends CwmsDTOPaginated {
     @JacksonXmlElementWrapper
     @JacksonXmlProperty(localName = "clob")

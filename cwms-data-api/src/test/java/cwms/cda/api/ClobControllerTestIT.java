@@ -11,6 +11,7 @@ import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
     @Test
     void test_getOne_not_found() throws UnsupportedEncodingException {
         String clobId = "TEST";
-        String urlencoded = java.net.URLEncoder.encode(clobId, "UTF-8");
+        String urlencoded = URLEncoder.encode(clobId, "UTF-8");
 
         given()
         .log().ifValidationFails(LogDetail.ALL,true)
