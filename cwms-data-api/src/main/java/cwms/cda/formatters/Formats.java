@@ -64,7 +64,7 @@ public class Formats {
 
     static {
         contentTypeList.addAll(
-                Stream.of(JSON, XML, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
+                Stream.of(JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
     }
