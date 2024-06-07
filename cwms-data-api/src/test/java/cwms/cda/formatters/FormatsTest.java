@@ -4,6 +4,7 @@ package cwms.cda.formatters;
 import java.util.Arrays;
 import java.util.Map;
 
+import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
@@ -189,6 +190,14 @@ class FormatsTest
 		STATE_DEFAULT(State.class, Formats.DEFAULT, Formats.JSONV2),
 		STATE_JSON(State.class, Formats.JSON, Formats.JSONV2),
 		STATE_JSONV2(State.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_DEFAULT(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_JSON(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_JSONV2(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_XML(Office.class, Formats.XML, Formats.XMLV2),
+		OFFICE_XMLV2(Office.class, Formats.XMLV2, Formats.XMLV2),
+		BLOB_DEFAULT(Blob.class, Formats.DEFAULT, Formats.JSONV2),
+		BLOB_JSON(Blob.class, Formats.JSON, Formats.JSONV2),
+		BLOB_JSONV2(Blob.class, Formats.JSONV2, Formats.JSONV2),
 		;
 
 		final Class<? extends CwmsDTOBase> _class;

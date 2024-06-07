@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonRootName("blobs")
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class Blobs extends CwmsDTOPaginated {
     @JacksonXmlElementWrapper(localName = "blobs")
     @JacksonXmlProperty(localName = "blob")
