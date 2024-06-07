@@ -71,9 +71,9 @@ public final class LookupTypeController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = CATEGORY, description = "Filters lookup types to the specified category"),
-                    @OpenApiParam(name = PREFIX, description = "Filters lookup types to the specified prefix"),
-                    @OpenApiParam(name = OFFICE, description = "Filters lookup types to the specified office ID"),
+                    @OpenApiParam(name = CATEGORY, required = true, description = "Filters lookup types to the specified category"),
+                    @OpenApiParam(name = PREFIX, required = true, description = "Filters lookup types to the specified prefix"),
+                    @OpenApiParam(name = OFFICE, required = true, description = "Filters lookup types to the specified office ID"),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
@@ -112,8 +112,8 @@ public final class LookupTypeController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = CATEGORY, description = "Specifies the category id of the lookup type to be created."),
-                    @OpenApiParam(name = PREFIX, description = "Specifies the prefix of the lookup type to be created."),
+                    @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be created."),
+                    @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be created."),
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -146,8 +146,8 @@ public final class LookupTypeController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = CATEGORY, description = "Specifies the category id of the lookup type to be updated."),
-                    @OpenApiParam(name = PREFIX, description = "Specifies the prefix of the lookup type to be updated."),
+                    @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be updated."),
+                    @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be updated."),
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -180,9 +180,9 @@ public final class LookupTypeController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = CATEGORY, description = "Specifies the category id of the lookup type to be deleted."),
-                    @OpenApiParam(name = PREFIX, description = "Specifies the prefix of the lookup type to be deleted."),
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the lookup type to be deleted."),
+                    @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be deleted."),
+                    @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be deleted."),
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of the lookup type to be deleted."),
             },
             description = "Delete CWMS Lookup Type",
             method = HttpMethod.DELETE,
