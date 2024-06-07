@@ -55,12 +55,8 @@ import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
-/**
- *
- */
 final class EmbankmentControllerIT extends DataApiTestIT {
     
     private static final Location PROJECT_LOC;
@@ -102,10 +98,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId());
+            locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId(), true);
             CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
                     DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId());
+            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
         });
     }
 
@@ -150,11 +146,18 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-//            .body("category", equalTo(property.getCategory()))
-//            .body("office-id", equalTo(office))
-//            .body("comment", equalTo(property.getComment()))
-//            .body("value", equalTo(property.getValue()))
-//            .body("name", equalTo(property.getName()))
+            .body("upstream-side-slope", equalTo(EMBANKMENT.getUpstreamSideSlope().floatValue()))
+            .body("downstream-side-slope", equalTo(EMBANKMENT.getDownstreamSideSlope().floatValue()))
+            .body("structure-length", equalTo(EMBANKMENT.getStructureLength().floatValue()))
+            .body("height-max", equalTo(EMBANKMENT.getHeightMax().floatValue()))
+            .body("top-width", equalTo(EMBANKMENT.getTopWidth().floatValue()))
+            .body("units-id", equalTo(EMBANKMENT.getUnitsId()))
+            .body("downstream-prot-type", not(nullValue()))
+            .body("upstream-prot-type", not(nullValue()))
+            .body("structure-type", not(nullValue()))
+            .body("location", not(nullValue()))
+            .body("project-id", equalTo(EMBANKMENT.getProjectId()))
+            .body("project-office-id", equalTo(EMBANKMENT.getProjectOfficeId()))
         ;
 
         // Delete a Embankment
@@ -185,8 +188,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("value", nullValue())
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 
@@ -263,7 +265,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(Controllers.OFFICE_MASK, office)
+            .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectId())
         .when()
             .redirects().follow(true)
@@ -273,11 +275,18 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-//            .body("[0].category", equalTo(property.getCategory()))
-//            .body("[0].office-id", equalTo(office))
-//            .body("[0].comment", equalTo(property.getComment()))
-//            .body("[0].value", equalTo(property.getValue()))
-//            .body("[0].name", equalTo(property.getName()))
+            .body("[0].upstream-side-slope", equalTo(EMBANKMENT.getUpstreamSideSlope().floatValue()))
+            .body("[0].downstream-side-slope", equalTo(EMBANKMENT.getDownstreamSideSlope().floatValue()))
+            .body("[0].structure-length", equalTo(EMBANKMENT.getStructureLength().floatValue()))
+            .body("[0].height-max", equalTo(EMBANKMENT.getHeightMax().floatValue()))
+            .body("[0].top-width", equalTo(EMBANKMENT.getTopWidth().floatValue()))
+            .body("[0].units-id", equalTo(EMBANKMENT.getUnitsId()))
+            .body("[0].downstream-prot-type", not(nullValue()))
+            .body("[0].upstream-prot-type", not(nullValue()))
+            .body("[0].structure-type", not(nullValue()))
+            .body("[0].location", not(nullValue()))
+            .body("[0].project-id", equalTo(EMBANKMENT.getProjectId()))
+            .body("[0].project-office-id", equalTo(EMBANKMENT.getProjectOfficeId()))
         ;
 
         // Delete a Embankment
