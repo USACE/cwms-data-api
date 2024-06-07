@@ -4,13 +4,11 @@ import java.util.List;
 
 import javax.xml.bind.annotation.*;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
 import cwms.cda.data.dto.Office;
 
-@XmlRootElement(name = "offices")
-@XmlAccessorType (XmlAccessType.FIELD)
+@JsonRootName("offices")
 public class XMLv1Office {
-    @XmlElementWrapper(name="offices")
-    @XmlElement(name="office")
     List<Office> offices;
 
 

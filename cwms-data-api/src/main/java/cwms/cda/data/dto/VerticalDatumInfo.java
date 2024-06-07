@@ -1,35 +1,32 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import cwms.cda.api.errors.FieldException;
 
-@XmlRootElement(name = "vertical-datum-info")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("vertical-datum-info")
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class VerticalDatumInfo {
-    @XmlAttribute
+public class VerticalDatumInfo implements CwmsDTOBase {
     String office;
 
-    @XmlAttribute
     String unit;
     String location;
 
-    @XmlElement(name = "native-datum")
     String nativeDatum;
     Double elevation;
 
     // Serialize empty arrays in the xml
-    @XmlElement(name = "offset")
     @JsonInclude(JsonInclude.Include.ALWAYS)
     VerticalDatumInfo.Offset[] offsets = new Offset[0];
 
@@ -60,12 +57,15 @@ public class VerticalDatumInfo {
         return offsets;
     }
 
-    @XmlAccessorType(XmlAccessType.FIELD)
+    @Override
+    public void validate() throws FieldException {
+
+    }
+
+    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Offset {
-        @XmlAttribute
         boolean estimate;
 
-        @XmlElement(name = "to-datum")
         String toDatum;
 
         Double value;

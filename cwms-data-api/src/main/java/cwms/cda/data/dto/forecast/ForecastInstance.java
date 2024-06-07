@@ -1,28 +1,23 @@
 package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Map;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name = "forecast-instance")
-@XmlAccessorType(XmlAccessType.FIELD)
+import java.time.Instant;
+import java.util.Map;
+
+@JsonRootName("forecast-instance")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @JsonDeserialize(builder = ForecastInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -30,50 +25,47 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class ForecastInstance implements CwmsDTOBase {
 
     @Schema(description = "Forecast Spec")
-    @XmlElement(name = "spec")
     private final ForecastSpec spec;
 
-    @XmlAttribute(name = "date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant dateTime;
 
-    @XmlAttribute(name = "issue-date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant issueDateTime;
 
-    @XmlAttribute(name = "first-date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant firstDateTime;
 
-    @XmlAttribute(name = "last-date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant lastDateTime;
 
-    @XmlAttribute(name = "max-age")
+    @JacksonXmlProperty(isAttribute = true)
     private final Integer maxAge;
 
     @Schema(description = "Forecast Instance Notes")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String notes;
 
-    @XmlAttribute(name = "metadata")
+    @JacksonXmlProperty(isAttribute = true)
     private final Map<String, String> metadata;
 
     @Schema(description = "Forecast Filename")
-    @XmlAttribute(name = "filename")
+    @JacksonXmlProperty(isAttribute = true)
     private final String filename;
 
     @Schema(description = "Description of Forecast File")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String fileDescription;
 
     @Schema(description = "Forecast File Media Type")
-    @XmlAttribute(name = "file-media-type")
+    @JacksonXmlProperty(isAttribute = true)
     private final String fileMediaType;
 
     @Schema(description = "Forecast File binary data")
-    @XmlElement(name = "forecast-data")
     private final byte[] fileData;
 
     @Schema(description = "Link to Forecast File binary data")
-    @XmlElement(name = "file-data-url")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String fileDataUrl;
 
 

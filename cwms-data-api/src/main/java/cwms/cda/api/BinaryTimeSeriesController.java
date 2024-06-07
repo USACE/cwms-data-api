@@ -194,7 +194,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            BinaryTimeSeries tts = deserializeBody(ctx, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            BinaryTimeSeries tts = deserializeBody(ctx, contentType);
             TimeSeriesBinaryDao dao = getDao(dsl);
 
             boolean maxVersion = true;
@@ -232,7 +233,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            BinaryTimeSeries tts = deserializeBody(ctx, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            BinaryTimeSeries tts = deserializeBody(ctx, contentType);
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesBinaryDao dao = getDao(dsl);
@@ -287,49 +289,35 @@ public class BinaryTimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-    private static BinaryTimeSeries deserializeBody(@NotNull Context ctx, String formatHeader) {
-        BinaryTimeSeries bts;
 
-
-        if (ContentType.equivalent(Formats.JSONV2, formatHeader)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-
-             /*
-              If the body is more than 1Mb then this:
-              bts = om.readValue(ctx.body(), BinaryTimeSeries.class) generates a warning that
-              looks like:  WARNING [http-nio-auto-1-exec-3] io.javalin.core.util.JavalinLogger.warn Body greater than max size (1000000 bytes)
-              Javalin will then automatically return 413 and close the connection.
-                 HTTP/1.1 413
-                 Strict-Transport-Security: max-age=31536000;includeSubDomains
-                 X-Frame-Options: SAMEORIGIN
-                 X-Content-Type-Options: nosniff
-                 X-XSS-Protection: 1; mode=block
-                 Content-Type: application/json
-                 Content-Length: 138
-                 Date: Wed, 28 Feb 2024 21:27:33 GMT
-                 Connection: close
-                 {
-                     "title": "Payload Too Large",
-                     "status": 413,
-                     "type": "https://javalin.io/documentation#error-responses",
-                     "details": {
-                     }
-                 }
-                 In ApiServlet we can adjust the maxRequest size via code like:
-                  config.maxRequestSize = 2000000L;  but that just sets the bar slightly higher.
-                  Javalin doesn't want to read big bodies b/c I think it holds on to them.
-                  We know this end-point can potentially deal with big bodies so the solution is
-                  just read the object from the body as an input stream.
-              */
-            try {
-                bts = om.readValue(ctx.bodyAsInputStream(), BinaryTimeSeries.class);
-            } catch (IOException ex) {
-                throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
-            }
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + formatHeader);
-        }
-
-        return bts;
+    private static BinaryTimeSeries deserializeBody(@NotNull Context ctx, ContentType contentType) {
+        /*
+        If the body is more than 1Mb then this:
+        bts = om.readValue(ctx.body(), BinaryTimeSeries.class) generates a warning that
+        looks like:  WARNING [http-nio-auto-1-exec-3] io.javalin.core.util.JavalinLogger.warn Body greater than max size (1000000 bytes)
+        Javalin will then automatically return 413 and close the connection.
+         HTTP/1.1 413
+         Strict-Transport-Security: max-age=31536000;includeSubDomains
+         X-Frame-Options: SAMEORIGIN
+         X-Content-Type-Options: nosniff
+         X-XSS-Protection: 1; mode=block
+         Content-Type: application/json
+         Content-Length: 138
+         Date: Wed, 28 Feb 2024 21:27:33 GMT
+         Connection: close
+         {
+             "title": "Payload Too Large",
+             "status": 413,
+             "type": "https://javalin.io/documentation#error-responses",
+             "details": {
+             }
+         }
+         In ApiServlet we can adjust the maxRequest size via code like:
+          config.maxRequestSize = 2000000L;  but that just sets the bar slightly higher.
+          Javalin doesn't want to read big bodies b/c I think it holds on to them.
+          We know this end-point can potentially deal with big bodies so the solution is
+          just read the object from the body as an input stream.
+        */
+        return Formats.parseContent(contentType, ctx.bodyAsInputStream(), BinaryTimeSeries.class);
     }
 }

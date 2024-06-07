@@ -39,7 +39,6 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.csv.CsvV1LocationGroup;
-import cwms.cda.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -216,26 +215,12 @@ public class LocationGroupController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
-            LocationGroup deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             LocationGroupDao dao = new LocationGroupDao(dsl);
             dao.create(deserialize);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private LocationGroup deserialize(String body, String format) throws JsonProcessingException {
-        LocationGroup retval;
-        if (ContentType.equivalent(Formats.JSON, format)) {
-            ObjectMapper om = JsonV1.buildObjectMapper();
-            retval = om.readValue(body, LocationGroup.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
     @OpenApi(
@@ -264,7 +249,8 @@ public class LocationGroupController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             String body = ctx.body();
-            LocationGroup deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
@@ -276,10 +262,6 @@ public class LocationGroupController implements CrudHandler {
             }
             locationGroupDao.assignLocs(deserialize);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

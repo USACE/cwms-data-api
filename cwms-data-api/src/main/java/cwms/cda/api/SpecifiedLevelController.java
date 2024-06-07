@@ -27,14 +27,11 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.SpecifiedLevelDao;
 import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -152,15 +149,12 @@ public class SpecifiedLevelController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             String body = ctx.body();
-            SpecifiedLevel deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            SpecifiedLevel deserialize = Formats.parseContent(contentType, body, SpecifiedLevel.class);
             SpecifiedLevelDao dao = getDao(dsl);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             dao.create(deserialize, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -214,17 +208,6 @@ public class SpecifiedLevelController implements CrudHandler {
             dao.delete(specifiedLevelId, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
-    }
-
-    private static SpecifiedLevel deserialize(String body, String format) throws JsonProcessingException {
-        SpecifiedLevel retval;
-        if (ContentType.equivalent(Formats.JSONV2, format)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(body, SpecifiedLevel.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
 }

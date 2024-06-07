@@ -1,5 +1,8 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dao.CatalogRequestParameters;
 import cwms.cda.data.dto.catalog.CatalogEntry;
@@ -13,14 +16,8 @@ import cwms.cda.formatters.xml.XMLv1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name = "catalog")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("catalog")
 @FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
@@ -31,8 +28,8 @@ public class Catalog extends CwmsDTOPaginated {
                     TimeseriesCatalogEntry.class
             }
     )
-    @XmlElementWrapper(name = "entries")
-    @XmlElement(name = "entry")
+    @JacksonXmlElementWrapper(localName = "entries")
+    @JacksonXmlProperty(localName = "entry")
     private List<? extends CatalogEntry> entries;
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal

@@ -1,5 +1,8 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -8,20 +11,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
 
-@XmlRootElement(name = "blobs")
-@XmlSeeAlso(Blob.class)
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@JsonRootName("blobs")
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class Blobs extends CwmsDTOPaginated {
-    @XmlElementWrapper
-    @XmlElement(name = "blob")
+    @JacksonXmlElementWrapper(localName = "blobs")
+    @JacksonXmlProperty(localName = "blob")
 
     @Schema(description = "List of retrieved blobs")
     List<Blob> blobs;

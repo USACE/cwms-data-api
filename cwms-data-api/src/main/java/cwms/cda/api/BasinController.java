@@ -91,9 +91,6 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
@@ -147,9 +144,6 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);
