@@ -167,6 +167,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
         return new Location.Builder("PROJECT", "PROJECT", ZoneId.of("UTC"),
                 38.5613824, -121.7298432, "NVGD29", officeId)
                 .withElevation(10.0)
+                .withElevationUnits("m")
                 .withLocationType("SITE")
                 .withCountyName("Sacramento")
                 .withNation(Nation.US)
@@ -185,6 +186,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
         return new Location.Builder("PROJECT-EMBANKMENT_LOC", "EMBANKMENT", ZoneId.of("UTC"),
                 38.5613824, -121.7298432, "NVGD29", officeId)
                 .withElevation(10.0)
+                .withElevationUnits("m")
                 .withLocationType("SITE")
                 .withCountyName("Sacramento")
                 .withNation(Nation.US)
