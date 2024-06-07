@@ -193,7 +193,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     @JsonProperty(value = "value-columns")
     @Schema(name = "value-columns", accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
-        return getColumnDescriptor("json");
+        return getColumnDescriptor();
     }
 
     public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
@@ -209,35 +209,16 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
-    private List<Column> getColumnDescriptor(String format) {
+    private List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
 
         for (Field f: Record.class.getDeclaredFields()) {
-            String fieldName = f.getName();
-            int fieldIndex = -1;
-            if(format.equals("json")) {
-                JsonProperty field = f.getAnnotation(JsonProperty.class);
-                if(field != null)
-                    fieldName = !field.value().isEmpty() ? field.value() : f.getName();
-                fieldIndex = field.index();
+            JsonProperty field = f.getAnnotation(JsonProperty.class);
+            if(field != null) {
+                String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
+                int fieldIndex = field.index();
+                columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
-            else if(format.equals("xml")) {
-                XmlType xmltype = Record.class.getAnnotation(XmlType.class);
-                if(xmltype != null) {
-                    String[] props = xmltype.propOrder();
-                    for(int idx = 0; idx < props.length; idx++) {
-                        if( props[idx].equals(fieldName)) {
-                            fieldIndex = idx;
-                            break;
-                        }
-                    }
-                }
-            }
-            else {
-                fieldIndex++;
-            }
-
-            columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
         }
 
         return columns;
