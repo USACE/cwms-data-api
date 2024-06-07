@@ -26,7 +26,6 @@ import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -564,7 +563,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         }
     }
 
-@Disabled("This test is disabled because it is slow")
     @Test
     void test_big_create() throws Exception {
 
