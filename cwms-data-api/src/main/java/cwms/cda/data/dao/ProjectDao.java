@@ -6,6 +6,7 @@ import static org.jooq.impl.DSL.noCondition;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.Project;
 import cwms.cda.data.dto.Projects;
 import java.math.BigDecimal;
@@ -177,9 +178,12 @@ public class ProjectDao extends JooqDao<Project> {
             nearLocRef = neargageLocationType.getLocationRef();
         }
         if (nearLocRef != null) {
-            builder = builder.withNearGageLocationId(nearLocRef.getOfficeId())
-                    .withNearGageLocationId(getLocationId(nearLocRef.getBaseLocationId(),
-                            nearLocRef.getSubLocationId()));
+            builder = builder.withNearGage(new Location.Builder(nearLocRef.getOfficeId(),
+                    getLocationId(nearLocRef.getBaseLocationId(), nearLocRef.getSubLocationId()))
+                    .withPublicName(null)
+                    .withActive(null)
+                    .build()
+            );
         }
 
         LocationType pumpbackLocationType =
@@ -189,9 +193,12 @@ public class ProjectDao extends JooqDao<Project> {
             pumpbackLocRef = pumpbackLocationType.getLocationRef();
         }
         if (pumpbackLocRef != null) {
-            builder = builder.withPumpBackOfficeId(pumpbackLocRef.getOfficeId())
-                    .withPumpBackLocationId(getLocationId(pumpbackLocRef.getBaseLocationId(),
-                            pumpbackLocRef.getSubLocationId()));
+            builder = builder.withPumpBack(new Location.Builder(pumpbackLocRef.getOfficeId(),
+                    getLocationId(pumpbackLocRef.getBaseLocationId(), pumpbackLocRef.getSubLocationId()))
+                    .withPublicName(null)
+                    .withActive(null)
+                    .build()
+            );
         }
 
         BigDecimal federalCost = projectObjT.getFEDERAL_COST();
@@ -232,16 +239,23 @@ public class ProjectDao extends JooqDao<Project> {
         return builder.build();
     }
 
+
+
     private static Project buildProject(usace.cwms.db.jooq.codegen.tables.records.AV_PROJECT r) {
         Project.Builder builder = new Project.Builder();
         builder.withOfficeId(r.getOFFICE_ID());
         builder.withName(r.getPROJECT_ID());
-        //builder.withPumpBackOfficeId(r.getPUMP_BACK_OFFICE_ID());
-        builder.withPumpBackOfficeId(r.getOFFICE_ID());  // Can we assume same office?
-        builder.withPumpBackLocationId(r.getPUMP_BACK_LOCATION_ID());
-        //builder.withNearGageOfficeId(r.getNEAR_GAGE_OFFICE_ID());
-        builder.withNearGageOfficeId(r.getOFFICE_ID());  // Can we assume same office?
-        builder.withNearGageLocationId(r.getNEAR_GAGE_LOCATION_ID());
+        builder.withPumpBack(new Location.Builder(r.getOFFICE_ID(), r.getPUMP_BACK_LOCATION_ID())
+                .withPublicName(null)
+                .withActive(null)
+                .build()
+        ); // Can we assume same office?
+        builder.withNearGage(new Location.Builder(r.getOFFICE_ID(), r.getNEAR_GAGE_LOCATION_ID())
+                .withPublicName(null)
+                .withActive(null)
+                .build()
+        ); // Can we assume same office?
+
         builder.withAuthorizingLaw(r.getAUTHORIZING_LAW());
         builder.withProjectRemarks(r.getPROJECT_REMARKS());
         builder.withProjectOwner(r.getPROJECT_OWNER());
@@ -394,10 +408,18 @@ public class ProjectDao extends JooqDao<Project> {
         builder.withSedimentationDesc(resultSet.getString("sedimentation_description"));
         builder.withDownstreamUrbanDesc(resultSet.getString("downstream_urban_description"));
         builder.withBankFullCapacityDesc(resultSet.getString("bank_full_capacity_description"));
-        builder.withPumpBackLocationId(resultSet.getString("pump_back_location_id"));
-        builder.withPumpBackOfficeId(resultSet.getString("pump_back_office_id"));
-        builder.withNearGageLocationId(resultSet.getString("near_gage_location_id"));
-        builder.withNearGageOfficeId(resultSet.getString("near_gage_office_id"));
+        builder.withPumpBack(
+                new Location.Builder(resultSet.getString("pump_back_office_id"),
+                        resultSet.getString("pump_back_location_id"))
+                        .build()
+        );
+
+        builder.withNearGage(
+                new Location.Builder(resultSet.getString("near_gage_office_id"),
+                        resultSet.getString("near_gage_location_id"))
+                        .build()
+        );
+
         builder.withProjectRemarks(resultSet.getString("project_remarks"));
 
         BigDecimal federalCost = resultSet.getBigDecimal("federal_cost");
@@ -557,17 +579,17 @@ public class ProjectDao extends JooqDao<Project> {
         projectLocation.setLOCATION_REF(getLocationRefT(project.getName(), project.getOfficeId()));
 
         LOCATION_OBJ_T pumpBackLocation = null;
-        if (project.getPumpBackLocationId() != null && project.getPumpBackOfficeId() != null) {
+        Location pb = project.getPumpBack();
+        if (pb != null ) {
             pumpBackLocation = new LOCATION_OBJ_T();
-            pumpBackLocation.setLOCATION_REF(getLocationRefT(project.getPumpBackLocationId(),
-                    project.getPumpBackOfficeId()));
+            pumpBackLocation.setLOCATION_REF(getLocationRefT(pb.getName(), pb.getOfficeId()));
         }
 
         LOCATION_OBJ_T nearGageLocation = null;
-        if (project.getNearGageLocationId() != null && project.getNearGageOfficeId() != null) {
+        Location ng = project.getNearGage();
+        if (ng != null ) {
             nearGageLocation = new LOCATION_OBJ_T();
-            nearGageLocation.setLOCATION_REF(getLocationRefT(project.getNearGageLocationId(),
-                    project.getNearGageOfficeId()));
+            nearGageLocation.setLOCATION_REF(getLocationRefT(ng.getName(), ng.getOfficeId()));
         }
 
         String authorizingLaw = project.getAuthorizingLaw();
