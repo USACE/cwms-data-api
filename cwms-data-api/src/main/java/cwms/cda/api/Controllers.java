@@ -31,6 +31,8 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
@@ -38,6 +40,7 @@ import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
+
 import static com.codahale.metrics.MetricRegistry.name;
 
 public final class Controllers {
@@ -167,6 +170,10 @@ public final class Controllers {
     public static final String INCLUDE_EXTENTS = "include-extents";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
+
+    private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
+    private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
+    private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
 
     static {
@@ -355,5 +362,15 @@ public final class Controllers {
         return retval;
     }
 
-
+    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type)
+    {
+        if (type.getType().equalsIgnoreCase(Formats.TAB))
+        {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+        }
+        else if (type.getType().equalsIgnoreCase(Formats.CSV))
+        {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+        }
+    }
 }
