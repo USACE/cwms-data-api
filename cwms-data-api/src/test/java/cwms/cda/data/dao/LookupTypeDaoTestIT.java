@@ -67,7 +67,7 @@ final class LookupTypeDaoTestIT extends DataApiTestIT {
             assertEquals(lookupType, fromDb, "LookupType retrieved from database does not match original lookupType");
 
             // Delete lookup type
-            lookupTypeDao.deleteLookupType(category, prefix, lookupType);
+            lookupTypeDao.deleteLookupType(category, prefix, lookupType.getOfficeId(), lookupType.getDisplayValue());
 
             //Retrieve Deleted lookup type to confirm it no longer exists
             Optional<LookupType> empty = lookupTypeDao.retrieveLookupTypes(category, prefix, databaseLink.getOfficeId())

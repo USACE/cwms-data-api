@@ -200,17 +200,8 @@ public final class LookupTypeController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
-            List<LookupType> lookupTypes = dao.retrieveLookupTypes(category, prefix, officeId);
-            LookupType lookupType = lookupTypes.stream()
-                    .filter(lt -> lt.getDisplayValue().equals(displayValue))
-                    .findFirst()
-                    .orElse(null);
-            if (lookupType != null) {
-                dao.deleteLookupType(category, prefix, lookupType);
-                ctx.status(HttpServletResponse.SC_NO_CONTENT).json(displayValue + " Deleted");
-            } else {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(displayValue + " Not Found");
-            }
+            dao.deleteLookupType(category, prefix, officeId, displayValue);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(displayValue + " Deleted");
         }
     }
 
