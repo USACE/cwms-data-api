@@ -42,8 +42,9 @@
     "published-longitude": -95.992775,
     "published-latitude": 36.153980,
     "elevation": 10.0,
+    "elevation-units": "m",
     "bounding-office-id": "SWT"
-  },
+},
   "project-id": "PROJ",
   "project-office-id": "SWT"
 }
