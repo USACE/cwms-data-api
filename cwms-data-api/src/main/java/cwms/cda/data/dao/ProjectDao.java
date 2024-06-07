@@ -179,7 +179,8 @@ public class ProjectDao extends JooqDao<Project> {
         }
         if (nearLocRef != null) {
             builder = builder.withNearGageLocation(new Location.Builder(nearLocRef.getOfficeId(),
-                    getLocationId(nearLocRef.getBaseLocationId(), nearLocRef.getSubLocationId()))
+                    getLocationId(nearLocRef.getBaseLocationId(),
+                            nearLocRef.getSubLocationId()))
                     .withActive(null)
                     .build()
             );
@@ -193,7 +194,8 @@ public class ProjectDao extends JooqDao<Project> {
         }
         if (pumpbackLocRef != null) {
             builder = builder.withPumpBackLocation(new Location.Builder(pumpbackLocRef.getOfficeId(),
-                    getLocationId(pumpbackLocRef.getBaseLocationId(), pumpbackLocRef.getSubLocationId()))
+                    getLocationId(pumpbackLocRef.getBaseLocationId(),
+                            pumpbackLocRef.getSubLocationId()))
                     .withActive(null)
                     .build()
             );
