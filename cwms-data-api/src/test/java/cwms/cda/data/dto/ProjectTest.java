@@ -19,6 +19,16 @@ class ProjectTest {
 
     @Test
     void testProject() throws JsonProcessingException {
+
+        Location pbLoc = new Location.Builder("SPK","Pumpback Location Id")
+                .withPublicName(null)
+                .withActive(null)
+                .build();
+        Location ngLoc = new Location.Builder("SPK","Near Gage Location Id")
+                .withPublicName(null)
+                .withActive(null)
+                .build();
+
         Project project = new Project.Builder()
                 .withOfficeId("SPK")
                 .withName("Project Id")
@@ -35,10 +45,8 @@ class ProjectTest {
                 .withFederalOAndMCost(10.0)
                 .withNonFederalOAndMCost(5.0)
                 .withProjectRemarks("Remarks")
-                .withPumpBackLocationId("Pumpback Location Id")
-                .withPumpBackOfficeId("SPK")
-                .withNearGageLocationId("Near Gage Location Id")
-                .withNearGageOfficeId("SPK")
+                .withPumpBack(pbLoc)
+                .withNearGage(ngLoc)
                 .withBankFullCapacityDesc("Bank Full Capacity Description")
                 .withDownstreamUrbanDesc("Downstream Urban Description")
                 .withHydropowerDesc("Hydropower Description")
@@ -49,8 +57,8 @@ class ProjectTest {
         ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
         String json = ow.writeValueAsString(project);
-        assertNotNull(json);
 
+        assertNotNull(json);
 
     }
 
@@ -66,7 +74,6 @@ class ProjectTest {
 
         assertNotNull(project);
 
-
         assertEquals("SPK", project.getOfficeId());
         assertEquals("Project Id", project.getName());
         assertEquals("Project Owner", project.getProjectOwner());
@@ -80,16 +87,14 @@ class ProjectTest {
         assertEquals(1717199914902L, project.getYieldTimeFrameStart().toEpochMilli());
         assertEquals(1717199914902L, project.getYieldTimeFrameEnd().toEpochMilli());
         assertEquals("Remarks", project.getProjectRemarks());
-        assertEquals("Pumpback Location Id", project.getPumpBackLocationId());
-        assertEquals("SPK", project.getPumpBackOfficeId());
-        assertEquals("Near Gage Location Id", project.getNearGageLocationId());
-        assertEquals("SPK", project.getNearGageOfficeId());
+        assertEquals("Pumpback Location Id", project.getPumpBack().getName());
+        assertEquals("SPK", project.getPumpBack().getOfficeId());
+        assertEquals("Near Gage Location Id", project.getNearGage().getName());
+        assertEquals("SPK", project.getNearGage().getOfficeId());
         assertEquals("Bank Full Capacity Description", project.getBankFullCapacityDesc());
         assertEquals("Downstream Urban Description", project.getDownstreamUrbanDesc());
         assertEquals("Hydropower Description", project.getHydropowerDesc());
         assertEquals("Sedimentation Description", project.getSedimentationDesc());
-
-
 
     }
 }

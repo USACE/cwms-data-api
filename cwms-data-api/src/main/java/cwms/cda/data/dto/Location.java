@@ -15,7 +15,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
-
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -237,7 +236,7 @@ public final class Location extends CwmsDTO {
         private Double latitude;
         private Double longitude;
         private String officeId;
-        private boolean active = true;
+        private Boolean active = true;
         private String publicName;
         private String longName;
         private String description;
@@ -275,6 +274,10 @@ public final class Location extends CwmsDTO {
             this.horizontalDatum = horizontalDatum;
             this.officeId = officeId;
             buildPropertyFunctions();
+        }
+
+        public Builder(String office, String name) {
+            this(name, null, null, null, null, null, office);
         }
 
         public Builder(Location location) {
@@ -398,7 +401,7 @@ public final class Location extends CwmsDTO {
             return this;
         }
 
-        public Builder withActive(boolean active) {
+        public Builder withActive(Boolean active) {
             this.active = active;
             return this;
         }
