@@ -106,11 +106,11 @@ public final class EmbankmentController  implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "Specifies the name of "
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the name of "
                             + "the embankment to be retrieved."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the embankment to be retrieved.")
             },
             responses = {
@@ -124,7 +124,7 @@ public final class EmbankmentController  implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String name) {
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
@@ -180,9 +180,9 @@ public final class EmbankmentController  implements CrudHandler {
                             + "the embankment to be deleted."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the embankment to be deleted."),
-                    @OpenApiParam(name = NAME, description = "Specifies the new embankment name. ")
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the new embankment name. ")
             },
             description = "Rename CWMS Embankment",
             method = HttpMethod.PATCH,
@@ -194,10 +194,10 @@ public final class EmbankmentController  implements CrudHandler {
     @Override
     public void update(Context ctx, String name) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
+            String office = requiredParam(ctx, OFFICE);
+            String newName = requiredParam(ctx, NAME);
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
-            String office = ctx.queryParam(OFFICE);
-            String newName = ctx.queryParam(NAME);
             dao.renameEmbankment(office, name, newName);
             ctx.status(HttpServletResponse.SC_OK).json("Renamed Embankment");
         }
@@ -209,7 +209,7 @@ public final class EmbankmentController  implements CrudHandler {
                             + "the embankment to be deleted."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the embankment to be deleted."),
                     @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
                             "Defaults to \"DELETE_KEY\"",
@@ -226,7 +226,7 @@ public final class EmbankmentController  implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, String name) {
-        String office = ctx.queryParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
                 .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
         try (Timer.Context ignored = markAndTime(DELETE)) {
