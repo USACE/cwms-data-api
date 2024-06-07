@@ -46,6 +46,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.EmbankmentController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
@@ -165,7 +166,7 @@ import org.owasp.html.PolicyFactory;
         "/forecast-spec/*",
         "/forecast-instance/*",
         "/standard-text-id/*",
-        "/properties/*"
+        "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -461,6 +462,8 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
+                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
 
     /**

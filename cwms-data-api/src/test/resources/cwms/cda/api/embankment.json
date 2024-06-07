@@ -1,0 +1,49 @@
+{
+  "upstream-side-slope": 15.0,
+  "downstream-side-slope": 90.0,
+  "structure-length": 25.0,
+  "height-max": 5.0,
+  "top-width": 20.0,
+  "units-id": "m",
+  "downstream-prot-type": {
+    "office-id": "CWMS",
+    "display-value": "Concrete Arch Facing",
+    "tooltip": "Protected by the faces of the concrete arches",
+    "active": true
+  },
+  "upstream-prot-type": {
+    "office-id": "CWMS",
+    "display-value": "Concrete Blanket",
+    "tooltip": "Protected by blanket of concrete",
+    "active": true
+  },
+  "structure-type": {
+    "office-id": "CWMS",
+    "display-value": "Rolled Earth-Filled",
+    "tooltip": "An embankment formed by compacted earth",
+    "active": true
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "PROJECT-EMBANKMENT_LOC",
+    "latitude": 36.153980,
+    "longitude": -95.992775,
+    "active": true,
+    "public-name": "PROJECT-EMBANKMENT_LOC",
+    "long-name": "UNITED STATES",
+    "description": "for testing",
+    "timezone-name": "UTC",
+    "location-type": "SITE",
+    "location-kind": "EMBANKMENT",
+    "nation": "US",
+    "state-initial": "CA",
+    "county-name": "Sacramento",
+    "horizontal-datum": "NVGD29",
+    "published-longitude": -95.992775,
+    "published-latitude": 36.153980,
+    "elevation": 10.0,
+    "bounding-office-id": "SWT"
+  },
+  "project-id": "PROJ",
+  "project-office-id": "SWT"
+}
