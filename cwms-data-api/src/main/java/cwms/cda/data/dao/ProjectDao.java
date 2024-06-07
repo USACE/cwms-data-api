@@ -11,6 +11,7 @@ import cwms.cda.data.dto.Project;
 import cwms.cda.data.dto.Projects;
 import cwms.cda.helpers.ResourceHelper;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,8 +26,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
+import org.jooq.SQLDialect;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectLimitPercentStep;
+import org.jooq.impl.DSL;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
 import usace.cwms.db.dao.ifc.loc.LocationType;
 import usace.cwms.db.dao.util.OracleTypeMap;
@@ -123,7 +126,8 @@ public class ProjectDao extends JooqDao<Project> {
         }
         if (nearLocRef != null) {
             builder = builder.withNearGageLocation(new Location.Builder(nearLocRef.getOfficeId(),
-                    getLocationId(nearLocRef.getBaseLocationId(), nearLocRef.getSubLocationId()))
+                    getLocationId(nearLocRef.getBaseLocationId(),
+                            nearLocRef.getSubLocationId()))
                     .withActive(null)
                     .build()
             );
@@ -137,7 +141,8 @@ public class ProjectDao extends JooqDao<Project> {
         }
         if (pumpbackLocRef != null) {
             builder = builder.withPumpBackLocation(new Location.Builder(pumpbackLocRef.getOfficeId(),
-                    getLocationId(pumpbackLocRef.getBaseLocationId(), pumpbackLocRef.getSubLocationId()))
+                    getLocationId(pumpbackLocRef.getBaseLocationId(),
+                            pumpbackLocRef.getSubLocationId()))
                     .withActive(null)
                     .build()
             );
@@ -568,4 +573,228 @@ public class ProjectDao extends JooqDao<Project> {
                 id, deleteRule.getRule(), office
         ));
     }
+
+
+    public Number publishStatusUpdate(String pProjectId,
+                                      String appId, String sourceId,
+                                      String tsId, Timestamp start,
+                                      Timestamp end, String office) {
+        BigInteger startTime = toBigInteger(start);
+        BigInteger endTime = toBigInteger(end);
+        return connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE(
+                getDslContext(c, office).configuration(),
+                pProjectId, appId, sourceId,
+                tsId, startTime, endTime, office)
+        );
+    }
+
+    protected static BigInteger toBigInteger(Timestamp timestamp) {
+        BigInteger retval = null;
+        if (timestamp != null) {
+            retval = BigInteger.valueOf(timestamp.getTime());
+        }
+
+        return retval;
+    }
+
+    protected static BigInteger toBigInteger(Long value) {
+        BigInteger retval = null;
+        if (value != null) {
+            retval = BigInteger.valueOf(value);
+        }
+
+        return retval;
+    }
+
+    protected static BigInteger toBigInteger(int revokeTimeout) {
+        return BigInteger.valueOf(revokeTimeout);
+    }
+
+
+    public String requestLock(String projectId, String appId,
+                              boolean revokeExisting, int revokeTimeout, String office) {
+        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
+        return connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(getDslContext(c,
+                        office).configuration(),
+                projectId, appId, OracleTypeMap.formatBool(revokeExisting), revokeTimeoutBI,
+                office));
+    }
+
+
+    public void releaseLock(String lockId) {
+        connection(dsl, c -> CWMS_PROJECT_PACKAGE.call_RELEASE_LOCK(
+                DSL.using(c, SQLDialect.ORACLE18C).configuration(),
+                lockId));
+    }
+
+
+    public void revokeLock(String projId, String appId,
+                           int revokeTimeout, String office) {
+        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
+        connection(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_REVOKE_LOCK(getDslContext(c, office).configuration(),
+                        projId,
+                        appId, revokeTimeoutBI, office));
+    }
+
+
+    public void denyLockRevocation(String lockId) {
+        connection(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_DENY_LOCK_REVOCATION(
+                        DSL.using(c, SQLDialect.ORACLE18C).configuration(),
+                        lockId));
+    }
+
+
+    public boolean isLocked(String projectId, String appId, String office) {
+        String s = connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_IS_LOCKED(getDslContext(c
+                        , office).configuration(),
+                projectId, appId, office));
+        return OracleTypeMap.parseBool(s);
+    }
+
+
+    public List<Lock> catLocks(String projMask, String appMask, TimeZone tz, String officeMask) throws SQLException {
+        List<Lock> retval = new ArrayList<>();
+        try (ResultSet resultSet = CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
+                        projMask, appMask, tz.getID(), officeMask)
+                .intoResultSet()) {
+            while (resultSet.next()) {
+                String officeId = resultSet.getString("office_id");
+                String projectId = resultSet.getString("project_id");
+                String applicationId = resultSet.getString("application_id");
+                String acquireTime = resultSet.getString("acquire_time");
+                String sessionUser = resultSet.getString("session_user");
+                String osUser = resultSet.getString("os_user");
+                String sessionProgram = resultSet.getString("session_program");
+                String sessionMachine = resultSet.getString("session_machine");
+
+                Lock lock = new Lock(officeId, projectId, applicationId, acquireTime, sessionUser
+                        , osUser, sessionProgram, sessionMachine);
+                retval.add(lock);
+            }
+        }
+        return retval;
+    }
+
+    public static class Lock {
+        private final String officeId;
+        private final String projectId;
+        private final String applicationId;
+        private final String acquireTime;
+        private final String sessionUser;
+        private final String osUser;
+        private final String sessionProgram;
+        private final String sessionMachine;
+
+        public Lock(String officeId, String projectId, String applicationId, String acquireTime,
+                    String sessionUser, String osUser, String sessionProgram,
+                    String sessionMachine) {
+            this.officeId = officeId;
+            this.projectId = projectId;
+            this.applicationId = applicationId;
+            this.acquireTime = acquireTime;
+            this.sessionUser = sessionUser;
+            this.osUser = osUser;
+            this.sessionProgram = sessionProgram;
+            this.sessionMachine = sessionMachine;
+        }
+
+        public String getOfficeId() {
+            return officeId;
+        }
+
+        public String getProjectId() {
+            return projectId;
+        }
+
+        public String getApplicationId() {
+            return applicationId;
+        }
+
+        public String getAcquireTime() {
+            return acquireTime;
+        }
+
+        public String getSessionUser() {
+            return sessionUser;
+        }
+
+        public String getOsUser() {
+            return osUser;
+        }
+
+        public String getSessionProgram() {
+            return sessionProgram;
+        }
+
+        public String getSessionMachine() {
+            return sessionMachine;
+        }
+    }
+
+
+    public void updateLockRevokerRights(LockRevokerRights lock, boolean allow) {
+        CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(dsl.configuration(),
+                lock.getUserId(), lock.getProjectId(), OracleTypeMap.formatBool(allow),
+                lock.getApplicationId(), lock.getOfficeId());
+    }
+
+
+    public List<LockRevokerRights> catLockRevokerRights(String projectMask,
+                                                        String applicationMask, String officeMask) {
+        return connectionResult(dsl, c -> {
+            List<LockRevokerRights> retval = new ArrayList<>();
+            try (ResultSet rs = CWMS_PROJECT_PACKAGE.call_CAT_LOCK_REVOKER_RIGHTS(
+                    DSL.using(c, SQLDialect.ORACLE18C).configuration(),
+                    projectMask, applicationMask, officeMask).intoResultSet()) {
+                while (rs.next()) {
+                    String officeId = rs.getString("office_id");
+                    String projectId = rs.getString("project_id");
+                    String applicationId = rs.getString("application_id");
+                    String userId = rs.getString("user_id");
+
+                    LockRevokerRights lock = new LockRevokerRights(officeId, projectId,
+                            applicationId, userId);
+                    retval.add(lock);
+                }
+
+            }
+            return retval;
+        });
+    }
+
+
+    public static class LockRevokerRights {
+        private final String officeId;
+        private final String projectId;
+        private final String applicationId;
+        private final String userId;
+
+        public LockRevokerRights(String officeId, String projectId, String applicationId,
+                                 String userId) {
+            this.officeId = officeId;
+            this.projectId = projectId;
+            this.applicationId = applicationId;
+            this.userId = userId;
+        }
+
+        public String getOfficeId() {
+            return officeId;
+        }
+
+        public String getProjectId() {
+            return projectId;
+        }
+
+        public String getApplicationId() {
+            return applicationId;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+    }
+
+
 }
