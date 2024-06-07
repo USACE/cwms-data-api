@@ -1,5 +1,8 @@
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.*;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -23,16 +26,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
 
 
 /**
@@ -130,6 +130,8 @@ public class BlobController implements CrudHandler {
     }
 
     @OpenApi(
+            description = "Returns the binary value of the requested blob as a seekable stream with the "
+                    + "appropriate media type.",
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
@@ -211,16 +213,68 @@ public class BlobController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            description = "Update an existing Blob",
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = Blob.class, type = Formats.JSON)
+                    },
+                    required = true),
+            method = HttpMethod.POST,
+            tags = {TAG}
+    )
     @Override
-    public void update(Context ctx, @NotNull String blobId) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
+    public void update(@NotNull Context ctx, @NotNull String blobId) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
+
+            String reqContentType = ctx.req.getContentType();
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+
+            if (blob.getOfficeId() == null) {
+                throw new FormattingException("An officeId is required when updating a blob");
+            }
+
+            if (blob.getId() == null) {
+                throw new FormattingException("An Id is required when updating a blob");
+            }
+
+            if (blob.getValue() == null) {
+                throw new FormattingException("A non-empty value field is required when "
+                        + "updating a blob");
+            }
+
+            BlobDao dao = new BlobDao(dsl);
+            dao.update(blob, false);
+            ctx.status(HttpServletResponse.SC_OK);
+        }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+            description = "Deletes requested blob",
+            pathParams = {
+                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+            },
+            queryParams = {
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the blob to be deleted"),
+            },
+            method = HttpMethod.DELETE,
+            tags = {TAG}
+    )
     @Override
-    public void delete(Context ctx, @NotNull String blobId) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
+    public void delete(@NotNull Context ctx, @NotNull String blobId) {
+        try (Timer.Context ignored = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
+            String office = requiredParam(ctx, OFFICE);
+            BlobDao dao = new BlobDao(dsl);
+            dao.delete(office, blobId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+        }
     }
 
 }

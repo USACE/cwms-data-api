@@ -2,13 +2,6 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.ResultQuery;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +10,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.ResultQuery;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public class BlobDao extends JooqDao<Blob> {
 
@@ -176,6 +175,55 @@ public class BlobDao extends JooqDao<Blob> {
                 pFailIfExists,
                 pIgnoreNulls,
                 blob.getOfficeId()));
+    }
+
+    public void update(Blob blob, boolean ignoreNulls) {
+        String pFailIfExists = OracleTypeMap.formatBool(false);
+        String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
+
+        if(blob == null){
+            throw new NotFoundException("null blob provided to update");
+        }
+
+        if (!blobExists(blob.getOfficeId(), blob.getId())) {
+            throw new NotFoundException("Unable to find blob with id " + blob.getId() + " in office " + blob.getOfficeId());
+        }
+
+        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+                getDslContext(c, blob.getOfficeId()).configuration(),
+                blob.getValue(),
+                blob.getId(),
+                blob.getMediaTypeId(),
+                blob.getDescription(),
+                pFailIfExists,
+                pIgnoreNulls,
+                blob.getOfficeId()));
+    }
+
+    public void delete(String office, String id) {
+        if (!blobExists(office, id)) {
+            throw new NotFoundException("Unable to find blob with id " + id + " in office " + office);
+        }
+        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_DELETE_BINARY(
+                getDslContext(c, office).configuration(),
+                id,
+                office));
+    }
+
+    private boolean blobExists(String office, String id) {
+        String existsQuery = "select 1 "
+                + "from CWMS_20.AT_BLOB \n"
+                + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE = CWMS_OFFICE.OFFICE_CODE \n"
+                + "WHERE ID = ? AND upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
+        return connectionResult(dsl, conn -> {
+            try (PreparedStatement preparedStatement = conn.prepareStatement(existsQuery)) {
+                preparedStatement.setString(1, id);
+                preparedStatement.setString(2, office);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    return resultSet.next();
+                }
+            }
+        });
     }
 
 
