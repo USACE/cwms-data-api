@@ -277,7 +277,9 @@ public final class Location extends CwmsDTO {
         }
 
         public Builder(String office, String name) {
-            this(name, null, null, null, null, null, office);
+            this.officeId = office;
+            this.name = name;
+            buildPropertyFunctions();
         }
 
         public Builder(Location location) {

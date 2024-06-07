@@ -13,11 +13,11 @@
   "sedimentation-desc" : "Sedimentation Description",
   "downstream-urban-desc" : "Downstream Urban Description",
   "bank-full-capacity-desc" : "Bank Full Capacity Description",
-  "pump-back" : {
+  "pump-back-location" : {
     "office-id" : "SPK",
     "name" : "Pumpback Location Id"
   },
-  "near-gage" : {
+  "near-gage-location" : {
     "office-id" : "SPK",
     "name" : "Near Gage Location Id"
   },

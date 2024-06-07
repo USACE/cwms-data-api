@@ -31,8 +31,8 @@ public class Project extends CwmsDTO {
     private final String sedimentationDesc;
     private final String downstreamUrbanDesc;
     private final String bankFullCapacityDesc;
-    private final Location pumpBack;
-    private final Location nearGage;
+    private final Location pumpBackLocation;
+    private final Location nearGageLocation;
     private final Instant yieldTimeFrameStart;
     private final Instant yieldTimeFrameEnd;
     private final String projectRemarks;
@@ -53,8 +53,8 @@ public class Project extends CwmsDTO {
         this.sedimentationDesc = builder.sedimentationDesc;
         this.downstreamUrbanDesc = builder.downstreamUrbanDesc;
         this.bankFullCapacityDesc = builder.bankFullCapacityDesc;
-        this.pumpBack = builder.pumpBack;
-        this.nearGage = builder.nearGage;
+        this.pumpBackLocation = builder.pumpBackLocation;
+        this.nearGageLocation = builder.nearGageLocation;
         this.yieldTimeFrameStart = builder.yieldTimeFrameStart;
         this.yieldTimeFrameEnd = builder.yieldTimeFrameEnd;
         this.projectRemarks = builder.projectRemarks;
@@ -85,8 +85,8 @@ public class Project extends CwmsDTO {
         return hydropowerDesc;
     }
 
-    public Location getNearGage() {
-        return nearGage;
+    public Location getNearGageLocation() {
+        return nearGageLocation;
     }
 
     public Double getNonFederalCost() {
@@ -121,8 +121,8 @@ public class Project extends CwmsDTO {
         return projectRemarks;
     }
 
-    public Location getPumpBack() {
-        return pumpBack;
+    public Location getPumpBackLocation() {
+        return pumpBackLocation;
     }
 
     public String getSedimentationDesc() {
@@ -154,8 +154,8 @@ public class Project extends CwmsDTO {
         private String sedimentationDesc;
         private String downstreamUrbanDesc;
         private String bankFullCapacityDesc;
-        private Location pumpBack;
-        private Location nearGage;
+        private Location pumpBackLocation;
+        private Location nearGageLocation;
         private Instant yieldTimeFrameStart;
         private Instant yieldTimeFrameEnd;
         private String projectRemarks;
@@ -186,8 +186,8 @@ public class Project extends CwmsDTO {
                     .withSedimentationDesc(project.getSedimentationDesc())
                     .withDownstreamUrbanDesc(project.getDownstreamUrbanDesc())
                     .withBankFullCapacityDesc(project.getBankFullCapacityDesc())
-                    .withPumpBack(project.getPumpBack())
-                    .withNearGage(project.getNearGage())
+                    .withPumpBackLocation(project.getPumpBackLocation())
+                    .withNearGageLocation(project.getNearGageLocation())
                     .withYieldTimeFrameStart(project.getYieldTimeFrameStart())
                     .withYieldTimeFrameEnd(project.getYieldTimeFrameEnd())
                     .withProjectRemarks(project.getProjectRemarks());
@@ -263,13 +263,13 @@ public class Project extends CwmsDTO {
             return this;
         }
 
-        public Builder withPumpBack(Location pbLoc) {
-            this.pumpBack = pbLoc;
+        public Builder withPumpBackLocation(Location pbLoc) {
+            this.pumpBackLocation = pbLoc;
             return this;
         }
 
-        public Builder withNearGage(Location ngLoc) {
-            this.nearGage = ngLoc;
+        public Builder withNearGageLocation(Location ngLoc) {
+            this.nearGageLocation = ngLoc;
             return this;
         }
 

@@ -21,11 +21,9 @@ class ProjectTest {
     void testProject() throws JsonProcessingException {
 
         Location pbLoc = new Location.Builder("SPK","Pumpback Location Id")
-                .withPublicName(null)
                 .withActive(null)
                 .build();
         Location ngLoc = new Location.Builder("SPK","Near Gage Location Id")
-                .withPublicName(null)
                 .withActive(null)
                 .build();
 
@@ -45,8 +43,8 @@ class ProjectTest {
                 .withFederalOAndMCost(10.0)
                 .withNonFederalOAndMCost(5.0)
                 .withProjectRemarks("Remarks")
-                .withPumpBack(pbLoc)
-                .withNearGage(ngLoc)
+                .withPumpBackLocation(pbLoc)
+                .withNearGageLocation(ngLoc)
                 .withBankFullCapacityDesc("Bank Full Capacity Description")
                 .withDownstreamUrbanDesc("Downstream Urban Description")
                 .withHydropowerDesc("Hydropower Description")
@@ -59,7 +57,6 @@ class ProjectTest {
         String json = ow.writeValueAsString(project);
 
         assertNotNull(json);
-
     }
 
     @Test
@@ -87,10 +84,10 @@ class ProjectTest {
         assertEquals(1717199914902L, project.getYieldTimeFrameStart().toEpochMilli());
         assertEquals(1717199914902L, project.getYieldTimeFrameEnd().toEpochMilli());
         assertEquals("Remarks", project.getProjectRemarks());
-        assertEquals("Pumpback Location Id", project.getPumpBack().getName());
-        assertEquals("SPK", project.getPumpBack().getOfficeId());
-        assertEquals("Near Gage Location Id", project.getNearGage().getName());
-        assertEquals("SPK", project.getNearGage().getOfficeId());
+        assertEquals("Pumpback Location Id", project.getPumpBackLocation().getName());
+        assertEquals("SPK", project.getPumpBackLocation().getOfficeId());
+        assertEquals("Near Gage Location Id", project.getNearGageLocation().getName());
+        assertEquals("SPK", project.getNearGageLocation().getOfficeId());
         assertEquals("Bank Full Capacity Description", project.getBankFullCapacityDesc());
         assertEquals("Downstream Urban Description", project.getDownstreamUrbanDesc());
         assertEquals("Hydropower Description", project.getHydropowerDesc());
