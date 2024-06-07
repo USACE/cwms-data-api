@@ -5,9 +5,8 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dto.basinconnectivity.StreamLocation;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
 
@@ -18,10 +17,10 @@ public class StreamLocationDao extends JooqDao<StreamLocation> {
 
     /**
      * @param streamId - stream containing stream locations that are being retrieved
-     * @return list of stream locations on stream
+     * @return Set of stream locations on stream
      */
     public Set<StreamLocation> getStreamLocations(String streamId, String unitSystem,
-                                                  String officeId) throws SQLException {
+                                                  String officeId) {
         String pStreamIdMaskIn = streamId == null ? "*" : streamId;
         String pLocationIdMaskIn = "*";
         String pStationUnitIn = UnitSystem.EN.value().equalsIgnoreCase(unitSystem)
@@ -31,14 +30,17 @@ public class StreamLocationDao extends JooqDao<StreamLocation> {
         String pAreaUnitIn = UnitSystem.EN.value().equalsIgnoreCase(unitSystem)
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-        AtomicReference<ResultSet> resultSetRef = new AtomicReference<>();
-        connection(dsl, c -> resultSetRef.set(streamJooq.catStreamLocations(c, pStreamIdMaskIn,
-                pLocationIdMaskIn, pStationUnitIn, pStageUnitIn, pAreaUnitIn, officeId)));
-        return buildStreamLocations(resultSetRef.get());
+
+        return connectionResult(dsl, c -> {
+            try (ResultSet resultSet = streamJooq.catStreamLocations(c, pStreamIdMaskIn,
+                    pLocationIdMaskIn, pStationUnitIn, pStageUnitIn, pAreaUnitIn, officeId)) {
+                return buildStreamLocations(resultSet);
+            }
+        });
     }
 
     private Set<StreamLocation> buildStreamLocations(ResultSet rs) throws SQLException {
-        Set<StreamLocation> retVal = new HashSet<>();
+        Set<StreamLocation> retVal = new LinkedHashSet<>();
         while (rs.next()) {
             String locationId = rs.getString("LOCATION_ID");
             String officeId = rs.getString("OFFICE_ID");
@@ -64,7 +66,7 @@ public class StreamLocationDao extends JooqDao<StreamLocation> {
         return retVal;
     }
 
-    public Set<StreamLocation> getAllStreamLocations(String unitSystem, String officeId) throws SQLException {
+    public Set<StreamLocation> getAllStreamLocations(String unitSystem, String officeId)  {
         return getStreamLocations(null, unitSystem, officeId);
     }
 

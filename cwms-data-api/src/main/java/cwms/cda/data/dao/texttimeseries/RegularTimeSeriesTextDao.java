@@ -16,7 +16,6 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 import java.io.IOException;
@@ -98,7 +97,7 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
                 parameterizeRetrieveTsText(stmt, tsId, textMask, startTime, endTime, versionDate, officeId);
                 stmt.execute();
                 List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
-                try(ResultSet rs = (ResultSet) stmt.getObject(1)) {
+                try (ResultSet rs = (ResultSet) stmt.getObject(1)) {
                     //UTF-16 conversion and assumes 2 bytes per character
                     long characterLimit = kiloByteLimit * 1024L / 2;
                     while (rs.next()) {

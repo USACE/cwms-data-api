@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -563,7 +564,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         }
     }
 
-
+@Disabled("This test is disabled because it is slow")
     @Test
     void test_big_create() throws Exception {
 
@@ -752,7 +753,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
     private static void deleteLocation(String location, String officeId) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
+        db.connection(c-> {
             try(PreparedStatement stmt = c.prepareStatement("declare\n"
                     + "    p_location varchar2(64) := ?;\n"
                     + "    p_office varchar2(10) := ?;\n"

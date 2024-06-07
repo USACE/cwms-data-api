@@ -1,5 +1,10 @@
 package cwms.cda.data.dao.binarytimeseries;
 
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
+import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
+import static java.lang.String.format;
+import static usace.cwms.db.dao.util.OracleTypeMap.formatBool;
+
 import cwms.cda.api.Controllers;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.BlobDao;
@@ -8,15 +13,6 @@ import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.helpers.ReplaceUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.Configuration;
-import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
-import org.jooq.exception.NoDataFoundException;
-import usace.cwms.db.dao.util.OracleTypeMap;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
@@ -32,11 +28,13 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
-
-import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
-import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
-import static java.lang.String.format;
-import static usace.cwms.db.dao.util.OracleTypeMap.formatBool;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
+import org.jooq.exception.NoDataFoundException;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final String DATE_TIME = "DATE_TIME";
@@ -46,8 +44,8 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final String BLOB = "BLOB";
     private static final String MEDIA_TYPE = "MEDIA_TYPE_ID";
     private static final String FILENAME = "FILENAME";
-    private static final  String QUALITY = "QUALITY";
-    private static final  String DEST_FLAG = "DEST_FLAG";
+    private static final String QUALITY = "QUALITY";
+    private static final String DEST_FLAG = "DEST_FLAG";
     private static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 
@@ -96,35 +94,39 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
      * date combination, binary and text time series can have multiple entries at each time/version
      * date combination.  Entries are retrieved in the order they are stored.
      *
-     * @param configuration The database configuration to use.  It is assumed that the setOffice
-     *                      call has already been made.
-     * @param officeId The office that owns the time series. If not specified or NULL, the session
-     *                 user's default office is used.
-     * @param tsId The time series identifier
-     * @param binaryData The binary data to store.
-     * @param binaryType The data type expressed as either an internet media type
-     *                   (e.g. 'application/pdf') or a file extension (e.g. '.pdf')
-     * @param startStamp The first (or only) time for the binary data
-     * @param endStamp The last time for the binary data. If specified the binary data is
-     *                 associated with all times from p_start_time to p_end_time (inclusive). Times
-     *                 must already exist for irregular time series.
-     * @param verStamp The version date for the time series.  If not specified or NULL, the
-     *                 maximum version date is used.
-     * @param timeZone The time zone for p_start_time, p_end_time, and p_version_date. If not
-     *                 specified or NULL, the local time zone of the time series' location is used.
-     * @param maxVersion A flag specifying whether to use the maximum version date if
-     *                   p_version_date is not specified or NULL.
-     * @param storeExisting  A flag specifying whether to store the binary data for times that
-     *                       already exist in the specified time series. Used only for regular
-     *                       time series.
+     * @param configuration    The database configuration to use.  It is assumed that the setOffice
+     *                         call has already been made.
+     * @param officeId         The office that owns the time series. If not specified or NULL,
+     *                         the session
+     *                         user's default office is used.
+     * @param tsId             The time series identifier
+     * @param binaryData       The binary data to store.
+     * @param binaryType       The data type expressed as either an internet media type
+     *                         (e.g. 'application/pdf') or a file extension (e.g. '.pdf')
+     * @param startStamp       The first (or only) time for the binary data
+     * @param endStamp         The last time for the binary data. If specified the binary data is
+     *                         associated with all times from p_start_time to p_end_time
+     *                         (inclusive). Times
+     *                         must already exist for irregular time series.
+     * @param verStamp         The version date for the time series.  If not specified or NULL, the
+     *                         maximum version date is used.
+     * @param timeZone         The time zone for p_start_time, p_end_time, and p_version_date. If
+     *                        not
+     *                         specified or NULL, the local time zone of the time series'
+     *                         location is used.
+     * @param maxVersion       A flag specifying whether to use the maximum version date if
+     *                         p_version_date is not specified or NULL.
+     * @param storeExisting    A flag specifying whether to store the binary data for times that
+     *                         already exist in the specified time series. Used only for regular
+     *                         time series.
      * @param storeNonExisting A flag specifying whether to store the binary data for times that
      *                         don't already exist in the specified time series. Used only for
      *                         regular time series.
-     * @param replaceAll A flag specifying whether to replace any and all existing text with the
-     *                   specified text
-
+     * @param replaceAll       A flag specifying whether to replace any and all existing text
+     *                         with the
+     *                         specified text
      */
-    private static void store(Configuration configuration, String officeId, String tsId, 
+    private static void store(Configuration configuration, String officeId, String tsId,
                               byte[] binaryData, String binaryType, Timestamp startStamp,
                               Timestamp endStamp, Timestamp verStamp, TimeZone timeZone,
                               boolean maxVersion, boolean storeExisting, boolean storeNonExisting,
@@ -136,7 +138,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 null, officeId);
     }
 
-    public void store(BinaryTimeSeries tts, boolean maxVersion,  boolean replaceAll) {
+    public void store(BinaryTimeSeries tts, boolean maxVersion, boolean replaceAll) {
         store(tts, maxVersion, true, true, replaceAll);
     }
 
@@ -151,12 +153,14 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
 
     public BinaryTimeSeries retrieve(String officeId, String tsId, String mask,
-            @NotNull Instant startTime, @NotNull Instant endTime,
-            Instant versionInstant, int kiloByteLimit, ReplaceUtils.OperatorBuilder urlBuilder) {
+                                     @NotNull Instant startTime, @NotNull Instant endTime,
+                                     Instant versionInstant, int kiloByteLimit,
+                                     ReplaceUtils.OperatorBuilder urlBuilder) {
         List<BinaryTimeSeriesRow> binRows = retrieveRows(officeId, tsId, mask, startTime, endTime,
                 versionInstant, kiloByteLimit, urlBuilder);
 
-        VersionType versionType = TimeSeriesDaoImpl.getVersionType(dsl, tsId, officeId, versionInstant != null);
+        VersionType versionType = TimeSeriesDaoImpl.getVersionType(dsl, tsId, officeId,
+                versionInstant != null);
         String timeZoneId = TimeSeriesDaoImpl.getTimeZoneId(dsl, tsId, officeId);
         return new BinaryTimeSeries.Builder()
                 .withOfficeId(officeId)
@@ -169,8 +173,10 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     }
 
     public List<BinaryTimeSeriesRow> retrieveRows(String officeId, String tsId, String mask,
-            @NotNull Instant startTime, @NotNull Instant endTime, Instant versionInstant,
-            int kiloByteLimit, ReplaceUtils.OperatorBuilder urlBuilder) {
+                                                  @NotNull Instant startTime,
+                                                  @NotNull Instant endTime, Instant versionInstant,
+                                                  int kiloByteLimit,
+                                                  ReplaceUtils.OperatorBuilder urlBuilder) {
         return connectionResult(dsl, conn -> {
             // Making the call from jOOQ package codegen does not work
             // b/c jOOQ MockResultSet eagerly loads the BLOB
@@ -185,7 +191,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 parameterizeRetrieveTsBinText(stmt, tsId, mask, pStartTime, pEndTime, pVersionDate, pTimeZone, officeId);
                 stmt.execute();
                 List<BinaryTimeSeriesRow> rows = new ArrayList<>();
-                try(ResultSet rs = (ResultSet) stmt.getObject(1)) {
+                try (ResultSet rs = (ResultSet) stmt.getObject(1)) {
                     while (rs.next()) {
                         BinaryTimeSeriesRow row = buildRow(byteLimit, urlBuilder, rs);
                         rows.add(row);
@@ -205,7 +211,8 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         });
     }
 
-    private BinaryTimeSeriesRow buildRow(long byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, ResultSet rs)
+    private BinaryTimeSeriesRow buildRow(long byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
+                                         ResultSet rs)
             throws SQLException, IOException {
         //Implementation will change with new CWMS schema
         //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
@@ -236,8 +243,9 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     }
 
     private void parameterizeRetrieveTsBinText(CallableStatement stmt, String tsId, String mask,
-            Timestamp pStartTime, Timestamp pEndTime, Timestamp pVersionDate, String pTimeZone,
-            String officeId) throws SQLException {
+                                               Timestamp pStartTime, Timestamp pEndTime,
+                                               Timestamp pVersionDate, String pTimeZone,
+                                               String officeId) throws SQLException {
         stmt.registerOutParameter(1, ORACLE_CURSOR_TYPE);
         stmt.setString(2, tsId);
         stmt.setString(3, mask);
@@ -253,7 +261,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     }
 
     private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
-                          boolean maxVersion, boolean storeExisting, boolean storeNonExisting,
+                           boolean maxVersion, boolean storeExisting, boolean storeNonExisting,
                            boolean replaceAll, Instant versionDate) {
         dsl.connection(connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
