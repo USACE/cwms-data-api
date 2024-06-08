@@ -6,8 +6,7 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.NamedPgJsonFormatter;
 import cwms.cda.formatters.Formats;
 
-@FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class)
-@FormattableWith(contentType = Formats.PGJSON, formatter = NamedPgJsonFormatter.class)
+@FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class, aliases = {Formats.DEFAULT, Formats.JSON, Formats.PGJSON})
 public final class Basin extends CwmsDTO
 {
     private final String basinName;
