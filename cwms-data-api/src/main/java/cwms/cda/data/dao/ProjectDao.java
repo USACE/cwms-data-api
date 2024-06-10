@@ -9,6 +9,7 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.Project;
 import cwms.cda.data.dto.Projects;
+import cwms.cda.helpers.ResourceHelper;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -38,85 +39,31 @@ import usace.cwms.db.jooq.dao.util.LocationTypeUtil;
 
 public class ProjectDao extends JooqDao<Project> {
     private static final Logger logger = Logger.getLogger(ProjectDao.class.getName());
+    public static final String OFFICE_ID = "office_id";
+    public static final String PROJECT_ID = "project_id";
+    public static final String AUTHORIZING_LAW = "authorizing_law";
+    public static final String PROJECT_OWNER = "project_owner";
+    public static final String HYDROPOWER_DESCRIPTION = "hydropower_description";
+    public static final String SEDIMENTATION_DESCRIPTION = "sedimentation_description";
+    public static final String DOWNSTREAM_URBAN_DESCRIPTION = "downstream_urban_description";
+    public static final String BANK_FULL_CAPACITY_DESCRIPTION = "bank_full_capacity_description";
+    public static final String PUMP_BACK_OFFICE_ID = "pump_back_office_id";
+    public static final String PUMP_BACK_LOCATION_ID = "pump_back_location_id";
+    public static final String NEAR_GAGE_OFFICE_ID = "near_gage_office_id";
+    public static final String NEAR_GAGE_LOCATION_ID = "near_gage_location_id";
+    public static final String PROJECT_REMARKS = "project_remarks";
+    public static final String FEDERAL_COST = "federal_cost";
+    public static final String NONFEDERAL_COST = "nonfederal_cost";
+    public static final String FEDERAL_OM_COST = "FEDERAL_OM_COST";
+    public static final String NONFEDERAL_OM_COST = "NONFEDERAL_OM_COST";
+    public static final String COST_YEAR = "COST_YEAR";
+    public static final String YIELD_TIME_FRAME_START = "yield_time_frame_start";
+    public static final String YIELD_TIME_FRAME_END = "yield_time_frame_end";
 
     private final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
-    public static final String SELECT_PART = "select project.office_id,\n"
-            + "       project.location_id as project_id,\n"
-            + "       project.COST_YEAR,\n"
-            + "       project.federal_cost,\n"
-            + "       project.nonfederal_cost,\n"
-            + "       project.FEDERAL_OM_COST,\n"
-            + "       project.NONFEDERAL_OM_COST,\n"
-            + "       project.authorizing_law,\n"
-            + "       project.project_owner,\n"
-            + "       project.hydropower_description,\n"
-            + "       project.sedimentation_description,\n"
-            + "       project.downstream_urban_description,\n"
-            + "       project.bank_full_capacity_description,\n"
-            + "       pumpback.location_id as pump_back_location_id,\n"
-            + "       pumpback.p_office_id as pump_back_office_id,\n"
-            + "       neargage.location_id as near_gage_location_id,\n"
-            + "       neargage.n_office_id as near_gage_office_id,\n"
-            + "       project.yield_time_frame_start,\n"
-            + "       project.yield_time_frame_end,\n"
-            + "       project.project_remarks\n"
-            + "from ( select o.office_id as office_id,\n"
-            + "              bl.base_location_id\n"
-            + "                  ||substr('-', 1, length(pl.sub_location_id))\n"
-            + "                  ||pl.sub_location_id as location_id,\n"
-            + "              p.COST_YEAR,\n"
-            + "              p.federal_cost,\n"
-            + "              p.nonfederal_cost,\n"
-            + "              p.FEDERAL_OM_COST,\n"
-            + "              p.NONFEDERAL_OM_COST,\n"
-            + "              p.authorizing_law,\n"
-            + "              p.project_owner,\n"
-            + "              p.hydropower_description,\n"
-            + "              p.sedimentation_description,\n"
-            + "              p.downstream_urban_description,\n"
-            + "              p.bank_full_capacity_description,\n"
-            + "              p.pump_back_location_code,\n"
-            + "              p.near_gage_location_code,\n"
-            + "              p.yield_time_frame_start,\n"
-            + "              p.yield_time_frame_end,\n"
-            + "              p.project_remarks\n"
-            + "       from cwms_20.cwms_office o,\n"
-            + "            cwms_20.at_base_location bl,\n"
-            + "            cwms_20.at_physical_location pl,\n"
-            + "            cwms_20.at_project p\n"
-            + "       where bl.db_office_code = o.office_code\n"
-            + "         and pl.base_location_code = bl.base_location_code\n"
-            + "         and p.project_location_code = pl.location_code\n"
-            + "     ) project\n"
-            + "         left outer join\n"
-            + "     ( select pl.location_code,\n"
-            + "              o.office_id as p_office_id,\n"
-            + "              bl.base_location_id\n"
-            + "                  ||substr('-', 1, length(pl.sub_location_id))\n"
-            + "                  ||pl.sub_location_id as location_id\n"
-            + "       from cwms_20.cwms_office o,\n"
-            + "            cwms_20.at_base_location bl,\n"
-            + "            cwms_20.at_physical_location pl,\n"
-            + "            cwms_20.at_project p\n"
-            + "       where bl.db_office_code = o.office_code\n"
-            + "         and pl.base_location_code = bl.base_location_code\n"
-            + "         and p.project_location_code = pl.location_code\n"
-            + "     ) pumpback on pumpback.location_code = project.pump_back_location_code\n"
-            + "         left outer join\n"
-            + "     ( select pl.location_code,\n"
-            + "              o.office_id as n_office_id,\n"
-            + "              bl.base_location_id\n"
-            + "                  ||substr('-', 1, length(pl.sub_location_id))\n"
-            + "                  ||pl.sub_location_id as location_id\n"
-            + "       from cwms_20.cwms_office o,\n"
-            + "            cwms_20.at_base_location bl,\n"
-            + "            cwms_20.at_physical_location pl,\n"
-            + "            cwms_20.at_project p\n"
-            + "       where bl.db_office_code = o.office_code\n"
-            + "         and pl.base_location_code = bl.base_location_code\n"
-            + "         and p.project_location_code = pl.location_code\n"
-            + "     ) neargage on neargage.location_code = project.near_gage_location_code\n";
+    private static final String SELECT_PART =
+            ResourceHelper.getResourceAsString("/cwms/data/sql/project/project_select.sql", ProjectDao.class);
 
 
     public ProjectDao(DSLContext dsl) {
@@ -393,58 +340,58 @@ public class ProjectDao extends JooqDao<Project> {
 
     private Project buildProjectFromTableRow(ResultSet resultSet) throws SQLException {
         Project.Builder builder = new Project.Builder();
-        builder.withOfficeId(resultSet.getString("office_id"));
-        builder.withName(resultSet.getString("project_id"));
-        builder.withAuthorizingLaw(resultSet.getString("authorizing_law"));
-        builder.withProjectOwner(resultSet.getString("project_owner"));
-        builder.withHydropowerDesc(resultSet.getString("hydropower_description"));
-        builder.withSedimentationDesc(resultSet.getString("sedimentation_description"));
-        builder.withDownstreamUrbanDesc(resultSet.getString("downstream_urban_description"));
-        builder.withBankFullCapacityDesc(resultSet.getString("bank_full_capacity_description"));
+        builder.withOfficeId(resultSet.getString(OFFICE_ID));
+        builder.withName(resultSet.getString(PROJECT_ID));
+        builder.withAuthorizingLaw(resultSet.getString(AUTHORIZING_LAW));
+        builder.withProjectOwner(resultSet.getString(PROJECT_OWNER));
+        builder.withHydropowerDesc(resultSet.getString(HYDROPOWER_DESCRIPTION));
+        builder.withSedimentationDesc(resultSet.getString(SEDIMENTATION_DESCRIPTION));
+        builder.withDownstreamUrbanDesc(resultSet.getString(DOWNSTREAM_URBAN_DESCRIPTION));
+        builder.withBankFullCapacityDesc(resultSet.getString(BANK_FULL_CAPACITY_DESCRIPTION));
         builder.withPumpBackLocation(
-                new Location.Builder(resultSet.getString("pump_back_office_id"),
-                        resultSet.getString("pump_back_location_id"))
+                new Location.Builder(resultSet.getString(PUMP_BACK_OFFICE_ID),
+                        resultSet.getString(PUMP_BACK_LOCATION_ID))
                         .build()
         );
 
         builder.withNearGageLocation(
-                new Location.Builder(resultSet.getString("near_gage_office_id"),
-                        resultSet.getString("near_gage_location_id"))
+                new Location.Builder(resultSet.getString(NEAR_GAGE_OFFICE_ID),
+                        resultSet.getString(NEAR_GAGE_LOCATION_ID))
                         .build()
         );
 
-        builder.withProjectRemarks(resultSet.getString("project_remarks"));
+        builder.withProjectRemarks(resultSet.getString(PROJECT_REMARKS));
 
-        BigDecimal federalCost = resultSet.getBigDecimal("federal_cost");
+        BigDecimal federalCost = resultSet.getBigDecimal(FEDERAL_COST);
         if (federalCost != null) {
             builder.withFederalCost(federalCost.doubleValue());
         }
 
-        BigDecimal nonfederalCost = resultSet.getBigDecimal("nonfederal_cost");
+        BigDecimal nonfederalCost = resultSet.getBigDecimal(NONFEDERAL_COST);
         if (nonfederalCost != null) {
             builder.withNonFederalCost(nonfederalCost.doubleValue());
         }
 
-        BigDecimal federalOmCost = resultSet.getBigDecimal("FEDERAL_OM_COST");
+        BigDecimal federalOmCost = resultSet.getBigDecimal(FEDERAL_OM_COST);
         if (federalOmCost != null) {
             builder.withFederalOAndMCost(federalOmCost.doubleValue());
         }
-        BigDecimal nonfederalOmCost = resultSet.getBigDecimal("NONFEDERAL_OM_COST");
+        BigDecimal nonfederalOmCost = resultSet.getBigDecimal(NONFEDERAL_OM_COST);
         if (nonfederalOmCost != null) {
             builder.withNonFederalOAndMCost(nonfederalOmCost.doubleValue());
         }
 
-        Timestamp costStamp = resultSet.getTimestamp("COST_YEAR", UTC_CALENDAR);
+        Timestamp costStamp = resultSet.getTimestamp(COST_YEAR, UTC_CALENDAR);
         if (costStamp != null) {
             builder.withCostYear(costStamp.toInstant());
         }
 
-        Timestamp yieldTimeFrameStart = resultSet.getTimestamp("yield_time_frame_start",
+        Timestamp yieldTimeFrameStart = resultSet.getTimestamp(YIELD_TIME_FRAME_START,
                 UTC_CALENDAR);
         if (yieldTimeFrameStart != null) {
             builder.withYieldTimeFrameStart(yieldTimeFrameStart.toInstant());
         }
-        Timestamp yieldTimeFrameEnd = resultSet.getTimestamp("yield_time_frame_end", UTC_CALENDAR);
+        Timestamp yieldTimeFrameEnd = resultSet.getTimestamp(YIELD_TIME_FRAME_END, UTC_CALENDAR);
         if (yieldTimeFrameEnd != null) {
             builder.withYieldTimeFrameEnd(yieldTimeFrameEnd.toInstant());
         }
