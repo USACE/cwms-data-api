@@ -27,7 +27,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.ProjectDao;
+import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
 import cwms.cda.formatters.ContentType;
