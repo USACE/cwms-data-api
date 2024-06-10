@@ -563,7 +563,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         }
     }
 
-
     @Test
     void test_big_create() throws Exception {
 
@@ -752,7 +751,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
     private static void deleteLocation(String location, String officeId) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
+        db.connection(c-> {
             try(PreparedStatement stmt = c.prepareStatement("declare\n"
                     + "    p_location varchar2(64) := ?;\n"
                     + "    p_office varchar2(10) := ?;\n"
