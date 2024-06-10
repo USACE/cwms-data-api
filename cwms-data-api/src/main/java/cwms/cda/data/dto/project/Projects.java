@@ -1,6 +1,7 @@
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.project;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;

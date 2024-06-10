@@ -7,8 +7,10 @@ import static org.jooq.impl.DSL.noCondition;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.Project;
-import cwms.cda.data.dto.Projects;
+import cwms.cda.data.dto.project.Lock;
+import cwms.cda.data.dto.project.LockRevokerRights;
+import cwms.cda.data.dto.project.Project;
+import cwms.cda.data.dto.project.Projects;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
@@ -730,62 +732,6 @@ public class ProjectDao extends JooqDao<Project> {
         return retval;
     }
 
-    public static class Lock {
-        private final String officeId;
-        private final String projectId;
-        private final String applicationId;
-        private final String acquireTime;
-        private final String sessionUser;
-        private final String osUser;
-        private final String sessionProgram;
-        private final String sessionMachine;
-
-        public Lock(String officeId, String projectId, String applicationId, String acquireTime,
-                    String sessionUser, String osUser, String sessionProgram,
-                    String sessionMachine) {
-            this.officeId = officeId;
-            this.projectId = projectId;
-            this.applicationId = applicationId;
-            this.acquireTime = acquireTime;
-            this.sessionUser = sessionUser;
-            this.osUser = osUser;
-            this.sessionProgram = sessionProgram;
-            this.sessionMachine = sessionMachine;
-        }
-
-        public String getOfficeId() {
-            return officeId;
-        }
-
-        public String getProjectId() {
-            return projectId;
-        }
-
-        public String getApplicationId() {
-            return applicationId;
-        }
-
-        public String getAcquireTime() {
-            return acquireTime;
-        }
-
-        public String getSessionUser() {
-            return sessionUser;
-        }
-
-        public String getOsUser() {
-            return osUser;
-        }
-
-        public String getSessionProgram() {
-            return sessionProgram;
-        }
-
-        public String getSessionMachine() {
-            return sessionMachine;
-        }
-    }
-
 
     public void updateLockRevokerRights(LockRevokerRights lock, boolean allow) {
         CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(dsl.configuration(),
@@ -816,38 +762,5 @@ public class ProjectDao extends JooqDao<Project> {
             return retval;
         });
     }
-
-
-    public static class LockRevokerRights {
-        private final String officeId;
-        private final String projectId;
-        private final String applicationId;
-        private final String userId;
-
-        public LockRevokerRights(String officeId, String projectId, String applicationId,
-                                 String userId) {
-            this.officeId = officeId;
-            this.projectId = projectId;
-            this.applicationId = applicationId;
-            this.userId = userId;
-        }
-
-        public String getOfficeId() {
-            return officeId;
-        }
-
-        public String getProjectId() {
-            return projectId;
-        }
-
-        public String getApplicationId() {
-            return applicationId;
-        }
-
-        public String getUserId() {
-            return userId;
-        }
-    }
-
 
 }
