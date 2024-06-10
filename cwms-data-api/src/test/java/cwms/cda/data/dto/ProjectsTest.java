@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -116,10 +117,12 @@ class ProjectsTest {
     }
 
     private static Project buildProject(int i) {
-        Project project = new Project.Builder()
-                .withOfficeId(OFFICE)
-                .withName("Test Project" + i)
+
+        return new Project.Builder()
+                .withLocation(new Location.Builder(OFFICE, "Test Project" + i)
+                        .withTimeZoneName(ZoneId.of("UTC"))
+                        .withActive(null)
+                        .build())
                 .build();
-        return project;
     }
 }

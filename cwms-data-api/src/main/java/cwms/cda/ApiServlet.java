@@ -58,6 +58,7 @@ import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
+import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
 import cwms.cda.api.RatingController;
 import cwms.cda.api.RatingMetadataController;
@@ -166,6 +167,8 @@ import org.owasp.html.PolicyFactory;
         "/forecast-spec/*",
         "/forecast-instance/*",
         "/standard-text-id/*",
+        "/projects/*",
+        "/properties/*",
         "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
@@ -460,6 +463,9 @@ public class ApiServlet extends HttpServlet {
         String forecastFilePath = "/forecast-instance/{" + NAME + "}/file-data";
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
+
+        cdaCrudCache("/projects/{" + Controllers.NAME + "}",
+                new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
