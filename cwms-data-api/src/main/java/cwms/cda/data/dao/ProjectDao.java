@@ -178,9 +178,8 @@ public class ProjectDao extends JooqDao<Project> {
             nearLocRef = neargageLocationType.getLocationRef();
         }
         if (nearLocRef != null) {
-            builder = builder.withNearGage(new Location.Builder(nearLocRef.getOfficeId(),
+            builder = builder.withNearGageLocation(new Location.Builder(nearLocRef.getOfficeId(),
                     getLocationId(nearLocRef.getBaseLocationId(), nearLocRef.getSubLocationId()))
-                    .withPublicName(null)
                     .withActive(null)
                     .build()
             );
@@ -193,9 +192,8 @@ public class ProjectDao extends JooqDao<Project> {
             pumpbackLocRef = pumpbackLocationType.getLocationRef();
         }
         if (pumpbackLocRef != null) {
-            builder = builder.withPumpBack(new Location.Builder(pumpbackLocRef.getOfficeId(),
+            builder = builder.withPumpBackLocation(new Location.Builder(pumpbackLocRef.getOfficeId(),
                     getLocationId(pumpbackLocRef.getBaseLocationId(), pumpbackLocRef.getSubLocationId()))
-                    .withPublicName(null)
                     .withActive(null)
                     .build()
             );
@@ -245,13 +243,11 @@ public class ProjectDao extends JooqDao<Project> {
         Project.Builder builder = new Project.Builder();
         builder.withOfficeId(r.getOFFICE_ID());
         builder.withName(r.getPROJECT_ID());
-        builder.withPumpBack(new Location.Builder(r.getOFFICE_ID(), r.getPUMP_BACK_LOCATION_ID())
-                .withPublicName(null)
+        builder.withPumpBackLocation(new Location.Builder(r.getOFFICE_ID(), r.getPUMP_BACK_LOCATION_ID())
                 .withActive(null)
                 .build()
         ); // Can we assume same office?
-        builder.withNearGage(new Location.Builder(r.getOFFICE_ID(), r.getNEAR_GAGE_LOCATION_ID())
-                .withPublicName(null)
+        builder.withNearGageLocation(new Location.Builder(r.getOFFICE_ID(), r.getNEAR_GAGE_LOCATION_ID())
                 .withActive(null)
                 .build()
         ); // Can we assume same office?
@@ -408,13 +404,13 @@ public class ProjectDao extends JooqDao<Project> {
         builder.withSedimentationDesc(resultSet.getString("sedimentation_description"));
         builder.withDownstreamUrbanDesc(resultSet.getString("downstream_urban_description"));
         builder.withBankFullCapacityDesc(resultSet.getString("bank_full_capacity_description"));
-        builder.withPumpBack(
+        builder.withPumpBackLocation(
                 new Location.Builder(resultSet.getString("pump_back_office_id"),
                         resultSet.getString("pump_back_location_id"))
                         .build()
         );
 
-        builder.withNearGage(
+        builder.withNearGageLocation(
                 new Location.Builder(resultSet.getString("near_gage_office_id"),
                         resultSet.getString("near_gage_location_id"))
                         .build()
@@ -579,15 +575,15 @@ public class ProjectDao extends JooqDao<Project> {
         projectLocation.setLOCATION_REF(getLocationRefT(project.getName(), project.getOfficeId()));
 
         LOCATION_OBJ_T pumpBackLocation = null;
-        Location pb = project.getPumpBack();
-        if (pb != null ) {
+        Location pb = project.getPumpBackLocation();
+        if (pb != null) {
             pumpBackLocation = new LOCATION_OBJ_T();
             pumpBackLocation.setLOCATION_REF(getLocationRefT(pb.getName(), pb.getOfficeId()));
         }
 
         LOCATION_OBJ_T nearGageLocation = null;
-        Location ng = project.getNearGage();
-        if (ng != null ) {
+        Location ng = project.getNearGageLocation();
+        if (ng != null) {
             nearGageLocation = new LOCATION_OBJ_T();
             nearGageLocation.setLOCATION_REF(getLocationRefT(ng.getName(), ng.getOfficeId()));
         }
