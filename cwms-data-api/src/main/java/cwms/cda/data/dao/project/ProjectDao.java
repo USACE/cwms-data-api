@@ -1,14 +1,16 @@
-package cwms.cda.data.dao;
+package cwms.cda.data.dao.project;
 
+import static cwms.cda.data.dao.project.ProjectUtil.getProject;
+import static cwms.cda.data.dao.project.ProjectUtil.toProjectT;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.noCondition;
 
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.project.Lock;
-import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
 import java.math.BigDecimal;
@@ -22,24 +24,16 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import org.jooq.SQLDialect;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectLimitPercentStep;
-import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.loc.LocationRefType;
-import usace.cwms.db.dao.ifc.loc.LocationType;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_PROJECT;
-import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
-import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
-import usace.cwms.db.jooq.dao.util.LocationTypeUtil;
 
 public class ProjectDao extends JooqDao<Project> {
     private static final Logger logger = Logger.getLogger(ProjectDao.class.getName());
@@ -135,110 +129,7 @@ public class ProjectDao extends JooqDao<Project> {
                         getDslContext(c, office).configuration(), projectId, office)
         );
 
-        return projectObjT == null ? null : buildProject(projectObjT);
-    }
-
-    private Project buildProject(PROJECT_OBJ_T projectObjT) {
-        Project.Builder builder = new Project.Builder();
-
-        LOCATION_OBJ_T projectLocation = projectObjT.getPROJECT_LOCATION();
-        LOCATION_REF_T locRef = projectLocation.getLOCATION_REF();
-        String office = locRef.getOFFICE_ID();
-        builder.withOfficeId(office);
-
-        String id = getLocationId(locRef.getBASE_LOCATION_ID(), locRef.getSUB_LOCATION_ID());
-        builder.withName(id);
-
-        String authorizingLaw = projectObjT.getAUTHORIZING_LAW();
-        builder.withAuthorizingLaw(authorizingLaw);
-
-        String bankFullCapacityDescription = projectObjT.getBANK_FULL_CAPACITY_DESCRIPTION();
-        builder.withBankFullCapacityDesc(bankFullCapacityDescription);
-
-        String downstreamUrbanDescription = projectObjT.getDOWNSTREAM_URBAN_DESCRIPTION();
-        builder.withDownstreamUrbanDesc(downstreamUrbanDescription);
-
-        String costUnitsId = projectObjT.getCOST_UNITS_ID();
-        builder.withCostUnit(costUnitsId);
-
-        String projectOwner = projectObjT.getPROJECT_OWNER();
-        builder.withProjectOwner(projectOwner);
-
-        String hydropowerDescription = projectObjT.getHYDROPOWER_DESCRIPTION();
-        builder.withHydropowerDesc(hydropowerDescription);
-
-        String remarks = projectObjT.getREMARKS();
-        builder.withProjectRemarks(remarks);
-
-        String sedimentationDescription = projectObjT.getSEDIMENTATION_DESCRIPTION();
-        builder.withSedimentationDesc(sedimentationDescription);
-
-        LocationType neargageLocationType =
-                LocationTypeUtil.toLocationType(projectObjT.getNEAR_GAGE_LOCATION());
-        LocationRefType nearLocRef = null;
-        if (neargageLocationType != null) {
-            nearLocRef = neargageLocationType.getLocationRef();
-        }
-        if (nearLocRef != null) {
-            builder = builder.withNearGageLocation(new Location.Builder(nearLocRef.getOfficeId(),
-                    getLocationId(nearLocRef.getBaseLocationId(),
-                            nearLocRef.getSubLocationId()))
-                    .withActive(null)
-                    .build()
-            );
-        }
-
-        LocationType pumpbackLocationType =
-                LocationTypeUtil.toLocationType(projectObjT.getPUMP_BACK_LOCATION());
-        LocationRefType pumpbackLocRef = null;
-        if (pumpbackLocationType != null) {
-            pumpbackLocRef = pumpbackLocationType.getLocationRef();
-        }
-        if (pumpbackLocRef != null) {
-            builder = builder.withPumpBackLocation(new Location.Builder(pumpbackLocRef.getOfficeId(),
-                    getLocationId(pumpbackLocRef.getBaseLocationId(),
-                            pumpbackLocRef.getSubLocationId()))
-                    .withActive(null)
-                    .build()
-            );
-        }
-
-        BigDecimal federalCost = projectObjT.getFEDERAL_COST();
-        if (federalCost != null) {
-            builder = builder.withFederalCost(federalCost.doubleValue());
-        }
-
-        BigDecimal federalOandMCost = projectObjT.getFEDERAL_OM_COST();
-        if (federalOandMCost != null) {
-            builder = builder.withFederalOAndMCost(federalOandMCost.doubleValue());
-        }
-
-        BigDecimal nonFederalCost = projectObjT.getNONFEDERAL_COST();
-        if (nonFederalCost != null) {
-            builder = builder.withNonFederalCost(nonFederalCost.doubleValue());
-        }
-
-        BigDecimal nonFederalOandMCost = projectObjT.getNONFEDERAL_OM_COST();
-        if (nonFederalOandMCost != null) {
-            builder = builder.withNonFederalOAndMCost(nonFederalOandMCost.doubleValue());
-        }
-
-        Timestamp costYear = projectObjT.getCOST_YEAR();
-        if (costYear != null) {
-            builder = builder.withCostYear(costYear.toInstant());
-        }
-
-        Timestamp yieldTimeFrameEnd = projectObjT.getYIELD_TIME_FRAME_END();
-        if (yieldTimeFrameEnd != null) {
-            builder = builder.withYieldTimeFrameEnd(yieldTimeFrameEnd.toInstant());
-        }
-
-        Timestamp yieldTimeFrameStart = projectObjT.getYIELD_TIME_FRAME_START();
-        if (yieldTimeFrameStart != null) {
-            builder = builder.withYieldTimeFrameStart(yieldTimeFrameStart.toInstant());
-        }
-
-        return builder.build();
+        return projectObjT == null ? null : getProject(projectObjT);
     }
 
 
@@ -286,10 +177,7 @@ public class ProjectDao extends JooqDao<Project> {
         return builder.build();
     }
 
-    public static String getLocationId(String base, String sub) {
-        boolean hasSub = sub != null && !sub.isEmpty();
-        return hasSub ? base + "-" + sub : base;
-    }
+
 
     public Projects retrieveProjectsFromView(String cursor, int pageSize, String projectIdMask,
                                              String office) {
@@ -524,31 +412,6 @@ public class ProjectDao extends JooqDao<Project> {
                 projectT, OracleTypeMap.formatBool(failIfExists)));
     }
 
-    public static LOCATION_REF_T toLocationRefT(String base, String sub, String office) {
-        return new LOCATION_REF_T(base, sub, office);
-    }
-
-
-    private static @NotNull LOCATION_REF_T getLocationRefT(String locationId, String office) {
-        String base;
-        String sub;
-        if (locationId == null) {
-            base = null;
-            sub = null;
-        } else {
-            int fieldIndex = locationId.indexOf("-");
-            if (fieldIndex == -1) {
-                base = locationId;
-                sub = null;
-            } else {
-                base = locationId.substring(0, fieldIndex);
-                sub = locationId.substring(fieldIndex + 1);
-            }
-        }
-
-        return toLocationRefT(base, sub, office);
-    }
-
 
     public void store(Project project, boolean failIfExists) {
         String office = project.getOfficeId();
@@ -574,52 +437,7 @@ public class ProjectDao extends JooqDao<Project> {
 
     }
 
-    private PROJECT_OBJ_T toProjectT(Project project) {
-        LOCATION_OBJ_T projectLocation = new LOCATION_OBJ_T();
-        projectLocation.setLOCATION_REF(getLocationRefT(project.getName(), project.getOfficeId()));
 
-        LOCATION_OBJ_T pumpBackLocation = null;
-        Location pb = project.getPumpBackLocation();
-        if (pb != null) {
-            pumpBackLocation = new LOCATION_OBJ_T();
-            pumpBackLocation.setLOCATION_REF(getLocationRefT(pb.getName(), pb.getOfficeId()));
-        }
-
-        LOCATION_OBJ_T nearGageLocation = null;
-        Location ng = project.getNearGageLocation();
-        if (ng != null) {
-            nearGageLocation = new LOCATION_OBJ_T();
-            nearGageLocation.setLOCATION_REF(getLocationRefT(ng.getName(), ng.getOfficeId()));
-        }
-
-        String authorizingLaw = project.getAuthorizingLaw();
-        Timestamp costYear = project.getCostYear() != null
-                ? Timestamp.from(project.getCostYear()) : null;
-        BigDecimal federalCost = project.getFederalCost() != null
-                ? BigDecimal.valueOf(project.getFederalCost()) : null;
-        BigDecimal nonFederalCost = (project.getNonFederalCost() != null)
-                ? BigDecimal.valueOf(project.getNonFederalCost()) : null;
-        BigDecimal federalOandMCost = (project.getFederalOAndMCost() != null)
-                ? BigDecimal.valueOf(project.getFederalOAndMCost()) : null;
-        BigDecimal nonFederalOandMCost = (project.getNonFederalOAndMCost() != null)
-                ? BigDecimal.valueOf(project.getNonFederalOAndMCost()) : null;
-        String costUnitsId = project.getCostUnit();
-        String remarks = project.getProjectRemarks();
-        String projectOwner = project.getProjectOwner();
-        String hydropowerDescription = project.getHydropowerDesc();
-        String sedimentationDescription = project.getSedimentationDesc();
-        String downstreamUrbanDescription = project.getDownstreamUrbanDesc();
-        String bankFullCapacityDescription = project.getBankFullCapacityDesc();
-        Timestamp yieldTimeFrameStartTimestamp = (project.getYieldTimeFrameStart() != null)
-                ? Timestamp.from(project.getYieldTimeFrameStart()) : null;
-        Timestamp yieldTimeFrameEndTimestamp = (project.getYieldTimeFrameEnd() != null)
-                ? Timestamp.from(project.getYieldTimeFrameEnd()) : null;
-        return new PROJECT_OBJ_T(projectLocation, pumpBackLocation, nearGageLocation,
-                authorizingLaw, costYear, federalCost, nonFederalCost, federalOandMCost,
-                nonFederalOandMCost, costUnitsId, remarks, projectOwner, hydropowerDescription,
-                sedimentationDescription, downstreamUrbanDescription, bankFullCapacityDescription,
-                yieldTimeFrameStartTimestamp, yieldTimeFrameEndTimestamp);
-    }
 
     public void delete(String office, String id, DeleteRule deleteRule) {
 
@@ -643,7 +461,7 @@ public class ProjectDao extends JooqDao<Project> {
         );
     }
 
-    protected static BigInteger toBigInteger(Timestamp timestamp) {
+    public static BigInteger toBigInteger(Timestamp timestamp) {
         BigInteger retval = null;
         if (timestamp != null) {
             retval = BigInteger.valueOf(timestamp.getTime());
@@ -652,7 +470,7 @@ public class ProjectDao extends JooqDao<Project> {
         return retval;
     }
 
-    protected static BigInteger toBigInteger(Long value) {
+    public static BigInteger toBigInteger(Long value) {
         BigInteger retval = null;
         if (value != null) {
             retval = BigInteger.valueOf(value);
@@ -661,106 +479,11 @@ public class ProjectDao extends JooqDao<Project> {
         return retval;
     }
 
-    protected static BigInteger toBigInteger(int revokeTimeout) {
+    public static BigInteger toBigInteger(int revokeTimeout) {
         return BigInteger.valueOf(revokeTimeout);
     }
 
 
-    public String requestLock(String projectId, String appId,
-                              boolean revokeExisting, int revokeTimeout, String office) {
-        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
-        return connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(getDslContext(c,
-                        office).configuration(),
-                projectId, appId, OracleTypeMap.formatBool(revokeExisting), revokeTimeoutBI,
-                office));
-    }
 
-
-    public void releaseLock(String lockId) {
-        connection(dsl, c -> CWMS_PROJECT_PACKAGE.call_RELEASE_LOCK(
-                DSL.using(c, SQLDialect.ORACLE18C).configuration(),
-                lockId));
-    }
-
-
-    public void revokeLock(String projId, String appId,
-                           int revokeTimeout, String office) {
-        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_REVOKE_LOCK(getDslContext(c, office).configuration(),
-                        projId,
-                        appId, revokeTimeoutBI, office));
-    }
-
-
-    public void denyLockRevocation(String lockId) {
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_DENY_LOCK_REVOCATION(
-                        DSL.using(c, SQLDialect.ORACLE18C).configuration(),
-                        lockId));
-    }
-
-
-    public boolean isLocked(String projectId, String appId, String office) {
-        String s = connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_IS_LOCKED(getDslContext(c
-                        , office).configuration(),
-                projectId, appId, office));
-        return OracleTypeMap.parseBool(s);
-    }
-
-
-    public List<Lock> catLocks(String projMask, String appMask, TimeZone tz, String officeMask) throws SQLException {
-        List<Lock> retval = new ArrayList<>();
-        try (ResultSet resultSet = CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
-                        projMask, appMask, tz.getID(), officeMask)
-                .intoResultSet()) {
-            while (resultSet.next()) {
-                String officeId = resultSet.getString("office_id");
-                String projectId = resultSet.getString("project_id");
-                String applicationId = resultSet.getString("application_id");
-                String acquireTime = resultSet.getString("acquire_time");
-                String sessionUser = resultSet.getString("session_user");
-                String osUser = resultSet.getString("os_user");
-                String sessionProgram = resultSet.getString("session_program");
-                String sessionMachine = resultSet.getString("session_machine");
-
-                Lock lock = new Lock(officeId, projectId, applicationId, acquireTime, sessionUser
-                        , osUser, sessionProgram, sessionMachine);
-                retval.add(lock);
-            }
-        }
-        return retval;
-    }
-
-
-    public void updateLockRevokerRights(LockRevokerRights lock, boolean allow) {
-        CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(dsl.configuration(),
-                lock.getUserId(), lock.getProjectId(), OracleTypeMap.formatBool(allow),
-                lock.getApplicationId(), lock.getOfficeId());
-    }
-
-
-    public List<LockRevokerRights> catLockRevokerRights(String projectMask,
-                                                        String applicationMask, String officeMask) {
-        return connectionResult(dsl, c -> {
-            List<LockRevokerRights> retval = new ArrayList<>();
-            try (ResultSet rs = CWMS_PROJECT_PACKAGE.call_CAT_LOCK_REVOKER_RIGHTS(
-                    DSL.using(c, SQLDialect.ORACLE18C).configuration(),
-                    projectMask, applicationMask, officeMask).intoResultSet()) {
-                while (rs.next()) {
-                    String officeId = rs.getString("office_id");
-                    String projectId = rs.getString("project_id");
-                    String applicationId = rs.getString("application_id");
-                    String userId = rs.getString("user_id");
-
-                    LockRevokerRights lock = new LockRevokerRights(officeId, projectId,
-                            applicationId, userId);
-                    retval.add(lock);
-                }
-
-            }
-            return retval;
-        });
-    }
 
 }
