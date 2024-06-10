@@ -170,6 +170,8 @@ public final class Controllers {
     public static final String INCLUDE_EXTENTS = "include-extents";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
+    public static final String CATEGORY = "category";
+    public static final String PREFIX = "prefix";
 
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";

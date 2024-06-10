@@ -25,6 +25,7 @@
 package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
+import cwms.cda.api.LookupTypeController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
@@ -166,6 +167,8 @@ import org.owasp.html.PolicyFactory;
         "/forecast-spec/*",
         "/forecast-instance/*",
         "/standard-text-id/*",
+        "/properties/*",
+        "/lookup-types/*",
         "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
@@ -462,6 +465,8 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
+                new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
                 new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
