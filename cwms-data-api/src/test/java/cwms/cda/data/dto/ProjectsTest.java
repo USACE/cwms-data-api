@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import cwms.cda.data.dto.project.Project;
+import cwms.cda.data.dto.project.Projects;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
