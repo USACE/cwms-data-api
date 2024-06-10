@@ -90,7 +90,7 @@ public class BasinController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
@@ -143,7 +143,7 @@ public class BasinController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);
