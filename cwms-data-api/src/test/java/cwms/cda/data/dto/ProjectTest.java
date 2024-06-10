@@ -55,7 +55,6 @@ class ProjectTest {
         ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
         String json = ow.writeValueAsString(project);
-
         assertNotNull(json);
     }
 
@@ -88,10 +87,10 @@ class ProjectTest {
         assertEquals("SPK", project.getPumpBackLocation().getOfficeId());
         assertEquals("Near Gage Location Id", project.getNearGageLocation().getName());
         assertEquals("SPK", project.getNearGageLocation().getOfficeId());
+
         assertEquals("Bank Full Capacity Description", project.getBankFullCapacityDesc());
         assertEquals("Downstream Urban Description", project.getDownstreamUrbanDesc());
         assertEquals("Hydropower Description", project.getHydropowerDesc());
         assertEquals("Sedimentation Description", project.getSedimentationDesc());
-
     }
 }
