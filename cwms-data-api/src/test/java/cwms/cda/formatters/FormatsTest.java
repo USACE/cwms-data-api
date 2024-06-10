@@ -215,7 +215,7 @@ class FormatsTest
 		CLOBS_JSON(Clobs.class, Formats.JSON, Formats.JSONV2),
 		CLOBS_JSONV2(Clobs.class, Formats.JSONV2, Formats.JSONV2),
 		BASIN_DEFAULT(Basin.class, Formats.DEFAULT, Formats.NAMED_PGJSON),
-		BASIN_PGJSON(Basin.class, Formats.PGJSON, Formats.NAMED_PGJSON),
+		BASIN_PGJSON(Basin.class, Formats.PGJSON, Formats.PGJSON),
 		BASIN_NAMED_PGJSON(Basin.class, Formats.NAMED_PGJSON, Formats.NAMED_PGJSON),
 		;
 

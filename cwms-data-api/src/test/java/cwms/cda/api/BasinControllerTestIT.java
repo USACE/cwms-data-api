@@ -59,7 +59,8 @@ class BasinControllerTestIT extends DataApiTestIT
 	enum AliasTest
 	{
 		DEFAULT(Formats.DEFAULT, Formats.NAMED_PGJSON),
-		PGJSON(Formats.PGJSON, Formats.NAMED_PGJSON),
+		JSON(Formats.JSON, Formats.NAMED_PGJSON),
+		PGJSON(Formats.PGJSON, Formats.PGJSON),
 		NAMED_PGJSON(Formats.NAMED_PGJSON, Formats.NAMED_PGJSON),
 		;
 		final String _accept;
