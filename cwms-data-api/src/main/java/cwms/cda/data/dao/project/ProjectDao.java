@@ -1,15 +1,14 @@
 package cwms.cda.data.dao.project;
 
+import static cwms.cda.data.dao.project.ProjectUtil.getLocationId;
 import static cwms.cda.data.dao.project.ProjectUtil.getProject;
 import static cwms.cda.data.dao.project.ProjectUtil.toProjectT;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
-import static org.jooq.impl.DSL.noCondition;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
@@ -20,6 +19,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -28,11 +28,13 @@ import java.util.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.Result;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectLimitPercentStep;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.cwms_project.CAT_PROJECT;
 import usace.cwms.db.jooq.codegen.tables.AV_PROJECT;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
@@ -59,6 +61,22 @@ public class ProjectDao extends JooqDao<Project> {
     public static final String YIELD_TIME_FRAME_START = "yield_time_frame_start";
     public static final String YIELD_TIME_FRAME_END = "yield_time_frame_end";
 
+    // These are the columns from the PROJECT_CAT cursor
+    public static final String DB_OFFICE_ID = "DB_OFFICE_ID";
+    public static final String BASE_LOCATION_ID = "BASE_LOCATION_ID";
+    public static final String SUB_LOCATION_ID = "SUB_LOCATION_ID";
+    public static final String TIME_ZONE_NAME = "TIME_ZONE_NAME";
+    public static final String LATITUDE = "LATITUDE";
+    public static final String LONGITUDE = "LONGITUDE";
+    public static final String HORIZONTAL_DATUM = "HORIZONTAL_DATUM";
+    public static final String ELEVATION = "ELEVATION";
+    public static final String ELEV_UNIT_ID = "ELEV_UNIT_ID";
+    public static final String VERTICAL_DATUM = "VERTICAL_DATUM";
+    public static final String PUBLIC_NAME = "PUBLIC_NAME";
+    public static final String LONG_NAME = "LONG_NAME";
+    public static final String DESCRIPTION = "DESCRIPTION";
+    public static final String ACTIVE_FLAG = "ACTIVE_FLAG";
+
     private final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     private static final String SELECT_PART =
@@ -79,102 +97,6 @@ public class ProjectDao extends JooqDao<Project> {
         return projectObjT == null ? null : getProject(projectObjT);
     }
 
-
-
-    private static Project buildProject(usace.cwms.db.jooq.codegen.tables.records.AV_PROJECT r) {
-        Project.Builder builder = new Project.Builder();
-        builder.withOfficeId(r.getOFFICE_ID());
-        builder.withName(r.getPROJECT_ID());
-        builder.withPumpBackLocation(new Location.Builder(r.getOFFICE_ID(), r.getPUMP_BACK_LOCATION_ID())
-                .withActive(null)
-                .build()
-        ); // Can we assume same office?
-        builder.withNearGageLocation(new Location.Builder(r.getOFFICE_ID(), r.getNEAR_GAGE_LOCATION_ID())
-                .withActive(null)
-                .build()
-        ); // Can we assume same office?
-
-        builder.withAuthorizingLaw(r.getAUTHORIZING_LAW());
-        builder.withProjectRemarks(r.getPROJECT_REMARKS());
-        builder.withProjectOwner(r.getPROJECT_OWNER());
-        builder.withHydropowerDesc(r.getHYDROPOWER_DESCRIPTION());
-        builder.withSedimentationDesc(r.getSEDIMENTATION_DESCRIPTION());
-        builder.withDownstreamUrbanDesc(r.getDOWNSTREAM_URBAN_DESCRIPTION());
-        builder.withBankFullCapacityDesc(r.getBANK_FULL_CAPACITY_DESCRIPTION());
-        BigDecimal federalCost = r.getFEDERAL_COST();
-        if (federalCost != null) {
-            builder.withFederalCost(federalCost.doubleValue());
-        }
-        BigDecimal nonfederalCost = r.getNONFEDERAL_COST();
-        if (nonfederalCost != null) {
-            builder.withNonFederalCost(nonfederalCost.doubleValue());
-        }
-        Timestamp yieldTimeFrameStart = r.getYIELD_TIME_FRAME_START();
-        if (yieldTimeFrameStart != null) {
-            builder.withYieldTimeFrameStart(yieldTimeFrameStart.toInstant());
-        }
-        Timestamp yieldTimeFrameEnd = r.getYIELD_TIME_FRAME_END();
-        if (yieldTimeFrameEnd != null) {
-            builder.withYieldTimeFrameEnd(yieldTimeFrameEnd.toInstant());
-        }
-
-        // The view is missing cost-year, fed_om_cat and nonfed_om_cost and the pump office and
-        // near gage office.
-
-        return builder.build();
-    }
-
-
-
-    public Projects retrieveProjectsFromView(String cursor, int pageSize, String projectIdMask,
-                                             String office) {
-
-        Condition whereClause =
-                JooqDao.caseInsensitiveLikeRegexNullTrue(AV_PROJECT.AV_PROJECT.PROJECT_ID,
-                        projectIdMask);
-        if (office != null) {
-            whereClause = whereClause.and(AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(office));
-        }
-
-        String cursorOffice = null;
-        String cursorProjectId = null;
-        int total = 0;
-        if (cursor == null || cursor.isEmpty()) {
-            SelectConditionStep<Record1<Integer>> count =
-                    dsl.select(count(asterisk()))
-                            .from(AV_PROJECT.AV_PROJECT)
-                            .where(whereClause);
-            total = count.fetchOne().value1();
-        } else {
-            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
-            if (parts.length == 4) {
-                cursorOffice = parts[0];
-                cursorProjectId = parts[1];
-                pageSize = Integer.parseInt(parts[2]);
-                total = Integer.parseInt(parts[3]);
-            }
-        }
-
-        Condition pagingCondition = noCondition();
-        if (cursorOffice != null || cursorProjectId != null) {
-            Condition inSameOffice = AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(cursorOffice)
-                    .and(AV_PROJECT.AV_PROJECT.PROJECT_ID.gt(cursorProjectId));
-            Condition nextOffice = AV_PROJECT.AV_PROJECT.OFFICE_ID.gt(cursorOffice);
-            pagingCondition = inSameOffice.or(nextOffice);
-        }
-
-        SelectLimitPercentStep<usace.cwms.db.jooq.codegen.tables.records.AV_PROJECT> query =
-                dsl.selectFrom(AV_PROJECT.AV_PROJECT)
-                        .where(whereClause.and(pagingCondition))
-                        .orderBy(AV_PROJECT.AV_PROJECT.OFFICE_ID, AV_PROJECT.AV_PROJECT.PROJECT_ID)
-                        .limit(pageSize);
-
-        List<Project> projs = query.fetch().map(ProjectDao::buildProject);
-
-        Projects.Builder builder = new Projects.Builder(cursor, pageSize, total);
-        builder.addAll(projs);
-        return builder.build();
-    }
 
     public Projects retrieveProjectsFromTable(String cursor, int pageSize,
                                               @Nullable String projectIdMask,
@@ -214,8 +136,7 @@ public class ProjectDao extends JooqDao<Project> {
         List<Project> projs = connectionResult(dsl, c -> {
             List<Project> projects;
             try (PreparedStatement ps = c.prepareStatement(query)) {
-                fillTableQueryParameters(ps, projectIdMask, office, cursorOffice, cursorProjectId
-                        , finalPageSize);
+                fillTableQueryParameters(ps, projectIdMask, office, cursorOffice, cursorProjectId, finalPageSize);
 
                 try (ResultSet resultSet = ps.executeQuery()) {
                     projects = new ArrayList<>();
@@ -235,25 +156,39 @@ public class ProjectDao extends JooqDao<Project> {
 
     private Project buildProjectFromTableRow(ResultSet resultSet) throws SQLException {
         Project.Builder builder = new Project.Builder();
-        builder.withOfficeId(resultSet.getString(OFFICE_ID));
-        builder.withName(resultSet.getString(PROJECT_ID));
+        String prjOffice = resultSet.getString(OFFICE_ID);
+        String prjId = resultSet.getString(PROJECT_ID);
+        Location prjLoc = new Location.Builder(prjOffice, prjId)
+                .withActive(null)
+                .build();
+
+        builder.withLocation(prjLoc);
         builder.withAuthorizingLaw(resultSet.getString(AUTHORIZING_LAW));
         builder.withProjectOwner(resultSet.getString(PROJECT_OWNER));
         builder.withHydropowerDesc(resultSet.getString(HYDROPOWER_DESCRIPTION));
         builder.withSedimentationDesc(resultSet.getString(SEDIMENTATION_DESCRIPTION));
         builder.withDownstreamUrbanDesc(resultSet.getString(DOWNSTREAM_URBAN_DESCRIPTION));
         builder.withBankFullCapacityDesc(resultSet.getString(BANK_FULL_CAPACITY_DESCRIPTION));
-        builder.withPumpBackLocation(
-                new Location.Builder(resultSet.getString(PUMP_BACK_OFFICE_ID),
-                        resultSet.getString(PUMP_BACK_LOCATION_ID))
-                        .build()
-        );
 
-        builder.withNearGageLocation(
-                new Location.Builder(resultSet.getString(NEAR_GAGE_OFFICE_ID),
-                        resultSet.getString(NEAR_GAGE_LOCATION_ID))
-                        .build()
-        );
+        String pbOffice = resultSet.getString(PUMP_BACK_OFFICE_ID);
+        String pbId = resultSet.getString(PUMP_BACK_LOCATION_ID);
+        if (pbOffice != null && pbId != null) {
+            builder.withPumpBackLocation(
+                    new Location.Builder(pbOffice, pbId)
+                            .withActive(null)
+                            .build()
+            );
+        }
+
+        String ngOffice = resultSet.getString(NEAR_GAGE_OFFICE_ID);
+        String ngId = resultSet.getString(NEAR_GAGE_LOCATION_ID);
+        if (ngOffice != null && ngId != null) {
+            builder.withNearGageLocation(
+                    new Location.Builder(ngOffice, ngId)
+                            .withActive(null)
+                            .build()
+            );
+        }
 
         builder.withProjectRemarks(resultSet.getString(PROJECT_REMARKS));
 
@@ -320,7 +255,7 @@ public class ProjectDao extends JooqDao<Project> {
         String sql = SELECT_PART;
 
         if (projectIdMask != null || office != null || cursorOffice != null || cursorProjectId != null) {
-            sql += "where (";
+            sql += " where (";
 
             if (projectIdMask != null && office != null) {
                 sql += "(regexp_like(project.location_id, ?, 'i'))\n"  // projectIdMask
@@ -351,7 +286,7 @@ public class ProjectDao extends JooqDao<Project> {
 
     public void create(Project project) {
         boolean failIfExists = true;
-        String office = project.getOfficeId();
+        String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
         connection(dsl,
@@ -361,7 +296,7 @@ public class ProjectDao extends JooqDao<Project> {
 
 
     public void store(Project project, boolean failIfExists) {
-        String office = project.getOfficeId();
+        String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
         connection(dsl,
@@ -371,8 +306,8 @@ public class ProjectDao extends JooqDao<Project> {
     }
 
     public void update(Project project) {
-        String office = project.getOfficeId();
-        Project existingProject = retrieveProject(office, project.getName());
+        String office = project.getLocation().getOfficeId();
+        Project existingProject = retrieveProject(office, project.getLocation().getName());
         if (existingProject == null) {
             throw new NotFoundException("Could not find project to update.");
         }
@@ -431,6 +366,65 @@ public class ProjectDao extends JooqDao<Project> {
     }
 
 
+    public List<Location> catProject(String office) {
+
+        return connectionResult(dsl, c -> {
+            CAT_PROJECT catProject = CWMS_PROJECT_PACKAGE.call_CAT_PROJECT(getDslContext(c,
+                    office).configuration(), office);
+
+            // catProject has two open ResultSets.
+            // Other places close the basin one we aren't using
+            // FYI basinRs here is a MockResultSet
+            // The MockResultSet.close() impl just sets its internal Result variable to null
+            // So I suspect that with jOOQ we don't actually have to "close" anything here.
+            ResultSet basinRs = catProject.getP_BASIN_CAT().intoResultSet();
+            if (basinRs != null && !basinRs.isClosed()) {
+                basinRs.close();
+            }
+
+            Result<Record> projectCatalog = catProject.getP_PROJECT_CAT();
+            return projectCatalog.map(this::buildLocation);
+        });
+    }
+
+    private Location buildLocation(Record r) {
+
+        String office = r.get(DB_OFFICE_ID, String.class);
+
+        String base = r.get(BASE_LOCATION_ID, String.class);
+        String sub = r.get(SUB_LOCATION_ID, String.class);
+        String name = getLocationId(base, sub);
+        Location.Builder builder = new Location.Builder(office, name);
+
+        String timeZoneName = r.get(TIME_ZONE_NAME, String.class);
+        if (timeZoneName != null) {
+            builder.withTimeZoneName(ZoneId.of(timeZoneName));
+        }
+        Double latitude = r.get(LATITUDE, Double.class);
+        if (latitude != null) {
+            builder.withLatitude(latitude);
+        }
+        Double longitude = r.get(LONGITUDE, Double.class);
+        if (longitude != null) {
+            builder.withLongitude(longitude);
+        }
+        String horizontalDatum = r.get(HORIZONTAL_DATUM, String.class);
+        if (horizontalDatum != null) {
+            builder.withHorizontalDatum(horizontalDatum);
+        }
+        builder.withElevation(r.get(ELEVATION, Double.class));
+        builder.withElevationUnits(r.get(ELEV_UNIT_ID, String.class));
+        builder.withVerticalDatum(r.get(VERTICAL_DATUM, String.class));
+        builder.withPublicName(r.get(PUBLIC_NAME, String.class));
+        builder.withLongName(r.get(LONG_NAME, String.class));
+        builder.withDescription(r.get(DESCRIPTION, String.class));
+        String activeStr = r.get(ACTIVE_FLAG, String.class);
+        if (activeStr != null) {
+            builder.withActive(OracleTypeMap.parseBool(activeStr));
+        }
+
+        return builder.build();
+    }
 
 
 }

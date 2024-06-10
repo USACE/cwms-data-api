@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -22,15 +23,21 @@ class ProjectTest {
     void testProject() throws JsonProcessingException {
 
         Location pbLoc = new Location.Builder("SPK","Pumpback Location Id")
+                .withTimeZoneName(ZoneId.of("UTC"))
                 .withActive(null)
                 .build();
         Location ngLoc = new Location.Builder("SPK","Near Gage Location Id")
+                .withTimeZoneName(ZoneId.of("UTC"))
+                .withActive(null)
+                .build();
+
+        Location prjLoc = new Location.Builder("SPK","Project Location Id")
+                .withTimeZoneName(ZoneId.of("UTC"))
                 .withActive(null)
                 .build();
 
         Project project = new Project.Builder()
-                .withOfficeId("SPK")
-                .withName("Project Id")
+                .withLocation(prjLoc)
                 .withProjectOwner("Project Owner")
                 .withAuthorizingLaw("Authorizing Law")
                 .withFederalCost(100.0)
@@ -71,8 +78,10 @@ class ProjectTest {
 
         assertNotNull(project);
 
-        assertEquals("SPK", project.getOfficeId());
-        assertEquals("Project Id", project.getName());
+        Location loc = project.getLocation();
+        assertNotNull(loc);
+        assertEquals("SPK", loc.getOfficeId());
+        assertEquals("Project Id", loc.getName());
         assertEquals("Project Owner", project.getProjectOwner());
         assertEquals("Authorizing Law", project.getAuthorizingLaw());
         assertEquals(100.0, project.getFederalCost());

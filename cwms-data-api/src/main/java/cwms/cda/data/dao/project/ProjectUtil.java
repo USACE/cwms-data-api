@@ -2,6 +2,7 @@ package cwms.cda.data.dao.project;
 
 import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
 
+import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import java.math.BigDecimal;
@@ -19,22 +20,10 @@ public class ProjectUtil {
     }
 
     public static PROJECT_OBJ_T toProjectT(Project project) {
-        LOCATION_OBJ_T projectLocation = new LOCATION_OBJ_T();
-        projectLocation.setLOCATION_REF(getLocationRef(project.getName(), project.getOfficeId()));
 
-        LOCATION_OBJ_T pumpBackLocation = null;
-        Location pb = project.getPumpBackLocation();
-        if (pb != null) {
-            pumpBackLocation = new LOCATION_OBJ_T();
-            pumpBackLocation.setLOCATION_REF(getLocationRef(pb.getName(), pb.getOfficeId()));
-        }
-
-        LOCATION_OBJ_T nearGageLocation = null;
-        Location ng = project.getNearGageLocation();
-        if (ng != null) {
-            nearGageLocation = new LOCATION_OBJ_T();
-            nearGageLocation.setLOCATION_REF(getLocationRef(ng.getName(), ng.getOfficeId()));
-        }
+        LOCATION_OBJ_T projectLocation = LocationUtil.getLocation(project.getLocation());
+        LOCATION_OBJ_T pumpBackLocation = LocationUtil.getLocation(project.getPumpBackLocation());
+        LOCATION_OBJ_T nearGageLocation = LocationUtil.getLocation(project.getNearGageLocation());
 
         String authorizingLaw = project.getAuthorizingLaw();
         Timestamp costYear = project.getCostYear() != null
@@ -69,12 +58,8 @@ public class ProjectUtil {
         Project.Builder builder = new Project.Builder();
 
         LOCATION_OBJ_T projectLocation = projectObjT.getPROJECT_LOCATION();
-        LOCATION_REF_T locRef = projectLocation.getLOCATION_REF();
-        String office = locRef.getOFFICE_ID();
-        builder.withOfficeId(office);
-
-        String id = getLocationId(locRef.getBASE_LOCATION_ID(), locRef.getSUB_LOCATION_ID());
-        builder.withName(id);
+        Location projectLoc = LocationUtil.getLocation(projectLocation);
+        builder.withLocation(projectLoc);
 
         String authorizingLaw = projectObjT.getAUTHORIZING_LAW();
         builder.withAuthorizingLaw(authorizingLaw);
@@ -100,35 +85,11 @@ public class ProjectUtil {
         String sedimentationDescription = projectObjT.getSEDIMENTATION_DESCRIPTION();
         builder.withSedimentationDesc(sedimentationDescription);
 
-        LocationType neargageLocationType =
-                LocationTypeUtil.toLocationType(projectObjT.getNEAR_GAGE_LOCATION());
-        LocationRefType nearLocRef = null;
-        if (neargageLocationType != null) {
-            nearLocRef = neargageLocationType.getLocationRef();
-        }
-        if (nearLocRef != null) {
-            builder = builder.withNearGageLocation(new Location.Builder(nearLocRef.getOfficeId(),
-                    getLocationId(nearLocRef.getBaseLocationId(),
-                            nearLocRef.getSubLocationId()))
-                    .withActive(null)
-                    .build()
-            );
-        }
+        Location ngLoc = LocationUtil.getLocation(projectObjT.getNEAR_GAGE_LOCATION());
+        builder = builder.withNearGageLocation(ngLoc);
 
-        LocationType pumpbackLocationType =
-                LocationTypeUtil.toLocationType(projectObjT.getPUMP_BACK_LOCATION());
-        LocationRefType pumpbackLocRef = null;
-        if (pumpbackLocationType != null) {
-            pumpbackLocRef = pumpbackLocationType.getLocationRef();
-        }
-        if (pumpbackLocRef != null) {
-            builder = builder.withPumpBackLocation(new Location.Builder(pumpbackLocRef.getOfficeId(),
-                    getLocationId(pumpbackLocRef.getBaseLocationId(),
-                            pumpbackLocRef.getSubLocationId()))
-                    .withActive(null)
-                    .build()
-            );
-        }
+        Location pbLoc = LocationUtil.getLocation(projectObjT.getPUMP_BACK_LOCATION());
+        builder = builder.withPumpBackLocation(pbLoc);
 
         BigDecimal federalCost = projectObjT.getFEDERAL_COST();
         if (federalCost != null) {

@@ -2,6 +2,7 @@ package cwms.cda.data.dto.project;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -91,8 +92,9 @@ public class Projects extends CwmsDTOPaginated {
             if (this.workingProjects.projects.size() == this.workingProjects.pageSize) {
                 Project last =
                         this.workingProjects.projects.get(this.workingProjects.projects.size() - 1);
-                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, last.getOfficeId(),
-                        last.getName());
+                Location lastLoc = last.getLocation();
+                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastLoc.getOfficeId(),
+                        lastLoc.getName());
                 this.workingProjects.nextPage = encodeCursor(cursor,
                         this.workingProjects.pageSize, this.workingProjects.total);
             } else {

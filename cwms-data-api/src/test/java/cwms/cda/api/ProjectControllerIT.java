@@ -26,12 +26,16 @@ package cwms.cda.api;
 
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -84,7 +88,8 @@ final class ProjectControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
-        String office = project.getOfficeId();
+        Location loc = project.getLocation();
+        String office = loc.getOfficeId();
         // Retrieve the project and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -93,13 +98,13 @@ final class ProjectControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("projects/" + project.getName())
+            .get("projects/" + loc.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(office))
-            .body("name", equalTo(project.getName()))
+            .body("location.office-id", equalTo(office))
+            .body("location.name", equalTo(loc.getName()))
         ;
 
         // Delete a Project
@@ -111,7 +116,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("projects/" + project.getName())
+            .delete("projects/" + loc.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -126,7 +131,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("projects/" + project.getName())
+            .get("projects/" + loc.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -143,6 +148,8 @@ final class ProjectControllerIT extends DataApiTestIT {
         Project project = Formats.parseContent(new ContentType(Formats.JSON), json, Project.class);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
+        Location loc = project.getLocation();
+
         //Try to update the project - should fail b/c it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -153,7 +160,7 @@ final class ProjectControllerIT extends DataApiTestIT {
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .patch("/projects/" + project.getName())
+                .patch("/projects/" + loc.getName())
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -212,8 +219,8 @@ final class ProjectControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
-
-        String office = project.getOfficeId();
+        Location loc = project.getLocation();
+        String office = loc.getOfficeId();
 
         long expectedCostYear = 1717282800000L;
 
@@ -225,7 +232,7 @@ final class ProjectControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(Controllers.ID_MASK, "^" + project.getName() + "$")
+            .queryParam(Controllers.ID_MASK, "^" + loc.getName() + "$")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -234,8 +241,10 @@ final class ProjectControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("projects[0].office-id", equalTo(office))
-            .body("projects[0].name", equalTo(project.getName()))
+            .body("projects[0].location", notNullValue())
+            .body("projects[0].location", not(empty()))
+            .body("projects[0].location.office-id", equalTo(office))
+            .body("projects[0].location.name", equalTo(loc.getName()))
             .body("projects[0].federal-cost", equalTo(100.0f))
             .body("projects[0].non-federal-cost", equalTo(50.0f))
             .body("projects[0].federal-o-and-m-cost", equalTo(10.0f))
@@ -250,10 +259,14 @@ final class ProjectControllerIT extends DataApiTestIT {
             .body("projects[0].yield-time-frame-start", equalTo(expectedStart))
             .body("projects[0].yield-time-frame-end", equalTo(expectedEnd))
             .body("projects[0].cost-year", equalTo(expectedCostYear))
-// TODO:           .body("projects[0].pump-back-location-id", equalTo("Pumpback Location Id"))
-// TODO:           .body("projects[0].pump-back-office-id", equalTo("SPK"))
-// TODO:           .body("projects[0].near-gage-location-id", equalTo("Near Gage Location Id"))
-// TODO:           .body("projects[0].near-gage-office-id", equalTo("SPK"))
+            .body("projects[0].pump-back-location", notNullValue())
+            .body("projects[0].pump-back-location", not(empty()))
+            .body("projects[0].pump-back-location.name", equalTo("tgcd-PbLoc"))
+            .body("projects[0].pump-back-location.office-id", equalTo("SPK"))
+            .body("projects[0].near-gage-location", notNullValue())
+            .body("projects[0].near-gage-location", not(empty()))
+            .body("projects[0].near-gage-location.name", equalTo("tgcd-NgLoc"))
+            .body("projects[0].near-gage-location.office-id", equalTo("SPK"))
 // TODO:           .body("projects[0].cost-unit", equalTo("$"))
 
         ;
@@ -267,7 +280,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("projects/" + project.getName())
+            .delete("projects/" + project.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -294,7 +307,9 @@ final class ProjectControllerIT extends DataApiTestIT {
         for (int i = 0; i < 15; i++) {
             Project.Builder builder = new Project.Builder();
             builder.from(project)
-                    .withName(String.format("PageTest%2d", i));
+                    .withLocation(new Location.Builder(project.getLocation())
+                            .withName(String.format("PageTest%2d", i))
+                            .build());
             Project build = builder.build();
             String projJson = om.writeValueAsString(build);
 
@@ -315,7 +330,7 @@ final class ProjectControllerIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_CREATED));
         }
 
-        String office = project.getOfficeId();
+        String office = project.getLocation().getOfficeId();
         try {
             ExtractableResponse<Response> extractableResponse = given()
                     .log().ifValidationFails(LogDetail.ALL, true)
@@ -331,12 +346,12 @@ final class ProjectControllerIT extends DataApiTestIT {
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK))
-                    .body("projects[0].office-id", equalTo(office))
-                    .body("projects[0].name", equalTo("PageTest 0"))
-                    .body("projects[1].name", equalTo("PageTest 1"))
-                    .body("projects[2].name", equalTo("PageTest 2"))
-                    .body("projects[3].name", equalTo("PageTest 3"))
-                    .body("projects[4].name", equalTo("PageTest 4"))
+                    .body("projects[0].location.office-id", equalTo(office))
+                    .body("projects[0].location.name", equalTo("PageTest 0"))
+                    .body("projects[1].location.name", equalTo("PageTest 1"))
+                    .body("projects[2].location.name", equalTo("PageTest 2"))
+                    .body("projects[3].location.name", equalTo("PageTest 3"))
+                    .body("projects[4].location.name", equalTo("PageTest 4"))
                     .extract();
 
             String next = extractableResponse.path("next-page");
@@ -358,12 +373,12 @@ final class ProjectControllerIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("projects[0].office-id", equalTo(office))
-                .body("projects[0].name", equalTo("PageTest 5"))
-                .body("projects[1].name", equalTo("PageTest 6"))
-                .body("projects[2].name", equalTo("PageTest 7"))
-                .body("projects[3].name", equalTo("PageTest 8"))
-                .body("projects[4].name", equalTo("PageTest 9"))
+                .body("projects[0].location.office-id", equalTo(office))
+                .body("projects[0].location.name", equalTo("PageTest 5"))
+                .body("projects[1].location.name", equalTo("PageTest 6"))
+                .body("projects[2].location.name", equalTo("PageTest 7"))
+                .body("projects[3].location.name", equalTo("PageTest 8"))
+                .body("projects[4].location.name", equalTo("PageTest 9"))
                 ;
         } finally {
             for (int i = 0; i < 15; i++) {
