@@ -194,14 +194,13 @@ public class TextTimeSeriesController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
 
-            TextTimeSeries tts = deserializeBody(ctx, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
             TimeSeriesTextDao dao = getDao(dsl);
 
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_CREATE_REPLACE_ALL);
             dao.create(tts, replaceAll);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (IOException ex) {
-            throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
         }
     }
 
@@ -229,14 +228,12 @@ public class TextTimeSeriesController implements CrudHandler {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            TextTimeSeries tts = deserializeBody(ctx, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader);
+            TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesTextDao dao = getDao(dsl);
             dao.store(tts, replaceAll);
-
-        } catch (IOException e) {
-            throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
         }
     }
 
@@ -287,18 +284,5 @@ public class TextTimeSeriesController implements CrudHandler {
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
-    }
-
-    private static TextTimeSeries deserializeBody(@NotNull Context ctx, String formatHeader) throws IOException {
-        TextTimeSeries tts;
-
-        if (ContentType.equivalent(Formats.JSONV2, formatHeader)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            tts = om.readValue(ctx.bodyAsInputStream(), TextTimeSeries.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + formatHeader);
-        }
-
-        return tts;
     }
 }

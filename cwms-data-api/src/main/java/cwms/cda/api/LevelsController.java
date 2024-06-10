@@ -134,13 +134,9 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            LocationLevel level = deserializeLocationLevel(ctx.body(), formatHeader);
-
+            LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
             if (level.getOfficeId() == null) {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
                         "The request body must specify the office.");
@@ -433,11 +429,8 @@ public class LevelsController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(),
-                contentType.getType());
+            LocationLevel levelFromBody = Formats.parseContent(contentType, ctx.body(),
+                LocationLevel.class);
             String officeId = levelFromBody.getOfficeId();
             if (officeId == null) {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
@@ -566,17 +559,6 @@ public class LevelsController implements CrudHandler {
 
     public static LocationLevelsDao getLevelsDao(DSLContext dsl) {
         return new LocationLevelsDaoImpl(dsl);
-    }
-
-    public static LocationLevel deserializeLocationLevel(String body, String format) {
-        ObjectMapper om = getObjectMapperForFormat(format);
-
-        try {
-            return new LocationLevel.Builder(om.readValue(body, LocationLevel.class)).build();
-        } catch (JsonProcessingException e) {
-            throw new JsonFieldsException(e);
-        }
-
     }
 
     private static ObjectMapper getObjectMapperForFormat(String format) {

@@ -1,17 +1,10 @@
 package cwms.cda.data.dto.catalog;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-@XmlRootElement(name = "entry")
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlSeeAlso({TimeseriesCatalogEntry.class,LocationCatalogEntry.class})
 public abstract class CatalogEntry {
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private String office;
 
     @SuppressWarnings("unused") // for JAXB rendering

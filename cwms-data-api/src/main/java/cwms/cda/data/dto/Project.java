@@ -31,10 +31,8 @@ public class Project extends CwmsDTO {
     private final String sedimentationDesc;
     private final String downstreamUrbanDesc;
     private final String bankFullCapacityDesc;
-    private final String pumpBackLocationId;
-    private final String pumpBackOfficeId;
-    private final String nearGageLocationId;
-    private final String nearGageOfficeId;
+    private final Location pumpBackLocation;
+    private final Location nearGageLocation;
     private final Instant yieldTimeFrameStart;
     private final Instant yieldTimeFrameEnd;
     private final String projectRemarks;
@@ -55,10 +53,8 @@ public class Project extends CwmsDTO {
         this.sedimentationDesc = builder.sedimentationDesc;
         this.downstreamUrbanDesc = builder.downstreamUrbanDesc;
         this.bankFullCapacityDesc = builder.bankFullCapacityDesc;
-        this.pumpBackLocationId = builder.pumpBackLocationId;
-        this.pumpBackOfficeId = builder.pumpBackOfficeId;
-        this.nearGageLocationId = builder.nearGageLocationId;
-        this.nearGageOfficeId = builder.nearGageOfficeId;
+        this.pumpBackLocation = builder.pumpBackLocation;
+        this.nearGageLocation = builder.nearGageLocation;
         this.yieldTimeFrameStart = builder.yieldTimeFrameStart;
         this.yieldTimeFrameEnd = builder.yieldTimeFrameEnd;
         this.projectRemarks = builder.projectRemarks;
@@ -89,12 +85,8 @@ public class Project extends CwmsDTO {
         return hydropowerDesc;
     }
 
-    public String getNearGageLocationId() {
-        return nearGageLocationId;
-    }
-
-    public String getNearGageOfficeId() {
-        return nearGageOfficeId;
+    public Location getNearGageLocation() {
+        return nearGageLocation;
     }
 
     public Double getNonFederalCost() {
@@ -129,12 +121,8 @@ public class Project extends CwmsDTO {
         return projectRemarks;
     }
 
-    public String getPumpBackLocationId() {
-        return pumpBackLocationId;
-    }
-
-    public String getPumpBackOfficeId() {
-        return pumpBackOfficeId;
+    public Location getPumpBackLocation() {
+        return pumpBackLocation;
     }
 
     public String getSedimentationDesc() {
@@ -166,10 +154,8 @@ public class Project extends CwmsDTO {
         private String sedimentationDesc;
         private String downstreamUrbanDesc;
         private String bankFullCapacityDesc;
-        private String pumpBackLocationId;
-        private String pumpBackOfficeId;
-        private String nearGageLocationId;
-        private String nearGageOfficeId;
+        private Location pumpBackLocation;
+        private Location nearGageLocation;
         private Instant yieldTimeFrameStart;
         private Instant yieldTimeFrameEnd;
         private String projectRemarks;
@@ -181,6 +167,7 @@ public class Project extends CwmsDTO {
 
         /**
          * Copy the values from the given project into this builder.
+         *
          * @param project the project to copy values from
          * @return this builder
          */
@@ -199,10 +186,8 @@ public class Project extends CwmsDTO {
                     .withSedimentationDesc(project.getSedimentationDesc())
                     .withDownstreamUrbanDesc(project.getDownstreamUrbanDesc())
                     .withBankFullCapacityDesc(project.getBankFullCapacityDesc())
-                    .withPumpBackLocationId(project.getPumpBackLocationId())
-                    .withPumpBackOfficeId(project.getPumpBackOfficeId())
-                    .withNearGageLocationId(project.getNearGageLocationId())
-                    .withNearGageOfficeId(project.getNearGageOfficeId())
+                    .withPumpBackLocation(project.getPumpBackLocation())
+                    .withNearGageLocation(project.getNearGageLocation())
                     .withYieldTimeFrameStart(project.getYieldTimeFrameStart())
                     .withYieldTimeFrameEnd(project.getYieldTimeFrameEnd())
                     .withProjectRemarks(project.getProjectRemarks());
@@ -278,18 +263,13 @@ public class Project extends CwmsDTO {
             return this;
         }
 
-        public Builder withPumpBackLocationId(String pumpBackLocationId) {
-            this.pumpBackLocationId = pumpBackLocationId;
+        public Builder withPumpBackLocation(Location pbLoc) {
+            this.pumpBackLocation = pbLoc;
             return this;
         }
 
-        public Builder withNearGageLocationId(String nearGageLocationId) {
-            this.nearGageLocationId = nearGageLocationId;
-            return this;
-        }
-
-        public Builder withNearGageOfficeId(String nearGageOfficeId) {
-            this.nearGageOfficeId = nearGageOfficeId;
+        public Builder withNearGageLocation(Location ngLoc) {
+            this.nearGageLocation = ngLoc;
             return this;
         }
 
@@ -308,10 +288,6 @@ public class Project extends CwmsDTO {
             return this;
         }
 
-        public Builder withPumpBackOfficeId(String spk) {
-            this.pumpBackOfficeId = spk;
-            return this;
-        }
     }
 
 }

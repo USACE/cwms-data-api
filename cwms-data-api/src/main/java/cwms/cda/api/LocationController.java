@@ -184,8 +184,7 @@ public class LocationController implements CrudHandler {
             String version = contentType.getParameters().get(VERSION);
             if (version != null && version.equals("2")) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
-                ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-                results = om.writeValueAsString(locations);
+                results = Formats.format(contentType, locations, Location.class);
                 ctx.result(results);
                 requestResultSize.update(results.length());
             } else if (contentType.getType().equals(Formats.GEOJSON)) {
@@ -271,14 +270,10 @@ public class LocationController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
             Location location = locationDao.getLocation(name, units, office);
-            ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-            String serializedLocation = om.writeValueAsString(location);
+            String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -316,10 +311,7 @@ public class LocationController implements CrudHandler {
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
+            Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             locationsDao.storeLocation(locationFromBody);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location");
         } catch (IOException ex) {
@@ -332,8 +324,8 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Location.class, type = Formats.JSON),
-                        @OpenApiContent(from = Location.class, type = Formats.XML)
+                        @OpenApiContent(from = Location.class, type = Formats.XML),
+                        @OpenApiContent(from = Location.class, type = Formats.JSON)
                     },
                     required = true),
             description = "Update CWMS Location",
@@ -356,10 +348,7 @@ public class LocationController implements CrudHandler {
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
+            Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,
                     UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
@@ -456,19 +445,6 @@ public class LocationController implements CrudHandler {
         } catch (NullPointerException e) {
             //gets thrown if required field is null
             throw new IOException(e.getMessage());
-        }
-        return retVal;
-    }
-
-    public static Location deserializeLocation(String body, String format)
-            throws IOException {
-        ObjectMapper om = getObjectMapperForFormat(format);
-        Location retVal;
-        try {
-            retVal = new Location.Builder(om.readValue(body, Location.class)).build();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to deserialize location", e);
-            throw new IOException("Failed to deserialize location");
         }
         return retVal;
     }

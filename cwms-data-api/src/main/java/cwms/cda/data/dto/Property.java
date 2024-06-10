@@ -25,6 +25,7 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -33,13 +34,9 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
 
-@XmlRootElement(name = "property")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("property")
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @JsonDeserialize(builder = Property.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)

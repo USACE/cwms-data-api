@@ -4,8 +4,11 @@ package cwms.cda.formatters;
 import java.util.Arrays;
 import java.util.Map;
 
+import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.Office;
+import cwms.cda.data.dto.State;
 import cwms.cda.formatters.annotations.FormattableWith;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -13,10 +16,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class FormatsTest
 {
@@ -49,9 +49,7 @@ class FormatsTest
 	@Test
 	void testParseNullNull()
 	{
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
-			Formats.parseHeaderAndQueryParm(null, null);
-		});
+		assertThrows(FormattingException.class, () -> Formats.parseHeaderAndQueryParm(null, null));
 	}
 
 	@Test
@@ -82,7 +80,7 @@ class FormatsTest
 
 	@Test
 	void testParseHeaderAndQueryParmXML(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm(null, null);
 		});
 
@@ -108,7 +106,7 @@ class FormatsTest
 
 	@Test
 	void testParseBoth(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm("application/json", "json");
 		});
 
@@ -117,7 +115,7 @@ class FormatsTest
 
 	@Test
 	void testParseBothv2(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm("application/json;version=2", "json");
 		});
 
@@ -137,27 +135,17 @@ class FormatsTest
 		assertNotNull(contentType);
 		assertEquals("application/json", contentType.getType());
 
-		contentType = Formats.parseHeader(null);
-		assertNull(contentType);
+		assertThrows(FormattingException.class, () -> Formats.parseHeader(null));
 
-		contentType = Formats.parseHeader("");
-		assertNull(contentType);
+		assertThrows(FormattingException.class, () -> Formats.parseHeader(""));
 
 	}
 
-	@Test
-	void testParseQueryParam(){
-		ContentType contentType;
-		contentType	= Formats.parseQueryParam("json");
-		assertNotNull(contentType);
-		assertEquals("application/json", contentType.getType());
-
-		contentType	= Formats.parseQueryParam("");
-		assertNull(contentType);
-
-		contentType	= Formats.parseQueryParam(null);
-		assertNull(contentType);
-
+	@EnumSource(ParseQueryParamTest.class)
+	@ParameterizedTest
+	void testParseQueryParam(ParseQueryParamTest test){
+		ContentType contentType = Formats.parseQueryParam(test._contentType, test._class);
+		assertEquals(test._expectedType, contentType);
 	}
 
 	@Test
@@ -197,13 +185,45 @@ class FormatsTest
 	enum ParseHeaderClassAliasTest
 	{
 		COUNTY_DEFAULT(County.class, Formats.DEFAULT, Formats.JSONV2),
-		COUNTY_JSON(County.class, Formats.JSON, Formats.JSONV2);
+		COUNTY_JSON(County.class, Formats.JSON, Formats.JSONV2),
+		COUNTY_JSONV2(County.class, Formats.JSONV2, Formats.JSONV2),
+		STATE_DEFAULT(State.class, Formats.DEFAULT, Formats.JSONV2),
+		STATE_JSON(State.class, Formats.JSON, Formats.JSONV2),
+		STATE_JSONV2(State.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_DEFAULT(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_JSON(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_JSONV2(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_XML(Office.class, Formats.XML, Formats.XMLV2),
+		OFFICE_XMLV2(Office.class, Formats.XMLV2, Formats.XMLV2),
+		BLOB_DEFAULT(Blob.class, Formats.DEFAULT, Formats.JSONV2),
+		BLOB_JSON(Blob.class, Formats.JSON, Formats.JSONV2),
+		BLOB_JSONV2(Blob.class, Formats.JSONV2, Formats.JSONV2),
+		;
 
 		final Class<? extends CwmsDTOBase> _class;
 		final String _contentType;
 		final String _expectedType;
 
 		ParseHeaderClassAliasTest(Class<? extends CwmsDTOBase> aClass, String contentType, String expectedType)
+		{
+			_class = aClass;
+			_contentType = contentType;
+			_expectedType = expectedType;
+		}
+	}
+
+	enum ParseQueryParamTest
+	{
+		JSON(null, "json", new ContentType(Formats.JSON)),
+		NULL(null, null, null),
+		EMPTY(null, "", null),
+		OFFICE(Office.class, "json", new ContentType(Formats.JSONV2)),
+		;
+		final Class<? extends CwmsDTOBase> _class;
+		final String _contentType;
+		final ContentType _expectedType;
+
+		ParseQueryParamTest(Class<? extends CwmsDTOBase> aClass, String contentType, ContentType expectedType)
 		{
 			_class = aClass;
 			_contentType = contentType;

@@ -24,31 +24,26 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.annotations.Formattables;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 
 @Schema(description = "A representation of a county")
-@XmlRootElement(name = "county")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("county")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class County implements CwmsDTOBase {
 
-    @XmlElement(name = "name")
     private String name;
-    @XmlElement(name = "county-id")
     private String countyId;
-    @XmlElement(name = "state-initial")
     private String stateInitial;
 
     public County() {

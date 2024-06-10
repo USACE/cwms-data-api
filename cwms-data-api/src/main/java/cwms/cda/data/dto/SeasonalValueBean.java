@@ -1,6 +1,5 @@
 package cwms.cda.data.dto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -41,19 +40,21 @@ public class SeasonalValueBean {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private final Double value;
+        private Double value;
         private Integer offsetMonths;
         private BigInteger offsetMinutes;
 
+        public Builder() {
+            //No-op
+        }
 
-        public Builder(@JsonProperty(value = "value") Double value) {
+        public Builder(Double value) {
             this.value = value;
             this.offsetMonths = null;
             this.offsetMinutes = null;
         }
 
-        @JsonCreator
-        public Builder(@JsonProperty(value = "value") String value) {
+        public Builder(String value) {
             this.value = Double.valueOf(value);
             this.offsetMonths = null;
             this.offsetMinutes = null;
@@ -63,6 +64,11 @@ public class SeasonalValueBean {
             this.value = bean.getValue();
             this.offsetMonths = bean.getOffsetMonths();
             this.offsetMinutes = bean.getOffsetMinutes();
+        }
+
+        public Builder withValue(Double value) {
+            this.value = value;
+            return this;
         }
 
         public Builder withOffsetMinutes(BigInteger totalOffsetMinutes) {
