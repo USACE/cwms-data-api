@@ -47,6 +47,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import static cwms.cda.api.Controllers.*;
+import static helpers.FloatCloseTo.floatCloseTo;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -329,8 +330,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[0].level-units-id"),equalTo("ac-ft"));
                 assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
-                actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
-                assertThat(actual0, closeTo(1.0, 0.01));
+                assertThat(response.path("levels[0].constant-value"), floatCloseTo(1.0, 0.01));
 
                 assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
                 assertThat(response.path("levels[1].location-level-id"),equalTo(levelId2));
@@ -340,8 +340,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[1].level-units-id"),equalTo("ac-ft"));
                 assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
-                actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
-                assertThat(actual1, closeTo(2.0, 0.01));
+                assertThat(response.path("levels[1].constant-value"), floatCloseTo(2.0, 0.01));
     }
 
 }
