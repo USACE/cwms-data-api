@@ -59,6 +59,15 @@ public class Formats {
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
     public static final String DEFAULT = "*/*";
 
+    public static final String JSON_LEGACY = "json";
+    public static final String XML_LEGACY = "xml";
+    public static final String WML2_LEGACY = "wml2";
+    public static final String TAB_LEGACY = "tab";
+    public static final String CSV_LEGACY = "csv";
+    public static final String GEOJSON_LEGACY = "geojson";
+    public static final String PGJSON_LEGACY = "pgjson";
+    public static final String NAMED_PGJSON_LEGACY = "named-pgjson";
+
 
     private static final List<ContentType> contentTypeList = new ArrayList<>();
 
@@ -72,14 +81,14 @@ public class Formats {
     private static final Map<String, String> typeMap = new LinkedHashMap<>();
 
     static {
-        typeMap.put("json", Formats.JSON);
-        typeMap.put("xml", Formats.XML);
-        typeMap.put("wml2", Formats.WML2);
-        typeMap.put("tab", Formats.TAB);
-        typeMap.put("csv", Formats.CSV);
-        typeMap.put("geojson", Formats.GEOJSON);
-        typeMap.put("pgjson", Formats.PGJSON);
-        typeMap.put("named-pgjson", Formats.NAMED_PGJSON);
+        typeMap.put(JSON_LEGACY, Formats.JSON);
+        typeMap.put(XML_LEGACY, Formats.XML);
+        typeMap.put(WML2_LEGACY, Formats.WML2);
+        typeMap.put(TAB_LEGACY, Formats.TAB);
+        typeMap.put(CSV_LEGACY, Formats.CSV);
+        typeMap.put(GEOJSON_LEGACY, Formats.GEOJSON);
+        typeMap.put(PGJSON_LEGACY, Formats.PGJSON);
+        typeMap.put(NAMED_PGJSON_LEGACY, Formats.NAMED_PGJSON);
     }
 
 

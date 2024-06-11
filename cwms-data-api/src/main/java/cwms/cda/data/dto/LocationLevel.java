@@ -16,8 +16,7 @@ import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv1;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
+import cwms.cda.formatters.xml.XMLv2;
 import hec.data.level.ILocationLevelRef;
 import hec.data.level.IParameterTypedValue;
 import hec.data.level.ISeasonalInterval;
@@ -43,8 +42,8 @@ import java.util.function.Consumer;
 @JsonDeserialize(builder = LocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
