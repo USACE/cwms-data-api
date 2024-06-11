@@ -43,7 +43,8 @@
     "published-latitude": 36.153980,
     "elevation": 10.0,
     "elevation-units": "m",
-    "bounding-office-id": "SWT"
+    "bounding-office-id": "SWT",
+    "nearest-city": "Davis"
 },
   "project-id": "PROJ",
   "project-office-id": "SWT"

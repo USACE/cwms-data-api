@@ -178,6 +178,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
                 .withBoundingOfficeId(officeId)
                 .withLongName("UNITED STATES")
                 .withDescription("for testing")
+                .withNearestCity("Davis")
                 .build();
     }
 
@@ -197,6 +198,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
                 .withPublishedLongitude(-121.7298432)
                 .withLongName("UNITED STATES")
                 .withDescription("for testing")
+                .withNearestCity("Davis")
                 .build();
     }
 

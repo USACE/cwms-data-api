@@ -43,7 +43,8 @@
     "published-latitude": 50.0,
     "elevation": 10.0,
     "elevation-units": "m",
-    "bounding-office-id": "LRL"
+    "bounding-office-id": "LRL",
+    "nearest-city": "Davis"
   },
   "project-id": "PROJECT",
   "project-office-id": "LRD"
