@@ -93,6 +93,7 @@ final class EmbankmentDaoTest {
                 .withPublishedLatitude(50.0)
                 .withPublishedLongitude(50.0)
                 .withDescription("for testing")
+                .withNearestCity("Davis")
                 .build();
     }
 }

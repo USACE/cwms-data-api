@@ -117,6 +117,7 @@ public final class LocationUtil {
                     .withLongName(location.getLONG_NAME())
                     .withStateInitial(location.getSTATE_INITIAL())
                     .withLocationType(location.getLOCATION_TYPE())
+                    .withNearestCity(location.getNEAREST_CITY())
                     .build();
         }
         return retval;
@@ -147,6 +148,7 @@ public final class LocationUtil {
             retval.setLONG_NAME(location.getLongName());
             retval.setSTATE_INITIAL(location.getStateInitial());
             retval.setLOCATION_TYPE(location.getLocationType());
+            retval.setNEAREST_CITY(location.getNearestCity());
         }
         return retval;
     }
