@@ -40,6 +40,7 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -176,7 +177,7 @@ public class LocationController implements CrudHandler {
 
             String formatParm = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Location.class);
             ctx.contentType(contentType.toString());
 
             final String results;
@@ -197,6 +198,7 @@ public class LocationController implements CrudHandler {
                 String format = getFormatFromContent(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
+                addDeprecatedContentTypeWarning(ctx, contentType);
                 requestResultSize.update(results.length());
             }
 
@@ -269,12 +271,13 @@ public class LocationController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
             Location location = locationDao.getLocation(name, units, office);
             String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
+            addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
             logger.log(Level.WARNING, re.toString(), e);

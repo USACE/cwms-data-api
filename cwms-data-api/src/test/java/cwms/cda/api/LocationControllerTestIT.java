@@ -32,10 +32,13 @@ import org.junit.jupiter.api.Test;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
 
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
@@ -160,5 +163,73 @@ public class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GetAllTest.class)
+    void test_get_all_locations(GetAllTest test)
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(test._accept)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(is(test._expectedContentType));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GetAllLegacyTest.class)
+    void test_get_all_locations_legacy_types(GetAllLegacyTest test)
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(FORMAT, test._accept)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(is(test._expectedContentType));
+    }
+
+    enum GetAllLegacyTest
+    {
+        ;
+
+        final String _accept;
+        final String _expectedContentType;
+
+        GetAllLegacyTest(String accept, String expectedContentType)
+        {
+            _accept = accept;
+            _expectedContentType = expectedContentType;
+        }
+    }
+
+    enum GetAllTest
+    {
+        DEFAULT(Formats.DEFAULT, Formats.JSONV2),
+        JSON(Formats.JSON, Formats.JSONV2),
+        JSONV1(Formats.JSONV1, Formats.JSONV1),
+        JSONV2(Formats.JSONV2, Formats.JSONV2),
+        ;
+
+        final String _accept;
+        final String _expectedContentType;
+
+        GetAllTest(String accept, String expectedContentType)
+        {
+            _accept = accept;
+            _expectedContentType = expectedContentType;
+        }
     }
 }
