@@ -284,67 +284,57 @@ public class LevelsController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format, LocationLevels.class);
+            String version = contentType.getParameters()
+                                          .getOrDefault(VERSION, "");
 
-            if (format.isEmpty())
+            boolean isLegacyVersion = version.equals("1");
+
+            if (format.isEmpty() && !isLegacyVersion)
             {
-                String version = contentType.getParameters()
-                                              .getOrDefault(VERSION, "");
-                if (version.equals("1"))
+                String cursor = ctx.queryParamAsClass(PAGE, String.class)
+                                   .getOrDefault("");
+                int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
+                                  .getOrDefault(DEFAULT_PAGE_SIZE);
+
+                ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
+
+                ZonedDateTime endZdt = end != null ? DateUtils.parseUserDate(end, timezone) :
+                        ZonedDateTime.now(tz);
+                ZonedDateTime beginZdt;
+                if (begin != null) {
+                    beginZdt = DateUtils.parseUserDate(begin, timezone);
+                } else {
+                    beginZdt = endZdt.minusHours(24);
+                }
+
+                LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
+                        office, unit, datum, beginZdt, endZdt);
+                String result = Formats.format(contentType, levels);
+
+                ctx.result(result);
+                requestResultSize.update(result.length());
+
+                ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+            } else {
+                //Use the type string, not the full string with properties.
+                //i.e. application/json not application/json;version=1
+                String results = levelsDao.getLocationLevels(format, levelIdMask, office, unit, datum,
+                        begin, end, timezone);
+                ctx.status(HttpServletResponse.SC_OK);
+                ctx.result(results);
+                requestResultSize.update(results.length());
+                if (isLegacyVersion)
                 {
-                    //Need to return the version 1 part here, so the receiver knows what to expect?
-                    getAllLegacyRender(ctx, Formats.getLegacyTypeFromContentType(contentType), levelsDao, levelIdMask, office, unit, datum, begin, end, timezone);
+                    ctx.contentType(contentType.toString());
                 }
                 else
                 {
-                    getAllRenderFromJava(ctx, contentType, timezone, end, begin, levelsDao, levelIdMask, office, unit, datum);
+                    ctx.contentType(contentType.getType());
                 }
-                ctx.contentType(contentType.toString());
-            } else {
-                getAllLegacyRender(ctx, format, levelsDao, levelIdMask, office, unit, datum, begin, end, timezone);
-                ctx.contentType(contentType.getType());
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
         }
-    }
-
-    private void getAllLegacyRender(@NotNull Context ctx, String format, LocationLevelsDao levelsDao, String levelIdMask, String office, String unit, String datum, String begin, String end, String timezone)
-    {
-        //Use the type string, not the full string with properties.
-        //i.e. application/json not application/json;version=1
-        String results = levelsDao.getLocationLevels(format, levelIdMask, office, unit, datum,
-                begin, end, timezone);
-        ctx.status(HttpServletResponse.SC_OK);
-        ctx.result(results);
-        requestResultSize.update(results.length());
-    }
-
-    private void getAllRenderFromJava(@NotNull Context ctx, ContentType contentType, String timezone, String end, String begin, LocationLevelsDao levelsDao, String levelIdMask, String office, String unit, String datum)
-    {
-        String contentTypeString = contentType.toString();
-        String cursor = ctx.queryParamAsClass(PAGE, String.class)
-                           .getOrDefault("");
-        int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
-                          .getOrDefault(DEFAULT_PAGE_SIZE);
-
-        ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
-
-        ZonedDateTime endZdt = end != null ? DateUtils.parseUserDate(end, timezone) :
-                ZonedDateTime.now(tz);
-        ZonedDateTime beginZdt;
-        if (begin != null) {
-            beginZdt = DateUtils.parseUserDate(begin, timezone);
-        } else {
-            beginZdt = endZdt.minusHours(24);
-        }
-
-        LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                office, unit, datum, beginZdt, endZdt);
-        String result = Formats.format(contentType, levels);
-
-        ctx.result(result);
-        requestResultSize.update(result.length());
-
-        ctx.status(HttpServletResponse.SC_OK);
     }
 
 
