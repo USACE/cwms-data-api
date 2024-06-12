@@ -404,9 +404,9 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
         cdaCrudCache("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles,60, TimeUnit.MINUTES);
-        cdaCrudCache("/levels/{" + Controllers.LEVEL_ID + "}",
+        cdaCrudCache(format("/levels/{%s}", Controllers.LEVEL_ID),
                 new LevelsController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String levelTsPath = "/levels/{" + Controllers.LEVEL_ID + "}/timeseries";
+        String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
@@ -456,15 +456,15 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/forecast-instance/{" + Controllers.NAME + "}",
+        cdaCrudCache(format("/forecast-instance/{%s}", Controllers.NAME),
                 new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/forecast-spec/{" + Controllers.NAME + "}",
+        cdaCrudCache(format("/forecast-spec/{%s}", Controllers.NAME),
                 new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String forecastFilePath = "/forecast-instance/{" + NAME + "}/file-data";
+        String forecastFilePath = format("/forecast-instance/{%s}/file-data", NAME);
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
-        cdaCrudCache("/projects/{" + Controllers.NAME + "}",
+        cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
