@@ -408,6 +408,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     {
         DEFAULT(Formats.DEFAULT, Formats.JSONV2),
         JSON(Formats.JSON, Formats.JSONV2),
+        JSONV1(Formats.JSONV1, Formats.JSONV1),
         JSONV2(Formats.JSONV2, Formats.JSONV2),
         ;
         final String _accept;

@@ -99,6 +99,15 @@ public class Formats {
     private Formats() {
     }
 
+    public static String getLegacyTypeFromContentType(ContentType contentType)
+    {
+        return typeMap.entrySet()
+                      .stream()
+                      .filter(e -> e.getValue().equals(contentType.getType()))
+                      .map(Map.Entry::getKey)
+                      .findFirst()
+                      .orElse(JSON_LEGACY);
+    }
 
     private String getFormatted(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         Objects.requireNonNull(toFormat, "Object to be formatted should not be null");
