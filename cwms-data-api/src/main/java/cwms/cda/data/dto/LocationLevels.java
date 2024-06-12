@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonRootName("location-levels")
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LocationLevels extends CwmsDTOPaginated {
     @JacksonXmlElementWrapper
     @JacksonXmlProperty(localName = "location-level")
