@@ -178,29 +178,45 @@ public class LocationController implements CrudHandler {
             String formatParm = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Location.class);
-            ctx.contentType(contentType.toString());
 
-            final String results;
+            String results;
 
-            String version = contentType.getParameters().get(VERSION);
-            if (version != null && version.equals("2")) {
-                List<Location> locations = locationsDao.getLocations(names, units, datum, office);
-                results = Formats.format(contentType, locations, Location.class);
-                ctx.result(results);
-                requestResultSize.update(results.length());
-            } else if (contentType.getType().equals(Formats.GEOJSON)) {
+            String version = contentType.getParameters().getOrDefault(VERSION, "");
+            boolean isLegacyFormat = version.equalsIgnoreCase("1");
+
+            if (contentType.getType().equals(Formats.GEOJSON)) {
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units,
                         office);
                 ctx.json(collection);
 
                 requestResultSize.update(ctx.res.getBufferSize());
-            } else {
-                String format = getFormatFromContent(contentType);
+                ctx.contentType(contentType.toString());
+            }
+            else if (formatParm.isEmpty() && !isLegacyFormat)
+            {
+                List<Location> locations = locationsDao.getLocations(names, units, datum, office);
+                results = Formats.format(contentType, locations, Location.class);
+                ctx.result(results);
+                requestResultSize.update(results.length());
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
-                addDeprecatedContentTypeWarning(ctx, contentType);
                 requestResultSize.update(results.length());
+                if (isLegacyFormat)
+                {
+                    ctx.contentType(contentType.toString());
+                }
+                else
+                {
+                    ctx.contentType(contentType.getType());
+                }
             }
+
+            addDeprecatedContentTypeWarning(ctx, contentType);
 
             ctx.status(HttpServletResponse.SC_OK);
 
@@ -209,27 +225,6 @@ public class LocationController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private String getFormatFromContent(ContentType contentType) {
-        String format = "json";
-        if (contentType != null) {
-            // Seems weird to map back to format from contentType but we really want them to agree.
-            // What if format wasn't provided but an accept header for csv was?
-            // I think we would want to pass "csv" to the db procedure.
-            Map<String, String> lookup = new LinkedHashMap<>();
-            lookup.put(Formats.TAB, "tab");
-            lookup.put(Formats.CSV, "csv");
-            lookup.put(Formats.XML, "xml");
-            lookup.put(Formats.WML2, "wml2");
-            lookup.put(Formats.JSON, "json");
-
-            String type = contentType.getType();
-            if (lookup.containsKey(type)) {
-                format = lookup.get(type);
-            }
-        }
-        return format;
     }
 
     @OpenApi(

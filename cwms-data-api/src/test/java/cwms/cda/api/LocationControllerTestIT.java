@@ -203,6 +203,11 @@ public class LocationControllerTestIT extends DataApiTestIT {
 
     enum GetAllLegacyTest
     {
+        JSON(Formats.JSON_LEGACY, Formats.JSON),
+        CSV(Formats.CSV_LEGACY, Formats.CSV),
+        XML(Formats.XML_LEGACY, Formats.XML),
+        TAB(Formats.TAB_LEGACY, Formats.TAB),
+        GEOJSON(Formats.GEOJSON_LEGACY, Formats.GEOJSON),
         ;
 
         final String _accept;
@@ -221,6 +226,10 @@ public class LocationControllerTestIT extends DataApiTestIT {
         JSON(Formats.JSON, Formats.JSONV2),
         JSONV1(Formats.JSONV1, Formats.JSONV1),
         JSONV2(Formats.JSONV2, Formats.JSONV2),
+        GEOJSON(Formats.GEOJSON, Formats.GEOJSON),
+        XML(Formats.XML, Formats.XMLV2),
+        XMLV1(Formats.XMLV1, Formats.XMLV1),
+        XMLV2(Formats.XMLV2, Formats.XMLV2),
         ;
 
         final String _accept;
