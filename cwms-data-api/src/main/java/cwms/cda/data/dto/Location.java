@@ -58,6 +58,10 @@ public final class Location extends CwmsDTO {
     private final String boundingOfficeId;
     private final String elevationUnits;
 
+    private Location() {
+        this(new Builder(null, null, null, null, null,null, null));
+    }
+
     private Location(Builder builder) {
         super(builder.officeId);
         this.name = builder.name;
