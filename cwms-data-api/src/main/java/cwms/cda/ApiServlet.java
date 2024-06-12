@@ -25,16 +25,8 @@
 package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
-import cwms.cda.api.DownstreamLocationsGetController;
-import cwms.cda.api.LookupTypeController;
-import cwms.cda.api.StreamController;
-import cwms.cda.api.StreamLocationController;
-import cwms.cda.api.StreamReachController;
-import cwms.cda.api.UpstreamLocationsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
