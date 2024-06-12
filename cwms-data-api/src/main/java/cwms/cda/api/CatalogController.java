@@ -119,31 +119,33 @@ public class CatalogController implements CrudHandler {
                             + "want to isolate data to."
             ),
             @OpenApiParam(name = LIKE,
-                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the id"
             ),
             @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
-                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
-                            + "timeseries category id"
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the timeseries category id"
             ),
             @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
-                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
-                            + "timeseries group id"
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the timeseries group id"
             ),
             @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
-                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                            + " category id"
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the location category id"
             ),
             @OpenApiParam(name = LOCATION_GROUP_LIKE,
-                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                            + " group id"
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the location group id"
             ),
-            @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                    + "matching against the location bounding office. "
-                    + "When this field is used items with no bounding office set will not be present in results."),
+            @OpenApiParam(name = BOUNDING_OFFICE_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                    + "matching against the location bounding office. When this field is used "
+                            + "items with no bounding office set will not be present in results."),
             @OpenApiParam(name = INCLUDE_EXTENTS, type = Boolean.class,
                     description = "Whether the returned catalog entries should include timeseries "
-                            + "extents. Only valid for TIMESERIES. "
-                            + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
+                        + "extents. Only valid for TIMESERIES. "
+                        + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
             @OpenApiParam(name = EXCLUDE_EMPTY, type = Boolean.class,
                     description = "Specifies "
                         + "whether Timeseries that have empty extents "
@@ -154,12 +156,17 @@ public class CatalogController implements CrudHandler {
                         + "timeseries are excluded. Only valid for TIMESERIES. "
                         + "Default is " + EXCLUDE_EMPTY_DEFAULT + "."),
             @OpenApiParam(name = LOCATION_KIND_LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                                + " kind."
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
+                        + "against the location kind.  The location-kind is typically unset "
+                        + "or one of the following: {\"SITE\", \"EMBANKMENT\", \"OVERFLOW\", "
+                        + "\"TURBINE\", \"STREAM\", \"PROJECT\", \"STREAMGAGE\", \"BASIN\", "
+                        + "\"OUTLET\", \"LOCK\", \"GATE\"}.  Multiple kinds can be matched "
+                        + "by using Regular Expression OR clauses. For example: "
+                        + "\"(SITE|STREAM)\""
                 ),
             @OpenApiParam(name = LOCATION_TYPE_LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                                + " type."
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
+                        + "against the location type."
                 ),
         },
         pathParams = {
