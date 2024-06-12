@@ -1,7 +1,38 @@
-# CWMS DATA API (CDA) 
-*Formerly known as RADAR*
 
-![Build CWMS Data-Api](https://github.com/USACE/cwms-data-api/workflows/Build%20CWMS%20Data%20API/badge.svg)
+---
+
+<p align="center">
+  <strong>
+    <a href="https://github.com/USACE/cwms-data-api/wiki">Getting Started</a>
+    &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="https://github.com/USACE/cwms-data-api/blob/develop/CONTRIBUTING.md">Getting Involved</a>
+    &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="https://github.com/usace/cwms-data-api/discussions">Getting In Touch</a>
+  </strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/usace/cwms-data-api/actions/workflows/build.yml">
+    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/usace/cwms-data-api/build.yml?branch=develop&style=for-the-badge&label=Build&logo=githubactions">
+  </a>
+  <a href="https://github.com/usace/cwms-data-api/actions/workflows/codeql.yml">
+    <img alt="CodeQL Status" src="https://img.shields.io/github/actions/workflow/status/usace/cwms-data-api/codeql.yml?branch=develop&style=for-the-badge&label=CodeQL&logo=githubactions">
+  </a>
+  <a href="https://github.com/usace/cwms-data-api/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/usace/cwms-data-api?include_prereleases&style=for-the-badge&logo=github">
+  </a>
+</p>
+
+<p align="center">
+  <strong>
+    <a href="CONTRIBUTING.md">Contributing</a>
+  </strong>
+</p>
+
+---
+
+# CWMS DATA API (CDA)
+*Formerly known as RADAR*
 
 This is a new implementation of a REST API for data retrieval of USACE Water Data.
 
