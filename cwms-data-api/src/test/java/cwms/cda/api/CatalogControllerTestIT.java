@@ -5,12 +5,21 @@ import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.project.ProjectDao;
+import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.project.Project;
+import fixtures.CwmsDataApiSetupCallback;
+import java.sql.SQLException;
 import java.time.Duration;
 
+import java.time.ZoneId;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -43,6 +52,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         createLocation("Alder Springs",true, OFFICE);
         createLocation("Wet Meadows",true, OFFICE);
         createLocation("Pine Flat-Outflow",true, OFFICE);
+        createLocation("Flat Lake",true, OFFICE);
+
+        createProject("Flat Project", OFFICE);
         createTimeseries(OFFICE,"Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
         createTimeseries(OFFICE,"Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
         createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
@@ -62,9 +74,37 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
     }
 
+    private static void createProject(String id, String office) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            ProjectDao projectDao = new ProjectDao(dsl);
+            Project project = new Project.Builder()
+                    .withLocation(new Location.Builder(id,
+                            "PROJECT",
+                            ZoneId.of("UTC"),
+                            0.0,
+                            0.0,
+                            "WGS84",
+                            office)
+                            .build())
+                    .build();
+        projectDao.create(project);
+        });
+    }
+
+    private static void deleteProject(String id, String office) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            ProjectDao projectDao = new ProjectDao(dsl);
+
+            projectDao.delete(office, id, DeleteRule.DELETE_KEY);
+        });
+    }
+
     @AfterAll
     public static void deload_data() throws Exception {
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_cleanup.sql");
+        deleteProject("Flat Project", OFFICE);
     }
 
     @Test
@@ -280,5 +320,46 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         ;
     }
 
+    @Test
+    void test_loc_kind() {
+
+        String pattern = "^Flat";
+
+        // First with just the regex.  This should match Flat Lake and Flat Project
+        given()
+                .accept("application/json;version=2")
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(LIKE, pattern)
+                .when()
+                .get("/catalog/LOCATIONS")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(200))
+                .body("$", hasKey("total"))
+                .body("total", is(2))
+                .body("$", hasKey("entries"))
+                .body("entries.size()", is(2))
+        ;
+
+        // Now add the LOCATION_KIND filter
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(LOCATION_KIND_LIKE, "PROJECT")  // just Flat Project
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(1))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(1))
+            .body("entries[0].name", equalTo("Flat Project"))
+        ;
+    }
 
 }

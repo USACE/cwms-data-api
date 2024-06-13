@@ -58,6 +58,10 @@ public final class Location extends CwmsDTO {
     private final String boundingOfficeId;
     private final String elevationUnits;
 
+    private Location() {
+        this(new Builder(null, null, null, null, null,null, null));
+    }
+
     private Location(Builder builder) {
         super(builder.officeId);
         this.name = builder.name;
@@ -273,8 +277,8 @@ public final class Location extends CwmsDTO {
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
-        public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "location"
-                + "-kind") String locationKind,
+        public Builder(@JsonProperty(value = "name") String name,
+                       @JsonProperty(value = "location-kind") String locationKind,
                        @JsonProperty(value = "timezone-name") ZoneId timezoneName,
                        @JsonProperty(value = "latitude") Double latitude,
                        @JsonProperty(value = "longitude") Double longitude,
