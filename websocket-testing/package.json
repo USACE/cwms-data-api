@@ -1,0 +1,17 @@
+{
+  "name": "websocket-testing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./src/main/javascript/stomp-ws-testing.js"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@stomp/stompjs": "^7.0.0",
+    "ws": "^8.17.0"
+  }
+}

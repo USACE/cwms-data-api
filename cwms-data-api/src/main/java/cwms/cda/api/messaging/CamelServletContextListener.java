@@ -24,8 +24,6 @@
 
 package cwms.cda.api.messaging;
 
-import cwms.cda.datasource.DelegatingDataSource;
-import oracle.jdbc.driver.OracleConnection;
 import oracle.jms.AQjmsFactory;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -41,12 +39,11 @@ import javax.jms.ConnectionFactory;
 import javax.jms.TopicConnectionFactory;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.servlet.ServletException;
+import javax.servlet.annotation.WebListener;
 import javax.sql.DataSource;
 import java.net.InetAddress;
-import java.sql.Connection;
-import java.sql.SQLException;
 
+@WebListener
 public final class CamelServletContextListener implements ServletContextListener {
 
     @Resource(name = "jdbc/CWMS3")
@@ -58,26 +55,15 @@ public final class CamelServletContextListener implements ServletContextListener
         try {
             //wrapped DelegatingDataSource is used because internally AQJMS casts the returned connection
             //as an OracleConnection, but the JNDI pool is returning us a proxy, so unwrap it
-            CamelContext camelContext = new DefaultCamelContext();
-            TopicConnectionFactory connectionFactory = AQjmsFactory.getTopicConnectionFactory(new DelegatingDataSource(cwms)
-            {
-                @Override
-                public Connection getConnection() throws SQLException {
-                    return super.getConnection().unwrap(OracleConnection.class);
-                }
-
-                @Override
-                public Connection getConnection(String username, String password) throws SQLException {
-                    return super.getConnection(username, password).unwrap(OracleConnection.class);
-                }
-            }, true);
+            camelContext = new DefaultCamelContext();
+            TopicConnectionFactory connectionFactory = AQjmsFactory.getTopicConnectionFactory(new DataSourceWrapper(cwms), true);
             camelContext.addComponent("oracleAQ", JmsComponent.jmsComponent(connectionFactory));
             //TODO: determine how the port is configured
-            String activeMqUrl = "tcp://" + InetAddress.getLocalHost().getHostName() + ":61616";
+            String activeMqUrl = "tcp://" + InetAddress.getLocalHost().getHostName() + ":61616?protocols=STOMP&webSocketEncoderType=text";
             ActiveMQServer server = ActiveMQServers.newActiveMQServer(new ConfigurationImpl()
                     .addAcceptorConfiguration("tcp", activeMqUrl)
-                    .setPersistenceEnabled(true)
-                    .setJournalDirectory("build/data/journal")
+                    .setPersistenceEnabled(false)
+//                    .setJournalDirectory("build/data/journal")
                     //Need to update to verify roles
                     .setSecurityEnabled(false)
                     .addAcceptorConfiguration("invm", "vm://0"));
@@ -90,9 +76,10 @@ public final class CamelServletContextListener implements ServletContextListener
                     //TODO: determine clientId - should be unique to CDA version?
                     from("oracleAQ:topic:CWMS_20.SWT_TS_STORED?durableSubscriptionName=CDA_SWT_TS_STORED&clientId=CDA")
                             .log("Received message from ActiveMQ.Queue : ${body}")
+                            .process(new MapMessageToJsonProcessor(camelContext))
                             //TODO: define standard naming
                             //TODO: register artemis queue names with Swagger UI
-                            .to("artemis:topic:ActiveMQ.Queue");
+                            .to("artemis:topic:SWT_TS_STORED");
                 }
             });
             server.start();
