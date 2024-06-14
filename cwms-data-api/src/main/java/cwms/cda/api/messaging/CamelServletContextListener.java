@@ -24,8 +24,12 @@
 
 package cwms.cda.api.messaging;
 
+import hec.io.FilePath;
+import hec.io.HecFileImpl;
+import hec.util.XMLUtilities;
 import oracle.jms.AQjmsFactory;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.config.impl.FileConfiguration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.jms.client.ActiveMQJMSConnectionFactory;
@@ -33,6 +37,8 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jms.JmsComponent;
 import org.apache.camel.impl.DefaultCamelContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
@@ -41,6 +47,9 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import javax.sql.DataSource;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 import java.net.InetAddress;
 
 @WebListener
@@ -58,15 +67,16 @@ public final class CamelServletContextListener implements ServletContextListener
             camelContext = new DefaultCamelContext();
             TopicConnectionFactory connectionFactory = AQjmsFactory.getTopicConnectionFactory(new DataSourceWrapper(cwms), true);
             camelContext.addComponent("oracleAQ", JmsComponent.jmsComponent(connectionFactory));
-            //TODO: determine how the port is configured
-            String activeMqUrl = "tcp://" + InetAddress.getLocalHost().getHostName() + ":61616?protocols=STOMP&webSocketEncoderType=text";
-            ActiveMQServer server = ActiveMQServers.newActiveMQServer(new ConfigurationImpl()
-                    .addAcceptorConfiguration("tcp", activeMqUrl)
-                    .setPersistenceEnabled(false)
-//                    .setJournalDirectory("build/data/journal")
-                    //Need to update to verify roles
-                    .setSecurityEnabled(false)
-                    .addAcceptorConfiguration("invm", "vm://0"));
+            File brokerXmlFile = new File("src/test/resources/tomcat/conf/broker.xml").getAbsoluteFile();
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            dbFactory.setNamespaceAware(true);
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(brokerXmlFile);
+            doc.getDocumentElement().normalize();
+            Element rootElement = doc.getDocumentElement();
+            FileConfiguration configuration = new FileConfiguration();
+            configuration.parse(rootElement, brokerXmlFile.toURI().toURL());
+            ActiveMQServer server = ActiveMQServers.newActiveMQServer(configuration);
             ConnectionFactory artemisConnectionFactory = new ActiveMQJMSConnectionFactory("vm://0");
             camelContext.addComponent("artemis", JmsComponent.jmsComponent(artemisConnectionFactory));
             camelContext.addRoutes(new RouteBuilder() {
