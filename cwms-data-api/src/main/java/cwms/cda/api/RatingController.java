@@ -299,15 +299,28 @@ public class RatingController implements CrudHandler {
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String header = ctx.header(Header.ACCEPT);
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
-            ctx.contentType(contentType.getType());
-            String legacyFormat = Formats.getLegacyTypeFromContentType(contentType);
 
+            if (format.isEmpty())
+            {
+                //Use the full content type here (i.e. application/json;version=2)
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                //Legacy content type only includes the basic type (i.e. application/json)
+                ctx.contentType(contentType.getType());
+            }
+
+            //At the moment, we still use the legacy formatting here, since we don't have a newer API for serializing/deserializing
+            //a collection of rating sets - unlike getOne.
+            String legacyFormat = Formats.getLegacyTypeFromContentType(contentType);
             String results = ratingDao.retrieveRatings(legacyFormat, names, unit, datum, office, start,
                     end, timezone);
+
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
@@ -391,6 +404,7 @@ public class RatingController implements CrudHandler {
             boolean isXml = Formats.XMLV2.equals(contentType.toString());
 
             if (isJson || isXml) {
+                ctx.contentType(contentType.toString());
                 try {
                     RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
