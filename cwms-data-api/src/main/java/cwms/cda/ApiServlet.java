@@ -47,7 +47,6 @@ import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
-import cwms.cda.api.MessageQueueHandler;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
@@ -77,6 +76,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.messaging.MessageQueueHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -162,7 +162,8 @@ import static java.lang.String.format;
         "/specified-levels/*",
         "/forecast-spec/*",
         "/forecast-instance/*",
-        "/standard-text-id/*"
+        "/standard-text-id/*",
+        "/messaging/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -456,8 +457,7 @@ public class ApiServlet extends HttpServlet {
         String forecastFilePath = "/forecast-instance/{" + NAME + "}/file-data";
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
-        sse("/topics", new MessageQueueHandler(cwms));
-
+        get("/messaging", new MessageQueueHandler(cwms));
     }
 
     /**

@@ -118,6 +118,7 @@ dependencies {
     implementation(libs.jmscommon)
     implementation(libs.camel.core)
     implementation(libs.camel.jms)
+    implementation("com.rometools:rome:2.1.0")
 
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.junit.jupiter.engine)
