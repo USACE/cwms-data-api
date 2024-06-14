@@ -1,0 +1,8 @@
+{
+  "description": "Description",
+  "parameter-list": ["Temperature","Depth"],
+  "location-id": "Location",
+  "office-id": "Office",
+  "ref-ts-id": "TimeSeries",
+  "key-parameter": "Depth"
+}
