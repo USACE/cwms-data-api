@@ -301,12 +301,6 @@ public class Formats {
         if (klass != null) {
             aliasMap = ContentTypeAliasMap.forDtoClass(klass);
         }
-
-        return parseHeader(header, aliasMap);
-    }
-
-    public static ContentType parseHeader(String header, ContentTypeAliasMap aliasMap)
-    {
         ArrayList<ContentType> contentTypes = new ArrayList<>();
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
