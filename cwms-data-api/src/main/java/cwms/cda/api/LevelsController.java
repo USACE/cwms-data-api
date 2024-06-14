@@ -67,6 +67,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
@@ -87,13 +88,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 
 public class LevelsController implements CrudHandler {
@@ -131,7 +132,6 @@ public class LevelsController implements CrudHandler {
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
@@ -150,6 +150,7 @@ public class LevelsController implements CrudHandler {
             level = new LocationLevel.Builder(level).withLevelDate(unmarshalledDateTime).build();
             level.validate();
 
+            DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level, timezoneId);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
@@ -163,7 +164,8 @@ public class LevelsController implements CrudHandler {
                         + "location level id of the Location Level to be deleted"),
             },
             queryParams = {
-                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class),
+                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, description = "Specifies"
+                        + " whether to cascade the delete.  Defaults to false."),
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                         + "the location level whose data is to be deleted. If this field is "
                         + "not specified, matching location level information will be deleted"
@@ -190,9 +192,10 @@ public class LevelsController implements CrudHandler {
                     name(LevelsController.class.getName(), DELETE));
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                     .getOrDefault("UTC");
-            Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam(CASCADE_DELETE));
-            ZonedDateTime unmarshalledDateTime = dateString != null ?
-                    DateUtils.parseUserDate(dateString, timezone) : null;
+            Boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class)
+                    .getOrDefault(false);
+            ZonedDateTime unmarshalledDateTime = dateString != null
+                    ? DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_OK).json(levelId + " Deleted");
