@@ -54,11 +54,9 @@ from ( select o.office_id as office_id,
                   ||pl.sub_location_id as location_id
        from cwms_20.cwms_office o,
             cwms_20.at_base_location bl,
-            cwms_20.at_physical_location pl,
-            cwms_20.at_project p
+            cwms_20.at_physical_location pl
        where bl.db_office_code = o.office_code
          and pl.base_location_code = bl.base_location_code
-         and p.project_location_code = pl.location_code
      ) pumpback on pumpback.location_code = project.pump_back_location_code
          left outer join
      ( select pl.location_code,
@@ -68,9 +66,7 @@ from ( select o.office_id as office_id,
                   ||pl.sub_location_id as location_id
        from cwms_20.cwms_office o,
             cwms_20.at_base_location bl,
-            cwms_20.at_physical_location pl,
-            cwms_20.at_project p
+            cwms_20.at_physical_location pl
        where bl.db_office_code = o.office_code
          and pl.base_location_code = bl.base_location_code
-         and p.project_location_code = pl.location_code
      ) neargage on neargage.location_code = project.near_gage_location_code

@@ -24,6 +24,8 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -40,8 +42,6 @@ import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
-
-import static com.codahale.metrics.MetricRegistry.name;
 
 public final class Controllers {
 
@@ -130,6 +130,8 @@ public final class Controllers {
     public static final String SOURCE_ENTITY = "source-entity";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
+    public static final String LOCATION_KIND_LIKE = "location-kind-like";
+    public static final String LOCATION_TYPE_LIKE = "location-type-like";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
@@ -364,14 +366,10 @@ public final class Controllers {
         return retval;
     }
 
-    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type)
-    {
-        if (type.getType().equalsIgnoreCase(Formats.TAB))
-        {
+    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+        if (type.getType().equalsIgnoreCase(Formats.TAB)) {
             ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
-        }
-        else if (type.getType().equalsIgnoreCase(Formats.CSV))
-        {
+        } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
             ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
         }
     }

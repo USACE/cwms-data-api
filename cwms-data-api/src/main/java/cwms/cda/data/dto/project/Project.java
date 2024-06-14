@@ -1,4 +1,4 @@
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.project;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -16,9 +18,9 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-public class Project extends CwmsDTO {
+public class Project implements CwmsDTOBase {
 
-    private final String name;
+    private final Location location;
     private final Double federalCost;
     private final Double nonFederalCost;
     private final Instant costYear;
@@ -39,8 +41,8 @@ public class Project extends CwmsDTO {
 
 
     private Project(Project.Builder builder) {
-        super(builder.officeId);
-        this.name = builder.name;
+
+        this.location = builder.location;
         this.federalCost = builder.federalCost;
         this.nonFederalCost = builder.nonFederalCost;
         this.costYear = builder.costYear;
@@ -63,6 +65,10 @@ public class Project extends CwmsDTO {
     @Override
     public void validate() throws FieldException {
 
+    }
+
+    public Location getLocation() {
+        return location;
     }
 
     public String getAuthorizingLaw() {
@@ -109,10 +115,6 @@ public class Project extends CwmsDTO {
         return costUnit;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public String getProjectOwner() {
         return projectOwner;
     }
@@ -140,8 +142,8 @@ public class Project extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private String officeId;
-        private String name;
+        private Location location;
+
         private Double federalCost;
         private Double nonFederalCost;
         private Instant costYear;
@@ -172,8 +174,7 @@ public class Project extends CwmsDTO {
          * @return this builder
          */
         public Builder from(Project project) {
-            return this.withOfficeId(project.getOfficeId())
-                    .withName(project.getName())
+            return this.withLocation(project.getLocation())
                     .withFederalCost(project.getFederalCost())
                     .withNonFederalCost(project.getNonFederalCost())
                     .withCostYear(project.getCostYear())
@@ -193,13 +194,10 @@ public class Project extends CwmsDTO {
                     .withProjectRemarks(project.getProjectRemarks());
         }
 
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
-            return this;
-        }
 
-        public Builder withName(String projectId) {
-            this.name = projectId;
+
+        public Builder withLocation(Location location) {
+            this.location = location;
             return this;
         }
 

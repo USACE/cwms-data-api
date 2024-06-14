@@ -49,6 +49,7 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -270,11 +271,6 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format);
-            String version = contentType.getParameters().get(VERSION);
-
             String levelIdMask = queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK, NAME},
                     String.class, null, metrics,
                     name(LevelsController.class.getName(), GET_ALL));
@@ -288,12 +284,20 @@ public class LevelsController implements CrudHandler {
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                     .getOrDefault("UTC");
 
-            if ("2".equals(version)) {
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format, LocationLevels.class);
+            String version = contentType.getParameters()
+                                          .getOrDefault(VERSION, "");
 
+            boolean isLegacyVersion = version.equals("1");
+
+            if (format.isEmpty() && !isLegacyVersion)
+            {
                 String cursor = ctx.queryParamAsClass(PAGE, String.class)
-                        .getOrDefault("");
+                                   .getOrDefault("");
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
-                        .getOrDefault(DEFAULT_PAGE_SIZE);
+                                  .getOrDefault(DEFAULT_PAGE_SIZE);
 
                 ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
 
@@ -310,46 +314,29 @@ public class LevelsController implements CrudHandler {
                         office, unit, datum, beginZdt, endZdt);
                 String result = Formats.format(contentType, levels);
 
-                ctx.result(result).contentType(contentType.toString());
+                ctx.result(result);
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
             } else {
-                switch (format) {
-                    case "json": {
-                        ctx.contentType(Formats.JSON);
-                        break;
-                    }
-                    case "tab": {
-                        ctx.contentType(Formats.TAB);
-                        break;
-                    }
-                    case "csv": {
-                        ctx.contentType(Formats.CSV);
-                        break;
-                    }
-                    case "xml": {
-                        ctx.contentType(Formats.XML);
-                        break;
-                    }
-                    case "wml2": {
-                        ctx.contentType(Formats.WML2);
-                        break;
-                    }
-                    case "png": // fall next
-                    case "jpg": // fall next
-                    default: {
-                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                                .json(CdaError.notImplemented());
-                    }
-                }
-
+                //Use the type string, not the full string with properties.
+                //i.e. application/json not application/json;version=1
                 String results = levelsDao.getLocationLevels(format, levelIdMask, office, unit, datum,
                         begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
                 requestResultSize.update(results.length());
+                if (isLegacyVersion)
+                {
+                    ctx.contentType(contentType.toString());
+                }
+                else
+                {
+                    ctx.contentType(contentType.getType());
+                }
             }
+            addDeprecatedContentTypeWarning(ctx, contentType);
         }
     }
 
