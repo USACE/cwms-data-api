@@ -297,12 +297,11 @@ public class Formats {
     }
 
     public static ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
-        ArrayList<ContentType> contentTypes = new ArrayList<>();
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
         if (klass != null) {
             aliasMap = ContentTypeAliasMap.forDtoClass(klass);
         }
-
+        ArrayList<ContentType> contentTypes = new ArrayList<>();
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
             logger.log(Level.FINEST, "Finding handlers {0}", all.length);

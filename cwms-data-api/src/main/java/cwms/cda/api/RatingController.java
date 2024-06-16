@@ -50,6 +50,7 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -59,9 +60,12 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -287,7 +291,6 @@ public class RatingController implements CrudHandler {
 
             RatingDao ratingDao = getRatingDao(dsl);
 
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
             String names = ctx.queryParamAsClass(NAME, String.class).getOrDefault("*");
             String unit = ctx.queryParam(UNIT);
             String datum = ctx.queryParam(DATUM);
@@ -296,40 +299,31 @@ public class RatingController implements CrudHandler {
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-            switch (format) {
-                case "json": {
-                    ctx.contentType(Formats.JSON);
-                    break;
-                }
-                case "tab": {
-                    ctx.contentType(Formats.TAB);
-                    break;
-                }
-                case "csv": {
-                    ctx.contentType(Formats.CSV);
-                    break;
-                }
-                case "xml": {
-                    ctx.contentType(Formats.XML);
-                    break;
-                }
-                case "wml2": {
-                    ctx.contentType(Formats.WML2);
-                    break;
-                }
-                case "jpg": // same handler
-                case "png":
-                default: {
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                            .json(CdaError.notImplemented());
-                    return;
-                }
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String header = ctx.header(Header.ACCEPT);
+
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
+
+            if (format.isEmpty())
+            {
+                //Use the full content type here (i.e. application/json;version=2)
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                //Legacy content type only includes the basic type (i.e. application/json)
+                ctx.contentType(contentType.getType());
             }
 
-            String results = ratingDao.retrieveRatings(format, names, unit, datum, office, start,
+            //At the moment, we still use the legacy formatting here, since we don't have a newer API for serializing/deserializing
+            //a collection of rating sets - unlike getOne.
+            String legacyFormat = Formats.getLegacyTypeFromContentType(contentType);
+            String results = ratingDao.retrieveRatings(legacyFormat, names, unit, datum, office, start,
                     end, timezone);
+
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         }
     }
@@ -404,12 +398,17 @@ public class RatingController implements CrudHandler {
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
             String acceptHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(acceptHeader, RatingAliasMarker.class);
 
-            if (Formats.JSONV2.equals(acceptHeader) || Formats.XMLV2.equals(acceptHeader)) {
+            boolean isJson = Formats.JSONV2.equals(contentType.toString());
+            boolean isXml = Formats.XMLV2.equals(contentType.toString());
+
+            if (isJson || isXml) {
+                ctx.contentType(contentType.toString());
                 try {
                     RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
-                        if (Formats.JSONV2.equals(acceptHeader)) {
+                        if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
                         } else {
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
@@ -438,6 +437,8 @@ public class RatingController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 ctx.json(CdaError.notImplemented());
             }
+
+            addDeprecatedContentTypeWarning(ctx, contentType);
         }
         return retval;
     }
@@ -486,4 +487,11 @@ public class RatingController implements CrudHandler {
         }
     }
 
+    /**
+     * This is a marker interface only used by <code>Formats</code> to support <code>ContentType</code> aliases.
+     * There's no reason to implement this interface.
+     */
+    @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON})
+    @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML, Formats.DEFAULT})
+    private interface RatingAliasMarker extends CwmsDTOBase { }
 }
