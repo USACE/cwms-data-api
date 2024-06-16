@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -9,19 +10,24 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.TimeZoneDao;
+import cwms.cda.data.dto.TimeZone;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -79,41 +85,44 @@ public class TimeZoneController implements CrudHandler {
         try (Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TimeZoneDao dao = new TimeZoneDao(dsl);
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String header = ctx.header(ACCEPT);
 
-            switch (format) {
-                case "json": {
-                    ctx.contentType(Formats.JSON);
-                    break;
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, TimeZone.class);
+            String version = contentType.getParameters()
+                                        .getOrDefault(VERSION, "");
+
+            boolean isLegacyVersion = version.equals("1");
+
+            String results;
+            if (format.isEmpty() && !isLegacyVersion)
+            {
+                List<TimeZone> zones = dao.getTimeZones();
+                results = Formats.format(contentType, zones, TimeZone.class);
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                if (isLegacyVersion)
+                {
+                    format = Formats.getLegacyTypeFromContentType(contentType);
                 }
-                case "tab": {
-                    ctx.contentType(Formats.TAB);
-                    break;
+                results = dao.getTimeZones(format);
+                if (isLegacyVersion)
+                {
+                    ctx.contentType(contentType.toString());
                 }
-                case "csv": {
-                    ctx.contentType(Formats.CSV);
-                    break;
-                }
-                case "xml": {
-                    ctx.contentType(Formats.XML);
-                    break;
-                }
-                case "wml2": {
-                    ctx.contentType(Formats.WML2);
-                    break;
-                }
-                default: {
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                            .json(CdaError.notImplemented());
-                    return;
+                else
+                {
+                    ctx.contentType(contentType.getType());
                 }
             }
 
-            String results = dao.getTimeZones(format);
+            addDeprecatedContentTypeWarning(ctx, contentType);
+
             requestResultSize.update(results.length());
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
-            requestResultSize.update(results.length());
         } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
