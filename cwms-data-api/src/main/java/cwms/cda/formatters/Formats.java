@@ -136,7 +136,7 @@ public class Formats {
             return outputFormatter.format(dtos);
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
-                    type.toString(), dtos.get(0).getClass().getName());
+                    type.toString(), rootType.getName());
             throw new FormattingException(message);
         }
     }
