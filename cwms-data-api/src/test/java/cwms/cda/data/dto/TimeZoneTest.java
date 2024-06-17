@@ -3,9 +3,21 @@ package cwms.cda.data.dto;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,6 +66,43 @@ class TimeZoneTest
 		String expectedTz = "Not a Time Zone";
 		TimeZone zone = new TimeZone(expectedTz);
 		assertThrows(FieldException.class, zone::validate);
+	}
+
+	@Test
+	void test_serialize_list()
+	{
+		ContentType contentType = new ContentType(Formats.JSONV2);
+		TimeZones tzs = new TimeZones(ZoneId.getAvailableZoneIds()
+									   .stream()
+									   .map(TimeZone::new)
+									   .collect(Collectors.toList()));
+		String json = Formats.format(contentType, tzs);
+		TimeZones receivedTzs = Formats.parseContent(contentType, json, TimeZones.class);
+
+		List<TimeZone> expectedZones = tzs.getTimeZones();
+		List<TimeZone> receivedZones = receivedTzs.getTimeZones();
+
+		assertEquals(expectedZones.size(), receivedZones.size());
+
+		assertAll(IntStream.range(0, expectedZones.size())
+						   .mapToObj(i -> testZone(expectedZones.get(i), receivedZones.get(i)))
+						   .collect(Collectors.toList()));
+	}
+
+	@Test
+	void test_from_resource_file() throws Exception
+	{
+		InputStream resource = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/TimeZones.json");
+		assertNotNull(resource);
+		String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+		ContentType contentType = new ContentType(Formats.JSONV2);
+		TimeZones receivedTzs = Formats.parseContent(contentType, json, TimeZones.class);
+		assertTrue(!receivedTzs.getTimeZones().isEmpty());
+	}
+
+	private Executable testZone(TimeZone expected, TimeZone received)
+	{
+		return () -> assertEquals(expected.getTimeZone(), received.getTimeZone());
 	}
 
 	enum SerializationType

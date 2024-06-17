@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.TimeZoneDao;
 import cwms.cda.data.dto.TimeZone;
+import cwms.cda.data.dto.TimeZones;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -97,8 +98,8 @@ public class TimeZoneController implements CrudHandler {
             String results;
             if (format.isEmpty() && !isLegacyVersion)
             {
-                List<TimeZone> zones = dao.getTimeZones();
-                results = Formats.format(contentType, zones, TimeZone.class);
+                TimeZones zones = dao.getTimeZones();
+                results = Formats.format(contentType, zones);
                 ctx.contentType(contentType.toString());
             }
             else
