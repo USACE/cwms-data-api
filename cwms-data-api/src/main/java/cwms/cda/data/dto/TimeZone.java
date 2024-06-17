@@ -15,7 +15,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.ZoneId;
 
