@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -76,33 +77,8 @@ public class ParametersController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             ParameterDao dao = new ParameterDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
-
-            switch (format) {
-                case "json": {
-                    ctx.contentType(Formats.JSON);
-                    break;
-                }
-                case "tab": {
-                    ctx.contentType(Formats.TAB);
-                    break;
-                }
-                case "csv": {
-                    ctx.contentType(Formats.CSV);
-                    break;
-                }
-                case "xml": {
-                    ctx.contentType(Formats.XML);
-                    break;
-                }
-                case "wml2": {
-                    ctx.contentType(Formats.WML2);
-                    break;
-                }
-                default:
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                            .json(CdaError.notImplemented());
-                    return;
-            }
+            String acceptHeader = ctx.header(ACCEPT);
+            Formats.parseHeaderAndQueryParm(format, acceptHeader, Parameters.class);
 
             String results = dao.getParameters(format);
             ctx.status(HttpServletResponse.SC_OK);
