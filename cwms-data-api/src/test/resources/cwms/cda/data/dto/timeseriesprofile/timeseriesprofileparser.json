@@ -1,0 +1,23 @@
+{
+  "office-id": "SWT",
+  "location-id": "TIMESERIESPROFILE_LOC",
+  "key-parameter": "Depth",
+  "record-delimiter": "\n",
+  "field-delimiter": ",",
+  "time-format": "MM/DD/YYYY,HH24:MI:SS",
+  "time-zone": "UTC",
+  "time-field": 1,
+  "time-in-two-fields": "F",
+  "parameter-info": [
+    {
+      "parameter":"Depth",
+      "unit":"m",
+      "index":3
+    },
+    {
+      "parameter":"Temp-Water",
+      "unit":"F",
+      "index":5
+    }
+  ]
+}
