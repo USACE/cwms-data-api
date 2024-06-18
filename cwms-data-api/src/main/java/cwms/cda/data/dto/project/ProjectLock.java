@@ -35,11 +35,11 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-@JsonDeserialize(builder = Lock.Builder.class)
+@JsonDeserialize(builder = ProjectLock.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-public class Lock extends CwmsDTO {
+public class ProjectLock extends CwmsDTO {
     // officeId held by CwmsDTO
     private final String projectId;
     private final String applicationId;
@@ -49,7 +49,7 @@ public class Lock extends CwmsDTO {
     private final String sessionProgram;
     private final String sessionMachine;
 
-    private Lock(Builder builer) {
+    private ProjectLock(Builder builer) {
         super(builer.officeId);
         this.projectId = builer.projectId;
         this.applicationId = builer.applicationId;
@@ -154,7 +154,7 @@ public class Lock extends CwmsDTO {
             return this;
         }
 
-        public Builder from(Lock lock) {
+        public Builder from(ProjectLock lock) {
             return this.withOfficeId(lock.officeId)
                     .withProjectId(lock.projectId)
                     .withApplicationId(lock.applicationId)
@@ -165,8 +165,8 @@ public class Lock extends CwmsDTO {
                     .withSessionMachine(lock.sessionMachine);
         }
 
-        public Lock build() {
-            return new Lock(this);
+        public ProjectLock build() {
+            return new ProjectLock(this);
         }
     }
 }

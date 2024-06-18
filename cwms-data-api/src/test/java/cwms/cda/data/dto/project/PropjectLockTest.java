@@ -39,13 +39,13 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-class LockTest {
+class PropjectLockTest {
 
 
     @Test
     void testSerialize(){
 
-        Lock lock = new Lock.Builder("SPK", "ProjectId", "ApplicationId").build();
+        ProjectLock lock = new ProjectLock.Builder("SPK", "ProjectId", "ApplicationId").build();
         assertNotNull(lock);
 
         // minimal
@@ -57,7 +57,7 @@ class LockTest {
         assertTrue(json.contains("ApplicationId"));
 
         // full
-        lock = new Lock.Builder("SPK", "ProjectId", "ApplicationId")
+        lock = new ProjectLock.Builder("SPK", "ProjectId", "ApplicationId")
                 .withSessionMachine("SessionMachine")
                 .withSessionProgram("SessionProgram")
                 .withSessionUser("SessionUser")
@@ -81,26 +81,26 @@ class LockTest {
 
     @Test
     void testSerializeList() {
-        List<Lock> locks = new ArrayList<>();
+        List<ProjectLock> locks = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            Lock lock = new Lock.Builder("SPK", "ProjectId" + i, "ApplicationId").build();
+            ProjectLock lock = new ProjectLock.Builder("SPK", "ProjectId" + i, "ApplicationId").build();
             locks.add(lock);
         }
 
-        String json = Formats.format(new ContentType(Formats.JSON), locks, Lock.class);
+        String json = Formats.format(new ContentType(Formats.JSON), locks, ProjectLock.class);
         assertNotNull(json);
 
     }
 
     @Test
     void testDeserializeList() throws IOException {
-        InputStream stream = LockTest.class.getClassLoader().getResourceAsStream(
-                "cwms/cda/data/dto/locks.json");
+        InputStream stream = PropjectLockTest.class.getClassLoader().getResourceAsStream(
+                "cwms/cda/data/dto/project_locks.json");
         assertNotNull(stream);
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        List<Lock> lock = om.readValue(input, new TypeReference <List<Lock>>(){});
+        List<ProjectLock> lock = om.readValue(input, new TypeReference <List<ProjectLock>>(){});
 
         assertNotNull(lock);
         assertFalse(lock.isEmpty());
@@ -108,26 +108,26 @@ class LockTest {
 
     @Test
     void testDeserialize() throws IOException {
-        InputStream stream = LockTest.class.getClassLoader().getResourceAsStream(
-                "cwms/cda/data/dto/lock.json");
+        InputStream stream = PropjectLockTest.class.getClassLoader().getResourceAsStream(
+                "cwms/cda/data/dto/project_lock.json");
         assertNotNull(stream);
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        Lock lock = om.readValue(input, Lock.class);
+        ProjectLock lock = om.readValue(input, ProjectLock.class);
 
         assertNotNull(lock);
     }
 
     @Test
     void testDeserializeFull() throws IOException {
-        InputStream stream = LockTest.class.getClassLoader().getResourceAsStream(
-                "cwms/cda/data/dto/lock_full.json");
+        InputStream stream = PropjectLockTest.class.getClassLoader().getResourceAsStream(
+                "cwms/cda/data/dto/project_lock_full.json");
         assertNotNull(stream);
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        Lock lock = om.readValue(input, Lock.class);
+        ProjectLock lock = om.readValue(input, ProjectLock.class);
 
         assertNotNull(lock);
     }

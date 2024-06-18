@@ -36,11 +36,11 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-class IdTest {
+class ProjectLockIdTest {
 
     @Test
     void testSerialize(){
-        Id theId = new Id("1234");
+        ProjectLockId theId = new ProjectLockId("1234");
 
         assertNotNull(theId);
 
@@ -52,13 +52,13 @@ class IdTest {
 
     @Test
     void testDeserialize() throws IOException {
-        InputStream stream = IdTest.class.getClassLoader().getResourceAsStream(
-                "cwms/cda/data/dto/id.json");
+        InputStream stream = ProjectLockIdTest.class.getClassLoader().getResourceAsStream(
+                "cwms/cda/data/dto/project_lock_id.json");
         assertNotNull(stream);
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        Id theId = om.readValue(input, Id.class);
+        ProjectLockId theId = om.readValue(input, ProjectLockId.class);
 
         assertNotNull(theId);
     }

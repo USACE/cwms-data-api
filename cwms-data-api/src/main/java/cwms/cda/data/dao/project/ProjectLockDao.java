@@ -27,7 +27,7 @@ package cwms.cda.data.dao.project;
 import static cwms.cda.data.dao.project.ProjectDao.toBigInteger;
 
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.project.Lock;
+import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import java.math.BigInteger;
 import java.util.List;
@@ -41,7 +41,7 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 
-public class ProjectLockDao extends JooqDao<Lock> {
+public class ProjectLockDao extends JooqDao<ProjectLock> {
     private static final Logger logger = Logger.getLogger(ProjectLockDao.class.getName());
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String PROJECT_ID = "PROJECT_ID";
@@ -75,18 +75,18 @@ public class ProjectLockDao extends JooqDao<Lock> {
     }
 
 
-    public List<Lock> catLocks(String projMask, String appMask, TimeZone tz, String officeMask) {
+    public List<ProjectLock> catLocks(String projMask, String appMask, TimeZone tz, String officeMask) {
         return CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
                 projMask, appMask, tz.getID(), officeMask)
                 .map(ProjectLockDao::buildLockFromCatLocksRecord);
     }
 
-    private static @NotNull Lock buildLockFromCatLocksRecord(Record catRecord) {
+    private static @NotNull ProjectLock buildLockFromCatLocksRecord(Record catRecord) {
         String officeId = catRecord.getValue(OFFICE_ID, String.class);
         String projectId = catRecord.getValue(PROJECT_ID, String.class);
         String applicationId = catRecord.getValue(APPLICATION_ID, String.class);
 
-        return new Lock.Builder(officeId, projectId, applicationId)
+        return new ProjectLock.Builder(officeId, projectId, applicationId)
                 .withAcquireTime(catRecord.getValue(ACQUIRE_TIME, String.class))
                 .withSessionUser(catRecord.getValue(SESSION_USER, String.class))
                 .withOsUser(catRecord.getValue(OS_USER, String.class))

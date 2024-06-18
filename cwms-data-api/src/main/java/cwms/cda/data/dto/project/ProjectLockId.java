@@ -37,10 +37,10 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-public class Id implements CwmsDTOBase {
+public class ProjectLockId implements CwmsDTOBase {
     private final String id;
 
-    public Id(@JsonProperty(value = "id") String id) {
+    public ProjectLockId(@JsonProperty(value = "id") String id) {
         this.id = id;
     }
 
