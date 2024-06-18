@@ -3,39 +3,42 @@
   {
     "location-id": "DET",
     "key-parameter": "Depth",
-    "parameter-list": [ "Temp-Water", "Pres", "%-DO",  "Conc-DO", "Cond", "pH", "TurbN",  "Depth","Volt-Battery"],
+    "parameter-list": [ "Temp-Water", "Depth"],
     "description": "Demonstration Profile for Couger Lake",
     "office-id": "SWT",
     "ref-ts-id": "DET.Elev-Forebay.Inst.0.0.Mixed-Rev"
   },
 
-  "value-list" :  [
+  "timeseries-list" :  [
     {
-      "time-zone": "US/Pacific",
-      "times" : ["09/09/2019,13:16:01", "09/09/2019,13:17:20"],
-      "value":
-      {
-        "parameter": "Temp-Water",
-        "unit": "F",
-        "values": ["1", "2"]
-      }
+         "parameter": "Temp-Water",
+         "unit": "F",
+         "time-value-pairs":
+        [
+           {
+              "time": "09/09/2019,13:16:01Z",
+              "value": "1.0"
+           },
+           {
+             "time": "09/09/2019,13:17:20Z",
+             "value": "2.0"
+           }
+        ]
     },
     {
-      "value":
-      {
-        "parameter": "Pres",
-        "unit": "mm-hg",
-        "values": ["1", "2"]
-      }
-    },
-    {
-      "value":
-    {
-      "parameter": "Depth",
-      "unit": "ft",
-      "values": ["1", "2"]
-    }
+        "parameter": "Depth",
+        "unit": "ft",
+        "time-value-pairs":
+        [
+          {
+            "time": "09/09/2019,13:16:01-07:00",
+            "value": "1.0"
+          },
+          {
+            "time": "09/09/2019,13:17:20-07:00",
+            "value": "2.0"
+          }
+        ]
     }
   ]
-
 }
