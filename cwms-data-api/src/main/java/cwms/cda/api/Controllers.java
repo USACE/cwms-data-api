@@ -184,6 +184,16 @@ public final class Controllers {
     public static final String CATEGORY = "category";
     public static final String PREFIX = "prefix";
 
+    public static final String APPLICATION_ID = "application-id";
+    public static final String REVOKE_EXISTING = "revoke-existing";
+    public static final String REVOKE_TIMEOUT = "revoke-timeout";
+    public static final String PROJECT_MASK = "project-mask";
+    public static final String APPLICATION_MASK = "application-mask";
+    public static final String USER_ID = "user-id";
+    public static final String TIME_ZONE_ID = "time-zone-id";
+    public static final String LOCK_ID = "lock-id";
+    public static final String ALLOW = "allow";
+
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
