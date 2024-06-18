@@ -1,0 +1,28 @@
+{
+  "project-identifier": {
+    "office-id": "LRD",
+    "location-id": "PROJECT"
+  },
+  "location": {
+    "office-id": "LRL",
+    "name": "TEST_LOCATION2",
+    "latitude": 50.0,
+    "longitude": 50.0,
+    "active": true,
+    "public-name": "TEST_LOCATION2",
+    "long-name": "TEST_LOCATION",
+    "description": "for testing",
+    "timezone-name": "UTC",
+    "location-type": "SITE",
+    "location-kind": "TURBINE",
+    "nation": "US",
+    "state-initial": "CA",
+    "county-name": "Sacramento",
+    "horizontal-datum": "NVGD29",
+    "published-longitude": 50.0,
+    "published-latitude": 50.0,
+    "elevation": 10.0,
+    "bounding-office-id": "LRL",
+    "elevation-units": "m"
+  }
+}
