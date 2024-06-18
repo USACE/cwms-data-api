@@ -1,0 +1,16 @@
+{
+  "starts-downstream": true,
+  "flows-into-stream": "AnotherStream",
+  "flows-into-station": 123.45,
+  "flows-into-bank": "Left",
+  "diverts-from-stream": "UpstreamStream",
+  "diverts-from-station": 678.90,
+  "diverts-from-bank": "Right",
+  "length": 10.5,
+  "slope": 0.01,
+  "comment": "This is a comment for the stream.",
+  "location-identifier": {
+    "office-id": "Office123",
+    "location-id": "Stream123"
+  }
+}
