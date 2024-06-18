@@ -35,25 +35,22 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@JsonDeserialize(builder = StreamJunctionIdentifier.Builder.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonDeserialize(builder = StreamNode.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-/**
- * Reference object for a stream location containing the location identifier, bank, and station
- */
-public final class StreamJunctionIdentifier implements CwmsDTOBase {
+public final class StreamNode implements CwmsDTOBase {
 
     private final LocationIdentifier streamId;
     private final Bank bank;
     private final Double station;
+    private final String stationUnit;
 
-    private StreamJunctionIdentifier(Builder builder) {
+    private StreamNode(Builder builder) {
         this.streamId = builder.streamId;
         this.bank = builder.bank;
         this.station = builder.station;
+        this.stationUnit = builder.stationUnit;
     }
 
     @Override
@@ -76,30 +73,15 @@ public final class StreamJunctionIdentifier implements CwmsDTOBase {
         return station;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        StreamJunctionIdentifier that = (StreamJunctionIdentifier) o;
-        return Objects.equals(getStreamId(), that.getStreamId())
-                && Objects.equals(getBank(), that.getBank())
-                && Objects.equals(getStation(), that.getStation());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getStreamId(), getBank(), getStation());
+    public String getStationUnit() {
+        return stationUnit;
     }
 
     public static class Builder {
         private LocationIdentifier streamId;
         private Bank bank;
         private Double station;
+        private String stationUnit;
 
         public Builder withStreamId(LocationIdentifier locationIdentifier) {
             this.streamId = locationIdentifier;
@@ -116,8 +98,13 @@ public final class StreamJunctionIdentifier implements CwmsDTOBase {
             return this;
         }
 
-        public StreamJunctionIdentifier build() {
-            return new StreamJunctionIdentifier(this);
+        public Builder withStationUnit(String stationUnit) {
+            this.stationUnit = stationUnit;
+            return this;
+        }
+
+        public StreamNode build() {
+            return new StreamNode(this);
         }
     }
 }
