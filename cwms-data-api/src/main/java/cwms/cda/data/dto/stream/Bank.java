@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Bank {
-    //this has a Left and Right which should say "Left" and "Right" and a code that is "L" and "R"
     LEFT("Left", "L"),
     RIGHT("Right", "R");
 

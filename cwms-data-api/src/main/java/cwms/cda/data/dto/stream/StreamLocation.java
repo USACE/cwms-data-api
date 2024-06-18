@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dto.stream;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -35,46 +36,52 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = StreamLocation.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class StreamLocation implements CwmsDTOBase {
 
-    private final LocationIdentifier streamLocationId;
-    private final StreamJunctionIdentifier streamJunctionIdentifier;
+    private final LocationIdentifier id;
+    private final StreamNode streamNode; //the node representation of this location containing the stream id, bank, and station
     private final Double publishedStation;
     private final Double navigationStation;
     private final Double lowestMeasurableStage;
     private final Double totalDrainageArea;
     private final Double ungagedDrainageArea;
+    private final String areaUnit;
+    private final String stageUnit;
 
     private StreamLocation(Builder builder) {
-        this.streamJunctionIdentifier = builder.streamJunctionIdentifier;
-        this.streamLocationId = builder.streamLocationId;
+        this.streamNode = builder.streamNode;
+        this.id = builder.id;
         this.publishedStation = builder.publishedStation;
         this.navigationStation = builder.navigationStation;
         this.lowestMeasurableStage = builder.lowestMeasurableStage;
         this.totalDrainageArea = builder.totalDrainageArea;
         this.ungagedDrainageArea = builder.ungagedDrainageArea;
+        this.areaUnit = builder.areaUnit;
+        this.stageUnit = builder.stageUnit;
     }
 
     @Override
     public void validate() throws FieldException {
-        if (this.streamLocationId == null) {
-            throw new FieldException("The 'streamId' field of a StreamLocation cannot be null.");
+        if (this.id == null) {
+            throw new FieldException("The 'id' field of a StreamLocation cannot be null.");
         }
-        streamLocationId.validate();
+        id.validate();
+        if(this.streamNode == null){
+            throw new FieldException("The 'streamNode' field of a StreamLocation cannot be null.");
+        }
+        streamNode.validate();
     }
 
-    public StreamJunctionIdentifier getStreamJunctionId() {
-        return streamJunctionIdentifier;
+    public StreamNode getStreamNode() {
+        return streamNode;
     }
 
-    public LocationIdentifier getStreamLocationId() {
-        return streamLocationId;
+    public LocationIdentifier getId() {
+        return id;
     }
 
     public Double getPublishedStation() {
@@ -97,46 +104,47 @@ public final class StreamLocation implements CwmsDTOBase {
         return ungagedDrainageArea;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        StreamLocation that = (StreamLocation) o;
-        return Objects.equals(getStreamJunctionId(), that.getStreamJunctionId())
-                && Objects.equals(getStreamLocationId(), that.getStreamLocationId())
-                && Objects.equals(getPublishedStation(), that.getPublishedStation())
-                && Objects.equals(getNavigationStation(), that.getNavigationStation())
-                && Objects.equals(getLowestMeasurableStage(), that.getLowestMeasurableStage())
-                && Objects.equals(getTotalDrainageArea(), that.getTotalDrainageArea())
-                && Objects.equals(getUngagedDrainageArea(), that.getUngagedDrainageArea());
+    public String getAreaUnit() {
+        return areaUnit;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getStreamJunctionId(), getStreamLocationId(), getPublishedStation(),
-                getNavigationStation(), getLowestMeasurableStage(), getTotalDrainageArea(), getUngagedDrainageArea());
+    public String getStageUnit() {
+        return stageUnit;
+    }
+
+    @JsonIgnore
+    public String getStationUnit() {
+        return streamNode.getStationUnit();
+    }
+
+    @JsonIgnore
+    public Double getStation() {
+        return streamNode.getStation();
+    }
+
+    @JsonIgnore
+    public LocationIdentifier getStreamId() {
+        return streamNode.getStreamId();
     }
 
     public static class Builder {
-        private LocationIdentifier streamLocationId;
-        private StreamJunctionIdentifier streamJunctionIdentifier;
+        private LocationIdentifier id;
+        private StreamNode streamNode;
         private Double publishedStation;
         private Double navigationStation;
         private Double lowestMeasurableStage;
         private Double totalDrainageArea;
         private Double ungagedDrainageArea;
+        private String areaUnit;
+        private String stageUnit;
 
-        public Builder withStreamLocationId(LocationIdentifier streamId) {
-            this.streamLocationId = streamId;
+        public Builder withId(LocationIdentifier id) {
+            this.id = id;
             return this;
         }
-        public Builder withStreamJunctionId(StreamJunctionIdentifier streamLocationIdentifier) {
-            this.streamJunctionIdentifier = streamLocationIdentifier;
+
+        public Builder withStreamNode(StreamNode streamNode) {
+            this.streamNode = streamNode;
             return this;
         }
 
@@ -162,6 +170,16 @@ public final class StreamLocation implements CwmsDTOBase {
 
         public Builder withUngagedDrainageArea(Double ungagedDrainageArea) {
             this.ungagedDrainageArea = ungagedDrainageArea;
+            return this;
+        }
+
+        public Builder withAreaUnit(String areaUnit) {
+            this.areaUnit = areaUnit;
+            return this;
+        }
+
+        public Builder withStageUnit(String stageUnit) {
+            this.stageUnit = stageUnit;
             return this;
         }
 

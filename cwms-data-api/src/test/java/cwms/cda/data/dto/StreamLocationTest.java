@@ -1,54 +1,90 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including but not limited to the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package cwms.cda.data.dto;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.stream.Bank;
-import cwms.cda.data.dto.stream.StreamJunctionIdentifier;
+import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class StreamLocationTest {
+public class StreamLocationTest {
 
     @Test
     void createStreamLocation_allFieldsProvided_success() {
         LocationIdentifier streamLocationId = new LocationIdentifier.Builder()
-                .withOfficeId("Office123")
+                .withOfficeId("SPK")
                 .withName("StreamLoc123")
                 .build();
 
         LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
-                .withOfficeId("Office123")
+                .withOfficeId("SPK")
                 .withName("AnotherStream")
                 .build();
 
-        StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()
+        StreamNode streamNode = new StreamNode.Builder()
                 .withStreamId(flowsIntoStreamId)
                 .withBank(Bank.LEFT)
                 .withStation(123.45)
+                .withStationUnit("ft")
                 .build();
 
         StreamLocation.Builder builder = new StreamLocation.Builder()
-                .withStreamLocationId(streamLocationId)
-                .withStreamJunctionId(streamJunctionIdentifier)
+                .withId(streamLocationId)
+                .withStreamNode(streamNode)
                 .withPublishedStation(100.0)
                 .withNavigationStation(90.0)
                 .withLowestMeasurableStage(1.0)
                 .withTotalDrainageArea(50.0)
-                .withUngagedDrainageArea(20.0);
+                .withUngagedDrainageArea(20.0)
+                .withAreaUnit("mi2")
+                .withStageUnit("ft");
 
         StreamLocation item = builder.build();
 
-        assertAll(() -> assertEquals(streamLocationId, item.getStreamLocationId(),
-                        "The stream location id does not match the provided value"),
-                () -> assertEquals(streamJunctionIdentifier, item.getStreamJunctionId(),
-                        "The stream junction id does not match the provided value"),
+        assertAll(() -> {
+                    assertEquals(streamLocationId.getName(), item.getId().getName(),
+                            "The stream location id name does not match the provided value");
+                    assertEquals(streamLocationId.getOfficeId(), item.getId().getOfficeId(),
+                            "The stream location id officeId does not match the provided value");
+                },
+                () -> {
+                    assertEquals(flowsIntoStreamId.getName(), item.getStreamNode().getStreamId().getName(),
+                            "The flows into stream id name does not match the provided value");
+                    assertEquals(flowsIntoStreamId.getOfficeId(), item.getStreamNode().getStreamId().getOfficeId(),
+                            "The flows into stream id officeId does not match the provided value");
+                },
                 () -> assertEquals(100.0, item.getPublishedStation(), "The published station does not match the provided value"),
                 () -> assertEquals(90.0, item.getNavigationStation(), "The navigation station does not match the provided value"),
                 () -> assertEquals(1.0, item.getLowestMeasurableStage(), "The lowest measurable stage does not match the provided value"),
@@ -60,87 +96,115 @@ class StreamLocationTest {
     void createStreamLocation_missingField_throwsFieldException() {
         assertThrows(FieldException.class, () -> {
             StreamLocation.Builder builder = new StreamLocation.Builder()
-                    .withStreamJunctionId(new StreamJunctionIdentifier.Builder()
+                    .withStreamNode(new StreamNode.Builder()
                             .withStreamId(new LocationIdentifier.Builder()
-                                    .withOfficeId("Office123")
+                                    .withOfficeId("SPK")
                                     .withName("AnotherStream")
                                     .build())
                             .withBank(Bank.LEFT)
                             .withStation(123.45)
+                            .withStationUnit("ft")
                             .build())
                     .withPublishedStation(100.0)
                     .withNavigationStation(90.0)
                     .withLowestMeasurableStage(1.0)
                     .withTotalDrainageArea(50.0)
-                    .withUngagedDrainageArea(20.0);
+                    .withUngagedDrainageArea(20.0)
+                    .withAreaUnit("mi2")
+                    .withStageUnit("ft");
             StreamLocation item = builder.build();
             item.validate();
-        }, "The validate method should have thrown a FieldException because the stream junction id field is missing");
+        }, "The validate method should have thrown a FieldException because the stream location id field is missing");
 
         assertThrows(FieldException.class, () -> {
             StreamLocation.Builder builder = new StreamLocation.Builder()
-                    .withStreamLocationId(new LocationIdentifier.Builder()
+                    .withId(new LocationIdentifier.Builder()
+                            .withOfficeId("SPK")
                             .withName("StreamLoc123")
-                            .build())
-                    .withStreamJunctionId(new StreamJunctionIdentifier.Builder()
-                            .withStreamId(new LocationIdentifier.Builder()
-                                    .withOfficeId("Office123")
-                                    .withName("AnotherStream")
-                                    .build())
-                            .withBank(Bank.LEFT)
-                            .withStation(123.45)
                             .build())
                     .withPublishedStation(100.0)
                     .withNavigationStation(90.0)
                     .withLowestMeasurableStage(1.0)
                     .withTotalDrainageArea(50.0)
-                    .withUngagedDrainageArea(20.0);
+                    .withUngagedDrainageArea(20.0)
+                    .withAreaUnit("mi2")
+                    .withStageUnit("ft");
             StreamLocation item = builder.build();
             item.validate();
-        }, "The validate method should have thrown a FieldException because the stream junction id field is missing");
+        }, "The validate method should have thrown a FieldException because the stream node field is missing");
     }
 
     @Test
     void createStreamLocation_serialize_roundtrip() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withOfficeId("Office123")
+                .withOfficeId("SPK")
                 .withName("Stream123")
                 .build();
 
         LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
-                .withOfficeId("Office123")
+                .withOfficeId("SPK")
                 .withName("AnotherStream")
                 .build();
 
-        StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()
+        StreamNode streamNode = new StreamNode.Builder()
                 .withStreamId(flowsIntoStreamId)
                 .withBank(Bank.LEFT)
                 .withStation(123.45)
+                .withStationUnit("ft")
                 .build();
 
         StreamLocation streamLocation = new StreamLocation.Builder()
-                .withStreamLocationId(locationIdentifier)
-                .withStreamJunctionId(streamJunctionIdentifier)
+                .withId(locationIdentifier)
+                .withStreamNode(streamNode)
                 .withPublishedStation(100.0)
                 .withNavigationStation(90.0)
                 .withLowestMeasurableStage(1.0)
                 .withTotalDrainageArea(50.0)
                 .withUngagedDrainageArea(20.0)
+                .withAreaUnit("mi2")
+                .withStageUnit("ft")
                 .build();
 
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, streamLocation);
         StreamLocation deserialized = Formats.parseContent(contentType, json, StreamLocation.class);
-        assertEquals(streamLocation, deserialized, "StreamLocation deserialized from JSON doesn't equal original");
+        assertSame(streamLocation, deserialized);
     }
 
     @Test
     void createStreamLocation_deserialize() throws Exception {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/stream-location.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/stream_location.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         StreamLocation deserialized = Formats.parseContent(contentType, json, StreamLocation.class);
-        assertNotNull(deserialized);
+
+        assertAll(
+                () -> assertEquals("StreamLoc123", deserialized.getId().getName(), "The stream location ID name does not match"),
+                () -> assertEquals("SPK", deserialized.getId().getOfficeId(), "The stream location ID officeId does not match"),
+                () -> assertEquals("ImOnThisStream", deserialized.getStreamNode().getStreamId().getName(), "The flows into stream ID name does not match"),
+                () -> assertEquals("SPK", deserialized.getStreamNode().getStreamId().getOfficeId(), "The flows into stream ID officeId does not match"),
+                () -> assertEquals(123.45, deserialized.getPublishedStation(), "The published station does not match"),
+                () -> assertEquals(12, deserialized.getNavigationStation(), "The navigation station does not match"),
+                () -> assertEquals(1.5, deserialized.getLowestMeasurableStage(), "The lowest measurable stage does not match"),
+                () -> assertEquals(10.5, deserialized.getTotalDrainageArea(), "The total drainage area does not match"),
+                () -> assertEquals(0.01, deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
+                () -> assertEquals("mi2", deserialized.getAreaUnit(), "The area unit does not match"),
+                () -> assertEquals("ft", deserialized.getStageUnit(), "The stage unit does not match")
+        );
+    }
+
+    public static void assertSame(StreamLocation streamLocation, StreamLocation deserialized) {
+        assertAll(
+                () -> LocationIdentifierTest.assertSame(streamLocation.getId(), deserialized.getId()),
+                () -> StreamNodeTest.assertSame(streamLocation.getStreamNode(), deserialized.getStreamNode()),
+                () -> assertEquals(streamLocation.getPublishedStation(), deserialized.getPublishedStation(), "The published station does not match"),
+                () -> assertEquals(streamLocation.getNavigationStation(), deserialized.getNavigationStation(), "The navigation station does not match"),
+                () -> assertEquals(streamLocation.getLowestMeasurableStage(), deserialized.getLowestMeasurableStage(), "The lowest measurable stage does not match"),
+                () -> assertEquals(streamLocation.getTotalDrainageArea(), deserialized.getTotalDrainageArea(), "The total drainage area does not match"),
+                () -> assertEquals(streamLocation.getUngagedDrainageArea(), deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
+                () -> assertEquals(streamLocation.getAreaUnit(), deserialized.getAreaUnit(), "The area unit does not match"),
+                () -> assertEquals(streamLocation.getStageUnit(), deserialized.getStageUnit(), "The stage unit does not match")
+        );
     }
 }

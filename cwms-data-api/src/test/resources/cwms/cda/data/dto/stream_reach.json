@@ -1,0 +1,33 @@
+{
+  "id": {
+    "office-id": "SPK",
+    "name": "Reach123"
+  },
+  "stream-id": {
+    "office-id": "SPK",
+    "name": "Stream123"
+  },
+  "comment": "This is a comment for the stream reach.",
+  "downstream-node": {
+    "stream-id": {
+      "office-id": "SPK",
+      "name": "Downstream123"
+    },
+    "station": 20.0,
+    "bank": "R",
+    "station-unit": "ft"
+  },
+  "upstream-node": {
+    "stream-id": {
+      "office-id": "SPK",
+      "name": "Upstream123"
+    },
+    "station": 10.0,
+    "bank": "L",
+    "station-unit": "ft"
+  },
+  "configuration-id": {
+    "office-id": "SPK",
+    "name": "Config123"
+  }
+}
