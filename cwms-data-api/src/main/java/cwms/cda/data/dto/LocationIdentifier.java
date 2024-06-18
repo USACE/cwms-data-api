@@ -1,0 +1,109 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package cwms.cda.data.dto;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
+
+import java.util.Objects;
+
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@JsonDeserialize(builder = LocationIdentifier.Builder.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonPropertyOrder({ "officeId", "locationId" })
+public final class LocationIdentifier implements CwmsDTOBase {
+
+    private final String officeId;
+    private final String locationId;
+
+    public LocationIdentifier(Builder builder) {
+        this.officeId = builder.officeId;
+        this.locationId = builder.locationId;
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        if(this.officeId == null || this.officeId.isEmpty()){
+            throw new FieldException("The 'officeId' field of a LocationIdentifier cannot be null or empty.");
+        }
+        if(this.locationId == null || this.locationId.isEmpty()){
+            throw new FieldException("The 'locationId' field of a LocationIdentifier cannot be null or empty.");
+        }
+    }
+
+    public String getOfficeId() {
+        return officeId;
+    }
+
+    public String getLocationId() {
+        return locationId;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocationIdentifier that = (LocationIdentifier) o;
+        return Objects.equals(getOfficeId(), that.getOfficeId())
+                && Objects.equals(getLocationId(), that.getLocationId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getOfficeId(), getLocationId());
+    }
+
+    public static class Builder {
+        private String officeId;
+        private String locationId;
+
+        public Builder withOfficeId(String officeId) {
+            this.officeId = officeId;
+            return this;
+        }
+        public Builder withLocationId(String locationId) {
+            this.locationId = locationId;
+            return this;
+        }
+
+        public LocationIdentifier build() {
+            return new LocationIdentifier(this);
+        }
+    }
+}
