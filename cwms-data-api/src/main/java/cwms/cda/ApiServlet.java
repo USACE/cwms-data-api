@@ -90,6 +90,7 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.Role;
 import cwms.cda.spi.AccessManagers;
@@ -246,6 +247,11 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                })
+                .exception(UnsupportedFormatException.class, (e, ctx) -> {
+                    CdaError re = new CdaError(e.getMessage());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_NOT_ACCEPTABLE).json(re);
                 })
                 .exception(FormattingException.class, (fe, ctx) -> {
                     final CdaError re = new CdaError("Formatting error:" + fe.getMessage());
