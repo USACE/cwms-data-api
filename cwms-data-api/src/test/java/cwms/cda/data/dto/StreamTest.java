@@ -25,6 +25,9 @@
 package cwms.cda.data.dto;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.stream.Bank;
+import cwms.cda.data.dto.stream.Stream;
+import cwms.cda.data.dto.stream.StreamJunctionIdentifier;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -50,7 +53,7 @@ final class StreamTest {
                         .withOfficeId("Office123")
                         .build())
                 .withStation(123.45)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .build();
 
         StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
@@ -59,7 +62,7 @@ final class StreamTest {
                         .withOfficeId("Office123")
                         .build())
                 .withStation(678.90)
-                .withBank("Right")
+                .withBank(Bank.RIGHT)
                 .build();
 
         Stream item = new Stream.Builder()
@@ -92,7 +95,7 @@ final class StreamTest {
                                     .withOfficeId("Office123")
                                     .build())
                             .withStation(123.45)
-                            .withBank("Left")
+                            .withBank(Bank.LEFT)
                             .build();
 
                     StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
@@ -101,7 +104,7 @@ final class StreamTest {
                                     .withOfficeId("Office123")
                                     .build())
                             .withStation(678.90)
-                            .withBank("Right")
+                            .withBank(Bank.RIGHT)
                             .build();
 
                     Stream item = new Stream.Builder()
@@ -129,7 +132,7 @@ final class StreamTest {
                         .withOfficeId("Office123")
                         .build())
                 .withStation(123.45)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .build();
 
         StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
@@ -138,7 +141,7 @@ final class StreamTest {
                         .withOfficeId("Office123")
                         .build())
                 .withStation(678.90)
-                .withBank("Right")
+                .withBank(Bank.RIGHT)
                 .build();
 
         Stream stream = new Stream.Builder()
@@ -170,7 +173,7 @@ final class StreamTest {
                         .withOfficeId("Office123")
                         .build())
                 .withStation(123.45)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .build();
 
         StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
@@ -179,7 +182,7 @@ final class StreamTest {
                         .withOfficeId("Office123")
                         .build())
                 .withStation(678.90)
-                .withBank("Right")
+                .withBank(Bank.RIGHT)
                 .build();
 
         Stream stream = new Stream.Builder()

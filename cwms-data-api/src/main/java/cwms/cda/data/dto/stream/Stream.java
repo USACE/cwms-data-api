@@ -1,4 +1,4 @@
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
