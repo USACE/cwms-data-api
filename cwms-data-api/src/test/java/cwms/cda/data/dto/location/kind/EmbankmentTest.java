@@ -27,6 +27,7 @@ package cwms.cda.data.dto.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -62,7 +63,6 @@ final class EmbankmentTest {
     @Test
     void testValidate() {
         Location location = buildTestLocation();
-        String projectId = "project";
         assertAll(() -> {
                     Embankment embankment = new Embankment.Builder().build();
                     assertThrows(FieldException.class, embankment::validate,
@@ -71,14 +71,6 @@ final class EmbankmentTest {
                     Embankment embankment = new Embankment.Builder().withLocation(location).build();
                     assertThrows(FieldException.class, embankment::validate,
                             "Expected validate() to throw FieldException because Project Id field can't be null, but it didn't");
-                }, () -> {
-                    Embankment embankment = new Embankment.Builder().withLocation(location).withProjectId(projectId).build();
-                    assertThrows(FieldException.class, embankment::validate,
-                            "Expected validate() to throw FieldException because Project Office Id field can't be null, but it didn't");
-                }, () -> {
-                    Embankment embankment = new Embankment.Builder().withLocation(location).withProjectId(projectId).withProjectOfficeId("SPK").build();
-                    assertThrows(FieldException.class, embankment::validate,
-                            "Expected validate() to throw FieldException because Structure type field can't be null, but it didn't");
                 }
         );
     }
@@ -87,8 +79,10 @@ final class EmbankmentTest {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
                 .withHeightMax(5.0)
-                .withProjectId("PROJECT")
-                .withProjectOfficeId("LRD")
+                .withProjectIdentifier(new LocationIdentifier.Builder()
+                        .withOfficeId("LRD")
+                        .withLocationId("PROJECT")
+                        .build())
                 .withStructureLength(10.0)
                 .withStructureType(new LookupType.Builder()
                         .withOfficeId("CWMS")

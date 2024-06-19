@@ -156,8 +156,8 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .body("upstream-prot-type", not(nullValue()))
             .body("structure-type", not(nullValue()))
             .body("location", not(nullValue()))
-            .body("project-id", equalTo(EMBANKMENT.getProjectId()))
-            .body("project-office-id", equalTo(EMBANKMENT.getProjectOfficeId()))
+            .body("project-identifier.location-id", equalTo(EMBANKMENT.getProjectIdentifier().getLocationId()))
+            .body("project-identifier.office-id", equalTo(EMBANKMENT.getProjectIdentifier().getOfficeId()))
         ;
 
         // Delete a Embankment
@@ -266,7 +266,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectId())
+            .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectIdentifier().getLocationId())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -285,8 +285,8 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .body("[0].upstream-prot-type", not(nullValue()))
             .body("[0].structure-type", not(nullValue()))
             .body("[0].location", not(nullValue()))
-            .body("[0].project-id", equalTo(EMBANKMENT.getProjectId()))
-            .body("[0].project-office-id", equalTo(EMBANKMENT.getProjectOfficeId()))
+            .body("project-identifier.location-id", equalTo(EMBANKMENT.getProjectIdentifier().getLocationId()))
+            .body("project-identifier.office-id", equalTo(EMBANKMENT.getProjectIdentifier().getOfficeId()))
         ;
 
         // Delete a Embankment

@@ -26,6 +26,7 @@ package cwms.cda.data.dao.location.kind;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.data.dto.LookupType;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
@@ -39,6 +40,36 @@ public final class LocationUtil {
 
     private LocationUtil() {
         throw new AssertionError("Utility class");
+    }
+
+    public static LocationIdentifier getLocationIdentifier(LOCATION_REF_T ref) {
+        LocationIdentifier retval = null;
+        if(ref != null) {
+            String locationId = ref.getBASE_LOCATION_ID();
+            String sub = ref.getSUB_LOCATION_ID();
+            if (sub != null && !sub.isEmpty()) {
+                locationId += "-" + sub;
+            }
+            retval = new LocationIdentifier.Builder()
+                    .withLocationId(locationId)
+                    .withOfficeId(ref.getOFFICE_ID())
+                    .build();
+        }
+        return retval;
+    }
+
+    public static LOCATION_REF_T getLocationRef(LocationIdentifier locationIdentifier) {
+        LOCATION_REF_T retval = null;
+        if(locationIdentifier != null) {
+            retval = new LOCATION_REF_T();
+            String[] split = locationIdentifier.getLocationId().split("-");
+            retval.setBASE_LOCATION_ID(split[0]);
+            if(split.length > 1) {
+                retval.setSUB_LOCATION_ID(split[1]);
+            }
+            retval.setOFFICE_ID(locationIdentifier.getOfficeId());
+        }
+        return retval;
     }
 
     public static String getLocationId(LOCATION_REF_T ref) {

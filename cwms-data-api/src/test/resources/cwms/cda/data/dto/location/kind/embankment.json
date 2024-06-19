@@ -1,4 +1,8 @@
 {
+  "project-identifier": {
+    "location-id": "PROJECT",
+    "office-id": "LRD"
+  },
   "upstream-side-slope": 15.0,
   "downstream-side-slope": 90.0,
   "structure-length": 25.0,
@@ -45,7 +49,5 @@
     "elevation-units": "m",
     "bounding-office-id": "LRL",
     "nearest-city": "Davis"
-  },
-  "project-id": "PROJECT",
-  "project-office-id": "LRD"
+  }
 }
