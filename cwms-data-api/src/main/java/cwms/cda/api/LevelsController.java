@@ -137,11 +137,6 @@ public class LevelsController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
             LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
-            if (level.getOfficeId() == null) {
-                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
-                        "The request body must specify the office.");
-            }
-
             ZonedDateTime unmarshalledDateTime = level.getLevelDate(); //getUnmarshalledDateTime
 
             ZoneId timezoneId = unmarshalledDateTime.getZone();

@@ -167,7 +167,6 @@ public final class PropertyController implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
-            property.validate();
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.storeProperty(property);
@@ -196,7 +195,6 @@ public final class PropertyController implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
-            property.validate();
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.updateProperty(property);

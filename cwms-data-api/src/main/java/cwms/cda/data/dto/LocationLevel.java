@@ -24,6 +24,8 @@ import hec.data.level.ISeasonalInterval;
 import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
 import hec.data.level.JDomLocationLevelImpl;
+import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import rma.util.RMAConst;
 
@@ -35,8 +37,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 @JsonRootName("LocationLevel")
@@ -577,24 +581,35 @@ public final class LocationLevel extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
-        ArrayList<String> fields = new ArrayList<>();
+        Set<String> requiredFields = new HashSet<>();
+        List<String> mutuallyExclusiveFields = new ArrayList<>();
+        if (getOfficeId() == null) {
+            requiredFields.add("office-id");
+        }
+        if (getLocationLevelId() == null) {
+            requiredFields.add("location-level-id");
+        }
         if (seasonalValues != null) {
-            fields.add("seasonal-values");
+            requiredFields.add("seasonal-values");
+            mutuallyExclusiveFields.add("seasonal-values");
         }
 
         if (constantValue != null) {
-            fields.add("constant-value");
+            requiredFields.add("constant-value");
+            mutuallyExclusiveFields.add("constant-value");
         }
 
         if (seasonalTimeSeriesId != null) {
-            fields.add("seasonable-time-series-id");
+            requiredFields.add("seasonable-time-series-id");
+            mutuallyExclusiveFields.add("seasonable-time-series-id");
         }
-        if (fields.isEmpty()) {
+        if (requiredFields.isEmpty()) {
             throw new RequiredFieldException(Arrays.asList("seasonal-values", "constant-value",
-                    "season-time-series-id"));
+                    "season-time-series-id", "office-id", "location-level-id"));
         }
-        if (fields.size() != 1) {
-            throw new ExclusiveFieldsException(fields);
+        //Requires level id, office id, and one of the level type identifiers
+        if (mutuallyExclusiveFields.size() != 1) {
+            throw new ExclusiveFieldsException(mutuallyExclusiveFields);
         }
     }
 }

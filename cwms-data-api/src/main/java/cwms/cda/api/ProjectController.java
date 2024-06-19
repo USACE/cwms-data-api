@@ -194,8 +194,6 @@ public class ProjectController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
-            project.validate();
-
             ProjectDao dao = new ProjectDao(dsl);
 
             dao.create(project);
@@ -225,7 +223,6 @@ public class ProjectController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
-            project.validate();
             DSLContext dsl = getDslContext(ctx);
 
             ProjectDao dao = new ProjectDao(dsl);
