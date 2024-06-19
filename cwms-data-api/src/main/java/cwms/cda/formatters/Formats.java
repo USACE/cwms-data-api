@@ -119,7 +119,7 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data-type : (%s, %s)",
                     type.toString(), toFormat.getClass().getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
         }
 
     }
@@ -137,7 +137,7 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
                     type.toString(), rootType.getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
         }
     }
 
@@ -151,7 +151,7 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
                     type.toString(), rootType.getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
         }
     }
 
@@ -165,7 +165,7 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
                     type.toString(), rootType.getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
         }
     }
 
@@ -249,7 +249,7 @@ public class Formats {
                 // The older format= query parameters don't give us the option to supply a
                 // version the
                 // way that the accept header does.
-                throw new FormattingException("Accept header and query parameter are both "
+                throw new UnsupportedFormatException("Accept header and query parameter are both "
                         + "present, this is not supported.");
             }
 
@@ -257,17 +257,17 @@ public class Formats {
             if (ct != null) {
                 return ct;
             } else {
-                throw new FormattingException("content-type " + queryParam + " is not implemented");
+                throw new UnsupportedFormatException("content-type " + queryParam + " is not implemented");
             }
         } else if (header == null) {
-            throw new FormattingException("no content type or format specified");
+            throw new UnsupportedFormatException("no content type or format specified");
         } else {
             ContentType ct = parseHeader(header, klass);
             if (ct != null) {
                 return ct;
             }
         }
-        throw new FormattingException("Content-Type " + header + " is not available");
+        throw new UnsupportedFormatException("Content-Type " + header + " is not available");
     }
 
     public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
@@ -349,6 +349,6 @@ public class Formats {
                 return new ContentType(Formats.JSON);
             }
         }
-        throw new FormattingException("Format header " + header + " could not be parsed");
+        throw new UnsupportedFormatException("Format header " + header + " could not be parsed");
     }
 }

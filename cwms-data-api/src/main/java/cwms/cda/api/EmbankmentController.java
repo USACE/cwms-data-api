@@ -79,7 +79,7 @@ public final class EmbankmentController  implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = Embankment.class)
+                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Embankment.class)
                     })
             },
             description = "Returns matching CWMS Embankment Data for a Reservoir Project.",
@@ -94,8 +94,8 @@ public final class EmbankmentController  implements CrudHandler {
             EmbankmentDao dao = new EmbankmentDao(dsl);
             List<Embankment> embankments = dao.retrieveEmbankments(projectId, office);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+                    Formats.JSONV1;
+            ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, embankments, Embankment.class);
             ctx.result(serialized);
@@ -116,7 +116,7 @@ public final class EmbankmentController  implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(type = Formats.JSON, from = Embankment.class)
+                                    @OpenApiContent(type = Formats.JSONV1, from = Embankment.class)
                             })
             },
             description = "Returns CWMS Embankment Data",
@@ -130,8 +130,8 @@ public final class EmbankmentController  implements CrudHandler {
             EmbankmentDao dao = new EmbankmentDao(dsl);
             Embankment embankment = dao.retrieveEmbankment(name, office);
             String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = header != null ? header : Formats.JSONV1;
+            ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, embankment);
             ctx.result(serialized);
@@ -143,7 +143,7 @@ public final class EmbankmentController  implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Embankment.class, type = Formats.JSON)
+                            @OpenApiContent(from = Embankment.class, type = Formats.JSONV1)
                     },
                     required = true),
             queryParams = {
@@ -161,8 +161,8 @@ public final class EmbankmentController  implements CrudHandler {
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             Embankment embankment = Formats.parseContent(contentType, ctx.body(), Embankment.class);
             embankment.validate();
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
