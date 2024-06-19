@@ -33,9 +33,7 @@ import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
 import cwms.cda.api.UpstreamLocationsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
@@ -64,6 +62,15 @@ import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
+import cwms.cda.api.LookupTypeController;
+import cwms.cda.api.LookupTypeController;
+import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
+import cwms.cda.api.StreamReachController;
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
+import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.ParametersController;
@@ -100,6 +107,15 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.project.LockRevokerRightsCatalog;
+import cwms.cda.api.project.ProjectLockCatalog;
+import cwms.cda.api.project.ProjectLockDeny;
+import cwms.cda.api.project.ProjectLockRelease;
+import cwms.cda.api.project.ProjectLockRequest;
+import cwms.cda.api.project.ProjectLockRevoke;
+import cwms.cda.api.project.ProjectLockStatus;
+import cwms.cda.api.project.RemoveAllLockRevokerRights;
+import cwms.cda.api.project.UpdateLockRevokerRights;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
@@ -187,6 +203,8 @@ import org.owasp.html.PolicyFactory;
         "/forecast-instance/*",
         "/standard-text-id/*",
         "/projects/*",
+        "/project-locks/*",
+        "/project-lock-rights/*",
         "/properties/*",
         "/lookup-types/*",
         "/embankments/*"
@@ -525,6 +543,33 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
+                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
+                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
+
+        addProjectLocksHandlers("/project-locks/{project-id}", requiredRoles);
+        addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+    }
+
+
+    private void addProjectLocksHandlers(String path, RouteRole[] requiredRoles) {
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+
+        get(pathWithoutResource + "status", new ProjectLockStatus(metrics));
+        get(pathWithoutResource, new ProjectLockCatalog(metrics));
+        post(pathWithoutResource + "deny", new ProjectLockDeny(metrics), requiredRoles);
+        post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
+        put(pathWithoutResource, new ProjectLockRelease(metrics), requiredRoles);
+        delete(path, new ProjectLockRevoke(metrics), requiredRoles);
+    }
+
+    private void addProjectLockRightsHandlers(String path, RouteRole[] requiredRoles) {
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+        get(pathWithoutResource, new LockRevokerRightsCatalog(metrics));
+        post(pathWithoutResource + "remove-all", new RemoveAllLockRevokerRights(metrics), requiredRoles);
+        post(pathWithoutResource + "update", new UpdateLockRevokerRights(metrics), requiredRoles);
+
     }
 
     /**
@@ -602,8 +647,9 @@ public class ApiServlet extends HttpServlet {
 
     /**
      * Given a path like "/location/category/{category-id}" this method returns "{category-id}".
-     * @param fullPath
-     * @return
+     * @param fullPath the full path to extract the resource id from.
+     * @return the resource id portion of the path.
+     * @throws IllegalArgumentException if the path does not contain a resource id.
      */
     @NotNull
     public static String getResourceId(String fullPath) {
