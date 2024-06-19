@@ -35,23 +35,30 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-@JsonDeserialize(builder = LockRevokerRights.Builder.class)
+@JsonDeserialize(builder = ProjectLock.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-public class LockRevokerRights extends CwmsDTO {
-
+public class ProjectLock extends CwmsDTO {
+    // officeId held by CwmsDTO
     private final String projectId;
     private final String applicationId;
-    private final String userId;
+    private final String acquireTime;
+    private final String sessionUser;
+    private final String osUser;
+    private final String sessionProgram;
+    private final String sessionMachine;
 
-    private LockRevokerRights(Builder builder) {
-        super(builder.officeId);
-        this.projectId = builder.projectId;
-        this.applicationId = builder.applicationId;
-        this.userId = builder.userId;
+    private ProjectLock(Builder builer) {
+        super(builer.officeId);
+        this.projectId = builer.projectId;
+        this.applicationId = builer.applicationId;
+        this.acquireTime = builer.acquireTime;
+        this.sessionUser = builer.sessionUser;
+        this.osUser = builer.osUser;
+        this.sessionProgram = builer.sessionProgram;
+        this.sessionMachine = builer.sessionMachine;
     }
-
 
     public String getProjectId() {
         return projectId;
@@ -61,13 +68,29 @@ public class LockRevokerRights extends CwmsDTO {
         return applicationId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getAcquireTime() {
+        return acquireTime;
+    }
+
+    public String getSessionUser() {
+        return sessionUser;
+    }
+
+    public String getOsUser() {
+        return osUser;
+    }
+
+    public String getSessionProgram() {
+        return sessionProgram;
+    }
+
+    public String getSessionMachine() {
+        return sessionMachine;
     }
 
     @Override
     public void validate() throws FieldException {
-
+        // Nothing to do
     }
 
     @JsonPOJOBuilder
@@ -76,16 +99,19 @@ public class LockRevokerRights extends CwmsDTO {
         private String officeId;
         private String projectId;
         private String applicationId;
-        private String userId;
+        private String acquireTime;
+        private String sessionUser;
+        private String osUser;
+        private String sessionProgram;
+        private String sessionMachine;
 
         public Builder() {
         }
 
-        public Builder(String officeId, String projectId, String applicationId, String userId) {
+        public Builder(String officeId, String projectId, String applicationId) {
             this.officeId = officeId;
             this.projectId = projectId;
             this.applicationId = applicationId;
-            this.userId = userId;
         }
 
         public Builder withOfficeId(String officeId) {
@@ -103,20 +129,44 @@ public class LockRevokerRights extends CwmsDTO {
             return this;
         }
 
-        public Builder withUserId(String userId) {
-            this.userId = userId;
+        public Builder withAcquireTime(String acquireTime) {
+            this.acquireTime = acquireTime;
             return this;
         }
 
-        public Builder from(LockRevokerRights lockRevokerRights) {
-            return withOfficeId(lockRevokerRights.getOfficeId())
-                    .withApplicationId(lockRevokerRights.getApplicationId())
-                    .withProjectId(lockRevokerRights.getProjectId())
-                    .withUserId(lockRevokerRights.getUserId());
+        public Builder withSessionUser(String sessionUser) {
+            this.sessionUser = sessionUser;
+            return this;
         }
 
-        public LockRevokerRights build() {
-            return new LockRevokerRights(this);
+        public Builder withOsUser(String osUser) {
+            this.osUser = osUser;
+            return this;
+        }
+
+        public Builder withSessionProgram(String sessionProgram) {
+            this.sessionProgram = sessionProgram;
+            return this;
+        }
+
+        public Builder withSessionMachine(String sessionMachine) {
+            this.sessionMachine = sessionMachine;
+            return this;
+        }
+
+        public Builder from(ProjectLock lock) {
+            return this.withOfficeId(lock.officeId)
+                    .withProjectId(lock.projectId)
+                    .withApplicationId(lock.applicationId)
+                    .withAcquireTime(lock.acquireTime)
+                    .withSessionUser(lock.sessionUser)
+                    .withOsUser(lock.osUser)
+                    .withSessionProgram(lock.sessionProgram)
+                    .withSessionMachine(lock.sessionMachine);
+        }
+
+        public ProjectLock build() {
+            return new ProjectLock(this);
         }
     }
 }
