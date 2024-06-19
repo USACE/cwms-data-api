@@ -1,0 +1,46 @@
+{
+  "basinName": "TEST_BASIN",
+  "officeId": "TEST_OFFICE",
+  "primaryStream": {
+
+  },
+  "sortOrder": 1.0,
+  "basinArea": 100.0,
+  "contributingArea": 100.0,
+  "parentBaseId": "TEST_PARENT",
+  "streams": {
+    "TEST_STREAM": {
+      "streamName": "TEST_STREAM",
+      "startsDownstream": true,
+      "streamLength": 100.0,
+      "officeId": "TEST_OFFICE"
+    },
+    "TEST_STREAM2": {
+      "streamName": "TEST_STREAM2",
+      "startsDownstream": false,
+      "streamLength": 150.0,
+      "officeId": "TEST_OFFICE2"
+    }
+  },
+  "subBasins": {
+    "TEST_SUBBASIN": {
+      "basinName": "TEST_SUBBASIN",
+      "officeId": "TEST_OFFICE",
+      "primaryStream": {
+
+      },
+      "sortOrder": 1.0,
+      "basinArea": 50.0,
+      "contributingArea": 50.0,
+      "parentBaseId": "TEST_BASIN",
+      "streams": {
+        "TEST_SUBSTREAM": {
+          "streamName": "TEST_SUBSTREAM",
+          "startsDownstream": true,
+          "streamLength": 50.0,
+          "officeId": "TEST_OFFICE"
+        }
+      }
+    }
+  }
+}
