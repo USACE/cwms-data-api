@@ -1,6 +1,8 @@
 package cwms.cda.data.dto;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.stream.Bank;
+import cwms.cda.data.dto.stream.StreamJunctionIdentifier;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -22,14 +24,14 @@ class StreamJunctionIdentifierTest {
 
         StreamJunctionIdentifier.Builder builder = new StreamJunctionIdentifier.Builder()
                 .withStreamId(flowsIntoStreamId)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .withStation(123.45);
 
         StreamJunctionIdentifier item = builder.build();
 
         assertAll(() -> assertEquals(flowsIntoStreamId, item.getStreamId(),
                         "The flows into stream id does not match the provided value"),
-                () -> assertEquals("Left", item.getBank(), "The bank does not match the provided value"),
+                () -> assertEquals(Bank.LEFT, item.getBank(), "The bank does not match the provided value"),
                 () -> assertEquals(123.45, item.getStation(), "The station does not match the provided value"));
     }
 
@@ -37,7 +39,7 @@ class StreamJunctionIdentifierTest {
     void createStreamJunctionIdentifier_missingField_throwsFieldException() {
         assertThrows(FieldException.class, () -> {
             StreamJunctionIdentifier.Builder builder = new StreamJunctionIdentifier.Builder()
-                    .withBank("Left")
+                    .withBank(Bank.LEFT)
                     .withStation(123.45);
             StreamJunctionIdentifier item = builder.build();
             item.validate();
@@ -53,7 +55,7 @@ class StreamJunctionIdentifierTest {
 
         StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()
                 .withStreamId(flowsIntoStreamId)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .withStation(123.45)
                 .build();
 

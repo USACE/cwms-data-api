@@ -1,6 +1,9 @@
 package cwms.cda.data.dto;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.stream.Bank;
+import cwms.cda.data.dto.stream.StreamJunctionIdentifier;
+import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -27,7 +30,7 @@ class StreamLocationTest {
 
         StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()
                 .withStreamId(flowsIntoStreamId)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .withStation(123.45)
                 .build();
 
@@ -62,7 +65,7 @@ class StreamLocationTest {
                                     .withOfficeId("Office123")
                                     .withLocationId("AnotherStream")
                                     .build())
-                            .withBank("Left")
+                            .withBank(Bank.LEFT)
                             .withStation(123.45)
                             .build())
                     .withPublishedStation(100.0)
@@ -89,7 +92,7 @@ class StreamLocationTest {
 
         StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()
                 .withStreamId(flowsIntoStreamId)
-                .withBank("Left")
+                .withBank(Bank.LEFT)
                 .withStation(123.45)
                 .build();
 

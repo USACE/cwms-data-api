@@ -22,13 +22,15 @@
  * SOFTWARE.
  */
 
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -45,7 +47,7 @@ import java.util.Objects;
 public final class StreamJunctionIdentifier implements CwmsDTOBase {
 
     private final LocationIdentifier streamId;
-    private final String bank;
+    private final Bank bank;
     private final Double station;
 
     private StreamJunctionIdentifier(Builder builder) {
@@ -65,7 +67,7 @@ public final class StreamJunctionIdentifier implements CwmsDTOBase {
         return streamId;
     }
 
-    public String getBank() {
+    public Bank getBank() {
         return bank;
     }
 
@@ -95,7 +97,7 @@ public final class StreamJunctionIdentifier implements CwmsDTOBase {
 
     public static class Builder {
         private LocationIdentifier streamId;
-        private String bank;
+        private Bank bank;
         private Double station;
 
         public Builder withStreamId(LocationIdentifier locationIdentifier) {
@@ -103,7 +105,7 @@ public final class StreamJunctionIdentifier implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withBank(String bank) {
+        public Builder withBank(Bank bank) {
             this.bank = bank;
             return this;
         }
