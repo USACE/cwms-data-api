@@ -61,6 +61,7 @@ public final class StreamJunctionIdentifier implements CwmsDTOBase {
         if (this.streamId == null) {
             throw new FieldException("The 'locationIdentifier' field of a StreamLocationRef cannot be null.");
         }
+        streamId.validate();
     }
 
     public LocationIdentifier getStreamId() {
