@@ -3,11 +3,18 @@ package cwms.cda.data.dto.basin;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.basinconnectivity.Stream;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.NamedPgJsonFormatter;
+import cwms.cda.formatters.json.PgJsonFormatter;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+@FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.PGJSON, formatter = PgJsonFormatter.class)
 public final class Basin implements CwmsDTOBase {
     private final String basinName;
     private final String officeId;
@@ -16,8 +23,8 @@ public final class Basin implements CwmsDTOBase {
     private final Double basinArea;
     private final Double contributingArea;
     private final String parentBasinId;
-    private final LinkedList<Stream> streams;
-    private final LinkedList<Stream> subBasins;
+    private final List<Stream> streams;
+    private final List<Basin> subBasins;
 
     private Basin(Builder builder)
     {
@@ -69,11 +76,11 @@ public final class Basin implements CwmsDTOBase {
 
     public List<Stream> getStreams()
     {
-        return streams;
+        return new ArrayList<>(streams);
     }
 
-    public List<Stream> getSubBasins() {
-        return subBasins;
+    public List<Basin> getSubBasins() {
+        return new ArrayList<>(subBasins);
     }
 
     @Override
@@ -104,20 +111,26 @@ public final class Basin implements CwmsDTOBase {
 
     public static class Builder
     {
-        private final String basinName;
-        private final String officeId;
+        private String basinName;
+        private String officeId;
         private Stream primaryStream;
         private Double sortOrder;
         private Double basinArea;
         private Double contributingArea;
         private String parentBasinId;
-        private LinkedList<Stream> streams = new LinkedList<>();
-        private LinkedList<Stream> subBasins = new LinkedList<>();
+        private final List<Stream> streams = new ArrayList<>();
+        private final List<Basin> subBasins = new ArrayList<>();
 
-        public Builder(String basinName, String officeId)
+        public Builder withBasinName(String basinName)
         {
             this.basinName = basinName;
+            return this;
+        }
+
+        public Builder withOfficeId(String officeId)
+        {
             this.officeId = officeId;
+            return this;
         }
 
         public Builder withPrimaryStream(Stream primaryStream)
@@ -150,15 +163,17 @@ public final class Basin implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withStream(Stream stream)
+        public Builder withStreams(Collection<Stream> streams)
         {
-            streams.add(stream);
+            this.streams.clear();
+            this.streams.addAll(streams);
             return this;
         }
 
-        public Builder withSubBasin(Stream subBasin)
+        public Builder withSubBasin(Collection<Basin> subBasins)
         {
-            subBasins.add(subBasin);
+            this.subBasins.clear();
+            this.subBasins.addAll(subBasins);
             return this;
         }
 
