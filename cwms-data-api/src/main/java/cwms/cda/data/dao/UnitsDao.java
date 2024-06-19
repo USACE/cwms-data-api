@@ -26,7 +26,7 @@ public class UnitsDao extends JooqDao<String> {
     public List<Unit> getUnits()
     {
         Map<Long, List<String>> unitIdToAliasMap = dsl.select()
-                                                      .from(table("AT_UNIT_ALIAS"))
+                                                      .from(table("CWMS_20.AT_UNIT_ALIAS"))
                                                       .fetch()
                                                       .stream()
                                                       .collect(Collectors.groupingBy(rec -> rec.get("UNIT_CODE", Long.class), Collectors.mapping(rec -> rec.get("ALIAS_ID", String.class), Collectors.toList())));
