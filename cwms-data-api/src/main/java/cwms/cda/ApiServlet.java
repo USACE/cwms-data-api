@@ -76,6 +76,7 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
+import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
@@ -172,7 +173,8 @@ import org.owasp.html.PolicyFactory;
         "/projects/*",
         "/properties/*",
         "/lookup-types/*",
-        "/embankments/*"
+        "/embankments/*",
+        "/turbines/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -480,6 +482,8 @@ public class ApiServlet extends HttpServlet {
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
                 new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
+                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
 
     /**
