@@ -43,6 +43,7 @@ public final class Stream implements CwmsDTOBase {
         if (this.streamId == null) {
             throw new FieldException("The 'locationIdentifier' field of a Stream cannot be null.");
         }
+        streamId.validate();
     }
 
     public Boolean getStartsDownstream() {

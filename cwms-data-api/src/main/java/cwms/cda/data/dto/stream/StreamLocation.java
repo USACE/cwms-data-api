@@ -66,6 +66,7 @@ public final class StreamLocation implements CwmsDTOBase {
         if (this.streamLocationId == null) {
             throw new FieldException("The 'streamId' field of a StreamLocation cannot be null.");
         }
+        streamLocationId.validate();
     }
 
     public StreamJunctionIdentifier getStreamJunctionId() {

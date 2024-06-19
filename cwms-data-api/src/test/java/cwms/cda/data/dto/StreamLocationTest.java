@@ -76,6 +76,28 @@ class StreamLocationTest {
             StreamLocation item = builder.build();
             item.validate();
         }, "The validate method should have thrown a FieldException because the stream junction id field is missing");
+
+        assertThrows(FieldException.class, () -> {
+            StreamLocation.Builder builder = new StreamLocation.Builder()
+                    .withStreamLocationId(new LocationIdentifier.Builder()
+                            .withLocationId("StreamLoc123")
+                            .build())
+                    .withStreamJunctionId(new StreamJunctionIdentifier.Builder()
+                            .withStreamId(new LocationIdentifier.Builder()
+                                    .withOfficeId("Office123")
+                                    .withLocationId("AnotherStream")
+                                    .build())
+                            .withBank(Bank.LEFT)
+                            .withStation(123.45)
+                            .build())
+                    .withPublishedStation(100.0)
+                    .withNavigationStation(90.0)
+                    .withLowestMeasurableStage(1.0)
+                    .withTotalDrainageArea(50.0)
+                    .withUngagedDrainageArea(20.0);
+            StreamLocation item = builder.build();
+            item.validate();
+        }, "The validate method should have thrown a FieldException because the stream junction id field is missing");
     }
 
     @Test
