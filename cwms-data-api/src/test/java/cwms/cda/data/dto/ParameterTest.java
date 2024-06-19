@@ -10,8 +10,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ParameterTest
 {
@@ -32,8 +31,8 @@ class ParameterTest
 	}
 
 	@ParameterizedTest
-	@EnumSource(ParametersTest.SerializationType.class)
-	void test_serialization(ParametersTest.SerializationType test)
+	@EnumSource(SerializationType.class)
+	void test_serialization(SerializationType test)
 	{
 		Parameter param = ParameterTest.newTestParameter();
 		String json = Formats.format(test._contentType, param);

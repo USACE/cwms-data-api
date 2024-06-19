@@ -1,11 +1,11 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.Parameter;
-import cwms.cda.data.dto.Parameters;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class ParameterDao extends JooqDao<ParameterDao> {
@@ -18,12 +18,12 @@ public class ParameterDao extends JooqDao<ParameterDao> {
         return CWMS_CAT_PACKAGE.call_RETRIEVE_PARAMETERS_F(dsl.configuration(), format);
     }
 
-    public Parameters getParametersV2(String office)
+    public List<Parameter> getParametersV2(String office)
     {
-        return new Parameters(office, CWMS_CAT_PACKAGE.call_CAT_PARAMETER(dsl.configuration(), office)
+        return CWMS_CAT_PACKAGE.call_CAT_PARAMETER(dsl.configuration(), office)
                                                       .stream()
                                                       .map(this::buildParameter)
-                                                      .collect(Collectors.toList()));
+                                                      .collect(Collectors.toList());
     }
 
     private Parameter buildParameter(Record record)
