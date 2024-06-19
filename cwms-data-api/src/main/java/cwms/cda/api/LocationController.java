@@ -64,6 +64,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -454,7 +455,7 @@ public class LocationController implements CrudHandler {
         } else if (Formats.JSON.equals(format) || (Formats.JSONV2).equals(format)) {
             om = new ObjectMapper();
         } else {
-            throw new FormattingException("Format is not currently supported for Locations");
+            throw new UnsupportedFormatException("Format is not currently supported for Locations: " + format);
         }
         om.registerModule(new JavaTimeModule());
         return om;

@@ -76,6 +76,7 @@ import cwms.cda.data.dto.SeasonalValueBean;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -558,7 +559,7 @@ public class LevelsController implements CrudHandler {
         } else if (Formats.JSON.equals(format)) {
             om = new ObjectMapper();
         } else {
-            throw new FormattingException("Format is not currently supported for Levels");
+            throw new UnsupportedFormatException("Format is not currently supported for Levels: " + format);
         }
         om.registerModule(new JavaTimeModule());
         return om;

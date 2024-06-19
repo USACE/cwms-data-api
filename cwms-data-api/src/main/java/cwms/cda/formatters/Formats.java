@@ -27,6 +27,7 @@ package cwms.cda.formatters;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
 
+import javax.validation.constraints.NotNull;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -303,7 +304,7 @@ public class Formats {
      * @deprecated Use overloaded parseHeader that takes in a class to utilize the format aliasing.
      */
     @Deprecated
-    public static ContentType parseHeader(String header) {
+    public static @NotNull ContentType parseHeader(String header) {
         return parseHeader(header, null);
     }
 
@@ -315,7 +316,7 @@ public class Formats {
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header can't be identified as a mimetype
      */
-    public static ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
+    public static @NotNull ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
         if (klass != null) {
             aliasMap = ContentTypeAliasMap.forDtoClass(klass);
