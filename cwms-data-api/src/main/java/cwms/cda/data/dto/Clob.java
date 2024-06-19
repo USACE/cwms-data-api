@@ -9,7 +9,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
 
 
@@ -57,5 +56,15 @@ public class Clob extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
+        if (getOfficeId() == null) {
+            throw new FieldException("An officeId is required when creating a clob");
+        }
+        if (getId() == null) {
+            throw new FieldException("An Id is required when creating a clob");
+        }
+        if (getValue() == null || getValue().isEmpty()) {
+            throw new FieldException("A non-empty value field is required when "
+                    + "creating a clob");
+        }
     }
 }

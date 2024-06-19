@@ -229,20 +229,6 @@ public class ClobController implements CrudHandler {
 
             ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
             Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
-
-            if (clob.getOfficeId() == null) {
-                throw new FormattingException("An officeId is required when creating a clob");
-            }
-
-            if (clob.getId() == null) {
-                throw new FormattingException("An Id is required when creating a clob");
-            }
-
-            if (clob.getValue() == null || clob.getValue().isEmpty()) {
-                throw new FormattingException("A non-empty value field is required when "
-                        + "creating a clob");
-            }
-
             ClobDao dao = new ClobDao(dsl);
             dao.create(clob, failIfExists);
             ctx.status(HttpCode.CREATED);

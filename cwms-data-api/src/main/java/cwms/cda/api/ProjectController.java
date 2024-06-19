@@ -122,11 +122,7 @@ public class ProjectController implements CrudHandler {
 
     private static @NotNull ContentType getContentType(Context ctx) {
         String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
-        ContentType contentType = Formats.parseHeader(formatHeader);
-        if (contentType == null) {
-            throw new FormattingException("Format header could not be parsed");
-        }
-        return contentType;
+        return Formats.parseHeader(formatHeader);
     }
 
     @OpenApi(
@@ -197,9 +193,6 @@ public class ProjectController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             project.validate();
 
@@ -231,9 +224,6 @@ public class ProjectController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             project.validate();
             DSLContext dsl = getDslContext(ctx);
