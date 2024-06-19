@@ -201,8 +201,6 @@ public class ProjectController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
-            project.validate();
-
             ProjectDao dao = new ProjectDao(dsl);
 
             dao.create(project);
@@ -235,7 +233,6 @@ public class ProjectController implements CrudHandler {
                 throw new FormattingException("Format header could not be parsed");
             }
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
-            project.validate();
             DSLContext dsl = getDslContext(ctx);
 
             ProjectDao dao = new ProjectDao(dsl);

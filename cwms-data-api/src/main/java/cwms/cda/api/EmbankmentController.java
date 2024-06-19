@@ -164,7 +164,6 @@ public final class EmbankmentController  implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Embankment embankment = Formats.parseContent(contentType, ctx.body(), Embankment.class);
-            embankment.validate();
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
