@@ -11,15 +11,14 @@ import javax.servlet.http.HttpServletResponse;
 import static cwms.cda.api.Controllers.FORMAT;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class UnitsControllerTestIT extends DataApiTestIT
 {
 
 	@ParameterizedTest
-	@EnumSource(TimeZoneControllerTestIT.GetAllTest.class)
-	void test_getAll(TimeZoneControllerTestIT.GetAllTest test)
+	@EnumSource(GetAllTest.class)
+	void test_getAll(GetAllTest test)
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
@@ -36,8 +35,8 @@ class UnitsControllerTestIT extends DataApiTestIT
 	}
 
 	@ParameterizedTest
-	@EnumSource(TimeZoneControllerTestIT.GetAllLegacyTest.class)
-	void test_getAll(TimeZoneControllerTestIT.GetAllLegacyTest test)
+	@EnumSource(GetAllLegacyTest.class)
+	void test_getAll(GetAllLegacyTest test)
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
