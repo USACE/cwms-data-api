@@ -94,13 +94,13 @@ public class ProjectLockStatusHandlerIT extends DataApiTestIT {
                         .queryParam(Controllers.OFFICE, OFFICE)
                         .queryParam(PROJECT_ID, projId)
                         .queryParam(APPLICATION_ID, appId)
-                        .when()
+                    .when()
                         .redirects().follow(true)
                         .redirects().max(3)
                         .get("/project-locks/status")
-                        .then()
+                    .then()
                         .log().ifValidationFails(LogDetail.ALL, true)
-                        .assertThat()
+                    .assertThat()
                         .statusCode(is(HttpServletResponse.SC_OK))
                 ;
 
@@ -112,13 +112,13 @@ public class ProjectLockStatusHandlerIT extends DataApiTestIT {
                         .queryParam(Controllers.OFFICE, OFFICE)
                         .queryParam(PROJECT_ID, projId)
                         .queryParam(APPLICATION_ID, appId)
-                        .when()
+                    .when()
                         .redirects().follow(true)
                         .redirects().max(3)
                         .get("/project-locks/status")
-                        .then()
+                    .then()
                         .log().ifValidationFails(LogDetail.ALL, true)
-                        .assertThat()
+                    .assertThat()
                         .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
                 ;
 
