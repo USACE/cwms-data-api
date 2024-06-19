@@ -1,57 +1,50 @@
 package cwms.cda.data.dto.basin;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.basinconnectivity.Stream;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.NamedPgJsonFormatter;
-import cwms.cda.formatters.json.PgJsonFormatter;
+import cwms.cda.formatters.json.JsonV1;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 
-@FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@FormattableWith(contentType = Formats.PGJSON, formatter = PgJsonFormatter.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonDeserialize(builder = Basin.Builder.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class Basin implements CwmsDTOBase {
-    private final String basinName;
-    private final String officeId;
-    private final Stream primaryStream;
+    private final LocationIdentifier basinId;
     private final Double sortOrder;
     private final Double basinArea;
     private final Double contributingArea;
-    private final String parentBasinId;
-    private final List<Stream> streams;
-    private final List<Basin> subBasins;
+    private final LocationIdentifier parentBasinId;
+    private final String areaUnit;
+    private final LocationIdentifier primaryStreamId;
 
     private Basin(Builder builder)
     {
-        this.officeId = builder.officeId;
-        this.basinName = builder.basinName;
-        this.primaryStream = builder.primaryStream;
+        this.basinId = builder.basinId;
         this.sortOrder = builder.sortOrder;
         this.basinArea = builder.basinArea;
         this.contributingArea = builder.contributingArea;
         this.parentBasinId = builder.parentBasinId;
-        this.streams = builder.streams;
-        this.subBasins = builder.subBasins;
+        this.areaUnit = builder.areaUnit;
+        this.primaryStreamId = builder.primaryStreamId;
     }
 
-    public String getBasinName()
+    public LocationIdentifier getBasinId()
     {
-        return basinName;
+        return basinId;
     }
 
-    public String getOfficeId()
+    public LocationIdentifier getPrimaryStreamId()
     {
-        return officeId;
-    }
-
-    public Stream getPrimaryStream()
-    {
-        return primaryStream;
+        return primaryStreamId;
     }
 
     public Double getSortOrder()
@@ -69,18 +62,14 @@ public final class Basin implements CwmsDTOBase {
         return contributingArea;
     }
 
-    public String getParentBasinId()
+    public LocationIdentifier getParentBasinId()
     {
         return parentBasinId;
     }
 
-    public List<Stream> getStreams()
+    public String getAreaUnit()
     {
-        return new ArrayList<>(streams);
-    }
-
-    public List<Basin> getSubBasins() {
-        return new ArrayList<>(subBasins);
+        return areaUnit;
     }
 
     @Override
@@ -93,49 +82,40 @@ public final class Basin implements CwmsDTOBase {
         }
 
         Basin basin = (Basin) o;
-        return Objects.equals(basinName, basin.basinName)
-                && Objects.equals(primaryStream, basin.primaryStream)
-                && Objects.equals(sortOrder, basin.sortOrder)
-                && Objects.equals(basinArea, basin.basinArea)
-                && Objects.equals(contributingArea, basin.contributingArea)
-                && Objects.equals(parentBasinId, basin.parentBasinId)
-                && Objects.equals(streams, basin.streams)
-                && Objects.equals(subBasins, basin.subBasins);
+        return Objects.equals(getBasinId(), basin.basinId)
+                && Objects.equals(getPrimaryStreamId(), basin.primaryStreamId)
+                && Objects.equals(getSortOrder(), basin.sortOrder)
+                && Objects.equals(getBasinArea(), basin.basinArea)
+                && Objects.equals(getContributingArea(), basin.contributingArea)
+                && Objects.equals(getParentBasinId(), basin.parentBasinId)
+                && Objects.equals(getAreaUnit(), basin.areaUnit);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(basinName, primaryStream, sortOrder, basinArea,
-                contributingArea, parentBasinId, streams, subBasins);
+        return Objects.hash(getBasinId(), getPrimaryStreamId(), getSortOrder(), getBasinArea(),
+                getContributingArea(), getParentBasinId(), getAreaUnit());
     }
 
     public static class Builder
     {
-        private String basinName;
-        private String officeId;
-        private Stream primaryStream;
+        private LocationIdentifier basinId;
         private Double sortOrder;
         private Double basinArea;
         private Double contributingArea;
-        private String parentBasinId;
-        private final List<Stream> streams = new ArrayList<>();
-        private final List<Basin> subBasins = new ArrayList<>();
+        private LocationIdentifier parentBasinId;
+        private String areaUnit;
+        private LocationIdentifier primaryStreamId;
 
-        public Builder withBasinName(String basinName)
+        public Builder withBasinId(LocationIdentifier basinId)
         {
-            this.basinName = basinName;
+            this.basinId = basinId;
             return this;
         }
 
-        public Builder withOfficeId(String officeId)
+        public Builder withPrimaryStreamId(LocationIdentifier primaryStreamId)
         {
-            this.officeId = officeId;
-            return this;
-        }
-
-        public Builder withPrimaryStream(Stream primaryStream)
-        {
-            this.primaryStream = primaryStream;
+            this.primaryStreamId = primaryStreamId;
             return this;
         }
 
@@ -157,23 +137,15 @@ public final class Basin implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withParentBasinId(String parentBasinId)
+        public Builder withParentBasinId(LocationIdentifier parentBasinId)
         {
             this.parentBasinId = parentBasinId;
             return this;
         }
 
-        public Builder withStreams(Collection<Stream> streams)
+        public Builder withAreaUnit(String areaUnit)
         {
-            this.streams.clear();
-            this.streams.addAll(streams);
-            return this;
-        }
-
-        public Builder withSubBasin(Collection<Basin> subBasins)
-        {
-            this.subBasins.clear();
-            this.subBasins.addAll(subBasins);
+            this.areaUnit = areaUnit;
             return this;
         }
 
@@ -185,11 +157,8 @@ public final class Basin implements CwmsDTOBase {
 
     @Override
     public void validate() throws FieldException {
-        if (this.basinName == null) {
-            throw new FieldException("Basin name field can't be null");
-        }
-        if (this.officeId == null) {
-            throw new FieldException("Office Id field can't be null");
+        if (this.basinId == null) {
+            throw new FieldException("Basin identifier field can't be null");
         }
     }
 }
