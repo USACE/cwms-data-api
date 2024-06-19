@@ -72,14 +72,14 @@ public class TurbineDao extends JooqDao<Turbine> {
 
     static Turbine map(PROJECT_STRUCTURE_OBJ_T turbine) {
         return new Turbine.Builder()
-                .withProjectIdentifier(getLocationIdentifier(turbine.getPROJECT_LOCATION_REF()))
+                .withProjectId(getLocationIdentifier(turbine.getPROJECT_LOCATION_REF()))
                 .withLocation(getLocation(turbine.getSTRUCTURE_LOCATION()))
                 .build();
     }
 
     static PROJECT_STRUCTURE_OBJ_T map(Turbine turbine) {
         PROJECT_STRUCTURE_OBJ_T retval = new PROJECT_STRUCTURE_OBJ_T();
-        retval.setPROJECT_LOCATION_REF(getLocationRef(turbine.getProjectIdentifier()));
+        retval.setPROJECT_LOCATION_REF(getLocationRef(turbine.getProjectId()));
         retval.setSTRUCTURE_LOCATION(getLocation(turbine.getLocation()));
         return retval;
     }

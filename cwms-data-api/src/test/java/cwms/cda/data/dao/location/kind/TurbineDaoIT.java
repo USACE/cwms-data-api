@@ -131,8 +131,8 @@ final class TurbineDaoIT extends DataApiTestIT {
             turbineDao.storeTurbine(turbine2, false);
             String turbineId = turbine2.getLocation().getName();
             String turbineOfficeId = turbine2.getLocation().getOfficeId();
-            List<Turbine> retrievedTurbine = turbineDao.retrieveTurbines(turbine1.getProjectIdentifier().getLocationId(),
-                    turbine1.getProjectIdentifier().getOfficeId());
+            List<Turbine> retrievedTurbine = turbineDao.retrieveTurbines(turbine1.getProjectId().getName(),
+                    turbine1.getProjectId().getOfficeId());
             assertEquals(2, retrievedTurbine.size());
             assertTrue(retrievedTurbine.contains(turbine1));
             assertTrue(retrievedTurbine.contains(turbine2));
@@ -185,8 +185,8 @@ final class TurbineDaoIT extends DataApiTestIT {
     private static Turbine buildTestTurbine(Location location, String projectId) {
         return new Turbine.Builder()
                 .withLocation(location)
-                .withProjectIdentifier(new LocationIdentifier.Builder()
-                        .withLocationId(projectId)
+                .withProjectId(new LocationIdentifier.Builder()
+                        .withName(projectId)
                         .withOfficeId(PROJECT_LOC.getOfficeId())
                         .build())
                 .build();
