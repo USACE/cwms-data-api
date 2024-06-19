@@ -16,6 +16,8 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 
+import java.util.Objects;
+
 @JsonRootName("parameter")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
@@ -29,6 +31,11 @@ public final class Parameter extends CwmsDTO
 	private String dbUnitId;
 	private String unitLongName;
 	private String unitDesc;
+
+	public Parameter()
+	{
+		super(null);
+	}
 
 	public Parameter(String param, String baseParam, String subParam, String subParamDesc, String dbOfficeId, String dbUnitId, String unitLongName, String unitDesc)
 	{
@@ -81,5 +88,26 @@ public final class Parameter extends CwmsDTO
 	public void validate() throws FieldException
 	{
 		//No validation
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+		Parameter parameter = (Parameter) o;
+		return Objects.equals(getParam(), parameter.getParam()) && Objects.equals(getBaseParam(), parameter.getBaseParam()) && Objects.equals(getSubParam(), parameter.getSubParam()) && Objects.equals(getSubParamDesc(), parameter.getSubParamDesc()) && Objects.equals(getDbUnitId(), parameter.getDbUnitId()) && Objects.equals(getUnitLongName(), parameter.getUnitLongName()) && Objects.equals(getUnitDesc(), parameter.getUnitDesc());
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(getParam(), getBaseParam(), getSubParam(), getSubParamDesc(), getDbUnitId(), getUnitLongName(), getUnitDesc());
 	}
 }

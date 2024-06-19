@@ -10,21 +10,24 @@ import org.junit.jupiter.params.provider.EnumSource;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ParametersTest
 {
+	private static final String SPK = "SPK";
 
 	@ParameterizedTest
 	@EnumSource(SerializationType.class)
 	void test_serialization(SerializationType test)
 	{
-
-//		Parameter expectedTz = new Parameter(tz);
-//		String json = Formats.format(test._contentType, expectedTz);
-//		Parameter receivedTz = Formats.parseContent(test._contentType, json, Parameter.class);
-//		assertEquals(expectedTz.getTimeZone(), receivedTz.getTimeZone());
+		Parameter param = ParameterTest.newTestParameter();
+		Parameters parameters = new Parameters(SPK, Collections.singletonList(param));
+		String json = Formats.format(test._contentType, parameters);
+		Parameters parsedParam = Formats.parseContent(test._contentType, json, Parameters.class);
+		assertEquals(parameters.getParameters(), parsedParam.getParameters());
+		assertEquals(parameters.getOfficeId(), parsedParam.getOfficeId());
 	}
 
 	@Test
@@ -35,7 +38,7 @@ class ParametersTest
 		String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
 		ContentType contentType = new ContentType(Formats.JSONV2);
 		Parameters receivedTzs = Formats.parseContent(contentType, json, Parameters.class);
-		assertTrue(!receivedTzs.getParameters().isEmpty());
+		assertFalse(receivedTzs.getParameters().isEmpty());
 	}
 
 	enum SerializationType
