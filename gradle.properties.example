@@ -8,6 +8,9 @@ CDA_JDBC_USERNAME=username
 CDA_JDBC_PASSWORD=password
 CDA_LISTEN_PORT=7000
 
+# Allows an override of the default `spk-data` context used in the gradle run task
+cda.war.context=cwms-data
+
 # If you have an existing oracle instance the integration tests can skip the 
 # database setup and schema install process saving time.
 # NOTE: the integration tests ASSUME, and MUST be able to ASSUME, that it has
