@@ -1,24 +1,30 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.api.DataApiTestIT;
+import cwms.cda.data.dto.Parameters;
+import fixtures.CwmsDataApiSetupCallback;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class ParameterDaoTestIT extends DaoTest
+@Tag("integration")
+class ParameterDaoTestIT extends DataApiTestIT
 {
 
 	@Test
-	void test_getParameters() throws Exception
+	void test_getParametersV2() throws Exception
 	{
-		try(Connection conn = getConnection())
-		{
-			DSLContext ctx = dslContext(conn);
+		CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+		db.connection(c -> {
+			DSLContext ctx = dslContext(c);
 			ParameterDao dao = new ParameterDao(ctx);
-			String parameters = dao.getParameters();
+			Parameters parameters = dao.getParametersV2("SPK");
 			assertNotNull(parameters);
-		}
+		});
 	}
 }

@@ -5,9 +5,12 @@ import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -15,6 +18,10 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ParameterDao;
+import cwms.cda.data.dto.Parameters;
+import cwms.cda.data.dto.TimeZone;
+import cwms.cda.data.dto.TimeZones;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
@@ -58,13 +65,17 @@ public class ParametersController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = FORMAT, required = false, description = "Specifies the"
+                    @OpenApiParam(name = FORMAT, deprecated = true, required = false, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
                             + " for this URI are:"
                             + "\n* `tab`"
                             + "\n* `csv`"
                             + "\n* `xml`"
-                            + "\n* `json` (default)")
+                            + "\n* `json` (default)"),
+                    @OpenApiParam(name = OFFICE, description = "Specifies the"
+                            + " owning office of the parameters whose data is to be included in the "
+                            + "response. If this field is not specified, the session user's default office will be"
+                            + " used."),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200)
@@ -76,13 +87,43 @@ public class ParametersController implements CrudHandler {
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             ParameterDao dao = new ParameterDao(dsl);
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
-            String acceptHeader = ctx.header(ACCEPT);
-            Formats.parseHeaderAndQueryParm(format, acceptHeader, Parameters.class);
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String office = ctx.queryParamAsClass(OFFICE, String.class).getOrDefault(null);
+            String header = ctx.header(ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Parameters.class);
+            String version = contentType.getParameters()
+                                        .getOrDefault(VERSION, "");
 
-            String results = dao.getParameters(format);
+            boolean isLegacyVersion = version.equals("1");
+
+            String results;
+            if (format.isEmpty() && !isLegacyVersion)
+            {
+                Parameters params = dao.getParametersV2(office);
+                results = Formats.format(contentType, params);
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                if (isLegacyVersion)
+                {
+                    format = Formats.getLegacyTypeFromContentType(contentType);
+                }
+
+                results = dao.getParameters(format);
+                if (isLegacyVersion)
+                {
+                    ctx.contentType(contentType.toString());
+                }
+                else
+                {
+                    ctx.contentType(contentType.getType());
+                }
+            }
+
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (Exception ex) {
             CdaError re = new CdaError("Failed to process request");
