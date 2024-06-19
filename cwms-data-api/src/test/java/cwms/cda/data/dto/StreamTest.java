@@ -43,30 +43,42 @@ final class StreamTest {
                 .withLocationId("Stream123")
                 .withOfficeId("Office123")
                 .build();
+
+        StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
+                .withStreamId(new LocationIdentifier.Builder()
+                        .withLocationId("AnotherStream")
+                        .withOfficeId("Office123")
+                        .build())
+                .withStation(123.45)
+                .withBank("Left")
+                .build();
+
+        StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
+                .withStreamId(new LocationIdentifier.Builder()
+                        .withLocationId("UpstreamStream")
+                        .withOfficeId("Office123")
+                        .build())
+                .withStation(678.90)
+                .withBank("Right")
+                .build();
+
         Stream item = new Stream.Builder()
                 .withStartsDownstream(true)
-                .withFlowsIntoStream("AnotherStream")
-                .withFlowsIntoStation(123.45)
-                .withFlowsIntoBank("Left")
-                .withDivertsFromStream("UpstreamStream")
-                .withDivertsFromStation(678.90)
-                .withDivertsFromBank("Right")
+                .withFlowsIntoStream(flowsIntoStream)
+                .withDivertsFromStream(divertsFromStream)
                 .withLength(10.5)
                 .withSlope(0.01)
                 .withComment("This is a comment for the stream.")
-                .withLocationIdentifier(locationIdentifier)
+                .withStreamId(locationIdentifier)
                 .build();
+
         assertAll(() -> assertEquals(true, item.getStartsDownstream(), "The starts downstream does not match the provided value"),
-                () -> assertEquals("AnotherStream", item.getFlowsIntoStream(), "The flows into stream does not match the provided value"),
-                () -> assertEquals(123.45, item.getFlowsIntoStation(), "The flows into station does not match the provided value"),
-                () -> assertEquals("Left", item.getFlowsIntoBank(), "The flows into bank does not match the provided value"),
-                () -> assertEquals("UpstreamStream", item.getDivertsFromStream(), "The diverts from stream does not match the provided value"),
-                () -> assertEquals(678.90, item.getDivertsFromStation(), "The diverts from station does not match the provided value"),
-                () -> assertEquals("Right", item.getDivertsFromBank(), "The diverts from bank does not match the provided value"),
+                () -> assertEquals(flowsIntoStream, item.getFlowsIntoStream(), "The flows into stream does not match the provided value"),
+                () -> assertEquals(divertsFromStream, item.getDivertsFromStream(), "The diverts from stream does not match the provided value"),
                 () -> assertEquals(10.5, item.getLength(), "The length does not match the provided value"),
                 () -> assertEquals(0.01, item.getSlope(), "The slope does not match the provided value"),
                 () -> assertEquals("This is a comment for the stream.", item.getComment(), "The comment does not match the provided value"),
-                () -> assertEquals(locationIdentifier, item.getLocationIdentifier(), "The location template does not match the provided value"));
+                () -> assertEquals(locationIdentifier, item.getStreamId(), "The location identifier does not match the provided value"));
     }
 
     @Test
@@ -74,41 +86,71 @@ final class StreamTest {
         assertAll(
                 // When LocationIdentifier is missing
                 () -> assertThrows(FieldException.class, () -> {
+                    StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
+                            .withStreamId(new LocationIdentifier.Builder()
+                                    .withLocationId("AnotherStream")
+                                    .withOfficeId("Office123")
+                                    .build())
+                            .withStation(123.45)
+                            .withBank("Left")
+                            .build();
+
+                    StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
+                            .withStreamId(new LocationIdentifier.Builder()
+                                    .withLocationId("UpstreamStream")
+                                    .withOfficeId("Office123")
+                                    .build())
+                            .withStation(678.90)
+                            .withBank("Right")
+                            .build();
+
                     Stream item = new Stream.Builder()
                             .withStartsDownstream(true)
-                            .withFlowsIntoStream("AnotherStream")
-                            .withFlowsIntoStation(123.45)
-                            .withFlowsIntoBank("Left")
-                            .withDivertsFromStream("UpstreamStream")
-                            .withDivertsFromStation(678.90)
-                            .withDivertsFromBank("Right")
+                            .withFlowsIntoStream(flowsIntoStream)
+                            .withDivertsFromStream(divertsFromStream)
                             .withLength(10.5)
                             .withSlope(0.01)
                             .withComment("This is a comment for the stream.")
                             .build();
                     item.validate();
-                }, "The validate method should have thrown a FieldException because the location template field is missing"));
+                }, "The validate method should have thrown a FieldException because the location identifier field is missing"));
     }
 
     @Test
     void createStream_serialize_roundtrip() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withOfficeId("Office123")
                 .withLocationId("Stream123")
+                .withOfficeId("Office123")
                 .build();
+
+        StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
+                .withStreamId(new LocationIdentifier.Builder()
+                        .withLocationId("AnotherStream")
+                        .withOfficeId("Office123")
+                        .build())
+                .withStation(123.45)
+                .withBank("Left")
+                .build();
+
+        StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
+                .withStreamId(new LocationIdentifier.Builder()
+                        .withLocationId("UpstreamStream")
+                        .withOfficeId("Office123")
+                        .build())
+                .withStation(678.90)
+                .withBank("Right")
+                .build();
+
         Stream stream = new Stream.Builder()
                 .withStartsDownstream(true)
-                .withFlowsIntoStream("AnotherStream")
-                .withFlowsIntoStation(123.45)
-                .withFlowsIntoBank("Left")
-                .withDivertsFromStream("UpstreamStream")
-                .withDivertsFromStation(678.90)
-                .withDivertsFromBank("Right")
+                .withFlowsIntoStream(flowsIntoStream)
+                .withDivertsFromStream(divertsFromStream)
                 .withLength(10.5)
                 .withSlope(0.01)
                 .withComment("This is a comment for the stream.")
-                .withLocationIdentifier(locationIdentifier)
+                .withStreamId(locationIdentifier)
                 .build();
+
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, stream);
         Stream deserialized = Formats.parseContent(contentType, json, Stream.class);
@@ -118,22 +160,38 @@ final class StreamTest {
     @Test
     void createStream_deserialize() throws Exception {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withOfficeId("Office123")
                 .withLocationId("Stream123")
+                .withOfficeId("Office123")
                 .build();
+
+        StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
+                .withStreamId(new LocationIdentifier.Builder()
+                        .withLocationId("AnotherStream")
+                        .withOfficeId("Office123")
+                        .build())
+                .withStation(123.45)
+                .withBank("Left")
+                .build();
+
+        StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
+                .withStreamId(new LocationIdentifier.Builder()
+                        .withLocationId("UpstreamStream")
+                        .withOfficeId("Office123")
+                        .build())
+                .withStation(678.90)
+                .withBank("Right")
+                .build();
+
         Stream stream = new Stream.Builder()
                 .withStartsDownstream(true)
-                .withFlowsIntoStream("AnotherStream")
-                .withFlowsIntoStation(123.45)
-                .withFlowsIntoBank("Left")
-                .withDivertsFromStream("UpstreamStream")
-                .withDivertsFromStation(678.90)
-                .withDivertsFromBank("Right")
+                .withFlowsIntoStream(flowsIntoStream)
+                .withDivertsFromStream(divertsFromStream)
                 .withLength(10.5)
                 .withSlope(0.01)
                 .withComment("This is a comment for the stream.")
-                .withLocationIdentifier(locationIdentifier)
+                .withStreamId(locationIdentifier)
                 .build();
+
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/stream.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
