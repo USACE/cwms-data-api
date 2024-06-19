@@ -3,25 +3,82 @@ package cwms.cda.data.dto;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.Formats;
 
 import usace.cwms.db.dao.ifc.pool.PoolNameType;
-import usace.cwms.db.dao.ifc.pool.PoolType;
 
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-public class Pool extends PoolType implements CwmsDTOBase {
+public class Pool extends CwmsDTOBase {
+
+	private final PoolNameType poolName;
+	private final String projectId;
+	private final String bottomLevelId;
+	private final String topLevelId;
+	private final boolean implicit;
 	private final Number attribute;
 	private final String description;
 	private final String clobText;
 
 	private Pool(Builder b){
-		super(b.getPoolName(), b.getProjectId(), b.getBottomLevelId(), b.getTopLevelId(), b.isImplicit());
+		this.poolName = b.getPoolName();
+		this.projectId = b.getProjectId();
+		this.bottomLevelId = b.getBottomLevelId();
+		this.topLevelId	= b.getTopLevelId();
+		this.implicit = b.isImplicit();
 		this.attribute = b.getAttribute();
 		this.description = b.getDescription();
 		this.clobText = b.getClobText();
+	}
+
+	public boolean isImplicit()
+	{
+		return this.implicit;
+	}
+
+	/**
+	 * Returns the pool name information for the pool
+	 *
+	 * @return Pool name information for the pool
+	 */
+	public PoolNameType getPoolName()
+	{
+		return this.poolName;
+	}
+
+	/**
+	 * Returns the Project ID for the pool
+	 *
+	 * @return Project ID as a String
+	 */
+	public String getProjectId()
+	{
+		return this.projectId;
+	}
+
+	/**
+	 * Returns the bottom location level ID for the pool.
+	 *
+	 * This is represented as: {Project}.{Parameter}.{ParameterType}.{Duration}.{SpecifiedLevel}
+	 *
+	 * @return String that represents the bottom location level ID.
+	 */
+	public String getBottomLevelId()
+	{
+		return this.bottomLevelId;
+	}
+
+	/**
+	 * Returns the top location level ID for the pool.
+	 *
+	 * This is represented as: {Project}.{Parameter}.{ParameterType}.{Duration}.{SpecifiedLevel}
+	 *
+	 * @return String that represents the top location level ID.
+	 */
+	public String getTopLevelId()
+	{
+		return this.topLevelId;
 	}
 
 	public Number getAttribute()
@@ -223,24 +280,5 @@ public class Pool extends PoolType implements CwmsDTOBase {
 		{
 			return new Pool(this);
 		}
-
-		public Builder withPoolType(PoolType poolType)
-		{
-			withPoolName(poolType.getPoolName());
-			withBottomLevelId(poolType.getBottomLevelId());
-			withTopLevelId(poolType.getTopLevelId());
-			withProjectId(poolType.getProjectId());
-			withImplicit(poolType.isImplicit());
-
-			return this;
-		}
 	}
-
-	@Override
-	public void validate() throws FieldException {
-		// TODO Auto-generated method stub
-
-	}
-
-
 }

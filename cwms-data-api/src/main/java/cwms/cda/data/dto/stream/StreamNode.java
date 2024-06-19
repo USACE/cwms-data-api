@@ -25,10 +25,10 @@
 package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -39,8 +39,9 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamNode.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamNode implements CwmsDTOBase {
+public final class StreamNode extends CwmsDTOBase {
 
+    @JsonProperty(required = true)
     private final CwmsId streamId;
     private final Bank bank;
     private final Double station;
@@ -51,14 +52,6 @@ public final class StreamNode implements CwmsDTOBase {
         this.bank = builder.bank;
         this.station = builder.station;
         this.stationUnits = builder.stationUnits;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        if (this.streamId == null) {
-            throw new FieldException("The 'locationIdentifier' field of a StreamLocationRef cannot be null.");
-        }
-        streamId.validate();
     }
 
     public CwmsId getStreamId() {

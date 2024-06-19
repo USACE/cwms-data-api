@@ -149,7 +149,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             return;
         }
         connection(dsl, conn -> {
-            setOffice(conn, physicalStructureChange.get(0).getOfficeId());
+            setOffice(conn, physicalStructureChange.get(0).getProjectId().getOfficeId());
             TURBINE_CHANGE_TAB_T changes = new TURBINE_CHANGE_TAB_T();
             physicalStructureChange.stream()
                 .map(TurbineDao::map)

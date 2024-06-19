@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -36,12 +35,6 @@ public class RatingTemplates extends CwmsDTOPaginated {
 
     public List<RatingTemplate> getTemplates() {
         return Collections.unmodifiableList(templates);
-    }
-
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     public static class Builder {

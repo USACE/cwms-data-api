@@ -39,7 +39,7 @@ import java.util.concurrent.Callable;
 
 
 /**
- * This class is used to validate the fields of a CwmsDTO object.
+ * This class is used to validate the fields of a CwmsDTOBase object.
  */
 public final class CwmsDTOValidator {
 
@@ -52,7 +52,7 @@ public final class CwmsDTOValidator {
     /**
      * Validates the presence of a required field in a given object or DTO.
      * Adds the field name to a set of missing fields if the value is null.
-     * If the value is an instance of CwmsDTO, it validates the CwmsDTO as well.
+     * If the value is an instance of CwmsDTOBase, it validates the CwmsDTOBase as well.
      *
      * @param value     the value of the field to be checked
      * @param fieldName the name of the field to be checked
@@ -60,27 +60,27 @@ public final class CwmsDTOValidator {
     public void required(Object value, String fieldName) {
         if (value == null) {
             missingFields.add(fieldName);
-        } else if (value instanceof CwmsDTO) {
-            ((CwmsDTO) value).validateInternal(this);
+        } else if (value instanceof CwmsDTOBase) {
+            ((CwmsDTOBase) value).validateInternal(this);
         }
     }
 
-    public void validateRequiredFields(CwmsDTO cwmsDTO) {
-        Class<? extends CwmsDTO> type = cwmsDTO.getClass();
-        while (CwmsDTO.class.isAssignableFrom(type)) {
+    public void validateRequiredFields(CwmsDTOBase cwmsDTO) {
+        Class<? extends CwmsDTOBase> type = cwmsDTO.getClass();
+        while (CwmsDTOBase.class.isAssignableFrom(type)) {
             validateFieldsInClass(cwmsDTO, type);
-            type = (Class<? extends CwmsDTO>) type.getSuperclass();
+            type = (Class<? extends CwmsDTOBase>) type.getSuperclass();
         }
     }
 
-    private void validateFieldsInClass(CwmsDTO cwmsDTO, Class<? extends CwmsDTO> type) {
+    private void validateFieldsInClass(CwmsDTOBase cwmsDTO, Class<? extends CwmsDTOBase> type) {
         Field[] fields = type.getDeclaredFields();
         try {
             for (Field field : fields) {
                 JsonProperty annotation = field.getAnnotation(JsonProperty.class);
                 if (annotation != null && annotation.required()) {
                     boolean accessible = field.isAccessible();
-                    synchronized (CwmsDTO.class) {
+                    synchronized (CwmsDTOBase.class) {
                         try {
                             if (!accessible) {
                                 field.setAccessible(true);
@@ -88,11 +88,9 @@ public final class CwmsDTOValidator {
                             Object value = field.get(cwmsDTO);
                             if (value == null) {
                                 missingFields.add(field.getName());
-                            } else if (value instanceof CwmsDTO) {
-                                ((CwmsDTO) value).validateInternal(this);
-                                validateRequiredFields((CwmsDTO) value);
                             } else if (value instanceof CwmsDTOBase) {
-                                ((CwmsDTOBase) value).validate();
+                                ((CwmsDTOBase) value).validateInternal(this);
+                                validateRequiredFields((CwmsDTOBase) value);
                             }
                         } finally {
                             if (!accessible) {
@@ -107,7 +105,7 @@ public final class CwmsDTOValidator {
         }
     }
 
-    public void validateCollection(Collection<? extends CwmsDTO> collection) {
+    public void validateCollection(Collection<? extends CwmsDTOBase> collection) {
         if (collection != null) {
             collection.forEach(c -> c.validateInternal(this));
         }

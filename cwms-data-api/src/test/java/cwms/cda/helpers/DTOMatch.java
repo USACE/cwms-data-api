@@ -34,7 +34,6 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.CompoundOutletRecord;
 import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.data.dto.location.kind.Outlet;
-import cwms.cda.data.dto.location.kind.PhysicalStructureChange;
 import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.data.dto.location.kind.TurbineSetting;
@@ -201,7 +200,6 @@ public final class DTOMatch {
                 () -> assertMatch(first.getProjectId(), second.getProjectId()),
                 () -> assertEquals(first.getLocation(), second.getLocation()),
                 () -> assertEquals(first.getRatingGroupId(), second.getRatingGroupId()),
-                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
                 () -> assertMatch(first.getCompoundOutletRecords(), second.getCompoundOutletRecords(), DTOMatch::assertMatch)
         );
     }

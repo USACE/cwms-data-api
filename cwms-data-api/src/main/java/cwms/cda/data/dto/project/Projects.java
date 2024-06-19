@@ -24,7 +24,6 @@
 
 package cwms.cda.data.dto.project;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
@@ -137,12 +136,4 @@ public class Projects extends CwmsDTOPaginated {
             return this;
         }
     }
-
-
-    @Override
-    public void validate() throws FieldException {
-
-    }
-
-
 }

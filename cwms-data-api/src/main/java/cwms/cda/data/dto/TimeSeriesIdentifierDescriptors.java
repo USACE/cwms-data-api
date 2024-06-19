@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -36,12 +35,6 @@ public class TimeSeriesIdentifierDescriptors extends CwmsDTOPaginated {
 
     public List<TimeSeriesIdentifierDescriptor> getDescriptors() {
         return Collections.unmodifiableList(descriptors);
-    }
-
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     public static class Builder {
