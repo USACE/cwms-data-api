@@ -24,34 +24,34 @@ import java.util.Objects;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public final class Parameter extends CwmsDTO
 {
-	private String param;
-	private String baseParam;
-	private String subParam;
-	private String subParamDesc;
+	private String name;
+	private String baseParameter;
+	private String subParameter;
+	private String subParameterDescription;
 	private String dbUnitId;
 	private String unitLongName;
-	private String unitDesc;
+	private String unitDescription;
 
 	public Parameter()
 	{
 		super(null);
 	}
 
-	public Parameter(String param, String baseParam, String subParam, String subParamDesc, String dbOfficeId, String dbUnitId, String unitLongName, String unitDesc)
+	public Parameter(String name, String baseParameter, String subParameter, String subParameterDescription, String dbOfficeId, String dbUnitId, String unitLongName, String unitDescription)
 	{
 		super(dbOfficeId);
-		this.param = param;
-		this.baseParam = baseParam;
-		this.subParam = subParam;
-		this.subParamDesc = subParamDesc;
+		this.name = name;
+		this.baseParameter = baseParameter;
+		this.subParameter = subParameter;
+		this.subParameterDescription = subParameterDescription;
 		this.dbUnitId = dbUnitId;
 		this.unitLongName = unitLongName;
-		this.unitDesc = unitDesc;
+		this.unitDescription = unitDescription;
 	}
 
-	public String getBaseParam()
+	public String getBaseParameter()
 	{
-		return baseParam;
+		return baseParameter;
 	}
 
 	public String getDbUnitId()
@@ -59,24 +59,24 @@ public final class Parameter extends CwmsDTO
 		return dbUnitId;
 	}
 
-	public String getParam()
+	public String getName()
 	{
-		return param;
+		return name;
 	}
 
-	public String getSubParam()
+	public String getSubParameter()
 	{
-		return subParam;
+		return subParameter;
 	}
 
-	public String getSubParamDesc()
+	public String getSubParameterDescription()
 	{
-		return subParamDesc;
+		return subParameterDescription;
 	}
 
-	public String getUnitDesc()
+	public String getUnitDescription()
 	{
-		return unitDesc;
+		return unitDescription;
 	}
 
 	public String getUnitLongName()
@@ -102,12 +102,12 @@ public final class Parameter extends CwmsDTO
 			return false;
 		}
 		Parameter parameter = (Parameter) o;
-		return Objects.equals(getParam(), parameter.getParam()) && Objects.equals(getBaseParam(), parameter.getBaseParam()) && Objects.equals(getSubParam(), parameter.getSubParam()) && Objects.equals(getSubParamDesc(), parameter.getSubParamDesc()) && Objects.equals(getDbUnitId(), parameter.getDbUnitId()) && Objects.equals(getUnitLongName(), parameter.getUnitLongName()) && Objects.equals(getUnitDesc(), parameter.getUnitDesc());
+		return Objects.equals(getName(), parameter.getName()) && Objects.equals(getBaseParameter(), parameter.getBaseParameter()) && Objects.equals(getSubParameter(), parameter.getSubParameter()) && Objects.equals(getSubParameterDescription(), parameter.getSubParameterDescription()) && Objects.equals(getDbUnitId(), parameter.getDbUnitId()) && Objects.equals(getUnitLongName(), parameter.getUnitLongName()) && Objects.equals(getUnitDescription(), parameter.getUnitDescription());
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(getParam(), getBaseParam(), getSubParam(), getSubParamDesc(), getDbUnitId(), getUnitLongName(), getUnitDesc());
+		return Objects.hash(getName(), getBaseParameter(), getSubParameter(), getSubParameterDescription(), getDbUnitId(), getUnitLongName(), getUnitDescription());
 	}
 }

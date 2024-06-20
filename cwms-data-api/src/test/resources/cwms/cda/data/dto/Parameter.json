@@ -1,10 +1,10 @@
 {
   "office-id": "CWMS",
-  "param": "%-ofArea-Snow",
-  "base-param": "%",
-  "sub-param": "ofArea-Snow",
-  "sub-param-desc": "Percent of Area Covered by Snow",
+  "name": "%-ofArea-Snow",
+  "base-parameter": "%",
+  "sub-parameter": "ofArea-Snow",
+  "sub-parameter-description": "Percent of Area Covered by Snow",
   "db-unit-id": "%",
   "unit-long-name": "Percent",
-  "unit-desc": "Ratio of 1E-02"
+  "unit-description": "Ratio of 1E-02"
 }
