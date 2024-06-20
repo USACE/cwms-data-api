@@ -1,0 +1,8 @@
+{
+  "stream-id": {
+    "office-id": "Office123",
+    "location-id": "Stream123"
+  },
+  "bank": "L",
+  "station": 123.45
+}
