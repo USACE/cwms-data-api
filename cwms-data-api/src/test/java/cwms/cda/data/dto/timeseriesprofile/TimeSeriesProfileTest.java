@@ -36,30 +36,6 @@ final class TimeSeriesProfileTest
 		assertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization failed");
 	}
 
-//	@Test
-//	void testValidate() {
-//		Location location = buildTestLocation();
-//		String projectId = "project";
-//		assertAll(() -> {
-//					Embankment embankment = new Embankment.Builder().build();
-//					assertThrows(FieldException.class, embankment::validate,
-//							"Expected validate() to throw FieldException because Location field can't be null, but it didn't");
-//				}, () -> {
-//					Embankment embankment = new Embankment.Builder().withLocation(location).build();
-//					assertThrows(FieldException.class, embankment::validate,
-//							"Expected validate() to throw FieldException because Project Id field can't be null, but it didn't");
-//				}, () -> {
-//					Embankment embankment = new Embankment.Builder().withLocation(location).withProjectId(projectId).build();
-//					assertThrows(FieldException.class, embankment::validate,
-//							"Expected validate() to throw FieldException because Project Office Id field can't be null, but it didn't");
-//				}, () -> {
-//					Embankment embankment = new Embankment.Builder().withLocation(location).withProjectId(projectId).withProjectOfficeId("SPK").build();
-//					assertThrows(FieldException.class, embankment::validate,
-//							"Expected validate() to throw FieldException because Structure type field can't be null, but it didn't");
-//				}
-//		);
-//	}
-
 	private TimeSeriesProfile buildTestTimeSeriesProfile() {
 		return new TimeSeriesProfile.Builder()
 				.withOfficeId("Office")
