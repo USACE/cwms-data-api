@@ -1,0 +1,22 @@
+{
+  "project-identifier": {
+    "office-id": "SPK",
+    "location-id": "location"
+  },
+  "structure-location": {
+    "office-id": "SPK",
+    "name": "location-outlet",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "active": true,
+    "public-name": "location-outlet",
+    "timezone-name": "UTC",
+    "location-kind": "Outlet",
+    "horizontal-datum": "NAD84",
+    "vertical-datum": "NAVD88"
+  },
+  "characteristic-ref": {
+    "office-id": "SPK",
+    "characteristic-id": "No idea"
+  }
+}
