@@ -6,10 +6,7 @@
   "sort-order": 1.0,
   "basin-area": 1005.0,
   "contributing-area": 1050.0,
-  "parent-basin-id": {
-    "office-id": "NAE",
-    "location-id": "TEST_LOCATION5"
-  },
+  "parent-basin-id": {},
   "area-unit": "SI",
   "primary-stream-id": {
     "office-id": "MVP",
