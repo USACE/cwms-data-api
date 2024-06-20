@@ -224,7 +224,6 @@ public class Formats {
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header and queryParam are both supplied or neither are
      */
-    @Deprecated
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
         return parseHeaderAndQueryParm(header, queryParam, null);
     }
@@ -293,7 +292,6 @@ public class Formats {
         return retVal;
     }
 
-    @Deprecated
     public static ContentType parseHeader(String header) {
         return parseHeader(header, null);
     }
