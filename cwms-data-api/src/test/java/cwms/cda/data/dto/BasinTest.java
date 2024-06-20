@@ -17,7 +17,7 @@ final class BasinTest {
         Basin basin = buildTestBasin(new LocationIdentifier.Builder()
                 .withLocationId("TEST_LOCATION1")
                 .withOfficeId("NVE")
-                .build());
+                .build(), false);
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, Basin.class), basin);
         Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
         assertEquals(basin, deserialized, "Roundtrip serialization failed");
@@ -29,12 +29,22 @@ final class BasinTest {
         Basin basin = buildTestBasin(new LocationIdentifier.Builder()
                 .withLocationId("TEST_LOCATION2")
                 .withOfficeId("MVR")
-                .build());
+                .build(), false);
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/basin/basin.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
         assertEquals(basin, deserialized, "Roundtrip serialization failed");
+
+        Basin basin1 = buildTestBasin(new LocationIdentifier.Builder()
+                .withLocationId("TEST_LOCATION2")
+                .withOfficeId("MVR")
+                .build(), true);
+        InputStream resource1 = this.getClass().getResourceAsStream("/cwms/cda/data/dto/basin/basin1.json");
+        assertNotNull(resource1);
+        String serialized1 = IOUtils.toString(resource1, StandardCharsets.UTF_8);
+        Basin deserialized1 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized1, Basin.class);
+        assertEquals(basin1, deserialized1, "Roundtrip serialization failed");
     }
 
     @Test
@@ -55,21 +65,36 @@ final class BasinTest {
         });
     }
 
-    private Basin buildTestBasin(LocationIdentifier basinId) {
-        return new Basin.Builder()
-                .withBasinId(basinId)
-                .withPrimaryStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("TEST_LOCATION4")
-                        .withOfficeId("MVP")
-                        .build())
-                .withSortOrder(1.0)
-                .withBasinArea(1005.0)
-                .withContributingArea(1050.0)
-                .withParentBasinId(new LocationIdentifier.Builder()
-                        .withLocationId("TEST_LOCATION5")
-                        .withOfficeId("NAE")
-                        .build())
-                .withAreaUnit("m")
-                .build();
+    private Basin buildTestBasin(LocationIdentifier basinId, boolean parentBasinIdNull) {
+        if (parentBasinIdNull) {
+            return new Basin.Builder()
+                    .withBasinId(basinId)
+                    .withPrimaryStreamId(new LocationIdentifier.Builder()
+                            .withLocationId("TEST_LOCATION4")
+                            .withOfficeId("MVP")
+                            .build())
+                    .withSortOrder(1.0)
+                    .withBasinArea(1005.0)
+                    .withContributingArea(1050.0)
+                    .withParentBasinId(new LocationIdentifier.Builder().build())
+                    .withAreaUnit("SI")
+                    .build();
+        } else {
+            return new Basin.Builder()
+                    .withBasinId(basinId)
+                    .withPrimaryStreamId(new LocationIdentifier.Builder()
+                            .withLocationId("TEST_LOCATION4")
+                            .withOfficeId("MVP")
+                            .build())
+                    .withSortOrder(1.0)
+                    .withBasinArea(1005.0)
+                    .withContributingArea(1050.0)
+                    .withParentBasinId(new LocationIdentifier.Builder()
+                            .withLocationId("TEST_LOCATION5")
+                            .withOfficeId("NAE")
+                            .build())
+                    .withAreaUnit("SI")
+                    .build();
+        }
     }
 }
