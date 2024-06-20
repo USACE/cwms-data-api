@@ -160,5 +160,6 @@ public final class Basin implements CwmsDTOBase {
         if (this.basinId == null) {
             throw new FieldException("Basin identifier field can't be null");
         }
+        basinId.validate();
     }
 }

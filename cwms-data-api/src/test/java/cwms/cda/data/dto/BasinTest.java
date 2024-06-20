@@ -16,10 +16,10 @@ final class BasinTest {
     void testBasinSerializationRoundTrip() {
         Basin basin = buildTestBasin(new LocationIdentifier.Builder()
                 .withLocationId("TEST_LOCATION1")
-                .withOfficeId("TEST_OFFICE1")
+                .withOfficeId("NVE")
                 .build());
-        String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1), basin);
-        Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1), serialized, Basin.class);
+        String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, Basin.class), basin);
+        Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
         assertEquals(basin, deserialized, "Roundtrip serialization failed");
         assertEquals(basin.hashCode(), deserialized.hashCode(), "Roundtrip serialization failed");
     }
@@ -28,19 +28,19 @@ final class BasinTest {
     void testBasinSerializationRoundTripFromFile() throws Exception {
         Basin basin = buildTestBasin(new LocationIdentifier.Builder()
                 .withLocationId("TEST_LOCATION2")
-                .withOfficeId("TEST_OFFICE2")
+                .withOfficeId("MVR")
                 .build());
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/basin/basin.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1), serialized, Basin.class);
+        Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
         assertEquals(basin, deserialized, "Roundtrip serialization failed");
     }
 
     @Test
     void testValidate() {
         LocationIdentifier basinId = new LocationIdentifier.Builder()
-                .withLocationId("TEST_LOCATION3")
+                .withLocationId("NAB")
                 .withOfficeId("TEST_OFFICE3")
                 .build();
 
@@ -60,14 +60,14 @@ final class BasinTest {
                 .withBasinId(basinId)
                 .withPrimaryStreamId(new LocationIdentifier.Builder()
                         .withLocationId("TEST_LOCATION4")
-                        .withOfficeId("TEST_OFFICE4")
+                        .withOfficeId("MVP")
                         .build())
                 .withSortOrder(1.0)
                 .withBasinArea(1005.0)
                 .withContributingArea(1050.0)
                 .withParentBasinId(new LocationIdentifier.Builder()
                         .withLocationId("TEST_LOCATION5")
-                        .withOfficeId("TEST_OFFICE5")
+                        .withOfficeId("NAE")
                         .build())
                 .withAreaUnit("m")
                 .build();
