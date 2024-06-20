@@ -223,7 +223,9 @@ public class Formats {
      * @param queryParam format query parameter value
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header and queryParam are both supplied or neither are
+     * @deprecated Use overloaded parseHeaderAndQueryParm that takes in a class to utilize the format aliasing.
      */
+    @Deprecated
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
         return parseHeaderAndQueryParm(header, queryParam, null);
     }
@@ -292,10 +294,27 @@ public class Formats {
         return retVal;
     }
 
+    /**
+     * Parses the supplied header param to determine the content type.
+     *
+     * @param header Accept header value
+     * @return an appropriate standard mimetype for lookup
+     * @throws FormattingException if the header can't be identified as a mimetype
+     * @deprecated Use overloaded parseHeader that takes in a class to utilize the format aliasing.
+     */
+    @Deprecated
     public static ContentType parseHeader(String header) {
         return parseHeader(header, null);
     }
 
+    /**
+     * Parses the supplied header param to determine the content type.
+     *
+     * @param header Accept header value
+     * @param klass  DTO object class, used for identifying content type aliases from the DTO's <code>FormattableWith</code> annotations.
+     * @return an appropriate standard mimetype for lookup
+     * @throws FormattingException if the header can't be identified as a mimetype
+     */
     public static ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
         if (klass != null) {
