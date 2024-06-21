@@ -166,7 +166,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
     private static Embankment buildTestEmbankment(Location location, String projectId) {
         return new Embankment.Builder()
                 .withLocation(location)
-                .withHeightMax(5.0)
+                .withMaxHeight(5.0)
                 .withProjectId(new LocationIdentifier.Builder()
                         .withName(projectId)
                         .withOfficeId(PROJECT_LOC.getOfficeId())

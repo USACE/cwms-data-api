@@ -50,7 +50,7 @@ public final class Embankment implements CwmsDTOBase {
     private final Double upstreamSideSlope;
     private final Double downstreamSideSlope;
     private final Double structureLength;
-    private final Double heightMax;
+    private final Double maxHeight;
     private final Double topWidth;
     private final String unitsId;
     private final LookupType downstreamProtectionType;
@@ -64,7 +64,7 @@ public final class Embankment implements CwmsDTOBase {
         this.downstreamProtectionType = builder.downstreamProtectionType;
         this.unitsId = builder.unitsId;
         this.topWidth = builder.topWidth;
-        this.heightMax = builder.heightMax;
+        this.maxHeight = builder.maxHeight;
         this.structureLength = builder.structureLength;
         this.downstreamSideSlope = builder.downstreamSideSlope;
         this.upstreamSideSlope = builder.upstreamSideSlope;
@@ -82,8 +82,8 @@ public final class Embankment implements CwmsDTOBase {
         return structureLength;
     }
 
-    public Double getHeightMax() {
-        return heightMax;
+    public Double getMaxHeight() {
+        return maxHeight;
     }
 
     public Double getTopWidth() {
@@ -133,7 +133,7 @@ public final class Embankment implements CwmsDTOBase {
         private Double upstreamSideSlope;
         private Double downstreamSideSlope;
         private Double structureLength;
-        private Double heightMax;
+        private Double maxHeight;
         private Double topWidth;
         private String unitsId;
         private LookupType downstreamProtectionType;
@@ -157,8 +157,8 @@ public final class Embankment implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withHeightMax(Double heightMax) {
-            this.heightMax = heightMax;
+        public Builder withMaxHeight(Double maxHeight) {
+            this.maxHeight = maxHeight;
             return this;
         }
 
