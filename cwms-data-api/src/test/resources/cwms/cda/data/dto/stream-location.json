@@ -2,14 +2,14 @@
   "stream-junction-id": {
     "stream-id": {
       "office-id": "Office123",
-      "location-id": "UpstreamStream"
+      "name": "UpstreamStream"
     },
     "bank": "R",
     "station": 678.9
   },
   "stream-location-id": {
     "office-id": "Office123",
-    "location-id": "Stream123"
+    "name": "Stream123"
   },
   "published-station": 123.45,
   "navigation-station": null,

@@ -1,27 +1,7 @@
 {
-  "upstream-side-slope": 15.0,
-  "downstream-side-slope": 90.0,
-  "structure-length": 25.0,
-  "height-max": 5.0,
-  "top-width": 20.0,
-  "units-id": "m",
-  "downstream-prot-type": {
-    "office-id": "CWMS",
-    "display-value": "Concrete Arch Facing",
-    "tooltip": "Protected by the faces of the concrete arches",
-    "active": true
-  },
-  "upstream-prot-type": {
-    "office-id": "CWMS",
-    "display-value": "Concrete Blanket",
-    "tooltip": "Protected by blanket of concrete",
-    "active": true
-  },
-  "structure-type": {
-    "office-id": "CWMS",
-    "display-value": "Rolled Earth-Filled",
-    "tooltip": "An embankment formed by compacted earth",
-    "active": true
+  "project-id": {
+    "office-id": "SWT",
+    "name": "PROJ"
   },
   "location": {
     "office-id": "SWT",
@@ -45,7 +25,29 @@
     "elevation-units": "m",
     "bounding-office-id": "SWT",
     "nearest-city": "Davis"
-},
-  "project-id": "PROJ",
-  "project-office-id": "SWT"
+  },
+  "upstream-side-slope": 15.0,
+  "downstream-side-slope": 90.0,
+  "structure-length": 25.0,
+  "height-max": 5.0,
+  "top-width": 20.0,
+  "units-id": "m",
+  "downstream-prot-type": {
+    "office-id": "CWMS",
+    "display-value": "Concrete Arch Facing",
+    "tooltip": "Protected by the faces of the concrete arches",
+    "active": true
+  },
+  "upstream-prot-type": {
+    "office-id": "CWMS",
+    "display-value": "Concrete Blanket",
+    "tooltip": "Protected by blanket of concrete",
+    "active": true
+  },
+  "structure-type": {
+    "office-id": "CWMS",
+    "display-value": "Rolled Earth-Filled",
+    "tooltip": "An embankment formed by compacted earth",
+    "active": true
+  }
 }

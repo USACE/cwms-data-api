@@ -40,15 +40,15 @@ import java.util.Objects;
 @JsonDeserialize(builder = LocationIdentifier.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({ "officeId", "locationId" })
+@JsonPropertyOrder({ "officeId", "name" })
 public final class LocationIdentifier implements CwmsDTOBase {
 
     private final String officeId;
-    private final String locationId;
+    private final String name;
 
     public LocationIdentifier(Builder builder) {
         this.officeId = builder.officeId;
-        this.locationId = builder.locationId;
+        this.name = builder.name;
     }
 
     @Override
@@ -56,7 +56,7 @@ public final class LocationIdentifier implements CwmsDTOBase {
         if(this.officeId == null || this.officeId.isEmpty()){
             throw new FieldException("The 'officeId' field of a LocationIdentifier cannot be null or empty.");
         }
-        if(this.locationId == null || this.locationId.isEmpty()){
+        if(this.name == null || this.name.isEmpty()){
             throw new FieldException("The 'locationId' field of a LocationIdentifier cannot be null or empty.");
         }
     }
@@ -65,8 +65,8 @@ public final class LocationIdentifier implements CwmsDTOBase {
         return officeId;
     }
 
-    public String getLocationId() {
-        return locationId;
+    public String getName() {
+        return name;
     }
 
 
@@ -81,24 +81,24 @@ public final class LocationIdentifier implements CwmsDTOBase {
 
         LocationIdentifier that = (LocationIdentifier) o;
         return Objects.equals(getOfficeId(), that.getOfficeId())
-                && Objects.equals(getLocationId(), that.getLocationId());
+                && Objects.equals(getName(), that.getName());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOfficeId(), getLocationId());
+        return Objects.hash(getOfficeId(), getName());
     }
 
     public static class Builder {
         private String officeId;
-        private String locationId;
+        private String name;
 
         public Builder withOfficeId(String officeId) {
             this.officeId = officeId;
             return this;
         }
-        public Builder withLocationId(String locationId) {
-            this.locationId = locationId;
+        public Builder withName(String name) {
+            this.name = name;
             return this;
         }
 

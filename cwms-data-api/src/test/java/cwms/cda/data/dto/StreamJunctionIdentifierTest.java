@@ -19,7 +19,7 @@ class StreamJunctionIdentifierTest {
     void createStreamJunctionIdentifier_allFieldsProvided_success() {
         LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
                 .withOfficeId("Office123")
-                .withLocationId("AnotherStream")
+                .withName("AnotherStream")
                 .build();
 
         StreamJunctionIdentifier.Builder builder = new StreamJunctionIdentifier.Builder()
@@ -50,7 +50,7 @@ class StreamJunctionIdentifierTest {
     void createStreamJunctionIdentifier_serialize_roundtrip() {
         LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
                 .withOfficeId("Office123")
-                .withLocationId("AnotherStream")
+                .withName("AnotherStream")
                 .build();
 
         StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()

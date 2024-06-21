@@ -3,7 +3,7 @@
   "flows-into-stream": {
     "stream-id": {
       "office-id": "Office123",
-      "location-id": "AnotherStream"
+      "name": "AnotherStream"
     },
     "station": 123.45,
     "bank": "L"
@@ -11,7 +11,7 @@
   "diverts-from-stream": {
     "stream-id": {
       "office-id": "Office123",
-      "location-id": "UpstreamStream"
+      "name": "UpstreamStream"
     },
     "station": 678.9,
     "bank": "R"
@@ -21,6 +21,6 @@
   "comment": "This is a comment for the stream.",
   "stream-id": {
     "office-id": "Office123",
-    "location-id": "Stream123"
+    "name": "Stream123"
   }
 }

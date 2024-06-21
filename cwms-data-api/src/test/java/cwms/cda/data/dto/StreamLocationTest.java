@@ -20,12 +20,12 @@ class StreamLocationTest {
     void createStreamLocation_allFieldsProvided_success() {
         LocationIdentifier streamLocationId = new LocationIdentifier.Builder()
                 .withOfficeId("Office123")
-                .withLocationId("StreamLoc123")
+                .withName("StreamLoc123")
                 .build();
 
         LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
                 .withOfficeId("Office123")
-                .withLocationId("AnotherStream")
+                .withName("AnotherStream")
                 .build();
 
         StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()
@@ -63,7 +63,7 @@ class StreamLocationTest {
                     .withStreamJunctionId(new StreamJunctionIdentifier.Builder()
                             .withStreamId(new LocationIdentifier.Builder()
                                     .withOfficeId("Office123")
-                                    .withLocationId("AnotherStream")
+                                    .withName("AnotherStream")
                                     .build())
                             .withBank(Bank.LEFT)
                             .withStation(123.45)
@@ -80,12 +80,12 @@ class StreamLocationTest {
         assertThrows(FieldException.class, () -> {
             StreamLocation.Builder builder = new StreamLocation.Builder()
                     .withStreamLocationId(new LocationIdentifier.Builder()
-                            .withLocationId("StreamLoc123")
+                            .withName("StreamLoc123")
                             .build())
                     .withStreamJunctionId(new StreamJunctionIdentifier.Builder()
                             .withStreamId(new LocationIdentifier.Builder()
                                     .withOfficeId("Office123")
-                                    .withLocationId("AnotherStream")
+                                    .withName("AnotherStream")
                                     .build())
                             .withBank(Bank.LEFT)
                             .withStation(123.45)
@@ -104,12 +104,12 @@ class StreamLocationTest {
     void createStreamLocation_serialize_roundtrip() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
                 .withOfficeId("Office123")
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .build();
 
         LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
                 .withOfficeId("Office123")
-                .withLocationId("AnotherStream")
+                .withName("AnotherStream")
                 .build();
 
         StreamJunctionIdentifier streamJunctionIdentifier = new StreamJunctionIdentifier.Builder()

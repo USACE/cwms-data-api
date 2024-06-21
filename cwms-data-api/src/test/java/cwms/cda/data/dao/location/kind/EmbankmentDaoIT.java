@@ -132,8 +132,8 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             embankmentDao.storeEmbankment(embankment2, false);
             String embankmentId = embankment2.getLocation().getName();
             String embankmentOfficeId = embankment2.getLocation().getOfficeId();
-            List<Embankment> retrievedEmbankment = embankmentDao.retrieveEmbankments(embankment1.getProjectIdentifier().getLocationId(),
-                    embankment1.getProjectIdentifier().getOfficeId());
+            List<Embankment> retrievedEmbankment = embankmentDao.retrieveEmbankments(embankment1.getProjectId().getName(),
+                    embankment1.getProjectId().getOfficeId());
             assertEquals(2, retrievedEmbankment.size());
             assertTrue(retrievedEmbankment.contains(embankment1));
             assertTrue(retrievedEmbankment.contains(embankment2));
@@ -167,8 +167,8 @@ final class EmbankmentDaoIT extends DataApiTestIT {
         return new Embankment.Builder()
                 .withLocation(location)
                 .withHeightMax(5.0)
-                .withProjectIdentifier(new LocationIdentifier.Builder()
-                        .withLocationId(projectId)
+                .withProjectId(new LocationIdentifier.Builder()
+                        .withName(projectId)
                         .withOfficeId(PROJECT_LOC.getOfficeId())
                         .build())
                 .withStructureLength(10.0)

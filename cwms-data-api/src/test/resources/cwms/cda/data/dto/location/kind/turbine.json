@@ -1,7 +1,7 @@
 {
-  "project-identifier": {
+  "project-id": {
     "office-id": "LRD",
-    "location-id": "PROJECT"
+    "name": "PROJECT"
   },
   "location": {
     "office-id": "LRL",

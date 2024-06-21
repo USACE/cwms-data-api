@@ -1,7 +1,7 @@
 {
   "stream-id": {
     "office-id": "Office123",
-    "location-id": "Stream123"
+    "name": "Stream123"
   },
   "bank": "L",
   "station": 123.45

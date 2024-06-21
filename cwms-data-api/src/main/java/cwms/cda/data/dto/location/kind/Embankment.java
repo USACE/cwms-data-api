@@ -44,9 +44,9 @@ import java.util.Objects;
 @JsonDeserialize(builder = Embankment.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectIdentifier", "location"})
+@JsonPropertyOrder({"projectId", "location"})
 public final class Embankment implements CwmsDTOBase {
-    private final LocationIdentifier projectIdentifier;
+    private final LocationIdentifier projectId;
     private final Location location;
     private final Double upstreamSideSlope;
     private final Double downstreamSideSlope;
@@ -59,7 +59,7 @@ public final class Embankment implements CwmsDTOBase {
     private final LookupType structureType;
 
     private Embankment(Builder builder) {
-        this.projectIdentifier = builder.projectIdentifier;
+        this.projectId = builder.projectId;
         this.location = builder.location;
         this.structureType = builder.structureType;
         this.upstreamProtType = builder.upstreamProtType;
@@ -112,8 +112,8 @@ public final class Embankment implements CwmsDTOBase {
         return location;
     }
 
-    public LocationIdentifier getProjectIdentifier() {
-        return projectIdentifier;
+    public LocationIdentifier getProjectId() {
+        return projectId;
     }
 
     @Override
@@ -136,7 +136,7 @@ public final class Embankment implements CwmsDTOBase {
                 && Objects.equals(getUpstreamProtType(), that.getUpstreamProtType())
                 && Objects.equals(getStructureType(), that.getStructureType())
                 && Objects.equals(getLocation(), that.getLocation())
-                && Objects.equals(getProjectIdentifier(), that.getProjectIdentifier());
+                && Objects.equals(getProjectId(), that.getProjectId());
     }
 
     @Override
@@ -151,7 +151,7 @@ public final class Embankment implements CwmsDTOBase {
         result = 31 * result + Objects.hashCode(getUpstreamProtType());
         result = 31 * result + Objects.hashCode(getStructureType());
         result = 31 * result + Objects.hashCode(getLocation());
-        result = 31 * result + Objects.hashCode(getProjectIdentifier());
+        result = 31 * result + Objects.hashCode(getProjectId());
         return result;
     }
 
@@ -161,10 +161,10 @@ public final class Embankment implements CwmsDTOBase {
             throw new FieldException("Location field can't be null");
         }
         location.validate();
-        if (this.projectIdentifier == null) {
+        if (this.projectId == null) {
             throw new FieldException("Project location Id field can't be null");
         }
-        projectIdentifier.validate();
+        projectId.validate();
         if (this.structureType == null) {
             throw new FieldException("Structure type field can't be null");
         }
@@ -181,7 +181,7 @@ public final class Embankment implements CwmsDTOBase {
         private LookupType upstreamProtType;
         private LookupType structureType;
         private Location location;
-        private LocationIdentifier projectIdentifier;
+        private LocationIdentifier projectId;
 
         public Builder withUpstreamSideSlope(Double upstreamSideSlope) {
             this.upstreamSideSlope = upstreamSideSlope;
@@ -233,8 +233,8 @@ public final class Embankment implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withProjectIdentifier(LocationIdentifier projectIdentifier) {
-            this.projectIdentifier = projectIdentifier;
+        public Builder withProjectId(LocationIdentifier projectId) {
+            this.projectId = projectId;
             return this;
         }
 
