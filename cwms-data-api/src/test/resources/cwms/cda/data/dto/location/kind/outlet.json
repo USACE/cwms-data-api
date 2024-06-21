@@ -1,7 +1,7 @@
 {
   "project-id": {
     "office-id": "SPK",
-    "location-id": "location"
+    "name": "location"
   },
   "location": {
     "office-id": "SPK",

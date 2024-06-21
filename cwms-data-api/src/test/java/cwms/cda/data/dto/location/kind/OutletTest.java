@@ -52,7 +52,7 @@ class OutletTest
 	private Outlet buildTestOutlet()
 	{
 		LocationIdentifier identifier = new LocationIdentifier.Builder()
-				.withLocationId(PROJECT_LOC)
+				.withName(PROJECT_LOC)
 				.withOfficeId(SPK)
 				.build();
 		Location loc = new Location.Builder(SPK, OUTLET_LOC)
