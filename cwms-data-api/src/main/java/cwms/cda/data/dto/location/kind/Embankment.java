@@ -105,7 +105,7 @@ public final class Embankment extends ProjectStructure {
     @Override
     public void validate() throws FieldException {
         super.validate();
-        getProjectId().validate();
+
         if (this.structureType == null) {
             throw new FieldException("Structure type field can't be null");
         }
