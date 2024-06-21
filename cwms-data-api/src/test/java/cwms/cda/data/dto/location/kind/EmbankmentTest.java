@@ -28,10 +28,13 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.LocationIdentifierTest;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -41,13 +44,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class EmbankmentTest {
 
-    @Test
-    void testEmbankmentSerializationRoundTrip() {
+    @ParameterizedTest
+    @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
+    void testTurbineSerializationRoundTrip(String format) {
         Embankment embankment = buildTestEmbankment();
-        String serialized = Formats.format(Formats.parseHeader(Formats.JSON), embankment);
-        Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON), serialized, Embankment.class);
-        assertEquals(embankment, deserialized, "Roundtrip serialization failed");
-        assertEquals(embankment.hashCode(), deserialized.hashCode(), "Roundtrip serialization failed");
+        String serialized = Formats.format(Formats.parseHeader(format, Embankment.class), embankment);
+        Embankment deserialized = Formats.parseContent(Formats.parseHeader(format, Embankment.class),
+                serialized, Embankment.class);
+        assertSame(embankment, deserialized);
     }
 
     @Test
@@ -56,8 +60,9 @@ final class EmbankmentTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/embankment.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON), serialized, Embankment.class);
-        assertEquals(embankment, deserialized, "Roundtrip serialization failed");
+        Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON, Embankment.class),
+                serialized, Embankment.class);
+        assertSame(embankment, deserialized);
     }
 
     @Test
@@ -126,5 +131,22 @@ final class EmbankmentTest {
                 .withPublishedLongitude(50.0)
                 .withDescription("for testing")
                 .build();
+    }
+
+    private static void assertSame(Embankment first, Embankment second) {
+
+        assertAll(
+                () -> assertEquals(first.getUpstreamSideSlope(), second.getUpstreamSideSlope(), "Upstream side slope doesn't match"),
+                () -> assertEquals(first.getDownstreamSideSlope(), second.getDownstreamSideSlope(), "Downstream side slope doesn't match"),
+                () -> assertEquals(first.getStructureLength(), second.getStructureLength(), "Structure length doesn't match"),
+                () -> assertEquals(first.getHeightMax(), second.getHeightMax(), "Maximum height doesn't match"),
+                () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
+                () -> assertEquals(first.getUnitsId(), second.getUnitsId(), "Units ID doesn't match"),
+                () -> assertEquals(first.getDownstreamProtType(), second.getDownstreamProtType(), "Downstream protection type doesn't match"),
+                () -> assertEquals(first.getUpstreamProtType(), second.getUpstreamProtType(), "Upstream protection type doesn't match"),
+                () -> assertEquals(first.getStructureType(), second.getStructureType(), "Structure type doesn't match"),
+                () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
+                () -> LocationIdentifierTest.assertSame(first.getProjectId(), second.getProjectId())
+        );
     }
 }

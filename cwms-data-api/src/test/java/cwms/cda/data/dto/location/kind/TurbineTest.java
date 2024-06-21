@@ -28,9 +28,12 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.LocationIdentifierTest;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -40,13 +43,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class TurbineTest {
 
-    @Test
-    void testTurbineSerializationRoundTrip() {
+    @ParameterizedTest
+    @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
+    void testTurbineSerializationRoundTrip(String format) {
         Turbine turbine = buildTestTurbine();
-        String serialized = Formats.format(Formats.parseHeader(Formats.JSON), turbine);
-        Turbine deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON), serialized, Turbine.class);
-        assertEquals(turbine, deserialized, "Roundtrip serialization failed");
-        assertEquals(turbine.hashCode(), deserialized.hashCode(), "Roundtrip serialization failed");
+        String serialized = Formats.format(Formats.parseHeader(format, Turbine.class), turbine);
+        Turbine deserialized = Formats.parseContent(Formats.parseHeader(format, Turbine.class),
+                serialized, Turbine.class);
+        assertSame(turbine, deserialized);
     }
 
     @Test
@@ -55,8 +59,9 @@ final class TurbineTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/turbine.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        Turbine deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON), serialized, Turbine.class);
-        assertEquals(turbine, deserialized, "Roundtrip serialization failed");
+        Turbine deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Turbine.class),
+                serialized, Turbine.class);
+        assertSame(turbine, deserialized);
     }
 
     @Test
@@ -100,5 +105,12 @@ final class TurbineTest {
                 .withPublishedLongitude(50.0)
                 .withDescription("for testing")
                 .build();
+    }
+
+    private static void assertSame(Turbine first, Turbine second) {
+        assertAll(
+                () -> LocationIdentifierTest.assertSame(first.getProjectId(), second.getProjectId()),
+                () -> assertEquals(first.getLocation(), second.getLocation(), "Locations are not the same")
+        );
     }
 }
