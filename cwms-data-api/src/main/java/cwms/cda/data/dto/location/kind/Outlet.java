@@ -37,12 +37,6 @@ public class Outlet extends ProjectStructure
 		return characteristicRef;
 	}
 
-	@Override
-	public void validate() throws FieldException
-	{
-		//No opped
-	}
-
 	public static final class Builder
 	{
 		private CharacteristicRef characteristicRef;

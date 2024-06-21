@@ -10,6 +10,7 @@ package cwms.cda.data.dto.location.kind;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
@@ -35,5 +36,18 @@ public abstract class ProjectStructure implements CwmsDTOBase
 	public final Location getLocation()
 	{
 		return location;
+	}
+
+	@Override
+	public void validate() throws FieldException
+	{
+		if (getLocation() == null) {
+			throw new FieldException("Location field can't be null");
+		}
+		getLocation().validate();
+		if (getProjectId() == null) {
+			throw new FieldException("Project location Id field must be defined");
+		}
+		getProjectId().validate();
 	}
 }
