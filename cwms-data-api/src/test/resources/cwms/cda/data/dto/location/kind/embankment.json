@@ -26,6 +26,12 @@
     "bounding-office-id": "LRL",
     "nearest-city": "Davis"
   },
+  "structure-type": {
+    "active": true,
+    "office-id": "CWMS",
+    "tooltip": "TOOLTIP_STRUCT",
+    "display-value": "STRUCT"
+  },
   "upstream-side-slope": 15.0,
   "downstream-side-slope": 90.0,
   "structure-length": 25.0,
@@ -43,11 +49,5 @@
     "office-id": "LRL",
     "tooltip": "TOOLTIP_UPSTREAM_PROT",
     "display-value": "UPSTREAM_PROT"
-  },
-  "structure-type": {
-    "active": true,
-    "office-id": "CWMS",
-    "tooltip": "TOOLTIP_STRUCT",
-    "display-value": "STRUCT"
   }
 }

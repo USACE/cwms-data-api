@@ -38,16 +38,15 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Embankment.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectId", "location"})
+@JsonPropertyOrder({"projectId", "location", "structureType"})
 public final class Embankment implements CwmsDTOBase {
     private final LocationIdentifier projectId;
     private final Location location;
+    private final LookupType structureType;
     private final Double upstreamSideSlope;
     private final Double downstreamSideSlope;
     private final Double structureLength;
@@ -56,7 +55,6 @@ public final class Embankment implements CwmsDTOBase {
     private final String unitsId;
     private final LookupType downstreamProtType;
     private final LookupType upstreamProtType;
-    private final LookupType structureType;
 
     private Embankment(Builder builder) {
         this.projectId = builder.projectId;
@@ -114,45 +112,6 @@ public final class Embankment implements CwmsDTOBase {
 
     public LocationIdentifier getProjectId() {
         return projectId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Embankment that = (Embankment) o;
-        return Objects.equals(getUpstreamSideSlope(), that.getUpstreamSideSlope())
-                && Objects.equals(getDownstreamSideSlope(), that.getDownstreamSideSlope())
-                && Objects.equals(getStructureLength(), that.getStructureLength())
-                && Objects.equals(getHeightMax(), that.getHeightMax())
-                && Objects.equals(getTopWidth(), that.getTopWidth())
-                && Objects.equals(getUnitsId(), that.getUnitsId())
-                && Objects.equals(getDownstreamProtType(), that.getDownstreamProtType())
-                && Objects.equals(getUpstreamProtType(), that.getUpstreamProtType())
-                && Objects.equals(getStructureType(), that.getStructureType())
-                && Objects.equals(getLocation(), that.getLocation())
-                && Objects.equals(getProjectId(), that.getProjectId());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getUpstreamSideSlope());
-        result = 31 * result + Objects.hashCode(getDownstreamSideSlope());
-        result = 31 * result + Objects.hashCode(getStructureLength());
-        result = 31 * result + Objects.hashCode(getHeightMax());
-        result = 31 * result + Objects.hashCode(getTopWidth());
-        result = 31 * result + Objects.hashCode(getUnitsId());
-        result = 31 * result + Objects.hashCode(getDownstreamProtType());
-        result = 31 * result + Objects.hashCode(getUpstreamProtType());
-        result = 31 * result + Objects.hashCode(getStructureType());
-        result = 31 * result + Objects.hashCode(getLocation());
-        result = 31 * result + Objects.hashCode(getProjectId());
-        return result;
     }
 
     @Override

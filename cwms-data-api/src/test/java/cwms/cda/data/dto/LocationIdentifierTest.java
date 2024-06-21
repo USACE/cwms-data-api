@@ -35,7 +35,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class LocationIdentifierTest {
+public final class LocationIdentifierTest {
 
     @Test
     void createLocationIdentifier_allFieldsProvided_success() {
@@ -76,7 +76,7 @@ final class LocationIdentifierTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, locationIdentifier);
         LocationIdentifier deserialized = Formats.parseContent(contentType, json, LocationIdentifier.class);
-        assertEquals(locationIdentifier, deserialized, "LocationIdentifier deserialized from JSON doesn't equal original");
+        assertSame(locationIdentifier, deserialized);
     }
 
     @Test
@@ -90,7 +90,7 @@ final class LocationIdentifierTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         LocationIdentifier deserialized = Formats.parseContent(contentType, json, LocationIdentifier.class);
-        assertEquals(locationIdentifier, deserialized, "LocationIdentifier deserialized from JSON doesn't equal original");
+        assertSame(locationIdentifier, deserialized);
     }
 
     @Test
@@ -108,5 +108,12 @@ final class LocationIdentifierTest {
         int locationIdIndex = json.indexOf("\"name\"");
 
         assertTrue(officeIdIndex < locationIdIndex, "The officeId field should come before the locationId field in the JSON string");
+    }
+
+    public static void assertSame(LocationIdentifier first, LocationIdentifier second) {
+        assertAll(
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "LocationIdentifiers not the same. Office id differs"),
+                () -> assertEquals(first.getName(), second.getName(), "LocationIdentifiers not the same. Office id differs")
+        );
     }
 }

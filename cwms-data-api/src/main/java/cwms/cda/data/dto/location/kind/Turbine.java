@@ -37,9 +37,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSONV1})
 @JsonDeserialize(builder = Turbine.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -71,23 +69,6 @@ public final class Turbine implements CwmsDTOBase {
             throw new FieldException("Project location Id field must be defined");
         }
         projectId.validate();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Turbine turbine = (Turbine) o;
-        return Objects.equals(getProjectId(), turbine.getProjectId())
-                && Objects.equals(getLocation(), turbine.getLocation());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getProjectId());
-        result = 31 * result + Objects.hashCode(getLocation());
-        return result;
     }
 
     public static class Builder {

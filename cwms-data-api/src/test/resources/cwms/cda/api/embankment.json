@@ -26,6 +26,12 @@
     "bounding-office-id": "SWT",
     "nearest-city": "Davis"
   },
+  "structure-type": {
+    "office-id": "CWMS",
+    "display-value": "Rolled Earth-Filled",
+    "tooltip": "An embankment formed by compacted earth",
+    "active": true
+  },
   "upstream-side-slope": 15.0,
   "downstream-side-slope": 90.0,
   "structure-length": 25.0,
@@ -42,12 +48,6 @@
     "office-id": "CWMS",
     "display-value": "Concrete Blanket",
     "tooltip": "Protected by blanket of concrete",
-    "active": true
-  },
-  "structure-type": {
-    "office-id": "CWMS",
-    "display-value": "Rolled Earth-Filled",
-    "tooltip": "An embankment formed by compacted earth",
     "active": true
   }
 }
