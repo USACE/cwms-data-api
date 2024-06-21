@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.data.dto.LookupType;
@@ -43,9 +42,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"projectId", "location", "structureType"})
-public final class Embankment implements CwmsDTOBase {
-    private final LocationIdentifier projectId;
-    private final Location location;
+public final class Embankment extends ProjectStructure {
     private final LookupType structureType;
     private final Double upstreamSideSlope;
     private final Double downstreamSideSlope;
@@ -57,8 +54,7 @@ public final class Embankment implements CwmsDTOBase {
     private final LookupType upstreamProtectionType;
 
     private Embankment(Builder builder) {
-        this.projectId = builder.projectId;
-        this.location = builder.location;
+        super(builder.projectId, builder.location);
         this.structureType = builder.structureType;
         this.upstreamProtectionType = builder.upstreamProtectionType;
         this.downstreamProtectionType = builder.downstreamProtectionType;
@@ -106,24 +102,16 @@ public final class Embankment implements CwmsDTOBase {
         return downstreamProtectionType;
     }
 
-    public Location getLocation() {
-        return location;
-    }
-
-    public LocationIdentifier getProjectId() {
-        return projectId;
-    }
-
     @Override
     public void validate() throws FieldException {
-        if (this.location == null) {
+        if (getLocation() == null) {
             throw new FieldException("Location field can't be null");
         }
-        location.validate();
-        if (this.projectId == null) {
+        getLocation().validate();
+        if (getProjectId() == null) {
             throw new FieldException("Project location Id field can't be null");
         }
-        projectId.validate();
+        getProjectId().validate();
         if (this.structureType == null) {
             throw new FieldException("Structure type field can't be null");
         }
