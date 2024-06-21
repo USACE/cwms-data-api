@@ -77,9 +77,9 @@ final class TurbineTest {
     private Turbine buildTestTurbine() {
         return new Turbine.Builder()
                 .withLocation(buildTestLocation())
-                .withProjectIdentifier(new LocationIdentifier.Builder()
+                .withProjectId(new LocationIdentifier.Builder()
                         .withOfficeId("LRD")
-                        .withLocationId("PROJECT")
+                        .withName("PROJECT")
                         .build())
                 .build();
     }

@@ -51,7 +51,7 @@ public final class LocationUtil {
                 locationId += "-" + sub;
             }
             retval = new LocationIdentifier.Builder()
-                    .withLocationId(locationId)
+                    .withName(locationId)
                     .withOfficeId(ref.getOFFICE_ID())
                     .build();
         }
@@ -62,7 +62,7 @@ public final class LocationUtil {
         LOCATION_REF_T retval = null;
         if(locationIdentifier != null) {
             retval = new LOCATION_REF_T();
-            String[] split = locationIdentifier.getLocationId().split("-");
+            String[] split = locationIdentifier.getName().split("-");
             retval.setBASE_LOCATION_ID(split[0]);
             if(split.length > 1) {
                 retval.setSUB_LOCATION_ID(split[1]);

@@ -43,18 +43,18 @@ import java.util.Objects;
 @JsonDeserialize(builder = Turbine.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({ "projectIdentifier", "location" })
+@JsonPropertyOrder({ "projectId", "location" })
 public final class Turbine implements CwmsDTOBase {
-    private final LocationIdentifier projectIdentifier;
+    private final LocationIdentifier projectId;
     private final Location location;
 
     private Turbine(Builder builder) {
-        this.projectIdentifier = builder.projectIdentifier;
+        this.projectId = builder.projectId;
         this.location = builder.location;
     }
 
-    public LocationIdentifier getProjectIdentifier() {
-        return projectIdentifier;
+    public LocationIdentifier getProjectId() {
+        return projectId;
     }
 
     public Location getLocation() {
@@ -67,10 +67,10 @@ public final class Turbine implements CwmsDTOBase {
             throw new FieldException("Location field can't be null");
         }
         this.location.validate();
-        if (this.projectIdentifier == null) {
+        if (this.projectId == null) {
             throw new FieldException("Project location Id field must be defined");
         }
-        projectIdentifier.validate();
+        projectId.validate();
     }
 
     @Override
@@ -79,23 +79,23 @@ public final class Turbine implements CwmsDTOBase {
         if (o == null || getClass() != o.getClass()) return false;
 
         Turbine turbine = (Turbine) o;
-        return Objects.equals(getProjectIdentifier(), turbine.getProjectIdentifier())
+        return Objects.equals(getProjectId(), turbine.getProjectId())
                 && Objects.equals(getLocation(), turbine.getLocation());
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(getProjectIdentifier());
+        int result = Objects.hashCode(getProjectId());
         result = 31 * result + Objects.hashCode(getLocation());
         return result;
     }
 
     public static class Builder {
-        private LocationIdentifier projectIdentifier;
+        private LocationIdentifier projectId;
         private Location location;
 
-        public Builder withProjectIdentifier(LocationIdentifier projectIdentifier) {
-            this.projectIdentifier = projectIdentifier;
+        public Builder withProjectId(LocationIdentifier projectId) {
+            this.projectId = projectId;
             return this;
         }
 
