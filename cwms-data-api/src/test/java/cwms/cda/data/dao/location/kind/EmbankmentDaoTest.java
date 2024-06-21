@@ -29,6 +29,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
+import cwms.cda.data.dto.location.kind.EmbankmentTest;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.EMBANKMENT_OBJ_T;
 
@@ -43,7 +44,7 @@ final class EmbankmentDaoTest {
         Embankment expected = buildTestEmbankment();
         EMBANKMENT_OBJ_T embankmentObjT = EmbankmentDao.map(expected);
         Embankment embankment = EmbankmentDao.map(embankmentObjT);
-        assertEquals(expected, embankment, "Conversion of Embankment to jOOQ type and back failed.");
+        EmbankmentTest.assertSame(expected, embankment);
     }
 
     private Embankment buildTestEmbankment() {

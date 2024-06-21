@@ -42,7 +42,7 @@ import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class EmbankmentTest {
+public final class EmbankmentTest {
 
     @ParameterizedTest
     @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
@@ -133,7 +133,7 @@ final class EmbankmentTest {
                 .build();
     }
 
-    private static void assertSame(Embankment first, Embankment second) {
+    public static void assertSame(Embankment first, Embankment second) {
 
         assertAll(
                 () -> assertEquals(first.getUpstreamSideSlope(), second.getUpstreamSideSlope(), "Upstream side slope doesn't match"),
