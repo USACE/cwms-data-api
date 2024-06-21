@@ -35,7 +35,7 @@
   "upstream-side-slope": 15.0,
   "downstream-side-slope": 90.0,
   "structure-length": 25.0,
-  "height-max": 5.0,
+  "max-height": 5.0,
   "top-width": 20.0,
   "units-id": "m",
   "downstream-protection-type": {

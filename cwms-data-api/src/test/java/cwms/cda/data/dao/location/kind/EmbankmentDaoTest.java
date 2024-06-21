@@ -50,7 +50,7 @@ final class EmbankmentDaoTest {
     private Embankment buildTestEmbankment() {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
-                .withHeightMax(5.0)
+                .withMaxHeight(5.0)
                 .withProjectId(new LocationIdentifier.Builder()
                         .withName("PROJECT")
                         .withOfficeId("LRD")

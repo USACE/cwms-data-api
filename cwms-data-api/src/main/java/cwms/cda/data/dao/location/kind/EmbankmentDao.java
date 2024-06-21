@@ -80,7 +80,7 @@ public class EmbankmentDao extends JooqDao<Embankment> {
                 .withUpstreamProtectionType(getLookupType(embankment.getUPSTREAM_PROT_TYPE()))
                 .withDownstreamProtectionType(getLookupType(embankment.getDOWNSTREAM_PROT_TYPE()))
                 .withLocation(getLocation(embankment.getEMBANKMENT_LOCATION()))
-                .withHeightMax(embankment.getHEIGHT_MAX())
+                .withMaxHeight(embankment.getHEIGHT_MAX())
                 .withStructureType(getLookupType(embankment.getSTRUCTURE_TYPE()))
                 .build();
     }
@@ -96,7 +96,7 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         retval.setUPSTREAM_PROT_TYPE(getLookupType(embankment.getUpstreamProtectionType()));
         retval.setDOWNSTREAM_PROT_TYPE(getLookupType(embankment.getDownstreamProtectionType()));
         retval.setEMBANKMENT_LOCATION(getLocation(embankment.getLocation()));
-        retval.setHEIGHT_MAX(embankment.getHeightMax());
+        retval.setHEIGHT_MAX(embankment.getMaxHeight());
         retval.setSTRUCTURE_TYPE(getLookupType(embankment.getStructureType()));
         return retval;
     }
