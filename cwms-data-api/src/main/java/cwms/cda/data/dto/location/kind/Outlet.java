@@ -12,17 +12,11 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
-import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Outlet.Builder.class)
@@ -34,7 +28,7 @@ public class Outlet extends ProjectStructure
 
 	private Outlet(Builder builder)
 	{
-		super(builder);
+		super(builder.projectId, builder.location);
 		characteristicRef = builder.characteristicRef;
 	}
 
@@ -49,9 +43,11 @@ public class Outlet extends ProjectStructure
 		//No opped
 	}
 
-	public static final class Builder extends ProjectStructureBuilder<Outlet, Builder>
+	public static final class Builder
 	{
 		private CharacteristicRef characteristicRef;
+		private LocationIdentifier projectId;
+		private Location location;
 
 		public Outlet build()
 		{
@@ -61,6 +57,18 @@ public class Outlet extends ProjectStructure
 		public Builder withCharacteristicRef(CharacteristicRef characteristicRef)
 		{
 			this.characteristicRef = characteristicRef;
+			return this;
+		}
+
+		public Builder withProjectId(LocationIdentifier projectIdentifier)
+		{
+			this.projectId = projectIdentifier;
+			return this;
+		}
+
+		public Builder withLocation(Location location)
+		{
+			this.location = location;
 			return this;
 		}
 	}

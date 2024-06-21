@@ -1,9 +1,9 @@
 {
-  "project-identifier": {
+  "project-id": {
     "office-id": "SPK",
     "location-id": "location"
   },
-  "structure-location": {
+  "location": {
     "office-id": "SPK",
     "name": "location-outlet",
     "latitude": 0.0,

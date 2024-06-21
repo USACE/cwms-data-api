@@ -22,26 +22,31 @@ class OutletTest
 	private static final String PROJECT_LOC = "location";
 	private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
 
-	@ParameterizedTest
-	@EnumSource(SerializationType.class)
-	void test_serialization(SerializationType test)
+	@Test
+	void test_serialization()
 	{
+		ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
 		Outlet outlet = buildTestOutlet();
-		String json = Formats.format(test._contentType, outlet);
+		String json = Formats.format(contentType, outlet);
 
-		Outlet parsedOutlet = Formats.parseContent(test._contentType, json, Outlet.class);
-		assertEquals(outlet, parsedOutlet);
+		Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
+		assertEquals(outlet.getCharacteristicRef(), parsedOutlet.getCharacteristicRef(), "Characteristic refs do not match");
+		assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
+		assertEquals(outlet.getProjectId(), parsedOutlet.getProjectId(), "Locations do not match");
 	}
 
 	@Test
 	void test_serialize_from_file() throws Exception
 	{
+		ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
 		Outlet turbine = buildTestOutlet();
-		InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/turbine.json");
+		InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/outlet.json");
 		assertNotNull(resource);
 		String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-		Outlet deserialized = Formats.parseContent(new ContentType(Formats.JSONV2), serialized, Outlet.class);
-		assertEquals(turbine, deserialized, "Roundtrip serialization failed");
+		Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
+		assertEquals(turbine.getCharacteristicRef(), deserialized.getCharacteristicRef(), "Characteristic refs do not match");
+		assertEquals(turbine.getLocation(), deserialized.getLocation(), "Locations do not match");
+		assertEquals(turbine.getProjectId(), deserialized.getProjectId(), "Locations do not match");
 	}
 
 	private Outlet buildTestOutlet()
@@ -70,19 +75,5 @@ class OutletTest
 				.withLocation(loc)
 				.build();
 		return outlet;
-	}
-
-	enum SerializationType
-	{
-		JSONV2(Formats.JSONV2),
-		XMLV2(Formats.XMLV2),
-		;
-
-		final ContentType _contentType;
-
-		SerializationType(String contentType)
-		{
-			_contentType = new ContentType(contentType);
-		}
 	}
 }

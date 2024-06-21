@@ -21,10 +21,10 @@ public abstract class ProjectStructure implements CwmsDTOBase
 	private final LocationIdentifier projectId;
 	private final Location location;
 
-	protected ProjectStructure(ProjectStructureBuilder builder)
+	protected ProjectStructure(LocationIdentifier projectId, Location location)
 	{
-		this.projectId = builder.projectId;
-		this.location = builder.location;
+		this.location = location;
+		this.projectId = projectId;
 	}
 
 	public final LocationIdentifier getProjectId()
@@ -35,25 +35,5 @@ public abstract class ProjectStructure implements CwmsDTOBase
 	public final Location getLocation()
 	{
 		return location;
-	}
-
-	protected abstract static class ProjectStructureBuilder<T extends ProjectStructure, K extends ProjectStructureBuilder<T, K>>
-	{
-		private LocationIdentifier projectId;
-		private Location location;
-
-		public abstract T build();
-
-		public final K withProjectId(LocationIdentifier projectIdentifier)
-		{
-			this.projectId = projectIdentifier;
-			return (K)this;
-		}
-
-		public final K withLocation(Location location)
-		{
-			this.location = location;
-			return (K)this;
-		}
 	}
 }
