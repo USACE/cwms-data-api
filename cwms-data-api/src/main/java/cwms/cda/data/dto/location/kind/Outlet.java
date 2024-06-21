@@ -18,28 +18,23 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
+import cwms.cda.formatters.json.JsonV1;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class Outlet implements CwmsDTOBase
+public class Outlet extends ProjectStructure
 {
-	private final LocationIdentifier projectIdentifier;
-	private final Location structureLocation;
 	private final CharacteristicRef characteristicRef;
 
 	private Outlet(Builder builder)
 	{
-		projectIdentifier = builder.projectIdentifier;
-		structureLocation = builder.structureLocation;
+		super(builder);
 		characteristicRef = builder.characteristicRef;
 	}
 
@@ -48,79 +43,14 @@ public class Outlet implements CwmsDTOBase
 		return characteristicRef;
 	}
 
-	public LocationIdentifier getProjectIdentifier()
-	{
-		return projectIdentifier;
-	}
-
-	public Location getStructureLocation()
-	{
-		return structureLocation;
-	}
-
-	@Override
-	public String toString()
-	{
-		return "Outlet{" +
-				"characteristicRef=" + characteristicRef +
-				", projectIdentifier=" + projectIdentifier +
-				", structureLocation=" + structureLocation +
-				'}';
-	}
-
-	@Override
-	public boolean equals(Object o)
-	{
-		if (this == o)
-		{
-			return true;
-		}
-		if (o == null || getClass() != o.getClass())
-		{
-			return false;
-		}
-		Outlet outlet = (Outlet) o;
-		return Objects.equals(getProjectIdentifier(), outlet.getProjectIdentifier()) && Objects.equals(getStructureLocation(), outlet.getStructureLocation()) && Objects.equals(getCharacteristicRef(), outlet.getCharacteristicRef());
-	}
-
-	@Override
-	public int hashCode()
-	{
-		return Objects.hash(getProjectIdentifier(), getStructureLocation(), getCharacteristicRef());
-	}
-
 	@Override
 	public void validate() throws FieldException
 	{
-		List<String> missingFields = new ArrayList<>();
-		if (projectIdentifier == null)
-		{
-			missingFields.add("projectIdentifier");
-		}
-
-		if (structureLocation == null)
-		{
-			missingFields.add("structureLocation");
-		}
-
-		if (!missingFields.isEmpty())
-		{
-			throw new RequiredFieldException(missingFields);
-		}
-
-		projectIdentifier.validate();
-		structureLocation.validate();
-
-		if (characteristicRef != null)
-		{
-			characteristicRef.validate();
-		}
+		//No opped
 	}
 
-	public static final class Builder
+	public static final class Builder extends ProjectStructureBuilder<Outlet, Builder>
 	{
-		private LocationIdentifier projectIdentifier;
-		private Location structureLocation;
 		private CharacteristicRef characteristicRef;
 
 		public Outlet build()
@@ -131,18 +61,6 @@ public class Outlet implements CwmsDTOBase
 		public Builder withCharacteristicRef(CharacteristicRef characteristicRef)
 		{
 			this.characteristicRef = characteristicRef;
-			return this;
-		}
-
-		public Builder withProjectIdentifier(LocationIdentifier projectIdentifier)
-		{
-			this.projectIdentifier = projectIdentifier;
-			return this;
-		}
-
-		public Builder withStructureLocation(Location structureLocation)
-		{
-			this.structureLocation = structureLocation;
 			return this;
 		}
 	}

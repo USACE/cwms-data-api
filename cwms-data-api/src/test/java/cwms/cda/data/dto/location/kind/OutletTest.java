@@ -4,12 +4,17 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class OutletTest
 {
@@ -20,6 +25,26 @@ class OutletTest
 	@ParameterizedTest
 	@EnumSource(SerializationType.class)
 	void test_serialization(SerializationType test)
+	{
+		Outlet outlet = buildTestOutlet();
+		String json = Formats.format(test._contentType, outlet);
+
+		Outlet parsedOutlet = Formats.parseContent(test._contentType, json, Outlet.class);
+		assertEquals(outlet, parsedOutlet);
+	}
+
+	@Test
+	void test_serialize_from_file() throws Exception
+	{
+		Outlet turbine = buildTestOutlet();
+		InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/turbine.json");
+		assertNotNull(resource);
+		String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+		Outlet deserialized = Formats.parseContent(new ContentType(Formats.JSONV2), serialized, Outlet.class);
+		assertEquals(turbine, deserialized, "Roundtrip serialization failed");
+	}
+
+	private Outlet buildTestOutlet()
 	{
 		LocationIdentifier identifier = new LocationIdentifier.Builder()
 				.withLocationId(PROJECT_LOC)
@@ -40,14 +65,11 @@ class OutletTest
 				.build();
 
 		Outlet outlet = new Outlet.Builder()
-				.withStructureLocation(loc)
-				.withProjectIdentifier(identifier)
+				.withProjectId(identifier)
 				.withCharacteristicRef(charRef)
+				.withLocation(loc)
 				.build();
-		String json = Formats.format(test._contentType, outlet);
-
-		Outlet parsedOutlet = Formats.parseContent(test._contentType, json, Outlet.class);
-		assertEquals(outlet, parsedOutlet);
+		return outlet;
 	}
 
 	enum SerializationType
