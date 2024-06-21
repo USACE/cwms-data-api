@@ -79,7 +79,8 @@ public final class EmbankmentController  implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Embankment.class)
+                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Embankment.class),
+                            @OpenApiContent(isArray = true, type = Formats.JSON, from = Embankment.class)
                     })
             },
             description = "Returns matching CWMS Embankment Data for a Reservoir Project.",
@@ -116,7 +117,8 @@ public final class EmbankmentController  implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(type = Formats.JSONV1, from = Embankment.class)
+                                    @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Embankment.class),
+                                    @OpenApiContent(isArray = true, type = Formats.JSON, from = Embankment.class)
                             })
             },
             description = "Returns CWMS Embankment Data",
