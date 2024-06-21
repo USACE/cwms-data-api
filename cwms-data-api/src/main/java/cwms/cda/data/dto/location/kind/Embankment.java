@@ -53,15 +53,15 @@ public final class Embankment implements CwmsDTOBase {
     private final Double heightMax;
     private final Double topWidth;
     private final String unitsId;
-    private final LookupType downstreamProtType;
-    private final LookupType upstreamProtType;
+    private final LookupType downstreamProtectionType;
+    private final LookupType upstreamProtectionType;
 
     private Embankment(Builder builder) {
         this.projectId = builder.projectId;
         this.location = builder.location;
         this.structureType = builder.structureType;
-        this.upstreamProtType = builder.upstreamProtType;
-        this.downstreamProtType = builder.downstreamProtType;
+        this.upstreamProtectionType = builder.upstreamProtectionType;
+        this.downstreamProtectionType = builder.downstreamProtectionType;
         this.unitsId = builder.unitsId;
         this.topWidth = builder.topWidth;
         this.heightMax = builder.heightMax;
@@ -98,12 +98,12 @@ public final class Embankment implements CwmsDTOBase {
         return structureType;
     }
 
-    public LookupType getUpstreamProtType() {
-        return upstreamProtType;
+    public LookupType getUpstreamProtectionType() {
+        return upstreamProtectionType;
     }
 
-    public LookupType getDownstreamProtType() {
-        return downstreamProtType;
+    public LookupType getDownstreamProtectionType() {
+        return downstreamProtectionType;
     }
 
     public Location getLocation() {
@@ -136,8 +136,8 @@ public final class Embankment implements CwmsDTOBase {
         private Double heightMax;
         private Double topWidth;
         private String unitsId;
-        private LookupType downstreamProtType;
-        private LookupType upstreamProtType;
+        private LookupType downstreamProtectionType;
+        private LookupType upstreamProtectionType;
         private LookupType structureType;
         private Location location;
         private LocationIdentifier projectId;
@@ -172,13 +172,13 @@ public final class Embankment implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withDownstreamProtType(LookupType downstreamProtType) {
-            this.downstreamProtType = downstreamProtType;
+        public Builder withDownstreamProtectionType(LookupType downstreamProtectionType) {
+            this.downstreamProtectionType = downstreamProtectionType;
             return this;
         }
 
-        public Builder withUpstreamProtType(LookupType upstreamProtType) {
-            this.upstreamProtType = upstreamProtType;
+        public Builder withUpstreamProtectionType(LookupType upstreamProtectionType) {
+            this.upstreamProtectionType = upstreamProtectionType;
             return this;
         }
 

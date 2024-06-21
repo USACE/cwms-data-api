@@ -95,13 +95,13 @@ public final class EmbankmentTest {
                         .withTooltip("TOOLTIP_STRUCT")
                         .withActive(true)
                         .build())
-                .withDownstreamProtType(new LookupType.Builder()
+                .withDownstreamProtectionType(new LookupType.Builder()
                         .withOfficeId("SPK")
                         .withDisplayValue("DOWNSTREAM_PROT")
                         .withTooltip("TOOLTIP_DOWNSTREAM_PROT")
                         .withActive(false)
                         .build())
-                .withUpstreamProtType(new LookupType.Builder()
+                .withUpstreamProtectionType(new LookupType.Builder()
                         .withOfficeId("LRL")
                         .withDisplayValue("UPSTREAM_PROT")
                         .withTooltip("TOOLTIP_UPSTREAM_PROT")
@@ -142,8 +142,8 @@ public final class EmbankmentTest {
                 () -> assertEquals(first.getHeightMax(), second.getHeightMax(), "Maximum height doesn't match"),
                 () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
                 () -> assertEquals(first.getUnitsId(), second.getUnitsId(), "Units ID doesn't match"),
-                () -> assertEquals(first.getDownstreamProtType(), second.getDownstreamProtType(), "Downstream protection type doesn't match"),
-                () -> assertEquals(first.getUpstreamProtType(), second.getUpstreamProtType(), "Upstream protection type doesn't match"),
+                () -> assertEquals(first.getDownstreamProtectionType(), second.getDownstreamProtectionType(), "Downstream protection type doesn't match"),
+                () -> assertEquals(first.getUpstreamProtectionType(), second.getUpstreamProtectionType(), "Upstream protection type doesn't match"),
                 () -> assertEquals(first.getStructureType(), second.getStructureType(), "Structure type doesn't match"),
                 () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
                 () -> LocationIdentifierTest.assertSame(first.getProjectId(), second.getProjectId())

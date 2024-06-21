@@ -38,13 +38,13 @@
   "height-max": 5.0,
   "top-width": 20.0,
   "units-id": "m",
-  "downstream-prot-type": {
+  "downstream-protection-type": {
     "office-id": "CWMS",
     "display-value": "Concrete Arch Facing",
     "tooltip": "Protected by the faces of the concrete arches",
     "active": true
   },
-  "upstream-prot-type": {
+  "upstream-protection-type": {
     "office-id": "CWMS",
     "display-value": "Concrete Blanket",
     "tooltip": "Protected by blanket of concrete",

@@ -77,8 +77,8 @@ public class EmbankmentDao extends JooqDao<Embankment> {
                 .withUpstreamSideSlope(embankment.getUPSTREAM_SIDESLOPE())
                 .withDownstreamSideSlope(embankment.getDOWNSTREAM_SIDESLOPE())
                 .withProjectId(getLocationIdentifier(embankment.getPROJECT_LOCATION_REF()))
-                .withUpstreamProtType(getLookupType(embankment.getUPSTREAM_PROT_TYPE()))
-                .withDownstreamProtType(getLookupType(embankment.getDOWNSTREAM_PROT_TYPE()))
+                .withUpstreamProtectionType(getLookupType(embankment.getUPSTREAM_PROT_TYPE()))
+                .withDownstreamProtectionType(getLookupType(embankment.getDOWNSTREAM_PROT_TYPE()))
                 .withLocation(getLocation(embankment.getEMBANKMENT_LOCATION()))
                 .withHeightMax(embankment.getHEIGHT_MAX())
                 .withStructureType(getLookupType(embankment.getSTRUCTURE_TYPE()))
@@ -93,8 +93,8 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         retval.setUPSTREAM_SIDESLOPE(embankment.getUpstreamSideSlope());
         retval.setDOWNSTREAM_SIDESLOPE(embankment.getDownstreamSideSlope());
         retval.setPROJECT_LOCATION_REF(getLocationRef(embankment.getProjectId()));
-        retval.setUPSTREAM_PROT_TYPE(getLookupType(embankment.getUpstreamProtType()));
-        retval.setDOWNSTREAM_PROT_TYPE(getLookupType(embankment.getDownstreamProtType()));
+        retval.setUPSTREAM_PROT_TYPE(getLookupType(embankment.getUpstreamProtectionType()));
+        retval.setDOWNSTREAM_PROT_TYPE(getLookupType(embankment.getDownstreamProtectionType()));
         retval.setEMBANKMENT_LOCATION(getLocation(embankment.getLocation()));
         retval.setHEIGHT_MAX(embankment.getHeightMax());
         retval.setSTRUCTURE_TYPE(getLookupType(embankment.getStructureType()));

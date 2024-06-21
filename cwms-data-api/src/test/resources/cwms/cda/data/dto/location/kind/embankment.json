@@ -38,13 +38,13 @@
   "height-max": 5.0,
   "top-width": 20.0,
   "units-id": "ft",
-  "downstream-prot-type": {
+  "downstream-protection-type": {
     "active": false,
     "office-id": "SPK",
     "tooltip": "TOOLTIP_DOWNSTREAM_PROT",
     "display-value": "DOWNSTREAM_PROT"
   },
-  "upstream-prot-type": {
+  "upstream-protection-type": {
     "active": true,
     "office-id": "LRL",
     "tooltip": "TOOLTIP_UPSTREAM_PROT",
