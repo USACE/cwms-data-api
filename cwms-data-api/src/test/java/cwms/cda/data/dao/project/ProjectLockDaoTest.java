@@ -38,6 +38,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -398,16 +399,16 @@ class ProjectLockDaoTest {
                 .withLocation(prjLoc)
                 .withProjectOwner("Project Owner")
                 .withAuthorizingLaw("Authorizing Law")
-                .withFederalCost(100.0)
-                .withNonFederalCost(50.0)
-                .withFederalOAndMCost(10.0)
-                .withNonFederalOAndMCost(5.0)
+                .withFederalCost(BigDecimal.valueOf(100.0))
+                .withNonFederalCost(BigDecimal.valueOf(50.0))
+                .withFederalOAndMCost(BigDecimal.valueOf(10.0))
+                .withNonFederalOAndMCost(BigDecimal.valueOf(5.0))
                 .withCostYear(Instant.now())
                 .withCostUnit("$")
                 .withYieldTimeFrameEnd(Instant.now())
                 .withYieldTimeFrameStart(Instant.now())
-                .withFederalOAndMCost(10.0)
-                .withNonFederalOAndMCost(5.0)
+                .withFederalOAndMCost(BigDecimal.valueOf(10.0))
+                .withNonFederalOAndMCost(BigDecimal.valueOf(5.0))
                 .withProjectRemarks("Remarks")
                 .withPumpBackLocation(pbLoc)
                 .withNearGageLocation(ngLoc)
