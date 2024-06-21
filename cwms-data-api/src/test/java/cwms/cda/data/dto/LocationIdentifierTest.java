@@ -35,15 +35,15 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class LocationIdentifierTest {
+public final class LocationIdentifierTest {
 
     @Test
     void createLocationIdentifier_allFieldsProvided_success() {
         LocationIdentifier item = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
-        assertAll(() -> assertEquals("Stream123", item.getLocationId(), "The location ID does not match the provided value"),
+        assertAll(() -> assertEquals("Stream123", item.getName(), "The location ID does not match the provided value"),
                 () -> assertEquals("Office123", item.getOfficeId(), "The office ID does not match the provided value"));
     }
 
@@ -61,7 +61,7 @@ final class LocationIdentifierTest {
                 // When officeId is missing
                 () -> assertThrows(FieldException.class, () -> {
                     LocationIdentifier item = new LocationIdentifier.Builder()
-                            .withLocationId("Stream123")
+                            .withName("Stream123")
                             .build();
                     item.validate();
                 }, "The validate method should have thrown a FieldException because the officeId field is missing"));
@@ -70,19 +70,19 @@ final class LocationIdentifierTest {
     @Test
     void createLocationIdentifier_serialize_roundtrip() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, locationIdentifier);
         LocationIdentifier deserialized = Formats.parseContent(contentType, json, LocationIdentifier.class);
-        assertEquals(locationIdentifier, deserialized, "LocationIdentifier deserialized from JSON doesn't equal original");
+        assertSame(locationIdentifier, deserialized);
     }
 
     @Test
     void createLocationIdentifier_deserialize() throws Exception {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location_identifier.json");
@@ -90,13 +90,13 @@ final class LocationIdentifierTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         LocationIdentifier deserialized = Formats.parseContent(contentType, json, LocationIdentifier.class);
-        assertEquals(locationIdentifier, deserialized, "LocationIdentifier deserialized from JSON doesn't equal original");
+        assertSame(locationIdentifier, deserialized);
     }
 
     @Test
     void createLocationIdentifier_verifyOrdering() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
 
@@ -105,8 +105,15 @@ final class LocationIdentifierTest {
 
         // Verify that officeId comes before locationId
         int officeIdIndex = json.indexOf("\"office-id\"");
-        int locationIdIndex = json.indexOf("\"location-id\"");
+        int locationIdIndex = json.indexOf("\"name\"");
 
         assertTrue(officeIdIndex < locationIdIndex, "The officeId field should come before the locationId field in the JSON string");
+    }
+
+    public static void assertSame(LocationIdentifier first, LocationIdentifier second) {
+        assertAll(
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "LocationIdentifiers not the same. Office id differs"),
+                () -> assertEquals(first.getName(), second.getName(), "LocationIdentifiers not the same. Office id differs")
+        );
     }
 }

@@ -38,32 +38,30 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Embankment.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectIdentifier", "location"})
+@JsonPropertyOrder({"projectId", "location", "structureType"})
 public final class Embankment implements CwmsDTOBase {
-    private final LocationIdentifier projectIdentifier;
+    private final LocationIdentifier projectId;
     private final Location location;
+    private final LookupType structureType;
     private final Double upstreamSideSlope;
     private final Double downstreamSideSlope;
     private final Double structureLength;
     private final Double heightMax;
     private final Double topWidth;
     private final String unitsId;
-    private final LookupType downstreamProtType;
-    private final LookupType upstreamProtType;
-    private final LookupType structureType;
+    private final LookupType downstreamProtectionType;
+    private final LookupType upstreamProtectionType;
 
     private Embankment(Builder builder) {
-        this.projectIdentifier = builder.projectIdentifier;
+        this.projectId = builder.projectId;
         this.location = builder.location;
         this.structureType = builder.structureType;
-        this.upstreamProtType = builder.upstreamProtType;
-        this.downstreamProtType = builder.downstreamProtType;
+        this.upstreamProtectionType = builder.upstreamProtectionType;
+        this.downstreamProtectionType = builder.downstreamProtectionType;
         this.unitsId = builder.unitsId;
         this.topWidth = builder.topWidth;
         this.heightMax = builder.heightMax;
@@ -100,59 +98,20 @@ public final class Embankment implements CwmsDTOBase {
         return structureType;
     }
 
-    public LookupType getUpstreamProtType() {
-        return upstreamProtType;
+    public LookupType getUpstreamProtectionType() {
+        return upstreamProtectionType;
     }
 
-    public LookupType getDownstreamProtType() {
-        return downstreamProtType;
+    public LookupType getDownstreamProtectionType() {
+        return downstreamProtectionType;
     }
 
     public Location getLocation() {
         return location;
     }
 
-    public LocationIdentifier getProjectIdentifier() {
-        return projectIdentifier;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Embankment that = (Embankment) o;
-        return Objects.equals(getUpstreamSideSlope(), that.getUpstreamSideSlope())
-                && Objects.equals(getDownstreamSideSlope(), that.getDownstreamSideSlope())
-                && Objects.equals(getStructureLength(), that.getStructureLength())
-                && Objects.equals(getHeightMax(), that.getHeightMax())
-                && Objects.equals(getTopWidth(), that.getTopWidth())
-                && Objects.equals(getUnitsId(), that.getUnitsId())
-                && Objects.equals(getDownstreamProtType(), that.getDownstreamProtType())
-                && Objects.equals(getUpstreamProtType(), that.getUpstreamProtType())
-                && Objects.equals(getStructureType(), that.getStructureType())
-                && Objects.equals(getLocation(), that.getLocation())
-                && Objects.equals(getProjectIdentifier(), that.getProjectIdentifier());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getUpstreamSideSlope());
-        result = 31 * result + Objects.hashCode(getDownstreamSideSlope());
-        result = 31 * result + Objects.hashCode(getStructureLength());
-        result = 31 * result + Objects.hashCode(getHeightMax());
-        result = 31 * result + Objects.hashCode(getTopWidth());
-        result = 31 * result + Objects.hashCode(getUnitsId());
-        result = 31 * result + Objects.hashCode(getDownstreamProtType());
-        result = 31 * result + Objects.hashCode(getUpstreamProtType());
-        result = 31 * result + Objects.hashCode(getStructureType());
-        result = 31 * result + Objects.hashCode(getLocation());
-        result = 31 * result + Objects.hashCode(getProjectIdentifier());
-        return result;
+    public LocationIdentifier getProjectId() {
+        return projectId;
     }
 
     @Override
@@ -161,10 +120,10 @@ public final class Embankment implements CwmsDTOBase {
             throw new FieldException("Location field can't be null");
         }
         location.validate();
-        if (this.projectIdentifier == null) {
+        if (this.projectId == null) {
             throw new FieldException("Project location Id field can't be null");
         }
-        projectIdentifier.validate();
+        projectId.validate();
         if (this.structureType == null) {
             throw new FieldException("Structure type field can't be null");
         }
@@ -177,11 +136,11 @@ public final class Embankment implements CwmsDTOBase {
         private Double heightMax;
         private Double topWidth;
         private String unitsId;
-        private LookupType downstreamProtType;
-        private LookupType upstreamProtType;
+        private LookupType downstreamProtectionType;
+        private LookupType upstreamProtectionType;
         private LookupType structureType;
         private Location location;
-        private LocationIdentifier projectIdentifier;
+        private LocationIdentifier projectId;
 
         public Builder withUpstreamSideSlope(Double upstreamSideSlope) {
             this.upstreamSideSlope = upstreamSideSlope;
@@ -213,13 +172,13 @@ public final class Embankment implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withDownstreamProtType(LookupType downstreamProtType) {
-            this.downstreamProtType = downstreamProtType;
+        public Builder withDownstreamProtectionType(LookupType downstreamProtectionType) {
+            this.downstreamProtectionType = downstreamProtectionType;
             return this;
         }
 
-        public Builder withUpstreamProtType(LookupType upstreamProtType) {
-            this.upstreamProtType = upstreamProtType;
+        public Builder withUpstreamProtectionType(LookupType upstreamProtectionType) {
+            this.upstreamProtectionType = upstreamProtectionType;
             return this;
         }
 
@@ -233,8 +192,8 @@ public final class Embankment implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withProjectIdentifier(LocationIdentifier projectIdentifier) {
-            this.projectIdentifier = projectIdentifier;
+        public Builder withProjectId(LocationIdentifier projectId) {
+            this.projectId = projectId;
             return this;
         }
 

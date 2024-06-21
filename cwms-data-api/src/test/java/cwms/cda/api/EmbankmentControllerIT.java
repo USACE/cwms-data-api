@@ -152,12 +152,12 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .body("height-max", equalTo(EMBANKMENT.getHeightMax().floatValue()))
             .body("top-width", equalTo(EMBANKMENT.getTopWidth().floatValue()))
             .body("units-id", equalTo(EMBANKMENT.getUnitsId()))
-            .body("downstream-prot-type", not(nullValue()))
-            .body("upstream-prot-type", not(nullValue()))
+            .body("downstream-protection-type", not(nullValue()))
+            .body("upstream-protection-type", not(nullValue()))
             .body("structure-type", not(nullValue()))
             .body("location", not(nullValue()))
-            .body("project-identifier.location-id", equalTo(EMBANKMENT.getProjectIdentifier().getLocationId()))
-            .body("project-identifier.office-id", equalTo(EMBANKMENT.getProjectIdentifier().getOfficeId()))
+            .body("project-id.name", equalTo(EMBANKMENT.getProjectId().getName()))
+            .body("project-id.office-id", equalTo(EMBANKMENT.getProjectId().getOfficeId()))
         ;
 
         // Delete a Embankment
@@ -266,7 +266,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectIdentifier().getLocationId())
+            .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectId().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -281,12 +281,12 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .body("[0].height-max", equalTo(EMBANKMENT.getHeightMax().floatValue()))
             .body("[0].top-width", equalTo(EMBANKMENT.getTopWidth().floatValue()))
             .body("[0].units-id", equalTo(EMBANKMENT.getUnitsId()))
-            .body("[0].downstream-prot-type", not(nullValue()))
-            .body("[0].upstream-prot-type", not(nullValue()))
+            .body("[0].downstream-protection-type", not(nullValue()))
+            .body("[0].upstream-protection-type", not(nullValue()))
             .body("[0].structure-type", not(nullValue()))
             .body("[0].location", not(nullValue()))
-            .body("project-identifier.location-id", equalTo(EMBANKMENT.getProjectIdentifier().getLocationId()))
-            .body("project-identifier.office-id", equalTo(EMBANKMENT.getProjectIdentifier().getOfficeId()))
+            .body("[0].project-id.name", equalTo(EMBANKMENT.getProjectId().getName()))
+            .body("[0].project-id.office-id", equalTo(EMBANKMENT.getProjectId().getOfficeId()))
         ;
 
         // Delete a Embankment

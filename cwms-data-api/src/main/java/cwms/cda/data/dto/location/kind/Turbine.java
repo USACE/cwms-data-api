@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.location.kind;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -30,76 +30,63 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@JsonDeserialize(builder = LocationIdentifier.Builder.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSONV1})
+@JsonDeserialize(builder = Turbine.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({ "officeId", "name" })
-public final class LocationIdentifier implements CwmsDTOBase {
+@JsonPropertyOrder({ "projectId", "location" })
+public final class Turbine implements CwmsDTOBase {
+    private final LocationIdentifier projectId;
+    private final Location location;
 
-    private final String officeId;
-    private final String name;
+    private Turbine(Builder builder) {
+        this.projectId = builder.projectId;
+        this.location = builder.location;
+    }
 
-    public LocationIdentifier(Builder builder) {
-        this.officeId = builder.officeId;
-        this.name = builder.name;
+    public LocationIdentifier getProjectId() {
+        return projectId;
+    }
+
+    public Location getLocation() {
+        return location;
     }
 
     @Override
     public void validate() throws FieldException {
-        if(this.officeId == null || this.officeId.isEmpty()){
-            throw new FieldException("The 'officeId' field of a LocationIdentifier cannot be null or empty.");
+        if (this.location == null) {
+            throw new FieldException("Location field can't be null");
         }
-        if(this.name == null || this.name.isEmpty()){
-            throw new FieldException("The 'locationId' field of a LocationIdentifier cannot be null or empty.");
+        this.location.validate();
+        if (this.projectId == null) {
+            throw new FieldException("Project location Id field must be defined");
         }
-    }
-
-    public String getOfficeId() {
-        return officeId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        LocationIdentifier that = (LocationIdentifier) o;
-        return Objects.equals(getOfficeId(), that.getOfficeId()) && Objects.equals(getName(), that.getName());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getOfficeId());
-        result = 31 * result + Objects.hashCode(getName());
-        return result;
+        projectId.validate();
     }
 
     public static class Builder {
-        private String officeId;
-        private String name;
+        private LocationIdentifier projectId;
+        private Location location;
 
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
-            return this;
-        }
-        public Builder withName(String name) {
-            this.name = name;
+        public Builder withProjectId(LocationIdentifier projectId) {
+            this.projectId = projectId;
             return this;
         }
 
-        public LocationIdentifier build() {
-            return new LocationIdentifier(this);
+        public Builder withLocation(Location location) {
+            this.location = location;
+            return this;
+        }
+
+        public Turbine build() {
+            return new Turbine(this);
         }
     }
 }

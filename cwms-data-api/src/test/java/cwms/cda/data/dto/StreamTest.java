@@ -43,13 +43,13 @@ final class StreamTest {
     @Test
     void createStream_allFieldsProvided_success() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
 
         StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
                 .withStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("AnotherStream")
+                        .withName("AnotherStream")
                         .withOfficeId("Office123")
                         .build())
                 .withStation(123.45)
@@ -58,7 +58,7 @@ final class StreamTest {
 
         StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
                 .withStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("UpstreamStream")
+                        .withName("UpstreamStream")
                         .withOfficeId("Office123")
                         .build())
                 .withStation(678.90)
@@ -91,7 +91,7 @@ final class StreamTest {
                 () -> assertThrows(FieldException.class, () -> {
                     StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
                             .withStreamId(new LocationIdentifier.Builder()
-                                    .withLocationId("AnotherStream")
+                                    .withName("AnotherStream")
                                     .withOfficeId("Office123")
                                     .build())
                             .withStation(123.45)
@@ -100,7 +100,7 @@ final class StreamTest {
 
                     StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
                             .withStreamId(new LocationIdentifier.Builder()
-                                    .withLocationId("UpstreamStream")
+                                    .withName("UpstreamStream")
                                     .withOfficeId("Office123")
                                     .build())
                             .withStation(678.90)
@@ -122,13 +122,13 @@ final class StreamTest {
     @Test
     void createStream_serialize_roundtrip() {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
 
         StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
                 .withStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("AnotherStream")
+                        .withName("AnotherStream")
                         .withOfficeId("Office123")
                         .build())
                 .withStation(123.45)
@@ -137,7 +137,7 @@ final class StreamTest {
 
         StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
                 .withStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("UpstreamStream")
+                        .withName("UpstreamStream")
                         .withOfficeId("Office123")
                         .build())
                 .withStation(678.90)
@@ -163,13 +163,13 @@ final class StreamTest {
     @Test
     void createStream_deserialize() throws Exception {
         LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
-                .withLocationId("Stream123")
+                .withName("Stream123")
                 .withOfficeId("Office123")
                 .build();
 
         StreamJunctionIdentifier flowsIntoStream = new StreamJunctionIdentifier.Builder()
                 .withStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("AnotherStream")
+                        .withName("AnotherStream")
                         .withOfficeId("Office123")
                         .build())
                 .withStation(123.45)
@@ -178,7 +178,7 @@ final class StreamTest {
 
         StreamJunctionIdentifier divertsFromStream = new StreamJunctionIdentifier.Builder()
                 .withStreamId(new LocationIdentifier.Builder()
-                        .withLocationId("UpstreamStream")
+                        .withName("UpstreamStream")
                         .withOfficeId("Office123")
                         .build())
                 .withStation(678.90)

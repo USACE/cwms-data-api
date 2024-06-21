@@ -29,6 +29,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
+import cwms.cda.data.dto.location.kind.EmbankmentTest;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.EMBANKMENT_OBJ_T;
 
@@ -43,15 +44,15 @@ final class EmbankmentDaoTest {
         Embankment expected = buildTestEmbankment();
         EMBANKMENT_OBJ_T embankmentObjT = EmbankmentDao.map(expected);
         Embankment embankment = EmbankmentDao.map(embankmentObjT);
-        assertEquals(expected, embankment, "Conversion of Embankment to jOOQ type and back failed.");
+        EmbankmentTest.assertSame(expected, embankment);
     }
 
     private Embankment buildTestEmbankment() {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
                 .withHeightMax(5.0)
-                .withProjectIdentifier(new LocationIdentifier.Builder()
-                        .withLocationId("PROJECT")
+                .withProjectId(new LocationIdentifier.Builder()
+                        .withName("PROJECT")
                         .withOfficeId("LRD")
                         .build())
                 .withStructureLength(10.0)
@@ -61,13 +62,13 @@ final class EmbankmentDaoTest {
                         .withTooltip("TOOLTIP_STRUCT")
                         .withActive(true)
                         .build())
-                .withDownstreamProtType(new LookupType.Builder()
+                .withDownstreamProtectionType(new LookupType.Builder()
                         .withOfficeId("SPK")
                         .withDisplayValue("DOWNSTREAM_PROT")
                         .withTooltip("TOOLTIP_DOWNSTREAM_PROT")
                         .withActive(false)
                         .build())
-                .withUpstreamProtType(new LookupType.Builder()
+                .withUpstreamProtectionType(new LookupType.Builder()
                         .withOfficeId("LRL")
                         .withDisplayValue("UPSTREAM_PROT")
                         .withTooltip("TOOLTIP_UPSTREAM_PROT")

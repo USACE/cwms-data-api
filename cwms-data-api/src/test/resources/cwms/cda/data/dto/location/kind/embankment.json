@@ -1,31 +1,7 @@
 {
-  "project-identifier": {
-    "location-id": "PROJECT",
-    "office-id": "LRD"
-  },
-  "upstream-side-slope": 15.0,
-  "downstream-side-slope": 90.0,
-  "structure-length": 25.0,
-  "height-max": 5.0,
-  "top-width": 20.0,
-  "units-id": "ft",
-  "downstream-prot-type": {
-    "active": false,
-    "office-id": "SPK",
-    "tooltip": "TOOLTIP_DOWNSTREAM_PROT",
-    "display-value": "DOWNSTREAM_PROT"
-  },
-  "upstream-prot-type": {
-    "active": true,
-    "office-id": "LRL",
-    "tooltip": "TOOLTIP_UPSTREAM_PROT",
-    "display-value": "UPSTREAM_PROT"
-  },
-  "structure-type": {
-    "active": true,
-    "office-id": "CWMS",
-    "tooltip": "TOOLTIP_STRUCT",
-    "display-value": "STRUCT"
+  "project-id": {
+    "office-id": "LRD",
+    "name": "PROJECT"
   },
   "location": {
     "office-id": "LRL",
@@ -49,5 +25,29 @@
     "elevation-units": "m",
     "bounding-office-id": "LRL",
     "nearest-city": "Davis"
+  },
+  "structure-type": {
+    "active": true,
+    "office-id": "CWMS",
+    "tooltip": "TOOLTIP_STRUCT",
+    "display-value": "STRUCT"
+  },
+  "upstream-side-slope": 15.0,
+  "downstream-side-slope": 90.0,
+  "structure-length": 25.0,
+  "height-max": 5.0,
+  "top-width": 20.0,
+  "units-id": "ft",
+  "downstream-protection-type": {
+    "active": false,
+    "office-id": "SPK",
+    "tooltip": "TOOLTIP_DOWNSTREAM_PROT",
+    "display-value": "DOWNSTREAM_PROT"
+  },
+  "upstream-protection-type": {
+    "active": true,
+    "office-id": "LRL",
+    "tooltip": "TOOLTIP_UPSTREAM_PROT",
+    "display-value": "UPSTREAM_PROT"
   }
 }
