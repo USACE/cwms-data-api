@@ -66,9 +66,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         try(InputStream projectStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
             InputStream embankmentStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/embankment.json")) {
             String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
-            PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSON), projectLocJson, Location.class);
+            PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
             String embankmentJson = IOUtils.toString(embankmentStream, StandardCharsets.UTF_8);
-            EMBANKMENT = Formats.parseContent(new ContentType(Formats.JSON), embankmentJson, Embankment.class);
+            EMBANKMENT = Formats.parseContent(new ContentType(Formats.JSONV1), embankmentJson, Embankment.class);
             EMBANKMENT_LOC = EMBANKMENT.getLocation();
         } catch(Exception ex) {
             throw new RuntimeException(ex);
@@ -114,12 +114,11 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // 3)Delete the Embankment
         // 4)Retrieve the Embankment and assert that it does not exist
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSON), EMBANKMENT);
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Embankment.class), EMBANKMENT);
         //Create the Embankment
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
+            .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
@@ -136,7 +135,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // Retrieve the Embankment and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -163,7 +162,6 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // Delete a Embankment
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -179,7 +177,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // Retrieve a Embankment and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -195,13 +193,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     @Test
     void test_update_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        //Create the Embankment
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
-                .queryParam(Controllers.OFFICE, user.getOperatingOffice())
-                .queryParam(Controllers.NAME, "NewBogus")
+            .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+            .queryParam(Controllers.NAME, "NewBogus")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -220,7 +215,6 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // Delete a Embankment
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -242,12 +236,11 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // 2)Retrieve the Embankment with getAll and assert that it exists
         // 3)Delete the Embankment
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSON), EMBANKMENT);
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Embankment.class), EMBANKMENT);
         //Create the Embankment
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
+            .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
@@ -264,7 +257,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // Retrieve the Embankment and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectId().getName())
         .when()
@@ -292,7 +285,6 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         // Delete a Embankment
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
