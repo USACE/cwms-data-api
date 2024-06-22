@@ -1,7 +1,7 @@
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.basin;
 
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.basin.Basin;
+import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.formatters.Formats;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +15,7 @@ final class BasinTest {
     @Test
     void testBasinSerializationRoundTrip() {
         Basin basin = buildTestBasin(new LocationIdentifier.Builder()
-                .withLocationId("TEST_LOCATION1")
+                .withName("TEST_LOCATION1")
                 .withOfficeId("NVE")
                 .build(), false);
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, Basin.class), basin);
@@ -27,7 +27,7 @@ final class BasinTest {
     @Test
     void testBasinSerializationRoundTripFromFile() throws Exception {
         Basin basin = buildTestBasin(new LocationIdentifier.Builder()
-                .withLocationId("TEST_LOCATION2")
+                .withName("TEST_LOCATION2")
                 .withOfficeId("MVR")
                 .build(), false);
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/basin/basin.json");
@@ -37,7 +37,7 @@ final class BasinTest {
         assertEquals(basin, deserialized, "Roundtrip serialization failed");
 
         Basin basin1 = buildTestBasin(new LocationIdentifier.Builder()
-                .withLocationId("TEST_LOCATION2")
+                .withName("TEST_LOCATION2")
                 .withOfficeId("MVR")
                 .build(), true);
         InputStream resource1 = this.getClass().getResourceAsStream("/cwms/cda/data/dto/basin/basin1.json");
@@ -50,7 +50,7 @@ final class BasinTest {
     @Test
     void testValidate() {
         LocationIdentifier basinId = new LocationIdentifier.Builder()
-                .withLocationId("NAB")
+                .withName("NAB")
                 .withOfficeId("TEST_OFFICE3")
                 .build();
 
@@ -70,7 +70,7 @@ final class BasinTest {
             return new Basin.Builder()
                     .withBasinId(basinId)
                     .withPrimaryStreamId(new LocationIdentifier.Builder()
-                            .withLocationId("TEST_LOCATION4")
+                            .withName("TEST_LOCATION4")
                             .withOfficeId("MVP")
                             .build())
                     .withSortOrder(1.0)
@@ -83,14 +83,14 @@ final class BasinTest {
             return new Basin.Builder()
                     .withBasinId(basinId)
                     .withPrimaryStreamId(new LocationIdentifier.Builder()
-                            .withLocationId("TEST_LOCATION4")
+                            .withName("TEST_LOCATION4")
                             .withOfficeId("MVP")
                             .build())
                     .withSortOrder(1.0)
                     .withBasinArea(1005.0)
                     .withContributingArea(1050.0)
                     .withParentBasinId(new LocationIdentifier.Builder()
-                            .withLocationId("TEST_LOCATION5")
+                            .withName("TEST_LOCATION5")
                             .withOfficeId("NAE")
                             .build())
                     .withAreaUnit("SI")
