@@ -11,8 +11,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Basin.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -70,31 +68,6 @@ public final class Basin implements CwmsDTOBase {
     public String getAreaUnit()
     {
         return AREA_UNIT;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Basin basin = (Basin) o;
-        return Objects.equals(getBasinId(), basin.BASIN_ID)
-                && Objects.equals(getPrimaryStreamId(), basin.PRIMARY_STREAM_ID)
-                && Objects.equals(getSortOrder(), basin.SORT_ORDER)
-                && Objects.equals(getBasinArea(), basin.TOTAL_DRAINAGE_AREA)
-                && Objects.equals(getContributingArea(), basin.CONTRIBUTING_DRAINAGE_AREA)
-                && Objects.equals(getParentBasinId(), basin.PARENT_BASIN_ID)
-                && Objects.equals(getAreaUnit(), basin.AREA_UNIT);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getBasinId(), getPrimaryStreamId(), getSortOrder(), getBasinArea(),
-                getContributingArea(), getParentBasinId(), getAreaUnit());
     }
 
     public static class Builder
