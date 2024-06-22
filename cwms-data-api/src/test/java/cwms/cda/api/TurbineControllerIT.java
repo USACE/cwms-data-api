@@ -66,7 +66,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
             InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine.json")) {
             String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
-            PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSON), projectLocJson, Location.class);
+            PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
             String turbineJson = IOUtils.toString(turbineStream, StandardCharsets.UTF_8);
             TURBINE = Formats.parseContent(new ContentType(Formats.JSONV1), turbineJson, Turbine.class);
             TURBINE_LOC = TURBINE.getLocation();
@@ -114,12 +114,11 @@ final class TurbineControllerIT extends DataApiTestIT {
         // 3)Delete the Turbine
         // 4)Retrieve the Turbine and assert that it does not exist
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSON, Turbine.class), TURBINE);
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Turbine.class), TURBINE);
         //Create the Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
+            .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
@@ -136,7 +135,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -154,7 +153,6 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Delete a Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -170,7 +168,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Retrieve a Turbine and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -189,10 +187,9 @@ final class TurbineControllerIT extends DataApiTestIT {
         //Create the Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
-                .queryParam(Controllers.OFFICE, user.getOperatingOffice())
-                .queryParam(Controllers.NAME, "NewBogus")
+            .contentType(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+            .queryParam(Controllers.NAME, "NewBogus")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -211,7 +208,6 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Delete a Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -237,8 +233,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         //Create the Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
+            .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
@@ -255,7 +250,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, TURBINE.getProjectId().getName())
         .when()
@@ -274,7 +269,6 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Delete a Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()

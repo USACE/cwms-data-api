@@ -178,18 +178,18 @@ public final class EmbankmentController  implements CrudHandler {
     @OpenApi(
             pathParams = {
                     @OpenApiParam(name = NAME, description = "Specifies the name of "
-                            + "the embankment to be deleted."),
+                            + "the embankment to be renamed."),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the embankment to be deleted."),
+                            + "the embankment to be renamed."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the new embankment name. ")
             },
             description = "Rename CWMS Embankment",
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Embankment successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_204, description = "Embankment successfully renamed in CWMS.")
             }
     )
     @Override

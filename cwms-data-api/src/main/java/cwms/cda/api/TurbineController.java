@@ -79,7 +79,8 @@ public final class TurbineController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Turbine.class)
+                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Turbine.class),
+                            @OpenApiContent(from = Turbine.class, type = Formats.JSON)
                     })
             },
             description = "Returns matching CWMS Turbine Data for a Reservoir Project.",
@@ -116,7 +117,8 @@ public final class TurbineController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(type = Formats.JSONV1, from = Turbine.class)
+                                    @OpenApiContent(type = Formats.JSONV1, from = Turbine.class),
+                                    @OpenApiContent(from = Turbine.class, type = Formats.JSON)
                             })
             },
             description = "Returns CWMS Turbine Data",
@@ -143,7 +145,8 @@ public final class TurbineController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Turbine.class, type = Formats.JSONV1)
+                            @OpenApiContent(from = Turbine.class, type = Formats.JSONV1),
+                            @OpenApiContent(from = Turbine.class, type = Formats.JSON)
                     },
                     required = true),
             queryParams = {
@@ -177,18 +180,18 @@ public final class TurbineController implements CrudHandler {
     @OpenApi(
             pathParams = {
                     @OpenApiParam(name = NAME, description = "Specifies the name of "
-                            + "the turbine to be deleted."),
+                            + "the turbine to be renamed."),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the turbine to be deleted."),
+                            + "the turbine to be renamed."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the new turbine name. ")
             },
             description = "Rename CWMS Turbine",
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Turbine successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_204, description = "Turbine successfully renamed in to CWMS.")
             }
     )
     @Override
