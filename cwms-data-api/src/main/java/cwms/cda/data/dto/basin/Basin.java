@@ -11,8 +11,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Basin.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -52,12 +50,12 @@ public final class Basin implements CwmsDTOBase {
         return sortOrder;
     }
 
-    public Double getBasinArea()
+    public Double getTotalDrainageArea()
     {
         return totalDrainageArea;
     }
 
-    public Double getContributingArea()
+    public Double getContributingDrainageArea()
     {
         return contributingDrainageArea;
     }
@@ -100,13 +98,13 @@ public final class Basin implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withBasinArea(Double totalDrainageArea)
+        public Builder withTotalDrainageArea(Double totalDrainageArea)
         {
             this.totalDrainageArea = totalDrainageArea;
             return this;
         }
 
-        public Builder withContributingArea(Double contributingDrainageArea)
+        public Builder withContributingDrainageArea(Double contributingDrainageArea)
         {
             this.contributingDrainageArea = contributingDrainageArea;
             return this;
@@ -128,19 +126,6 @@ public final class Basin implements CwmsDTOBase {
         {
             return new Basin(this);
         }
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getBasinId(), getSortOrder(), totalDrainageArea, contributingDrainageArea, getParentBasinId(), getAreaUnit(), getPrimaryStreamId());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Basin basin = (Basin) o;
-        return Objects.equals(getBasinId(), basin.getBasinId()) && Objects.equals(getSortOrder(), basin.getSortOrder()) && Objects.equals(totalDrainageArea, basin.totalDrainageArea) && Objects.equals(contributingDrainageArea, basin.contributingDrainageArea) && Objects.equals(getParentBasinId(), basin.getParentBasinId()) && Objects.equals(getAreaUnit(), basin.getAreaUnit()) && Objects.equals(getPrimaryStreamId(), basin.getPrimaryStreamId());
     }
 
     @Override

@@ -4,8 +4,8 @@
     "name": "TEST_LOCATION2"
   },
   "sort-order": 1.0,
-  "basin-area": 1005.0,
-  "contributing-area": 1050.0,
+  "total-drainage-area": 1005.0,
+  "contributing-drainage-area": 1050.0,
   "parent-basin-id": {},
   "area-unit": "SI",
   "primary-stream-id": {
