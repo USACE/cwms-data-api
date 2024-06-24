@@ -65,7 +65,7 @@ class OutletTest
 				.withVerticalDatum("NAVD88")
 				.build();
 		CharacteristicRef charRef = new CharacteristicRef.Builder()
-				.withCharacteristicId("No idea")
+				.withCharacteristicId("Ogee Weir Depth")
 				.withOfficeId(SPK)
 				.build();
 
