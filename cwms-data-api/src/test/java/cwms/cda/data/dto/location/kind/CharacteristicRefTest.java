@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CharacteristicRefTest
 {
 	private static final String SPK = "SPK";
-	private static final String CHARACTERISTIC = "Characteristic";
+	private static final String CHARACTERISTIC = "Ogee Weir Depth";
 
 	@ParameterizedTest
 	@EnumSource(SerializationType.class)
