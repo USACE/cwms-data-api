@@ -1,7 +1,7 @@
 {
   "basin-id": {
     "office-id": "MVR",
-    "location-id": "TEST_LOCATION2"
+    "name": "TEST_LOCATION2"
   },
   "sort-order": 1.0,
   "basin-area": 1005.0,
@@ -10,6 +10,6 @@
   "area-unit": "SI",
   "primary-stream-id": {
     "office-id": "MVP",
-    "location-id": "TEST_LOCATION4"
+    "name": "TEST_LOCATION4"
   }
 }
