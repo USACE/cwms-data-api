@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public abstract class CwmsDTO implements CwmsDTOBase {
     @Schema(description = "Owning office of object.")
-    @JsonProperty(required = true)
     protected final String officeId; // ALL DTOs require an office field
 
     protected CwmsDTO(String office) {

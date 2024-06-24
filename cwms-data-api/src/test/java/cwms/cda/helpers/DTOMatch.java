@@ -30,7 +30,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.location.kind.CompoundOutletRecord;
 import cwms.cda.data.dto.location.kind.Embankment;
+import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.data.dto.location.kind.PhysicalStructureChange;
 import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.data.dto.location.kind.TurbineSetting;
@@ -41,6 +43,7 @@ import cwms.cda.data.dto.stream.StreamReach;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 
@@ -184,5 +187,37 @@ public final class DTOMatch {
             () -> assertEquals(first.getGenerationUnits(), second.getGenerationUnits(),"Generation units do not match"),
             () -> assertEquals(first.getRealPower(), second.getRealPower(), "Real power does not match"),
             () -> assertEquals(first.getScheduledLoad(), second.getScheduledLoad(), "Scheduled load does not match"));
+    }
+
+    public static void assertMatch(Outlet first, Outlet second) {
+        assertAll(
+                () -> assertMatch(first.getProjectId(), second.getProjectId()),
+                () -> assertEquals(first.getLocation(), second.getLocation()),
+                () -> assertEquals(first.getRatingGroupId(), second.getRatingGroupId()),
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
+                () -> assertMatch(first.getCompoundOutletRecords(), second.getCompoundOutletRecords(), DTOMatch::assertMatch)
+        );
+    }
+
+    public static void assertMatch(CompoundOutletRecord first, CompoundOutletRecord second) {
+        assertAll(() -> assertMatch(first.getOutletId(), second.getOutletId()),
+                  () -> assertEquals(first.getDownstreamOutletIds().size(), second.getDownstreamOutletIds().size()),
+                  () -> assertAll(IntStream.range(0, first.getDownstreamOutletIds().size())
+                                           .mapToObj(i -> () -> DTOMatch.assertMatch(
+                                                   first.getDownstreamOutletIds().get(i),
+                                                   second.getDownstreamOutletIds().get(i),
+                                                   "Downstream Outlet Id " + i)))
+        );
+    }
+
+    private static <T> void assertMatch(List<T> first, List<T> second, AssertMatchMethod<T> matcher) {
+        assertAll(() -> assertEquals(first.size(), second.size()),
+                  () -> assertAll(IntStream.range(0, first.size())
+                                           .mapToObj(i -> () -> matcher.assertMatch(first.get(i), second.get(i)))));
+    }
+
+    @FunctionalInterface
+    private interface AssertMatchMethod<T>{
+        void assertMatch(T first, T second);
     }
 }

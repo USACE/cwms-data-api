@@ -26,12 +26,13 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class OutletTest {
@@ -39,6 +40,8 @@ final class OutletTest {
     private static final String PROJECT_LOC = "location";
     private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
     private static final String BASE_OUTLET_LOC = "outlet";
+    private static final String COMPOUND_OUTLET_LOC1 = "CO1";
+    private static final String RATING_GROUP_ID = "Rating-" + OUTLET_LOC;
 
     @Test
     void test_serialization() {
@@ -47,8 +50,7 @@ final class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-        DTOMatch.assertMatch(outlet.getProjectId(), parsedOutlet.getProjectId());
+        DTOMatch.assertMatch(outlet, parsedOutlet);
     }
 
     @Test
@@ -58,8 +60,7 @@ final class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-        DTOMatch.assertMatch(outlet.getProjectId(), parsedOutlet.getProjectId());
+        DTOMatch.assertMatch(outlet, parsedOutlet);
     }
 
     @Test
@@ -70,8 +71,7 @@ final class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
-        DTOMatch.assertMatch(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+        DTOMatch.assertMatch(outlet, deserialized);
     }
 
     @Test
@@ -82,11 +82,50 @@ final class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
-        DTOMatch.assertMatch(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+        DTOMatch.assertMatch(outlet, deserialized);
     }
 
-    private Outlet buildTestOutlet(String outletLocId) {
+    @Test
+    void test_serialize_compound_outlets() {
+        ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
+        Outlet outlet = buildTestOutlet(COMPOUND_OUTLET_LOC1,
+                                        buildCompoundOutletRecord("TG1", SPK, "TG2"),
+                                        buildCompoundOutletRecord("TG2", SPK, "TG3"),
+                                        buildCompoundOutletRecord("TG3", SPK));
+        String json = Formats.format(contentType, outlet);
+
+        Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
+        DTOMatch.assertMatch(outlet, parsedOutlet);
+    }
+
+    @Test
+    void test_serialize_compound_outlets_from_file() throws Exception {
+        ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
+        Outlet outlet = buildTestOutlet(COMPOUND_OUTLET_LOC1,
+                                        buildCompoundOutletRecord("TG1", SPK, "TG2"),
+                                        buildCompoundOutletRecord("TG2", SPK, "TG3"),
+                                        buildCompoundOutletRecord("TG3", SPK, "TG4", "TG5"),
+                                        buildCompoundOutletRecord("TG4", SPK),
+                                        buildCompoundOutletRecord("TG5", SPK));
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/compound_outlet.json");
+        assertNotNull(resource);
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
+        DTOMatch.assertMatch(outlet, deserialized);
+    }
+
+    private CompoundOutletRecord buildCompoundOutletRecord(String outletId, String officeId, String ... downstreamOutlets) {
+        return new CompoundOutletRecord.Builder()
+                .withOutletId(new CwmsId.Builder().withName(outletId).withOfficeId(officeId).build())
+                .withDownstreamOutletIds(Arrays.stream(downstreamOutlets)
+                                               .map(dso -> new CwmsId.Builder().withOfficeId(officeId)
+                                                                               .withName(dso)
+                                                                               .build())
+                                               .collect(Collectors.toList()))
+                .build();
+    }
+
+    private Outlet buildTestOutlet(String outletLocId, CompoundOutletRecord ... records) {
         CwmsId identifier = new CwmsId.Builder()
                 .withName(PROJECT_LOC)
                 .withOfficeId(SPK)
@@ -101,9 +140,10 @@ final class OutletTest {
                 .withVerticalDatum("NAVD88")
                 .build();
 
-        return new Outlet.Builder()
-                .withProjectId(identifier)
+        return new Outlet.Builder().withProjectId(identifier)
                 .withLocation(loc)
+                .withRatingGroupId(RATING_GROUP_ID)
+                .withCompoundOutletRecords(Arrays.asList(records))
                 .build();
     }
 }
