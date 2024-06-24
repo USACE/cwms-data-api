@@ -30,6 +30,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.LookupTypeTest;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -142,9 +143,9 @@ public final class EmbankmentTest {
                 () -> assertEquals(first.getMaxHeight(), second.getMaxHeight(), "Maximum height doesn't match"),
                 () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
                 () -> assertEquals(first.getUnitsId(), second.getUnitsId(), "Units ID doesn't match"),
-                () -> assertEquals(first.getDownstreamProtectionType(), second.getDownstreamProtectionType(), "Downstream protection type doesn't match"),
-                () -> assertEquals(first.getUpstreamProtectionType(), second.getUpstreamProtectionType(), "Upstream protection type doesn't match"),
-                () -> assertEquals(first.getStructureType(), second.getStructureType(), "Structure type doesn't match"),
+                () -> LookupTypeTest.assertSame(first.getDownstreamProtectionType(), second.getDownstreamProtectionType()),
+                () -> LookupTypeTest.assertSame(first.getUpstreamProtectionType(), second.getUpstreamProtectionType()),
+                () -> LookupTypeTest.assertSame(first.getStructureType(), second.getStructureType()),
                 () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
                 () -> CwmsIdTest.assertSame(first.getProjectId(), second.getProjectId())
         );

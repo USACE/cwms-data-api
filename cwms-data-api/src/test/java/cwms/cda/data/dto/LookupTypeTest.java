@@ -35,7 +35,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class LookupTypeTest {
+public final class LookupTypeTest {
 
     @Test
     void createLookupType_allFieldsProvided_success() {
@@ -86,7 +86,7 @@ final class LookupTypeTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, lookupType);
         LookupType deserialized = Formats.parseContent(contentType, json, LookupType.class);
-        assertEquals(lookupType, deserialized, "LookupType deserialized from JSON doesn't equal original");
+        assertSame(lookupType, deserialized);
     }
 
     @Test
@@ -102,6 +102,13 @@ final class LookupTypeTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         LookupType deserialized = Formats.parseContent(contentType, json, LookupType.class);
-        assertEquals(lookupType, deserialized, "LookupType deserialized from JSON doesn't equal original");
+        assertSame(lookupType, deserialized);
+    }
+
+    public static void assertSame(LookupType lookupType, LookupType deserialized) {
+        assertEquals(lookupType.getOfficeId(), deserialized.getOfficeId());
+        assertEquals(lookupType.getDisplayValue(), deserialized.getDisplayValue());
+        assertEquals(lookupType.getTooltip(), deserialized.getTooltip());
+        assertEquals(lookupType.getActive(), deserialized.getActive());
     }
 }
