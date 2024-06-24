@@ -1,18 +1,36 @@
-package cwms.cda.data.dao.project;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
+package cwms.cda.data.dao.project;
 
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import usace.cwms.db.dao.ifc.loc.LocationRefType;
-import usace.cwms.db.dao.ifc.loc.LocationType;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
-import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
-import usace.cwms.db.jooq.dao.util.LocationTypeUtil;
 
 public class ProjectUtil {
     private ProjectUtil() {
@@ -28,14 +46,10 @@ public class ProjectUtil {
         String authorizingLaw = project.getAuthorizingLaw();
         Timestamp costYear = project.getCostYear() != null
                 ? Timestamp.from(project.getCostYear()) : null;
-        BigDecimal federalCost = project.getFederalCost() != null
-                ? BigDecimal.valueOf(project.getFederalCost()) : null;
-        BigDecimal nonFederalCost = (project.getNonFederalCost() != null)
-                ? BigDecimal.valueOf(project.getNonFederalCost()) : null;
-        BigDecimal federalOandMCost = (project.getFederalOAndMCost() != null)
-                ? BigDecimal.valueOf(project.getFederalOAndMCost()) : null;
-        BigDecimal nonFederalOandMCost = (project.getNonFederalOAndMCost() != null)
-                ? BigDecimal.valueOf(project.getNonFederalOAndMCost()) : null;
+        BigDecimal federalCost = project.getFederalCost();
+        BigDecimal nonFederalCost = project.getNonFederalCost();
+        BigDecimal federalOandMCost = project.getFederalOAndMCost();
+        BigDecimal nonFederalOandMCost = project.getNonFederalOAndMCost();
         String costUnitsId = project.getCostUnit();
         String remarks = project.getProjectRemarks();
         String projectOwner = project.getProjectOwner();
@@ -92,24 +106,16 @@ public class ProjectUtil {
         builder = builder.withPumpBackLocation(pbLoc);
 
         BigDecimal federalCost = projectObjT.getFEDERAL_COST();
-        if (federalCost != null) {
-            builder = builder.withFederalCost(federalCost.doubleValue());
-        }
+        builder = builder.withFederalCost(federalCost);
 
         BigDecimal federalOandMCost = projectObjT.getFEDERAL_OM_COST();
-        if (federalOandMCost != null) {
-            builder = builder.withFederalOAndMCost(federalOandMCost.doubleValue());
-        }
+        builder = builder.withFederalOAndMCost(federalOandMCost);
 
         BigDecimal nonFederalCost = projectObjT.getNONFEDERAL_COST();
-        if (nonFederalCost != null) {
-            builder = builder.withNonFederalCost(nonFederalCost.doubleValue());
-        }
+        builder = builder.withNonFederalCost(nonFederalCost);
 
         BigDecimal nonFederalOandMCost = projectObjT.getNONFEDERAL_OM_COST();
-        if (nonFederalOandMCost != null) {
-            builder = builder.withNonFederalOAndMCost(nonFederalOandMCost.doubleValue());
-        }
+        builder = builder.withNonFederalOAndMCost(nonFederalOandMCost);
 
         Timestamp costYear = projectObjT.getCOST_YEAR();
         if (costYear != null) {

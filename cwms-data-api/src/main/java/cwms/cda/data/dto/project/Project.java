@@ -36,6 +36,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @JsonDeserialize(builder = Project.Builder.class)
@@ -45,12 +46,12 @@ import java.time.Instant;
 public class Project implements CwmsDTOBase {
 
     private final Location location;
-    private final Double federalCost;
-    private final Double nonFederalCost;
+    private final BigDecimal federalCost;
+    private final BigDecimal nonFederalCost;
     private final Instant costYear;
     private final String costUnit;
-    private final Double federalOAndMCost;
-    private final Double nonFederalOAndMCost;
+    private final BigDecimal federalOAndMCost;
+    private final BigDecimal nonFederalOAndMCost;
     private final String authorizingLaw;
     private final String projectOwner;
     private final String hydropowerDesc;
@@ -107,7 +108,7 @@ public class Project implements CwmsDTOBase {
         return downstreamUrbanDesc;
     }
 
-    public Double getFederalCost() {
+    public BigDecimal getFederalCost() {
         return federalCost;
     }
 
@@ -119,15 +120,15 @@ public class Project implements CwmsDTOBase {
         return nearGageLocation;
     }
 
-    public Double getNonFederalCost() {
+    public BigDecimal getNonFederalCost() {
         return nonFederalCost;
     }
 
-    public Double getFederalOAndMCost() {
+    public BigDecimal getFederalOAndMCost() {
         return federalOAndMCost;
     }
 
-    public Double getNonFederalOAndMCost() {
+    public BigDecimal getNonFederalOAndMCost() {
         return nonFederalOAndMCost;
     }
 
@@ -168,12 +169,12 @@ public class Project implements CwmsDTOBase {
     public static class Builder {
         private Location location;
 
-        private Double federalCost;
-        private Double nonFederalCost;
+        private BigDecimal federalCost;
+        private BigDecimal nonFederalCost;
         private Instant costYear;
         private String costUnit;
-        private Double federalOAndMCost;
-        private Double nonFederalOandMCost;
+        private BigDecimal federalOAndMCost;
+        private BigDecimal nonFederalOandMCost;
         private String authorizingLaw;
         private String projectOwner;
         private String hydropowerDesc;
@@ -225,12 +226,12 @@ public class Project implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withFederalCost(Double federalCost) {
+        public Builder withFederalCost(BigDecimal federalCost) {
             this.federalCost = federalCost;
             return this;
         }
 
-        public Builder withNonFederalCost(Double nonFederalCost) {
+        public Builder withNonFederalCost(BigDecimal nonFederalCost) {
             this.nonFederalCost = nonFederalCost;
             return this;
         }
@@ -245,12 +246,12 @@ public class Project implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withFederalOAndMCost(Double federalOandMCost) {
+        public Builder withFederalOAndMCost(BigDecimal federalOandMCost) {
             this.federalOAndMCost = federalOandMCost;
             return this;
         }
 
-        public Builder withNonFederalOAndMCost(Double nonFederalOandMCost) {
+        public Builder withNonFederalOAndMCost(BigDecimal nonFederalOandMCost) {
             this.nonFederalOandMCost = nonFederalOandMCost;
             return this;
         }

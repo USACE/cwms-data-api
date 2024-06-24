@@ -136,7 +136,6 @@ public final class LookupTypeController implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             LookupType lookupType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
-            lookupType.validate();
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.storeLookupType(category, prefix, lookupType);
@@ -170,7 +169,6 @@ public final class LookupTypeController implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             LookupType lookupType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
-            lookupType.validate();
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.updateLookupType(category, prefix, lookupType);

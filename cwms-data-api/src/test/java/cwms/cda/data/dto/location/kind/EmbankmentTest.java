@@ -83,7 +83,7 @@ public final class EmbankmentTest {
     private Embankment buildTestEmbankment() {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
-                .withHeightMax(5.0)
+                .withMaxHeight(5.0)
                 .withProjectId(new LocationIdentifier.Builder()
                         .withOfficeId("LRD")
                         .withName("PROJECT")
@@ -139,7 +139,7 @@ public final class EmbankmentTest {
                 () -> assertEquals(first.getUpstreamSideSlope(), second.getUpstreamSideSlope(), "Upstream side slope doesn't match"),
                 () -> assertEquals(first.getDownstreamSideSlope(), second.getDownstreamSideSlope(), "Downstream side slope doesn't match"),
                 () -> assertEquals(first.getStructureLength(), second.getStructureLength(), "Structure length doesn't match"),
-                () -> assertEquals(first.getHeightMax(), second.getHeightMax(), "Maximum height doesn't match"),
+                () -> assertEquals(first.getMaxHeight(), second.getMaxHeight(), "Maximum height doesn't match"),
                 () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
                 () -> assertEquals(first.getUnitsId(), second.getUnitsId(), "Units ID doesn't match"),
                 () -> assertEquals(first.getDownstreamProtectionType(), second.getDownstreamProtectionType(), "Downstream protection type doesn't match"),
