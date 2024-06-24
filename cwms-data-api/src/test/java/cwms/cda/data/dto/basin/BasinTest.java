@@ -20,8 +20,7 @@ final class BasinTest {
                 .build(), false);
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, Basin.class), basin);
         Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
-        assertEquals(basin, deserialized, "Roundtrip serialization failed");
-        assertEquals(basin.hashCode(), deserialized.hashCode(), "Roundtrip serialization failed");
+        assertSame(basin, deserialized);
     }
 
     @Test
@@ -34,7 +33,7 @@ final class BasinTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
-        assertEquals(basin, deserialized, "Roundtrip serialization failed");
+        assertSame(basin, deserialized);
 
         Basin basin1 = buildTestBasin(new LocationIdentifier.Builder()
                 .withName("TEST_LOCATION2")
@@ -44,7 +43,7 @@ final class BasinTest {
         assertNotNull(resource1);
         String serialized1 = IOUtils.toString(resource1, StandardCharsets.UTF_8);
         Basin deserialized1 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized1, Basin.class);
-        assertEquals(basin1, deserialized1, "Roundtrip serialization failed");
+        assertSame(basin1, deserialized1);
     }
 
     @Test
@@ -74,8 +73,8 @@ final class BasinTest {
                             .withOfficeId("MVP")
                             .build())
                     .withSortOrder(1.0)
-                    .withBasinArea(1005.0)
-                    .withContributingArea(1050.0)
+                    .withTotalDrainageArea(1005.0)
+                    .withContributingDrainageArea(1050.0)
                     .withParentBasinId(new LocationIdentifier.Builder().build())
                     .withAreaUnit("SI")
                     .build();
@@ -87,8 +86,8 @@ final class BasinTest {
                             .withOfficeId("MVP")
                             .build())
                     .withSortOrder(1.0)
-                    .withBasinArea(1005.0)
-                    .withContributingArea(1050.0)
+                    .withTotalDrainageArea(1005.0)
+                    .withContributingDrainageArea(1050.0)
                     .withParentBasinId(new LocationIdentifier.Builder()
                             .withName("TEST_LOCATION5")
                             .withOfficeId("NAE")
@@ -96,5 +95,17 @@ final class BasinTest {
                     .withAreaUnit("SI")
                     .build();
         }
+    }
+
+    private static void assertSame(Basin first, Basin second){
+        assertAll(
+                () -> assertEquals(first.getBasinId(), second.getBasinId(), "Basin IDs are not equal"),
+                () -> assertEquals(first.getPrimaryStreamId(), second.getPrimaryStreamId(), "Primary Stream IDs are not equal"),
+                () -> assertEquals(first.getSortOrder(), second.getSortOrder(), "Sort Orders are not equal"),
+                () -> assertEquals(first.getTotalDrainageArea(), second.getTotalDrainageArea(), "Total Drainage Areas are not equal"),
+                () -> assertEquals(first.getContributingDrainageArea(), second.getContributingDrainageArea(), "Contributing Drainage Areas are not equal"),
+                () -> assertEquals(first.getParentBasinId(), second.getParentBasinId(), "Parent Basin IDs are not equal"),
+                () -> assertEquals(first.getAreaUnit(), second.getAreaUnit(), "Area Units are not equal")
+        );
     }
 }
