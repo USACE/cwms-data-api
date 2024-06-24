@@ -11,114 +11,116 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
+import java.util.Objects;
+
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Basin.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class Basin implements CwmsDTOBase {
-    private final LocationIdentifier BASIN_ID;
-    private final Double SORT_ORDER;
-    private final Double TOTAL_DRAINAGE_AREA;
-    private final Double CONTRIBUTING_DRAINAGE_AREA;
-    private final LocationIdentifier PARENT_BASIN_ID;
-    private final String AREA_UNIT;
-    private final LocationIdentifier PRIMARY_STREAM_ID;
+    private final LocationIdentifier basinId;
+    private final Double sortOrder;
+    private final Double totalDrainageArea;
+    private final Double contributingDrainageArea;
+    private final LocationIdentifier parentBasinId;
+    private final String areaUnit;
+    private final LocationIdentifier primaryStreamId;
 
     private Basin(Builder builder)
     {
-        this.BASIN_ID = builder.BASIN_ID;
-        this.SORT_ORDER = builder.SORT_ORDER;
-        this.TOTAL_DRAINAGE_AREA = builder.TOTAL_DRAINAGE_AREA;
-        this.CONTRIBUTING_DRAINAGE_AREA = builder.CONTRIBUTING_DRAINAGE_AREA;
-        this.PARENT_BASIN_ID = builder.PARENT_BASIN_ID;
-        this.AREA_UNIT = builder.AREA_UNIT;
-        this.PRIMARY_STREAM_ID = builder.PRIMARY_STREAM_ID;
+        this.basinId = builder.basinId;
+        this.sortOrder = builder.sortOrder;
+        this.totalDrainageArea = builder.totalDrainageArea;
+        this.contributingDrainageArea = builder.contributingDrainageArea;
+        this.parentBasinId = builder.parentBasinId;
+        this.areaUnit = builder.areaUnit;
+        this.primaryStreamId = builder.primaryStreamId;
     }
 
     public LocationIdentifier getBasinId()
     {
-        return BASIN_ID;
+        return basinId;
     }
 
     public LocationIdentifier getPrimaryStreamId()
     {
-        return PRIMARY_STREAM_ID;
+        return primaryStreamId;
     }
 
     public Double getSortOrder()
     {
-        return SORT_ORDER;
+        return sortOrder;
     }
 
     public Double getBasinArea()
     {
-        return TOTAL_DRAINAGE_AREA;
+        return totalDrainageArea;
     }
 
     public Double getContributingArea()
     {
-        return CONTRIBUTING_DRAINAGE_AREA;
+        return contributingDrainageArea;
     }
 
     public LocationIdentifier getParentBasinId()
     {
-        return PARENT_BASIN_ID;
+        return parentBasinId;
     }
 
     public String getAreaUnit()
     {
-        return AREA_UNIT;
+        return areaUnit;
     }
 
     public static class Builder
     {
-        private LocationIdentifier BASIN_ID;
-        private Double SORT_ORDER;
-        private Double TOTAL_DRAINAGE_AREA;
-        private Double CONTRIBUTING_DRAINAGE_AREA;
-        private LocationIdentifier PARENT_BASIN_ID;
-        private String AREA_UNIT;
-        private LocationIdentifier PRIMARY_STREAM_ID;
+        private LocationIdentifier basinId;
+        private Double sortOrder;
+        private Double totalDrainageArea;
+        private Double contributingDrainageArea;
+        private LocationIdentifier parentBasinId;
+        private String areaUnit;
+        private LocationIdentifier primaryStreamId;
 
-        public Builder withBasinId(LocationIdentifier BASIN_ID)
+        public Builder withBasinId(LocationIdentifier basinId)
         {
-            this.BASIN_ID = BASIN_ID;
+            this.basinId = basinId;
             return this;
         }
 
-        public Builder withPrimaryStreamId(LocationIdentifier PRIMARY_STREAM_ID)
+        public Builder withPrimaryStreamId(LocationIdentifier primaryStreamId)
         {
-            this.PRIMARY_STREAM_ID = PRIMARY_STREAM_ID;
+            this.primaryStreamId = primaryStreamId;
             return this;
         }
 
-        public Builder withSortOrder(Double SORT_ORDER)
+        public Builder withSortOrder(Double sortOrder)
         {
-            this.SORT_ORDER = SORT_ORDER;
+            this.sortOrder = sortOrder;
             return this;
         }
 
-        public Builder withBasinArea(Double TOTAL_DRAINAGE_AREA)
+        public Builder withBasinArea(Double totalDrainageArea)
         {
-            this.TOTAL_DRAINAGE_AREA = TOTAL_DRAINAGE_AREA;
+            this.totalDrainageArea = totalDrainageArea;
             return this;
         }
 
-        public Builder withContributingArea(Double CONTRIBUTING_DRAINAGE_AREA)
+        public Builder withContributingArea(Double contributingDrainageArea)
         {
-            this.CONTRIBUTING_DRAINAGE_AREA = CONTRIBUTING_DRAINAGE_AREA;
+            this.contributingDrainageArea = contributingDrainageArea;
             return this;
         }
 
-        public Builder withParentBasinId(LocationIdentifier PARENT_BASIN_ID)
+        public Builder withParentBasinId(LocationIdentifier parentBasinId)
         {
-            this.PARENT_BASIN_ID = PARENT_BASIN_ID;
+            this.parentBasinId = parentBasinId;
             return this;
         }
 
-        public Builder withAreaUnit(String AREA_UNIT)
+        public Builder withAreaUnit(String areaUnit)
         {
-            this.AREA_UNIT = AREA_UNIT;
+            this.areaUnit = areaUnit;
             return this;
         }
 
@@ -129,10 +131,23 @@ public final class Basin implements CwmsDTOBase {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(getBasinId(), getSortOrder(), totalDrainageArea, contributingDrainageArea, getParentBasinId(), getAreaUnit(), getPrimaryStreamId());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Basin basin = (Basin) o;
+        return Objects.equals(getBasinId(), basin.getBasinId()) && Objects.equals(getSortOrder(), basin.getSortOrder()) && Objects.equals(totalDrainageArea, basin.totalDrainageArea) && Objects.equals(contributingDrainageArea, basin.contributingDrainageArea) && Objects.equals(getParentBasinId(), basin.getParentBasinId()) && Objects.equals(getAreaUnit(), basin.getAreaUnit()) && Objects.equals(getPrimaryStreamId(), basin.getPrimaryStreamId());
+    }
+
+    @Override
     public void validate() throws FieldException {
-        if (this.BASIN_ID == null) {
+        if (this.basinId == null) {
             throw new FieldException("Basin identifier field can't be null");
         }
-        BASIN_ID.validate();
+        basinId.validate();
     }
 }
