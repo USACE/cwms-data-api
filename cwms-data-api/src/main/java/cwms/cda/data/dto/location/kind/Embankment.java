@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -122,7 +122,7 @@ public final class Embankment extends ProjectStructure {
         private LookupType upstreamProtectionType;
         private LookupType structureType;
         private Location location;
-        private LocationIdentifier projectId;
+        private CwmsId projectId;
 
         public Builder withUpstreamSideSlope(Double upstreamSideSlope) {
             this.upstreamSideSlope = upstreamSideSlope;
@@ -174,7 +174,7 @@ public final class Embankment extends ProjectStructure {
             return this;
         }
 
-        public Builder withProjectId(LocationIdentifier projectId) {
+        public Builder withProjectId(CwmsId projectId) {
             this.projectId = projectId;
             return this;
         }

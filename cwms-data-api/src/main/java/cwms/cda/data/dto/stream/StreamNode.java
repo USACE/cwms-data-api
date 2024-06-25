@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -41,7 +41,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class StreamNode implements CwmsDTOBase {
 
-    private final LocationIdentifier streamId;
+    private final CwmsId streamId;
     private final Bank bank;
     private final Double station;
     private final String stationUnit;
@@ -61,7 +61,7 @@ public final class StreamNode implements CwmsDTOBase {
         streamId.validate();
     }
 
-    public LocationIdentifier getStreamId() {
+    public CwmsId getStreamId() {
         return streamId;
     }
 
@@ -78,13 +78,13 @@ public final class StreamNode implements CwmsDTOBase {
     }
 
     public static class Builder {
-        private LocationIdentifier streamId;
+        private CwmsId streamId;
         private Bank bank;
         private Double station;
         private String stationUnit;
 
-        public Builder withStreamId(LocationIdentifier locationIdentifier) {
-            this.streamId = locationIdentifier;
+        public Builder withStreamId(CwmsId cwmsId) {
+            this.streamId = cwmsId;
             return this;
         }
 

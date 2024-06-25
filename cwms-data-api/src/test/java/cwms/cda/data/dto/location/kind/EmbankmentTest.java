@@ -27,8 +27,8 @@ package cwms.cda.data.dto.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
-import cwms.cda.data.dto.LocationIdentifierTest;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -84,7 +84,7 @@ public final class EmbankmentTest {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
                 .withMaxHeight(5.0)
-                .withProjectId(new LocationIdentifier.Builder()
+                .withProjectId(new CwmsId.Builder()
                         .withOfficeId("LRD")
                         .withName("PROJECT")
                         .build())
@@ -146,7 +146,7 @@ public final class EmbankmentTest {
                 () -> assertEquals(first.getUpstreamProtectionType(), second.getUpstreamProtectionType(), "Upstream protection type doesn't match"),
                 () -> assertEquals(first.getStructureType(), second.getStructureType(), "Structure type doesn't match"),
                 () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
-                () -> LocationIdentifierTest.assertSame(first.getProjectId(), second.getProjectId())
+                () -> CwmsIdTest.assertSame(first.getProjectId(), second.getProjectId())
         );
     }
 }

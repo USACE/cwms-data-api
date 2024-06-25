@@ -27,8 +27,8 @@ package cwms.cda.data.dto.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
-import cwms.cda.data.dto.LocationIdentifierTest;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -82,7 +82,7 @@ final class TurbineTest {
     private Turbine buildTestTurbine() {
         return new Turbine.Builder()
                 .withLocation(buildTestLocation())
-                .withProjectId(new LocationIdentifier.Builder()
+                .withProjectId(new CwmsId.Builder()
                         .withOfficeId("LRD")
                         .withName("PROJECT")
                         .build())
@@ -109,7 +109,7 @@ final class TurbineTest {
 
     private static void assertSame(Turbine first, Turbine second) {
         assertAll(
-                () -> LocationIdentifierTest.assertSame(first.getProjectId(), second.getProjectId()),
+                () -> CwmsIdTest.assertSame(first.getProjectId(), second.getProjectId()),
                 () -> assertEquals(first.getLocation(), second.getLocation(), "Locations are not the same")
         );
     }

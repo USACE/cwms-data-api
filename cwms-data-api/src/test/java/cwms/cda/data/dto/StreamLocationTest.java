@@ -43,12 +43,12 @@ public class StreamLocationTest {
 
     @Test
     void createStreamLocation_allFieldsProvided_success() {
-        LocationIdentifier streamLocationId = new LocationIdentifier.Builder()
+        CwmsId streamLocationId = new CwmsId.Builder()
                 .withOfficeId("SPK")
                 .withName("StreamLoc123")
                 .build();
 
-        LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
+        CwmsId flowsIntoStreamId = new CwmsId.Builder()
                 .withOfficeId("SPK")
                 .withName("AnotherStream")
                 .build();
@@ -97,7 +97,7 @@ public class StreamLocationTest {
         assertThrows(FieldException.class, () -> {
             StreamLocation.Builder builder = new StreamLocation.Builder()
                     .withStreamNode(new StreamNode.Builder()
-                            .withStreamId(new LocationIdentifier.Builder()
+                            .withStreamId(new CwmsId.Builder()
                                     .withOfficeId("SPK")
                                     .withName("AnotherStream")
                                     .build())
@@ -118,7 +118,7 @@ public class StreamLocationTest {
 
         assertThrows(FieldException.class, () -> {
             StreamLocation.Builder builder = new StreamLocation.Builder()
-                    .withId(new LocationIdentifier.Builder()
+                    .withId(new CwmsId.Builder()
                             .withOfficeId("SPK")
                             .withName("StreamLoc123")
                             .build())
@@ -136,12 +136,12 @@ public class StreamLocationTest {
 
     @Test
     void createStreamLocation_serialize_roundtrip() {
-        LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
+        CwmsId cwmsId = new CwmsId.Builder()
                 .withOfficeId("SPK")
                 .withName("Stream123")
                 .build();
 
-        LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
+        CwmsId flowsIntoStreamId = new CwmsId.Builder()
                 .withOfficeId("SPK")
                 .withName("AnotherStream")
                 .build();
@@ -154,7 +154,7 @@ public class StreamLocationTest {
                 .build();
 
         StreamLocation streamLocation = new StreamLocation.Builder()
-                .withId(locationIdentifier)
+                .withId(cwmsId)
                 .withStreamNode(streamNode)
                 .withPublishedStation(100.0)
                 .withNavigationStation(90.0)
@@ -196,7 +196,7 @@ public class StreamLocationTest {
 
     public static void assertSame(StreamLocation streamLocation, StreamLocation deserialized) {
         assertAll(
-                () -> LocationIdentifierTest.assertSame(streamLocation.getId(), deserialized.getId()),
+                () -> CwmsIdTest.assertSame(streamLocation.getId(), deserialized.getId()),
                 () -> StreamNodeTest.assertSame(streamLocation.getStreamNode(), deserialized.getStreamNode()),
                 () -> assertEquals(streamLocation.getPublishedStation(), deserialized.getPublishedStation(), "The published station does not match"),
                 () -> assertEquals(streamLocation.getNavigationStation(), deserialized.getNavigationStation(), "The navigation station does not match"),

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -26,7 +26,7 @@ public final class Stream implements CwmsDTOBase {
     private final String lengthUnit;
     private final String slopeUnit;
     private final String comment;
-    private final LocationIdentifier id;
+    private final CwmsId id;
 
     private Stream(Builder builder) {
         this.startsDownstream = builder.startsDownstream;
@@ -85,7 +85,7 @@ public final class Stream implements CwmsDTOBase {
         return comment;
     }
 
-    public LocationIdentifier getId() {
+    public CwmsId getId() {
         return id;
     }
 
@@ -98,7 +98,7 @@ public final class Stream implements CwmsDTOBase {
         private String lengthUnit;
         private String slopeUnit;
         private String comment;
-        private LocationIdentifier id;
+        private CwmsId id;
 
         public Builder withStartsDownstream(Boolean startsDownstream) {
             this.startsDownstream = startsDownstream;
@@ -140,7 +140,7 @@ public final class Stream implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withId(LocationIdentifier id) {
+        public Builder withId(CwmsId id) {
             this.id = id;
             return this;
         }

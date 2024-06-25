@@ -13,22 +13,22 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public abstract class ProjectStructure implements CwmsDTOBase
 {
-	private final LocationIdentifier projectId;
+	private final CwmsId projectId;
 	private final Location location;
 
-	protected ProjectStructure(LocationIdentifier projectId, Location location)
+	protected ProjectStructure(CwmsId projectId, Location location)
 	{
 		this.location = location;
 		this.projectId = projectId;
 	}
 
-	public final LocationIdentifier getProjectId()
+	public final CwmsId getProjectId()
 	{
 		return projectId;
 	}

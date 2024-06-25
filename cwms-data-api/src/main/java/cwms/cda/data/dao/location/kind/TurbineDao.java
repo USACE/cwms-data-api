@@ -27,7 +27,6 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.LocationIdentifier;
 import cwms.cda.data.dto.location.kind.Turbine;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;

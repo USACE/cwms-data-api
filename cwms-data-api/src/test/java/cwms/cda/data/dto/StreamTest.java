@@ -43,13 +43,13 @@ class StreamTest {
 
     @Test
     void createStream_allFieldsProvided_success() {
-        LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
+        CwmsId cwmsId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode flowsIntoStream = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("AnotherStream")
                         .withOfficeId("SPK")
                         .build())
@@ -59,7 +59,7 @@ class StreamTest {
                 .build();
 
         StreamNode divertsFromStream = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("UpstreamStream")
                         .withOfficeId("SPK")
                         .build())
@@ -77,7 +77,7 @@ class StreamTest {
                 .withLengthUnit("mi")
                 .withSlopeUnit("%")
                 .withComment("This is a comment for the stream.")
-                .withId(locationIdentifier)
+                .withId(cwmsId)
                 .build();
 
         assertAll(() -> assertEquals(true, item.getStartsDownstream(), "The starts downstream does not match the provided value"),
@@ -104,7 +104,7 @@ class StreamTest {
     void createStream_missingField_throwsFieldException() {
         assertThrows(FieldException.class, () -> {
             StreamNode flowsIntoStream = new StreamNode.Builder()
-                    .withStreamId(new LocationIdentifier.Builder()
+                    .withStreamId(new CwmsId.Builder()
                             .withName("AnotherStream")
                             .withOfficeId("SPK")
                             .build())
@@ -113,7 +113,7 @@ class StreamTest {
                     .build();
 
             StreamNode divertsFromStream = new StreamNode.Builder()
-                    .withStreamId(new LocationIdentifier.Builder()
+                    .withStreamId(new CwmsId.Builder()
                             .withName("UpstreamStream")
                             .withOfficeId("SPK")
                             .build())
@@ -136,13 +136,13 @@ class StreamTest {
 
     @Test
     void createStream_serialize_roundtrip() {
-        LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
+        CwmsId cwmsId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode flowsIntoStream = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("AnotherStream")
                         .withOfficeId("SPK")
                         .build())
@@ -152,7 +152,7 @@ class StreamTest {
                 .build();
 
         StreamNode divertsFromStream = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("UpstreamStream")
                         .withOfficeId("SPK")
                         .build())
@@ -168,7 +168,7 @@ class StreamTest {
                 .withLength(10.5)
                 .withSlope(0.01)
                 .withComment("This is a comment for the stream.")
-                .withId(locationIdentifier)
+                .withId(cwmsId)
                 .withSlopeUnit("%")
                 .withLengthUnit("mi")
                 .build();
@@ -182,13 +182,13 @@ class StreamTest {
 
     @Test
     void createStream_deserialize() throws Exception {
-        LocationIdentifier locationIdentifier = new LocationIdentifier.Builder()
+        CwmsId cwmsId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode flowsIntoStream = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("AnotherStream")
                         .withOfficeId("SPK")
                         .build())
@@ -198,7 +198,7 @@ class StreamTest {
                 .build();
 
         StreamNode divertsFromStream = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("UpstreamStream")
                         .withOfficeId("SPK")
                         .build())
@@ -214,7 +214,7 @@ class StreamTest {
                 .withLength(10.5)
                 .withSlope(0.01)
                 .withComment("This is a comment for the stream.")
-                .withId(locationIdentifier)
+                .withId(cwmsId)
                 .withSlopeUnit("%")
                 .withLengthUnit("mi")
                 .build();
@@ -238,7 +238,7 @@ class StreamTest {
             () -> assertEquals(stream1.getLengthUnit(), stream2.getLengthUnit()),
             () -> assertEquals(stream1.getSlopeUnit(), stream2.getSlopeUnit()),
             () -> assertEquals(stream1.getComment(), stream2.getComment()),
-            () -> LocationIdentifierTest.assertSame(stream1.getId(), stream2.getId())
+            () -> CwmsIdTest.assertSame(stream1.getId(), stream2.getId())
         );
     }
 }

@@ -1,13 +1,12 @@
 package cwms.cda.data.dto.location.kind;
 
+import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +31,7 @@ class OutletTest
 		Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
 		assertEquals(outlet.getCharacteristicRef(), parsedOutlet.getCharacteristicRef(), "Characteristic refs do not match");
 		assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-		assertEquals(outlet.getProjectId(), parsedOutlet.getProjectId(), "Locations do not match");
+		CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
 	}
 
 	@Test
@@ -46,12 +45,12 @@ class OutletTest
 		Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
 		assertEquals(turbine.getCharacteristicRef(), deserialized.getCharacteristicRef(), "Characteristic refs do not match");
 		assertEquals(turbine.getLocation(), deserialized.getLocation(), "Locations do not match");
-		assertEquals(turbine.getProjectId(), deserialized.getProjectId(), "Locations do not match");
+		CwmsIdTest.assertSame(turbine.getProjectId(), deserialized.getProjectId());
 	}
 
 	private Outlet buildTestOutlet()
 	{
-		LocationIdentifier identifier = new LocationIdentifier.Builder()
+		CwmsId identifier = new CwmsId.Builder()
 				.withName(PROJECT_LOC)
 				.withOfficeId(SPK)
 				.build();

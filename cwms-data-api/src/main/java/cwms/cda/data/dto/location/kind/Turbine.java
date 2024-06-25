@@ -29,10 +29,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -49,10 +47,10 @@ public final class Turbine extends ProjectStructure {
     }
 
     public static class Builder {
-        private LocationIdentifier projectId;
+        private CwmsId projectId;
         private Location location;
 
-        public Builder withProjectId(LocationIdentifier projectId) {
+        public Builder withProjectId(CwmsId projectId) {
             this.projectId = projectId;
             return this;
         }
