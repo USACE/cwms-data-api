@@ -42,33 +42,10 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({ "projectId", "location" })
-public final class Turbine implements CwmsDTOBase {
-    private final LocationIdentifier projectId;
-    private final Location location;
+public final class Turbine extends ProjectStructure {
 
     private Turbine(Builder builder) {
-        this.projectId = builder.projectId;
-        this.location = builder.location;
-    }
-
-    public LocationIdentifier getProjectId() {
-        return projectId;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        if (this.location == null) {
-            throw new FieldException("Location field can't be null");
-        }
-        this.location.validate();
-        if (this.projectId == null) {
-            throw new FieldException("Project location Id field must be defined");
-        }
-        projectId.validate();
+        super(builder.projectId, builder.location);
     }
 
     public static class Builder {
