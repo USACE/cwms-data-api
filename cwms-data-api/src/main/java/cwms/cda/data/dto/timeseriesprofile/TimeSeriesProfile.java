@@ -2,7 +2,6 @@ package cwms.cda.data.dto.timeseriesprofile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -23,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public final class TimeSeriesProfile extends CwmsDTO
 {
 	@Schema(description = "Location ID")
+	// TODO replace with CWMSID
 	private final String locationId;
 	@Schema(description = "Description")
 	private final String description;
@@ -31,6 +31,7 @@ public final class TimeSeriesProfile extends CwmsDTO
 	@Schema(description = "Key Parameter")
 	private final String keyParameter;
 	@Schema(description = "Reference TS")
+	// TODO replace with CWMSID
 	private final String refTsId;
 
 	private TimeSeriesProfile(Builder builder)
@@ -89,34 +90,6 @@ public final class TimeSeriesProfile extends CwmsDTO
 		}
 	}
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-
-		TimeSeriesProfile that = (TimeSeriesProfile) o;
-		return Objects.equals(getLocationId(), that.getLocationId())
-				&& Objects.equals(getOfficeId(), that.getOfficeId())
-				&& Objects.equals(getDescription(), that.getDescription())
-				&& Objects.equals(getKeyParameter(), that.getKeyParameter())
-				&& Objects.equals(getRefTsId(), that.getRefTsId())
-				&& Objects.equals(getParameterList(), that.getParameterList())
-				;
-	}
-	@Override
-	public int hashCode() {
-		int result = Objects.hashCode(getDescription());
-		result = 31 * result + Objects.hashCode(getKeyParameter());
-		result = 31 * result + Objects.hashCode(getLocationId());
-		result = 31 * result + Objects.hashCode(getParameterList());
-		result = 31 * result + Objects.hashCode(getOfficeId());
-		result = 31 * result + Objects.hashCode(getRefTsId());
-		return result;
-	}
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	public static final class Builder {
