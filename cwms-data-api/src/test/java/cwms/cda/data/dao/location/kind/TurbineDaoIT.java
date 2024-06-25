@@ -30,7 +30,7 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.Turbine;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -185,7 +185,7 @@ final class TurbineDaoIT extends DataApiTestIT {
     private static Turbine buildTestTurbine(Location location, String projectId) {
         return new Turbine.Builder()
                 .withLocation(location)
-                .withProjectId(new LocationIdentifier.Builder()
+                .withProjectId(new CwmsId.Builder()
                         .withName(projectId)
                         .withOfficeId(PROJECT_LOC.getOfficeId())
                         .build())

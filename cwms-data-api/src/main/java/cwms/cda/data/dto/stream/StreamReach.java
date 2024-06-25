@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -44,9 +44,9 @@ public final class StreamReach implements CwmsDTOBase {
     private final String comment;
     private final StreamNode downstreamNode;
     private final StreamNode upstreamNode;
-    private final LocationIdentifier configurationId;
-    private final LocationIdentifier streamId;
-    private final LocationIdentifier id;
+    private final CwmsId configurationId;
+    private final CwmsId streamId;
+    private final CwmsId id;
 
     private StreamReach(Builder builder) {
         this.comment = builder.comment;
@@ -92,15 +92,15 @@ public final class StreamReach implements CwmsDTOBase {
         return upstreamNode;
     }
 
-    public LocationIdentifier getConfigurationId() {
+    public CwmsId getConfigurationId() {
         return configurationId;
     }
 
-    public LocationIdentifier getStreamId() {
+    public CwmsId getStreamId() {
         return streamId;
     }
 
-    public LocationIdentifier getId() {
+    public CwmsId getId() {
         return id;
     }
 
@@ -108,9 +108,9 @@ public final class StreamReach implements CwmsDTOBase {
         private String comment;
         private StreamNode downstreamNode;
         private StreamNode upstreamNode;
-        private LocationIdentifier configurationId;
-        private LocationIdentifier streamId;
-        private LocationIdentifier id;
+        private CwmsId configurationId;
+        private CwmsId streamId;
+        private CwmsId id;
 
         public Builder withComment(String comment) {
             this.comment = comment;
@@ -127,17 +127,17 @@ public final class StreamReach implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withConfigurationId(LocationIdentifier configurationId) {
+        public Builder withConfigurationId(CwmsId configurationId) {
             this.configurationId = configurationId;
             return this;
         }
 
-        public Builder withStreamId(LocationIdentifier streamId) {
+        public Builder withStreamId(CwmsId streamId) {
             this.streamId = streamId;
             return this;
         }
 
-        public Builder withId(LocationIdentifier id) {
+        public Builder withId(CwmsId id) {
             this.id = id;
             return this;
         }

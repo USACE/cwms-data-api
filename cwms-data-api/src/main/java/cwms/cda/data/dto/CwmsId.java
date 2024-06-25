@@ -34,19 +34,17 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@JsonDeserialize(builder = LocationIdentifier.Builder.class)
+@JsonDeserialize(builder = CwmsId.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({ "officeId", "name" })
-public final class LocationIdentifier implements CwmsDTOBase {
+public final class CwmsId implements CwmsDTOBase {
 
     private final String officeId;
     private final String name;
 
-    public LocationIdentifier(Builder builder) {
+    public CwmsId(Builder builder) {
         this.officeId = builder.officeId;
         this.name = builder.name;
     }
@@ -68,23 +66,6 @@ public final class LocationIdentifier implements CwmsDTOBase {
     public String getName() {
         return name;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        LocationIdentifier that = (LocationIdentifier) o;
-        return Objects.equals(getOfficeId(), that.getOfficeId()) && Objects.equals(getName(), that.getName());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getOfficeId());
-        result = 31 * result + Objects.hashCode(getName());
-        return result;
-    }
-
     public static class Builder {
         private String officeId;
         private String name;
@@ -98,8 +79,8 @@ public final class LocationIdentifier implements CwmsDTOBase {
             return this;
         }
 
-        public LocationIdentifier build() {
-            return new LocationIdentifier(this);
+        public CwmsId build() {
+            return new CwmsId(this);
         }
     }
 }

@@ -40,7 +40,7 @@ class StreamNodeTest {
 
     @Test
     void createStreamNode_allFieldsProvided_success() {
-        LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
+        CwmsId flowsIntoStreamId = new CwmsId.Builder()
                 .withOfficeId("SPK")
                 .withName("AnotherStream")
                 .build();
@@ -74,7 +74,7 @@ class StreamNodeTest {
 
     @Test
     void createStreamNode_serialize_roundtrip() {
-        LocationIdentifier flowsIntoStreamId = new LocationIdentifier.Builder()
+        CwmsId flowsIntoStreamId = new CwmsId.Builder()
                 .withOfficeId("SPK")
                 .withName("AnotherStream")
                 .build();
@@ -110,7 +110,7 @@ class StreamNodeTest {
 
     public static void assertSame(StreamNode node1, StreamNode node2) {
         assertAll(
-            () -> LocationIdentifierTest.assertSame(node1.getStreamId(), node2.getStreamId()),
+            () -> CwmsIdTest.assertSame(node1.getStreamId(), node2.getStreamId()),
             () -> assertEquals(node1.getBank(), node2.getBank()),
             () -> assertEquals(node1.getStation(), node2.getStation()),
             () -> assertEquals(node1.getStationUnit(), node2.getStationUnit())

@@ -11,9 +11,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -40,7 +39,7 @@ public class Outlet extends ProjectStructure
 	public static final class Builder
 	{
 		private CharacteristicRef characteristicRef;
-		private LocationIdentifier projectId;
+		private CwmsId projectId;
 		private Location location;
 
 		public Outlet build()
@@ -54,7 +53,7 @@ public class Outlet extends ProjectStructure
 			return this;
 		}
 
-		public Builder withProjectId(LocationIdentifier projectIdentifier)
+		public Builder withProjectId(CwmsId projectIdentifier)
 		{
 			this.projectId = projectIdentifier;
 			return this;

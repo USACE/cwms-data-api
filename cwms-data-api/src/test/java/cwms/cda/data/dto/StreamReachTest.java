@@ -41,17 +41,17 @@ public final class StreamReachTest {
 
     @Test
     void createStreamReach_allFieldsProvided_success() {
-        LocationIdentifier reachId = new LocationIdentifier.Builder()
+        CwmsId reachId = new CwmsId.Builder()
                 .withName("Reach123")
                 .withOfficeId("SPK")
                 .build();
-        LocationIdentifier streamId = new LocationIdentifier.Builder()
+        CwmsId streamId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -60,7 +60,7 @@ public final class StreamReachTest {
                 .build();
 
         StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -72,7 +72,7 @@ public final class StreamReachTest {
                 .withComment("This is a comment for the stream reach.")
                 .withDownstreamNode(downstreamNode)
                 .withUpstreamNode(upstreamNode)
-                .withConfigurationId(new LocationIdentifier.Builder()
+                .withConfigurationId(new CwmsId.Builder()
                         .withName("Config123")
                         .withOfficeId("SPK")
                         .build())
@@ -96,17 +96,17 @@ public final class StreamReachTest {
 
     @Test
     void createStreamReach_missingField_throwsFieldException() {
-        LocationIdentifier reachId = new LocationIdentifier.Builder()
+        CwmsId reachId = new CwmsId.Builder()
                 .withName("Reach123")
                 .withOfficeId("SPK")
                 .build();
-        LocationIdentifier streamId = new LocationIdentifier.Builder()
+        CwmsId streamId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -115,7 +115,7 @@ public final class StreamReachTest {
                 .build();
 
         StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -130,7 +130,7 @@ public final class StreamReachTest {
                             .withComment("This is a comment for the stream reach.")
                             .withDownstreamNode(downstreamNode)
                             .withUpstreamNode(upstreamNode)
-                            .withConfigurationId(new LocationIdentifier.Builder()
+                            .withConfigurationId(new CwmsId.Builder()
                                     .withName("Config123")
                                     .withOfficeId("SPK")
                                     .build())
@@ -145,7 +145,7 @@ public final class StreamReachTest {
                             .withComment("This is a comment for the stream reach.")
                             .withDownstreamNode(downstreamNode)
                             .withUpstreamNode(upstreamNode)
-                            .withConfigurationId(new LocationIdentifier.Builder()
+                            .withConfigurationId(new CwmsId.Builder()
                                     .withName("Config123")
                                     .withOfficeId("SPK")
                                     .build())
@@ -159,7 +159,7 @@ public final class StreamReachTest {
                     StreamReach item = new StreamReach.Builder()
                             .withComment("This is a comment for the stream reach.")
                             .withDownstreamNode(downstreamNode)
-                            .withConfigurationId(new LocationIdentifier.Builder()
+                            .withConfigurationId(new CwmsId.Builder()
                                     .withName("Config123")
                                     .withOfficeId("SPK")
                                     .build())
@@ -174,7 +174,7 @@ public final class StreamReachTest {
                     StreamReach item = new StreamReach.Builder()
                             .withComment("This is a comment for the stream reach.")
                             .withUpstreamNode(upstreamNode)
-                            .withConfigurationId(new LocationIdentifier.Builder()
+                            .withConfigurationId(new CwmsId.Builder()
                                     .withName("Config123")
                                     .withOfficeId("SPK")
                                     .build())
@@ -199,17 +199,17 @@ public final class StreamReachTest {
 
     @Test
     void createStreamReach_serialize_roundtrip() {
-        LocationIdentifier reachId = new LocationIdentifier.Builder()
+        CwmsId reachId = new CwmsId.Builder()
                 .withName("Reach123")
                 .withOfficeId("SPK")
                 .build();
-        LocationIdentifier streamId = new LocationIdentifier.Builder()
+        CwmsId streamId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -218,7 +218,7 @@ public final class StreamReachTest {
                 .build();
 
         StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -230,7 +230,7 @@ public final class StreamReachTest {
                 .withComment("This is a comment for the stream reach.")
                 .withDownstreamNode(downstreamNode)
                 .withUpstreamNode(upstreamNode)
-                .withConfigurationId(new LocationIdentifier.Builder()
+                .withConfigurationId(new CwmsId.Builder()
                         .withName("Config123")
                         .withOfficeId("SPK")
                         .build())
@@ -246,17 +246,17 @@ public final class StreamReachTest {
 
     @Test
     void createStreamReach_deserialize() throws Exception {
-        LocationIdentifier reachId = new LocationIdentifier.Builder()
+        CwmsId reachId = new CwmsId.Builder()
                 .withName("Reach123")
                 .withOfficeId("SPK")
                 .build();
-        LocationIdentifier streamId = new LocationIdentifier.Builder()
+        CwmsId streamId = new CwmsId.Builder()
                 .withName("Stream123")
                 .withOfficeId("SPK")
                 .build();
 
         StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -266,7 +266,7 @@ public final class StreamReachTest {
                 .build();
 
         StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new LocationIdentifier.Builder()
+                .withStreamId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
@@ -279,7 +279,7 @@ public final class StreamReachTest {
                 .withComment("This is a comment for the stream reach.")
                 .withDownstreamNode(downstreamNode)
                 .withUpstreamNode(upstreamNode)
-                .withConfigurationId(new LocationIdentifier.Builder()
+                .withConfigurationId(new CwmsId.Builder()
                         .withName("Config123")
                         .withOfficeId("SPK")
                         .build())
@@ -301,9 +301,9 @@ public final class StreamReachTest {
             () -> assertEquals(reach1.getComment(), reach2.getComment()),
             () -> StreamNodeTest.assertSame(reach1.getDownstreamNode(), reach2.getDownstreamNode()),
             () -> StreamNodeTest.assertSame(reach1.getUpstreamNode(), reach2.getUpstreamNode()),
-            () -> LocationIdentifierTest.assertSame(reach1.getConfigurationId(), reach2.getConfigurationId()),
-            () -> LocationIdentifierTest.assertSame(reach1.getStreamId(), reach2.getStreamId()),
-            () -> LocationIdentifierTest.assertSame(reach1.getId(), reach2.getId())
+            () -> CwmsIdTest.assertSame(reach1.getConfigurationId(), reach2.getConfigurationId()),
+            () -> CwmsIdTest.assertSame(reach1.getStreamId(), reach2.getStreamId()),
+            () -> CwmsIdTest.assertSame(reach1.getId(), reach2.getId())
         );
     }
 }

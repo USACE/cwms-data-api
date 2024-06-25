@@ -30,7 +30,7 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
 import fixtures.CwmsDataApiSetupCallback;
@@ -167,7 +167,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
         return new Embankment.Builder()
                 .withLocation(location)
                 .withMaxHeight(5.0)
-                .withProjectId(new LocationIdentifier.Builder()
+                .withProjectId(new CwmsId.Builder()
                         .withName(projectId)
                         .withOfficeId(PROJECT_LOC.getOfficeId())
                         .build())
