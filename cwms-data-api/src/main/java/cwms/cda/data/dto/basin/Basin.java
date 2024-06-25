@@ -11,7 +11,9 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
+        aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Basin.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -24,8 +26,7 @@ public final class Basin implements CwmsDTOBase {
     private final String areaUnit;
     private final LocationIdentifier primaryStreamId;
 
-    private Basin(Builder builder)
-    {
+    private Basin(Builder builder) {
         this.basinId = builder.basinId;
         this.sortOrder = builder.sortOrder;
         this.totalDrainageArea = builder.totalDrainageArea;
@@ -35,43 +36,35 @@ public final class Basin implements CwmsDTOBase {
         this.primaryStreamId = builder.primaryStreamId;
     }
 
-    public LocationIdentifier getBasinId()
-    {
+    public LocationIdentifier getBasinId() {
         return basinId;
     }
 
-    public LocationIdentifier getPrimaryStreamId()
-    {
+    public LocationIdentifier getPrimaryStreamId() {
         return primaryStreamId;
     }
 
-    public Double getSortOrder()
-    {
+    public Double getSortOrder() {
         return sortOrder;
     }
 
-    public Double getTotalDrainageArea()
-    {
+    public Double getTotalDrainageArea() {
         return totalDrainageArea;
     }
 
-    public Double getContributingDrainageArea()
-    {
+    public Double getContributingDrainageArea() {
         return contributingDrainageArea;
     }
 
-    public LocationIdentifier getParentBasinId()
-    {
+    public LocationIdentifier getParentBasinId() {
         return parentBasinId;
     }
 
-    public String getAreaUnit()
-    {
+    public String getAreaUnit() {
         return areaUnit;
     }
 
-    public static class Builder
-    {
+    public static class Builder {
         private LocationIdentifier basinId;
         private Double sortOrder;
         private Double totalDrainageArea;
@@ -80,50 +73,42 @@ public final class Basin implements CwmsDTOBase {
         private String areaUnit;
         private LocationIdentifier primaryStreamId;
 
-        public Builder withBasinId(LocationIdentifier basinId)
-        {
+        public Builder withBasinId(LocationIdentifier basinId) {
             this.basinId = basinId;
             return this;
         }
 
-        public Builder withPrimaryStreamId(LocationIdentifier primaryStreamId)
-        {
+        public Builder withPrimaryStreamId(LocationIdentifier primaryStreamId) {
             this.primaryStreamId = primaryStreamId;
             return this;
         }
 
-        public Builder withSortOrder(Double sortOrder)
-        {
+        public Builder withSortOrder(Double sortOrder) {
             this.sortOrder = sortOrder;
             return this;
         }
 
-        public Builder withTotalDrainageArea(Double totalDrainageArea)
-        {
+        public Builder withTotalDrainageArea(Double totalDrainageArea) {
             this.totalDrainageArea = totalDrainageArea;
             return this;
         }
 
-        public Builder withContributingDrainageArea(Double contributingDrainageArea)
-        {
+        public Builder withContributingDrainageArea(Double contributingDrainageArea) {
             this.contributingDrainageArea = contributingDrainageArea;
             return this;
         }
 
-        public Builder withParentBasinId(LocationIdentifier parentBasinId)
-        {
+        public Builder withParentBasinId(LocationIdentifier parentBasinId) {
             this.parentBasinId = parentBasinId;
             return this;
         }
 
-        public Builder withAreaUnit(String areaUnit)
-        {
+        public Builder withAreaUnit(String areaUnit) {
             this.areaUnit = areaUnit;
             return this;
         }
 
-        public Basin build()
-        {
+        public Basin build() {
             return new Basin(this);
         }
     }
