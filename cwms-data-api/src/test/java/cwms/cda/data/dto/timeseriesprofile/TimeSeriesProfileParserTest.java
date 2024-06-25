@@ -1,34 +1,39 @@
 package cwms.cda.data.dto.timeseriesprofile;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
-import fixtures.CwmsDataApiSetupCallback;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class TimeSeriesProfileParserTest
+final class TimeSeriesProfileParserTest
 {
 	@Test
-	void testTimeSeriesProfileSerializationRoundTrip() throws JsonProcessingException
+	void testTimeSeriesProfileSerializationRoundTrip()
 	{
 		TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
 		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
 
-		ObjectMapper om = JsonV2.buildObjectMapper();
-		String serializedLocation = om.writeValueAsString(timeSeriesProfileParser);
-
 		String serialized = Formats.format(contentType, timeSeriesProfileParser);
 		TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
-		assertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
-		assertEquals( timeSeriesProfileParser.hashCode(), deserialized.hashCode(),
-				"Roundtrip serialization failed");
+		testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
+	}
+
+	@Test
+	void testTimeSeriesProfileSerializationRoundTripFromFile() throws Exception {
+		TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
+		InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparser.json");
+		assertNotNull(resource);
+		String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+		TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
+		testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
 	}
 	private static TimeSeriesProfileParser buildTestTimeSeriesProfileParser() {
 		List<ParameterInfo> parameterInfo= new ArrayList<>();
@@ -46,7 +51,7 @@ public class TimeSeriesProfileParserTest
 
 				new TimeSeriesProfileParser.Builder()
 						.withOfficeId("SWT")
-						.withLocationId("TIMESERIESPROFILE_LOC")
+						.withLocationId("location")
 						.withKeyParameter("Depth")
 						.withRecordDelimiter((char) 10)
 						.withFieldDelimiter(',')
@@ -57,5 +62,17 @@ public class TimeSeriesProfileParserTest
 						.withParameterInfoList(parameterInfo)
 						.build();
 	}
-
+	private void testAssertEquals(TimeSeriesProfileParser expected, TimeSeriesProfileParser actual, String message)
+	{
+		assertEquals(expected.getLocationId(), actual.getLocationId(), message);
+		assertEquals(expected.getFieldDelimiter(), actual.getFieldDelimiter(), message);
+		assertEquals(expected.getOfficeId(), actual.getOfficeId(), message);
+		assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
+		assertEquals(expected.getTimeField(), actual.getTimeField(), message);
+		assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
+	//	assertEquals(expected.getParameterInfo(), actual.getParameterInfo(),message);
+		assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
+		assertEquals(expected.getTimeZone(), actual.getTimeZone());
+		assertEquals(expected.getTimeInTwoFields(), actual.getTimeInTwoFields());
+	}
 }

@@ -2,8 +2,6 @@ package cwms.cda.data.dto.timeseriesprofile;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -28,7 +26,7 @@ public class TimeSeriesProfileParser extends CwmsDTO
 	private final  String timeFormat;
 	private final String timeZone;
 	private final int timeField;
-	private final List<ParameterInfo> parameterInfo;
+	private final List<ParameterInfo> parameterInfoList;
 	private final boolean timeInTwoFields;
 	protected TimeSeriesProfileParser(Builder builder)
 	{
@@ -40,14 +38,16 @@ public class TimeSeriesProfileParser extends CwmsDTO
 		timeFormat = builder.timeFormat;
 		timeZone = builder.timeZone;
 		timeField = builder.timeField;
-		parameterInfo = builder.parameterInfo;
+		parameterInfoList = builder.parameterInfoList;
 		timeInTwoFields = builder.timeInTwoFields;
 	}
 
 	@Override
 	public void validate() throws FieldException
 	{
-
+		if (this.keyParameter == null) {
+			throw new FieldException("Key Parameter field can't be null");
+		}
 	}
 
 
@@ -60,11 +60,11 @@ public class TimeSeriesProfileParser extends CwmsDTO
 	{
 		return keyParameter;
 	}
-	public String getRecordDelimiter(){ return String.valueOf(recordDelimiter); }
-	public String getFieldDelimiter(){ return String.valueOf(fieldDelimiter); }
-	public List<ParameterInfo> getParameterInfo ()
+	public char getRecordDelimiter(){ return recordDelimiter; }
+	public char getFieldDelimiter(){ return fieldDelimiter; }
+	public List<ParameterInfo> getParameterInfoList ()
 	{
-		return parameterInfo;
+		return parameterInfoList;
 	}
 
 	public String getTimeFormat()
@@ -82,52 +82,17 @@ public class TimeSeriesProfileParser extends CwmsDTO
 		return BigInteger.valueOf(timeField);
 	}
 
-	public String getTimeInTwoFields()
+	public boolean getTimeInTwoFields()
 	{
-		return timeInTwoFields?"T":"F";
+		return timeInTwoFields;
 	}
 
-	@Override
-	public int hashCode() {
-		int result = Objects.hashCode(getLocationId());
-		result = 31 * result + Objects.hashCode(getFieldDelimiter());
-		result = 31 * result + Objects.hashCode(getOfficeId());
-		result = 31 * result + Objects.hashCode(getKeyParameter());
-		result = 31 * result + Objects.hashCode(getTimeField());
-		result = 31 * result + Objects.hashCode(getTimeFormat());
-		result = 31 * result + Objects.hashCode(getParameterInfo());
-		result = 31 * result + Objects.hashCode(getRecordDelimiter());
-		result = 31 * result + Objects.hashCode(getTimeZone());
-		result = 31 * result + Objects.hashCode(getTimeInTwoFields());
-		return result;
-	}
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-
-		TimeSeriesProfileParser that = (TimeSeriesProfileParser) o;
-		return Objects.equals(getLocationId(), that.getLocationId())
-				&& Objects.equals(getFieldDelimiter(), that.getFieldDelimiter())
-				&& Objects.equals(getOfficeId(), that.getOfficeId())
-				&& Objects.equals(getKeyParameter(), that.getKeyParameter())
-				&& Objects.equals(getTimeField(), that.getTimeField())
-				&& Objects.equals(getTimeFormat(), that.getTimeFormat())
-				&& Objects.equals(getParameterInfo(), that.getParameterInfo())
-				&& Objects.equals(getRecordDelimiter(), that.getRecordDelimiter())
-				&& Objects.equals(getTimeZone(), that.getTimeZone())
-				&& Objects.equals(getTimeInTwoFields(), that.getTimeInTwoFields());
-	}
 
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	public static final class Builder {
 		private String officeId;
-		private List<ParameterInfo> parameterInfo;
+		private List<ParameterInfo> parameterInfoList;
 		private String keyParameter;
 		private char recordDelimiter;
 		private char fieldDelimiter;
@@ -176,7 +141,7 @@ public class TimeSeriesProfileParser extends CwmsDTO
 		}
 		public TimeSeriesProfileParser.Builder withParameterInfoList(List<ParameterInfo> parameterInfoList)
 		{
-			this.parameterInfo =parameterInfoList;
+			this.parameterInfoList =parameterInfoList;
 				return this;
 		}
 

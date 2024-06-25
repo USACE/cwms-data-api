@@ -9,10 +9,8 @@ import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class TimeSeriesProfileTest
 {
@@ -22,8 +20,7 @@ final class TimeSeriesProfileTest
 		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
 		String serialized = Formats.format(contentType, timeSeriesProfile);
 		TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfile.class);
-		assertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization failed");
-		assertEquals(timeSeriesProfile.hashCode(), deserialized.hashCode(), "Roundtrip serialization failed");
+		testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization failed");
 	}
 
 	@Test
@@ -33,7 +30,7 @@ final class TimeSeriesProfileTest
 		assertNotNull(resource);
 		String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
 		TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfile.class);
-		assertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization failed");
+		testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization from file failed");
 	}
 
 	private TimeSeriesProfile buildTestTimeSeriesProfile() {
@@ -43,8 +40,14 @@ final class TimeSeriesProfileTest
 				.withRefTsId("TimeSeries")
 				.withLocationId("Location")
 				.withDescription("Description")
-				.withParameterList(Arrays.asList(new String[]{"Temperature", "Depth"}))
+				.withParameterList(Arrays.asList("Temperature", "Depth"))
 				.build();
 	}
-
+	private void testAssertEquals(TimeSeriesProfile expected, TimeSeriesProfile actual, String message) {
+		assertEquals(expected.getLocationId(), actual.getLocationId(), message);
+		assertEquals(expected.getDescription(), actual.getDescription(), message);
+		assertEquals(expected.getParameterList(), actual.getParameterList(), message);
+		assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
+		assertEquals(expected.getRefTsId(), actual.getRefTsId(), message);
+	}
 }
