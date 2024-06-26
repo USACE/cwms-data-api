@@ -13,66 +13,65 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-final class TimeSeriesProfileParserTest
-{
-	@Test
-	void testTimeSeriesProfileSerializationRoundTrip()
-	{
-		TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
-		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+final class TimeSeriesProfileParserTest {
+    @Test
+    void testTimeSeriesProfileSerializationRoundTrip() {
+        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
 
-		String serialized = Formats.format(contentType, timeSeriesProfileParser);
-		TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
-		testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
-	}
+        String serialized = Formats.format(contentType, timeSeriesProfileParser);
+        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
+        testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
+    }
 
-	@Test
-	void testTimeSeriesProfileSerializationRoundTripFromFile() throws Exception {
-		TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
-		InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparser.json");
-		assertNotNull(resource);
-		String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-		TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
-		testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
-	}
-	private static TimeSeriesProfileParser buildTestTimeSeriesProfileParser() {
-		List<ParameterInfo> parameterInfo= new ArrayList<>();
-		parameterInfo.add (new ParameterInfo.Builder()
-				.withParameter("Depth")
-				.withIndex(3)
-				.withUnit("m")
-				.build());
-		parameterInfo.add (new ParameterInfo.Builder()
-				.withParameter("Temp-Water")
-				.withIndex(5)
-				.withUnit("F")
-				.build());
-		return
+    @Test
+    void testTimeSeriesProfileSerializationRoundTripFromFile() throws Exception {
+        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparser.json");
+        assertNotNull(resource);
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
+        testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
+    }
 
-				new TimeSeriesProfileParser.Builder()
-						.withOfficeId("SWT")
-						.withLocationId("location")
-						.withKeyParameter("Depth")
-						.withRecordDelimiter((char) 10)
-						.withFieldDelimiter(',')
-						.withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
-						.withTimeZone("UTC")
-						.withTimeField(1)
-						.withTimeInTwoFields(false)
-						.withParameterInfoList(parameterInfo)
-						.build();
-	}
-	private void testAssertEquals(TimeSeriesProfileParser expected, TimeSeriesProfileParser actual, String message)
-	{
-		assertEquals(expected.getLocationId(), actual.getLocationId(), message);
-		assertEquals(expected.getFieldDelimiter(), actual.getFieldDelimiter(), message);
-		assertEquals(expected.getOfficeId(), actual.getOfficeId(), message);
-		assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
-		assertEquals(expected.getTimeField(), actual.getTimeField(), message);
-		assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
-	//	assertEquals(expected.getParameterInfo(), actual.getParameterInfo(),message);
-		assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
-		assertEquals(expected.getTimeZone(), actual.getTimeZone());
-		assertEquals(expected.getTimeInTwoFields(), actual.getTimeInTwoFields());
-	}
+    private static TimeSeriesProfileParser buildTestTimeSeriesProfileParser() {
+        List<ParameterInfo> parameterInfo = new ArrayList<>();
+        parameterInfo.add(new ParameterInfo.Builder()
+                .withParameter("Depth")
+                .withIndex(3)
+                .withUnit("m")
+                .build());
+        parameterInfo.add(new ParameterInfo.Builder()
+                .withParameter("Temp-Water")
+                .withIndex(5)
+                .withUnit("F")
+                .build());
+        return
+
+                new TimeSeriesProfileParser.Builder()
+                        .withOfficeId("SWT")
+                        .withLocationId("location")
+                        .withKeyParameter("Depth")
+                        .withRecordDelimiter((char) 10)
+                        .withFieldDelimiter(',')
+                        .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
+                        .withTimeZone("UTC")
+                        .withTimeField(1)
+                        .withTimeInTwoFields(false)
+                        .withParameterInfoList(parameterInfo)
+                        .build();
+    }
+
+    private void testAssertEquals(TimeSeriesProfileParser expected, TimeSeriesProfileParser actual, String message) {
+        assertEquals(expected.getLocationId(), actual.getLocationId(), message);
+        assertEquals(expected.getFieldDelimiter(), actual.getFieldDelimiter(), message);
+        assertEquals(expected.getOfficeId(), actual.getOfficeId(), message);
+        assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
+        assertEquals(expected.getTimeField(), actual.getTimeField(), message);
+        assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
+        //	assertEquals(expected.getParameterInfo(), actual.getParameterInfo(),message);
+        assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
+        assertEquals(expected.getTimeZone(), actual.getTimeZone());
+        assertEquals(expected.getTimeInTwoFields(), actual.getTimeInTwoFields());
+    }
 }

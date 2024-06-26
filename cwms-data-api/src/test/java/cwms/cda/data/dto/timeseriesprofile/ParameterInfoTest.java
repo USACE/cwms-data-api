@@ -1,5 +1,4 @@
 package cwms.cda.data.dto.timeseriesprofile;
 
-public class ParameterInfoTest
-{
+public class ParameterInfoTest {
 }

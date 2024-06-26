@@ -14,16 +14,13 @@ import cwms.cda.formatters.json.JsonV2;
 @JsonDeserialize(builder = TimeSeriesProfile.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeSeriesProfileInstance extends CwmsDTO
-{
-	protected TimeSeriesProfileInstance(String office)
-	{
-		super(office);
-	}
+public final class TimeSeriesProfileInstance extends CwmsDTO {
+    protected TimeSeriesProfileInstance(String office) {
+        super(office);
+    }
 
-	@Override
-	public void validate() throws FieldException
-	{
+    @Override
+    public void validate() throws FieldException {
 
-	}
+    }
 }
