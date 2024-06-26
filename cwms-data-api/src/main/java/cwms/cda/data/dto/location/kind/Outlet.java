@@ -36,7 +36,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Outlet extends ProjectStructure
 {
-	private final CharacteristicRef characteristicRef;
+	private final CwmsId characteristicRef;
 
 	private Outlet(Builder builder)
 	{
@@ -44,14 +44,14 @@ public class Outlet extends ProjectStructure
 		characteristicRef = builder.characteristicRef;
 	}
 
-	public CharacteristicRef getCharacteristicRef()
+	public CwmsId getCharacteristicRef()
 	{
 		return characteristicRef;
 	}
 
 	public static final class Builder
 	{
-		private CharacteristicRef characteristicRef;
+		private CwmsId characteristicRef;
 		private CwmsId projectId;
 		private Location location;
 
@@ -60,7 +60,7 @@ public class Outlet extends ProjectStructure
 			return new Outlet(this);
 		}
 
-		public Builder withCharacteristicRef(CharacteristicRef characteristicRef)
+		public Builder withCharacteristicRef(CwmsId characteristicRef)
 		{
 			this.characteristicRef = characteristicRef;
 			return this;

@@ -110,10 +110,14 @@ public final class CwmsIdTest {
         assertTrue(officeIdIndex < locationIdIndex, "The officeId field should come before the locationId field in the JSON string");
     }
 
-    public static void assertSame(CwmsId first, CwmsId second) {
+    public static void assertSame(CwmsId first, CwmsId second, String variableName) {
         assertAll(
-                () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "LocationIdentifiers not the same. Office id differs"),
-                () -> assertEquals(first.getName(), second.getName(), "LocationIdentifiers not the same. Office id differs")
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId(), variableName + " is not the same. Office ID differs"),
+                () -> assertEquals(first.getName(), second.getName(), variableName + " is not the same. Name differs")
         );
+    }
+
+    public static void assertSame(CwmsId first, CwmsId second) {
+        assertSame(first, second, "LocationIdentifier");
     }
 }

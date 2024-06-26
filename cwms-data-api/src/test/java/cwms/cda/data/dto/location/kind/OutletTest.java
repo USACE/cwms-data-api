@@ -49,7 +49,7 @@ class OutletTest
 		String json = Formats.format(contentType, outlet);
 
 		Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-		assertEquals(outlet.getCharacteristicRef(), parsedOutlet.getCharacteristicRef(), "Characteristic refs do not match");
+		CwmsIdTest.assertSame(outlet.getCharacteristicRef(), parsedOutlet.getCharacteristicRef());
 		assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
 		CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
 	}
@@ -63,9 +63,9 @@ class OutletTest
 		assertNotNull(resource);
 		String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
 		Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-		assertEquals(turbine.getCharacteristicRef(), deserialized.getCharacteristicRef(), "Characteristic refs do not match");
+		CwmsIdTest.assertSame(turbine.getCharacteristicRef(), deserialized.getCharacteristicRef(), "characteristic-ref");
 		assertEquals(turbine.getLocation(), deserialized.getLocation(), "Locations do not match");
-		CwmsIdTest.assertSame(turbine.getProjectId(), deserialized.getProjectId());
+		CwmsIdTest.assertSame(turbine.getProjectId(), deserialized.getProjectId(), "project-id");
 	}
 
 	private Outlet buildTestOutlet()
@@ -83,16 +83,15 @@ class OutletTest
 				.withHorizontalDatum("NAD84")
 				.withVerticalDatum("NAVD88")
 				.build();
-		CharacteristicRef charRef = new CharacteristicRef.Builder()
-				.withCharacteristicId("Ogee Weir Depth")
+		CwmsId charRef = new CwmsId.Builder()
+				.withName("Ogee Weir Depth")
 				.withOfficeId(SPK)
 				.build();
 
-		Outlet outlet = new Outlet.Builder()
+		return new Outlet.Builder()
 				.withProjectId(identifier)
 				.withCharacteristicRef(charRef)
 				.withLocation(loc)
 				.build();
-		return outlet;
 	}
 }

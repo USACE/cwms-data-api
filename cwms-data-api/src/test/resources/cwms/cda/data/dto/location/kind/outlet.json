@@ -17,6 +17,6 @@
   },
   "characteristic-ref": {
     "office-id": "SPK",
-    "characteristic-id": "Ogee Weir Depth"
+    "name": "Ogee Weir Depth"
   }
 }
