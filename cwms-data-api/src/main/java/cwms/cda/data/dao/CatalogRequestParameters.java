@@ -18,6 +18,8 @@ public class CatalogRequestParameters {
     private final String boundingOfficeLike;
     private final boolean includeExtents;
     private final boolean excludeEmpty;
+    private final String locationKind;
+    private final String locationType;
 
     private CatalogRequestParameters(Builder builder) {
         this.office = builder.office;
@@ -30,6 +32,8 @@ public class CatalogRequestParameters {
         this.boundingOfficeLike = builder.boundingOfficeLike;
         this.includeExtents = builder.includeExtents;
         this.excludeEmpty = builder.excludeEmpty;
+        this.locationKind = builder.locationKind;
+        this.locationType = builder.locationType;
     }
 
     public String getBoundingOfficeLike() {
@@ -72,6 +76,15 @@ public class CatalogRequestParameters {
         return excludeEmpty;
     }
 
+    public String getLocationKind() {
+        return locationKind;
+    }
+
+    public String getLocationType() {
+        return locationType;
+    }
+
+
     public static class Builder {
         String office;
         String idLike;
@@ -83,6 +96,8 @@ public class CatalogRequestParameters {
         String boundingOfficeLike;
         boolean includeExtents = false;
         private boolean excludeEmpty = true;
+        String locationKind;
+        String locationType;
 
         public Builder() {
 
@@ -138,6 +153,16 @@ public class CatalogRequestParameters {
             return this;
         }
 
+        public Builder withLocationKind(String locationKind) {
+            this.locationKind = locationKind;
+            return this;
+        }
+
+        public Builder withLocationType(String locationType) {
+            this.locationType = locationType;
+            return this;
+        }
+
         public static Builder from(CatalogRequestParameters params) {
             // This NEEDS to include every field in the CatalogRequestParameters
             return new Builder()
@@ -151,6 +176,8 @@ public class CatalogRequestParameters {
                     .withBoundingOfficeLike(params.boundingOfficeLike)
                     .withIncludeExtents(params.includeExtents)
                     .withExcludeEmpty(params.excludeEmpty)
+                    .withLocationKind(params.locationKind)
+                    .withLocationType(params.locationType)
                     ;
         }
 
@@ -173,7 +200,7 @@ public class CatalogRequestParameters {
         }
 
         if (table == AV_LOC.AV_LOC) {
-            return boundingOfficeLike != null;
+            return boundingOfficeLike != null || locationKind != null || locationType != null;
         }
 
         if (table == AV_TS_EXTENTS_UTC) {

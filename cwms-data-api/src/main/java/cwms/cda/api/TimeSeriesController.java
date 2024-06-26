@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -440,7 +441,7 @@ public class TimeSeriesController implements CrudHandler {
                     name(TimeSeriesController.class.getName(), GET_ALL));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
 
             String results;
             String version = contentType.getParameters().get(VERSION);
@@ -502,6 +503,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");

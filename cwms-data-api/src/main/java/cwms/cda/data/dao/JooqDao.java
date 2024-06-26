@@ -70,7 +70,19 @@ public abstract class JooqDao<T> extends Dao<T> {
     static ExecuteListener listener = new ExceptionWrappingListener();
 
     public enum DeleteMethod {
-        DELETE_ALL, DELETE_KEY, DELETE_DATA
+        DELETE_ALL(DeleteRule.DELETE_ALL),
+        DELETE_KEY(DeleteRule.DELETE_KEY),
+        DELETE_DATA(DeleteRule.DELETE_DATA);
+
+        private final DeleteRule rule;
+
+        DeleteMethod(DeleteRule rule) {
+            this.rule = rule;
+        }
+
+        public DeleteRule getRule() {
+            return rule;
+        }
     }
 
     protected JooqDao(DSLContext dsl) {

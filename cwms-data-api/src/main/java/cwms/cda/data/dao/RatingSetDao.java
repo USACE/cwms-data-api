@@ -55,8 +55,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 // can't exist if we are creating, if it exists use store
                 String office = extractOfficeId(ratingSetXml);
                 DSLContext context = getDslContext(c, office);
-                CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
+                String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
                         ratingSetXml, "T", storeTemplate ? "T" : "F");
+                if (errs != null && !errs.isEmpty())
+                {
+                    throw new DataAccessException(errs);
+                }
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();

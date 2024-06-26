@@ -190,20 +190,6 @@ public class BlobController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
-
-            if (blob.getOfficeId() == null) {
-                throw new FormattingException("An officeId is required when creating a blob");
-            }
-
-            if (blob.getId() == null) {
-                throw new FormattingException("An Id is required when creating a blob");
-            }
-
-            if (blob.getValue() == null) {
-                throw new FormattingException("A non-empty value field is required when "
-                        + "creating a blob");
-            }
-
             BlobDao dao = new BlobDao(dsl);
             dao.create(blob, failIfExists, false);
             ctx.status(HttpCode.CREATED);

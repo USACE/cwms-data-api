@@ -106,13 +106,13 @@ public final class PropertyController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                @OpenApiParam(name = NAME, description = "Specifies the name of "
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the name of "
                         + "the property to be retrieved."),
             },
             queryParams = {
-                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                         + "the property to be retrieved."),
-                @OpenApiParam(name = CATEGORY_ID, description = "Specifies the category id of "
+                @OpenApiParam(name = CATEGORY_ID, required = true,description = "Specifies the category id of "
                         + "the property to be retrieved."),
                 @OpenApiParam(name = DEFAULT_VALUE, description = "Specifies the default value "
                         + "if the property does not exist."),
@@ -128,8 +128,8 @@ public final class PropertyController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String name) {
-        String office = ctx.queryParam(OFFICE);
-        String category = ctx.queryParam(CATEGORY_ID);
+        String office = requiredParam(ctx, OFFICE);
+        String category = requiredParam(ctx, CATEGORY_ID);
         String defaultValue = ctx.queryParam(DEFAULT_VALUE);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -167,7 +167,6 @@ public final class PropertyController implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
-            property.validate();
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.storeProperty(property);
@@ -196,7 +195,6 @@ public final class PropertyController implements CrudHandler {
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
-            property.validate();
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.updateProperty(property);
@@ -207,13 +205,13 @@ public final class PropertyController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                @OpenApiParam(name = NAME, description = "Specifies the name of "
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the name of "
                         + "the property to be deleted."),
             },
             queryParams = {
-                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                         + "the property to be deleted."),
-                @OpenApiParam(name = CATEGORY_ID, description = "Specifies the category id of "
+                @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies the category id of "
                         + "the property to be deleted."),
             },
             description = "Delete CWMS Property",
@@ -227,8 +225,8 @@ public final class PropertyController implements CrudHandler {
     )
     @Override
     public void delete(Context ctx, String name) {
-        String office = ctx.queryParam(OFFICE);
-        String category = ctx.queryParam(CATEGORY_ID);
+        String office = requiredParam(ctx, OFFICE);
+        String category = requiredParam(ctx, CATEGORY_ID);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);

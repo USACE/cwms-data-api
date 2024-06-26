@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
 
@@ -16,13 +15,16 @@ public class StreamReachDao extends JooqDao<StreamReach> {
         super(dsl);
     }
 
-    public Set<StreamReach> getReachesOnStream(String streamId, String officeId) throws SQLException {
+    public Set<StreamReach> getReachesOnStream(String streamId, String officeId) {
         String pStationUnitIn = Unit.KILOMETER.getValue();
         CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-        AtomicReference<ResultSet> resultSetRef = new AtomicReference<>();
-        connection(dsl, c -> resultSetRef.set(streamJooq.catStreamReaches(c, streamId, null, null,
-                null, pStationUnitIn, officeId)));
-        return buildReachesFromResultSet(resultSetRef.get());
+
+        return connectionResult(dsl, c -> {
+            try (ResultSet resultSet = streamJooq.catStreamReaches(c, streamId, null, null,
+                    null, pStationUnitIn, officeId)) {
+                return buildReachesFromResultSet(resultSet);
+            }
+        });
     }
 
     private Set<StreamReach> buildReachesFromResultSet(ResultSet rs) throws SQLException {
