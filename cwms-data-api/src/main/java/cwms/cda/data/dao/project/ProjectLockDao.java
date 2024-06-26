@@ -189,9 +189,9 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                 .build();
     }
 
-    public void releaseLock(String lockId) {
+    public void releaseLock(String office, String lockId) {
         connection(dsl, c -> CWMS_PROJECT_PACKAGE.call_RELEASE_LOCK(
-                DSL.using(c, SQLDialect.ORACLE18C).configuration(),
+                getDslContext(c, office).configuration(),
                 lockId));
     }
 

@@ -536,7 +536,7 @@ public class ApiServlet extends HttpServlet {
         get(pathWithoutResource, new ProjectLockCatalog(metrics));
         post(pathWithoutResource + "deny", new ProjectLockDeny(metrics), requiredRoles);
         post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
-        put(pathWithoutResource, new ProjectLockRelease(metrics), requiredRoles);
+        post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
         delete(path, new ProjectLockRevoke(metrics), requiredRoles);
     }
 

@@ -121,7 +121,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                     assertNotNull(lockId);
                     assertFalse(lockId.isEmpty());
                 } finally {
-                    lockDao.releaseLock(lockId);
+                    lockDao.releaseLock(OFFICE, lockId);
                 }
 
             } catch (JsonProcessingException e) {

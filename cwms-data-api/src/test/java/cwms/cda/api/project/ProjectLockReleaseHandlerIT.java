@@ -24,14 +24,13 @@
 
 package cwms.cda.api.project;
 
-
-import static cwms.cda.api.Controllers.APPLICATION_ID;
-import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.LOCK_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,7 +45,6 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
-import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -54,84 +52,71 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-public class ProjectLockStatusHandlerIT extends DataApiTestIT {
+public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE = "SPK";
 
+
     @Test
-    void test_lock_status() throws SQLException {
+    void test_release() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectDao prjDao = new ProjectDao(dsl);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectDao prjDao = new ProjectDao(dsl);
 
-            String projId = "stProj";
-            String appId = "isLocked_test";
+            String projId = "lockRelease";
+            String appId = "test_release";
             String officeMask = OFFICE;
-            Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
-            String lockId;
 
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
 
+            Project testProject = buildTestProject(OFFICE, projId);
+            prjDao.create(testProject);
             try {
-                int revokeTimeout = 10;
-                boolean revokeExisting = true;
-
+                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask); // start fresh
                 lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, true);
-                lockId = lockDao.requestLock(OFFICE, projId, appId, revokeExisting, revokeTimeout);
 
-                assertNotNull(lockId);
-                assertTrue(lockId.length() > 8);  // FYI its 32 hex chars guid
-
-                // This is a little different.  Returns a 200 if locked, 404 if not.
-                given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .queryParam(Controllers.OFFICE, OFFICE)
-                        .queryParam(PROJECT_ID, projId)
-                        .queryParam(APPLICATION_ID, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .get("/project-locks/status")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_OK))
-                ;
-
-                lockDao.releaseLock(OFFICE, lockId);
-
-                given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .queryParam(Controllers.OFFICE, OFFICE)
-                        .queryParam(PROJECT_ID, projId)
-                        .queryParam(APPLICATION_ID, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .get("/project-locks/status")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
-                ;
-
-            } finally {
-
+                String lockId = lockDao.requestLock(OFFICE, projId, appId, true, 10);
                 try {
-                    lockDao.revokeLock(OFFICE, projId, appId, 0);  // delete/kill.
-                } catch (Exception e) {
-                    logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId);
+                assertNotNull(lockId);
+                assertTrue(lockId.length() > 8);  // FYI its 32 hex chars
+
+                boolean locked = lockDao.isLocked(OFFICE, projId, appId);
+                assertTrue(locked);
+
+                given()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                        .accept(Formats.JSON)
+                        .header("Authorization", user.toHeaderValue())
+                        .queryParam(LOCK_ID, lockId)
+                        .queryParam(Controllers.OFFICE, OFFICE)
+                    .when()
+                        .redirects().follow(true)
+                        .redirects().max(3)
+                        .post("/project-locks/release")
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                        .statusCode(is(HttpServletResponse.SC_OK));
+
+                    locked = lockDao.isLocked(OFFICE, projId, appId);
+                    assertFalse(locked);
+
+                } finally {
+                    try {
+                        lockDao.releaseLock(OFFICE, lockId);
+                    } catch (Exception e) {
+                     // don't care
+                    }
+                    lockDao.revokeLock(OFFICE, projId, appId, 0);
                 }
+            } finally {
+                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
-
         });
 
     }
