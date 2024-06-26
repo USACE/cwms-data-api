@@ -24,6 +24,8 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -31,6 +33,8 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
@@ -38,7 +42,6 @@ import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
-import static com.codahale.metrics.MetricRegistry.name;
 
 public final class Controllers {
 
@@ -127,6 +130,8 @@ public final class Controllers {
     public static final String SOURCE_ENTITY = "source-entity";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
+    public static final String LOCATION_KIND_LIKE = "location-kind-like";
+    public static final String LOCATION_TYPE_LIKE = "location-type-like";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
@@ -167,6 +172,12 @@ public final class Controllers {
     public static final String INCLUDE_EXTENTS = "include-extents";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
+    public static final String CATEGORY = "category";
+    public static final String PREFIX = "prefix";
+
+    private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
+    private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
+    private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
 
     static {
@@ -355,5 +366,11 @@ public final class Controllers {
         return retval;
     }
 
-
+    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+        if (type.getType().equalsIgnoreCase(Formats.TAB)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+        } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+        }
+    }
 }

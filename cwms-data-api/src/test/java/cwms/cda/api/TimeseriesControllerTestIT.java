@@ -28,6 +28,8 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
 class TimeseriesControllerTestIT extends DataApiTestIT {
@@ -563,7 +565,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         }
     }
 
-
     @Test
     void test_big_create() throws Exception {
 
@@ -752,7 +753,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
     private static void deleteLocation(String location, String officeId) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
+        db.connection(c-> {
             try(PreparedStatement stmt = c.prepareStatement("declare\n"
                     + "    p_location varchar2(64) := ?;\n"
                     + "    p_office varchar2(10) := ?;\n"
@@ -772,4 +773,79 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         }, "cwms_20");
     }
 
+    @ParameterizedTest
+    @EnumSource(GetAllTest.class)
+    void test_lrl_1day_content_type_aliasing(GetAllTest test) throws Exception
+    {
+        //Based on test_lrl_1day()
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization",user.toHeaderValue())
+                .queryParam("office",officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .queryParam("units", "F")
+                .queryParam("name", ts.get("name").asText())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+    }
+
+    enum GetAllTest
+    {
+        DEFAULT(Formats.DEFAULT, Formats.JSONV2),
+        JSON(Formats.JSON, Formats.JSONV2),
+        JSONV2(Formats.JSONV2, Formats.JSONV2),
+        XML(Formats.XML, Formats.XMLV2),
+        XMLV2(Formats.XMLV2, Formats.XMLV2),
+        ;
+
+        final String _accept;
+        final String _expectedContentType;
+
+        GetAllTest(String accept, String expectedContentType)
+        {
+            _accept = accept;
+            _expectedContentType = expectedContentType;
+        }
+    }
 }

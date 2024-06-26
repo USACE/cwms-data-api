@@ -73,15 +73,14 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         return new Embankment.Builder()
                 .withStructureLength(embankment.getSTRUCTURE_LENGTH())
                 .withTopWidth(embankment.getTOP_WIDTH())
-                .withUnitsId(embankment.getUNITS_ID())
+                .withLengthUnits(embankment.getUNITS_ID())
                 .withUpstreamSideSlope(embankment.getUPSTREAM_SIDESLOPE())
                 .withDownstreamSideSlope(embankment.getDOWNSTREAM_SIDESLOPE())
-                .withProjectOfficeId(embankment.getPROJECT_LOCATION_REF().getOFFICE_ID())
-                .withProjectId(getLocationId(embankment.getPROJECT_LOCATION_REF()))
-                .withUpstreamProtType(getLookupType(embankment.getUPSTREAM_PROT_TYPE()))
-                .withDownstreamProtType(getLookupType(embankment.getDOWNSTREAM_PROT_TYPE()))
+                .withProjectId(getLocationIdentifier(embankment.getPROJECT_LOCATION_REF()))
+                .withUpstreamProtectionType(getLookupType(embankment.getUPSTREAM_PROT_TYPE()))
+                .withDownstreamProtectionType(getLookupType(embankment.getDOWNSTREAM_PROT_TYPE()))
                 .withLocation(getLocation(embankment.getEMBANKMENT_LOCATION()))
-                .withHeightMax(embankment.getHEIGHT_MAX())
+                .withMaxHeight(embankment.getHEIGHT_MAX())
                 .withStructureType(getLookupType(embankment.getSTRUCTURE_TYPE()))
                 .build();
     }
@@ -90,14 +89,14 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         EMBANKMENT_OBJ_T retval = new EMBANKMENT_OBJ_T();
         retval.setSTRUCTURE_LENGTH(embankment.getStructureLength());
         retval.setTOP_WIDTH(embankment.getTopWidth());
-        retval.setUNITS_ID(embankment.getUnitsId());
+        retval.setUNITS_ID(embankment.getLengthUnits());
         retval.setUPSTREAM_SIDESLOPE(embankment.getUpstreamSideSlope());
         retval.setDOWNSTREAM_SIDESLOPE(embankment.getDownstreamSideSlope());
-        retval.setPROJECT_LOCATION_REF(getLocationRef(embankment.getProjectId(), embankment.getProjectOfficeId()));
-        retval.setUPSTREAM_PROT_TYPE(getLookupType(embankment.getUpstreamProtType()));
-        retval.setDOWNSTREAM_PROT_TYPE(getLookupType(embankment.getDownstreamProtType()));
+        retval.setPROJECT_LOCATION_REF(getLocationRef(embankment.getProjectId()));
+        retval.setUPSTREAM_PROT_TYPE(getLookupType(embankment.getUpstreamProtectionType()));
+        retval.setDOWNSTREAM_PROT_TYPE(getLookupType(embankment.getDownstreamProtectionType()));
         retval.setEMBANKMENT_LOCATION(getLocation(embankment.getLocation()));
-        retval.setHEIGHT_MAX(embankment.getHeightMax());
+        retval.setHEIGHT_MAX(embankment.getMaxHeight());
         retval.setSTRUCTURE_TYPE(getLookupType(embankment.getStructureType()));
         return retval;
     }

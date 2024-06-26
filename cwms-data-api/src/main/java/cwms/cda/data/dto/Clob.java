@@ -14,9 +14,9 @@ import cwms.cda.formatters.xml.XMLv2;
 
 @JsonRootName("clob")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public class Clob extends CwmsDTO {
     @JsonProperty(required = true)
     private String id;
@@ -56,5 +56,15 @@ public class Clob extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
+        if (getOfficeId() == null) {
+            throw new FieldException("An officeId is required when creating a clob");
+        }
+        if (getId() == null) {
+            throw new FieldException("An Id is required when creating a clob");
+        }
+        if (getValue() == null || getValue().isEmpty()) {
+            throw new FieldException("A non-empty value field is required when "
+                    + "creating a clob");
+        }
     }
 }

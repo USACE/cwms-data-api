@@ -79,31 +79,6 @@ public final class LookupType implements CwmsDTOBase {
         return active;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        LookupType that = (LookupType) o;
-        return Objects.equals(getOfficeId(), that.getOfficeId())
-                && Objects.equals(getDisplayValue(), that.getDisplayValue())
-                && Objects.equals(getTooltip(), that.getTooltip())
-                && Objects.equals(getActive(), that.getActive());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getOfficeId());
-        result = 31 * result + Objects.hashCode(getDisplayValue());
-        result = 31 * result + Objects.hashCode(getTooltip());
-        result = 31 * result + Objects.hashCode(getActive());
-        return result;
-    }
-
     public static class Builder {
         private String officeId;
         private String displayValue;

@@ -26,6 +26,7 @@ package cwms.cda.data.dao.location.kind;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
@@ -35,13 +36,43 @@ import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 import java.time.ZoneId;
 import java.util.Optional;
 
-final class LocationUtil {
+public final class LocationUtil {
 
     private LocationUtil() {
         throw new AssertionError("Utility class");
     }
 
-    static String getLocationId(LOCATION_REF_T ref) {
+    public static CwmsId getLocationIdentifier(LOCATION_REF_T ref) {
+        CwmsId retval = null;
+        if(ref != null) {
+            String locationId = ref.getBASE_LOCATION_ID();
+            String sub = ref.getSUB_LOCATION_ID();
+            if (sub != null && !sub.isEmpty()) {
+                locationId += "-" + sub;
+            }
+            retval = new CwmsId.Builder()
+                    .withName(locationId)
+                    .withOfficeId(ref.getOFFICE_ID())
+                    .build();
+        }
+        return retval;
+    }
+
+    public static LOCATION_REF_T getLocationRef(CwmsId cwmsId) {
+        LOCATION_REF_T retval = null;
+        if(cwmsId != null) {
+            retval = new LOCATION_REF_T();
+            String[] split = cwmsId.getName().split("-");
+            retval.setBASE_LOCATION_ID(split[0]);
+            if(split.length > 1) {
+                retval.setSUB_LOCATION_ID(split[1]);
+            }
+            retval.setOFFICE_ID(cwmsId.getOfficeId());
+        }
+        return retval;
+    }
+
+    public static String getLocationId(LOCATION_REF_T ref) {
         String locationId = null;
         if(ref != null) {
             locationId = ref.getBASE_LOCATION_ID();
@@ -53,7 +84,7 @@ final class LocationUtil {
         return locationId;
     }
 
-    static LOCATION_REF_T getLocationRef(String locationId, String officeId) {
+    public static LOCATION_REF_T getLocationRef(String locationId, String officeId) {
         LOCATION_REF_T retval = null;
         if(locationId != null && !locationId.isEmpty()) {
             retval = new LOCATION_REF_T();
@@ -67,7 +98,7 @@ final class LocationUtil {
         return retval;
     }
 
-    static LookupType getLookupType(LOOKUP_TYPE_OBJ_T lookupType) {
+    public static LookupType getLookupType(LOOKUP_TYPE_OBJ_T lookupType) {
         LookupType retval = null;
         if(lookupType != null) {
             retval = new LookupType.Builder()
@@ -80,7 +111,7 @@ final class LocationUtil {
         return retval;
     }
 
-    static LOOKUP_TYPE_OBJ_T getLookupType(LookupType lookupType) {
+    public static LOOKUP_TYPE_OBJ_T getLookupType(LookupType lookupType) {
         LOOKUP_TYPE_OBJ_T retval = null;
         if(lookupType != null) {
             retval = new LOOKUP_TYPE_OBJ_T();
@@ -92,7 +123,7 @@ final class LocationUtil {
         return retval;
     }
 
-    static Location getLocation(LOCATION_OBJ_T location) {
+    public static Location getLocation(LOCATION_OBJ_T location) {
         Location retval = null;
         if(location != null) {
             retval = new Location.Builder(getLocationId(location.getLOCATION_REF()),
@@ -105,6 +136,7 @@ final class LocationUtil {
                     .withActive(OracleTypeMap.parseBool(location.getACTIVE_FLAG()))
                     .withDescription(location.getDESCRIPTION())
                     .withElevation(OracleTypeMap.buildDouble(location.getELEVATION()))
+                    .withElevationUnits(location.getELEV_UNIT_ID())
                     .withCountyName(location.getCOUNTY_NAME())
                     .withBoundingOfficeId(location.getBOUNDING_OFFICE_ID())
                     .withNation(Nation.nationForName(location.getNATION_ID()))
@@ -116,12 +148,13 @@ final class LocationUtil {
                     .withLongName(location.getLONG_NAME())
                     .withStateInitial(location.getSTATE_INITIAL())
                     .withLocationType(location.getLOCATION_TYPE())
+                    .withNearestCity(location.getNEAREST_CITY())
                     .build();
         }
         return retval;
     }
 
-    static LOCATION_OBJ_T getLocation(Location location) {
+    public static LOCATION_OBJ_T getLocation(Location location) {
         LOCATION_OBJ_T retval = null;
         if(location != null) {
             retval = new LOCATION_OBJ_T();
@@ -134,7 +167,7 @@ final class LocationUtil {
             retval.setACTIVE_FLAG(OracleTypeMap.formatBool(location.getActive()));
             retval.setDESCRIPTION(location.getDescription());
             retval.setELEVATION(OracleTypeMap.toBigDecimal(location.getElevation()));
-            retval.setELEV_UNIT_ID("m");
+            retval.setELEV_UNIT_ID(location.getElevationUnits());
             retval.setCOUNTY_NAME(location.getCountyName());
             retval.setBOUNDING_OFFICE_ID(location.getBoundingOfficeId());
             retval.setNATION_ID(Optional.ofNullable(location.getNation()).map(Nation::getName).orElse(null));
@@ -146,6 +179,7 @@ final class LocationUtil {
             retval.setLONG_NAME(location.getLongName());
             retval.setSTATE_INITIAL(location.getStateInitial());
             retval.setLOCATION_TYPE(location.getLocationType());
+            retval.setNEAREST_CITY(location.getNearestCity());
         }
         return retval;
     }

@@ -37,6 +37,8 @@ import io.restassured.response.Response;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
 import java.time.Instant;
@@ -47,6 +49,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import static cwms.cda.api.Controllers.*;
+import static helpers.FloatCloseTo.floatCloseTo;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -329,8 +332,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[0].level-units-id"),equalTo("ac-ft"));
                 assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
-                actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
-                assertThat(actual0, closeTo(1.0, 0.01));
+                assertThat(response.path("levels[0].constant-value"), floatCloseTo(1.0, 0.01));
 
                 assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
                 assertThat(response.path("levels[1].location-level-id"),equalTo(levelId2));
@@ -340,8 +342,82 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[1].level-units-id"),equalTo("ac-ft"));
                 assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
-                actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
-                assertThat(actual1, closeTo(2.0, 0.01));
+                assertThat(response.path("levels[1].constant-value"), floatCloseTo(2.0, 0.01));
     }
 
+    @ParameterizedTest
+    @EnumSource(GetAllTestNewAliases.class)
+    void test_get_all_aliases_new(GetAllTestNewAliases test) throws Exception
+    {
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(test._accept)
+                .queryParam("office", OFFICE)
+                .queryParam(LEVEL_ID_MASK, "level_get_all.*")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(is(test._expectedContentType))
+                .statusCode(is(HttpServletResponse.SC_OK));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GetAllTestLegacy.class)
+    void test_get_all_aliases_legacy(GetAllTestLegacy test) throws Exception
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(FORMAT, test._format)
+            .queryParam("office", OFFICE)
+            .queryParam(LEVEL_ID_MASK, "level_get_all.*")
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .get("/levels/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(is(test._expectedContentType));
+    }
+
+    enum GetAllTestLegacy
+    {
+        JSON(Formats.JSON_LEGACY, Formats.JSON),
+        XML(Formats.XML_LEGACY, Formats.XML),
+        TAB(Formats.TAB_LEGACY, Formats.TAB),
+        CSV(Formats.CSV_LEGACY, Formats.CSV),
+        ;
+        final String _format;
+        final String _expectedContentType;
+
+        GetAllTestLegacy(String format, String expectedContentType)
+        {
+            _format = format;
+            _expectedContentType = expectedContentType;
+        }
+    }
+
+    enum GetAllTestNewAliases
+    {
+        DEFAULT(Formats.DEFAULT, Formats.JSONV2),
+        JSON(Formats.JSON, Formats.JSONV2),
+        JSONV1(Formats.JSONV1, Formats.JSONV1),
+        JSONV2(Formats.JSONV2, Formats.JSONV2),
+        ;
+        final String _accept;
+        final String _expectedContentType;
+
+        GetAllTestNewAliases(String accept, String expectedContentType)
+        {
+            _accept = accept;
+            _expectedContentType = expectedContentType;
+        }
+    }
 }
