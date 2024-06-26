@@ -43,7 +43,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Disabled;
@@ -278,7 +277,7 @@ class ProjectLockDaoTest {
             prjDao.delete(OFFICE, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
             logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
-            List<ProjectLock> locks = lockDao.catLocks(projId, appId, TimeZone.getTimeZone("UTC"), OFFICE);
+            List<ProjectLock> locks = lockDao.catLocks(projId, appId, OFFICE);
             locks.forEach(lock -> {
                logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
                         lock.getApplicationId() + " " + lock.getAcquireTime() + " " +
@@ -353,7 +352,7 @@ class ProjectLockDaoTest {
             assertTrue(lock2.length() > 8);
             assertNotEquals(lock1, lock2);
 
-            List<ProjectLock> locks = lockDao.catLocks(projId, appId+"*", TimeZone.getTimeZone("UTC"), officeMask);
+            List<ProjectLock> locks = lockDao.catLocks(projId, appId+"*", officeMask);
             assertNotNull(locks);
             assertFalse(locks.isEmpty());
 
