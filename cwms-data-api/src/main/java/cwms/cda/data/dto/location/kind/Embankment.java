@@ -49,7 +49,7 @@ public final class Embankment extends ProjectStructure {
     private final Double structureLength;
     private final Double maxHeight;
     private final Double topWidth;
-    private final String unitsId;
+    private final String lengthUnits;
     private final LookupType downstreamProtectionType;
     private final LookupType upstreamProtectionType;
 
@@ -58,7 +58,7 @@ public final class Embankment extends ProjectStructure {
         this.structureType = builder.structureType;
         this.upstreamProtectionType = builder.upstreamProtectionType;
         this.downstreamProtectionType = builder.downstreamProtectionType;
-        this.unitsId = builder.unitsId;
+        this.lengthUnits = builder.lengthUnits;
         this.topWidth = builder.topWidth;
         this.maxHeight = builder.maxHeight;
         this.structureLength = builder.structureLength;
@@ -86,8 +86,8 @@ public final class Embankment extends ProjectStructure {
         return topWidth;
     }
 
-    public String getUnitsId() {
-        return unitsId;
+    public String getLengthUnits() {
+        return lengthUnits;
     }
 
     public LookupType getStructureType() {
@@ -117,7 +117,7 @@ public final class Embankment extends ProjectStructure {
         private Double structureLength;
         private Double maxHeight;
         private Double topWidth;
-        private String unitsId;
+        private String lengthUnits;
         private LookupType downstreamProtectionType;
         private LookupType upstreamProtectionType;
         private LookupType structureType;
@@ -149,8 +149,8 @@ public final class Embankment extends ProjectStructure {
             return this;
         }
 
-        public Builder withUnitsId(String unitsId) {
-            this.unitsId = unitsId;
+        public Builder withLengthUnits(String lengthUnits) {
+            this.lengthUnits = lengthUnits;
             return this;
         }
 

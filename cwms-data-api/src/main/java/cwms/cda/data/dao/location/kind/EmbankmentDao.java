@@ -73,7 +73,7 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         return new Embankment.Builder()
                 .withStructureLength(embankment.getSTRUCTURE_LENGTH())
                 .withTopWidth(embankment.getTOP_WIDTH())
-                .withUnitsId(embankment.getUNITS_ID())
+                .withLengthUnits(embankment.getUNITS_ID())
                 .withUpstreamSideSlope(embankment.getUPSTREAM_SIDESLOPE())
                 .withDownstreamSideSlope(embankment.getDOWNSTREAM_SIDESLOPE())
                 .withProjectId(getLocationIdentifier(embankment.getPROJECT_LOCATION_REF()))
@@ -89,7 +89,7 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         EMBANKMENT_OBJ_T retval = new EMBANKMENT_OBJ_T();
         retval.setSTRUCTURE_LENGTH(embankment.getStructureLength());
         retval.setTOP_WIDTH(embankment.getTopWidth());
-        retval.setUNITS_ID(embankment.getUnitsId());
+        retval.setUNITS_ID(embankment.getLengthUnits());
         retval.setUPSTREAM_SIDESLOPE(embankment.getUpstreamSideSlope());
         retval.setDOWNSTREAM_SIDESLOPE(embankment.getDownstreamSideSlope());
         retval.setPROJECT_LOCATION_REF(getLocationRef(embankment.getProjectId()));
