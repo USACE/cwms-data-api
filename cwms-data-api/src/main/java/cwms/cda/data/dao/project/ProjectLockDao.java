@@ -112,6 +112,49 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         });
     }
 
+    public String requestLock(ProjectLock request, boolean revokeExisting, int revokeTimeout) {
+        String sessionUser = request.getSessionUser();
+        String osUser = request.getOsUser();
+        String sessionProgram = request.getSessionProgram();
+        String sessionMachine = request.getSessionMachine();
+
+        if (sessionUser == null && osUser == null && sessionProgram == null && sessionMachine == null) {
+            // old style - can go thru jOQQ api
+            return requestLock(request.getOfficeId(), request.getProjectId(), request.getApplicationId(),
+                revokeExisting, revokeTimeout);
+        } else {
+            // new style - must go thru jdbc until new jOOQ is generated.
+            return requestLock(request.getOfficeId(), request.getProjectId(), request.getApplicationId(),
+                    sessionUser, osUser, sessionProgram, sessionMachine,
+                    revokeExisting, revokeTimeout);
+        }
+    }
+
+    public String requestLock(String office, String projectId, String appId,
+                              String username, String osuser, String program, String machine,
+                              boolean revokeExisting, int revokeTimeout) {
+        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
+        String pRevokeExisting = OracleTypeMap.formatBool(revokeExisting);
+        return connectionResult(dsl, c -> {
+            setOffice(c, office);
+            int i = 1;
+            try (CallableStatement stmt = c.prepareCall("{? = call CWMS_PROJECT.REQUEST_LOCK(?,?,?,?,?,?,?,?,?)}")) {
+                stmt.registerOutParameter(i++, java.sql.Types.VARCHAR);
+                stmt.setString(i++, projectId);
+                stmt.setString(i++, appId);
+                stmt.setString(i++, pRevokeExisting);
+                stmt.setObject(i++, revokeTimeoutBI);
+                stmt.setString(i++, office);
+                stmt.setString(i++, username);
+                stmt.setString(i++, osuser);
+                stmt.setString(i++, program);
+                stmt.setString(i++, machine);
+                stmt.execute();
+                return stmt.getString(1);
+            }
+        });
+    }
+
     public boolean isLocked(String office, String projectId, String appId) {
         String s = connectionResult(dsl,
                 c -> CWMS_PROJECT_PACKAGE.call_IS_LOCKED(getDslContext(c, office).configuration(),
@@ -143,8 +186,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                 .withOsUser(catRecord.getValue(OS_USER, String.class))
                 .withSessionProgram(catRecord.getValue(SESSION_PROGRAM, String.class))
                 .withSessionMachine(catRecord.getValue(SESSION_MACHINE, String.class))
-                .build()
-                ;
+                .build();
     }
 
     public void releaseLock(String lockId) {

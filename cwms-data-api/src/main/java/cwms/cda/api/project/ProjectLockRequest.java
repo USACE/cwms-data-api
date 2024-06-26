@@ -38,8 +38,8 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
-import cwms.cda.data.dto.project.ProjectLockId;
 import cwms.cda.data.dto.project.ProjectLock;
+import cwms.cda.data.dto.project.ProjectLockId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -59,6 +59,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockRequest implements Handler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    public static final int DEFAULT_TIMEOUT = 10;
+    public static final boolean REVOKE_DEFAULT = false;
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -85,10 +87,10 @@ public class ProjectLockRequest implements Handler {
             queryParams = {
                 @OpenApiParam(name = REVOKE_EXISTING, type = Boolean.class,
                         description = "If an existing lock is found should a revoke be "
-                                + "attempted? Default: false"),
+                                + "attempted? Default: " + REVOKE_DEFAULT),
                 @OpenApiParam(name = REVOKE_TIMEOUT, type = Integer.class,
                         description = "time in seconds to wait for existing lock to be "
-                                + "revoked. Default: 10")
+                                + "revoked. Default: " + DEFAULT_TIMEOUT),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -109,12 +111,11 @@ public class ProjectLockRequest implements Handler {
             ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
             ProjectLock lock = Formats.parseContent(contentType, ctx.bodyAsInputStream(), ProjectLock.class);
             boolean revokeExisting =
-                    ctx.queryParamAsClass(REVOKE_EXISTING, Boolean.class).getOrDefault(false);
+                    ctx.queryParamAsClass(REVOKE_EXISTING, Boolean.class).getOrDefault(REVOKE_DEFAULT);
             int revokeTimeout =
-                    ctx.queryParamAsClass(REVOKE_TIMEOUT, Integer.class).getOrDefault(10);
+                    ctx.queryParamAsClass(REVOKE_TIMEOUT, Integer.class).getOrDefault(DEFAULT_TIMEOUT);
 
-            String lockId = lockDao.requestLock(lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId(),
-                    revokeExisting, revokeTimeout);
+            String lockId = lockDao.requestLock(lock, revokeExisting, revokeTimeout);
             if (lockId != null) {
                 ProjectLockId id = new ProjectLockId(lockId);
                 String acceptHeader = ctx.header(Header.ACCEPT);
@@ -131,24 +132,17 @@ public class ProjectLockRequest implements Handler {
                 boolean alreadyLocked = lockDao.isLocked(lock.getOfficeId(), lock.getProjectId(),
                         lock.getApplicationId());
 
-                // Might be able to see if we have revoker rights.
-                String userId = getUser(ctx).orElse(null);
-                lockDao.hasLockRevokerRights(lock.getOfficeId(), userId, lock.getProjectId(), lock.getApplicationId()
-                );
-
                 // or see what the locs are:
                 List<ProjectLock> locks = lockDao.catLocks(lock.getProjectId(), lock.getApplicationId(),
                         TimeZone.getTimeZone("UTC"), lock.getOfficeId());
 
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                CdaError re =
-                        new CdaError("Requested lock was not retrieved. Already locked: "
+                CdaError re =  new CdaError("Requested lock was not retrieved. Already locked: "
                                 + alreadyLocked + ", locks: " + locks, true);
                 ctx.json(re);
             }
 
         }
-
 
     }
 
