@@ -33,6 +33,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
+import cwms.cda.data.dto.location.kind.EmbankmentTest;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -111,7 +112,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             String embankmentOfficeId = embankment.getLocation().getOfficeId();
             Embankment retrievedEmbankment = embankmentDao.retrieveEmbankment(embankmentId,
                     embankmentOfficeId);
-            assertEquals(embankment, retrievedEmbankment);
+            EmbankmentTest.assertSame(embankment, retrievedEmbankment);
             embankmentDao.deleteEmbankment(embankmentId, embankmentOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> embankmentDao.retrieveEmbankment(embankmentId,
                     embankmentOfficeId));
@@ -135,8 +136,9 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             List<Embankment> retrievedEmbankment = embankmentDao.retrieveEmbankments(embankment1.getProjectId().getName(),
                     embankment1.getProjectId().getOfficeId());
             assertEquals(2, retrievedEmbankment.size());
-            assertTrue(retrievedEmbankment.contains(embankment1));
-            assertTrue(retrievedEmbankment.contains(embankment2));
+            assertTrue(retrievedEmbankment.stream().anyMatch(e -> e.getLocation().getName().equalsIgnoreCase(embankment1.getLocation().getName())));
+            assertTrue(retrievedEmbankment.stream().anyMatch(e -> e.getLocation().getName().equalsIgnoreCase(embankment2.getLocation().getName())));
+            assertFalse(retrievedEmbankment.stream().anyMatch(e -> e.getLocation().getName().equalsIgnoreCase(embankment3.getLocation().getName())));
             assertFalse(retrievedEmbankment.contains(embankment3));
             embankmentDao.deleteEmbankment(embankmentId, embankmentOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> embankmentDao.retrieveEmbankment(embankmentId,
@@ -191,7 +193,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
                         .withActive(true)
                         .build())
                 .withUpstreamSideSlope(15.0)
-                .withUnitsId("m")
+                .withLengthUnits("m")
                 .withTopWidth(20.0)
                 .withStructureLength(25.0)
                 .withDownstreamSideSlope(90.0)

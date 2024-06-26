@@ -75,7 +75,7 @@ final class EmbankmentDaoTest {
                         .withActive(true)
                         .build())
                 .withUpstreamSideSlope(15.0)
-                .withUnitsId("ft")
+                .withLengthUnits("ft")
                 .withTopWidth(20.0)
                 .withStructureLength(25.0)
                 .withDownstreamSideSlope(90.0)
