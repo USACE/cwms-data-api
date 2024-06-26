@@ -84,11 +84,11 @@ public final class StreamReachTest {
                 () -> assertEquals(downstreamNode.getStreamId().getName(), item.getDownstreamNode().getStreamId().getName(), "The downstream node does not match the provided value"),
                 () -> assertEquals(downstreamNode.getStation(), item.getDownstreamNode().getStation(), "The downstream node station does not match the provided value"),
                 () -> assertEquals(downstreamNode.getBank(), item.getDownstreamNode().getBank(), "The downstream node bank does not match the provided value"),
-                () -> assertEquals(downstreamNode.getStationUnit(), item.getDownstreamNode().getStationUnit(), "The downstream node station unit does not match the provided value"),
+                () -> assertEquals(downstreamNode.getStationUnits(), item.getDownstreamNode().getStationUnits(), "The downstream node station unit does not match the provided value"),
                 () -> assertEquals(upstreamNode.getStreamId().getName(), item.getUpstreamNode().getStreamId().getName(), "The upstream node does not match the provided value"),
                 () -> assertEquals(upstreamNode.getStation(), item.getUpstreamNode().getStation(), "The upstream node station does not match the provided value"),
                 () -> assertEquals(upstreamNode.getBank(), item.getUpstreamNode().getBank(), "The upstream node does not match the provided value"),
-                () -> assertEquals(upstreamNode.getStationUnit(), item.getUpstreamNode().getStationUnit(), "The upstream node station unit does not match the provided value"),
+                () -> assertEquals(upstreamNode.getStationUnits(), item.getUpstreamNode().getStationUnits(), "The upstream node station unit does not match the provided value"),
                 () -> assertEquals("Config123", item.getConfigurationId().getName(), "The configuration ID name does not match the provided value"),
                 () -> assertEquals("Stream123", item.getStreamId().getName(), "The stream ID name does not match the provided value"),
                 () -> assertEquals("Reach123", item.getId().getName(), "The reach ID name does not match the provided value"));
@@ -262,7 +262,7 @@ public final class StreamReachTest {
                         .build())
                 .withStation(10.0)
                 .withBank(Bank.LEFT)
-                .withStationUnit("ft")
+                .withStationUnits("ft")
                 .build();
 
         StreamNode downstreamNode = new StreamNode.Builder()
@@ -272,7 +272,7 @@ public final class StreamReachTest {
                         .build())
                 .withStation(20.0)
                 .withBank(Bank.RIGHT)
-                .withStationUnit("ft")
+                .withStationUnits("ft")
                 .build();
 
         StreamReach expected = new StreamReach.Builder()

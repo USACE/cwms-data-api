@@ -57,7 +57,7 @@ public class StreamLocationTest {
                 .withStreamId(flowsIntoStreamId)
                 .withBank(Bank.LEFT)
                 .withStation(123.45)
-                .withStationUnit("ft")
+                .withStationUnits("ft")
                 .build();
 
         StreamLocation.Builder builder = new StreamLocation.Builder()
@@ -68,8 +68,8 @@ public class StreamLocationTest {
                 .withLowestMeasurableStage(1.0)
                 .withTotalDrainageArea(50.0)
                 .withUngagedDrainageArea(20.0)
-                .withAreaUnit("mi2")
-                .withStageUnit("ft");
+                .withAreaUnits("mi2")
+                .withStageUnits("ft");
 
         StreamLocation item = builder.build();
 
@@ -103,15 +103,15 @@ public class StreamLocationTest {
                                     .build())
                             .withBank(Bank.LEFT)
                             .withStation(123.45)
-                            .withStationUnit("ft")
+                            .withStationUnits("ft")
                             .build())
                     .withPublishedStation(100.0)
                     .withNavigationStation(90.0)
                     .withLowestMeasurableStage(1.0)
                     .withTotalDrainageArea(50.0)
                     .withUngagedDrainageArea(20.0)
-                    .withAreaUnit("mi2")
-                    .withStageUnit("ft");
+                    .withAreaUnits("mi2")
+                    .withStageUnits("ft");
             StreamLocation item = builder.build();
             item.validate();
         }, "The validate method should have thrown a FieldException because the stream location id field is missing");
@@ -127,8 +127,8 @@ public class StreamLocationTest {
                     .withLowestMeasurableStage(1.0)
                     .withTotalDrainageArea(50.0)
                     .withUngagedDrainageArea(20.0)
-                    .withAreaUnit("mi2")
-                    .withStageUnit("ft");
+                    .withAreaUnits("mi2")
+                    .withStageUnits("ft");
             StreamLocation item = builder.build();
             item.validate();
         }, "The validate method should have thrown a FieldException because the stream node field is missing");
@@ -150,7 +150,7 @@ public class StreamLocationTest {
                 .withStreamId(flowsIntoStreamId)
                 .withBank(Bank.LEFT)
                 .withStation(123.45)
-                .withStationUnit("ft")
+                .withStationUnits("ft")
                 .build();
 
         StreamLocation streamLocation = new StreamLocation.Builder()
@@ -161,8 +161,8 @@ public class StreamLocationTest {
                 .withLowestMeasurableStage(1.0)
                 .withTotalDrainageArea(50.0)
                 .withUngagedDrainageArea(20.0)
-                .withAreaUnit("mi2")
-                .withStageUnit("ft")
+                .withAreaUnits("mi2")
+                .withStageUnits("ft")
                 .build();
 
         ContentType contentType = new ContentType(Formats.JSON);
@@ -189,8 +189,8 @@ public class StreamLocationTest {
                 () -> assertEquals(1.5, deserialized.getLowestMeasurableStage(), "The lowest measurable stage does not match"),
                 () -> assertEquals(10.5, deserialized.getTotalDrainageArea(), "The total drainage area does not match"),
                 () -> assertEquals(0.01, deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
-                () -> assertEquals("mi2", deserialized.getAreaUnit(), "The area unit does not match"),
-                () -> assertEquals("ft", deserialized.getStageUnit(), "The stage unit does not match")
+                () -> assertEquals("mi2", deserialized.getAreaUnits(), "The area unit does not match"),
+                () -> assertEquals("ft", deserialized.getStageUnits(), "The stage unit does not match")
         );
     }
 
@@ -203,8 +203,8 @@ public class StreamLocationTest {
                 () -> assertEquals(streamLocation.getLowestMeasurableStage(), deserialized.getLowestMeasurableStage(), "The lowest measurable stage does not match"),
                 () -> assertEquals(streamLocation.getTotalDrainageArea(), deserialized.getTotalDrainageArea(), "The total drainage area does not match"),
                 () -> assertEquals(streamLocation.getUngagedDrainageArea(), deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
-                () -> assertEquals(streamLocation.getAreaUnit(), deserialized.getAreaUnit(), "The area unit does not match"),
-                () -> assertEquals(streamLocation.getStageUnit(), deserialized.getStageUnit(), "The stage unit does not match")
+                () -> assertEquals(streamLocation.getAreaUnits(), deserialized.getAreaUnits(), "The area unit does not match"),
+                () -> assertEquals(streamLocation.getStageUnits(), deserialized.getStageUnits(), "The stage unit does not match")
         );
     }
 }

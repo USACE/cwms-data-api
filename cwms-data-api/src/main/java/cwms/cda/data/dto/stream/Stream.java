@@ -22,9 +22,9 @@ public final class Stream implements CwmsDTOBase {
     private final StreamNode flowsIntoStreamNode;
     private final StreamNode divertsFromStreamNode;
     private final Double length;
-    private final Double slope;
-    private final String lengthUnit;
-    private final String slopeUnit;
+    private final Double averageSlope;
+    private final String lengthUnits;
+    private final String slopeUnits;
     private final String comment;
     private final CwmsId id;
 
@@ -33,9 +33,9 @@ public final class Stream implements CwmsDTOBase {
         this.flowsIntoStreamNode = builder.flowsIntoStreamNode;
         this.divertsFromStreamNode = builder.divertsFromStreamNode;
         this.length = builder.length;
-        this.slope = builder.slope;
-        this.lengthUnit = builder.lengthUnit;
-        this.slopeUnit = builder.slopeUnit;
+        this.averageSlope = builder.averageSlope;
+        this.lengthUnits = builder.lengthUnits;
+        this.slopeUnits = builder.slopeUnits;
         this.comment = builder.comment;
         this.id = builder.id;
     }
@@ -69,16 +69,16 @@ public final class Stream implements CwmsDTOBase {
         return length;
     }
 
-    public Double getSlope() {
-        return slope;
+    public Double getAverageSlope() {
+        return averageSlope;
     }
 
-    public String getLengthUnit() {
-        return lengthUnit;
+    public String getLengthUnits() {
+        return lengthUnits;
     }
 
-    public String getSlopeUnit() {
-        return slopeUnit;
+    public String getSlopeUnits() {
+        return slopeUnits;
     }
 
     public String getComment() {
@@ -94,9 +94,9 @@ public final class Stream implements CwmsDTOBase {
         private StreamNode flowsIntoStreamNode;
         private StreamNode divertsFromStreamNode;
         private Double length;
-        private Double slope;
-        private String lengthUnit;
-        private String slopeUnit;
+        private Double averageSlope;
+        private String lengthUnits;
+        private String slopeUnits;
         private String comment;
         private CwmsId id;
 
@@ -120,18 +120,18 @@ public final class Stream implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withSlope(Double slope) {
-            this.slope = slope;
+        public Builder withAverageSlope(Double averageSlope) {
+            this.averageSlope = averageSlope;
             return this;
         }
 
-        public Builder withLengthUnit(String lengthUnit) {
-            this.lengthUnit = lengthUnit;
+        public Builder withLengthUnits(String lengthUnits) {
+            this.lengthUnits = lengthUnits;
             return this;
         }
 
-        public Builder withSlopeUnit(String slopeUnit) {
-            this.slopeUnit = slopeUnit;
+        public Builder withSlopeUnits(String slopeUnits) {
+            this.slopeUnits = slopeUnits;
             return this;
         }
 

@@ -15,7 +15,7 @@
     },
     "station": 20.0,
     "bank": "R",
-    "station-unit": "ft"
+    "station-units": "ft"
   },
   "upstream-node": {
     "stream-id": {
@@ -24,7 +24,7 @@
     },
     "station": 10.0,
     "bank": "L",
-    "station-unit": "ft"
+    "station-units": "ft"
   },
   "configuration-id": {
     "office-id": "SPK",

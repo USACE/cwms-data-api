@@ -10,13 +10,13 @@
     },
     "bank": "R",
     "station": 678.9,
-    "station-unit": "ft"
+    "station-units": "ft"
   },
   "published-station": 123.45,
   "navigation-station": 12,
   "lowest-measurable-stage": 1.5,
   "total-drainage-area": 10.5,
   "ungaged-drainage-area": 0.01,
-  "area-unit": "mi2",
-  "stage-unit": "ft"
+  "area-units": "mi2",
+  "stage-units": "ft"
 }

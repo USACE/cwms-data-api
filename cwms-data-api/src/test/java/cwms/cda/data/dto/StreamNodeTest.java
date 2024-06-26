@@ -49,7 +49,7 @@ class StreamNodeTest {
                 .withStreamId(flowsIntoStreamId)
                 .withBank(Bank.LEFT)
                 .withStation(123.45)
-                .withStationUnit("mi");
+                .withStationUnits("mi");
 
         StreamNode item = builder.build();
 
@@ -57,7 +57,7 @@ class StreamNodeTest {
                 () -> assertEquals(flowsIntoStreamId.getOfficeId(), item.getStreamId().getOfficeId(), "The office id does not match the provided value"),
                 () -> assertEquals(Bank.LEFT, item.getBank(), "The bank does not match the provided value"),
                 () -> assertEquals(123.45, item.getStation(), "The station does not match the provided value"),
-                () -> assertEquals("mi", item.getStationUnit(), "The station unit does not match the provided value"));
+                () -> assertEquals("mi", item.getStationUnits(), "The station unit does not match the provided value"));
     }
 
     @Test
@@ -66,7 +66,7 @@ class StreamNodeTest {
             StreamNode.Builder builder = new StreamNode.Builder()
                     .withBank(Bank.LEFT)
                     .withStation(123.45)
-                    .withStationUnit("mi");
+                    .withStationUnits("mi");
             StreamNode item = builder.build();
             item.validate();
         }, "The validate method should have thrown a FieldException because the stream id field is missing");
@@ -83,7 +83,7 @@ class StreamNodeTest {
                 .withStreamId(flowsIntoStreamId)
                 .withBank(Bank.LEFT)
                 .withStation(123.45)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .build();
 
         ContentType contentType = new ContentType(Formats.JSON);
@@ -113,7 +113,7 @@ class StreamNodeTest {
             () -> CwmsIdTest.assertSame(node1.getStreamId(), node2.getStreamId()),
             () -> assertEquals(node1.getBank(), node2.getBank()),
             () -> assertEquals(node1.getStation(), node2.getStation()),
-            () -> assertEquals(node1.getStationUnit(), node2.getStationUnit())
+            () -> assertEquals(node1.getStationUnits(), node2.getStationUnits())
         );
     }
 

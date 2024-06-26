@@ -5,5 +5,5 @@
   },
   "bank": "L",
   "station": 123.45,
-  "station-unit": "ft"
+  "station-units": "ft"
 }
