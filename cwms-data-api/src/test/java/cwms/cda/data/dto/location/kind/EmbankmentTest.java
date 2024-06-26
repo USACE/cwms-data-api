@@ -109,7 +109,7 @@ public final class EmbankmentTest {
                         .withActive(true)
                         .build())
                 .withUpstreamSideSlope(15.0)
-                .withUnitsId("ft")
+                .withLengthUnits("ft")
                 .withTopWidth(20.0)
                 .withStructureLength(25.0)
                 .withDownstreamSideSlope(90.0)
@@ -142,7 +142,7 @@ public final class EmbankmentTest {
                 () -> assertEquals(first.getStructureLength(), second.getStructureLength(), "Structure length doesn't match"),
                 () -> assertEquals(first.getMaxHeight(), second.getMaxHeight(), "Maximum height doesn't match"),
                 () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
-                () -> assertEquals(first.getUnitsId(), second.getUnitsId(), "Units ID doesn't match"),
+                () -> assertEquals(first.getLengthUnits(), second.getLengthUnits(), "Units ID doesn't match"),
                 () -> LookupTypeTest.assertSame(first.getDownstreamProtectionType(), second.getDownstreamProtectionType()),
                 () -> LookupTypeTest.assertSame(first.getUpstreamProtectionType(), second.getUpstreamProtectionType()),
                 () -> LookupTypeTest.assertSame(first.getStructureType(), second.getStructureType()),

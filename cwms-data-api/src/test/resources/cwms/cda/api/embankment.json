@@ -37,7 +37,7 @@
   "structure-length": 25.0,
   "max-height": 5.0,
   "top-width": 20.0,
-  "units-id": "m",
+  "length-units": "m",
   "downstream-protection-type": {
     "office-id": "CWMS",
     "display-value": "Concrete Arch Facing",
