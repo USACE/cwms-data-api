@@ -29,11 +29,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.Location;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSONV1})
 @JsonDeserialize(builder = Turbine.Builder.class)
@@ -44,6 +47,14 @@ public final class Turbine extends ProjectStructure {
 
     private Turbine(Builder builder) {
         super(builder.projectId, builder.location);
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        List<String> missingFields = getMissingFields();
+        if (!missingFields.isEmpty()) {
+            throw new RequiredFieldException(missingFields);
+        }
     }
 
     public static class Builder {

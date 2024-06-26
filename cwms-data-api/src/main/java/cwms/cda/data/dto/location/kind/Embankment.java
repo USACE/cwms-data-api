@@ -30,12 +30,14 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.Location;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Embankment.Builder.class)
@@ -104,10 +106,12 @@ public final class Embankment extends ProjectStructure {
 
     @Override
     public void validate() throws FieldException {
-        super.validate();
-
-        if (this.structureType == null) {
-            throw new FieldException("Structure type field can't be null");
+        List<String> missingFields = getMissingFields();
+        if (structureType == null) {
+            missingFields.add("structureType");
+        }
+        if (!missingFields.isEmpty()) {
+            throw new RequiredFieldException(missingFields);
         }
     }
 

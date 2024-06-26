@@ -24,58 +24,64 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.Location;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class Outlet extends ProjectStructure
-{
-	private final CwmsId characteristicRef;
+public class Outlet extends ProjectStructure {
+    private final CwmsId characteristicRef;
 
-	private Outlet(Builder builder)
-	{
-		super(builder.projectId, builder.location);
-		characteristicRef = builder.characteristicRef;
-	}
+    private Outlet(Builder builder) {
+        super(builder.projectId, builder.location);
+        characteristicRef = builder.characteristicRef;
+    }
 
-	public CwmsId getCharacteristicRef()
-	{
-		return characteristicRef;
-	}
+    public CwmsId getCharacteristicRef() {
+        return characteristicRef;
+    }
 
-	public static final class Builder
-	{
-		private CwmsId characteristicRef;
-		private CwmsId projectId;
-		private Location location;
+    @Override
+    public void validate() throws FieldException {
+        List<String> missingFields = getMissingFields();
+        if (characteristicRef == null) {
+            missingFields.add("characteristicRef");
+        }
+        if (!missingFields.isEmpty()) {
+            throw new RequiredFieldException(missingFields);
+        }
+    }
 
-		public Outlet build()
-		{
-			return new Outlet(this);
-		}
+    public static final class Builder {
+        private CwmsId characteristicRef;
+        private CwmsId projectId;
+        private Location location;
 
-		public Builder withCharacteristicRef(CwmsId characteristicRef)
-		{
-			this.characteristicRef = characteristicRef;
-			return this;
-		}
+        public Outlet build() {
+            return new Outlet(this);
+        }
 
-		public Builder withProjectId(CwmsId projectIdentifier)
-		{
-			this.projectId = projectIdentifier;
-			return this;
-		}
+        public Builder withCharacteristicRef(CwmsId characteristicRef) {
+            this.characteristicRef = characteristicRef;
+            return this;
+        }
 
-		public Builder withLocation(Location location)
-		{
-			this.location = location;
-			return this;
-		}
-	}
+        public Builder withProjectId(CwmsId projectIdentifier) {
+            this.projectId = projectIdentifier;
+            return this;
+        }
+
+        public Builder withLocation(Location location) {
+            this.location = location;
+            return this;
+        }
+    }
 }

@@ -23,44 +23,54 @@ package cwms.cda.data.dto.location.kind;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
+import java.util.ArrayList;
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public abstract class ProjectStructure implements CwmsDTOBase
-{
-	private final CwmsId projectId;
-	private final Location location;
+public abstract class ProjectStructure implements CwmsDTOBase {
+    private final CwmsId projectId;
+    private final Location location;
 
-	protected ProjectStructure(CwmsId projectId, Location location)
-	{
-		this.location = location;
-		this.projectId = projectId;
-	}
+    protected ProjectStructure(CwmsId projectId, Location location) {
+        this.location = location;
+        this.projectId = projectId;
+    }
 
-	public final CwmsId getProjectId()
-	{
-		return projectId;
-	}
+    public final CwmsId getProjectId() {
+        return projectId;
+    }
 
-	public final Location getLocation()
-	{
-		return location;
-	}
+    public final Location getLocation() {
+        return location;
+    }
 
-	@Override
-	public void validate() throws FieldException
-	{
-		if (getLocation() == null) {
-			throw new FieldException("Location field can't be null");
-		}
-		getLocation().validate();
-		if (getProjectId() == null) {
-			throw new FieldException("Project location Id field must be defined");
-		}
-		getProjectId().validate();
-	}
+    protected final List<String> getMissingFields() {
+        List<String> output = new ArrayList<>();
+
+        if (getLocation() == null) {
+            output.add("Location");
+        } else {
+            try {
+                getLocation().validate();
+            } catch (RequiredFieldException ex) {
+                output.addAll(ex.getDetails().get(RequiredFieldException.MISSING_FIELDS));
+            }
+        }
+        if (getProjectId() == null) {
+            output.add("ProjectId");
+        } else {
+            try {
+                getProjectId().validate();
+            } catch (RequiredFieldException ex) {
+                output.addAll(ex.getDetails().get(RequiredFieldException.MISSING_FIELDS));
+            }
+        }
+
+        return output;
+    }
 }
