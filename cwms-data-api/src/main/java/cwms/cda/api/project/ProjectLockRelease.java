@@ -26,6 +26,7 @@ package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.LOCK_ID;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
@@ -51,28 +52,29 @@ public class ProjectLockRelease implements Handler {
 
     public ProjectLockRelease(MetricRegistry metrics) {
         this.metrics = metrics;
-
     }
-
 
     @OpenApi(
             description = "Releases a project lock",
             queryParams = {
+                @OpenApiParam(name = OFFICE, required = true,
+                        description = "The user's office."),
                 @OpenApiParam(name = LOCK_ID, required = true,
                         description = "The id of the lock to release."),
             },
             method = HttpMethod.PUT,
             tags = {"Project Locks"},
-            path = "/project-locks/"
+            path = "/project-locks/release"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
 
         String lockId = requiredParam(ctx, LOCK_ID);
+        String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            lockDao.releaseLock(lockId);
+            lockDao.releaseLock(office, lockId);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

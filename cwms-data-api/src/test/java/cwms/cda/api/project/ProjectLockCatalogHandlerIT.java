@@ -24,9 +24,9 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.APPLICATION_ID;
+import static cwms.cda.api.Controllers.APPLICATION_MASK;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
-import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.Controllers.TIME_ZONE_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
@@ -70,29 +70,32 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             ProjectDao prjDao = new ProjectDao(dsl);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-            String projId = "catLocks";
+            String projId1 = "catLocks1";
+            String projId2 = "catLocks2";
             String appId = "catLocks_test";
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
             String officeMask = OFFICE;
-            Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+            Project testProject1 = buildTestProject(OFFICE, projId1);
+            prjDao.create(testProject1);
+            Project testProject2 = buildTestProject(OFFICE, projId2);
+            prjDao.create(testProject2);
             try {
                 int revokeTimeout = 10;
 
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId + "_1", officeMask, true);
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId + "_2", officeMask, true);
-                String lock1 = lockDao.requestLock(OFFICE, projId, appId + "_1", true, revokeTimeout);
+                lockDao.updateLockRevokerRights(OFFICE, userName, projId1, appId , officeMask, true);
+                lockDao.updateLockRevokerRights(OFFICE, userName, projId2, appId , officeMask, true);
+                String lock1 = lockDao.requestLock(OFFICE, projId1, appId, true, revokeTimeout);
                 assertTrue(lock1.length() > 8);
-                String lock2 = lockDao.requestLock(OFFICE, projId, appId + "_2", false, revokeTimeout);
+                String lock2 = lockDao.requestLock(OFFICE, projId2, appId , false, revokeTimeout);
                 assertTrue(lock2.length() > 8);
                 assertNotEquals(lock1, lock2);
 
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSON)
-                    .queryParam(PROJECT_ID, projId)
-                    .queryParam(APPLICATION_ID, appId)
+                    .queryParam(PROJECT_MASK, "catLocks*")
+                    .queryParam(APPLICATION_MASK, appId)
                     .queryParam(TIME_ZONE_ID, "UTC")
                     .queryParam(OFFICE_MASK, officeMask)
                 .when()
@@ -105,35 +108,36 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
                     .statusCode(is(HttpServletResponse.SC_OK))
                     .body("size()", is(2))
                     .body("[0].office-id", equalToIgnoringCase(OFFICE))
-                    .body("[0].project-id", equalToIgnoringCase(projId))
-                    .body("[0].application-id", equalToIgnoringCase(appId+"_1"))
+                    .body("[0].project-id", equalToIgnoringCase(projId1))
+                    .body("[0].application-id", equalToIgnoringCase(appId))
                     .body("[0].session-user", equalToIgnoringCase(userName))
 //                                .body("[0].session-program", equalToIgnoringCase("JDBC Thin Client"))
                     .body("[1].office-id", equalToIgnoringCase(OFFICE))
-                    .body("[1].project-id", equalToIgnoringCase(projId))
-                    .body("[1].application-id", equalToIgnoringCase(appId+"_2"))
+                    .body("[1].project-id", equalToIgnoringCase(projId2))
+                    .body("[1].application-id", equalToIgnoringCase(appId))
                     .body("[1].session-user", equalToIgnoringCase(userName))
                 ;
 
-                lockDao.releaseLock(lock1);
-                lockDao.releaseLock(lock2);
+                lockDao.releaseLock(OFFICE,  lock1);
+                lockDao.releaseLock(OFFICE, lock2);
 
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId + "_1", officeMask, true);
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId + "_2", officeMask, true);
+                lockDao.updateLockRevokerRights(OFFICE, userName, projId1, appId, officeMask, true);
+                lockDao.updateLockRevokerRights(OFFICE, userName, projId2, appId, officeMask, true);
 
             } finally {
                 try {
-                    lockDao.revokeLock(OFFICE, projId, appId + "_1", 0);
+                    lockDao.revokeLock(OFFICE, projId1, appId , 0);
                 } catch (Exception e) {
-                    logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId+"_1");
+                    logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId);
                 }
                 try {
-                    lockDao.revokeLock(OFFICE, projId, appId + "_2", 0);
+                    lockDao.revokeLock(OFFICE, projId2, appId , 0);
                 } catch (Exception e) {
-                    logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId+"_2");
+                    logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId);
                 }
 
-                deleteProject(prjDao, projId, lockDao, OFFICE, appId);
+                deleteProject(prjDao, projId1, lockDao, OFFICE, appId);
+                deleteProject(prjDao, projId2, lockDao, OFFICE, appId);
             }
         });
     }

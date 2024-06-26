@@ -313,7 +313,7 @@ class ProjectLockDaoTest {
             boolean locked = lockDao.isLocked(OFFICE, projId, appId);
             assertTrue(locked);
 
-            lockDao.releaseLock(lockId);  // throws if ther isn't a current lock
+            lockDao.releaseLock(OFFICE, lockId);  // throws if ther isn't a current lock
             locked = lockDao.isLocked(OFFICE, projId, appId);
             assertFalse(locked);
 
@@ -356,8 +356,8 @@ class ProjectLockDaoTest {
             assertNotNull(locks);
             assertFalse(locks.isEmpty());
 
-            lockDao.releaseLock(lock1);
-            lockDao.releaseLock(lock2);
+            lockDao.releaseLock(OFFICE, lock1);
+            lockDao.releaseLock(OFFICE, lock2);
 
             lockDao.updateLockRevokerRights(OFFICE, USER_ID, projId, appId + "_1", officeMask, true);
             lockDao.updateLockRevokerRights(OFFICE, USER_ID, projId, appId + "_2", officeMask, true);
