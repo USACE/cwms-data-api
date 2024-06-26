@@ -7,7 +7,7 @@
     },
     "station": 123.45,
     "bank": "L",
-    "station-unit": "mi"
+    "station-units": "mi"
   },
   "diverts-from-stream-node": {
     "stream-id": {
@@ -16,12 +16,12 @@
     },
     "station": 678.9,
     "bank": "R",
-    "station-unit": "mi"
+    "station-units": "mi"
   },
   "length": 10.5,
-  "slope": 0.01,
-  "length-unit": "mi",
-  "slope-unit": "%",
+  "average-slope": 0.01,
+  "length-units": "mi",
+  "slope-units": "%",
   "comment": "This is a comment for the stream.",
   "id": {
     "office-id": "SPK",

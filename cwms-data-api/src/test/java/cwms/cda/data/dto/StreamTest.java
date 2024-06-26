@@ -55,7 +55,7 @@ class StreamTest {
                         .build())
                 .withStation(123.45)
                 .withBank(Bank.LEFT)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .build();
 
         StreamNode divertsFromStream = new StreamNode.Builder()
@@ -64,7 +64,7 @@ class StreamTest {
                         .withOfficeId("SPK")
                         .build())
                 .withStation(678.90)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .withBank(Bank.RIGHT)
                 .build();
 
@@ -73,9 +73,9 @@ class StreamTest {
                 .withFlowsIntoStreamNode(flowsIntoStream)
                 .withDivertsFromStreamNode(divertsFromStream)
                 .withLength(10.5)
-                .withSlope(0.01)
-                .withLengthUnit("mi")
-                .withSlopeUnit("%")
+                .withAverageSlope(0.01)
+                .withLengthUnits("mi")
+                .withSlopeUnits("%")
                 .withComment("This is a comment for the stream.")
                 .withId(cwmsId)
                 .build();
@@ -83,18 +83,18 @@ class StreamTest {
         assertAll(() -> assertEquals(true, item.getStartsDownstream(), "The starts downstream does not match the provided value"),
                 () -> assertEquals(Bank.LEFT, item.getFlowsIntoStreamNode().getBank(), "Flows into stream bank"),
                 () -> assertEquals(123.45, item.getFlowsIntoStreamNode().getStation(), 0.001, "Flows into stream station"),
-                () -> assertEquals("mi", item.getFlowsIntoStreamNode().getStationUnit(), "Flows into stream station unit"),
+                () -> assertEquals("mi", item.getFlowsIntoStreamNode().getStationUnits(), "Flows into stream station unit"),
                 () -> assertEquals("AnotherStream", item.getFlowsIntoStreamNode().getStreamId().getName(), "Flows into stream name"),
                 () -> assertEquals("SPK", item.getFlowsIntoStreamNode().getStreamId().getOfficeId(), "Flows into stream office id"),
                 () -> assertEquals(Bank.RIGHT, item.getDivertsFromStreamNode().getBank(), "Diverts from stream bank"),
                 () -> assertEquals(678.90, item.getDivertsFromStreamNode().getStation(), 0.001, "Diverts from stream station"),
-                () -> assertEquals("mi", item.getDivertsFromStreamNode().getStationUnit(), "Diverts from stream station unit"),
+                () -> assertEquals("mi", item.getDivertsFromStreamNode().getStationUnits(), "Diverts from stream station unit"),
                 () -> assertEquals("UpstreamStream", item.getDivertsFromStreamNode().getStreamId().getName(), "Diverts from stream name"),
                 () -> assertEquals("SPK", item.getDivertsFromStreamNode().getStreamId().getOfficeId(), "Diverts from stream office id"),
                 () -> assertEquals(10.5, item.getLength(), 0.001, "Length"),
-                () -> assertEquals(0.01, item.getSlope(), 0.001, "Slope"),
-                () -> assertEquals("mi", item.getLengthUnit(), "Length unit"),
-                () -> assertEquals("%", item.getSlopeUnit(), "Slope unit"),
+                () -> assertEquals(0.01, item.getAverageSlope(), 0.001, "Slope"),
+                () -> assertEquals("mi", item.getLengthUnits(), "Length unit"),
+                () -> assertEquals("%", item.getSlopeUnits(), "Slope unit"),
                 () -> assertEquals("This is a comment for the stream.", item.getComment(), "Comment"),
                 () -> assertEquals("Stream123", item.getId().getName(), "Stream name"),
                 () -> assertEquals("SPK", item.getId().getOfficeId(), "Stream office id"));
@@ -126,7 +126,7 @@ class StreamTest {
                     .withFlowsIntoStreamNode(flowsIntoStream)
                     .withDivertsFromStreamNode(divertsFromStream)
                     .withLength(10.5)
-                    .withSlope(0.01)
+                    .withAverageSlope(0.01)
                     .withComment("This is a comment for the stream.")
                     .build();
 
@@ -148,7 +148,7 @@ class StreamTest {
                         .build())
                 .withStation(123.45)
                 .withBank(Bank.LEFT)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .build();
 
         StreamNode divertsFromStream = new StreamNode.Builder()
@@ -158,7 +158,7 @@ class StreamTest {
                         .build())
                 .withStation(678.90)
                 .withBank(Bank.RIGHT)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .build();
 
         Stream stream = new Stream.Builder()
@@ -166,11 +166,11 @@ class StreamTest {
                 .withFlowsIntoStreamNode(flowsIntoStream)
                 .withDivertsFromStreamNode(divertsFromStream)
                 .withLength(10.5)
-                .withSlope(0.01)
+                .withAverageSlope(0.01)
                 .withComment("This is a comment for the stream.")
                 .withId(cwmsId)
-                .withSlopeUnit("%")
-                .withLengthUnit("mi")
+                .withSlopeUnits("%")
+                .withLengthUnits("mi")
                 .build();
 
         ContentType contentType = new ContentType(Formats.JSON);
@@ -194,7 +194,7 @@ class StreamTest {
                         .build())
                 .withStation(123.45)
                 .withBank(Bank.LEFT)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .build();
 
         StreamNode divertsFromStream = new StreamNode.Builder()
@@ -204,7 +204,7 @@ class StreamTest {
                         .build())
                 .withStation(678.90)
                 .withBank(Bank.RIGHT)
-                .withStationUnit("mi")
+                .withStationUnits("mi")
                 .build();
 
         Stream expectedStream = new Stream.Builder()
@@ -212,11 +212,11 @@ class StreamTest {
                 .withFlowsIntoStreamNode(flowsIntoStream)
                 .withDivertsFromStreamNode(divertsFromStream)
                 .withLength(10.5)
-                .withSlope(0.01)
+                .withAverageSlope(0.01)
                 .withComment("This is a comment for the stream.")
                 .withId(cwmsId)
-                .withSlopeUnit("%")
-                .withLengthUnit("mi")
+                .withSlopeUnits("%")
+                .withLengthUnits("mi")
                 .build();
 
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/stream.json");
@@ -234,9 +234,9 @@ class StreamTest {
             () -> StreamNodeTest.assertSame(stream1.getFlowsIntoStreamNode(), stream2.getFlowsIntoStreamNode()),
             () -> StreamNodeTest.assertSame(stream1.getDivertsFromStreamNode(), stream2.getDivertsFromStreamNode()),
             () -> assertEquals(stream1.getLength(), stream2.getLength()),
-            () -> assertEquals(stream1.getSlope(), stream2.getSlope()),
-            () -> assertEquals(stream1.getLengthUnit(), stream2.getLengthUnit()),
-            () -> assertEquals(stream1.getSlopeUnit(), stream2.getSlopeUnit()),
+            () -> assertEquals(stream1.getAverageSlope(), stream2.getAverageSlope()),
+            () -> assertEquals(stream1.getLengthUnits(), stream2.getLengthUnits()),
+            () -> assertEquals(stream1.getSlopeUnits(), stream2.getSlopeUnits()),
             () -> assertEquals(stream1.getComment(), stream2.getComment()),
             () -> CwmsIdTest.assertSame(stream1.getId(), stream2.getId())
         );

@@ -49,8 +49,8 @@ public final class StreamLocation implements CwmsDTOBase {
     private final Double lowestMeasurableStage;
     private final Double totalDrainageArea;
     private final Double ungagedDrainageArea;
-    private final String areaUnit;
-    private final String stageUnit;
+    private final String areaUnits;
+    private final String stageUnits;
 
     private StreamLocation(Builder builder) {
         this.streamNode = builder.streamNode;
@@ -60,8 +60,8 @@ public final class StreamLocation implements CwmsDTOBase {
         this.lowestMeasurableStage = builder.lowestMeasurableStage;
         this.totalDrainageArea = builder.totalDrainageArea;
         this.ungagedDrainageArea = builder.ungagedDrainageArea;
-        this.areaUnit = builder.areaUnit;
-        this.stageUnit = builder.stageUnit;
+        this.areaUnits = builder.areaUnits;
+        this.stageUnits = builder.stageUnits;
     }
 
     @Override
@@ -104,17 +104,17 @@ public final class StreamLocation implements CwmsDTOBase {
         return ungagedDrainageArea;
     }
 
-    public String getAreaUnit() {
-        return areaUnit;
+    public String getAreaUnits() {
+        return areaUnits;
     }
 
-    public String getStageUnit() {
-        return stageUnit;
+    public String getStageUnits() {
+        return stageUnits;
     }
 
     @JsonIgnore
-    public String getStationUnit() {
-        return streamNode.getStationUnit();
+    public String getStationUnits() {
+        return streamNode.getStationUnits();
     }
 
     @JsonIgnore
@@ -135,8 +135,8 @@ public final class StreamLocation implements CwmsDTOBase {
         private Double lowestMeasurableStage;
         private Double totalDrainageArea;
         private Double ungagedDrainageArea;
-        private String areaUnit;
-        private String stageUnit;
+        private String areaUnits;
+        private String stageUnits;
 
         public Builder withId(CwmsId id) {
             this.id = id;
@@ -173,13 +173,13 @@ public final class StreamLocation implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withAreaUnit(String areaUnit) {
-            this.areaUnit = areaUnit;
+        public Builder withAreaUnits(String areaUnits) {
+            this.areaUnits = areaUnits;
             return this;
         }
 
-        public Builder withStageUnit(String stageUnit) {
-            this.stageUnit = stageUnit;
+        public Builder withStageUnits(String stageUnits) {
+            this.stageUnits = stageUnits;
             return this;
         }
 

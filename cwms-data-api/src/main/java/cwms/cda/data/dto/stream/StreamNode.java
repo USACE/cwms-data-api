@@ -44,13 +44,13 @@ public final class StreamNode implements CwmsDTOBase {
     private final CwmsId streamId;
     private final Bank bank;
     private final Double station;
-    private final String stationUnit;
+    private final String stationUnits;
 
     private StreamNode(Builder builder) {
         this.streamId = builder.streamId;
         this.bank = builder.bank;
         this.station = builder.station;
-        this.stationUnit = builder.stationUnit;
+        this.stationUnits = builder.stationUnits;
     }
 
     @Override
@@ -73,15 +73,15 @@ public final class StreamNode implements CwmsDTOBase {
         return station;
     }
 
-    public String getStationUnit() {
-        return stationUnit;
+    public String getStationUnits() {
+        return stationUnits;
     }
 
     public static class Builder {
         private CwmsId streamId;
         private Bank bank;
         private Double station;
-        private String stationUnit;
+        private String stationUnits;
 
         public Builder withStreamId(CwmsId cwmsId) {
             this.streamId = cwmsId;
@@ -98,8 +98,8 @@ public final class StreamNode implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withStationUnit(String stationUnit) {
-            this.stationUnit = stationUnit;
+        public Builder withStationUnits(String stationUnits) {
+            this.stationUnits = stationUnits;
             return this;
         }
 
