@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -18,13 +18,13 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class Basin implements CwmsDTOBase {
-    private final LocationIdentifier basinId;
+    private final CwmsId basinId;
     private final Double sortOrder;
     private final Double totalDrainageArea;
     private final Double contributingDrainageArea;
-    private final LocationIdentifier parentBasinId;
+    private final CwmsId parentBasinId;
     private final String areaUnit;
-    private final LocationIdentifier primaryStreamId;
+    private final CwmsId primaryStreamId;
 
     private Basin(Builder builder) {
         this.basinId = builder.basinId;
@@ -36,11 +36,11 @@ public final class Basin implements CwmsDTOBase {
         this.primaryStreamId = builder.primaryStreamId;
     }
 
-    public LocationIdentifier getBasinId() {
+    public CwmsId getBasinId() {
         return basinId;
     }
 
-    public LocationIdentifier getPrimaryStreamId() {
+    public CwmsId getPrimaryStreamId() {
         return primaryStreamId;
     }
 
@@ -56,7 +56,7 @@ public final class Basin implements CwmsDTOBase {
         return contributingDrainageArea;
     }
 
-    public LocationIdentifier getParentBasinId() {
+    public CwmsId getParentBasinId() {
         return parentBasinId;
     }
 
@@ -65,20 +65,20 @@ public final class Basin implements CwmsDTOBase {
     }
 
     public static class Builder {
-        private LocationIdentifier basinId;
+        private CwmsId basinId;
         private Double sortOrder;
         private Double totalDrainageArea;
         private Double contributingDrainageArea;
-        private LocationIdentifier parentBasinId;
+        private CwmsId parentBasinId;
         private String areaUnit;
-        private LocationIdentifier primaryStreamId;
+        private CwmsId primaryStreamId;
 
-        public Builder withBasinId(LocationIdentifier basinId) {
+        public Builder withBasinId(CwmsId basinId) {
             this.basinId = basinId;
             return this;
         }
 
-        public Builder withPrimaryStreamId(LocationIdentifier primaryStreamId) {
+        public Builder withPrimaryStreamId(CwmsId primaryStreamId) {
             this.primaryStreamId = primaryStreamId;
             return this;
         }
@@ -98,7 +98,7 @@ public final class Basin implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withParentBasinId(LocationIdentifier parentBasinId) {
+        public Builder withParentBasinId(CwmsId parentBasinId) {
             this.parentBasinId = parentBasinId;
             return this;
         }
