@@ -22,46 +22,65 @@
  * SOFTWARE.
  */
 
-package cwms.cda.data.dto.location.kind;
+package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.CwmsId;
+import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSONV1})
-@JsonDeserialize(builder = Turbine.Builder.class)
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@JsonDeserialize(builder = CwmsId.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({ "projectId", "location" })
-public final class Turbine extends ProjectStructure {
+@JsonPropertyOrder({ "officeId", "name" })
+public final class CwmsId implements CwmsDTOBase {
 
-    private Turbine(Builder builder) {
-        super(builder.projectId, builder.location);
+    private final String officeId;
+    private final String name;
+
+    public CwmsId(Builder builder) {
+        this.officeId = builder.officeId;
+        this.name = builder.name;
     }
 
+    @Override
+    public void validate() throws FieldException {
+        if(this.officeId == null || this.officeId.isEmpty()){
+            throw new FieldException("The 'officeId' field of a LocationIdentifier cannot be null or empty.");
+        }
+        if(this.name == null || this.name.isEmpty()){
+            throw new FieldException("The 'locationId' field of a LocationIdentifier cannot be null or empty.");
+        }
+    }
+
+    public String getOfficeId() {
+        return officeId;
+    }
+
+    public String getName() {
+        return name;
+    }
     public static class Builder {
-        private CwmsId projectId;
-        private Location location;
+        private String officeId;
+        private String name;
 
-        public Builder withProjectId(CwmsId projectId) {
-            this.projectId = projectId;
+        public Builder withOfficeId(String officeId) {
+            this.officeId = officeId;
+            return this;
+        }
+        public Builder withName(String name) {
+            this.name = name;
             return this;
         }
 
-        public Builder withLocation(Location location) {
-            this.location = location;
-            return this;
-        }
-
-        public Turbine build() {
-            return new Turbine(this);
+        public CwmsId build() {
+            return new CwmsId(this);
         }
     }
 }

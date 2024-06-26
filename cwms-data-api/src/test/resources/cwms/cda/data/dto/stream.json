@@ -1,26 +1,30 @@
 {
   "starts-downstream": true,
-  "flows-into-stream": {
+  "flows-into-stream-node": {
     "stream-id": {
-      "office-id": "Office123",
+      "office-id": "SPK",
       "name": "AnotherStream"
     },
     "station": 123.45,
-    "bank": "L"
+    "bank": "L",
+    "station-units": "mi"
   },
-  "diverts-from-stream": {
+  "diverts-from-stream-node": {
     "stream-id": {
-      "office-id": "Office123",
+      "office-id": "SPK",
       "name": "UpstreamStream"
     },
     "station": 678.9,
-    "bank": "R"
+    "bank": "R",
+    "station-units": "mi"
   },
   "length": 10.5,
-  "slope": 0.01,
+  "average-slope": 0.01,
+  "length-units": "mi",
+  "slope-units": "%",
   "comment": "This is a comment for the stream.",
-  "stream-id": {
-    "office-id": "Office123",
+  "id": {
+    "office-id": "SPK",
     "name": "Stream123"
   }
 }

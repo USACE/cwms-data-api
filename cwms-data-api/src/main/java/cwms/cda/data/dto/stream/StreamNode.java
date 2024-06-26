@@ -22,84 +22,89 @@
  * SOFTWARE.
  */
 
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@JsonDeserialize(builder = LocationIdentifier.Builder.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonDeserialize(builder = StreamNode.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({ "officeId", "name" })
-public final class LocationIdentifier implements CwmsDTOBase {
+public final class StreamNode implements CwmsDTOBase {
 
-    private final String officeId;
-    private final String name;
+    private final CwmsId streamId;
+    private final Bank bank;
+    private final Double station;
+    private final String stationUnits;
 
-    public LocationIdentifier(Builder builder) {
-        this.officeId = builder.officeId;
-        this.name = builder.name;
+    private StreamNode(Builder builder) {
+        this.streamId = builder.streamId;
+        this.bank = builder.bank;
+        this.station = builder.station;
+        this.stationUnits = builder.stationUnits;
     }
 
     @Override
     public void validate() throws FieldException {
-        if(this.officeId == null || this.officeId.isEmpty()){
-            throw new FieldException("The 'officeId' field of a LocationIdentifier cannot be null or empty.");
+        if (this.streamId == null) {
+            throw new FieldException("The 'locationIdentifier' field of a StreamLocationRef cannot be null.");
         }
-        if(this.name == null || this.name.isEmpty()){
-            throw new FieldException("The 'locationId' field of a LocationIdentifier cannot be null or empty.");
-        }
+        streamId.validate();
     }
 
-    public String getOfficeId() {
-        return officeId;
+    public CwmsId getStreamId() {
+        return streamId;
     }
 
-    public String getName() {
-        return name;
+    public Bank getBank() {
+        return bank;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        LocationIdentifier that = (LocationIdentifier) o;
-        return Objects.equals(getOfficeId(), that.getOfficeId()) && Objects.equals(getName(), that.getName());
+    public Double getStation() {
+        return station;
     }
 
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getOfficeId());
-        result = 31 * result + Objects.hashCode(getName());
-        return result;
+    public String getStationUnits() {
+        return stationUnits;
     }
 
     public static class Builder {
-        private String officeId;
-        private String name;
+        private CwmsId streamId;
+        private Bank bank;
+        private Double station;
+        private String stationUnits;
 
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
-            return this;
-        }
-        public Builder withName(String name) {
-            this.name = name;
+        public Builder withStreamId(CwmsId cwmsId) {
+            this.streamId = cwmsId;
             return this;
         }
 
-        public LocationIdentifier build() {
-            return new LocationIdentifier(this);
+        public Builder withBank(Bank bank) {
+            this.bank = bank;
+            return this;
+        }
+
+        public Builder withStation(Double station) {
+            this.station = station;
+            return this;
+        }
+
+        public Builder withStationUnits(String stationUnits) {
+            this.stationUnits = stationUnits;
+            return this;
+        }
+
+        public StreamNode build() {
+            return new StreamNode(this);
         }
     }
 }

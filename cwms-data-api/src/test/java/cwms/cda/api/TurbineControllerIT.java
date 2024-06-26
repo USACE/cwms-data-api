@@ -28,7 +28,7 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.location.kind.Embankment;
+import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -57,19 +57,19 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-final class EmbankmentControllerIT extends DataApiTestIT {
+final class TurbineControllerIT extends DataApiTestIT {
     
     private static final Location PROJECT_LOC;
-    private static final Location EMBANKMENT_LOC;
-    private static final Embankment EMBANKMENT;
+    private static final Location TURBINE_LOC;
+    private static final Turbine TURBINE;
     static {
-        try(InputStream projectStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
-            InputStream embankmentStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/embankment.json")) {
+        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
+            InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine.json")) {
             String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
             PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
-            String embankmentJson = IOUtils.toString(embankmentStream, StandardCharsets.UTF_8);
-            EMBANKMENT = Formats.parseContent(new ContentType(Formats.JSONV1), embankmentJson, Embankment.class);
-            EMBANKMENT_LOC = EMBANKMENT.getLocation();
+            String turbineJson = IOUtils.toString(turbineStream, StandardCharsets.UTF_8);
+            TURBINE = Formats.parseContent(new ContentType(Formats.JSONV1), turbineJson, Turbine.class);
+            TURBINE_LOC = TURBINE.getLocation();
         } catch(Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -84,7 +84,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
-                locationsDao.storeLocation(EMBANKMENT_LOC);
+                locationsDao.storeLocation(TURBINE_LOC);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -98,7 +98,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId(), true);
+            locationsDao.deleteLocation(TURBINE_LOC.getName(), databaseLink.getOfficeId(), true);
             CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
                     DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
             locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
@@ -109,13 +109,13 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     void test_get_create_delete() {
 
         // Structure of test:
-        // 1)Create the Embankment
-        // 2)Retrieve the Embankment and assert that it exists
-        // 3)Delete the Embankment
-        // 4)Retrieve the Embankment and assert that it does not exist
+        // 1)Create the Turbine
+        // 2)Retrieve the Turbine and assert that it exists
+        // 3)Delete the Turbine
+        // 4)Retrieve the Turbine and assert that it does not exist
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Embankment.class), EMBANKMENT);
-        //Create the Embankment
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Turbine.class), TURBINE);
+        //Create the Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
@@ -125,14 +125,14 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/embankments/")
+            .post("/turbines/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
-        String office = EMBANKMENT.getLocation().getOfficeId();
-        // Retrieve the Embankment and assert that it exists
+        String office = TURBINE.getLocation().getOfficeId();
+        // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV1)
@@ -140,26 +140,17 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/" + EMBANKMENT.getLocation().getName())
+            .get("turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("upstream-side-slope", equalTo(EMBANKMENT.getUpstreamSideSlope().floatValue()))
-            .body("downstream-side-slope", equalTo(EMBANKMENT.getDownstreamSideSlope().floatValue()))
-            .body("structure-length", equalTo(EMBANKMENT.getStructureLength().floatValue()))
-            .body("max-height", equalTo(EMBANKMENT.getMaxHeight().floatValue()))
-            .body("top-width", equalTo(EMBANKMENT.getTopWidth().floatValue()))
-            .body("units-id", equalTo(EMBANKMENT.getUnitsId()))
-            .body("downstream-protection-type", not(nullValue()))
-            .body("upstream-protection-type", not(nullValue()))
-            .body("structure-type", not(nullValue()))
             .body("location", not(nullValue()))
-            .body("project-id.name", equalTo(EMBANKMENT.getProjectId().getName()))
-            .body("project-id.office-id", equalTo(EMBANKMENT.getProjectId().getOfficeId()))
+            .body("project-id.name", equalTo(TURBINE.getProjectId().getName()))
+            .body("project-id.office-id", equalTo(TURBINE.getProjectId().getOfficeId()))
         ;
 
-        // Delete a Embankment
+        // Delete a Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .queryParam(Controllers.OFFICE, office)
@@ -167,14 +158,14 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + EMBANKMENT.getLocation().getName())
+            .delete("turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
 
-        // Retrieve a Embankment and assert that it does not exist
+        // Retrieve a Turbine and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV1)
@@ -182,7 +173,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/" + EMBANKMENT.getLocation().getName())
+            .get("turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -193,15 +184,17 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     @Test
     void test_update_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        //Create the Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
             .queryParam(Controllers.NAME, "NewBogus")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/embankments/bogus")
+            .patch("/turbines/bogus")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -212,7 +205,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     @Test
     void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        // Delete a Embankment
+        // Delete a Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
@@ -220,7 +213,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + Instant.now().toEpochMilli())
+            .delete("turbines/" + Instant.now().toEpochMilli())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -232,12 +225,12 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     void test_get_all() {
 
         // Structure of test:
-        // 1)Create the Embankment
-        // 2)Retrieve the Embankment with getAll and assert that it exists
-        // 3)Delete the Embankment
+        // 1)Create the Turbine
+        // 2)Retrieve the Turbine with getAll and assert that it exists
+        // 3)Delete the Turbine
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Embankment.class), EMBANKMENT);
-        //Create the Embankment
+        String json = Formats.format(Formats.parseHeader(Formats.JSON, Turbine.class), TURBINE);
+        //Create the Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
@@ -247,42 +240,33 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/embankments/")
+            .post("/turbines/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
-        String office = EMBANKMENT.getLocation().getOfficeId();
-        // Retrieve the Embankment and assert that it exists
+        String office = TURBINE.getLocation().getOfficeId();
+        // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(Controllers.PROJECT_ID, EMBANKMENT.getProjectId().getName())
+            .queryParam(Controllers.PROJECT_ID, TURBINE.getProjectId().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/")
+            .get("turbines/")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].upstream-side-slope", equalTo(EMBANKMENT.getUpstreamSideSlope().floatValue()))
-            .body("[0].downstream-side-slope", equalTo(EMBANKMENT.getDownstreamSideSlope().floatValue()))
-            .body("[0].structure-length", equalTo(EMBANKMENT.getStructureLength().floatValue()))
-            .body("[0].max-height", equalTo(EMBANKMENT.getMaxHeight().floatValue()))
-            .body("[0].top-width", equalTo(EMBANKMENT.getTopWidth().floatValue()))
-            .body("[0].units-id", equalTo(EMBANKMENT.getUnitsId()))
-            .body("[0].downstream-protection-type", not(nullValue()))
-            .body("[0].upstream-protection-type", not(nullValue()))
-            .body("[0].structure-type", not(nullValue()))
             .body("[0].location", not(nullValue()))
-            .body("[0].project-id.name", equalTo(EMBANKMENT.getProjectId().getName()))
-            .body("[0].project-id.office-id", equalTo(EMBANKMENT.getProjectId().getOfficeId()))
+            .body("[0].project-id.name", equalTo(TURBINE.getProjectId().getName()))
+            .body("[0].project-id.office-id", equalTo(TURBINE.getProjectId().getOfficeId()))
         ;
 
-        // Delete a Embankment
+        // Delete a Turbine
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .queryParam(Controllers.OFFICE, office)
@@ -290,7 +274,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + EMBANKMENT.getLocation().getName())
+            .delete("turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()

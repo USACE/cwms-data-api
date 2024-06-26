@@ -7,43 +7,45 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Stream.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class Stream implements CwmsDTOBase {
 
     private final Boolean startsDownstream;
-    private final StreamJunctionIdentifier flowsIntoStream;
-    private final StreamJunctionIdentifier divertsFromStream;
+    private final StreamNode flowsIntoStreamNode;
+    private final StreamNode divertsFromStreamNode;
     private final Double length;
-    private final Double slope;
+    private final Double averageSlope;
+    private final String lengthUnits;
+    private final String slopeUnits;
     private final String comment;
-    private final LocationIdentifier streamId;
+    private final CwmsId id;
 
     private Stream(Builder builder) {
         this.startsDownstream = builder.startsDownstream;
-        this.flowsIntoStream = builder.flowsIntoStream;
-        this.divertsFromStream = builder.divertsFromStream;
+        this.flowsIntoStreamNode = builder.flowsIntoStreamNode;
+        this.divertsFromStreamNode = builder.divertsFromStreamNode;
         this.length = builder.length;
-        this.slope = builder.slope;
+        this.averageSlope = builder.averageSlope;
+        this.lengthUnits = builder.lengthUnits;
+        this.slopeUnits = builder.slopeUnits;
         this.comment = builder.comment;
-        this.streamId = builder.streamId;
+        this.id = builder.id;
     }
 
     @Override
     public void validate() throws FieldException {
-        if (this.streamId == null) {
-            throw new FieldException("The 'locationIdentifier' field of a Stream cannot be null.");
+        if (this.id == null) {
+            throw new FieldException("The 'id' field of a Stream cannot be null.");
         }
-        streamId.validate();
+        id.validate();
     }
 
     public Boolean getStartsDownstream() {
@@ -52,85 +54,64 @@ public final class Stream implements CwmsDTOBase {
 
     @JsonIgnore
     public String getOfficeId() {
-        return streamId.getOfficeId();
+        return id.getOfficeId();
     }
 
-    public StreamJunctionIdentifier getFlowsIntoStream() {
-        return flowsIntoStream;
+    public StreamNode getFlowsIntoStreamNode() {
+        return flowsIntoStreamNode;
     }
 
-    public StreamJunctionIdentifier getDivertsFromStream() {
-        return divertsFromStream;
+    public StreamNode getDivertsFromStreamNode() {
+        return divertsFromStreamNode;
     }
 
     public Double getLength() {
         return length;
     }
 
-    public Double getSlope() {
-        return slope;
+    public Double getAverageSlope() {
+        return averageSlope;
+    }
+
+    public String getLengthUnits() {
+        return lengthUnits;
+    }
+
+    public String getSlopeUnits() {
+        return slopeUnits;
     }
 
     public String getComment() {
         return comment;
     }
 
-    public LocationIdentifier getStreamId() {
-        return streamId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Stream that = (Stream) o;
-        return Objects.equals(getStartsDownstream(), that.getStartsDownstream())
-                && Objects.equals(getFlowsIntoStream(), that.getFlowsIntoStream())
-                && Objects.equals(getDivertsFromStream(), that.getDivertsFromStream())
-                && Objects.equals(getLength(), that.getLength())
-                && Objects.equals(getSlope(), that.getSlope())
-                && Objects.equals(getComment(), that.getComment())
-                && Objects.equals(getStreamId(), that.getStreamId());
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(getStartsDownstream());
-        result = 31 * result + Objects.hashCode(getFlowsIntoStream());
-        result = 31 * result + Objects.hashCode(getDivertsFromStream());
-        result = 31 * result + Objects.hashCode(getLength());
-        result = 31 * result + Objects.hashCode(getSlope());
-        result = 31 * result + Objects.hashCode(getComment());
-        result = 31 * result + Objects.hashCode(getStreamId());
-        return result;
+    public CwmsId getId() {
+        return id;
     }
 
     public static final class Builder {
         private Boolean startsDownstream;
-        private StreamJunctionIdentifier flowsIntoStream;
-        private StreamJunctionIdentifier divertsFromStream;
+        private StreamNode flowsIntoStreamNode;
+        private StreamNode divertsFromStreamNode;
         private Double length;
-        private Double slope;
+        private Double averageSlope;
+        private String lengthUnits;
+        private String slopeUnits;
         private String comment;
-        private LocationIdentifier streamId;
+        private CwmsId id;
 
         public Builder withStartsDownstream(Boolean startsDownstream) {
             this.startsDownstream = startsDownstream;
             return this;
         }
 
-        public Builder withFlowsIntoStream(StreamJunctionIdentifier flowsIntoStream) {
-            this.flowsIntoStream = flowsIntoStream;
+        public Builder withFlowsIntoStreamNode(StreamNode flowsIntoStreamNode) {
+            this.flowsIntoStreamNode = flowsIntoStreamNode;
             return this;
         }
 
-        public Builder withDivertsFromStream(StreamJunctionIdentifier divertsFromStream) {
-            this.divertsFromStream = divertsFromStream;
+        public Builder withDivertsFromStreamNode(StreamNode divertsFromStreamNode) {
+            this.divertsFromStreamNode = divertsFromStreamNode;
             return this;
         }
 
@@ -139,8 +120,18 @@ public final class Stream implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withSlope(Double slope) {
-            this.slope = slope;
+        public Builder withAverageSlope(Double averageSlope) {
+            this.averageSlope = averageSlope;
+            return this;
+        }
+
+        public Builder withLengthUnits(String lengthUnits) {
+            this.lengthUnits = lengthUnits;
+            return this;
+        }
+
+        public Builder withSlopeUnits(String slopeUnits) {
+            this.slopeUnits = slopeUnits;
             return this;
         }
 
@@ -149,8 +140,8 @@ public final class Stream implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withStreamId(LocationIdentifier streamId) {
-            this.streamId = streamId;
+        public Builder withId(CwmsId id) {
+            this.id = id;
             return this;
         }
 

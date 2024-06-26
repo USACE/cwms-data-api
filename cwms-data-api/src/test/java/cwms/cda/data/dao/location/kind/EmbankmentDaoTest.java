@@ -26,7 +26,7 @@ package cwms.cda.data.dao.location.kind;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.data.dto.location.kind.EmbankmentTest;
@@ -51,7 +51,7 @@ final class EmbankmentDaoTest {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
                 .withMaxHeight(5.0)
-                .withProjectId(new LocationIdentifier.Builder()
+                .withProjectId(new CwmsId.Builder()
                         .withName("PROJECT")
                         .withOfficeId("LRD")
                         .build())
