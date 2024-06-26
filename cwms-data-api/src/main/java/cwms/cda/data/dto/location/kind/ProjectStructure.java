@@ -36,7 +36,7 @@ public abstract class ProjectStructure implements CwmsDTOBase {
     private final CwmsId projectId;
     private final Location location;
 
-    protected ProjectStructure(CwmsId projectId, Location location) {
+    ProjectStructure(CwmsId projectId, Location location) {
         this.location = location;
         this.projectId = projectId;
     }
