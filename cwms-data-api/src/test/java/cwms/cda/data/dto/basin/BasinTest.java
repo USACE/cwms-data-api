@@ -1,7 +1,7 @@
 package cwms.cda.data.dto.basin;
 
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.LocationIdentifier;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class BasinTest {
     @Test
     void testBasinSerializationRoundTrip() {
-        Basin basin = buildTestBasin(new LocationIdentifier.Builder()
+        Basin basin = buildTestBasin(new CwmsId.Builder()
                 .withName("TEST_LOCATION1")
                 .withOfficeId("NVE")
                 .build(), false);
@@ -25,7 +25,7 @@ final class BasinTest {
 
     @Test
     void testBasinSerializationRoundTripFromFile() throws Exception {
-        Basin basin = buildTestBasin(new LocationIdentifier.Builder()
+        Basin basin = buildTestBasin(new CwmsId.Builder()
                 .withName("TEST_LOCATION2")
                 .withOfficeId("MVR")
                 .build(), false);
@@ -35,7 +35,7 @@ final class BasinTest {
         Basin deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, Basin.class), serialized, Basin.class);
         assertSame(basin, deserialized);
 
-        Basin basin1 = buildTestBasin(new LocationIdentifier.Builder()
+        Basin basin1 = buildTestBasin(new CwmsId.Builder()
                 .withName("TEST_LOCATION2")
                 .withOfficeId("MVR")
                 .build(), true);
@@ -48,7 +48,7 @@ final class BasinTest {
 
     @Test
     void testValidate() {
-        LocationIdentifier basinId = new LocationIdentifier.Builder()
+        CwmsId basinId = new CwmsId.Builder()
                 .withName("NAB")
                 .withOfficeId("TEST_OFFICE3")
                 .build();
@@ -64,31 +64,31 @@ final class BasinTest {
         });
     }
 
-    private Basin buildTestBasin(LocationIdentifier basinId, boolean parentBasinIdNull) {
+    private Basin buildTestBasin(CwmsId basinId, boolean parentBasinIdNull) {
         if (parentBasinIdNull) {
             return new Basin.Builder()
                     .withBasinId(basinId)
-                    .withPrimaryStreamId(new LocationIdentifier.Builder()
+                    .withPrimaryStreamId(new CwmsId.Builder()
                             .withName("TEST_LOCATION4")
                             .withOfficeId("MVP")
                             .build())
                     .withSortOrder(1.0)
                     .withTotalDrainageArea(1005.0)
                     .withContributingDrainageArea(850.0)
-                    .withParentBasinId(new LocationIdentifier.Builder().build())
+                    .withParentBasinId(new CwmsId.Builder().build())
                     .withAreaUnit("m2")
                     .build();
         } else {
             return new Basin.Builder()
                     .withBasinId(basinId)
-                    .withPrimaryStreamId(new LocationIdentifier.Builder()
+                    .withPrimaryStreamId(new CwmsId.Builder()
                             .withName("TEST_LOCATION4")
                             .withOfficeId("MVP")
                             .build())
                     .withSortOrder(1.0)
                     .withTotalDrainageArea(1005.0)
                     .withContributingDrainageArea(850.0)
-                    .withParentBasinId(new LocationIdentifier.Builder()
+                    .withParentBasinId(new CwmsId.Builder()
                             .withName("TEST_LOCATION5")
                             .withOfficeId("NAE")
                             .build())
