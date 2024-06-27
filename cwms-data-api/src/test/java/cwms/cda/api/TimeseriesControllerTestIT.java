@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -658,6 +659,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled("Referenced data set is missing")
     void test_daylight_saving_retrieve()throws Exception {
 
         InputStream resource = this.getClass().getResourceAsStream(
