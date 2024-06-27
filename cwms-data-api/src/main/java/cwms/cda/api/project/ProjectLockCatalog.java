@@ -30,7 +30,6 @@ import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIME_ZONE_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.Histogram;
@@ -51,11 +50,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.TimeZone;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockCatalog implements Handler {
+    public static final String TAGS = "Project Locks";
+    public static final String PATH = "/project-locks/";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -85,32 +85,26 @@ public class ProjectLockCatalog implements Handler {
                         + " the "
                         + "office mask to be used to filter the locks. "
                         + "Supports '*' but is typically a single office."),
-                @OpenApiParam(name = TIME_ZONE_ID, description =
-                        "Specifies the "
-                                + "time zone id to be used to filter the locks. Defaults to "
-                                + "'UTC'"),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON, from = ProjectLock.class)}
                 )},
-            tags = {"Project Locks"},
-            path = "/project-locks/",
+            tags = {TAGS},
+            path = PATH,
             method = HttpMethod.GET
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
-        try (Timer.Context timer = markAndTime(GET_ALL)) {
+        try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
             String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
             String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault(
                     "*");
             String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the
             // office.
-            String timeZoneId = ctx.queryParamAsClass(TIME_ZONE_ID, String.class).getOrDefault(
-                    "UTC");
-            TimeZone tz = TimeZone.getTimeZone(timeZoneId);
-            List<ProjectLock> locks = lockDao.catLocks(projMask, appMask, tz, officeMask);
+
+            List<ProjectLock> locks = lockDao.catLocks(officeMask, projMask, appMask);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
             String result = Formats.format(contentType, locks, ProjectLock.class);

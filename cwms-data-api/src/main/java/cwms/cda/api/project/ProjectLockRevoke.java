@@ -25,7 +25,6 @@
 package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_ID;
-import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.REVOKE_TIMEOUT;
@@ -45,6 +44,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockRevoke implements Handler {
+    public static final String PATH = "/project-locks/{project-id}";
+    public static final String TAGS = "Project Locks";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -69,8 +70,8 @@ public class ProjectLockRevoke implements Handler {
                         description = "time in seconds to wait for existing lock to be revoked. Default: 10")
             },
             method = HttpMethod.DELETE,
-            path = "/project-locks/{project-id}",
-            tags = {"Project Locks"}
+            path = PATH,
+            tags = {TAGS}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
@@ -80,7 +81,7 @@ public class ProjectLockRevoke implements Handler {
         String appId = requiredParam(ctx, APPLICATION_ID);
         int revokeTimeout = ctx.queryParamAsClass(REVOKE_TIMEOUT, Integer.class).getOrDefault(10);
 
-        try (final Timer.Context ignored = markAndTime(DELETE)) {
+        try (final Timer.Context ignored = markAndTime("revoke")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
 
             lockDao.revokeLock(office, projectId, appId, revokeTimeout);

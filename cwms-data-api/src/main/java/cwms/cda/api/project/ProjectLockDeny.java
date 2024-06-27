@@ -24,7 +24,6 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.LOCK_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 
@@ -42,6 +41,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockDeny implements Handler {
+    public static final String TAGS = "Project Locks";
+    public static final String PATH = "/project-locks/";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -60,8 +61,8 @@ public class ProjectLockDeny implements Handler {
                         description = "The id of the lock."),
             },
             method = HttpMethod.POST,
-            tags = {"Project Locks"},
-            path = "/project-locks/"
+            tags = {TAGS},
+            path = PATH
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

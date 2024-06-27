@@ -27,6 +27,8 @@ package cwms.cda.api.project;
 import static cwms.cda.api.Controllers.LOCK_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
+import static cwms.cda.api.project.ProjectLockHandlerUtil.releaseLock;
+import static cwms.cda.api.project.ProjectLockHandlerUtil.revokeLock;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -40,6 +42,7 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.Project;
+import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
@@ -76,10 +79,11 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
             try {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask); // start fresh
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, true);
+                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
+                lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
 
-                String lockId = lockDao.requestLock(OFFICE, projId, appId, true, 10);
+                ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+                String lockId = lockDao.requestLock(req1, true, 10);
                 try {
                 assertNotNull(lockId);
                 assertTrue(lockId.length() > 8);  // FYI its 32 hex chars
@@ -106,15 +110,11 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
                     assertFalse(locked);
 
                 } finally {
-                    try {
-                        lockDao.releaseLock(OFFICE, lockId);
-                    } catch (Exception e) {
-                     // don't care
-                    }
-                    lockDao.revokeLock(OFFICE, projId, appId, 0);
+                    releaseLock(lockDao, OFFICE, lockId);
+                    revokeLock(lockDao, OFFICE, projId, appId);
                 }
             } finally {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask);
+                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
         });

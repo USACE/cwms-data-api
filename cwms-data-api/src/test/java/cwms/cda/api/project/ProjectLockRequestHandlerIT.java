@@ -28,15 +28,18 @@ import static cwms.cda.api.Controllers.REVOKE_EXISTING;
 import static cwms.cda.api.Controllers.REVOKE_TIMEOUT;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
+import static cwms.cda.api.project.ProjectLockHandlerUtil.releaseLock;
+import static cwms.cda.api.project.ProjectLockHandlerUtil.revokeLock;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
@@ -58,52 +61,156 @@ import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 public class ProjectLockRequestHandlerIT extends DataApiTestIT {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE = "SPK";
 
 
     @Test
     void test_request() throws SQLException {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+            String projId = "lockReq";
+            String appId = "test_req";
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            ProjectDao prjDao = new ProjectDao(dsl);
+            testCanRequest(dsl, user, projId, appId);
+        });
 
-            String projId = "lockReq";
-            String appId = "test_req";
-            String officeMask = OFFICE;
+    }
 
-            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-            String userName = user.getName();
+    private static void testCanRequest(DSLContext dsl, TestAccounts.KeyUser user, String projId, String appId) {
+        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectDao prjDao = new ProjectDao(dsl);
 
-            Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+        String officeMask = OFFICE;
+
+        String userName = user.getName();
+
+        Project testProject = buildTestProject(OFFICE, projId);
+        prjDao.create(testProject);
+        try {
+            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
+            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+
+            ProjectLock toRequest = new ProjectLock.Builder()
+                    .withOfficeId(OFFICE)
+                    .withProjectId(projId)
+                    .withApplicationId(appId)
+                    .withOsUser("fake_osuser")
+                    .withSessionProgram("fake_program")
+                    .withSessionMachine("fake_machine")
+                    .withSessionUser(userName)
+                    .build();
+
+            ObjectMapper om = JsonV2.buildObjectMapper();
+            String serializedProject = om.writeValueAsString(toRequest);
+
+            ExtractableResponse<Response> response =
+                given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(REVOKE_EXISTING, false)
+                    .queryParam(REVOKE_TIMEOUT, 10)
+                    .contentType(Formats.JSON)
+                    .body(serializedProject)
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/project-locks/")
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_CREATED))
+                    .extract();
+            String lockId = response.path("id");
+
             try {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask); // start fresh
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, true);
+                assertNotNull(lockId);
+                assertFalse(lockId.isEmpty());
+            } finally {
+                lockDao.releaseLock(OFFICE, lockId);
+            }
 
-                ProjectLock toRequest = new ProjectLock.Builder()
-                        .withOfficeId(OFFICE)
-                        .withProjectId(projId)
-                        .withApplicationId(appId)
-                        .withOsUser("fake_osuser")
-                        .withSessionProgram("fake_program")
-                        .withSessionMachine("fake_machine")
-                        .withSessionUser(userName)
-                        .build();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        } finally {
+            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
+            deleteProject(prjDao, projId, lockDao, OFFICE, appId);
+        }
+    }
 
-                ObjectMapper om = JsonV2.buildObjectMapper();
-                String serializedProject = om.writeValueAsString(toRequest);
+    @Test
+    void test_request_user2() throws SQLException {
+        TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SPK_NORMAL2;
+        String projId = "lockReq2";
+        String appId = "test_req2";
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            testCanRequest(dsl, user2, projId, appId);
+        });
 
-                ExtractableResponse<Response> response =
+    }
+
+    @Test
+    void test_can_request_revoke() throws SQLException, JsonProcessingException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        final String[] lockId = {null};
+        final String[] lockId2 = {null};
+
+        String projId = "revProj";
+        String appId = "revoke_test";
+        String officeMask = OFFICE;
+        TestAccounts.KeyUser user1 = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SPK_NORMAL2;
+        int revokeTimeout = 4;
+        boolean dontRevoke = false;
+
+        try {
+            // setup
+            databaseLink.connection(c -> {
+                DSLContext dsl = getDslContext(c, OFFICE);
+                ProjectDao prjDao = new ProjectDao(dsl);
+                ProjectLockDao lockDao = new ProjectLockDao(dsl);
+
+                Project testProject = buildTestProject(OFFICE, projId);
+                prjDao.create(testProject);
+
+                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, user1.getName(), true);
+                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, user2.getName(), true);
+
+                ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+                lockId[0] = lockDao.requestLock(req1, dontRevoke, revokeTimeout);
+                assertNotNull(lockId[0]);
+                assertFalse(lockId[0].isEmpty());
+                // now user1 has a lock.
+            });
+
+
+            // other user - try request user1 lock - this should wait until about revokeTimeout.
+            ProjectLock toRequest = new ProjectLock.Builder()
+                    .withOfficeId(OFFICE)
+                    .withProjectId(projId)
+                    .withApplicationId(appId)
+                    .withOsUser("fake_osuser")
+                    .withSessionProgram("fake_program")
+                    .withSessionMachine("fake_machine")
+                    .withSessionUser(user2.getName())
+                    .build();
+
+            ObjectMapper om = JsonV2.buildObjectMapper();
+            String serializedProject = om.writeValueAsString(toRequest);
+
+            long before = System.currentTimeMillis();
+
+            ExtractableResponse<Response> response =
                     given()
                         .log().ifValidationFails(LogDetail.ALL, true)
                         .accept(Formats.JSON)
-                        .header("Authorization", user.toHeaderValue())
-                        .queryParam(REVOKE_EXISTING, false)
-                        .queryParam(REVOKE_TIMEOUT, 10)
+                        .header("Authorization", user2.toHeaderValue())
+                        .queryParam(REVOKE_EXISTING, true)
+                        .queryParam(REVOKE_TIMEOUT, revokeTimeout)
                         .contentType(Formats.JSON)
                         .body(serializedProject)
                     .when()
@@ -112,25 +219,31 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                         .post("/project-locks/")
                     .then()
                         .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
+                        .assertThat()
                         .statusCode(is(HttpServletResponse.SC_CREATED))
                         .extract();
-                String lockId = response.path("id");
+            lockId2[0] = response.path("id");
+            assertNotNull(lockId2[0]);
 
-                try {
-                    assertNotNull(lockId);
-                    assertFalse(lockId.isEmpty());
-                } finally {
-                    lockDao.releaseLock(OFFICE, lockId);
-                }
+            long after = System.currentTimeMillis();
+            double elapsed = (double) (after - before);
+            assertThat(elapsed, closeTo(1000 * revokeTimeout, 2000));
 
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            } finally {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask);
+        } finally {
+            // clean up
+            databaseLink.connection(c -> {
+                DSLContext dsl = getDslContext(c, OFFICE);
+                ProjectDao prjDao = new ProjectDao(dsl);
+                ProjectLockDao lockDao = new ProjectLockDao(dsl);
+
+                releaseLock(lockDao, OFFICE, lockId);
+                releaseLock(lockDao, OFFICE, lockId2);
+
+                revokeLock(lockDao, OFFICE, projId, appId);
+
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
-            }
-        });
+            });
+        }
 
     }
 

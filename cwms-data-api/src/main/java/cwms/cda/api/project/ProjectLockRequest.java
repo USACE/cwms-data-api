@@ -33,7 +33,6 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -52,15 +51,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockRequest implements Handler {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final int DEFAULT_TIMEOUT = 10;
     public static final boolean REVOKE_DEFAULT = false;
+    public static final String PATH = "/project-locks/";
+    public static final String TAGS = "Project Locks";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -97,13 +95,13 @@ public class ProjectLockRequest implements Handler {
                     @OpenApiContent(type = Formats.JSON, from = ProjectLockId.class)}
                 )},
             method = HttpMethod.POST,
-            path = "/project-locks/",
-            tags = {"Project Locks"}
+            path = PATH,
+            tags = {TAGS}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
 
-        try (Timer.Context timer = markAndTime(GET_ALL)) {
+        try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
 
             String reqContentType = ctx.req.getContentType();
@@ -129,12 +127,12 @@ public class ProjectLockRequest implements Handler {
                 // We don't have any idea exactly why the create failed - right?
                 // we could try and see if its already locked.
 
-                boolean alreadyLocked = lockDao.isLocked(lock.getOfficeId(), lock.getProjectId(),
-                        lock.getApplicationId());
+                boolean alreadyLocked = lockDao.isLocked(
+                        lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId());
 
                 // or see what the locs are:
-                List<ProjectLock> locks = lockDao.catLocks(lock.getProjectId(), lock.getApplicationId(),
-                        TimeZone.getTimeZone("UTC"), lock.getOfficeId());
+                List<ProjectLock> locks = lockDao.catLocks(
+                        lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId());
 
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 CdaError re =  new CdaError("Requested lock was not retrieved. Already locked: "
@@ -144,16 +142,6 @@ public class ProjectLockRequest implements Handler {
 
         }
 
-    }
-
-    private static Optional<String> getUser(Context ctx) {
-        Optional<String> retval = Optional.empty();
-        if (ctx != null && ctx.req != null && ctx.req.getUserPrincipal() != null) {
-            retval = Optional.of(ctx.req.getUserPrincipal().getName());
-        } else {
-            logger.atFine().log("No user principal found in request.");
-        }
-        return retval;
     }
 
 }

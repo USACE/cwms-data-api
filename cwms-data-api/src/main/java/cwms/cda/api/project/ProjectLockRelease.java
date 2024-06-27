@@ -24,7 +24,6 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.LOCK_ID;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -43,6 +42,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockRelease implements Handler {
+    public static final String TAGS = "Project Locks";
+    public static final String PATH = "/project-locks/release";
     private final MetricRegistry metrics;
 
 
@@ -63,8 +64,8 @@ public class ProjectLockRelease implements Handler {
                         description = "The id of the lock to release."),
             },
             method = HttpMethod.PUT,
-            tags = {"Project Locks"},
-            path = "/project-locks/release"
+            tags = {TAGS},
+            path = PATH
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
@@ -72,7 +73,7 @@ public class ProjectLockRelease implements Handler {
         String lockId = requiredParam(ctx, LOCK_ID);
         String office = requiredParam(ctx, OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE)) {
+        try (final Timer.Context ignored = markAndTime("release")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
             lockDao.releaseLock(office, lockId);
         }

@@ -89,9 +89,9 @@ public class UpdateLockRevokerRights implements Handler {
         Boolean allow = ctx.queryParamAsClass(Controllers.ALLOW, Boolean.class)
                 .getOrThrow(e -> new RequiredQueryParameterException(Controllers.ALLOW));
 
-        try (final Timer.Context ignored = markAndTime("update_rights")) {
+        try (final Timer.Context ignored = markAndTime("updateRights")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            lockDao.updateLockRevokerRights(office, userId, projMask, appMask, officeMask, allow);
+            lockDao.updateLockRevokerRights(office, officeMask, projMask, appMask, userId, allow);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

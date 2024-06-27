@@ -25,7 +25,6 @@
 package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_MASK;
-import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.USER_ID;
@@ -82,10 +81,10 @@ public class RemoveAllLockRevokerRights implements Handler {
         String appMask = requiredParam(ctx, APPLICATION_MASK);
         String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault(office);
 
-        try (final Timer.Context ignored = markAndTime(DELETE)) {
+        try (final Timer.Context ignored = markAndTime("removeAll")) {
             DSLContext dslContext = getDslContext(ctx);
             ProjectLockDao lockDao = new ProjectLockDao(dslContext);
-            lockDao.removeAllLockRevokerRights(office, userId, appMask, officeMask);
+            lockDao.removeAllLockRevokerRights(office, officeMask, appMask, userId);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

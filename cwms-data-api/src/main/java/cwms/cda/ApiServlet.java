@@ -106,6 +106,7 @@ import cwms.cda.api.project.ProjectLockRelease;
 import cwms.cda.api.project.ProjectLockRequest;
 import cwms.cda.api.project.ProjectLockRevoke;
 import cwms.cda.api.project.ProjectLockStatus;
+import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
 import cwms.cda.data.dao.JooqDao;
@@ -169,36 +170,36 @@ import org.owasp.html.PolicyFactory;
  *
  */
 @WebServlet(urlPatterns = { "/catalog/*",
-        "/auth/*",
-        "/swagger-docs",
-        "/timeseries/*",
-        "/offices/*",
-        "/states/*",
-        "/counties/*",
-        "/location/*",
-        "/locations/*",
-        "/parameters/*",
-        "/timezones/*",
-        "/units/*",
-        "/ratings/*",
-        "/levels/*",
-        "/basins/*",
-        "/streams/*",
+    "/auth/*",
+    "/swagger-docs",
+    "/timeseries/*",
+    "/offices/*",
+    "/states/*",
+    "/counties/*",
+    "/location/*",
+    "/locations/*",
+    "/parameters/*",
+    "/timezones/*",
+    "/units/*",
+    "/ratings/*",
+    "/levels/*",
+    "/basins/*",
+    "/streams/*",
         "/stream-locations/*",
         "/stream-reaches/*",
         "/blobs/*",
-        "/clobs/*",
-        "/pools/*",
-        "/specified-levels/*",
-        "/forecast-spec/*",
-        "/forecast-instance/*",
-        "/standard-text-id/*",
-        "/projects/*",
-        "/project-locks/*",
-        "/project-lock-rights/*",
-        "/properties/*",
-        "/lookup-types/*",
-        "/embankments/*"
+    "/clobs/*",
+    "/pools/*",
+    "/specified-levels/*",
+    "/forecast-spec/*",
+    "/forecast-instance/*",
+    "/standard-text-id/*",
+    "/projects/*",
+    "/project-locks/*",
+    "/project-lock-rights/*",
+    "/properties/*",
+    "/lookup-types/*",
+    "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -358,8 +359,7 @@ public class ApiServlet extends HttpServlet {
                 .exception(CwmsAuthException.class, (e,ctx) -> {
                     CdaError re;
                     switch (e.getAuthFailCode()) {
-                        case 401:
-                        {
+                        case 401: {
                             String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
                             re = new CdaError(msg,true);
                             break;
@@ -504,6 +504,7 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+        post("/projects/status-update", new ProjectPublishStatusUpdate(metrics), requiredRoles);
         cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
