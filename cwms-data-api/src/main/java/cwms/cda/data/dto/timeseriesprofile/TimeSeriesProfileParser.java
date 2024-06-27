@@ -30,7 +30,7 @@ public class TimeSeriesProfileParser implements CwmsDTOBase {
     private final List<ParameterInfo> parameterInfoList;
     private final boolean timeInTwoFields;
 
-    protected TimeSeriesProfileParser(Builder builder) {
+    private TimeSeriesProfileParser(Builder builder) {
         locationId = builder.locationId;
         keyParameter = builder.keyParameter;
         recordDelimiter = builder.recordDelimiter;

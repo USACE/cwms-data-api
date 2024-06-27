@@ -53,7 +53,7 @@ public final class TimeSeriesProfile implements CwmsDTOBase {
     }
 
     public List<String> getParameterList() {
-        return parameterList != null ? new ArrayList<>(parameterList) : null;
+        return parameterList;
     }
 
     public CwmsId getReferenceTsId() {
@@ -62,8 +62,8 @@ public final class TimeSeriesProfile implements CwmsDTOBase {
 
     @Override
     public void validate() throws FieldException {
-        if (this.parameterList == null) {
-            throw new FieldException("Parameter list field can't be null");
+        if (this.parameterList.isEmpty()) {
+            throw new FieldException("Parameter list field must not be empty");
         }
         if (this.keyParameter == null) {
             throw new FieldException("Key Parameter field can't be null");
@@ -79,7 +79,7 @@ public final class TimeSeriesProfile implements CwmsDTOBase {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
-        private List<String> parameterList;
+        private final List<String> parameterList = new ArrayList<>();
         private String keyParameter;
         private String description;
         private CwmsId locationId;
@@ -101,8 +101,11 @@ public final class TimeSeriesProfile implements CwmsDTOBase {
         }
 
         public TimeSeriesProfile.Builder withParameterList(List<String> parameterList) {
-            this.parameterList = parameterList != null ? new ArrayList<>(parameterList) : null;
-            return this;
+            this.parameterList.clear();
+            if (parameterList != null) {
+                this.parameterList.addAll(parameterList);
+            }
+             return this;
         }
 
         public TimeSeriesProfile.Builder withReferenceTsId(CwmsId referenceTsId) {
