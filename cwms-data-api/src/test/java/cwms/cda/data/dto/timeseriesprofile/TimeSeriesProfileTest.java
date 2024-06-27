@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -16,9 +17,9 @@ final class TimeSeriesProfileTest {
     @Test
     void testTimeSeriesProfileSerializationRoundTrip() {
         TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfile.class);
         String serialized = Formats.format(contentType, timeSeriesProfile);
-        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfile.class);
+        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfile.class), serialized, TimeSeriesProfile.class);
         testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization failed");
     }
 
@@ -28,26 +29,35 @@ final class TimeSeriesProfileTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofile.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfile.class);
+        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfile.class), serialized, TimeSeriesProfile.class);
         testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization from file failed");
     }
 
     private TimeSeriesProfile buildTestTimeSeriesProfile() {
+        CwmsId locationId = new CwmsId.Builder()
+                .withName("location")
+                .withOfficeId("office")
+                .build();
+        CwmsId referenceTsId = new CwmsId.Builder()
+                .withName("location.Elev.Inst.0.0.REV")
+                .withOfficeId("office")
+                .build();
         return new TimeSeriesProfile.Builder()
-                .withOfficeId("Office")
                 .withKeyParameter("Depth")
-                .withRefTsId("TimeSeries")
-                .withLocationId("Location")
+                .withReferenceTsId(referenceTsId)
+                .withLocationId(locationId)
                 .withDescription("Description")
                 .withParameterList(Arrays.asList("Temperature", "Depth"))
                 .build();
     }
 
     private void testAssertEquals(TimeSeriesProfile expected, TimeSeriesProfile actual, String message) {
-        assertEquals(expected.getLocationId(), actual.getLocationId(), message);
+        assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
+        assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
         assertEquals(expected.getDescription(), actual.getDescription(), message);
         assertEquals(expected.getParameterList(), actual.getParameterList(), message);
         assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
-        assertEquals(expected.getRefTsId(), actual.getRefTsId(), message);
+        assertEquals(expected.getReferenceTsId().getName(), actual.getReferenceTsId().getName(), message);
+        assertEquals(expected.getReferenceTsId().getOfficeId(), actual.getReferenceTsId().getOfficeId(), message);
     }
 }

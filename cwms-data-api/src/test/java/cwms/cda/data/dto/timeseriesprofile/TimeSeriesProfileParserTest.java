@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
@@ -17,10 +18,10 @@ final class TimeSeriesProfileParserTest {
     @Test
     void testTimeSeriesProfileSerializationRoundTrip() {
         TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
+        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class), serialized, TimeSeriesProfileParser.class);
         testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
     }
 
@@ -30,7 +31,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparser.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), serialized, TimeSeriesProfileParser.class);
+        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class), serialized, TimeSeriesProfileParser.class);
         testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
     }
 
@@ -46,11 +47,13 @@ final class TimeSeriesProfileParserTest {
                 .withIndex(5)
                 .withUnit("F")
                 .build());
+        CwmsId locationId = new CwmsId.Builder()
+                .withOfficeId("SWT")
+                .withName("location")
+                .build();
         return
-
                 new TimeSeriesProfileParser.Builder()
-                        .withOfficeId("SWT")
-                        .withLocationId("location")
+                        .withLocationId(locationId)
                         .withKeyParameter("Depth")
                         .withRecordDelimiter((char) 10)
                         .withFieldDelimiter(',')
@@ -63,13 +66,15 @@ final class TimeSeriesProfileParserTest {
     }
 
     private void testAssertEquals(TimeSeriesProfileParser expected, TimeSeriesProfileParser actual, String message) {
-        assertEquals(expected.getLocationId(), actual.getLocationId(), message);
+        assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
+        assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
         assertEquals(expected.getFieldDelimiter(), actual.getFieldDelimiter(), message);
-        assertEquals(expected.getOfficeId(), actual.getOfficeId(), message);
+        assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
+        assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
         assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
         assertEquals(expected.getTimeField(), actual.getTimeField(), message);
         assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
-        //	assertEquals(expected.getParameterInfo(), actual.getParameterInfo(),message);
+        assertEquals(expected.getParameterInfoList(), actual.getParameterInfoList(),message);
         assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
         assertEquals(expected.getTimeZone(), actual.getTimeZone());
         assertEquals(expected.getTimeInTwoFields(), actual.getTimeInTwoFields());

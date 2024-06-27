@@ -9,7 +9,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -18,8 +19,8 @@ import cwms.cda.formatters.json.JsonV2;
 @JsonDeserialize(builder = TimeSeriesProfileParser.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class TimeSeriesProfileParser extends CwmsDTO {
-    private final String locationId;
+public class TimeSeriesProfileParser implements CwmsDTOBase {
+    private final CwmsId locationId;
     private final String keyParameter;
     private final char recordDelimiter;
     private final char fieldDelimiter;
@@ -30,7 +31,6 @@ public class TimeSeriesProfileParser extends CwmsDTO {
     private final boolean timeInTwoFields;
 
     protected TimeSeriesProfileParser(Builder builder) {
-        super(builder.officeId);
         locationId = builder.locationId;
         keyParameter = builder.keyParameter;
         recordDelimiter = builder.recordDelimiter;
@@ -50,7 +50,7 @@ public class TimeSeriesProfileParser extends CwmsDTO {
     }
 
 
-    public String getLocationId() {
+    public CwmsId getLocationId() {
         return locationId;
     }
 
@@ -90,7 +90,6 @@ public class TimeSeriesProfileParser extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
-        private String officeId;
         private List<ParameterInfo> parameterInfoList;
         private String keyParameter;
         private char recordDelimiter;
@@ -99,9 +98,9 @@ public class TimeSeriesProfileParser extends CwmsDTO {
         private String timeZone;
         private int timeField;
         private boolean timeInTwoFields;
-        private String locationId;
+        private CwmsId locationId;
 
-        public TimeSeriesProfileParser.Builder withLocationId(String locationId) {
+        public TimeSeriesProfileParser.Builder withLocationId(CwmsId locationId) {
             this.locationId = locationId;
             return this;
         }
@@ -145,12 +144,6 @@ public class TimeSeriesProfileParser extends CwmsDTO {
             this.parameterInfoList = parameterInfoList;
             return this;
         }
-
-        public TimeSeriesProfileParser.Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
-            return this;
-        }
-
 
         public TimeSeriesProfileParser build() {
             return new TimeSeriesProfileParser(this);

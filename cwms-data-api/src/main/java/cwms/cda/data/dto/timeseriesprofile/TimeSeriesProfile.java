@@ -9,7 +9,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -19,10 +20,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonDeserialize(builder = TimeSeriesProfile.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeSeriesProfile extends CwmsDTO {
+public final class TimeSeriesProfile implements CwmsDTOBase {
     @Schema(description = "Location ID")
-    // TODO replace with CWMSID
-    private final String locationId;
+    private final CwmsId locationId;
     @Schema(description = "Description")
     private final String description;
     @Schema(description = "Parameter List")
@@ -30,19 +30,17 @@ public final class TimeSeriesProfile extends CwmsDTO {
     @Schema(description = "Key Parameter")
     private final String keyParameter;
     @Schema(description = "Reference TS")
-    // TODO replace with CWMSID
-    private final String refTsId;
+    private final CwmsId referenceTsId;
 
     private TimeSeriesProfile(Builder builder) {
-        super(builder.officeId);
         this.locationId = builder.locationId;
         this.description = builder.description;
         this.keyParameter = builder.keyParameter;
         this.parameterList = builder.parameterList;
-        this.refTsId = builder.refTsId;
+        this.referenceTsId = builder.referenceTsId;
     }
 
-    public String getLocationId() {
+    public CwmsId getLocationId() {
         return locationId;
     }
 
@@ -58,8 +56,8 @@ public final class TimeSeriesProfile extends CwmsDTO {
         return parameterList != null ? new ArrayList<>(parameterList) : null;
     }
 
-    public String getRefTsId() {
-        return refTsId;
+    public CwmsId getReferenceTsId() {
+        return referenceTsId;
     }
 
     @Override
@@ -69,9 +67,6 @@ public final class TimeSeriesProfile extends CwmsDTO {
         }
         if (this.keyParameter == null) {
             throw new FieldException("Key Parameter field can't be null");
-        }
-        if (this.officeId == null) {
-            throw new FieldException("Office Id field can't be null");
         }
         if (this.locationId == null) {
             throw new FieldException("Location Id field can't be null");
@@ -84,14 +79,13 @@ public final class TimeSeriesProfile extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
-        private String officeId;
         private List<String> parameterList;
         private String keyParameter;
         private String description;
-        private String locationId;
-        private String refTsId;
+        private CwmsId locationId;
+        private CwmsId referenceTsId;
 
-        public TimeSeriesProfile.Builder withLocationId(String locationId) {
+        public TimeSeriesProfile.Builder withLocationId(CwmsId locationId) {
             this.locationId = locationId;
             return this;
         }
@@ -111,13 +105,8 @@ public final class TimeSeriesProfile extends CwmsDTO {
             return this;
         }
 
-        public TimeSeriesProfile.Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
-            return this;
-        }
-
-        public TimeSeriesProfile.Builder withRefTsId(String refTsId) {
-            this.refTsId = refTsId;
+        public TimeSeriesProfile.Builder withReferenceTsId(CwmsId referenceTsId) {
+            this.referenceTsId = referenceTsId;
             return this;
         }
 
