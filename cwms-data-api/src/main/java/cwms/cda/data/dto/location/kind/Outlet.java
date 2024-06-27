@@ -24,8 +24,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
@@ -38,26 +36,24 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Outlet extends ProjectStructure {
-    private final CwmsId characteristicRef;
+    private final CwmsId characteristicsId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
-        characteristicRef = builder.characteristicRef;
+        characteristicsId = builder.characteristicRef;
     }
 
-    public CwmsId getCharacteristicRef() {
-        return characteristicRef;
+    public CwmsId getCharacteristicsId() {
+        return characteristicsId;
     }
 
     @Override
-    public void validate() throws FieldException {
-        List<String> missingFields = getMissingFields();
-        if (characteristicRef == null) {
-            missingFields.add("characteristicRef");
+    protected List<String> getMissingFields() {
+        List<String> output = super.getMissingFields();
+        if (characteristicsId == null) {
+            output.add("characteristicsId");
         }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
+        return output;
     }
 
     public static final class Builder {

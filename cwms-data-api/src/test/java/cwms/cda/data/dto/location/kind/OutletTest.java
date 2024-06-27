@@ -46,7 +46,7 @@ class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicRef(), parsedOutlet.getCharacteristicRef());
+        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), parsedOutlet.getCharacteristicsId());
         assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
         CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
     }
@@ -59,7 +59,7 @@ class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        CwmsIdTest.assertSame(turbine.getCharacteristicRef(), deserialized.getCharacteristicRef(),
+        CwmsIdTest.assertSame(turbine.getCharacteristicsId(), deserialized.getCharacteristicsId(),
                 "characteristic-ref");
         assertEquals(turbine.getLocation(), deserialized.getLocation(), "Locations do not match");
         CwmsIdTest.assertSame(turbine.getProjectId(), deserialized.getProjectId(), "project-id");

@@ -15,7 +15,7 @@
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
   },
-  "characteristic-ref": {
+  "characteristics-id": {
     "office-id": "SPK",
     "name": "Ogee Weir Depth"
   }

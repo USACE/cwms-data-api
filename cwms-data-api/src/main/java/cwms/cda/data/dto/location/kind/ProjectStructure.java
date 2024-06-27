@@ -23,6 +23,7 @@ package cwms.cda.data.dto.location.kind;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
@@ -41,6 +42,14 @@ public abstract class ProjectStructure implements CwmsDTOBase {
         this.projectId = projectId;
     }
 
+    @Override
+    public final void validate() throws FieldException {
+        List<String> missingFields = getMissingFields();
+        if (!missingFields.isEmpty()) {
+            throw new RequiredFieldException(missingFields);
+        }
+    }
+
     public final CwmsId getProjectId() {
         return projectId;
     }
@@ -49,7 +58,7 @@ public abstract class ProjectStructure implements CwmsDTOBase {
         return location;
     }
 
-    protected final List<String> getMissingFields() {
+    protected List<String> getMissingFields() {
         List<String> output = new ArrayList<>();
 
         if (getLocation() == null) {

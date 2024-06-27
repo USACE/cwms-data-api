@@ -29,8 +29,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
@@ -105,14 +103,12 @@ public final class Embankment extends ProjectStructure {
     }
 
     @Override
-    public void validate() throws FieldException {
-        List<String> missingFields = getMissingFields();
+    protected List<String> getMissingFields() {
+        List<String> output = super.getMissingFields();
         if (structureType == null) {
-            missingFields.add("structureType");
+            output.add("structureType");
         }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
+        return output;
     }
 
     public static final class Builder {
