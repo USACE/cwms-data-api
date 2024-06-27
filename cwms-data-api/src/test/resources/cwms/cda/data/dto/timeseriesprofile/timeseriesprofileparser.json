@@ -1,6 +1,8 @@
 {
-  "office-id": "SWT",
-  "location-id": "location",
+  "location-id": {
+    "office-id": "SWT",
+    "name": "location"
+  },
   "key-parameter": "Depth",
   "record-delimiter": "\n",
   "field-delimiter": ",",
