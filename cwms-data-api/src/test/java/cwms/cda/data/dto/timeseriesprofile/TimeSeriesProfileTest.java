@@ -33,7 +33,7 @@ final class TimeSeriesProfileTest {
         testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization from file failed");
     }
 
-    private TimeSeriesProfile buildTestTimeSeriesProfile() {
+     static TimeSeriesProfile buildTestTimeSeriesProfile() {
         CwmsId locationId = new CwmsId.Builder()
                 .withName("location")
                 .withOfficeId("office")
@@ -51,7 +51,7 @@ final class TimeSeriesProfileTest {
                 .build();
     }
 
-    private void testAssertEquals(TimeSeriesProfile expected, TimeSeriesProfile actual, String message) {
+    static void testAssertEquals(TimeSeriesProfile expected, TimeSeriesProfile actual, String message) {
         assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
         assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
         assertEquals(expected.getDescription(), actual.getDescription(), message);
