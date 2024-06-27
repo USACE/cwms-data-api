@@ -62,11 +62,11 @@ import static org.junit.jupiter.api.Assertions.*;
 final class EmbankmentDaoIT extends DataApiTestIT {
     
     private static final String PROJECT_OFFICE_ID = "SPK";
-    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
-    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
-    private static final Location EMBANK_LOC1 = buildEmbankmentLocation("PROJECT-EMBANK_LOC1");
-    private static final Location EMBANK_LOC2 = buildEmbankmentLocation("EMBANK_LOC2");
-    private static final Location EMBANK_LOC3 = buildEmbankmentLocation("EMBANK_LOC3");
+    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1emdao");
+    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2emdao");
+    private static final Location EMBANK_LOC1 = buildEmbankmentLocation("PROJECT-EMBANK_LOC1dao");
+    private static final Location EMBANK_LOC2 = buildEmbankmentLocation("EMBANK_LOC2dao");
+    private static final Location EMBANK_LOC3 = buildEmbankmentLocation("EMBANK_LOC3dao");
 
     @BeforeAll
     public void setup() throws Exception {
@@ -83,7 +83,8 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, "cwms_20");
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -93,16 +94,21 @@ final class EmbankmentDaoIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, PROJECT_OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(EMBANK_LOC1.getName(), PROJECT_OFFICE_ID);
-            locationsDao.deleteLocation(EMBANK_LOC2.getName(), PROJECT_OFFICE_ID);
-            locationsDao.deleteLocation(EMBANK_LOC3.getName(), PROJECT_OFFICE_ID);
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), PROJECT_OFFICE_ID);
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), PROJECT_OFFICE_ID);
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_OFFICE_ID);
-            locationsDao.deleteLocation(PROJECT_LOC2.getName(), PROJECT_OFFICE_ID);
-        }, "cwms_20");
+            try {
+                locationsDao.deleteLocation(EMBANK_LOC1.getName(), PROJECT_OFFICE_ID, true);
+                locationsDao.deleteLocation(EMBANK_LOC2.getName(), PROJECT_OFFICE_ID, true);
+                locationsDao.deleteLocation(EMBANK_LOC3.getName(), PROJECT_OFFICE_ID, true);
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
+                        DeleteRule.DELETE_ALL.getRule(), PROJECT_OFFICE_ID);
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
+                        DeleteRule.DELETE_ALL.getRule(), PROJECT_OFFICE_ID);
+                locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_OFFICE_ID, true);
+                locationsDao.deleteLocation(PROJECT_LOC2.getName(), PROJECT_OFFICE_ID, true);
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -121,7 +127,8 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             embankmentDao.deleteEmbankment(embankmentId, embankmentOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> embankmentDao.retrieveEmbankment(embankmentId,
                     embankmentOfficeId));
-        }, "cwms_20");
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -148,7 +155,8 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             embankmentDao.deleteEmbankment(embankmentId, embankmentOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> embankmentDao.retrieveEmbankment(embankmentId,
                     embankmentOfficeId));
-        }, "cwms_20");
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -167,7 +175,8 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             Embankment retrievedEmbankment = embankmentDao.retrieveEmbankment(newId, office);
             assertEquals(newId, retrievedEmbankment.getLocation().getName());
             embankmentDao.deleteEmbankment(newId, office, DeleteRule.DELETE_ALL);
-        }, "cwms_20");
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     private static Embankment buildTestEmbankment(Location location, String projectId) {
