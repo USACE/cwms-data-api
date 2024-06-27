@@ -2,6 +2,8 @@ package cwms.cda.api;
 
 import cwms.cda.formatters.Formats;
 import io.restassured.filter.log.LogDetail;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -14,6 +16,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
+@Disabled("Not data available for test or the test isn't currently loading any data.")
 class BasinControllerTestIT extends DataApiTestIT
 {
 	private static final String SPK = "SPK";
@@ -23,7 +26,6 @@ class BasinControllerTestIT extends DataApiTestIT
 	void test_getOne_aliases(AliasTest test) throws Exception
 	{
 		String requestId = "TEST";
-		String urlencoded = URLEncoder.encode(requestId, "UTF-8");
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.accept(test._accept)
@@ -31,7 +33,7 @@ class BasinControllerTestIT extends DataApiTestIT
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("/basin/" + requestId)
+			.get("/basins/" + requestId)
 		.then()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.assertThat()
@@ -49,7 +51,7 @@ class BasinControllerTestIT extends DataApiTestIT
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("/basin/")
+			.get("/basins/")
 		.then()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.assertThat()

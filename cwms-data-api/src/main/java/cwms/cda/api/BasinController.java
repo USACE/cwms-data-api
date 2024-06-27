@@ -97,7 +97,7 @@ public class BasinController implements CrudHandler {
             if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
                 String result = basinPgJsonFormatter.format(basins);
-                ctx.result(result);
+                ctx.result(result).contentType(contentType.toString());
             }
         } catch (SQLException ex) {
             LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
@@ -150,7 +150,7 @@ public class BasinController implements CrudHandler {
             if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
                 String result = basinPgJsonFormatter.format(basin);
-                ctx.result(result);
+                ctx.result(result).contentType(contentType.toString());
             } else {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unsupported "
                         + "format for basins"));
