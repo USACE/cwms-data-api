@@ -38,11 +38,24 @@ class OutletTest {
     private static final String SPK = "SPK";
     private static final String PROJECT_LOC = "location";
     private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
+    private static final String BASE_OUTLET_LOC = "outlet";
 
     @Test
     void test_serialization() {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
-        Outlet outlet = buildTestOutlet();
+        Outlet outlet = buildTestOutlet(OUTLET_LOC);
+        String json = Formats.format(contentType, outlet);
+
+        Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
+        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), parsedOutlet.getCharacteristicsId());
+        assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
+        CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
+    }
+
+    @Test
+    void test_serialization_base_loc_only() {
+        ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
+        Outlet outlet = buildTestOutlet(BASE_OUTLET_LOC);
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
@@ -54,26 +67,40 @@ class OutletTest {
     @Test
     void test_serialize_from_file() throws Exception {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
-        Outlet turbine = buildTestOutlet();
+        Outlet outlet = buildTestOutlet(OUTLET_LOC);
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/outlet.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        CwmsIdTest.assertSame(turbine.getCharacteristicsId(), deserialized.getCharacteristicsId(),
+        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), deserialized.getCharacteristicsId(),
                 "characteristic-ref");
-        assertEquals(turbine.getLocation(), deserialized.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(turbine.getProjectId(), deserialized.getProjectId(), "project-id");
+        assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
+        CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
     }
 
-    private Outlet buildTestOutlet() {
+    @Test
+    void test_serialize_from_file_base_loc_only() throws Exception {
+        ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
+        Outlet outlet = buildTestOutlet(BASE_OUTLET_LOC);
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/base_outlet.json");
+        assertNotNull(resource);
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
+        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), deserialized.getCharacteristicsId(),
+                              "characteristic-ref");
+        assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
+        CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+    }
+
+    private Outlet buildTestOutlet(String outletLocId) {
         CwmsId identifier = new CwmsId.Builder()
                 .withName(PROJECT_LOC)
                 .withOfficeId(SPK)
                 .build();
-        Location loc = new Location.Builder(SPK, OUTLET_LOC)
+        Location loc = new Location.Builder(SPK, outletLocId)
                 .withLatitude(0.)
                 .withLongitude(0.)
-                .withPublicName(OUTLET_LOC)
+                .withPublicName(outletLocId)
                 .withLocationKind("Outlet")
                 .withTimeZoneName(ZoneId.of("UTC"))
                 .withHorizontalDatum("NAD84")

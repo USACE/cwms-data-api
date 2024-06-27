@@ -29,7 +29,6 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Outlet.Builder.class)
@@ -45,15 +44,6 @@ public class Outlet extends ProjectStructure {
 
     public CwmsId getCharacteristicsId() {
         return characteristicsId;
-    }
-
-    @Override
-    protected List<String> getMissingFields() {
-        List<String> output = super.getMissingFields();
-        if (characteristicsId == null) {
-            output.add("characteristicsId");
-        }
-        return output;
     }
 
     public static final class Builder {
