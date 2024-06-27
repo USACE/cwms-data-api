@@ -66,8 +66,12 @@ public abstract class ProjectStructure implements CwmsDTOBase {
         } else {
             try {
                 getLocation().validate();
-            } catch (RequiredFieldException ex) {
-                output.addAll(ex.getDetails().get(RequiredFieldException.MISSING_FIELDS));
+            } catch (FieldException ex) {
+				ex.getDetails().values().forEach(output::addAll);
+				if (ex.getDetails().isEmpty())
+				{
+					output.add(ex.getMessage());
+				}
             }
         }
         if (getProjectId() == null) {
@@ -75,8 +79,12 @@ public abstract class ProjectStructure implements CwmsDTOBase {
         } else {
             try {
                 getProjectId().validate();
-            } catch (RequiredFieldException ex) {
-                output.addAll(ex.getDetails().get(RequiredFieldException.MISSING_FIELDS));
+            } catch (FieldException ex) {
+				ex.getDetails().values().forEach(output::addAll);
+				if (ex.getDetails().isEmpty())
+				{
+					output.add(ex.getMessage());
+				}
             }
         }
 

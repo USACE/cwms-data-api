@@ -29,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
@@ -107,6 +108,15 @@ public final class Embankment extends ProjectStructure {
         List<String> output = super.getMissingFields();
         if (structureType == null) {
             output.add("structureType");
+        } else {
+            try {
+                structureType.validate();
+            } catch (FieldException ex) {
+                ex.getDetails().values().forEach(output::addAll);
+                if (ex.getDetails().isEmpty()) {
+                    output.add(ex.getMessage());
+                }
+            }
         }
         return output;
     }
