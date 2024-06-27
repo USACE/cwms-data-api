@@ -54,7 +54,6 @@ public final class StreamDao extends JooqDao<Stream> {
     static final int STREAM_STREAM_LENGTH_COLUMN_INDEX = 10;
     static final int STREAM_AVERAGE_SLOPE_COLUMN_INDEX = 11;
     static final int STREAM_COMMENTS_COLUMN_INDEX = 12;
-    private static final String DB_STATION_UNITS = "km";
     public static final String DB_STREAM_SLOPE_UNITS = "%";
 
     public StreamDao(DSLContext dsl) {
@@ -65,18 +64,19 @@ public final class StreamDao extends JooqDao<Stream> {
      * Retrieve a list of streams
      * @param officeIdMask - the office id mask
      * @param streamIdMask - the stream id mask
+     * @param stationUnits - the station units used for stations and length of stream
      * @return a list of streams
      */
-    public List<Stream> retrieveStreams(String officeIdMask, String streamIdMask) {
+    public List<Stream> retrieveStreams(String officeIdMask, String streamIdMask, String stationUnits) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeIdMask);
             ResultSet streams = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(DSL.using(conn).configuration(), streamIdMask,
-                    DB_STATION_UNITS, null, null, null,
+                    stationUnits, null, null, null,
                     null, null, null, null,
                     null, null, null, null, null,
                     null, null, officeIdMask)
                     .intoResultSet();
-            return buildStreamListFromResultSet(streams);
+            return buildStreamListFromResultSet(streams, stationUnits);
         });
     }
 
@@ -84,15 +84,17 @@ public final class StreamDao extends JooqDao<Stream> {
      * Retrieve a specific stream
      * @param streamId - the id of the stream
      * @param officeId - the office id
+     * @param stationUnits - the station units used for stations and length of stream
      * @return the stream
      */
-    public Stream retrieveStream(String officeId, String streamId) {
+    public Stream retrieveStream(String officeId, String streamId, String stationUnits) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeId);
-            STREAM_T streamT = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_F(DSL.using(conn).configuration(), streamId, DB_STATION_UNITS, officeId);
+            STREAM_T streamT = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_F(DSL.using(conn).configuration(), streamId, stationUnits, officeId);
             if (streamT == null) {
                 throw new NotFoundException("Stream: " + officeId + "." + streamId + " not found");
             }
+            streamT.setUNIT(stationUnits);
             return fromJooqStream(streamT);
         });
     }
@@ -152,7 +154,7 @@ public final class StreamDao extends JooqDao<Stream> {
      * @param streamId - the id of the stream
      */
     public void deleteStream(String officeId, String streamId, DeleteRule deleteRule) {
-        Stream streamToDelete = retrieveStream(officeId, streamId);
+        Stream streamToDelete = retrieveStream(officeId, streamId, "km");
         if (streamToDelete == null) {
             throw new NotFoundException("Could not find stream " + streamId + "to delete.");
         }
@@ -186,12 +188,12 @@ public final class StreamDao extends JooqDao<Stream> {
                         stream.getFLOWS_INTO_STREAM(),
                         stream.getFLOWS_INTO_STATION(),
                         Bank.fromCode(stream.getFLOWS_INTO_BANK()),
-                        DB_STATION_UNITS))
+                        stream.getUNIT()))
                 .withDivertsFromStreamNode(buildStreamNode(stream.getOFFICE_ID(),
                         stream.getDIVERTS_FROM_STREAM(),
                         stream.getDIVERTS_FROM_STATION(),
                         Bank.fromCode(stream.getDIVERTS_FROM_BANK()),
-                        DB_STATION_UNITS))
+                        stream.getUNIT()))
                 .withLength(stream.getLENGTH())
                 .withAverageSlope(stream.getAVERAGE_SLOPE())
                 .withComment(stream.getCOMMENTS())
@@ -199,12 +201,12 @@ public final class StreamDao extends JooqDao<Stream> {
                         .withName(stream.getNAME())
                         .withOfficeId(stream.getOFFICE_ID())
                         .build())
-                .withLengthUnits(DB_STATION_UNITS)
+                .withLengthUnits(stream.getUNIT())
                 .withSlopeUnits(DB_STREAM_SLOPE_UNITS)
                 .build();
     }
 
-    static List<Stream> buildStreamListFromResultSet(ResultSet result) throws SQLException
+    static List<Stream> buildStreamListFromResultSet(ResultSet result, String stationUnits) throws SQLException
     {
         List<Stream> retVal = new ArrayList<>();
         while(result.next())
@@ -219,16 +221,16 @@ public final class StreamDao extends JooqDao<Stream> {
                             result.getString(STREAM_FLOWS_INTO_STREAM_COLUMN_INDEX),
                             result.getDouble(STREAM_FLOWS_INTO_STATION_COLUMN_INDEX),
                             Bank.fromCode(result.getString(STREAM_FLOWS_INTO_BANK_COLUMN_INDEX)),
-                            DB_STATION_UNITS))
+                            stationUnits))
                     .withDivertsFromStreamNode(buildStreamNode(result.getString(STREAM_OFFICE_ID_COLUMN_INDEX),
                             result.getString(STREAM_DIVERTS_FROM_STREAM_COLUMN_INDEX),
                             result.getDouble(STREAM_DIVERTS_FROM_STATION_COLUMN_INDEX),
                             Bank.fromCode(result.getString(STREAM_DIVERTS_FROM_BANK_COLUMN_INDEX)),
-                            DB_STATION_UNITS))
+                            stationUnits))
                     .withLength(result.getDouble(STREAM_STREAM_LENGTH_COLUMN_INDEX))
                     .withAverageSlope(result.getDouble(STREAM_AVERAGE_SLOPE_COLUMN_INDEX))
                     .withComment(result.getString(STREAM_COMMENTS_COLUMN_INDEX))
-                    .withLengthUnits(DB_STATION_UNITS)
+                    .withLengthUnits(stationUnits)
                     .withSlopeUnits(DB_STREAM_SLOPE_UNITS)
                     .build();
             retVal.add(stream);
