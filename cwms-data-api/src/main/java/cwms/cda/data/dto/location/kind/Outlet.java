@@ -40,7 +40,7 @@ public class Outlet extends ProjectStructure {
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
-        characteristicsId = builder.characteristicRef;
+        characteristicsId = builder.characteristicsId;
     }
 
     public CwmsId getCharacteristicsId() {
@@ -57,7 +57,7 @@ public class Outlet extends ProjectStructure {
     }
 
     public static final class Builder {
-        private CwmsId characteristicRef;
+        private CwmsId characteristicsId;
         private CwmsId projectId;
         private Location location;
 
@@ -65,8 +65,8 @@ public class Outlet extends ProjectStructure {
             return new Outlet(this);
         }
 
-        public Builder withCharacteristicRef(CwmsId characteristicRef) {
-            this.characteristicRef = characteristicRef;
+        public Builder withCharacteristicsId(CwmsId characteristicsId) {
+            this.characteristicsId = characteristicsId;
             return this;
         }
 

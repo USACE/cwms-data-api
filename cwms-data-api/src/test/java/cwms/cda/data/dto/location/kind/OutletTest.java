@@ -86,7 +86,7 @@ class OutletTest {
 
         return new Outlet.Builder()
                 .withProjectId(identifier)
-                .withCharacteristicRef(charRef)
+                .withCharacteristicsId(charRef)
                 .withLocation(loc)
                 .build();
     }
