@@ -162,7 +162,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    static Double toDouble(BigDecimal bigDecimal) {
+    protected static Double toDouble(BigDecimal bigDecimal) {
         Double retVal = null;
         if (bigDecimal != null) {
             retVal = bigDecimal.doubleValue();

@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public class StreamLocationTest {
+public final class StreamLocationTest {
 
     @Test
     void createStreamLocation_allFieldsProvided_success() {
