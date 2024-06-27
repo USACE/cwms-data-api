@@ -68,7 +68,7 @@ public class ProjectLockDeny implements Handler {
 
         String lockId = requiredParam(ctx, LOCK_ID);
 
-        try (final Timer.Context ignored = markAndTime(DELETE)) {
+        try (final Timer.Context ignored = markAndTime("deny")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
             lockDao.denyLockRevocation(lockId);
         }
