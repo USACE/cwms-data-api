@@ -105,7 +105,7 @@ public class OfficeController implements CrudHandler {
                 .queryParamAsClass(HAS_DATA, Boolean.class)
                 .getOrDefault(false);
             List<Office> offices = dao.getOffices(hasDataParm);
-
+            
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Office.class);
 

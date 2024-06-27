@@ -104,7 +104,7 @@ public class OfficeControllerIT extends DataApiTestIT {
     }
 
     @EnumSource(AliasTest.class)
-    @ParameterizedTest
+    @ParameterizedTest(name = "{index} {0}")
     void test_get_all_aliases(AliasTest test)
     {
         given()
@@ -122,7 +122,7 @@ public class OfficeControllerIT extends DataApiTestIT {
     }
 
     @EnumSource(AliasTest.class)
-    @ParameterizedTest
+    @ParameterizedTest(name = "{index} {0}")
     void test_get_one_aliases(AliasTest test)
     {
         given()
@@ -135,15 +135,18 @@ public class OfficeControllerIT extends DataApiTestIT {
             .then()
                 .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_OK))
+                .statusCode(is(test._expectedGetAllStatusCode))
                 .contentType(is(test._expectedFormat));
     }
 
     enum AliasTest
     {
         DEFAULT(Formats.DEFAULT, Formats.JSONV2),
-        XML(Formats.JSON, Formats.JSONV2),
-        JSON(Formats.XML, Formats.XMLV2, HttpServletResponse.SC_NOT_IMPLEMENTED),
+        JSON(Formats.JSON, Formats.JSONV2),
+        XML(Formats.XML, Formats.XMLV2),
+        XMLv1(Formats.XMLV1, Formats.XMLV1),
+        /* expected format is the error response format */
+        BAD("text/plain", Formats.JSON, HttpServletResponse.SC_NOT_ACCEPTABLE)
         ;
 
         private final String _expectedFormat;
@@ -160,5 +163,12 @@ public class OfficeControllerIT extends DataApiTestIT {
             _expectedFormat = expectedFormat;
             _expectedGetAllStatusCode = expectedGetAllStatusCode;
         }
+/*
+        @Override
+        public String toString()
+        {
+            return String.format("%S:ask=%s,expected=s,expected status=%d", this.name(),
+                                 _acceptFormat, _expectedFormat, _expectedGetAllStatusCode);
+        }*/
     }
 }
