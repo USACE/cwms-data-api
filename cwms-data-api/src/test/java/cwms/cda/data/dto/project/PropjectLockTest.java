@@ -34,6 +34,7 @@ import cwms.cda.formatters.json.JsonV2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
@@ -62,7 +63,7 @@ class PropjectLockTest {
                 .withSessionProgram("SessionProgram")
                 .withSessionUser("SessionUser")
                 .withOsUser("OsUser")
-                .withAcquireTime("AcquireTime")
+                .withAcquireTime(Instant.now())
                 .build();
         assertNotNull(lock);
         json = Formats.format(new ContentType(Formats.JSON), lock);
@@ -130,5 +131,27 @@ class PropjectLockTest {
         ProjectLock lock = om.readValue(input, ProjectLock.class);
 
         assertNotNull(lock);
+        assertEquals("SPK", lock.getOfficeId());
+        assertEquals("ProjectId", lock.getProjectId());
+        assertEquals("ApplicationId", lock.getApplicationId());
+        assertEquals("SessionUser", lock.getSessionUser());
+        assertEquals("OsUser", lock.getOsUser());
+        assertEquals("SessionProgram", lock.getSessionProgram());
+        assertEquals("SessionMachine", lock.getSessionMachine());
+        assertEquals(1719430112429L, lock.getAcquireTime().toEpochMilli());
+
+        // write
+        String json = Formats.format(new ContentType(Formats.JSON), lock);
+        ProjectLock lock2 = om.readValue(json, ProjectLock.class);
+
+        assertEquals(lock.getOfficeId(), lock2.getOfficeId());
+        assertEquals(lock.getProjectId(), lock2.getProjectId());
+        assertEquals(lock.getApplicationId(), lock2.getApplicationId());
+        assertEquals(lock.getSessionUser(), lock2.getSessionUser());
+        assertEquals(lock.getOsUser(), lock2.getOsUser());
+        assertEquals(lock.getSessionProgram(), lock2.getSessionProgram());
+        assertEquals(lock.getSessionMachine(), lock2.getSessionMachine());
+        assertEquals(lock.getAcquireTime(), lock2.getAcquireTime());
+
     }
 }

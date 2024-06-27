@@ -27,12 +27,13 @@ package cwms.cda.data.dao.project;
 import static cwms.cda.data.dao.project.ProjectDao.toBigInteger;
 
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.data.dto.project.LockRevokerRights;
+import cwms.cda.data.dto.project.ProjectLock;
 import java.math.BigInteger;
+import java.sql.CallableStatement;
+import java.time.Instant;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -42,7 +43,6 @@ import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 
 public class ProjectLockDao extends JooqDao<ProjectLock> {
-    private static final Logger logger = Logger.getLogger(ProjectLockDao.class.getName());
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String PROJECT_ID = "PROJECT_ID";
     public static final String APPLICATION_ID = "APPLICATION_ID";
@@ -60,11 +60,56 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
     public String requestLock(String office, String projectId, String appId,
                               boolean revokeExisting, int revokeTimeout) {
         BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
-        String pRevokeExisting = OracleTypeMap.formatBool(revokeExisting);
         return connectionResult(dsl,
                 c -> CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(getDslContext(c, office).configuration(),
-                projectId, appId, pRevokeExisting, revokeTimeoutBI, office)
+                projectId, appId, OracleTypeMap.formatBool(revokeExisting), revokeTimeoutBI, office)
         );
+    }
+
+    public String requestLock(ProjectLock request, boolean revokeExisting, int revokeTimeout) {
+        String sessionUser = request.getSessionUser();
+        String osUser = request.getOsUser();
+        String sessionProgram = request.getSessionProgram();
+        String sessionMachine = request.getSessionMachine();
+
+        if (sessionUser == null && osUser == null && sessionProgram == null && sessionMachine == null) {
+            // old style - can use jOQQ api but how useful is this?
+            // The un-provided fields will be pulled from the session.
+            // And the session of the database connection is not the same as the session of the CDA
+            // user.   Machine name, for example - thats going to be the name of the machine running tomcat
+            // not the name of the machine running cwmsvue.
+            return requestLock(request.getOfficeId(), request.getProjectId(), request.getApplicationId(),
+                revokeExisting, revokeTimeout);
+        } else {
+            // new style - must go thru jdbc until new jOOQ is generated.
+            return requestLock(request.getOfficeId(), request.getProjectId(), request.getApplicationId(),
+                    sessionUser, osUser, sessionProgram, sessionMachine,
+                    revokeExisting, revokeTimeout);
+        }
+    }
+
+    public String requestLock(String office, String projectId, String appId,
+                              String username, String osuser, String program, String machine,
+                              boolean revokeExisting, int revokeTimeout) {
+        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
+        return connectionResult(dsl, c -> {
+            setOffice(c, office);
+            int i = 1;
+            try (CallableStatement stmt = c.prepareCall("{? = call CWMS_PROJECT.REQUEST_LOCK(?,?,?,?,?,?,?,?,?)}")) {
+                stmt.registerOutParameter(i++, java.sql.Types.VARCHAR);
+                stmt.setString(i++, projectId);
+                stmt.setString(i++, appId);
+                stmt.setString(i++, OracleTypeMap.formatBool(revokeExisting));
+                stmt.setObject(i++, revokeTimeoutBI);
+                stmt.setString(i++, office);
+                stmt.setString(i++, username);
+                stmt.setString(i++, osuser);
+                stmt.setString(i++, program);
+                stmt.setString(i++, machine);
+                stmt.execute();
+                return stmt.getString(1);
+            }
+        });
     }
 
     public boolean isLocked(String office, String projectId, String appId) {
@@ -74,8 +119,11 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         return OracleTypeMap.parseBool(s);
     }
 
+    public List<ProjectLock> catLocks(String projMask, String appMask, String officeMask) {
+        return catLocks(projMask, appMask, TimeZone.getTimeZone("UTC"), officeMask);
+    }
 
-    public List<ProjectLock> catLocks(String projMask, String appMask, TimeZone tz, String officeMask) {
+    private List<ProjectLock> catLocks(String projMask, String appMask, TimeZone tz, String officeMask) {
         return CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
                 projMask, appMask, tz.getID(), officeMask)
                 .map(ProjectLockDao::buildLockFromCatLocksRecord);
@@ -86,8 +134,11 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         String projectId = catRecord.getValue(PROJECT_ID, String.class);
         String applicationId = catRecord.getValue(APPLICATION_ID, String.class);
 
+        String acquireStr = catRecord.getValue(ACQUIRE_TIME, String.class);
+        Instant acquireTime = acquireStr != null ? Instant.parse(acquireStr) : null;
+
         return new ProjectLock.Builder(officeId, projectId, applicationId)
-                .withAcquireTime(catRecord.getValue(ACQUIRE_TIME, String.class))
+                .withAcquireTime(acquireTime)
                 .withSessionUser(catRecord.getValue(SESSION_USER, String.class))
                 .withOsUser(catRecord.getValue(OS_USER, String.class))
                 .withSessionProgram(catRecord.getValue(SESSION_PROGRAM, String.class))
@@ -119,7 +170,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
     }
 
     /**
-     * Either adds the user to allow list or the deny list
+     * Either adds the user to allow list or the deny list.
      * @param office the office to use in the session
      * @param userId the user to add
      * @param projectMask the project mask
@@ -129,15 +180,13 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      */
     public void updateLockRevokerRights(String office, String userId, String projectMask,
                                         String applicationMask, String officeMask, boolean allow) {
-        String pAllow = OracleTypeMap.formatBool(allow);
 
         connection(dsl, c -> {
             DSLContext context = getDslContext(c, office);
             CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(
                         context.configuration(),
-                userId, projectMask, pAllow, applicationMask, officeMask);
-                }
-        );
+                userId, projectMask, OracleTypeMap.formatBool(allow), applicationMask, officeMask);
+        });
     }
 
 

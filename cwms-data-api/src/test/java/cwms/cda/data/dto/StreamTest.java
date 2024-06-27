@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-class StreamTest {
+public final class StreamTest {
 
     @Test
     void createStream_allFieldsProvided_success() {
