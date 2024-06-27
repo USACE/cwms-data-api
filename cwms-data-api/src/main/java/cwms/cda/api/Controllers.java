@@ -24,21 +24,24 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import org.jetbrains.annotations.Nullable;
-
-import static com.codahale.metrics.MetricRegistry.name;
-
 
 public final class Controllers {
 
@@ -77,6 +80,7 @@ public final class Controllers {
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
+    public static final String BLOB_ID = "blob-id";
     public static final String INCLUDE_VALUES = "include-values";
     public static final String FAIL_IF_EXISTS = "fail-if-exists";
     public static final String IGNORE_NULLS = "ignore-nulls";
@@ -109,6 +113,7 @@ public final class Controllers {
     public static final String INTERVAL_OFFSET = "interval-offset";
     public static final String INTERVAL = "interval";
     public static final String CATEGORY_ID = "category-id";
+    public static final String CATEGORY_ID_MASK = "category-id-mask";
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
     public static final String VERSION_DATE = "version-date";
 
@@ -121,6 +126,13 @@ public final class Controllers {
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
 
+    public static final String LOCATION_ID = "location-id";
+    public static final String SOURCE_ENTITY = "source-entity";
+    public static final String FORECAST_DATE = "forecast-date";
+    public static final String ISSUE_DATE = "issue-date";
+    public static final String LOCATION_KIND_LIKE = "location-kind-like";
+    public static final String LOCATION_TYPE_LIKE = "location-type-like";
+
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
@@ -128,8 +140,9 @@ public final class Controllers {
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
-    public static final String ID_MASK = "id-mask";
     public static final String OFFICE_MASK = "office-mask";
+    public static final String ID_MASK = "id-mask";
+    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -143,6 +156,7 @@ public final class Controllers {
     public static final String HAS_DATA = "has-data";
     public static final String STATUS_200 = "200";
     public static final String STATUS_201 = "201";
+    public static final String STATUS_204 = "204";
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
@@ -153,11 +167,23 @@ public final class Controllers {
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String TRIM = "trim";
+    public static final String DESIGNATOR = "designator";
+    public static final String DESIGNATOR_MASK = "designator-mask";
+    public static final String INCLUDE_EXTENTS = "include-extents";
+    public static final String EXCLUDE_EMPTY = "exclude-empty";
+    public static final String DEFAULT_VALUE = "default-value";
+    public static final String CATEGORY = "category";
+    public static final String PREFIX = "prefix";
+
+    private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
+    private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
+    private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
     }
 
     private Controllers() {
@@ -298,6 +324,18 @@ public final class Controllers {
         return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
+    @Nullable
+    public static Instant queryParamAsInstant(Context ctx, String param) {
+        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param,
+                ctx.queryParamAsClass(TIMEZONE, String.class)
+                        .getOrDefault("UTC"));
+        Instant retval = null;
+        if (zonedDateTime != null) {
+            retval = zonedDateTime.toInstant();
+        }
+        return retval;
+    }
+
     /**
      * Parses the named parameters as ZonedDateTime or throws RequiredQueryParameterException.
      * @param ctx Request Context
@@ -313,5 +351,26 @@ public final class Controllers {
         return zdt;
     }
 
+    /**
+     * Parses the named parameters as Instant or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param param Query parameter name
+     * @return Instant
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static Instant requiredInstant(Context ctx, String param) {
+        Instant retval = queryParamAsInstant(ctx, param);
+        if (retval == null) {
+            throw new RequiredQueryParameterException(param);
+        }
+        return retval;
+    }
 
+    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+        if (type.getType().equalsIgnoreCase(Formats.TAB)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+        } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+        }
+    }
 }

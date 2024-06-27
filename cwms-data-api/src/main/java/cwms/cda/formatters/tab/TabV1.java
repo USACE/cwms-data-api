@@ -1,5 +1,6 @@
 package cwms.cda.formatters.tab;
 
+import java.io.InputStream;
 import java.util.List;
 
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -27,6 +28,24 @@ public class TabV1 implements OutputFormatter {
     public String format(List<? extends CwmsDTOBase> dtoList) {
         if (!dtoList.isEmpty() && dtoList.get(0) instanceof Office ) {
             return new TabV1Office().format(dtoList);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        if (type.isAssignableFrom(Office.class)) {
+            return new TabV1Office().parseContent(content, type);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
+        if (type.isAssignableFrom(Office.class)) {
+            return new TabV1Office().parseContent(content, type);
         } else {
             return null;
         }

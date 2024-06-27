@@ -1,12 +1,16 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -14,12 +18,16 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ParameterDao;
+import cwms.cda.data.dto.Parameter;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -57,10 +65,17 @@ public class ParametersController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = FORMAT, required = false, description = "Specifies the"
+                    @OpenApiParam(name = FORMAT, deprecated = true, required = false, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
-                            + " for this URI are:\r\n1. tab\r\n2. csv\r\n 3. xml\r\n4. json "
-                            + "(default)")
+                            + " for this URI are:"
+                            + "\n* `tab`"
+                            + "\n* `csv`"
+                            + "\n* `xml`"
+                            + "\n* `json` (default)"),
+                    @OpenApiParam(name = OFFICE, description = "Specifies the"
+                            + " owning office of the parameters whose data is to be included in the "
+                            + "response. If this field is not specified, the session user's default office will be"
+                            + " used."),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200)
@@ -69,41 +84,46 @@ public class ParametersController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             ParameterDao dao = new ParameterDao(dsl);
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String office = ctx.queryParamAsClass(OFFICE, String.class).getOrDefault(null);
+            String header = ctx.header(ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Parameter.class);
+            String version = contentType.getParameters()
+                                        .getOrDefault(VERSION, "");
 
-            switch (format) {
-                case "json": {
-                    ctx.contentType(Formats.JSON);
-                    break;
+            boolean isLegacyVersion = version.equals("1");
+
+            String results;
+            if (format.isEmpty() && !isLegacyVersion)
+            {
+                List<Parameter> params = dao.getParametersV2(office);
+                results = Formats.format(contentType, params, Parameter.class);
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                if (isLegacyVersion)
+                {
+                    format = Formats.getLegacyTypeFromContentType(contentType);
                 }
-                case "tab": {
-                    ctx.contentType(Formats.TAB);
-                    break;
+
+                results = dao.getParameters(format);
+                if (isLegacyVersion)
+                {
+                    ctx.contentType(contentType.toString());
                 }
-                case "csv": {
-                    ctx.contentType(Formats.CSV);
-                    break;
+                else
+                {
+                    ctx.contentType(contentType.getType());
                 }
-                case "xml": {
-                    ctx.contentType(Formats.XML);
-                    break;
-                }
-                case "wml2": {
-                    ctx.contentType(Formats.WML2);
-                    break;
-                }
-                default:
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                            .json(CdaError.notImplemented());
-                    return;
             }
 
-            String results = dao.getParameters(format);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (Exception ex) {
             CdaError re = new CdaError("Failed to process request");

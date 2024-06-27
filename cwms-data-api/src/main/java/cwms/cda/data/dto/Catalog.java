@@ -1,6 +1,10 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dao.CatalogRequestParameters;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
@@ -12,14 +16,8 @@ import cwms.cda.formatters.xml.XMLv1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name = "catalog")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("catalog")
 @FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
@@ -30,8 +28,8 @@ public class Catalog extends CwmsDTOPaginated {
                     TimeseriesCatalogEntry.class
             }
     )
-    @XmlElementWrapper(name = "entries")
-    @XmlElement(name = "entry")
+    @JacksonXmlElementWrapper(localName = "entries")
+    @JacksonXmlProperty(localName = "entry")
     private List<? extends CatalogEntry> entries;
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
@@ -39,24 +37,12 @@ public class Catalog extends CwmsDTOPaginated {
     }
 
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries) {
-        this(page, total, pageSize, entries, null, null, null, null, null, null, null);
+        this(page, total, pageSize, entries, new CatalogRequestParameters.Builder().build());
     }
 
-    @SuppressWarnings("java:S107") // This just has this many parameters.
-    public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries,
-                   String office,
-                   String idLike, String locCategoryLike, String locGroupLike,
-                   String tsCategoryLike,
-                   String tsGroupLike) {
-        this(page, total, pageSize, entries, office, idLike, locCategoryLike, locGroupLike, tsCategoryLike, tsGroupLike, null);
-    }
 
-    @SuppressWarnings("java:S107") // This just has this many parameters.
     public Catalog(String page, int total, int pageSize, List<? extends CatalogEntry> entries,
-                   String office,
-                   String idLike, String locCategoryLike, String locGroupLike,
-                   String tsCategoryLike,
-                   String tsGroupLike, String boundingOfficeLike) {
+                   CatalogRequestParameters param) {
         super(page, pageSize, total);
 
         Objects.requireNonNull(entries, "List of catalog entries must be a valid list, even if empty");
@@ -64,13 +50,7 @@ public class Catalog extends CwmsDTOPaginated {
         if (entries.size() == pageSize) {
             nextPage = encodeCursor(new CatalogPage(
                             entries.get(entries.size() - 1).getCursor(),
-                            office,
-                            idLike,
-                            locCategoryLike,
-                            locGroupLike,
-                            tsCategoryLike,
-                            tsGroupLike,
-                            boundingOfficeLike
+                            param
                     ).toString(),
                     pageSize, total);
 
@@ -101,19 +81,21 @@ public class Catalog extends CwmsDTOPaginated {
         private final String tsCategoryLike;
         private final String tsGroupLike;
         private final String boundingOfficeLike;
+        private final boolean includeExtents;
+        private final boolean excludeEmpty;
         private int total;
         private int pageSize;
 
         public CatalogPage(String page) {
             String[] parts = CwmsDTOPaginated.decodeCursor(page, CwmsDTOPaginated.delimiter);
 
-            if (parts.length != 10) {
+            if (parts.length != 12) {
                 throw new IllegalArgumentException("Invalid Catalog Page Provided, please verify "
                         + "you are using a page variable from the catalog endpoint");
             }
             String[] idParts = parts[0].split("/");
-            curOffice = idParts[0];
-            cursorId = idParts[1];
+            curOffice = idParts[0];  // this is the cursor office
+            cursorId = idParts[1];   // this is the cursor id
             searchOffice = nullOrVal(parts[1]);
             idLike = nullOrVal(parts[2]);
             locCategoryLike = nullOrVal(parts[3]);
@@ -121,25 +103,28 @@ public class Catalog extends CwmsDTOPaginated {
             tsCategoryLike = nullOrVal(parts[5]);
             tsGroupLike = nullOrVal(parts[6]);
             boundingOfficeLike = nullOrVal(parts[7]);
-            total = Integer.parseInt(parts[8]);
-            pageSize = Integer.parseInt(parts[9]);
+            includeExtents = Boolean.parseBoolean(parts[8]);
+            excludeEmpty = Boolean.parseBoolean(parts[9]);
+            total = Integer.parseInt(parts[10]);
+            pageSize = Integer.parseInt(parts[11]);
         }
 
-        public CatalogPage(String curElement, String office, String idLike,
-                           String locCategoryLike, String locGroupLike,
-                           String tsCategoryLike, String tsGroupLike, String boundingLike
-        ) {
 
+
+        public CatalogPage(String curElement, CatalogRequestParameters params) {
             String[] parts = curElement.split("/");
             this.curOffice = parts[0];
             this.cursorId = parts[1];
-            this.searchOffice = office;
-            this.idLike = idLike;
-            this.locCategoryLike = locCategoryLike;
-            this.locGroupLike = locGroupLike;
-            this.tsCategoryLike = tsCategoryLike;
-            this.tsGroupLike = tsGroupLike;
-            this.boundingOfficeLike = boundingLike;
+
+            this.searchOffice = params.getOffice();
+            this.idLike = params.getIdLike();
+            this.locCategoryLike = params.getLocCatLike();
+            this.locGroupLike = params.getLocGroupLike();
+            this.tsCategoryLike = params.getTsCatLike();
+            this.tsGroupLike = params.getTsGroupLike();
+            this.boundingOfficeLike = params.getBoundingOfficeLike();
+            this.includeExtents = params.isIncludeExtents();
+            this.excludeEmpty = params.isExcludeEmpty();
         }
 
         private String nullOrVal(String val) {
@@ -194,6 +179,15 @@ public class Catalog extends CwmsDTOPaginated {
             return boundingOfficeLike;
         }
 
+        public boolean isIncludeExtents() {
+            return includeExtents;
+        }
+
+        public boolean isExcludeEmpty() {
+            return excludeEmpty;
+        }
+
+
         @Override
         public String toString() {
             return curOffice + "/" + cursorId
@@ -203,7 +197,10 @@ public class Catalog extends CwmsDTOPaginated {
                     + CwmsDTOPaginated.delimiter + locGroupLike
                     + CwmsDTOPaginated.delimiter + tsCategoryLike
                     + CwmsDTOPaginated.delimiter + tsGroupLike
-                    + CwmsDTOPaginated.delimiter + boundingOfficeLike;
+                    + CwmsDTOPaginated.delimiter + boundingOfficeLike
+                    + CwmsDTOPaginated.delimiter + includeExtents
+                    + CwmsDTOPaginated.delimiter + excludeEmpty
+                    ;
         }
     }
 }

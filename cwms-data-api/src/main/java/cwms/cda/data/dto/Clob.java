@@ -1,9 +1,9 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -11,17 +11,12 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 
-
-@XmlRootElement(name = "clob")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("clob")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public class Clob extends CwmsDTO {
     @JsonProperty(required = true)
     private String id;
@@ -61,5 +56,15 @@ public class Clob extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
+        if (getOfficeId() == null) {
+            throw new FieldException("An officeId is required when creating a clob");
+        }
+        if (getId() == null) {
+            throw new FieldException("An Id is required when creating a clob");
+        }
+        if (getValue() == null || getValue().isEmpty()) {
+            throw new FieldException("A non-empty value field is required when "
+                    + "creating a clob");
+        }
     }
 }

@@ -38,6 +38,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
 public class OfficeControllerIT extends DataApiTestIT {
@@ -45,11 +47,48 @@ public class OfficeControllerIT extends DataApiTestIT {
     public static final String OFFICE = "SPK";
 
     @Test
+    void test_get_one()  {
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/" + OFFICE)
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header(Header.ETAG, not(isEmptyOrNullString()))
+                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+                .body("long-name", containsString("Sacramento"));
+    }
+
+    @Test
+    void test_get_one_xmlv2()  {
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.XMLV2)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/" + OFFICE)
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header(Header.ETAG, not(isEmptyOrNullString()))
+                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+                .body("office.long-name", containsString("Sacramento"));
+    }
+
+    @Test
     void test_get_all()  {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -61,17 +100,34 @@ public class OfficeControllerIT extends DataApiTestIT {
                 .header(Header.ETAG, not(isEmptyOrNullString()))
                 .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
                 .rootPath("find {it.name == '%s'}", withArgs("CPC"))
-                .body("long-name", CoreMatchers.equalTo("Central Processing Center"))
-                ;
+                .body("long-name", CoreMatchers.equalTo("Central Processing Center"));
     }
 
-    @Test
-    void test_get_one()  {
-
+    @EnumSource(AliasTest.class)
+    @ParameterizedTest
+    void test_get_all_aliases(AliasTest test)
+    {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
+                .accept(test._acceptFormat)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/offices/")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(test._expectedGetAllStatusCode))
+                .contentType(is(test._expectedFormat));
+    }
+
+    @EnumSource(AliasTest.class)
+    @ParameterizedTest
+    void test_get_one_aliases(AliasTest test)
+    {
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(test._acceptFormat)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -80,10 +136,29 @@ public class OfficeControllerIT extends DataApiTestIT {
                 .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .header(Header.ETAG, not(isEmptyOrNullString()))
-                .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
-                .body("long-name", containsString("Sacramento"))
+                .contentType(is(test._expectedFormat));
+    }
+
+    enum AliasTest
+    {
+        DEFAULT(Formats.DEFAULT, Formats.JSONV2),
+        XML(Formats.JSON, Formats.JSONV2),
+        JSON(Formats.XML, Formats.XMLV2, HttpServletResponse.SC_NOT_IMPLEMENTED),
         ;
 
+        private final String _expectedFormat;
+        private final String _acceptFormat;
+        private final int _expectedGetAllStatusCode;
+
+        AliasTest(String acceptFormat, String expectedFormat)
+        {
+            this(acceptFormat, expectedFormat, HttpServletResponse.SC_OK);
+        }
+        AliasTest(String acceptFormat, String expectedFormat, int expectedGetAllStatusCode)
+        {
+            _acceptFormat = acceptFormat;
+            _expectedFormat = expectedFormat;
+            _expectedGetAllStatusCode = expectedGetAllStatusCode;
+        }
     }
 }

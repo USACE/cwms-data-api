@@ -53,15 +53,17 @@ public class BasinController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
+                @OpenApiParam(name = OFFICE, description = "Specifies the"
                         + " owning office of the basin whose data is to be included in the "
                         + "response. If this field is not specified, matching basin "
                         + "information from all offices shall be returned."),
-                @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
+                @OpenApiParam(name = UNIT, description = "Specifies the "
                         + "unit or unit system of the response. Valid values for the unit "
-                        + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
+                        + "field are: "
+                        + "\n* `EN`  Specifies English unit system. Basin "
                         + "values will be in the default English units for their parameters. "
-                        + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
+                        + "(This is default if no value is entered)"
+                        + "\n* `SI`  Specifies the"
                         + " SI unit system. Basin values will be in the default SI units for "
                         + "their parameters."),
             },
@@ -88,10 +90,7 @@ public class BasinController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
@@ -107,16 +106,18 @@ public class BasinController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                @OpenApiParam(name = OFFICE, required = false, description = "Specifies the"
+                @OpenApiParam(name = OFFICE, description = "Specifies the"
                         + " owning office of the basin whose data is to be included in the "
                         + "response. If this field is not specified, matching basin "
                         + "information from all offices shall be returned."),
-                @OpenApiParam(name = UNIT, required = false, description = "Specifies the "
+                @OpenApiParam(name = UNIT, description = "Specifies the "
                         + "unit or unit system of the response. Valid values for the unit "
-                        + "field are:\r\n 1. EN.   Specifies English unit system. Basin "
-                        + "values will be in the default English units for their parameters. "
-                        + "(This is default if no value is entered)\r\n2. SI.   Specifies the"
-                        + " SI unit system. Basin values will be in the default SI units for "
+                        + "field are:"
+                        + "\n* `EN`  Specifies English unit system. Basin values will be in "
+                        + "the default English units for their parameters. "
+                        + "(This is default if no value is entered)"
+                        + "\n* `SI`  Specifies the SI unit system. Basin values will be in "
+                        + "the default SI units for "
                         + "their parameters."),
             },
             responses = {
@@ -142,10 +143,7 @@ public class BasinController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);

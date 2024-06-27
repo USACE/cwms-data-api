@@ -50,6 +50,7 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -59,9 +60,12 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -140,7 +144,7 @@ public class RatingController implements CrudHandler {
             String ratingSet = deserializeRatingSet(ctx);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             ratingDao.create(ratingSet, storeTemplate);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Created RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
         } catch (IOException | RatingException ex) {
             CdaError re = new CdaError("Failed to process create request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -156,11 +160,7 @@ public class RatingController implements CrudHandler {
     private ContentType getContentType(Context ctx) {
         String requestContent = ctx.req.getContentType();
         String formatHeader = requestContent != null ? requestContent : Formats.JSON;
-        ContentType contentType = Formats.parseHeader(formatHeader);
-        if (contentType == null) {
-            throw new FormattingException("Format header could not be parsed:" + formatHeader);
-        }
-        return contentType;
+        return Formats.parseHeader(formatHeader);
     }
 
     private String deserializeRatingSet(Context ctx) throws IOException, RatingException {
@@ -189,19 +189,24 @@ public class RatingController implements CrudHandler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be deleted. "),
+            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the "
+                    + "effective dates to be deleted. "),
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the ratings to be deleted."),
-            @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window to delete. "
-                + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
+                    + "the ratings to be deleted."),
+            @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
+                    + "window to delete. The format for this field is ISO 8601 extended, "
+                    + "with optional offset and timezone, i.e., '"
                 + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-            @OpenApiParam(name = END, required = true, description = "The end of the time window to delete."
-                + "The format for this field is ISO 8601 extended, with optional offset and timezone, i.e., '"
+            @OpenApiParam(name = END, required = true, description = "The end of the time window"
+                    + " to delete. The format for this field is ISO 8601 extended, with optional "
+                    + "offset and timezone, i.e., '"
                 + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
-            @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone to be used if the format of the "
-                + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include offset or time zone information. "
-                + "Defaults to UTC."),
+            @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
+                    + "timezone to be used if the format of the "
+                + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include "
+                    + "offset or time zone information. Defaults to UTC."),
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
@@ -231,19 +236,20 @@ public class RatingController implements CrudHandler {
                 + "information from all offices shall be returned."),
         @OpenApiParam(name = UNIT,  description = "Specifies the "
                 + "unit or unit system of the response. Valid values for the unit "
-                + "field are:\r\n"
-                + "1. EN.   Specifies English unit system.  Rating "
+                + "field are:"
+                + "\n* `EN`  Specifies English unit system.  Rating "
                 + "values will be in the default English units for their "
-                + "parameters.\r\n"
-                + "2. SI.   Specifies the SI unit system.  Rating values "
-                + "will be in the default SI units for their parameters.\r\n"
-                + "3. Other. Any unit returned in the response to the units URI request "
+                + "parameters."
+                + "\n* `SI`   Specifies the SI unit system.  Rating values "
+                + "will be in the default SI units for their parameters."
+                + "\n* `Other`  Any unit returned in the response to the units URI request "
                 + "that is appropriate for the requested parameters."),
         @OpenApiParam(name = DATUM,  description = "Specifies the "
                 + "elevation datum of the response. This field affects only elevation"
-                + " Ratings. Valid values for this field are:\r\n1. NAVD88.  The "
-                + "elevation values will in the specified or default units above the "
-                + "NAVD-88 datum.\r\n2. NGVD29.  The elevation values will be in the "
+                + " Ratings. Valid values for this field are:"
+                + "\n* `NAVD88`  The elevation values will in the "
+                + "specified or default units above the NAVD-88 datum."
+                + "\n* `NGVD29`  The elevation values will be in the "
                 + "specified or default units above the NGVD-29 datum."),
         @OpenApiParam(name = AT,  description = "Specifies the "
                 + "start of the time window for data to be included in the response. "
@@ -260,8 +266,11 @@ public class RatingController implements CrudHandler {
                 + "of UTC shall be used."),
         @OpenApiParam(name = FORMAT,  description = "Specifies the"
                 + " encoding format of the response. Valid values for the format "
-                + "field for this URI are:\r\n1.    tab\r\n2.    csv\r\n3.    "
-                + "xml\r\n4.    json (default)")},
+                + "field for this URI are:"
+                + "\n* `tab`"
+                + "\n* `csv`"
+                + "\n* `xml`"
+                + "\n* `json` (default)")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON),
@@ -282,7 +291,6 @@ public class RatingController implements CrudHandler {
 
             RatingDao ratingDao = getRatingDao(dsl);
 
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
             String names = ctx.queryParamAsClass(NAME, String.class).getOrDefault("*");
             String unit = ctx.queryParam(UNIT);
             String datum = ctx.queryParam(DATUM);
@@ -291,40 +299,31 @@ public class RatingController implements CrudHandler {
             String end = ctx.queryParam(END);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
-            switch (format) {
-                case "json": {
-                    ctx.contentType(Formats.JSON);
-                    break;
-                }
-                case "tab": {
-                    ctx.contentType(Formats.TAB);
-                    break;
-                }
-                case "csv": {
-                    ctx.contentType(Formats.CSV);
-                    break;
-                }
-                case "xml": {
-                    ctx.contentType(Formats.XML);
-                    break;
-                }
-                case "wml2": {
-                    ctx.contentType(Formats.WML2);
-                    break;
-                }
-                case "jpg": // same handler
-                case "png":
-                default: {
-                    ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                            .json(CdaError.notImplemented());
-                    return;
-                }
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String header = ctx.header(Header.ACCEPT);
+
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
+
+            if (format.isEmpty())
+            {
+                //Use the full content type here (i.e. application/json;version=2)
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                //Legacy content type only includes the basic type (i.e. application/json)
+                ctx.contentType(contentType.getType());
             }
 
-            String results = ratingDao.retrieveRatings(format, names, unit, datum, office, start,
+            //At the moment, we still use the legacy formatting here, since we don't have a newer API for serializing/deserializing
+            //a collection of rating sets - unlike getOne.
+            String legacyFormat = Formats.getLegacyTypeFromContentType(contentType);
+            String results = ratingDao.retrieveRatings(legacyFormat, names, unit, datum, office, start,
                     end, timezone);
+
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         }
     }
@@ -382,9 +381,6 @@ public class RatingController implements CrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            // If we wanted to do async I think it would be like this
-            //   ctx.future(getRatingSetAsync(ctx, officeId, rating));
-
             String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
             if (body != null) {
                 ctx.result(body);
@@ -402,12 +398,17 @@ public class RatingController implements CrudHandler {
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
             String acceptHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(acceptHeader, RatingAliasMarker.class);
 
-            if (Formats.JSONV2.equals(acceptHeader) || Formats.XMLV2.equals(acceptHeader)) {
+            boolean isJson = Formats.JSONV2.equals(contentType.toString());
+            boolean isXml = Formats.XMLV2.equals(contentType.toString());
+
+            if (isJson || isXml) {
+                ctx.contentType(contentType.toString());
                 try {
                     RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
-                        if (Formats.JSONV2.equals(acceptHeader)) {
+                        if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
                         } else {
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
@@ -436,6 +437,8 @@ public class RatingController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 ctx.json(CdaError.notImplemented());
             }
+
+            addDeprecatedContentTypeWarning(ctx, contentType);
         }
         return retval;
     }
@@ -476,7 +479,7 @@ public class RatingController implements CrudHandler {
                     .getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx);
             ratingDao.store(ratingSet, storeTemplate);
-            ctx.status(HttpServletResponse.SC_ACCEPTED).json("Updated RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).json("Updated RatingSet");
         } catch (IOException | RatingException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -484,4 +487,11 @@ public class RatingController implements CrudHandler {
         }
     }
 
+    /**
+     * This is a marker interface only used by <code>Formats</code> to support <code>ContentType</code> aliases.
+     * There's no reason to implement this interface.
+     */
+    @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON})
+    @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML, Formats.DEFAULT})
+    private interface RatingAliasMarker extends CwmsDTOBase { }
 }

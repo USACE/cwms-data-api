@@ -46,6 +46,7 @@ dependencies {
         exclude group: "org.jooq", module: "jooq"
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.jooq.pro-java-8", module: "jooq"
     }
 
     implementation(libs.slf4j)
@@ -228,14 +229,16 @@ task run(type: JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
 
-    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", "/spk-data"
+    def context = project.findProperty("cda.war.context") ?: "spk-data"
+
+    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", context
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    jvmArgs += "-DwarContext=/spk-data"
-    // If you have the docker-compose environment up and are trying to run 
+    jvmArgs += "-DwarContext=/" + context
+    // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
     //jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration"

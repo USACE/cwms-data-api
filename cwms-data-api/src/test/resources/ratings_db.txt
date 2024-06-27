@@ -80,6 +80,19 @@ select count(*) from "CWMS_20"."AV_CWMS_TS_ID2" where ((regexp_like("CWMS_20"."A
 > 5
 @ rows: 1
 
+# For catalog timeseries tests with caseInsensitiveRegex
+select count(distinct "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE") from "CWMS_20"."AV_CWMS_TS_ID";
+> count
+> -----
+> 5
+@ rows: 1
+# For catalog catalog_returns_only_original_ids_by_default
+select count(distinct "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE") from "CWMS_20"."AV_CWMS_TS_ID" left outer join "CWMS_20"."AV_TS_EXTENTS_UTC" on "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE" = "CWMS_20"."AV_TS_EXTENTS_UTC"."TS_CODE" where ((regexp_like("CWMS_20"."AV_CWMS_TS_ID"."CWMS_TS_ID", ?, 'i')) and ("CWMS_20"."AV_TS_EXTENTS_UTC"."VERSION_TIME" is not null or "CWMS_20"."AV_TS_EXTENTS_UTC"."EARLIEST_TIME" is not null or "CWMS_20"."AV_TS_EXTENTS_UTC"."LATEST_TIME" is not null or "CWMS_20"."AV_TS_EXTENTS_UTC"."LAST_UPDATE" is not null));
+> count
+> -----
+> 5
+@ rows: 1
+
 select "limiter"."DB_OFFICE_ID", "limiter"."CWMS_TS_ID", "limiter"."TS_CODE", "limiter"."UNIT_ID", "limiter"."INTERVAL_ID", "limiter"."INTERVAL_UTC_OFFSET", "CWMS_20"."AV_TS_EXTENTS_UTC"."VERSION_TIME", "CWMS_20"."AV_TS_EXTENTS_UTC"."EARLIEST_TIME", "CWMS_20"."AV_TS_EXTENTS_UTC"."LATEST_TIME", "CWMS_20"."AV_TS_EXTENTS_UTC"."LAST_UPDATE" from (select "data"."DB_OFFICE_ID", "data"."CWMS_TS_ID", "data"."TS_CODE", "data"."UNIT_ID", "data"."INTERVAL_ID", "data"."INTERVAL_UTC_OFFSET" from (select "CWMS_20"."AV_CWMS_TS_ID2"."DB_OFFICE_ID", "CWMS_20"."AV_CWMS_TS_ID2"."CWMS_TS_ID", "CWMS_20"."AV_CWMS_TS_ID2"."TS_CODE", "CWMS_20"."AV_CWMS_TS_ID2"."UNIT_ID", "CWMS_20"."AV_CWMS_TS_ID2"."INTERVAL_ID", "CWMS_20"."AV_CWMS_TS_ID2"."INTERVAL_UTC_OFFSET" from "CWMS_20"."AV_CWMS_TS_ID2" where ("CWMS_20"."AV_CWMS_TS_ID2"."ALIASED_ITEM" is null and (regexp_like("CWMS_20"."AV_CWMS_TS_ID2"."CWMS_TS_ID", ?, 'i')) and upper("CWMS_20"."AV_CWMS_TS_ID2"."CWMS_TS_ID") > ?) order by upper("CWMS_20"."AV_CWMS_TS_ID2"."DB_OFFICE_ID"), upper("CWMS_20"."AV_CWMS_TS_ID2"."CWMS_TS_ID")) "data" where rownum <= ?) "limiter" left outer join "CWMS_20"."AV_TS_EXTENTS_UTC" on ("CWMS_20"."AV_TS_EXTENTS_UTC"."TS_CODE" = "limiter"."TS_CODE") order by upper("limiter"."DB_OFFICE_ID"), upper("limiter"."CWMS_TS_ID");
 > DB_OFFICE_ID     CWMS_TS_ID                                                      TS_CODE UNIT_ID          INTERVAL_ID      INTERVAL_UTC_OFFSET VERSION_TIME  EARLIEST_TIME LATEST_TIME LAST_UPDATE
 > ---------------- --------------------------------------------------------------- ------- ---------------- ---------------- ------------------- ------------- ------------- ----------- ----------_
@@ -90,3 +103,15 @@ select "limiter"."DB_OFFICE_ID", "limiter"."CWMS_TS_ID", "limiter"."TS_CODE", "l
 > SPK              American Cn.Stage.Inst.15Minutes.0.DCP-raw                      5       m                15Minutes                          0 {null}        08-FEB-21     10-FEB-21   10-FEB-21
 > SPK              American Cn.Stage.Inst.15Minutes.0.DCP-raw                      6       m                15Minutes                          0 {null}        08-FEB-21     10-FEB-21   10-FEB-21
 @ rows: 6
+
+
+# Be careful, queries here have to end in semicolon to be matched.
+select "CWMS_20"."AV_CWMS_TS_ID"."DB_OFFICE_ID", "CWMS_20"."AV_CWMS_TS_ID"."CWMS_TS_ID", "CWMS_20"."AV_CWMS_TS_ID"."UNIT_ID", "CWMS_20"."AV_CWMS_TS_ID"."INTERVAL_ID", "CWMS_20"."AV_CWMS_TS_ID"."INTERVAL_UTC_OFFSET", "CWMS_20"."AV_TS_EXTENTS_UTC"."VERSION_TIME", "CWMS_20"."AV_TS_EXTENTS_UTC"."EARLIEST_TIME", "CWMS_20"."AV_TS_EXTENTS_UTC"."LATEST_TIME", "CWMS_20"."AV_TS_EXTENTS_UTC"."LAST_UPDATE" from "CWMS_20"."AV_CWMS_TS_ID" left outer join "CWMS_20"."AV_TS_EXTENTS_UTC" on "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE" = "CWMS_20"."AV_TS_EXTENTS_UTC"."TS_CODE" where "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE" in (select "alias_78096721"."TS_CODE" from (select "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE" from "CWMS_20"."AV_CWMS_TS_ID" left outer join "CWMS_20"."AV_TS_EXTENTS_UTC" on "CWMS_20"."AV_CWMS_TS_ID"."TS_CODE" = "CWMS_20"."AV_TS_EXTENTS_UTC"."TS_CODE" where ((regexp_like("CWMS_20"."AV_CWMS_TS_ID"."CWMS_TS_ID", '.*', 'i')) and ("CWMS_20"."AV_TS_EXTENTS_UTC"."VERSION_TIME" is not null or "CWMS_20"."AV_TS_EXTENTS_UTC"."EARLIEST_TIME" is not null or "CWMS_20"."AV_TS_EXTENTS_UTC"."LATEST_TIME" is not null or "CWMS_20"."AV_TS_EXTENTS_UTC"."LAST_UPDATE" is not null)) order by "CWMS_20"."AV_CWMS_TS_ID"."DB_OFFICE_ID", upper("CWMS_20"."AV_CWMS_TS_ID"."CWMS_TS_ID")) "alias_78096721" where rownum <= 500) order by "CWMS_20"."AV_CWMS_TS_ID"."DB_OFFICE_ID", upper("CWMS_20"."AV_CWMS_TS_ID"."CWMS_TS_ID");
+> DB_OFFICE_ID CWMS_TS_ID                                            UNIT_ID INTERVAL_ID INTERVAL_UTC_OFFSET VERSION_TIME EARLIEST_TIME LATEST_TIME LAST_UPDATE
+> ------------ ----------------------------------------------------- ------- ----------- ------------------- ------------ ------------- ----------- --------------------------
+> LRB          CHCN6.Volt.Inst.30Minutes.0.GOES-Rev                  volt    30Minutes   2147483647          {null}       {null}        {null}      2024-03-08 22:00:02.845431
+> LRB          GARN6.Volt.Inst.30Minutes.0.GOES-Raw                  volt    30Minutes   2147483647          {null}       {null}        {null}      2024-03-08 22:00:02.865229
+> LRB          GenR Avon.Area.Inst.15Minutes.0.CCP-LookUp-Rev        m2      15Minutes   2147483647          {null}       {null}        {null}      2024-03-08 22:00:02.880370
+> LRB          GenR Avon.Stage.Inst.15Minutes.0.GOES-USGS-Rev        m       15Minutes   2147483647          {null}       {null}        {null}      2024-03-08 22:00:02.897802
+> LRB          GenR Portagevill.Stage.Inst.15Minutes.0.GOES-USGS-Raw m       15Minutes   2147483647          {null}       {null}        {null}      2024-03-08 22:00:02.913639
+@ rows: 5

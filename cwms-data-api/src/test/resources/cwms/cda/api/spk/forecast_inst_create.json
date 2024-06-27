@@ -1,0 +1,29 @@
+{
+  "spec": {
+    "spec-id": "TEST-SPEC",
+    "office-id": "SPK",
+    "source-entity-id": "USGS",
+    "designator": "designator",
+    "description": "description",
+    "time-series-ids": [
+      "FcstInstTestLoc.Flow.Ave.1Day.1Day.tsid1",
+      "FcstInstTestLoc.Flow.Ave.1Day.1Day.tsid2",
+      "FcstInstTestLoc.Flow.Ave.1Day.1Day.tsid3"
+    ]
+  },
+  "date-time": 1624284000000,
+  "issue-date-time": 1653220980000,
+  "first-date-time": 1692702120000,
+  "last-date-time": 1727017260000,
+  "max-age": 5,
+  "notes": "test notes",
+  "metadata": {
+    "key1": "value1",
+    "key2": "value2",
+    "key3": "value3"
+  },
+  "filename": "testFilename.txt",
+  "file-description": "test file description",
+  "file-data": "dGVzdCBmaWxlIGNvbnRlbnQ=",
+  "file-media-type": "text/plain"
+}

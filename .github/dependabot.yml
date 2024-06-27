@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      alldependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    reviewers:
+      - "@MikeNeilson"
+      - "@DanielTOsborne"
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      alldependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+    reviewers:
+      - "@MikeNeilson"
+      - "@DanielTOsborne"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      alldependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    reviewers:
+      - "@MikeNeilson"
+      - "@DanielTOsborne"

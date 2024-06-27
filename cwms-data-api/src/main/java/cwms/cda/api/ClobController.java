@@ -1,34 +1,8 @@
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CLOB_ID;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.IGNORE_NULLS;
-import static cwms.cda.api.Controllers.INCLUDE_VALUES;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.requiredParam;
-
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
@@ -39,7 +13,6 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -51,17 +24,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.*;
 
 
 public class ClobController implements CrudHandler {
@@ -128,7 +99,7 @@ public class ClobController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, Clobs.class);
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(ClobController.class.getName(), GET_ALL));
@@ -202,22 +173,19 @@ public class ClobController implements CrudHandler {
             if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
                 // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
-
-                BiConsumer<InputStream, Long> streamConsumer = (stream, length) -> {
-                    if (stream == null) {
+                dao.getClob(clobId, office, c -> {
+                    if (c == null) {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                                 + "clob based on given parameters"));
                     } else {
-                        ctx.seekableStream(stream, TEXT_PLAIN, length);
+                        ctx.seekableStream(c.getAsciiStream(), TEXT_PLAIN, c.length());
                     }
-                };
-
-                dao.getClob(clobId, office, streamConsumer);
+                });
             } else {
                 Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
                 if (optAc.isPresent()) {
-                    ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                    ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
 
                     Clob clob = optAc.get();
                     String result = Formats.format(contentType, clob);
@@ -255,63 +223,16 @@ public class ClobController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
-            try {
-                Clob clob = deserialize(ctx.body(), formatHeader);
-
-                if (clob.getOfficeId() == null) {
-                    throw new FormattingException("An officeId is required when creating a clob");
-                }
-
-                if (clob.getId() == null) {
-                    throw new FormattingException("An Id is required when creating a clob");
-                }
-
-                if (clob.getValue() == null || clob.getValue().isEmpty()) {
-                    throw new FormattingException("A non-empty value field is required when "
-                            + "creating a clob");
-                }
-
-                ClobDao dao = new ClobDao(dsl);
-                dao.create(clob, failIfExists);
-                ctx.status(HttpCode.CREATED);
-            } catch (JsonProcessingException e) {
-                throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),"Unable to parse request body");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
+            Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
+            ClobDao dao = new ClobDao(dsl);
+            dao.create(clob, failIfExists);
+            ctx.status(HttpCode.CREATED);
         }
-    }
-
-    public Clob deserialize(String body, String formatHeader) throws JsonProcessingException {
-        ObjectMapper om = getObjectMapperForFormat(formatHeader);
-        return om.readValue(body, Clob.class);
-    }
-
-
-    private static ObjectMapper getObjectMapperForFormat(String format) {
-        ObjectMapper om;
-
-        if (ContentType.equivalent(Formats.XMLV2,format)) {
-            JacksonXmlModule module = new JacksonXmlModule();
-            module.setDefaultUseWrapper(false);
-            om = new XmlMapper(module);
-        } else if (ContentType.equivalent(Formats.JSONV2,format)) {
-            om = JsonV2.buildObjectMapper();
-        } else {
-            FormattingException fe = new FormattingException("Format specified is not currently supported for Clob");
-            log.atFine().withCause(fe).log("Format %s not supported",format);
-            throw fe;
-        }
-        om.registerModule(new JavaTimeModule());
-        return om;
-    }
-
-    public static Clob deserializeJAXB(String body) throws JAXBException {
-        JAXBContext jaxbContext = JAXBContext.newInstance(Clob.class);
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        return (Clob) unmarshaller.unmarshal(new StringReader(body));
     }
 
     @OpenApi(
@@ -346,28 +267,21 @@ public class ClobController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ClobDao dao = new ClobDao(dsl);
+            ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
+            Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
 
-            try {
-                Clob clob = deserialize(ctx.body(), formatHeader);
-
-                if (clob.getOfficeId() == null) {
-                    throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
-                    "An office is required in the request body when updating a clob");
-                }
-
-                clob = fillOutClob(clob, clobId);
-
-                if (!Objects.equals(clob.getId(), clobId)) {
-                    throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
-                            "Clob id in body does not match id in path");
-                }
-
-                dao.update(clob, ignoreNulls);
-            } catch (JsonProcessingException e) {
-                throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(),
-                        "Unable to parse request body");
+            if (clob.getOfficeId() == null) {
+                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                        "An office is required in the request body when updating a clob");
             }
 
+            clob = fillOutClob(clob, clobId);
+
+            if (!Objects.equals(clob.getId(), clobId)) {
+                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                        "Clob id in body does not match id in path");
+            }
+            dao.update(clob, ignoreNulls);
         }
     }
 

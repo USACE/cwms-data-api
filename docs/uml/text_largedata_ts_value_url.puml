@@ -1,0 +1,42 @@
+@startuml
+actor Client as "Client"
+participant Server as "CDA"
+database Database as "CWMS DB"
+
+Client -> Server: /timeseries/text?<office>&<timeseriesid>&<start>&<end>&<date-version>
+activate Server
+
+Server -> Database: cwms_text.retrieve_ts_text
+activate Database
+
+Database --> Server: ResultSet
+loop for each row in ResultSet
+    Server -> Server: Check Clob size
+    alt Clob size < 64kB
+        Server -> Server: Set TextTimeSeries row value byte[]
+    else Clob size >= 64kB
+        Server -> Server: Generate URL for Clob\n/timeseries/text/<timeseriesid>/value?<date>&<date-version>&<office>
+        Server -> Server: Add URL to response
+    end
+end loop
+
+deactivate Database
+
+Server --> Client: Return response.\n\nExample:\n{\n    "office-id": "SPK",\n    "name": "Test.Flow.Inst.1Hour.0.raw",\n    "date-version-type": "UNVERSIONED",\n    "text-values": [\n        {\n            "date-time": 1209654000000,\n            "data-entry-date": 1711496821953,\n            "media-type": "application/octet-stream",\n            "filename": "1209654000.bin",\n            "dest-flag": 0,\n            "value-url": "https://localhost:59947/cwms-data/timeseries/text/Test.Flow.Inst.1Hour.0.raw/value?office=SPK&version-date&date=2008-05-01T15%3A00%3A00Z",\n            "quality-code": 0\n        },\n        {\n            "date-time": 1209674000000,\n            "data-entry-date": 1711156821953,\n            "media-type": "application/octet-stream",\n            "filename": "1209654001.bin",\n            "dest-flag": 0,\n            "text-value": "YmluYXJ5RGF0YQ==",\n            "quality-code": 0\n        }\n    ]\n}
+
+deactivate Server
+activate Client
+
+par for each URL in response
+    Client -> Server: /timeseries/text/<timeseriesid>/value?<date>&<date-version>&<office>
+    activate Server
+    Server -> Database: query AT_BINARY_TSV for given date, date-version, office, timeseriesid
+    activate Database
+    Database --> Server: Return Clob Ascii Stream
+    Server --> Client: Stream byte[]
+    deactivate Database
+    deactivate Server
+end loop
+
+deactivate Client
+@enduml

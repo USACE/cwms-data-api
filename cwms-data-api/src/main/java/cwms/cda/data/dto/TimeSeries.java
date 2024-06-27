@@ -1,51 +1,37 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.enums.VersionType;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
+
+import javax.xml.bind.annotation.XmlType;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.annotation.JsonFormat.Shape;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
-import cwms.cda.api.enums.VersionType;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.TimeSeries.Record;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
-import cwms.cda.formatters.xml.adapters.DurationAdapter;
-import cwms.cda.formatters.xml.adapters.TimestampAdapter;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
-
-@XmlRootElement(name="timeseries")
-@XmlSeeAlso(Record.class)
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
+@JsonRootName("timeseries")
 @JsonPropertyOrder(alphabetic = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public class TimeSeries extends CwmsDTOPaginated {
     public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
@@ -53,7 +39,6 @@ public class TimeSeries extends CwmsDTOPaginated {
     String name;
 
     @Schema(description = "Office ID that owns the time-series")
-    @XmlElement(name = "office-id")
     String officeId;
 
     @Schema(description = "The units of the time series data",required = true)
@@ -66,12 +51,10 @@ public class TimeSeries extends CwmsDTOPaginated {
     @JsonFormat(shape = Shape.STRING)
     VersionType dateVersionType;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = Shape.STRING)
     @Schema(description = "The version date of the time series trace")
     ZonedDateTime versionDate;
 
-    @XmlJavaTypeAdapter(DurationAdapter.class)
     @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
@@ -80,26 +63,20 @@ public class TimeSeries extends CwmsDTOPaginated {
     )
     Duration interval;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
             description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
     )
     ZonedDateTime begin;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @JsonFormat(shape = Shape.STRING, pattern = ZONED_DATE_TIME_FORMAT)
+    @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
             description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
     )
     ZonedDateTime end;
 
-    @XmlElementWrapper
-    @XmlElement(name="record")
-    // Use the array shape to optimize data transfer to client
-    @JsonFormat(shape=JsonFormat.Shape.ARRAY)
     @ArraySchema(
             schema = @Schema(
                     description = "List of retrieved time-series values",
@@ -118,14 +95,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             accessMode = AccessMode.READ_ONLY,
             description="Offset from top of interval"
     )
-    @XmlElement(name="interval-offset")
     private Long intervalOffset;
 
     @Schema(
             accessMode = AccessMode.READ_ONLY,
             description = "Only on 21.1.1 Database. The timezone the Interval Offset is from."
     )
-    @XmlElement(name="time-zone")
     private String timeZone;
 
 
@@ -168,7 +143,6 @@ public class TimeSeries extends CwmsDTOPaginated {
         return units;
     }
 
-    @XmlTransient
     @JsonIgnore
     public long getIntervalMinutes() {
         return interval.toMinutes();
@@ -186,7 +160,14 @@ public class TimeSeries extends CwmsDTOPaginated {
         return end;
     }
 
+    // Use the array shape to optimize data transfer to client
+    @JsonFormat(shape=JsonFormat.Shape.ARRAY)
     public List<Record> getValues() {
+        return values;
+    }
+
+    @JsonIgnore
+    public List<Record> getXmlValues() {
         return values;
     }
 
@@ -209,18 +190,10 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     public VersionType getDateVersionType() { return dateVersionType; }
 
-    @XmlElementWrapper(name="value-columns")
-    @XmlElement(name="column")
-    @JsonIgnore
-    public List<Column> getValueColumnsXML() {
-        return getColumnDescriptor("xml");
-    }
-
-    @XmlTransient
     @JsonProperty(value = "value-columns")
     @Schema(name = "value-columns", accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
-        return getColumnDescriptor("json");
+        return getColumnDescriptor();
     }
 
     public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
@@ -236,35 +209,16 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
-    private List<Column> getColumnDescriptor(String format) {
+    private List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
 
         for (Field f: Record.class.getDeclaredFields()) {
-            String fieldName = f.getName();
-            int fieldIndex = -1;
-            if(format.equals("json")) {
-                JsonProperty field = f.getAnnotation(JsonProperty.class);
-                if(field != null)
-                    fieldName = !field.value().isEmpty() ? field.value() : f.getName();
-                fieldIndex = field.index();
+            JsonProperty field = f.getAnnotation(JsonProperty.class);
+            if(field != null) {
+                String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
+                int fieldIndex = field.index();
+                columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
-            else if(format.equals("xml")) {
-                XmlType xmltype = Record.class.getAnnotation(XmlType.class);
-                if(xmltype != null) {
-                    String[] props = xmltype.propOrder();
-                    for(int idx = 0; idx < props.length; idx++) {
-                        if( props[idx].equals(fieldName)) {
-                            fieldIndex = idx;
-                            break;
-                        }
-                    }
-                }
-            }
-            else {
-                fieldIndex++;
-            }
-
-            columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
         }
 
         return columns;
@@ -283,14 +237,9 @@ public class TimeSeries extends CwmsDTOPaginated {
                     example = "[1509654000000, 54.3, 0]"
             )
     )
-    @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlRootElement
-    @XmlType(propOrder = {"dateTime", "value", "qualityCode"})
     public static class Record {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
-        @XmlJavaTypeAdapter(TimestampAdapter.class)
-        @XmlElement(name = "date-time")
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
         Timestamp dateTime;
 
@@ -298,7 +247,6 @@ public class TimeSeries extends CwmsDTOPaginated {
         @Schema(description = "Requested time-series data value")
         Double value;
 
-        @XmlElement(name = "quality-code")
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
 

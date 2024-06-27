@@ -1,22 +1,22 @@
 package cwms.cda.data.dto;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class LocationTest
 {
@@ -48,6 +48,20 @@ class LocationTest
 		Location location2 = om.readValue(serializedLocation, Location.class);
 		assertNotNull(location2);
 
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.JSONV2, Formats.XMLV2 })
+	void testSerializationRoundTrip(String format) throws JsonProcessingException
+	{
+		Location location = buildTestLocation();
+		assertNotNull(location);
+
+		String serialized = Formats.format(Formats.parseHeader(format), location);
+		assertNotNull(serialized);
+
+		Location deserialized = Formats.parseContent(Formats.parseHeader(format), serialized, Location.class);
+		assertEquals(location, deserialized);
 	}
 
 	@Test
@@ -98,6 +112,7 @@ class LocationTest
 				.withPublishedLatitude(50.0)
 				.withPublishedLongitude(50.0)
 				.withDescription("for testing")
+				.withElevationUnits("m")
 				.build();
 	}
 

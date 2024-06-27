@@ -1,28 +1,8 @@
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
@@ -33,26 +13,26 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import javax.servlet.http.HttpServletResponse;
-import kotlin.Triple;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.*;
 
 
 /**
@@ -105,8 +85,8 @@ public class BlobController implements CrudHandler {
         responses = {@OpenApiResponse(status = STATUS_200,
                 description = "A list of blobs.",
                 content = {
+                    @OpenApiContent(type = Formats.JSON, from = Blobs.class),
                     @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                    @OpenApiContent(type = Formats.XMLV2, from = Blobs.class)
                 })
         },
         tags = {TAG}
@@ -135,7 +115,7 @@ public class BlobController implements CrudHandler {
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
             BlobDao dao = new BlobDao(dsl);
             List<Blob> blobList = dao.getAll(office, like);
@@ -164,16 +144,15 @@ public class BlobController implements CrudHandler {
             String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);
 
-            Consumer<Triple<InputStream, Long, String>> tripleConsumer = triple -> {
-                InputStream is = triple.getFirst();
-                Long size = triple.getSecond();
-                String mediaType = triple.getThird();
+            BlobDao.BlobConsumer tripleConsumer = (blob, mediaType) -> {
 
-                if (is == null) {
+                if (blob == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
+                    long size = blob.length();
                     requestResultSize.update(size);
+                    InputStream is = blob.getBinaryStream();
                     ctx.seekableStream(is, mediaType, size);
                 }
             };
@@ -190,8 +169,7 @@ public class BlobController implements CrudHandler {
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Blob.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
                     },
                     required = true),
             queryParams = {
@@ -210,50 +188,12 @@ public class BlobController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-
-            try {
-                ObjectMapper om = getObjectMapperForFormat(formatHeader);
-                Blob blob = om.readValue(ctx.body(), Blob.class);
-
-                if (blob.getOfficeId() == null) {
-                    throw new FormattingException("An officeId is required when creating a blob");
-                }
-
-                if (blob.getId() == null) {
-                    throw new FormattingException("An Id is required when creating a blob");
-                }
-
-                if (blob.getValue() == null) {
-                    throw new FormattingException("A non-empty value field is required when "
-                            + "creating a blob");
-                }
-
-                BlobDao dao = new BlobDao(dsl);
-                dao.create(blob, failIfExists, false);
-                ctx.status(HttpCode.CREATED);
-            } catch (JsonProcessingException e) {
-                throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(), "Unable to "
-                        + "parse request body");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+            BlobDao dao = new BlobDao(dsl);
+            dao.create(blob, failIfExists, false);
+            ctx.status(HttpCode.CREATED);
         }
-    }
-
-    private static ObjectMapper getObjectMapperForFormat(String format) {
-        ObjectMapper om;
-
-        if (ContentType.equivalent(Formats.XMLV2,format)) {
-            JacksonXmlModule module = new JacksonXmlModule();
-            module.setDefaultUseWrapper(false);
-            om = new XmlMapper(module);
-        } else if (ContentType.equivalent(Formats.JSONV2,format)) {
-            om = JsonV2.buildObjectMapper();
-        } else {
-            FormattingException fe = new FormattingException("Format specified is not currently supported for Blob");
-            logger.atFine().withCause(fe).log("Format %s not supported",format);
-            throw fe;
-        }
-        om.registerModule(new JavaTimeModule());
-        return om;
     }
 
     @OpenApi(ignore = true)

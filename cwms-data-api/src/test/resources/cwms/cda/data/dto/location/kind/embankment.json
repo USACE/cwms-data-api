@@ -1,0 +1,53 @@
+{
+  "project-id": {
+    "office-id": "LRD",
+    "name": "PROJECT"
+  },
+  "location": {
+    "office-id": "LRL",
+    "name": "TEST_LOCATION2",
+    "latitude": 50.0,
+    "longitude": 50.0,
+    "active": true,
+    "public-name": "TEST_LOCATION2",
+    "long-name": "TEST_LOCATION",
+    "description": "for testing",
+    "timezone-name": "UTC",
+    "location-type": "SITE",
+    "location-kind": "EMBANKMENT",
+    "nation": "US",
+    "state-initial": "CA",
+    "county-name": "Sacramento",
+    "horizontal-datum": "NVGD29",
+    "published-longitude": 50.0,
+    "published-latitude": 50.0,
+    "elevation": 10.0,
+    "elevation-units": "m",
+    "bounding-office-id": "LRL",
+    "nearest-city": "Davis"
+  },
+  "structure-type": {
+    "active": true,
+    "office-id": "CWMS",
+    "tooltip": "TOOLTIP_STRUCT",
+    "display-value": "STRUCT"
+  },
+  "upstream-side-slope": 15.0,
+  "downstream-side-slope": 90.0,
+  "structure-length": 25.0,
+  "max-height": 5.0,
+  "top-width": 20.0,
+  "length-units": "ft",
+  "downstream-protection-type": {
+    "active": false,
+    "office-id": "SPK",
+    "tooltip": "TOOLTIP_DOWNSTREAM_PROT",
+    "display-value": "DOWNSTREAM_PROT"
+  },
+  "upstream-protection-type": {
+    "active": true,
+    "office-id": "LRL",
+    "tooltip": "TOOLTIP_UPSTREAM_PROT",
+    "display-value": "UPSTREAM_PROT"
+  }
+}

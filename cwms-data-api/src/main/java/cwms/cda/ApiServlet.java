@@ -24,6 +24,8 @@
 
 package cwms.cda;
 
+import static cwms.cda.api.Controllers.NAME;
+import cwms.cda.api.LookupTypeController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
@@ -39,11 +41,16 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BinaryTimeSeriesController;
+import cwms.cda.api.BinaryTimeSeriesValueController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.EmbankmentController;
+import cwms.cda.api.ForecastFileController;
+import cwms.cda.api.ForecastInstanceController;
+import cwms.cda.api.ForecastSpecController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
@@ -52,6 +59,8 @@ import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
+import cwms.cda.api.ProjectController;
+import cwms.cda.api.PropertyController;
 import cwms.cda.api.RatingController;
 import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
@@ -60,12 +69,14 @@ import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.TextTimeSeriesController;
+import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
+import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
@@ -80,6 +91,7 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.Role;
 import cwms.cda.spi.AccessManagers;
@@ -112,6 +124,7 @@ import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -154,7 +167,14 @@ import org.owasp.html.PolicyFactory;
         "/clobs/*",
         "/pools/*",
         "/specified-levels/*",
-        "/standard-text-id/*"
+        "/forecast-spec/*",
+        "/forecast-instance/*",
+        "/standard-text-id/*",
+        "/projects/*",
+        "/properties/*",
+        "/lookup-types/*",
+        "/embankments/*",
+        "/turbines/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -230,6 +250,11 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
+                .exception(UnsupportedFormatException.class, (e, ctx) -> {
+                    CdaError re = new CdaError(e.getMessage());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_NOT_ACCEPTABLE).json(re);
+                })
                 .exception(FormattingException.class, (fe, ctx) -> {
                     final CdaError re = new CdaError("Formatting error:" + fe.getMessage());
 
@@ -264,7 +289,17 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(InvalidItemException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request.");
+                    CdaError re;
+                    String message = e.getMessage();
+                    if (message != null) {
+                        Map<String, Object> details = new LinkedHashMap<>();
+                        details.put("message", message);
+
+                        re = new CdaError("Bad Request.", details);
+                    } else {
+                        re = new CdaError("Bad Request.");
+                    }
+
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
@@ -274,7 +309,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
                 .exception(DeleteConflictException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Cannot perform requested delete. Data is referenced elsewhere in CWMS.", e.getDetails());
+                    CdaError re = new CdaError("Cannot perform requested delete. "
+                            + "Data is referenced elsewhere in CWMS.", e.getDetails());
                     logger.atInfo().withCause(e).log(re.toString(), e);
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
@@ -378,22 +414,31 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
         cdaCrudCache("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles,60, TimeUnit.MINUTES);
-        cdaCrudCache("/levels/{" + Controllers.LEVEL_ID + "}",
+        cdaCrudCache(format("/levels/{%s}", Controllers.LEVEL_ID),
                 new LevelsController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String levelTsPath = "/levels/{" + Controllers.LEVEL_ID + "}/timeseries";
+        String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
-        String recentPath = "/timeseries/recent/{group-id}";
-        get(recentPath, new TimeSeriesRecentController(metrics), requiredRoles);
+        String recentPath = "/timeseries/recent/";
+        get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache("/timeseries/text/{timeseries}",
-                new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/binary/{timeseries}",
-                new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
+        String textTsPath = format("/timeseries/text/{%s}", NAME);
+        cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String textValuePath = textTsPath + "/value";
+        get(textValuePath, new TextTimeSeriesValueController(metrics));
+        addCacheControl(textValuePath, 1, TimeUnit.DAYS);
+
+        String binTsPath = format("/timeseries/binary/{%s}", NAME);
+        cdaCrudCache(binTsPath, new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String textBinaryValuePath = binTsPath + "/value";
+        get(textBinaryValuePath, new BinaryTimeSeriesValueController(metrics));
+        addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
+
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
@@ -421,7 +466,24 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/forecast-instance/{%s}", Controllers.NAME),
+                new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/forecast-spec/{%s}", Controllers.NAME),
+                new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String forecastFilePath = format("/forecast-instance/{%s}/file-data", NAME);
+        get(forecastFilePath, new ForecastFileController(metrics));
+        addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+        cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
+                new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
+                new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
+                new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
+                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
+                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
 
     /**
@@ -452,7 +514,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
-        if(timeUnit != null && duration > 0) {
+        if (timeUnit != null && duration > 0) {
             staticInstance().after(path, ctx -> {
                 String method = ctx.req.getMethod();  // "GET"
                 if (ctx.status() == HttpServletResponse.SC_OK
@@ -498,7 +560,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     /**
-     * Given a path like "/location/category/{category-id}" this method returns "{category-id}"
+     * Given a path like "/location/category/{category-id}" this method returns "{category-id}".
      * @param fullPath
      * @return
      */
@@ -598,7 +660,7 @@ public class ApiServlet extends HttpServlet {
         // If something is set in the environment, make that the new default.
         // This is useful because Docker makes it easy to set environment variables.
         String envProvider = System.getenv(PROVIDER_KEY_OLD);
-        if( envProvider == null) {
+        if (envProvider == null) {
             envProvider = System.getenv(PROVIDER_KEY);
         }
         if (envProvider != null) {

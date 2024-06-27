@@ -1,0 +1,32 @@
+{
+  "location" : {
+    "office-id" : "SPK",
+    "name" : "tgcd",
+    "timezone-name": "UTC"
+  },
+  "federal-cost" : 100.0,
+  "non-federal-cost" : 50.0,
+  "cost-year" : 1717282800000,
+  "cost-unit" : "$",
+  "federal-o-and-m-cost" : 10.0,
+  "non-federal-o-and-m-cost" : 5.0,
+  "authorizing-law" : "Authorizing Law",
+  "project-owner" : "Project Owner",
+  "hydropower-desc" : "Hydropower Description",
+  "sedimentation-desc" : "Sedimentation Description",
+  "downstream-urban-desc" : "Downstream Urban Description",
+  "bank-full-capacity-desc" : "Bank Full Capacity Description",
+  "pump-back-location" : {
+    "office-id" : "SPK",
+    "name" : "tgcd-PbLoc",
+    "timezone-name": "UTC"
+  },
+  "near-gage-location" : {
+    "office-id" : "SPK",
+    "name" : "tgcd-NgLoc",
+    "timezone-name": "UTC"
+  },
+  "yield-time-frame-start" : 1717282800000,
+  "yield-time-frame-end" : 1717308000000,
+  "project-remarks" : "Remarks"
+}
