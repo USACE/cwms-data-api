@@ -35,8 +35,7 @@ public enum Bank {
 
     @JsonCreator
     public static Bank fromCode(String code){
-        if(code != null)
-        {
+        if(code != null) {
             for(Bank bank : Bank.values()){
                 if(bank.getCode().equals(code)){
                     return bank;

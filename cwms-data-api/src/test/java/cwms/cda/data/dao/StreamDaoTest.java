@@ -27,6 +27,7 @@ package cwms.cda.data.dao;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamNode;
+import org.jooq.Record;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -34,10 +35,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.udt.records.STREAM_T;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
 
 final class StreamDaoTest {
 
@@ -80,27 +77,24 @@ final class StreamDaoTest {
     }
 
     @Test
-    void testBuildStreamListFromResultSet() throws SQLException {
-        ResultSet resultSet = Mockito.mock(ResultSet.class);
-        Mockito.when(resultSet.next()).thenReturn(true).thenReturn(false);
-        Mockito.when(resultSet.getBoolean(StreamDao.STATIONING_STARTS_DS_COLUMN_INDEX)).thenReturn(true);
-        Mockito.when(resultSet.getString(StreamDao.STREAM_STREAM_ID_COLUMN_INDEX)).thenReturn("STREAM_ID");
-        Mockito.when(resultSet.getString(StreamDao.STREAM_OFFICE_ID_COLUMN_INDEX)).thenReturn("SPK");
-        Mockito.when(resultSet.getString(StreamDao.STREAM_FLOWS_INTO_STREAM_COLUMN_INDEX)).thenReturn("INTO_STREAM");
-        Mockito.when(resultSet.getDouble(StreamDao.STREAM_FLOWS_INTO_STATION_COLUMN_INDEX)).thenReturn(10.0);
-        Mockito.when(resultSet.getString(StreamDao.STREAM_FLOWS_INTO_BANK_COLUMN_INDEX)).thenReturn("L");
-        Mockito.when(resultSet.getString(StreamDao.STREAM_DIVERTS_FROM_STREAM_COLUMN_INDEX)).thenReturn("FROM_STREAM");
-        Mockito.when(resultSet.getDouble(StreamDao.STREAM_DIVERTS_FROM_STATION_COLUMN_INDEX)).thenReturn(20.0);
-        Mockito.when(resultSet.getString(StreamDao.STREAM_DIVERTS_FROM_BANK_COLUMN_INDEX)).thenReturn("R");
-        Mockito.when(resultSet.getDouble(StreamDao.STREAM_STREAM_LENGTH_COLUMN_INDEX)).thenReturn(100.0);
-        Mockito.when(resultSet.getDouble(StreamDao.STREAM_AVERAGE_SLOPE_COLUMN_INDEX)).thenReturn(5.0);
-        Mockito.when(resultSet.getString(StreamDao.STREAM_COMMENTS_COLUMN_INDEX)).thenReturn("Test Comment");
+    void testFromJooqStreamRecord() {
+        Record record = Mockito.mock(Record.class);
+        Mockito.when(record.get(StreamDao.STATIONING_STARTS_DS_COLUMN_INDEX, Boolean.class)).thenReturn(true);
+        Mockito.when(record.get(StreamDao.STREAM_STREAM_ID_COLUMN_INDEX, String.class)).thenReturn("STREAM_ID");
+        Mockito.when(record.get(StreamDao.STREAM_OFFICE_ID_COLUMN_INDEX, String.class)).thenReturn("SPK");
+        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_STREAM_COLUMN_INDEX, String.class)).thenReturn("INTO_STREAM");
+        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_STATION_COLUMN_INDEX, Double.class)).thenReturn(10.0);
+        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_BANK_COLUMN_INDEX, String.class)).thenReturn("L");
+        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_STREAM_COLUMN_INDEX, String.class)).thenReturn("FROM_STREAM");
+        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_STATION_COLUMN_INDEX, Double.class)).thenReturn(20.0);
+        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_BANK_COLUMN_INDEX, String.class)).thenReturn("R");
+        Mockito.when(record.get(StreamDao.STREAM_STREAM_LENGTH_COLUMN_INDEX, Double.class)).thenReturn(100.0);
+        Mockito.when(record.get(StreamDao.STREAM_AVERAGE_SLOPE_COLUMN_INDEX, Double.class)).thenReturn(5.0);
+        Mockito.when(record.get(StreamDao.STREAM_COMMENTS_COLUMN_INDEX, String.class)).thenReturn("Test Comment");
 
-        List<Stream> streams = StreamDao.buildStreamListFromResultSet(resultSet, "km");
+        Stream stream = StreamDao.fromJooqStreamRecord(record, "km");
 
-        assertNotNull(streams);
-        assertEquals(1, streams.size());
-        Stream stream = streams.get(0);
+        assertNotNull(stream);
         assertEquals(true, stream.getStartsDownstream());
         assertEquals("STREAM_ID", stream.getId().getName());
         assertEquals("SPK", stream.getId().getOfficeId());
@@ -116,7 +110,6 @@ final class StreamDaoTest {
         assertEquals("km", stream.getLengthUnits());
         assertEquals("%", stream.getSlopeUnits());
     }
-
     @Test
     void testBuildStreamNode() {
         String officeId = "SPK";
