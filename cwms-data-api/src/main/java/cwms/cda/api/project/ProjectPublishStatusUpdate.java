@@ -30,6 +30,7 @@ import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.SOURCE_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -40,11 +41,17 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.ProjectController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
+import cwms.cda.data.dto.project.PublishStatusUpdateResult;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -87,6 +94,10 @@ public class ProjectPublishStatusUpdate implements Handler {
                         + "not include this item.")
             },
             method = HttpMethod.POST,
+            responses = {
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(type = Formats.JSON, from = PublishStatusUpdateResult.class)}
+                    )},
             tags = {TAG},
             path = PATH
     )
@@ -106,9 +117,14 @@ public class ProjectPublishStatusUpdate implements Handler {
 
             Instant timeOfMessage = prjDao.publishStatusUpdate(
                     office, projectId, appId, sourceId, tsId, begin, end);
-            ctx.json(timeOfMessage);
+            PublishStatusUpdateResult updateResult = new PublishStatusUpdateResult(timeOfMessage);
+
+            ContentType contentType = Formats.parseHeader(ctx.header(Header.ACCEPT), PublishStatusUpdateResult.class);
+            String result = Formats.format(contentType, updateResult);
+            ctx.result(result).contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
         }
-        ctx.status(HttpServletResponse.SC_OK);
+
     }
 
 }
