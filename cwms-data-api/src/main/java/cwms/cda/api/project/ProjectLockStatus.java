@@ -54,6 +54,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockStatus implements Handler {
+    public static final String TAGS = "Project Locks";
+    public static final String PATH = "/project-locks/status";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -83,8 +85,8 @@ public class ProjectLockStatus implements Handler {
                 ),
                 @OpenApiResponse(status = STATUS_404, description = "Not matching Lock was found.")
             },
-            tags = {"Project Locks"},
-            path = "/project-locks/status",
+            tags = {TAGS},
+            path = PATH,
             method = HttpMethod.GET
     )
     @Override
@@ -98,7 +100,8 @@ public class ProjectLockStatus implements Handler {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
             boolean locked = lockDao.isLocked(office, prjId, appId);
             if (locked) {
-                // should we call catLocks instead and get the full lock?
+                // should we call catLocks instead and get the full lock
+                // with acquireTime and other fields?
                 ProjectLock lock = new ProjectLock.Builder(office, prjId, appId).build();
                 String acceptHeader = ctx.header(Header.ACCEPT);
                 ContentType acceptType = Formats.parseHeader(acceptHeader, ProjectLock.class);

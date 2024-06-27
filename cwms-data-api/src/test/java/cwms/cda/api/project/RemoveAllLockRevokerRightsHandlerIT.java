@@ -37,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -58,7 +57,6 @@ import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE = "SPK";
 
@@ -102,10 +100,10 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
                 ;
 
                 // Add an allow
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, true);
+                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, userName, true);
 
                 // make sure its there.
-                List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(projId, appId, OFFICE);
+                List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
                 assertNotNull(lockRevokerRights);
                 assertFalse(lockRevokerRights.isEmpty());
 
@@ -129,13 +127,13 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
                 ;
 
                 // make sure its gone.
-                lockRevokerRights = lockDao.catLockRevokerRights(projId, appId, OFFICE);
+                lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
                 assertNotNull(lockRevokerRights);
                 assertTrue(lockRevokerRights.isEmpty());
 
 
             } finally {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask);
+                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
         });

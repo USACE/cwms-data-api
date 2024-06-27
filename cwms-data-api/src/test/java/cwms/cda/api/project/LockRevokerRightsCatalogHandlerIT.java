@@ -35,7 +35,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
@@ -53,7 +52,6 @@ import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE = "SPK";
 
@@ -83,8 +81,8 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
             String userName = user.getName();
 
             try {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask); // start fresh
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, true);
+                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
+                lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
 
 
                 given()
@@ -110,7 +108,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
 
 
                 // Now deny
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, false);
+                lockDao.denyLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
 
                 given()
                         .log().ifValidationFails(LogDetail.ALL, true)
@@ -130,7 +128,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
                 ;
 
             } finally {
-                lockDao.removeAllLockRevokerRights(OFFICE, userName, appId, officeMask);
+                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
         });

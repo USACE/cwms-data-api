@@ -31,10 +31,10 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.logging.Level;
 
 public class ProjectLockHandlerUtil {
@@ -59,16 +59,16 @@ public class ProjectLockHandlerUtil {
                 .withLocation(prjLoc)
                 .withProjectOwner("Project Owner")
                 .withAuthorizingLaw("Authorizing Law")
-                .withFederalCost(100.0)
-                .withNonFederalCost(50.0)
-                .withFederalOAndMCost(10.0)
-                .withNonFederalOAndMCost(5.0)
+                .withFederalCost(BigDecimal.valueOf(100.0))
+                .withNonFederalCost(BigDecimal.valueOf(50.0))
+                .withFederalOAndMCost(BigDecimal.valueOf(10.0))
+                .withNonFederalOAndMCost(BigDecimal.valueOf(5.0))
                 .withCostYear(Instant.now())
                 .withCostUnit("$")
                 .withYieldTimeFrameEnd(Instant.now())
                 .withYieldTimeFrameStart(Instant.now())
-                .withFederalOAndMCost(10.0)
-                .withNonFederalOAndMCost(5.0)
+                .withFederalOAndMCost(BigDecimal.valueOf(10.0))
+                .withNonFederalOAndMCost(BigDecimal.valueOf(5.0))
                 .withProjectRemarks("Remarks")
                 .withPumpBackLocation(pbLoc)
                 .withNearGageLocation(ngLoc)
@@ -86,13 +86,37 @@ public class ProjectLockHandlerUtil {
             prjDao.delete(office, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
             logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
-            List<ProjectLock> locks = lockDao.catLocks(projId, appId, TimeZone.getTimeZone("UTC"), office);
+            List<ProjectLock> locks = lockDao.catLocks(office, projId, appId);
             locks.forEach(lock -> {
                 logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
                         lock.getApplicationId() + " " + lock.getAcquireTime() + " " +
                         lock.getSessionUser() + " " + lock.getOsUser() + " " +
                         lock.getSessionProgram() + " " + lock.getSessionMachine());
             });
+        }
+    }
+
+    public static void revokeLock(ProjectLockDao lockDao, String office, String projId, String appId) {
+        try {
+            lockDao.revokeLock(office, projId, appId, 0);
+        } catch (Exception e) {
+            logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId);
+        }
+    }
+
+    public static void releaseLock(ProjectLockDao lockDao, String office, String[] lockId2) {
+        if (lockId2 != null && lockId2.length > 0) {
+            releaseLock(lockDao, office, lockId2[0]);
+        }
+    }
+
+    public static void releaseLock(ProjectLockDao lockDao, String office, String lockId) {
+        if (lockId != null) {
+            try {
+                lockDao.releaseLock(office, lockId);
+            } catch (Exception e) {
+                // don't care
+            }
         }
     }
 

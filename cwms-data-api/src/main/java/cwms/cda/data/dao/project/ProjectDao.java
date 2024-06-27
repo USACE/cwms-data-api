@@ -43,12 +43,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -63,7 +63,6 @@ import usace.cwms.db.jooq.codegen.tables.AV_PROJECT;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 public class ProjectDao extends JooqDao<Project> {
-    private static final Logger logger = Logger.getLogger(ProjectDao.class.getName());
     public static final String OFFICE_ID = "office_id";
     public static final String PROJECT_ID = "project_id";
     public static final String AUTHORIZING_LAW = "authorizing_law";
@@ -111,20 +110,36 @@ public class ProjectDao extends JooqDao<Project> {
         super(dsl);
     }
 
+    /**
+     * Retrieves a project based on the given office and project ID.
+     *
+     * @param office The office ID associated with the project.
+     * @param projectId The project ID.
+     * @return The retrieved project. Returns null if projectObjT is null.
+     */
     public Project retrieveProject(String office, String projectId) {
 
-        PROJECT_OBJ_T projectObjT = connectionResult(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_RETRIEVE_PROJECT(
+        PROJECT_OBJ_T projectObjT = connectionResult(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_RETRIEVE_PROJECT(
                         getDslContext(c, office).configuration(), projectId, office)
         );
 
         return projectObjT == null ? null : getProject(projectObjT);
     }
 
-
-    public Projects retrieveProjectsFromTable(String cursor, int pageSize,
-                                              @Nullable String projectIdMask,
-                                              @Nullable String office) {
+    /**
+     * Retrieves projects based on the given parameters.
+     *
+     * @param cursor         The cursor to retrieve the next page of projects. If null or empty,
+     *                       retrieves the first page.
+     * @param pageSize       The number of projects to retrieve per page.
+     * @param projectIdMask  The mask to match the project IDs against. Can be null.
+     * @param office         The office ID to filter the projects by. Can be null.
+     * @return A Projects object containing the retrieved projects.
+     */
+    public Projects retrieveProjects(String cursor, int pageSize,
+                                     @Nullable String projectIdMask,
+                                     @Nullable String office) {
         final String cursorOffice;
         final String cursorProjectId;
         int total;
@@ -301,27 +316,44 @@ public class ProjectDao extends JooqDao<Project> {
         return sql;
     }
 
+    /**
+     * Creates a new project.
+     *
+     * @param project The project object to be created.
+     */
     public void create(Project project) {
         boolean failIfExists = true;
         String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
-        connection(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
+        connection(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
                 projectT, OracleTypeMap.formatBool(failIfExists)));
     }
 
-
+    /**
+     * Stores a project in the database.
+     *
+     * @param project The project to be stored.
+     * @param failIfExists Flag indicating whether the storing operation should fail if the
+     *                     project already exists. true if the operation should fail, false otherwise.
+     */
     public void store(Project project, boolean failIfExists) {
         String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
-        connection(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
+        connection(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
                 projectT, OracleTypeMap.formatBool(failIfExists)));
 
     }
 
+    /**
+     * Updates a project in the database.
+     *
+     * @param project The project object containing the updated information.
+     * @throws NotFoundException If the project to update is not found.
+     */
     public void update(Project project) {
         String office = project.getLocation().getOfficeId();
         Project existingProject = retrieveProject(office, project.getLocation().getName());
@@ -330,46 +362,81 @@ public class ProjectDao extends JooqDao<Project> {
         }
 
         PROJECT_OBJ_T projectT = toProjectT(project);
-        connection(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
+        connection(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
                 projectT, OracleTypeMap.formatBool(false)));
 
     }
 
 
-
+    /**
+     * Deletes a project based on the given office, project ID, and delete rule.
+     *
+     * @param office      The office ID associated with the project.
+     * @param id          The project ID.
+     * @param deleteRule  The delete rule specifying the deletion behavior.
+     */
     public void delete(String office, String id, DeleteRule deleteRule) {
 
-        connection(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(getDslContext(c, office).configuration(),
+        connection(dsl, c ->
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(getDslContext(c, office).configuration(),
                 id, deleteRule.getRule(), office
         ));
     }
 
 
-    public Number publishStatusUpdate(String pProjectId,
-                                      String appId, String sourceId,
-                                      String tsId, Timestamp start,
-                                      Timestamp end, String office) {
+    /**
+     * Generates and publishes a message on the office's STATUS queue that a project has been
+     * updated for a specified application.
+     *
+     * @param office        The text identifier of the office generating the message (and owning
+     *                      the project).
+     * @param projectId     The location identifier of the project that has been updated.
+     * @param applicationId A text string identifying the application for which the update applies.
+     * @param sourceId      An application-defined string of the instance and/or component that
+     *                      generated the message. If NULL or not specified, the generated
+     *                      message will not include this item.
+     * @param tsId          A time series identifier of the time series associated with the
+     *                      update. If NULL or not specified, the generated message will not
+     *                      include this item.
+     * @param start         The UTC start time of the updates to the time series, in Java
+     *                      milliseconds. If NULL or not specified, the generated message will
+     *                      not include this item.
+     * @param end           The UTC end time of the updates to the time series, in Java
+     *                      milliseconds. If NULL or not specified, the generated message will
+     *                      not include this item.
+     * @return The timestamp of the generated message
+     */
+    public Instant publishStatusUpdate(String office, String projectId, String applicationId,
+                                      @Nullable String sourceId, @Nullable String tsId,
+                                      @Nullable Instant start, @Nullable Instant end) {
         BigInteger startTime = toBigInteger(start);
         BigInteger endTime = toBigInteger(end);
-        return connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE(
+        BigInteger millis = connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE(
                 getDslContext(c, office).configuration(),
-                pProjectId, appId, sourceId,
+                projectId, applicationId, sourceId,
                 tsId, startTime, endTime, office)
         );
+
+        Instant retval = null;
+        if (millis != null) {
+            retval = Instant.ofEpochMilli(millis.longValue());
+        }
+        return retval;
     }
 
-    public static BigInteger toBigInteger(Timestamp timestamp) {
+    @Nullable
+    public static BigInteger toBigInteger(@Nullable Instant timestamp) {
         BigInteger retval = null;
         if (timestamp != null) {
-            retval = BigInteger.valueOf(timestamp.getTime());
+            retval = BigInteger.valueOf(timestamp.toEpochMilli());
         }
 
         return retval;
     }
 
-    public static BigInteger toBigInteger(Long value) {
+    @Nullable
+    public static BigInteger toBigInteger(@Nullable Long value) {
         BigInteger retval = null;
         if (value != null) {
             retval = BigInteger.valueOf(value);
@@ -383,6 +450,12 @@ public class ProjectDao extends JooqDao<Project> {
     }
 
 
+    /**
+     * Retrieves the locations associated with a project.
+     *
+     * @param office The office ID associated with the project.
+     * @return A list of Location objects representing the project's locations.
+     */
     public List<Location> catProject(String office) {
 
         return connectionResult(dsl, c -> {

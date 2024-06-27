@@ -55,6 +55,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class LockRevokerRightsCatalog implements Handler {
     public static final String TAGS = "Project Lock Revoker Rights";
+    public static final String PATH = "/project-lock-rights/";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -89,18 +90,18 @@ public class LockRevokerRightsCatalog implements Handler {
                     @OpenApiContent(type = Formats.JSON, from = LockRevokerRights.class)}
                 )},
             tags = {TAGS},
-            path = "/project-lock-rights/",
+            path = PATH,
             method = HttpMethod.GET
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
-        try (Timer.Context timer = markAndTime(GET_ALL)) {
+        try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
             String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
             String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault("*");
             String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the office.
 
-            List<LockRevokerRights> rights = lockDao.catLockRevokerRights(projMask, appMask, officeMask);
+            List<LockRevokerRights> rights = lockDao.catLockRevokerRights(officeMask, projMask, appMask);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, LockRevokerRights.class);
             String result = Formats.format(contentType, rights, LockRevokerRights.class);

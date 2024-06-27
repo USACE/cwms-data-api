@@ -29,24 +29,24 @@ import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
+import static cwms.cda.api.project.ProjectLockHandlerUtil.revokeLock;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.Project;
+import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
-import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -55,7 +55,6 @@ import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 public class ProjectLockStatusHandlerIT extends DataApiTestIT {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String OFFICE = "SPK";
 
@@ -81,8 +80,9 @@ public class ProjectLockStatusHandlerIT extends DataApiTestIT {
                 int revokeTimeout = 10;
                 boolean revokeExisting = true;
 
-                lockDao.updateLockRevokerRights(OFFICE, userName, projId, appId, officeMask, true);
-                lockId = lockDao.requestLock(OFFICE, projId, appId, revokeExisting, revokeTimeout);
+                lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+                ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+                lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
 
                 assertNotNull(lockId);
                 assertTrue(lockId.length() > 8);  // FYI its 32 hex chars guid
@@ -123,12 +123,7 @@ public class ProjectLockStatusHandlerIT extends DataApiTestIT {
                 ;
 
             } finally {
-
-                try {
-                    lockDao.revokeLock(OFFICE, projId, appId, 0);  // delete/kill.
-                } catch (Exception e) {
-                    logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId);
-                }
+                revokeLock(lockDao, OFFICE, projId, appId);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
 
