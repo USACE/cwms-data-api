@@ -166,7 +166,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                     .body("entries.size()",is(pageSize))
                     .extract()
                 .response();
-
             String nextPage = initialResponse.path("next-page");
 
             final int total = initialResponse.path("total");
@@ -192,11 +191,16 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                         .body("entries[0].name",not(equalTo(lastRowPreviousPage)))
                         .extract()
                     .response();
-
                 nextPage = pageN.path("next-page");
-
-                lastRowPreviousPage = pageN.path("entries.last().name");
+                
+                
+                
                 int pageTotal = pageN.path("entries.size()");
+                if (pageTotal > 0) {
+                    lastRowPreviousPage = pageN.path("entries.last().name");
+                } else {
+                    lastRowPreviousPage = "No data in this response.";
+                }
                 totalRetrieved += pageTotal;
                 /*if( nextPage == null && totalRetrieved < total) {
                     fail("Pagination not complete, system returned 'last page' before all values retrieved.");
