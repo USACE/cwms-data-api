@@ -98,9 +98,9 @@ final class BasinTest {
                             .build())
                     .withSortOrder(1.0)
                     .withTotalDrainageArea(1005.0)
-                    .withContributingDrainageArea(1050.0)
+                    .withContributingDrainageArea(850.0)
                     .withParentBasinId(new CwmsId.Builder().build())
-                    .withAreaUnit("SI")
+                    .withAreaUnit("m2")
                     .build();
         } else {
             return new Basin.Builder()
@@ -111,12 +111,12 @@ final class BasinTest {
                             .build())
                     .withSortOrder(1.0)
                     .withTotalDrainageArea(1005.0)
-                    .withContributingDrainageArea(1050.0)
+                    .withContributingDrainageArea(850.0)
                     .withParentBasinId(new CwmsId.Builder()
                             .withName("TEST_LOCATION5")
                             .withOfficeId("NAE")
                             .build())
-                    .withAreaUnit("SI")
+                    .withAreaUnit("m2")
                     .build();
         }
     }
