@@ -116,12 +116,12 @@ final class StreamDaoTestIT extends DataApiTestIT {
             streamDao.storeStream(stream2, false);
 
             //retrieve streams individually
-            Stream retrievedStream = streamDao.retrieveStream(stream.getId().getOfficeId(), stream.getId().getName());
+            Stream retrievedStream = streamDao.retrieveStream(stream.getId().getOfficeId(), stream.getId().getName(), stream.getLengthUnits());
             StreamTest.assertSame(stream, retrievedStream);
-            Stream retrievedStream2 = streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName());
+            Stream retrievedStream2 = streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName(), stream2.getLengthUnits());
             StreamTest.assertSame(stream2, retrievedStream2);
             //also test retrieve in bulk
-            List<Stream> retrievedStreams = streamDao.retrieveStreams(OFFICE_ID, null);
+            List<Stream> retrievedStreams = streamDao.retrieveStreams(OFFICE_ID, null, "km");
             assertFalse(retrievedStreams.isEmpty());
             retrievedStreams = retrievedStreams.stream()
                     .filter(s -> s.getId().getName().equalsIgnoreCase(stream.getId().getName()) || s.getId().getName().equalsIgnoreCase(stream2.getId().getName()))
@@ -133,8 +133,8 @@ final class StreamDaoTestIT extends DataApiTestIT {
             //delete streams
             streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(stream2.getId().getOfficeId(), stream2.getId().getName(), DeleteRule.DELETE_ALL);
-            assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(stream.getId().getOfficeId(), stream.getId().getName()));
-            assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName()));
+            assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(stream.getId().getOfficeId(), stream.getId().getName(), stream.getLengthUnits()));
+            assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName(), stream.getLengthUnits()));
             streamDao.deleteStream(flowsIntoStream.getId().getOfficeId(), flowsIntoStream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(divertsFromStream.getId().getOfficeId(), divertsFromStream.getId().getName(), DeleteRule.DELETE_ALL);
         });
@@ -158,8 +158,8 @@ final class StreamDaoTestIT extends DataApiTestIT {
             String office = stream.getId().getOfficeId();
             String newId = stream.getId().getName() + "N";
             streamDao.renameStream(office, originalId, newId);
-            assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(office, originalId));
-            Stream retrievedStream = streamDao.retrieveStream(office, newId);
+            assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(office, originalId, stream.getLengthUnits()));
+            Stream retrievedStream = streamDao.retrieveStream(office, newId, stream.getLengthUnits());
             assertEquals(newId, retrievedStream.getId().getName());
             streamDao.deleteStream(office, newId, DeleteRule.DELETE_ALL);
             streamDao.deleteStream(flowsIntoStream.getId().getOfficeId(), flowsIntoStream.getId().getName(), DeleteRule.DELETE_ALL);

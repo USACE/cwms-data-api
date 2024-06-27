@@ -55,7 +55,8 @@ final class StreamDaoTest {
                 .setAVERAGE_SLOPE(5.0)
                 .setCOMMENTS("Test Comment")
                 .setNAME("STREAM_NAME")
-                .setOFFICE_ID("OFFICE_ID");
+                .setOFFICE_ID("OFFICE_ID")
+                .setUNIT("km");
 
         Stream result = StreamDao.fromJooqStream(streamT);
 
@@ -95,7 +96,7 @@ final class StreamDaoTest {
         Mockito.when(resultSet.getDouble(StreamDao.STREAM_AVERAGE_SLOPE_COLUMN_INDEX)).thenReturn(5.0);
         Mockito.when(resultSet.getString(StreamDao.STREAM_COMMENTS_COLUMN_INDEX)).thenReturn("Test Comment");
 
-        List<Stream> streams = StreamDao.buildStreamListFromResultSet(resultSet);
+        List<Stream> streams = StreamDao.buildStreamListFromResultSet(resultSet, "km");
 
         assertNotNull(streams);
         assertEquals(1, streams.size());
