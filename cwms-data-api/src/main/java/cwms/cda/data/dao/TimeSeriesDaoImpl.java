@@ -576,7 +576,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                               /* rownum behaves oddly, make sure it's always on a final result set. */
                                               .where(field("rownum").lessOrEqual(pageSize));
 
-        logger.info(() -> overallQuery.getSQL(ParamType.INLINED));
+        logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
@@ -737,6 +737,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 .eq(AV_TS_EXTENTS_UTC.TS_CODE
                                         .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
             }
+            selectFields.add(AV_TS_EXTENTS_UTC.VERSION_TIME);
+            selectFields.add(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
+            selectFields.add(AV_TS_EXTENTS_UTC.LATEST_TIME);
+            selectFields.add(AV_TS_EXTENTS_UTC.LAST_UPDATE);
             fromTable = on;
         }
         return select(selectFields).from(fromTable).asTable("ctsCatFromTable");
