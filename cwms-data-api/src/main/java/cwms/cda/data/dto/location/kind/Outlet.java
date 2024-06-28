@@ -1,8 +1,21 @@
 /*
- * Copyright (c) 2024. Hydrologic Engineering Center (HEC).
- * United States Army Corps of Engineers
- * All Rights Reserved. HEC PROPRIETARY/CONFIDENTIAL.
- * Source may not be released without written approval from HEC
+ * MIT License
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 package cwms.cda.data.dto.location.kind;
@@ -11,8 +24,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -21,48 +34,40 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class Outlet extends ProjectStructure
-{
-	private final CharacteristicRef characteristicRef;
+public class Outlet extends ProjectStructure {
+    private final CwmsId characteristicsId;
 
-	private Outlet(Builder builder)
-	{
-		super(builder.projectId, builder.location);
-		characteristicRef = builder.characteristicRef;
-	}
+    private Outlet(Builder builder) {
+        super(builder.projectId, builder.location);
+        characteristicsId = builder.characteristicsId;
+    }
 
-	public CharacteristicRef getCharacteristicRef()
-	{
-		return characteristicRef;
-	}
+    public CwmsId getCharacteristicsId() {
+        return characteristicsId;
+    }
 
-	public static final class Builder
-	{
-		private CharacteristicRef characteristicRef;
-		private CwmsId projectId;
-		private Location location;
+    public static final class Builder {
+        private CwmsId characteristicsId;
+        private CwmsId projectId;
+        private Location location;
 
-		public Outlet build()
-		{
-			return new Outlet(this);
-		}
+        public Outlet build() {
+            return new Outlet(this);
+        }
 
-		public Builder withCharacteristicRef(CharacteristicRef characteristicRef)
-		{
-			this.characteristicRef = characteristicRef;
-			return this;
-		}
+        public Builder withCharacteristicsId(CwmsId characteristicsId) {
+            this.characteristicsId = characteristicsId;
+            return this;
+        }
 
-		public Builder withProjectId(CwmsId projectIdentifier)
-		{
-			this.projectId = projectIdentifier;
-			return this;
-		}
+        public Builder withProjectId(CwmsId projectIdentifier) {
+            this.projectId = projectIdentifier;
+            return this;
+        }
 
-		public Builder withLocation(Location location)
-		{
-			this.location = location;
-			return this;
-		}
-	}
+        public Builder withLocation(Location location) {
+            this.location = location;
+            return this;
+        }
+    }
 }

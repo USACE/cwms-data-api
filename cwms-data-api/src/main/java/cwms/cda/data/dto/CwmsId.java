@@ -30,15 +30,18 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.ArrayList;
+import java.util.List;
 
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @JsonDeserialize(builder = CwmsId.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({ "officeId", "name" })
+@JsonPropertyOrder({"officeId", "name"})
 public final class CwmsId implements CwmsDTOBase {
 
     private final String officeId;
@@ -51,11 +54,15 @@ public final class CwmsId implements CwmsDTOBase {
 
     @Override
     public void validate() throws FieldException {
-        if(this.officeId == null || this.officeId.isEmpty()){
-            throw new FieldException("The 'officeId' field of a LocationIdentifier cannot be null or empty.");
+        List<String> missingFields = new ArrayList<>();
+        if (this.officeId == null || this.officeId.isEmpty()) {
+            missingFields.add("officeId");
         }
-        if(this.name == null || this.name.isEmpty()){
-            throw new FieldException("The 'locationId' field of a LocationIdentifier cannot be null or empty.");
+        if (this.name == null || this.name.isEmpty()) {
+            missingFields.add("name");
+        }
+        if (!missingFields.isEmpty()) {
+            throw new RequiredFieldException(missingFields);
         }
     }
 
@@ -66,6 +73,7 @@ public final class CwmsId implements CwmsDTOBase {
     public String getName() {
         return name;
     }
+
     public static class Builder {
         private String officeId;
         private String name;
@@ -74,6 +82,7 @@ public final class CwmsId implements CwmsDTOBase {
             this.officeId = officeId;
             return this;
         }
+
         public Builder withName(String name) {
             this.name = name;
             return this;

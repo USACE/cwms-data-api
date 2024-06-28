@@ -5,11 +5,11 @@
   },
   "location": {
     "office-id": "SPK",
-    "name": "location-outlet",
+    "name": "outlet",
     "latitude": 0.0,
     "longitude": 0.0,
     "active": true,
-    "public-name": "location-outlet",
+    "public-name": "outlet",
     "timezone-name": "UTC",
     "location-kind": "Outlet",
     "horizontal-datum": "NAD84",
