@@ -16,7 +16,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-@Disabled("Not data available for test or the test isn't currently loading any data.")
+@Disabled("No data available for test or the test isn't currently loading any data.")
 class BasinControllerTestIT extends DataApiTestIT
 {
 	private static final String SPK = "SPK";
