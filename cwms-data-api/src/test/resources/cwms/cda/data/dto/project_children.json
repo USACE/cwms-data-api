@@ -1,0 +1,48 @@
+{
+  "project": {
+    "office-id": "SPK",
+    "name": "TestProject"
+  },
+  "embankments": [
+    {
+      "office-id": "SPK",
+      "name": "TestEmbankment1"
+    },
+    {
+      "office-id": "SPK",
+      "name": "TestEmbankment2"
+    }
+  ],
+  "locks": [
+    {
+      "office-id": "SPK",
+      "name": "TestLock1"
+    },
+    {
+      "office-id": "SPK",
+      "name": "TestLock2"
+    },
+    {
+      "office-id": "SPK",
+      "name": "TestLock3"
+    }
+  ],
+  "outlets": [
+    {
+      "office-id": "SPK",
+      "name": "TestOutlet1"
+    }
+  ],
+  "turbines": [
+    {
+      "office-id": "SPK",
+      "name": "TestTurbine1"
+    }
+  ],
+  "gates": [
+    {
+      "office-id": "SPK",
+      "name": "TestGate1"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "project": {
+      "office-id": "SPK",
+      "name": "TestProject1"
+    },
+    "embankments": [
+      {
+        "office-id": "SPK",
+        "name": "TestEmbankment1"
+      },
+      {
+        "office-id": "SPK",
+        "name": "TestEmbankment2"
+      }
+    ]
+  }
+]

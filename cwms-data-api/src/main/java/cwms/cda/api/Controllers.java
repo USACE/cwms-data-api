@@ -74,9 +74,6 @@ public final class Controllers {
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";
 
-
-
-
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
@@ -142,7 +139,6 @@ public final class Controllers {
     public static final String ANY_MASK = "*";
     public static final String OFFICE_MASK = "office-mask";
     public static final String ID_MASK = "id-mask";
-    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -161,9 +157,6 @@ public final class Controllers {
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
     public static final String TEXT_MASK = "text-mask";
-    public static final String DELETE_MODE = "delete-mode";
-    public static final String MIN_ATTRIBUTE = "min-attribute";
-    public static final String MAX_ATTRIBUTE = "max-attribute";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String TRIM = "trim";
@@ -174,6 +167,7 @@ public final class Controllers {
     public static final String DEFAULT_VALUE = "default-value";
     public static final String CATEGORY = "category";
     public static final String PREFIX = "prefix";
+    public static final String PROJECT_LIKE = "project-like";
 
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
