@@ -153,10 +153,6 @@ public final class StreamDao extends JooqDao<Stream> {
      * @param streamId - the id of the stream
      */
     public void deleteStream(String officeId, String streamId, DeleteRule deleteRule) {
-        Stream streamToDelete = retrieveStream(officeId, streamId, "km");
-        if (streamToDelete == null) {
-            throw new NotFoundException("Could not find stream " + streamId + "to delete.");
-        }
         connectionResult(dsl, conn -> {
             setOffice(conn, officeId);
             CWMS_STREAM_PACKAGE.call_DELETE_STREAM(DSL.using(conn).configuration(),

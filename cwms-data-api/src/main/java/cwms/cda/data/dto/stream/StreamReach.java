@@ -42,8 +42,8 @@ import cwms.cda.formatters.json.JsonV1;
 public final class StreamReach implements CwmsDTOBase {
 
     private final String comment;
-    private final StreamNode downstreamNode;
-    private final StreamNode upstreamNode;
+    private final StreamLocationNode downstreamNode;
+    private final StreamLocationNode upstreamNode;
     private final CwmsId configurationId;
     private final CwmsId streamId;
     private final CwmsId id;
@@ -84,11 +84,11 @@ public final class StreamReach implements CwmsDTOBase {
         return comment;
     }
 
-    public StreamNode getDownstreamNode() {
+    public StreamLocationNode getDownstreamNode() {
         return downstreamNode;
     }
 
-    public StreamNode getUpstreamNode() {
+    public StreamLocationNode getUpstreamNode() {
         return upstreamNode;
     }
 
@@ -106,8 +106,8 @@ public final class StreamReach implements CwmsDTOBase {
 
     public static class Builder {
         private String comment;
-        private StreamNode downstreamNode;
-        private StreamNode upstreamNode;
+        private StreamLocationNode downstreamNode;
+        private StreamLocationNode upstreamNode;
         private CwmsId configurationId;
         private CwmsId streamId;
         private CwmsId id;
@@ -117,12 +117,12 @@ public final class StreamReach implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withDownstreamNode(StreamNode downstreamNode) {
+        public Builder withDownstreamNode(StreamLocationNode downstreamNode) {
             this.downstreamNode = downstreamNode;
             return this;
         }
 
-        public Builder withUpstreamNode(StreamNode upstreamNode) {
+        public Builder withUpstreamNode(StreamLocationNode upstreamNode) {
             this.upstreamNode = upstreamNode;
             return this;
         }
