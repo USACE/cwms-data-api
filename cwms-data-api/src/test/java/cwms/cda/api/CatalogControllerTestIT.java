@@ -172,6 +172,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             int totalRetrieved = initialResponse.path("entries.size()");
 
             String lastRowPreviousPage = initialResponse.path("entries.last().name");
+
             do {
                 Response pageN =
                     given()
@@ -192,9 +193,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                         .extract()
                     .response();
                 nextPage = pageN.path("next-page");
-                
-                
-                
                 int pageTotal = pageN.path("entries.size()");
                 if (pageTotal > 0) {
                     lastRowPreviousPage = pageN.path("entries.last().name");
@@ -202,12 +200,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                     lastRowPreviousPage = "No data in this response.";
                 }
                 totalRetrieved += pageTotal;
-                /*if( nextPage == null && totalRetrieved < total) {
-                    fail("Pagination not complete, system returned 'last page' before all values retrieved.");
-                }*/
             } while( nextPage != null );
-
-            assertEquals(total, totalRetrieved, "Initial count and retrieval do not match");
+            assertEquals(total, totalRetrieved, "Expected amount of results not returned.");
         }, "Catalog retrieval got stuck; possibly in endless loop");
     }
 
