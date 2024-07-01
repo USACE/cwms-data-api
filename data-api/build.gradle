@@ -128,8 +128,8 @@ dependencies {
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest.all)
 
-    tomcatLibs(libs.bundles.tomcat.embedded)
-    tomcatLibs(libs.bundles.tomcat.support)
+    testImplementation(libs.bundles.tomcat.embedded)
+    testImplementation(libs.bundles.tomcat.support)
     tomcatLibs(libs.google.flogger.api)
     tomcatLibs(libs.google.flogger.backend)
 
