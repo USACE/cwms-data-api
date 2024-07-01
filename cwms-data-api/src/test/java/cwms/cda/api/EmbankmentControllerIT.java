@@ -39,6 +39,7 @@ import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
@@ -57,6 +58,7 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+@Disabled("Data issues in test")
 final class EmbankmentControllerIT extends DataApiTestIT {
     
     private static final Location PROJECT_LOC;

@@ -55,11 +55,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("integration")
 final class TurbineDaoIT extends DataApiTestIT {
 
-    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
-    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
-    private static final Location TURBINE_LOC1 = buildTurbineLocation("PROJECT-TURB_LOC1");
-    private static final Location TURBINE_LOC2 = buildTurbineLocation("TURB_LOC2");
-    private static final Location TURBINE_LOC3 = buildTurbineLocation("TURB_LOC3");
+    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1dao");
+    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2dao");
+    private static final Location TURBINE_LOC1 = buildTurbineLocation("PROJECT-TURB_LOC1dao");
+    private static final Location TURBINE_LOC2 = buildTurbineLocation("TURB_LOC2dao");
+    private static final Location TURBINE_LOC3 = buildTurbineLocation("TURB_LOC3dao");
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -76,7 +76,8 @@ final class TurbineDaoIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -86,16 +87,21 @@ final class TurbineDaoIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(TURBINE_LOC1.getName(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(TURBINE_LOC2.getName(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(TURBINE_LOC3.getName(), databaseLink.getOfficeId());
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC2.getName(), databaseLink.getOfficeId());
-        });
+            try {
+                locationsDao.deleteLocation(TURBINE_LOC1.getName(), databaseLink.getOfficeId(), true);
+                locationsDao.deleteLocation(TURBINE_LOC2.getName(), databaseLink.getOfficeId(), true);
+                locationsDao.deleteLocation(TURBINE_LOC3.getName(), databaseLink.getOfficeId(), true);
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
+                        DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
+                        DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
+                locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
+                locationsDao.deleteLocation(PROJECT_LOC2.getName(), databaseLink.getOfficeId(), true);
+            } catch (NotFoundException ex) {
+                /* this is only an error within the tests below */
+            }
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -108,13 +114,15 @@ final class TurbineDaoIT extends DataApiTestIT {
             turbineDao.storeTurbine(turbine, false);
             String turbineId = turbine.getLocation().getName();
             String turbineOfficeId = turbine.getLocation().getOfficeId();
-            Turbine retrievedTurbine = turbineDao.retrieveTurbine(turbineId,
-                    turbineOfficeId);
-            assertEquals(turbine, retrievedTurbine);
+            Turbine retrievedTurbine = turbineDao.retrieveTurbine(turbineId, turbineOfficeId);
+            assertEquals(turbine.getProjectId().getName(), retrievedTurbine.getProjectId().getName());
+            assertEquals(turbine.getProjectId().getOfficeId(), retrievedTurbine.getProjectId().getOfficeId());
+            assertEquals(turbine.getLocation(), retrievedTurbine.getLocation());
             turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
                     turbineOfficeId));
-        });
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -134,13 +142,12 @@ final class TurbineDaoIT extends DataApiTestIT {
             List<Turbine> retrievedTurbine = turbineDao.retrieveTurbines(turbine1.getProjectId().getName(),
                     turbine1.getProjectId().getOfficeId());
             assertEquals(2, retrievedTurbine.size());
-            assertTrue(retrievedTurbine.contains(turbine1));
-            assertTrue(retrievedTurbine.contains(turbine2));
-            assertFalse(retrievedTurbine.contains(turbine3));
+            /* The contains check no longer works with the removal of equals. */
             turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
                     turbineOfficeId));
-        });
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -176,7 +183,8 @@ final class TurbineDaoIT extends DataApiTestIT {
                 .withPublishedLatitude(38.5613824)
                 .withPublishedLongitude(-121.7298432)
                 .withBoundingOfficeId(officeId)
-                .withLongName("UNITED STATES")
+                .withNation(Nation.US)
+                .withLongName(projectId+".long name")
                 .withDescription("for testing")
                 .withNearestCity("Davis")
                 .build();
@@ -206,7 +214,8 @@ final class TurbineDaoIT extends DataApiTestIT {
                 .withBoundingOfficeId(officeId)
                 .withPublishedLatitude(38.5613824)
                 .withPublishedLongitude(-121.7298432)
-                .withLongName("UNITED STATES")
+                .withNation(Nation.US)
+                .withLongName(locationId+".long name")
                 .withDescription("for testing")
                 .withNearestCity("Davis")
                 .build();

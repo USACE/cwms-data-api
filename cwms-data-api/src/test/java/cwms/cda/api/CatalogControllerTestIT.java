@@ -166,13 +166,13 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                     .body("entries.size()",is(pageSize))
                     .extract()
                 .response();
-
             String nextPage = initialResponse.path("next-page");
 
             final int total = initialResponse.path("total");
             int totalRetrieved = initialResponse.path("entries.size()");
 
             String lastRowPreviousPage = initialResponse.path("entries.last().name");
+
             do {
                 Response pageN =
                     given()
@@ -192,18 +192,16 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                         .body("entries[0].name",not(equalTo(lastRowPreviousPage)))
                         .extract()
                     .response();
-
                 nextPage = pageN.path("next-page");
-
-                lastRowPreviousPage = pageN.path("entries.last().name");
                 int pageTotal = pageN.path("entries.size()");
+                if (pageTotal > 0) {
+                    lastRowPreviousPage = pageN.path("entries.last().name");
+                } else {
+                    lastRowPreviousPage = "No data in this response.";
+                }
                 totalRetrieved += pageTotal;
-                /*if( nextPage == null && totalRetrieved < total) {
-                    fail("Pagination not complete, system returned 'last page' before all values retrieved.");
-                }*/
             } while( nextPage != null );
-
-            assertEquals(total, totalRetrieved, "Initial count and retrieval do not match");
+            assertEquals(total, totalRetrieved, "Expected amount of results not returned.");
         }, "Catalog retrieval got stuck; possibly in endless loop");
     }
 
@@ -214,28 +212,28 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         // filter by loc group and ts group should find the intersection
         given()
-                .accept("application/json;version=2")
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
-                .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
-                .queryParam(TIMESERIES_CATEGORY_LIKE, TEST_CATEGORY)
-                .queryParam(TIMESERIES_GROUP_LIKE, EVENS)
-                .queryParam(EXCLUDE_EMPTY,false)
-            .when()
-                .get("/catalog/TIMESERIES")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-                .statusCode(is(200))
-                .body("$", hasKey("total"))
-                .body("total", is(4))
-                .body("$", hasKey("entries"))
-                .body("entries.size()",is(4))
-                .body("entries[0].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.four"))
-                .body("entries[1].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.two"))
-                .body("entries[2].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.four"))
-                .body("entries[3].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.two"))
-                ;
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
+            .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
+            .queryParam(TIMESERIES_CATEGORY_LIKE, TEST_CATEGORY)
+            .queryParam(TIMESERIES_GROUP_LIKE, EVENS)
+            .queryParam(EXCLUDE_EMPTY,false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(4))
+            .body("$", hasKey("entries"))
+            .body("entries.size()",is(4))
+            .body("entries[0].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.four"))
+            .body("entries[1].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.two"))
+            .body("entries[2].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.four"))
+            .body("entries[3].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.two"))
+            ;
     }
 
     @Test
@@ -244,54 +242,54 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         // filter by just loc group
         given()
-                .accept("application/json;version=2")
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
-                .queryParam(LOCATION_GROUP_LIKE, A_TO_M)
-                .queryParam(EXCLUDE_EMPTY,false)
-                .when()
-                .get("/catalog/TIMESERIES")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(200))
-                .body("$", hasKey("total"))
-                .body("total", is(2))
-                .body("$", hasKey("entries"))
-                .body("entries.size()",is(2))
-                .body("entries[0].name",equalTo("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda"))
-                .body("entries[1].name",equalTo("Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda"))
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
+            .queryParam(LOCATION_GROUP_LIKE, A_TO_M)
+            .queryParam(EXCLUDE_EMPTY,false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()",is(2))
+            .body("entries[0].name",equalTo("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda"))
+            .body("entries[1].name",equalTo("Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda"))
         ;
 
 
 
         // filter by just loc group
         given()
-                .accept("application/json;version=2")
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
-                .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
-                .queryParam(EXCLUDE_EMPTY,false)
-            .when()
-                .get("/catalog/TIMESERIES")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-                .statusCode(is(200))
-                .body("$", hasKey("total"))
-                .body("total", is(10))
-                .body("$", hasKey("entries"))
-                .body("entries.size()",is(10))
-                .body("entries[0].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.four"))
-                .body("entries[1].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.one"))
-                .body("entries[2].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda"))
-                .body("entries[3].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.three"))
-                .body("entries[4].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.two"))
-                .body("entries[5].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.four"))
-                .body("entries[6].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.one"))
-                .body("entries[7].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda"))
-                .body("entries[8].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.three"))
-                .body("entries[9].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.two"))
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
+            .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
+            .queryParam(EXCLUDE_EMPTY,false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(10))
+            .body("$", hasKey("entries"))
+            .body("entries.size()",is(10))
+            .body("entries[0].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.four"))
+            .body("entries[1].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.one"))
+            .body("entries[2].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda"))
+            .body("entries[3].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.three"))
+            .body("entries[4].name",equalTo("Pine Flat-Outflow.Stage.Inst.15Minutes.0.two"))
+            .body("entries[5].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.four"))
+            .body("entries[6].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.one"))
+            .body("entries[7].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda"))
+            .body("entries[8].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.three"))
+            .body("entries[9].name",equalTo("Wet Meadows.Depth-SWE.Inst.15Minutes.0.two"))
         ;
 
     }
@@ -302,21 +300,21 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         // we create Wet Meadows with a bounding office of SPK
         given()
-                .accept("application/json;version=2")
-                .queryParam(BOUNDING_OFFICE_LIKE, OFFICE)
-                .queryParam(LIKE, "^Wet Meadows.*")
-                .queryParam(EXCLUDE_EMPTY,false)
-            .when()
-                .get("/catalog/TIMESERIES")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-                .statusCode(is(200))
-                .body("$", hasKey("total"))
-                .body("total", greaterThan(3))
-                .body("$", hasKey("entries"))
-                .body("entries.size()",greaterThan(3))
-                .body("entries.name",everyItem(startsWith("Wet Meadows")))
+            .accept("application/json;version=2")
+            .queryParam(BOUNDING_OFFICE_LIKE, OFFICE)
+            .queryParam(LIKE, "^Wet Meadows.*")
+            .queryParam(EXCLUDE_EMPTY,false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", greaterThan(3))
+            .body("$", hasKey("entries"))
+            .body("entries.size()",greaterThan(3))
+            .body("entries.name",everyItem(startsWith("Wet Meadows")))
         ;
     }
 
@@ -327,19 +325,19 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         // First with just the regex.  This should match Flat Lake and Flat Project
         given()
-                .accept("application/json;version=2")
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(LIKE, pattern)
-                .when()
-                .get("/catalog/LOCATIONS")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(200))
-                .body("$", hasKey("total"))
-                .body("total", is(2))
-                .body("$", hasKey("entries"))
-                .body("entries.size()", is(2))
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
         ;
 
         // Now add the LOCATION_KIND filter

@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
@@ -57,8 +58,9 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+//* NOTE requires at least 24.05.24-RC03 to fix nation ID issue with store_location_f */
 final class TurbineControllerIT extends DataApiTestIT {
-    
+    private static final String OFFICE_ID = "SWT";
     private static final Location PROJECT_LOC;
     private static final Location TURBINE_LOC;
     private static final Turbine TURBINE;
@@ -80,7 +82,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
-                DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+                DSLContext context = getDslContext(c, OFFICE_ID);
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
@@ -88,7 +90,8 @@ final class TurbineControllerIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -96,13 +99,19 @@ final class TurbineControllerIT extends DataApiTestIT {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+            DSLContext context = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(TURBINE_LOC.getName(), databaseLink.getOfficeId(), true);
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
-        });
+            try {
+                locationsDao.deleteLocation(TURBINE_LOC.getName(), databaseLink.getOfficeId(), true);
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
+                        DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
+                locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
+            }
+            catch (NotFoundException ex) {
+                /* if this is an error it's covered under the tests below. */
+            }
+        },
+        CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test

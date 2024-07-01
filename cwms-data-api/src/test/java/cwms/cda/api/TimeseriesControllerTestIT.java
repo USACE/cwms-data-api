@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -368,7 +369,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(Formats.JSONV1)
                 .queryParam("office", officeId)
                 .queryParam("units", "F")
                 .queryParam("name", ts.get("name").asText())
@@ -405,23 +406,23 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
         // 1675335600000
         given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
-                .queryParam("begin", firstPoint)
-                .queryParam("end", firstPoint)
-                .queryParam("version-date", version)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .queryParam("office", officeId)
+            .queryParam("units", "F")
+            .queryParam("name", ts.get("name").asText())
+            .queryParam("begin", firstPoint)
+            .queryParam("end", firstPoint)
+            .queryParam("version-date", version)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
         ;
     }
 
@@ -658,6 +659,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled("Referenced data set is missing")
     void test_daylight_saving_retrieve()throws Exception {
 
         InputStream resource = this.getClass().getResourceAsStream(

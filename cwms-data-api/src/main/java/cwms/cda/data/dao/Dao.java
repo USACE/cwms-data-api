@@ -45,6 +45,13 @@ public abstract class Dao<T> {
     @SuppressWarnings("unused")
     protected DSLContext dsl;
 
+    /* We only need this once per instance of a DAO.
+     * would probably be good to cache at a larger level but
+     * this does strike a balance between performance and picking
+     * up new database features in real-time.
+     */
+    private Integer theDbVersion = null;
+
     protected Dao(DSLContext dsl) {
         this.dsl = dsl;
     }
@@ -59,11 +66,14 @@ public abstract class Dao<T> {
     }
 
     public int getDbVersion() {
-        String version = getVersion(dsl);
-        String[] parts = version.split("\\.");
-        return Integer.parseInt(parts[0]) * 10000
-                + Integer.parseInt(parts[1]) * 100
-                + Integer.parseInt(parts[2]);
+        if (theDbVersion == null) {
+            String version = getVersion(dsl);
+            String[] parts = version.split("\\.");
+            theDbVersion = Integer.parseInt(parts[0]) * 10000
+                    + Integer.parseInt(parts[1]) * 100
+                    + Integer.parseInt(parts[2]);
+        }
+        return theDbVersion; // the unboxing is still cheaper than a database call (the logging was nuts.)
     }
 
 
