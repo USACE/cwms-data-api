@@ -7,6 +7,7 @@ import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.selectDistinct;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -497,11 +498,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
-            TableLike innerFrom = buildFromTable(inputParams);
-            SelectConditionStep<Record1<Integer>> totalQuery = dsl
-                    .select(countDistinct(innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
-                    .from(innerFrom)
-                    .where(buildWhereConditions(innerFrom, inputParams));
+            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<Condition>(), pageSize);
+            SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
+                    .select(countDistinct(limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
+                    .from(limiter);
             logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
             total = totalQuery.fetchOne(0, int.class);
         } else {
@@ -532,50 +532,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             pageEntryFields.addAll(getExtentsFields());
         }
 
-        TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
-        if (params.needs(AV_TS_EXTENTS_UTC)) {
-            fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID.leftJoin(AV_TS_EXTENTS_UTC)
-                    .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
-                            .eq(AV_TS_EXTENTS_UTC.TS_CODE
-                                    .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
-        }
-
-        TableLike innerFrom = buildFromTable(params);
-
-        List<Condition> whereConditions = buildWhereConditions(innerFrom, params);
+        List<Condition> whereConditions = buildWhereConditions(params);
         List<Condition> pagingConditions = buildPagingConditions(cursorOffice, cursorTsId);
+        CommonTableExpression<?> limiter = buildWithClause(params, whereConditions, pagingConditions, pageSize);
+        Field<BigDecimal> limiterCode = limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE);
+        SelectJoinStep<?> tmpQuery = dsl.with(limiter)
+                                        .select(pageEntryFields)
+                                        .from(limiter)
+                                        .join(AV_CWMS_TS_ID.AV_CWMS_TS_ID).on(limiterCode.eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE));
 
-        
-        Field<BigDecimal> codeField = AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE;
-        Field<BigDecimal> fromTableCode = innerFrom.field(codeField);
-        Field<String> fromTableOffice = innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID);
-        Field<String> fromTableTsId = innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
-        Table innerSelect = dsl.select(fromTableCode)
-                .from(innerFrom)
-                .where(whereConditions).and(DSL.and(pagingConditions))
-                .orderBy(fromTableOffice,
-                        DSL.upper(fromTableTsId)).asTable("ctsCatInnerSelect");
+        if (params.isIncludeExtents()) {
 
-        Field<BigDecimal> codeField2 = innerSelect.field(codeField);
-
-        SelectJoinStep<Record1<BigDecimal>> codes = dsl.select(codeField2)
-                .from(innerSelect)
-                ;
-        
-        SelectSeekStep2<Record, String, String> catQuery = dsl.select(pageEntryFields)
-                .from(fromTable)
-                .where(
-                        codeField.in(codes)
-                )
-                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
-                        DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID));
-        CommonTableExpression catCte = name("cat_query").as(catQuery);
-        SelectConditionStep overallQuery = dsl.with(catCte)
-                                              .select(DSL.asterisk())
-                                              .from(catCte)
-                                              /* rownum behaves oddly, make sure it's always on a final result set. */
-                                              .where(field("rownum").lessOrEqual(pageSize));
-
+            tmpQuery = tmpQuery.leftOuterJoin(AV_TS_EXTENTS_UTC)
+                                       .on(limiterCode
+                                         .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
+        }
+        final SelectJoinStep<?> overallQuery = tmpQuery;
         logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
@@ -659,24 +631,24 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return cwmsTsIdFields;
     }
 
-    private @NotNull List<Condition> buildWhereConditions(TableLike innerFrom, CatalogRequestParameters params) {
+    private @NotNull List<Condition> buildWhereConditions(CatalogRequestParameters params) {
         List<Condition> conditions = new ArrayList<>();
-        conditions.addAll(buildCwmsTsIdConditions(innerFrom, params));
-        conditions.addAll(buildLocGrpAssgnConditions(innerFrom, params));
-        conditions.addAll(buildTsGrpAssgnConditions(innerFrom, params));
-        conditions.addAll(buildLocConditions(innerFrom, params));
-        conditions.addAll(buildExtentsConditions(innerFrom, params));
+        conditions.addAll(buildCwmsTsIdConditions(params));
+        conditions.addAll(buildLocGrpAssgnConditions(params));
+        conditions.addAll(buildTsGrpAssgnConditions(params));
+        conditions.addAll(buildLocConditions(params));
+        conditions.addAll(buildExtentsConditions(params));
         return conditions;
     }
 
-    private static @NotNull TableLike buildFromTable(CatalogRequestParameters params) {
-        TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
-        
-        
+    private static @NotNull CommonTableExpression<?> buildWithClause(CatalogRequestParameters params, List<Condition> whereConditions, List<Condition> pagingConditions, int pageSize ) {
+        TableLike<?> fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
+
         TableOnConditionStep<Record> on = null;
         List<Field<?>> selectFields = new ArrayList<>();
-        selectFields.add(fromTable.field(cwmsTsIdView.DB_OFFICE_ID));
         selectFields.add(fromTable.field(cwmsTsIdView.TS_CODE));
+        selectFields.add(fromTable.field(cwmsTsIdView.DB_OFFICE_ID));
+
         selectFields.add(fromTable.field(cwmsTsIdView.CWMS_TS_ID));
 
         if (params.needs(tsGroupView)) {
@@ -737,23 +709,29 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 .eq(AV_TS_EXTENTS_UTC.TS_CODE
                                         .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
             }
-            selectFields.add(AV_TS_EXTENTS_UTC.VERSION_TIME);
-            selectFields.add(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
-            selectFields.add(AV_TS_EXTENTS_UTC.LATEST_TIME);
-            selectFields.add(AV_TS_EXTENTS_UTC.LAST_UPDATE);
             fromTable = on;
         }
-        return select(selectFields).from(fromTable).asTable("ctsCatFromTable");
+        TableLike<?> innerSelect = selectDistinct(selectFields)
+                                     .from(fromTable)
+                                     .where(whereConditions).and(DSL.and(pagingConditions))
+                                     .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID, AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
+                                     .asTable("limiterInner");
+        return name("limiter").as(
+                 select(asterisk())
+                .from(innerSelect)
+                .where(
+                    field("rownum").lessOrEqual(pageSize))
+                );
     }
 
-    private Collection<? extends Condition> buildLocConditions(TableLike innerFrom, CatalogRequestParameters params) {
+    private Collection<? extends Condition> buildLocConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_LOC.AV_LOC)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID),
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID,
                     params.getBoundingOfficeLike()));
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(AV_LOC.AV_LOC.LOCATION_KIND_ID), params.getLocationKind()));
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(AV_LOC.AV_LOC.LOCATION_TYPE), params.getLocationType()));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC.AV_LOC.LOCATION_KIND_ID, params.getLocationKind()));
+            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC.AV_LOC.LOCATION_TYPE, params.getLocationType()));
             // we could add conditions based on lat/lon here too
             // or any bool fields.
         }
@@ -761,55 +739,55 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retval;
     }
 
-    private Collection<? extends Condition> buildExtentsConditions(TableLike innerFrom, CatalogRequestParameters params) {
+    private Collection<? extends Condition> buildExtentsConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
 
         if (params.isExcludeEmpty()) {
             retval.add(DSL.or(
-                    innerFrom.field(AV_TS_EXTENTS_UTC.VERSION_TIME).isNotNull(),
-                    innerFrom.field(AV_TS_EXTENTS_UTC.EARLIEST_TIME).isNotNull(),
-                    innerFrom.field(AV_TS_EXTENTS_UTC.LATEST_TIME).isNotNull(),
-                    innerFrom.field(AV_TS_EXTENTS_UTC.LAST_UPDATE).isNotNull())
+                    AV_TS_EXTENTS_UTC.VERSION_TIME.isNotNull(),
+                    AV_TS_EXTENTS_UTC.EARLIEST_TIME.isNotNull(),
+                    AV_TS_EXTENTS_UTC.LATEST_TIME.isNotNull(),
+                    AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
                     );
         }
 
         return retval;
     }
 
-    private Collection<? extends Condition> buildLocGrpAssgnConditions(TableLike innerFrom, CatalogRequestParameters params) {
+    private Collection<? extends Condition> buildLocGrpAssgnConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(locGroupField),
+            retval.add(caseInsensitiveLikeRegexNullTrue(locGroupField,
                     params.getLocGroupLike()));
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(locCategoryField),
+            retval.add(caseInsensitiveLikeRegexNullTrue(locCategoryField,
                     params.getLocCatLike()));
         }
         return retval;
     }
 
-    private Collection<? extends Condition> buildTsGrpAssgnConditions(TableLike innerFrom, CatalogRequestParameters params) {
+    private Collection<? extends Condition> buildTsGrpAssgnConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(tsGroupField),
+            retval.add(caseInsensitiveLikeRegexNullTrue(tsGroupField,
                     params.getTsGroupLike()));
-            retval.add(caseInsensitiveLikeRegexNullTrue(innerFrom.field(tsCategoryField),
+            retval.add(caseInsensitiveLikeRegexNullTrue(tsCategoryField,
                     params.getTsCatLike()));
         }
         return retval;
     }
 
-    private Collection<? extends Condition> buildCwmsTsIdConditions(TableLike innerFrom, CatalogRequestParameters params) {
+    private Collection<? extends Condition> buildCwmsTsIdConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
 
         if (params.getOffice() != null) {
-            retval.add(innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID).eq(params.getOffice().toUpperCase()));
+            retval.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID.eq(params.getOffice().toUpperCase()));
         }
 
         retval.add(
             caseInsensitiveLikeRegexNullTrue(
-                innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID),
+                AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID,
                 params.getIdLike()));
 
         return retval;
