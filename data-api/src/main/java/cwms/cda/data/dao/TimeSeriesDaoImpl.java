@@ -551,7 +551,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
         }
         final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID, AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
-        logger.info(() -> overallQuery.getSQL(ParamType.INLINED));
+        logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
