@@ -119,8 +119,30 @@ public class WaterSupply implements CwmsDTOBase {
         if (userType == null) {
             throw new FieldException("User Type cannot be null");
         }
+        if(userType.getEntityName() == null)
+        {
+            throw new FieldException("User Type Entity Name cannot be null");
+        }
+        if(userType.getWaterRight() == null) {
+            throw new FieldException("User Type Water Right cannot be null");
+        }
         if (contractType == null) {
             throw new FieldException("Contract Type cannot be null");
+        }
+        if (contractType.getWaterUserContractRefType() == null) {
+            throw new FieldException("Water User Contract Ref Type cannot be null");
+        }
+        if (contractType.getWaterSupplyContractType() == null) {
+            throw new FieldException("Water Supply Contract Type cannot be null");
+        }
+        if (contractType.getContractEffectiveDate() == null) {
+            throw new FieldException("Contract Effective Date cannot be null");
+        }
+        if (contractType.getInitialUseAllocation() == null) {
+            throw new FieldException("Contract Initial Use Allocation cannot be null");
+        }
+        if (contractType.getContractedStorage() == null) {
+            throw new FieldException("Contracted Storage cannot be null");
         }
     }
 }
