@@ -47,7 +47,6 @@ class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), parsedOutlet.getCharacteristicsId());
         assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
         CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
     }
@@ -59,7 +58,6 @@ class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), parsedOutlet.getCharacteristicsId());
         assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
         CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
     }
@@ -72,8 +70,6 @@ class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), deserialized.getCharacteristicsId(),
-                "characteristic-ref");
         assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
         CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
     }
@@ -86,8 +82,6 @@ class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), deserialized.getCharacteristicsId(),
-                              "characteristic-ref");
         assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
         CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
     }
@@ -106,14 +100,9 @@ class OutletTest {
                 .withHorizontalDatum("NAD84")
                 .withVerticalDatum("NAVD88")
                 .build();
-        CwmsId charRef = new CwmsId.Builder()
-                .withName("Ogee Weir Depth")
-                .withOfficeId(SPK)
-                .build();
 
         return new Outlet.Builder()
                 .withProjectId(identifier)
-                .withCharacteristicsId(charRef)
                 .withLocation(loc)
                 .build();
     }

@@ -14,9 +14,5 @@
     "location-kind": "Outlet",
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
-  },
-  "characteristics-id": {
-    "office-id": "SPK",
-    "name": "Ogee Weir Depth"
   }
 }
