@@ -1,4 +1,5 @@
 /*
+ *
  * MIT License
  *
  * Copyright (c) 2024 Hydrologic Engineering Center
@@ -6,7 +7,7 @@
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
@@ -18,7 +19,8 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE
  * SOFTWARE.
  */
 
@@ -26,16 +28,21 @@ package cwms.cda.data.dto.basin;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.formatters.Formats;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import org.junit.jupiter.api.Test;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 
-final class BasinTest {
+public final class BasinTest {
     @Test
     void testBasinSerializationRoundTrip() {
         Basin basin = buildTestBasin(new CwmsId.Builder()
@@ -121,17 +128,14 @@ final class BasinTest {
         }
     }
 
-    private static void assertSame(Basin first, Basin second){
+    public static void assertSame(Basin first, Basin second){
         assertAll(
-                () -> assertEquals(first.getBasinId().getName(), second.getBasinId().getName(), "Basin IDs are not equal"),
-                () -> assertEquals(first.getBasinId().getOfficeId(), second.getBasinId().getOfficeId(), "Basin Office IDs are not equal"),
-                () -> assertEquals(first.getPrimaryStreamId().getName(), second.getPrimaryStreamId().getName(), "Primary Stream IDs are not equal"),
-                () -> assertEquals(first.getPrimaryStreamId().getOfficeId(), second.getPrimaryStreamId().getOfficeId(), "Primary Stream Offices are not equal"),
+                () -> CwmsIdTest.assertSame(first.getBasinId(), second.getBasinId()),
+                () -> CwmsIdTest.assertSame(first.getPrimaryStreamId(), second.getPrimaryStreamId()),
                 () -> assertEquals(first.getSortOrder(), second.getSortOrder(), "Sort Orders are not equal"),
                 () -> assertEquals(first.getTotalDrainageArea(), second.getTotalDrainageArea(), "Total Drainage Areas are not equal"),
                 () -> assertEquals(first.getContributingDrainageArea(), second.getContributingDrainageArea(), "Contributing Drainage Areas are not equal"),
-                () -> assertEquals(first.getParentBasinId().getName(), second.getParentBasinId().getName(), "Parent Basin IDs are not equal"),
-                () -> assertEquals(first.getParentBasinId().getOfficeId(), second.getParentBasinId().getOfficeId(), "Parent Basin Offices are not equal"),
+                () -> CwmsIdTest.assertSame(first.getParentBasinId(), second.getParentBasinId()),
                 () -> assertEquals(first.getAreaUnit(), second.getAreaUnit(), "Area Units are not equal")
         );
     }
