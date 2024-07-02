@@ -37,15 +37,15 @@ public class WaterSupply implements CwmsDTOBase {
     private final String contractName;
     private final Integer contractNumber;
     private final String waterUser;
-    private final WaterUserType userType;
-    private final WaterUserContractType contractType;
+    private final WaterUser user;
+    private final WaterUserContract contract;
 
     private WaterSupply(Builder builder) {
         contractName = builder.contractName;
         contractNumber = builder.contractNumber;
         waterUser = builder.waterUser;
-        userType = builder.userType;
-        contractType = builder.contractType;
+        user = builder.user;
+        contract = builder.contract;
     }
 
     public String getContractName() {
@@ -60,20 +60,20 @@ public class WaterSupply implements CwmsDTOBase {
         return waterUser;
     }
 
-    public WaterUserType getUserType() {
-        return userType;
+    public WaterUser getUser() {
+        return user;
     }
 
-    public WaterUserContractType getContractType() {
-        return contractType;
+    public WaterUserContract getContract() {
+        return contract;
     }
 
     public static class Builder {
         private String contractName;
         private Integer contractNumber;
         private String waterUser;
-        private WaterUserType userType;
-        private WaterUserContractType contractType;
+        private WaterUser user;
+        private WaterUserContract contract;
 
         public Builder withContractName(String contractName) {
             this.contractName = contractName;
@@ -90,13 +90,13 @@ public class WaterSupply implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withUserType(WaterUserType userType) {
-            this.userType = userType;
+        public Builder withUser(WaterUser user) {
+            this.user = user;
             return this;
         }
 
-        public Builder withContractType(WaterUserContractType contractType) {
-            this.contractType = contractType;
+        public Builder withContract(WaterUserContract contract) {
+            this.contract = contract;
             return this;
         }
 
@@ -116,32 +116,31 @@ public class WaterSupply implements CwmsDTOBase {
         if (waterUser == null || waterUser.isEmpty()) {
             throw new FieldException("Water User cannot be null or empty");
         }
-        if (userType == null) {
+        if (user == null) {
             throw new FieldException("User Type cannot be null");
         }
-        if(userType.getEntityName() == null)
-        {
+        if (user.getEntityName() == null) {
             throw new FieldException("User Type Entity Name cannot be null");
         }
-        if(userType.getWaterRight() == null) {
+        if (user.getWaterRight() == null) {
             throw new FieldException("User Type Water Right cannot be null");
         }
-        if (contractType == null) {
+        if (contract == null) {
             throw new FieldException("Contract Type cannot be null");
         }
-        if (contractType.getWaterUserContractRefType() == null) {
+        if (contract.getWaterUserContractRef() == null) {
             throw new FieldException("Water User Contract Ref Type cannot be null");
         }
-        if (contractType.getWaterSupplyContractType() == null) {
+        if (contract.getWaterSupplyContract() == null) {
             throw new FieldException("Water Supply Contract Type cannot be null");
         }
-        if (contractType.getContractEffectiveDate() == null) {
+        if (contract.getContractEffectiveDate() == null) {
             throw new FieldException("Contract Effective Date cannot be null");
         }
-        if (contractType.getInitialUseAllocation() == null) {
+        if (contract.getInitialUseAllocation() == null) {
             throw new FieldException("Contract Initial Use Allocation cannot be null");
         }
-        if (contractType.getContractedStorage() == null) {
+        if (contract.getContractedStorage() == null) {
             throw new FieldException("Contracted Storage cannot be null");
         }
     }

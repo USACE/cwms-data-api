@@ -26,7 +26,9 @@
 
 package cwms.cda.data.dto.watersupply;
 
-public class LocationType {
+import cwms.cda.data.dto.CwmsId;
+
+public class Location {
     private final String nearestCity;
     private final String nationId;
     private final String boundingOfficeName;
@@ -49,9 +51,9 @@ public class LocationType {
     private final String timeZoneName;
     private final String countyName;
     private final String stateInitial;
-    private final LocationRefType locationRefType;
+    private final CwmsId locationRef;
 
-    private LocationType() {
+    private Location() {
         this.nearestCity = null;
         this.nationId = null;
         this.boundingOfficeName = null;
@@ -74,12 +76,12 @@ public class LocationType {
         this.timeZoneName = null;
         this.countyName = null;
         this.stateInitial = null;
-        this.locationRefType = null;
+        this.locationRef = null;
     }
 
 
-    public LocationType(Builder builder) {
-        this.locationRefType = builder.locationRefType;
+    public Location(Builder builder) {
+        this.locationRef = builder.locationRef;
         this.stateInitial = builder.stateInitial;
         this.countyName = builder.countyName;
         this.timeZoneName = builder.timeZoneName;
@@ -192,8 +194,8 @@ public class LocationType {
         return this.stateInitial;
     }
 
-    public LocationRefType getLocationRefType() {
-        return this.locationRefType;
+    public CwmsId getLocationRef() {
+        return this.locationRef;
     }
 
     public static class Builder {
@@ -219,7 +221,7 @@ public class LocationType {
         private String timeZoneName;
         private String countyName;
         private String stateInitial;
-        private LocationRefType locationRefType;
+        private CwmsId locationRef;
 
         public Builder withNearestCity(String nearestCity) {
             this.nearestCity = nearestCity;
@@ -331,13 +333,13 @@ public class LocationType {
             return this;
         }
 
-        public Builder withLocationRefType(LocationRefType locationRefType) {
-            this.locationRefType = locationRefType;
+        public Builder withLocationRef(CwmsId locationRef) {
+            this.locationRef = locationRef;
             return this;
         }
 
-        public LocationType build() {
-            return new LocationType(this);
+        public Location build() {
+            return new Location(this);
         }
     }
 }
