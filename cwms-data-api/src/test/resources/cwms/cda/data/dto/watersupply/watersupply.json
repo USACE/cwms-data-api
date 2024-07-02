@@ -2,36 +2,34 @@
   "contract-name": "Test Contract",
   "contract-number": 1234,
   "water-user": "Test User",
-  "user-type": {
+  "user": {
     "entity-name": "Test Entity",
-    "parent-location-ref-type": {
-      "base-location-id": "Base Location",
-      "office-id": "SPK",
-      "sub-location-id": "Sub location"
+    "parent-location-ref": {
+      "name": "Base Location",
+      "office-id": "SPK"
     },
     "water-right": "Water Right test"
   },
-  "contract-type": {
-    "water-user-contract-ref-type": {
-      "water-user-type": {
+  "contract": {
+    "water-user-contract-ref": {
+      "water-user": {
         "entity-name": "Entity Test",
-        "parent-location-ref-type": {
-          "base-location-id": "Base Location",
-          "office-id": "SPK",
-          "sub-location-id": "Sub Location"
+        "parent-location-ref": {
+          "name": "Base Location",
+          "office-id": "SPK"
         },
         "water-right": "Water Right Test"
       },
       "contract-name": "Contract Name Test"
     },
-    "water-supply-contract-type": {
+    "water-supply-contract": {
       "active": true,
       "office-id": "SPK",
       "tooltip": "Example Tooltip",
       "display-value": "Display Value Test"
     },
-    "contract-effective-date": 1719854376876,
-    "contract-expiration-date": 1719854376876,
+    "contract-effective-date": 1719854376,
+    "contract-expiration-date": 1719854376,
     "contracted-storage": 1000,
     "initial-use-allocation": 20.5,
     "future-use-allocation": 79.5,
@@ -61,10 +59,9 @@
       "time-zone-name": "UTC",
       "county-name": "Sacramento",
       "state-initial": "CA",
-      "location-ref-type": {
-        "base-location-id": "Base Location",
-        "office-id": "SPK",
-        "sub-location-id": "Sub location"
+      "location-ref": {
+        "name": "Base Location",
+        "office-id": "SPK"
       }
     },
     "pump-out-below-location": {
@@ -90,10 +87,9 @@
       "time-zone-name": "UTC",
       "county-name": "Sacramento",
       "state-initial": "CA",
-      "location-ref-type": {
-        "base-location-id": "Base Location",
-        "office-id": "SPK",
-        "sub-location-id": "Sub location"
+      "location-ref": {
+        "name": "Base Location",
+        "office-id": "SPK"
       }
     },
     "pump-in-location": {
@@ -119,10 +115,9 @@
       "time-zone-name": "UTC",
       "county-name": "Sacramento",
       "state-initial": "CA",
-      "location-ref-type": {
-        "base-location-id": "Base Location",
-        "office-id": "SPK",
-        "sub-location-id": "Sub location"
+      "location-ref": {
+        "name": "Base Location",
+        "office-id": "SPK"
       }
     }
   }
