@@ -24,16 +24,24 @@
 
 package cwms.cda.data.dto;
 
+import cwms.cda.api.errors.ExclusiveFieldsException;
+import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
+
 
 /**
- * This class is responsible for validating a CwmsDTO object by checking if all the required fields are present.
+ * This class is used to validate the fields of a CwmsDTO object.
  */
 public final class CwmsDTOValidator {
 
     private final Set<String> missingFields = new HashSet<>();
+    private final Set<String> mutuallyExclusiveFields = new HashSet<>();
+    private final Set<Exception> validationExceptions = new HashSet<>();
 
     /**
      * Validates the presence of a required field in a given object or DTO.
@@ -54,6 +62,40 @@ public final class CwmsDTOValidator {
     void validate() throws RequiredFieldException {
         if (!missingFields.isEmpty()) {
             throw new RequiredFieldException(missingFields);
+        }
+        if (!mutuallyExclusiveFields.isEmpty()) {
+            throw new ExclusiveFieldsException(mutuallyExclusiveFields);
+        }
+        if (!validationExceptions.isEmpty()) {
+            FieldException ex = new FieldException("Invalid CWMS DTO provided");
+            validationExceptions.forEach(ex::addSuppressed);
+            throw ex;
+        }
+    }
+
+    /**
+     * Checks if the given fields are mutually exclusive and adds a message to the list of mutually exclusive fields if they are not.
+     *
+     * @param message         the message to be added to the list of mutually exclusive fields if the fields are not mutually exclusive
+     * @param exclusiveFields the fields to be checked for mutual exclusivity
+     */
+    public void mutuallyExclusive(String message, Object... exclusiveFields) {
+        long count = Arrays.stream(exclusiveFields).filter(Objects::nonNull).count();
+        if (count > 1) {
+            mutuallyExclusiveFields.add(message);
+        }
+    }
+
+    /**
+     * Validates a given Callable by executing it and capturing any exceptions thrown.
+     *
+     * @param callable the Callable to be validated
+     */
+    public void validate(Callable callable) {
+        try {
+            callable.call();
+        } catch (Exception e) {
+            validationExceptions.add(e);
         }
     }
 }

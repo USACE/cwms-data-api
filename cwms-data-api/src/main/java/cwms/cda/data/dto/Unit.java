@@ -10,7 +10,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -98,11 +97,5 @@ public final class Unit extends CwmsDTO
 	public int hashCode()
 	{
 		return Objects.hash(getName(), getLongName(), getUnitSystem(), getDescription(), getAlternateNames());
-	}
-
-	@Override
-	public void validate() throws FieldException
-	{
-		//Nothing to validate
 	}
 }

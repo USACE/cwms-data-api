@@ -26,7 +26,7 @@ public abstract class CwmsDTO implements CwmsDTOBase {
     }
 
     @Override
-    public void validate() throws FieldException {
+    public final void validate() throws FieldException {
         CwmsDTOValidator validator = new CwmsDTOValidator();
         validateInternal(validator);
         validator.validate();
