@@ -28,7 +28,7 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.LookupType;
 
 import fixtures.CwmsDataApiSetupCallback;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import java.util.Optional;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;

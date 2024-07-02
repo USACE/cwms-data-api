@@ -27,7 +27,7 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;

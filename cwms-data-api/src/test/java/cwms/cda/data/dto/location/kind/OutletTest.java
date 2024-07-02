@@ -25,7 +25,7 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import java.io.InputStream;
