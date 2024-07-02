@@ -34,7 +34,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamNode;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;

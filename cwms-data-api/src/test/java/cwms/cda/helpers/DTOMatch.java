@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package helpers;
+package cwms.cda.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;

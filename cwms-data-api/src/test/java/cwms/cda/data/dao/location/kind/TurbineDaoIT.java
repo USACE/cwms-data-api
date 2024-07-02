@@ -33,7 +33,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.Turbine;
 import fixtures.CwmsDataApiSetupCallback;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;

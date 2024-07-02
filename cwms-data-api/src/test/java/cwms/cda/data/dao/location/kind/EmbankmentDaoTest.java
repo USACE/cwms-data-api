@@ -29,7 +29,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.EMBANKMENT_OBJ_T;
 

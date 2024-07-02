@@ -27,7 +27,7 @@ package cwms.cda.data.dto;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 

@@ -34,7 +34,7 @@ import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;

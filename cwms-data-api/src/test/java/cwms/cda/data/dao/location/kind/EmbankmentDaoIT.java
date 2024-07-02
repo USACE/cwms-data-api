@@ -40,7 +40,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
 import fixtures.CwmsDataApiSetupCallback;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;

@@ -28,8 +28,8 @@ package cwms.cda.data.dto.basin;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -130,12 +130,12 @@ public final class BasinTest {
 
     public static void assertSame(Basin first, Basin second){
         assertAll(
-                () -> CwmsIdTest.assertSame(first.getBasinId(), second.getBasinId()),
-                () -> CwmsIdTest.assertSame(first.getPrimaryStreamId(), second.getPrimaryStreamId()),
+                () -> DTOMatch.assertMatch(first.getBasinId(), second.getBasinId()),
+                () -> DTOMatch.assertMatch(first.getPrimaryStreamId(), second.getPrimaryStreamId()),
                 () -> assertEquals(first.getSortOrder(), second.getSortOrder(), "Sort Orders are not equal"),
                 () -> assertEquals(first.getTotalDrainageArea(), second.getTotalDrainageArea(), "Total Drainage Areas are not equal"),
                 () -> assertEquals(first.getContributingDrainageArea(), second.getContributingDrainageArea(), "Contributing Drainage Areas are not equal"),
-                () -> CwmsIdTest.assertSame(first.getParentBasinId(), second.getParentBasinId()),
+                () -> DTOMatch.assertMatch(first.getParentBasinId(), second.getParentBasinId()),
                 () -> assertEquals(first.getAreaUnit(), second.getAreaUnit(), "Area Units are not equal")
         );
     }

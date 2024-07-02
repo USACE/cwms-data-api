@@ -28,7 +28,7 @@ import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import helpers.DTOMatch;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
