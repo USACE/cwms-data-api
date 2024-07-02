@@ -25,7 +25,10 @@
 package cwms.cda.data.dto.watersupply;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.formatters.Formats;
+import cwms.cda.data.dto.LookupType;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class WaterSupplyTest {
 
@@ -66,7 +70,7 @@ class WaterSupplyTest {
     {
         assertAll(() -> {
                 WaterSupply waterSupply = buildTestWaterSupply();
-                assertThrows(FieldException.class, waterSupply::validate);
+                assertDoesNotThrow(waterSupply::validate);
             }, () -> {
                 WaterSupply waterSupply = new WaterSupply.Builder()
                     .withContractName("Test Contract")
@@ -83,17 +87,28 @@ class WaterSupplyTest {
                 .withContractName("Test Contract")
                 .withContractNumber(1234)
                 .withWaterUser("Test User")
-                .withUserType(new WaterUserType("Test Entity",
-                        new LocationRefType("Base Location", "Sub location", OFFICE_ID),
+                .withUser(new WaterUser("Test Entity",
+                        new CwmsId.Builder()
+                                .withName("Base Location")
+                                .withOfficeId(OFFICE_ID)
+                                .build(),
                         "Water Right test"))
-                .withContractType(new WaterUserContractType.Builder()
-                                .withWaterUserContractRefType(new WaterUserContractRefType(new WaterUserType("Entity Test",
-                                                new LocationRefType("Base Location", "Sub Location", OFFICE_ID),
+                .withContract(new WaterUserContract.Builder()
+                                .withWaterUserContractRef(new WaterUserContractRef(new WaterUser("Entity Test",
+                                                new CwmsId.Builder()
+                                                        .withName("Base Location")
+                                                        .withOfficeId(OFFICE_ID)
+                                                        .build(),
                                         "Water Right Test"),
                                 "Contract Name Test"))
-                                .withWaterSupplyContractType(new LookupType(OFFICE_ID, "Display Value Test", "Example Tooltip", true))
-                                .withContractEffectiveDate(new Date())
-                                .withContractExpirationDate(new Date())
+                                .withWaterSupplyContract(new LookupType.Builder()
+                                        .withActive(true)
+                                        .withDisplayValue("Display Value Test")
+                                        .withOfficeId(OFFICE_ID)
+                                        .withTooltip("Example Tooltip")
+                                        .build())
+                                .withContractEffectiveDate(new Date(1719854376))
+                                .withContractExpirationDate(new Date(1719854376))
                                 .withContractedStorage(1000.0)
                                 .withInitialUseAllocation(20.5)
                                 .withFutureUseAllocation(79.5)
@@ -107,10 +122,13 @@ class WaterSupplyTest {
                 .build();
     }
 
-    private LocationType buildLocationType(String pumpLocation)
+    private Location buildLocationType(String pumpLocation)
     {
-        return new LocationType.Builder()
-                .withLocationRefType( new LocationRefType("Base Location", "Sub location", OFFICE_ID))
+        return new Location.Builder()
+                .withLocationRef( new CwmsId.Builder()
+                        .withName("Base Location")
+                        .withOfficeId(OFFICE_ID)
+                        .build())
                 .withStateInitial("CA")
                 .withActiveFlag(true)
                 .withBoundingOfficeId(OFFICE_ID)
@@ -121,16 +139,16 @@ class WaterSupplyTest {
                 .withHorizontalDatum("WGS84")
                 .withLatitude(0.0)
                 .withLongitude(0.0)
-                .withLocationKindId("PUMP")
-                .withLongName(pumpLocation)
+                .withLocationKindId("Test Locale")
+                .withTypeOfLocation("PUMP")
+                .withLongName("Full Location Name")
                 .withMapLabel("Map location")
                 .withNationId("US")
                 .withNearestCity("Davis")
                 .withPublishedLatitude(0.0)
                 .withPublishedLongitude(0.0)
                 .withTimeZoneName("UTC")
-                .withTypeOfLocation("WGS84")
-                .withBoundingOfficeName("Sacramento")
+                .withBoundingOfficeName("Sacramento Office")
                 .withVerticalDatum("WGS84")
                 .withPublicName(pumpLocation)
                 .build();
@@ -143,21 +161,12 @@ class WaterSupplyTest {
                 () -> assertEquals(first.getContractName(), second.getContractName()),
                 () -> assertEquals(first.getContractNumber(), second.getContractNumber()),
                 () -> assertEquals(first.getWaterUser(), second.getWaterUser()),
-                () -> assertWaterUserType(first.getUserType(), second.getUserType()),
-                () -> assertWaterUserContractType(first.getContractType(), second.getContractType())
+                () -> assertWaterUserType(first.getUser(), second.getUser()),
+                () -> assertWaterUserContractType(first.getContract(), second.getContract())
         );
     }
 
-    private static void assertLocationRefType(LocationRefType first, LocationRefType second)
-    {
-        assertAll(
-                () -> assertEquals(first.getBaseLocationId(), second.getBaseLocationId()),
-                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
-                () -> assertEquals(first.getSubLocationId(), second.getSubLocationId())
-        );
-    }
-
-    private static void assertLocationType(LocationType first, LocationType second)
+    private static void assertLocationType(Location first, Location second)
     {
         assertAll(
                 () -> assertEquals(first.getNearestCity(), second.getNearestCity()),
@@ -182,7 +191,7 @@ class WaterSupplyTest {
                 () -> assertEquals(first.getTimeZoneName(), second.getTimeZoneName()),
                 () -> assertEquals(first.getCountyName(), second.getCountyName()),
                 () -> assertEquals(first.getStateInitial(), second.getStateInitial()),
-                () -> assertLocationRefType(first.getLocationRefType(), second.getLocationRefType())
+                () -> CwmsIdTest.assertSame(first.getLocationRef(), second.getLocationRef())
         );
     }
 
@@ -196,20 +205,20 @@ class WaterSupplyTest {
         );
     }
 
-    private static void assertWaterUserType(WaterUserType first, WaterUserType second)
+    private static void assertWaterUserType(WaterUser first, WaterUser second)
     {
         assertAll(
                 () -> assertEquals(first.getEntityName(), second.getEntityName()),
-                () -> assertLocationRefType(first.getParentLocationRefType(), second.getParentLocationRefType()),
+                () -> CwmsIdTest.assertSame(first.getParentLocationRef(), second.getParentLocationRef()),
                 () -> assertEquals(first.getWaterRight(), second.getWaterRight())
         );
     }
 
-    private static void assertWaterUserContractType(WaterUserContractType first, WaterUserContractType second)
+    private static void assertWaterUserContractType(WaterUserContract first, WaterUserContract second)
     {
         assertAll(
-                () -> assertWaterUserContractRefType(first.getWaterUserContractRefType(), second.getWaterUserContractRefType()),
-                () -> assertLookupType(first.getWaterSupplyContractType(), second.getWaterSupplyContractType()),
+                () -> assertWaterUserContractRefType(first.getWaterUserContractRef(), second.getWaterUserContractRef()),
+                () -> assertLookupType(first.getWaterSupplyContract(), second.getWaterSupplyContract()),
                 () -> assertEquals(first.getContractEffectiveDate(), second.getContractEffectiveDate()),
                 () -> assertEquals(first.getContractExpirationDate(), second.getContractExpirationDate()),
                 () -> assertEquals(first.getContractedStorage(), second.getContractedStorage()),
@@ -224,11 +233,11 @@ class WaterSupplyTest {
         );
     }
 
-    private static void assertWaterUserContractRefType(WaterUserContractRefType first, WaterUserContractRefType second)
+    private static void assertWaterUserContractRefType(WaterUserContractRef first, WaterUserContractRef second)
     {
         assertAll(
                 () -> assertEquals(first.getContractName(), second.getContractName()),
-                () -> assertWaterUserType(first.getWaterUserType(), second.getWaterUserType())
+                () -> assertWaterUserType(first.getWaterUser(), second.getWaterUser())
         );
     }
 }
