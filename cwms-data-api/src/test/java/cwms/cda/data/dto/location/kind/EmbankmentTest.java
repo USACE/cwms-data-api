@@ -24,26 +24,26 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.CwmsIdTest;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.LookupTypeTest;
 import cwms.cda.formatters.Formats;
+import helpers.DTOMatch;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-public final class EmbankmentTest {
+final class EmbankmentTest {
 
     @ParameterizedTest
     @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
@@ -52,7 +52,7 @@ public final class EmbankmentTest {
         String serialized = Formats.format(Formats.parseHeader(format, Embankment.class), embankment);
         Embankment deserialized = Formats.parseContent(Formats.parseHeader(format, Embankment.class),
                 serialized, Embankment.class);
-        assertSame(embankment, deserialized);
+        DTOMatch.assertMatch(embankment, deserialized);
     }
 
     @Test
@@ -63,7 +63,7 @@ public final class EmbankmentTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON, Embankment.class),
                 serialized, Embankment.class);
-        assertSame(embankment, deserialized);
+        DTOMatch.assertMatch(embankment, deserialized);
     }
 
     @Test
@@ -132,22 +132,5 @@ public final class EmbankmentTest {
                 .withPublishedLongitude(50.0)
                 .withDescription("for testing")
                 .build();
-    }
-
-    public static void assertSame(Embankment first, Embankment second) {
-
-        assertAll(
-                () -> assertEquals(first.getUpstreamSideSlope(), second.getUpstreamSideSlope(), "Upstream side slope doesn't match"),
-                () -> assertEquals(first.getDownstreamSideSlope(), second.getDownstreamSideSlope(), "Downstream side slope doesn't match"),
-                () -> assertEquals(first.getStructureLength(), second.getStructureLength(), "Structure length doesn't match"),
-                () -> assertEquals(first.getMaxHeight(), second.getMaxHeight(), "Maximum height doesn't match"),
-                () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
-                () -> assertEquals(first.getLengthUnits(), second.getLengthUnits(), "Units ID doesn't match"),
-                () -> LookupTypeTest.assertSame(first.getDownstreamProtectionType(), second.getDownstreamProtectionType()),
-                () -> LookupTypeTest.assertSame(first.getUpstreamProtectionType(), second.getUpstreamProtectionType()),
-                () -> LookupTypeTest.assertSame(first.getStructureType(), second.getStructureType()),
-                () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
-                () -> CwmsIdTest.assertSame(first.getProjectId(), second.getProjectId())
-        );
     }
 }

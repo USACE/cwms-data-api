@@ -29,12 +29,12 @@ import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.StreamTest;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamNode;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import helpers.DTOMatch;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -117,9 +117,9 @@ final class StreamDaoTestIT extends DataApiTestIT {
 
             //retrieve streams individually
             Stream retrievedStream = streamDao.retrieveStream(stream.getId().getOfficeId(), stream.getId().getName(), stream.getLengthUnits());
-            StreamTest.assertSame(stream, retrievedStream);
+            DTOMatch.assertMatch(stream, retrievedStream);
             Stream retrievedStream2 = streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName(), stream2.getLengthUnits());
-            StreamTest.assertSame(stream2, retrievedStream2);
+            DTOMatch.assertMatch(stream2, retrievedStream2);
             //also test retrieve in bulk
             List<Stream> retrievedStreams = streamDao.retrieveStreams(OFFICE_ID, null, "km");
             assertFalse(retrievedStreams.isEmpty());
@@ -128,8 +128,8 @@ final class StreamDaoTestIT extends DataApiTestIT {
                     .collect(Collectors.toList());
 
             assertEquals(2, retrievedStreams.size());
-            StreamTest.assertSame(stream, retrievedStreams.get(0));
-            StreamTest.assertSame(stream2, retrievedStreams.get(1));
+            DTOMatch.assertMatch(stream, retrievedStreams.get(0));
+            DTOMatch.assertMatch(stream2, retrievedStreams.get(1));
             //delete streams
             streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(stream2.getId().getOfficeId(), stream2.getId().getName(), DeleteRule.DELETE_ALL);

@@ -28,6 +28,7 @@ import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public final class StreamNodeTest {
+final class StreamNodeTest {
 
     @Test
     void createStreamNode_allFieldsProvided_success() {
@@ -89,7 +90,7 @@ public final class StreamNodeTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, streamNode);
         StreamNode deserialized = Formats.parseContent(contentType, json, StreamNode.class);
-        assertSame(streamNode, deserialized);
+        DTOMatch.assertMatch(streamNode, deserialized);
     }
 
     @Test
@@ -105,15 +106,6 @@ public final class StreamNodeTest {
                 () -> assertEquals("Stream123", deserialized.getStreamId().getName(), "The stream ID name does not match"),
                 () -> assertEquals(Bank.LEFT, deserialized.getBank(), "The bank does not match"),
                 () -> assertEquals(123.45, deserialized.getStation(), "The station does not match")
-        );
-    }
-
-    public static void assertSame(StreamNode node1, StreamNode node2) {
-        assertAll(
-            () -> CwmsIdTest.assertSame(node1.getStreamId(), node2.getStreamId()),
-            () -> assertEquals(node1.getBank(), node2.getBank()),
-            () -> assertEquals(node1.getStation(), node2.getStation()),
-            () -> assertEquals(node1.getStationUnits(), node2.getStationUnits())
         );
     }
 
