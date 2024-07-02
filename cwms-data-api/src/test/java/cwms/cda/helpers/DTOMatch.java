@@ -26,16 +26,24 @@ package cwms.cda.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
+import cwms.cda.data.dto.location.kind.PhysicalStructureChange;
+import cwms.cda.data.dto.location.kind.Setting;
 import cwms.cda.data.dto.location.kind.Turbine;
+import cwms.cda.data.dto.location.kind.TurbineSetting;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.function.Executable;
 
 public final class DTOMatch {
 
@@ -45,8 +53,10 @@ public final class DTOMatch {
 
     public static void assertMatch(CwmsId first, CwmsId second, String variableName) {
         assertAll(
-            () -> Assertions.assertEquals(first.getOfficeId(), second.getOfficeId(), variableName + " is not the same. Office ID differs"),
-            () -> Assertions.assertEquals(first.getName(), second.getName(), variableName + " is not the same. Name differs")
+            () -> Assertions.assertEquals(first.getOfficeId(), second.getOfficeId(),
+                variableName + " is not the same. Office ID differs"),
+            () -> Assertions.assertEquals(first.getName(), second.getName(),
+                variableName + " is not the same. Name differs")
         );
     }
 
@@ -59,13 +69,20 @@ public final class DTOMatch {
         assertAll(
             () -> assertMatch(streamLocation.getId(), deserialized.getId()),
             () -> assertMatch(streamLocation.getStreamNode(), deserialized.getStreamNode()),
-            () -> assertEquals(streamLocation.getPublishedStation(), deserialized.getPublishedStation(), "The published station does not match"),
-            () -> assertEquals(streamLocation.getNavigationStation(), deserialized.getNavigationStation(), "The navigation station does not match"),
-            () -> assertEquals(streamLocation.getLowestMeasurableStage(), deserialized.getLowestMeasurableStage(), "The lowest measurable stage does not match"),
-            () -> assertEquals(streamLocation.getTotalDrainageArea(), deserialized.getTotalDrainageArea(), "The total drainage area does not match"),
-            () -> assertEquals(streamLocation.getUngagedDrainageArea(), deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
-            () -> assertEquals(streamLocation.getAreaUnits(), deserialized.getAreaUnits(), "The area unit does not match"),
-            () -> assertEquals(streamLocation.getStageUnits(), deserialized.getStageUnits(), "The stage unit does not match")
+            () -> assertEquals(streamLocation.getPublishedStation(), deserialized.getPublishedStation(),
+                "The published station does not match"),
+            () -> assertEquals(streamLocation.getNavigationStation(), deserialized.getNavigationStation(),
+                "The navigation station does not match"),
+            () -> assertEquals(streamLocation.getLowestMeasurableStage(), deserialized.getLowestMeasurableStage(),
+                "The lowest measurable stage does not match"),
+            () -> assertEquals(streamLocation.getTotalDrainageArea(), deserialized.getTotalDrainageArea(),
+                "The total drainage area does not match"),
+            () -> assertEquals(streamLocation.getUngagedDrainageArea(), deserialized.getUngagedDrainageArea(),
+                "The ungaged drainage area does not match"),
+            () -> assertEquals(streamLocation.getAreaUnits(), deserialized.getAreaUnits(),
+                "The area unit does not match"),
+            () -> assertEquals(streamLocation.getStageUnits(), deserialized.getStageUnits(),
+                "The stage unit does not match")
         );
     }
 
@@ -78,8 +95,7 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(StreamReach reach1, StreamReach reach2)
-    {
+    public static void assertMatch(StreamReach reach1, StreamReach reach2) {
         assertAll(
             () -> assertEquals(reach1.getComment(), reach2.getComment()),
             () -> assertMatch(reach1.getDownstreamNode(), reach2.getDownstreamNode()),
@@ -107,9 +123,12 @@ public final class DTOMatch {
     public static void assertMatch(Embankment first, Embankment second) {
 
         assertAll(
-            () -> assertEquals(first.getUpstreamSideSlope(), second.getUpstreamSideSlope(), "Upstream side slope doesn't match"),
-            () -> assertEquals(first.getDownstreamSideSlope(), second.getDownstreamSideSlope(), "Downstream side slope doesn't match"),
-            () -> assertEquals(first.getStructureLength(), second.getStructureLength(), "Structure length doesn't match"),
+            () -> assertEquals(first.getUpstreamSideSlope(), second.getUpstreamSideSlope(),
+                "Upstream side slope doesn't match"),
+            () -> assertEquals(first.getDownstreamSideSlope(), second.getDownstreamSideSlope(),
+                "Downstream side slope doesn't match"),
+            () -> assertEquals(first.getStructureLength(), second.getStructureLength(),
+                "Structure length doesn't match"),
             () -> assertEquals(first.getMaxHeight(), second.getMaxHeight(), "Maximum height doesn't match"),
             () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width doesn't match"),
             () -> assertEquals(first.getLengthUnits(), second.getLengthUnits(), "Units ID doesn't match"),
@@ -133,5 +152,60 @@ public final class DTOMatch {
             () -> assertMatch(first.getProjectId(), second.getProjectId()),
             () -> assertEquals(first.getLocation(), second.getLocation(), "Locations are not the same")
         );
+    }
+
+    public static void assertMatch(PhysicalStructureChange first, PhysicalStructureChange second) {
+        assertAll(() -> assertMatch(first.getProjectId(), second.getProjectId()),
+            () -> assertMatch(first.getReasonType(), second.getReasonType()),
+            () -> assertMatch(first.getDischargeComputationType(), second.getDischargeComputationType()),
+            () -> assertSettingsMatch(first.getSettings(), second.getSettings()),
+            () -> assertEquals(first.getChangeDate(), second.getChangeDate()),
+            () -> assertEquals(first.getDischargeUnits(), second.getDischargeUnits()),
+            () -> assertEquals(first.getNewTotalDischargeOverride(), second.getNewTotalDischargeOverride()),
+            () -> assertEquals(first.getOldTotalDischargeOverride(), second.getOldTotalDischargeOverride()),
+            () -> assertEquals(first.getElevationUnits(), second.getElevationUnits()),
+            () -> assertEquals(first.getTailwaterElevation(), second.getTailwaterElevation()),
+            () -> assertEquals(first.getPoolElevation(), second.getPoolElevation()),
+            () -> assertEquals(first.getNotes(), second.getNotes()),
+            () -> assertEquals(first.isProtected(), second.isProtected()));
+    }
+
+    public static void assertSettingsMatch(Set<Setting> first, Set<Setting> second) {
+        List<Executable> assertions = new ArrayList<>();
+        assertions.add(() -> assertEquals(first.size(), second.size()));
+        for(Setting setting : first) {
+            assertions.add(() -> {
+                Setting match = second.stream()
+                    .filter(
+                        s -> s.getLocationId().getOfficeId().equalsIgnoreCase(setting.getLocationId().getOfficeId()))
+                    .filter(s -> s.getLocationId().getName().equalsIgnoreCase(setting.getLocationId().getName()))
+                    .findAny()
+                    .orElseThrow(
+                        () -> fail("Setting " + setting.getLocationId().getName() + " not found"));
+                assertMatch(setting, match);
+            });
+        }
+        assertAll(assertions.toArray(new Executable[0]));
+    }
+
+    public static void assertMatch(Setting first, Setting second) {
+        assertAll(() -> assertMatch(first.getLocationId(), second.getLocationId()),
+            () -> assertEquals(first.getClass(), second.getClass()),
+            () -> {
+                if(first instanceof TurbineSetting && second instanceof TurbineSetting) {
+                    assertMatch((TurbineSetting) first, (TurbineSetting) second);
+                } else {
+                    fail("Assertion check for setting type: " + first.getClass() + " not yet supported");
+                }
+            });
+    }
+
+    public static void assertMatch(TurbineSetting first, TurbineSetting second) {
+        assertAll(() -> assertEquals(first.getDischargeUnits(), second.getDischargeUnits()),
+            () -> assertEquals(first.getNewDischarge(), second.getNewDischarge()),
+            () -> assertEquals(first.getOldDischarge(), second.getOldDischarge()),
+            () -> assertEquals(first.getGenerationUnits(), second.getGenerationUnits()),
+            () -> assertEquals(first.getRealPower(), second.getRealPower()),
+            () -> assertEquals(first.getScheduledLoad(), second.getScheduledLoad()));
     }
 }
