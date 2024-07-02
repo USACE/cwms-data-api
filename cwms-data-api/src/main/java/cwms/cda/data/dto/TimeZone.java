@@ -10,12 +10,10 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
-
 import java.time.ZoneId;
 
 @JsonRootName("time-zone")
@@ -43,15 +41,9 @@ public final class TimeZone extends CwmsDTO
 	}
 
 	@Override
-	public void validate() throws FieldException
-	{
-		try
-		{
-			ZoneId zone = ZoneId.of(timeZone);
-		}
-		catch (RuntimeException e)
-		{
-			throw new FieldException(e.getMessage());
-		}
+	protected void validateInternal(CwmsDTOValidator validator) {
+		super.validateInternal(validator);
+		validator.required(getTimeZone(), "time-zone");
+		validator.validate(() -> ZoneId.of(getTimeZone()));
 	}
 }

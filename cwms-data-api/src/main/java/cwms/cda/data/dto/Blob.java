@@ -59,16 +59,10 @@ public class Blob extends CwmsDTO
 	}
 
 	@Override
-	public void validate() throws FieldException {
-		if (getOfficeId() == null) {
-			throw new FieldException("An officeId is required when creating a blob");
-		}
-		if (getId() == null) {
-			throw new FieldException("An Id is required when creating a blob");
-		}
-		if (getValue() == null) {
-			throw new FieldException("A non-empty value field is required when "
-					+ "creating a blob");
-		}
+	protected void validateInternal(CwmsDTOValidator validator) {
+		super.validateInternal(validator);
+		validator.required(getOfficeId(), "office-id");
+		validator.required(getId(), "id");
+		validator.required(getValue(), "value");
 	}
 }

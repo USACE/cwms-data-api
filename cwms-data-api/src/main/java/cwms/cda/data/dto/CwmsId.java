@@ -42,32 +42,20 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"officeId", "name"})
-public final class CwmsId implements CwmsDTOBase {
+public final class CwmsId extends CwmsDTO {
 
-    private final String officeId;
     private final String name;
 
     public CwmsId(Builder builder) {
-        this.officeId = builder.officeId;
+        super(builder.officeId);
         this.name = builder.name;
     }
 
     @Override
-    public void validate() throws FieldException {
-        List<String> missingFields = new ArrayList<>();
-        if (this.officeId == null || this.officeId.isEmpty()) {
-            missingFields.add("officeId");
-        }
-        if (this.name == null || this.name.isEmpty()) {
-            missingFields.add("name");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
-    }
-
-    public String getOfficeId() {
-        return officeId;
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getOfficeId(), "office-id");
+        validator.required(getName(), "name");
     }
 
     public String getName() {

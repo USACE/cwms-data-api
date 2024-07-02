@@ -10,7 +10,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -41,11 +40,5 @@ public final class TimeZones extends CwmsDTO
 	public List<TimeZone> getTimeZones()
 	{
 		return timeZones;
-	}
-
-	@Override
-	public void validate() throws FieldException
-	{
-		//No validation needed
 	}
 }

@@ -26,7 +26,6 @@ package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -95,11 +94,5 @@ public class TimeSeriesCategory extends CwmsDTO
 		result = 31 * result + (getId() != null ? getId().hashCode() : 0);
 		result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
 		return result;
-	}
-
-	@Override
-	public void validate() throws FieldException {
-		// TODO Auto-generated method stub
-
 	}
 }
