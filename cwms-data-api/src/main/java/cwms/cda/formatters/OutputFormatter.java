@@ -13,6 +13,10 @@ public interface OutputFormatter {
         throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
                 + getContentType() + " not yet supported.");
     }
+    default <T extends CwmsDTOBase> List<T> parseContentList(String content, Class<T> type) {
+        throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
+            + getContentType() + " not yet supported.");
+    }
     default <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
         throw new UnsupportedOperationException("Unable to process your request. Deserialization of "
                 + getContentType() + " not yet supported.");

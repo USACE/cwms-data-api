@@ -2,8 +2,10 @@ package cwms.cda.formatters.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
@@ -32,6 +34,8 @@ public class JsonV1 implements OutputFormatter {
         this.om = new ObjectMapper();
         this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.om.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        this.om.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
         this.om.registerModule(new JavaTimeModule());
     }
 
@@ -41,6 +45,8 @@ public class JsonV1 implements OutputFormatter {
 
         retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        retVal.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        retVal.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
         retVal.registerModule(new JavaTimeModule());
         return retVal;
     }
@@ -83,6 +89,15 @@ public class JsonV1 implements OutputFormatter {
     public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
         try {
             return om.readValue(content, type);
+        } catch (IOException e) {
+            throw new FormattingException("Could not deserialize:" + content, e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> List<T> parseContentList(String content, Class<T> type) {
+        try {
+            return om.readValue(content, om.getTypeFactory().constructCollectionType(List.class, type));
         } catch (IOException e) {
             throw new FormattingException("Could not deserialize:" + content, e);
         }

@@ -107,4 +107,13 @@ public class JsonV2 implements OutputFormatter {
             throw new FormattingException("Could not deserialize:" + content, e);
         }
     }
+
+    @Override
+    public <T extends CwmsDTOBase> List<T> parseContentList(String content, Class<T> type) {
+        try {
+            return om.readValue(content, om.getTypeFactory().constructCollectionType(List.class, type));
+        } catch (IOException e) {
+            throw new FormattingException("Could not deserialize:" + content, e);
+        }
+    }
 }
