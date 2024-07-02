@@ -24,17 +24,29 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
-import cwms.cda.data.dto.location.kind.EmbankmentTest;
 import fixtures.CwmsDataApiSetupCallback;
+import helpers.DTOMatch;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -46,16 +58,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.List;
-
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 @TestInstance(Lifecycle.PER_CLASS)
@@ -123,7 +125,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
             String embankmentOfficeId = embankment.getLocation().getOfficeId();
             Embankment retrievedEmbankment = embankmentDao.retrieveEmbankment(embankmentId,
                     embankmentOfficeId);
-            EmbankmentTest.assertSame(embankment, retrievedEmbankment);
+            DTOMatch.assertMatch(embankment, retrievedEmbankment);
             embankmentDao.deleteEmbankment(embankmentId, embankmentOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> embankmentDao.retrieveEmbankment(embankmentId,
                     embankmentOfficeId));

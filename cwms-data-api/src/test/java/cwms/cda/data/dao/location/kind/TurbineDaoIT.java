@@ -33,6 +33,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.Turbine;
 import fixtures.CwmsDataApiSetupCallback;
+import helpers.DTOMatch;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -88,6 +89,9 @@ final class TurbineDaoIT extends DataApiTestIT {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             try {
+                new TurbineDao(context).deleteTurbine(TURBINE_LOC1.getName(), databaseLink.getOfficeId(), DeleteRule.DELETE_ALL);
+                new TurbineDao(context).deleteTurbine(TURBINE_LOC2.getName(), databaseLink.getOfficeId(), DeleteRule.DELETE_ALL);
+                new TurbineDao(context).deleteTurbine(TURBINE_LOC3.getName(), databaseLink.getOfficeId(), DeleteRule.DELETE_ALL);
                 locationsDao.deleteLocation(TURBINE_LOC1.getName(), databaseLink.getOfficeId(), true);
                 locationsDao.deleteLocation(TURBINE_LOC2.getName(), databaseLink.getOfficeId(), true);
                 locationsDao.deleteLocation(TURBINE_LOC3.getName(), databaseLink.getOfficeId(), true);
@@ -115,9 +119,7 @@ final class TurbineDaoIT extends DataApiTestIT {
             String turbineId = turbine.getLocation().getName();
             String turbineOfficeId = turbine.getLocation().getOfficeId();
             Turbine retrievedTurbine = turbineDao.retrieveTurbine(turbineId, turbineOfficeId);
-            assertEquals(turbine.getProjectId().getName(), retrievedTurbine.getProjectId().getName());
-            assertEquals(turbine.getProjectId().getOfficeId(), retrievedTurbine.getProjectId().getOfficeId());
-            assertEquals(turbine.getLocation(), retrievedTurbine.getLocation());
+            DTOMatch.assertMatch(turbine, retrievedTurbine);
             turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
                     turbineOfficeId));
@@ -136,13 +138,16 @@ final class TurbineDaoIT extends DataApiTestIT {
             Turbine turbine2 = buildTestTurbine(TURBINE_LOC2, PROJECT_LOC.getName());
             turbineDao.storeTurbine(turbine2, false);
             Turbine turbine3 = buildTestTurbine(TURBINE_LOC3, PROJECT_LOC2.getName());
+                turbineDao.storeTurbine(turbine3, false);
             turbineDao.storeTurbine(turbine2, false);
             String turbineId = turbine2.getLocation().getName();
             String turbineOfficeId = turbine2.getLocation().getOfficeId();
             List<Turbine> retrievedTurbine = turbineDao.retrieveTurbines(turbine1.getProjectId().getName(),
                     turbine1.getProjectId().getOfficeId());
             assertEquals(2, retrievedTurbine.size());
-            /* The contains check no longer works with the removal of equals. */
+            assertTrue(retrievedTurbine.stream().anyMatch(t -> t.getLocation().getName().equals(turbine1.getLocation().getName())));
+            assertTrue(retrievedTurbine.stream().anyMatch(t -> t.getLocation().getName().equals(turbine2.getLocation().getName())));
+            assertFalse(retrievedTurbine.stream().anyMatch(t -> t.getLocation().getName().equals(turbine3.getLocation().getName())));
             turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
             assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
                     turbineOfficeId));

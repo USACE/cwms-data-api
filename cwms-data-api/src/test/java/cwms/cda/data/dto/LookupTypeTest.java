@@ -24,18 +24,22 @@
 
 package cwms.cda.data.dto;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import helpers.DTOMatch;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-public final class LookupTypeTest {
+final class LookupTypeTest {
 
     @Test
     void createLookupType_allFieldsProvided_success() {
@@ -86,7 +90,7 @@ public final class LookupTypeTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, lookupType);
         LookupType deserialized = Formats.parseContent(contentType, json, LookupType.class);
-        assertSame(lookupType, deserialized);
+        DTOMatch.assertMatch(lookupType, deserialized);
     }
 
     @Test
@@ -102,13 +106,6 @@ public final class LookupTypeTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         LookupType deserialized = Formats.parseContent(contentType, json, LookupType.class);
-        assertSame(lookupType, deserialized);
-    }
-
-    public static void assertSame(LookupType lookupType, LookupType deserialized) {
-        assertEquals(lookupType.getOfficeId(), deserialized.getOfficeId());
-        assertEquals(lookupType.getDisplayValue(), deserialized.getDisplayValue());
-        assertEquals(lookupType.getTooltip(), deserialized.getTooltip());
-        assertEquals(lookupType.getActive(), deserialized.getActive());
+        DTOMatch.assertMatch(lookupType, deserialized);
     }
 }

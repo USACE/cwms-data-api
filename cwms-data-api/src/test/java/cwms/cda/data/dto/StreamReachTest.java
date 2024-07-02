@@ -23,21 +23,24 @@
  */
 package cwms.cda.data.dto;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import helpers.DTOMatch;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-public final class StreamReachTest {
+final class StreamReachTest {
 
     @Test
     void createStreamReach_allFieldsProvided_success() {
@@ -241,7 +244,7 @@ public final class StreamReachTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, streamReach);
         StreamReach deserialized = Formats.parseContent(contentType, json, StreamReach.class);
-        assertSame(streamReach, deserialized);
+        DTOMatch.assertMatch(streamReach, deserialized);
     }
 
     @Test
@@ -292,18 +295,6 @@ public final class StreamReachTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         StreamReach deserialized = Formats.parseContent(contentType, json, StreamReach.class);
-        assertSame(expected, deserialized);
-    }
-
-    public static void assertSame(StreamReach reach1, StreamReach reach2)
-    {
-        assertAll(
-            () -> assertEquals(reach1.getComment(), reach2.getComment()),
-            () -> StreamNodeTest.assertSame(reach1.getDownstreamNode(), reach2.getDownstreamNode()),
-            () -> StreamNodeTest.assertSame(reach1.getUpstreamNode(), reach2.getUpstreamNode()),
-            () -> CwmsIdTest.assertSame(reach1.getConfigurationId(), reach2.getConfigurationId()),
-            () -> CwmsIdTest.assertSame(reach1.getStreamId(), reach2.getStreamId()),
-            () -> CwmsIdTest.assertSame(reach1.getId(), reach2.getId())
-        );
+        DTOMatch.assertMatch(expected, deserialized);
     }
 }

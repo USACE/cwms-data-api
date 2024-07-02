@@ -22,10 +22,10 @@ package cwms.cda.data.dto.location.kind;
 
 
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import java.io.InputStream;
@@ -34,7 +34,7 @@ import java.time.ZoneId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class OutletTest {
+final class OutletTest {
     private static final String SPK = "SPK";
     private static final String PROJECT_LOC = "location";
     private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
@@ -48,7 +48,7 @@ class OutletTest {
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
         assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
+        DTOMatch.assertMatch(outlet.getProjectId(), parsedOutlet.getProjectId());
     }
 
     @Test
@@ -59,7 +59,7 @@ class OutletTest {
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
         assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
+        DTOMatch.assertMatch(outlet.getProjectId(), parsedOutlet.getProjectId());
     }
 
     @Test
@@ -71,7 +71,7 @@ class OutletTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
         assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+        DTOMatch.assertMatch(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
     }
 
     @Test
@@ -83,7 +83,7 @@ class OutletTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
         assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+        DTOMatch.assertMatch(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
     }
 
     private Outlet buildTestOutlet(String outletLocId) {

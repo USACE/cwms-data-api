@@ -29,7 +29,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Embankment;
-import cwms.cda.data.dto.location.kind.EmbankmentTest;
+import helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.EMBANKMENT_OBJ_T;
 
@@ -44,7 +44,7 @@ final class EmbankmentDaoTest {
         Embankment expected = buildTestEmbankment();
         EMBANKMENT_OBJ_T embankmentObjT = EmbankmentDao.map(expected);
         Embankment embankment = EmbankmentDao.map(embankmentObjT);
-        EmbankmentTest.assertSame(expected, embankment);
+        DTOMatch.assertMatch(expected, embankment);
     }
 
     private Embankment buildTestEmbankment() {
