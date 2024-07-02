@@ -35,29 +35,17 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Outlet extends ProjectStructure {
-    private final CwmsId characteristicsId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
-        characteristicsId = builder.characteristicsId;
-    }
-
-    public CwmsId getCharacteristicsId() {
-        return characteristicsId;
     }
 
     public static final class Builder {
-        private CwmsId characteristicsId;
         private CwmsId projectId;
         private Location location;
 
         public Outlet build() {
             return new Outlet(this);
-        }
-
-        public Builder withCharacteristicsId(CwmsId characteristicsId) {
-            this.characteristicsId = characteristicsId;
-            return this;
         }
 
         public Builder withProjectId(CwmsId projectIdentifier) {
