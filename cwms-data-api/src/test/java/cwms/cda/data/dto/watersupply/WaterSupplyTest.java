@@ -24,16 +24,19 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.formatters.Formats;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.Location;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -124,33 +127,29 @@ class WaterSupplyTest {
 
     private Location buildLocationType(String pumpLocation)
     {
-        return new Location.Builder()
-                .withLocationRef( new CwmsId.Builder()
-                        .withName("Base Location")
-                        .withOfficeId(OFFICE_ID)
-                        .build())
+        return new Location.Builder(OFFICE_ID, pumpLocation)
                 .withStateInitial("CA")
-                .withActiveFlag(true)
                 .withBoundingOfficeId(OFFICE_ID)
                 .withDescription("Place for testing")
                 .withElevation(120.0)
                 .withCountyName("Sacramento")
-                .withElevUnitId("m")
                 .withHorizontalDatum("WGS84")
                 .withLatitude(0.0)
                 .withLongitude(0.0)
-                .withLocationKindId("Test Locale")
-                .withTypeOfLocation("PUMP")
                 .withLongName("Full Location Name")
                 .withMapLabel("Map location")
-                .withNationId("US")
                 .withNearestCity("Davis")
                 .withPublishedLatitude(0.0)
                 .withPublishedLongitude(0.0)
-                .withTimeZoneName("UTC")
-                .withBoundingOfficeName("Sacramento Office")
+                .withTimeZoneName(ZoneId.of("UTC"))
                 .withVerticalDatum("WGS84")
                 .withPublicName(pumpLocation)
+                .withLocationType("PUMP")
+                .withActive(true)
+                .withNation(Nation.US)
+                .withBoundingOfficeId(OFFICE_ID)
+                .withElevationUnits("m")
+                .withLocationKind("PUMP")
                 .build();
     }
 
@@ -170,28 +169,27 @@ class WaterSupplyTest {
     {
         assertAll(
                 () -> assertEquals(first.getNearestCity(), second.getNearestCity()),
-                () -> assertEquals(first.getNationId(), second.getNationId()),
-                () -> assertEquals(first.getBoundingOfficeName(), second.getBoundingOfficeName()),
+                () -> assertEquals(first.getNation(), second.getNation()),
                 () -> assertEquals(first.getBoundingOfficeId(), second.getBoundingOfficeId()),
                 () -> assertEquals(first.getPublishedLongitude(), second.getPublishedLongitude()),
                 () -> assertEquals(first.getPublishedLatitude(), second.getPublishedLatitude()),
                 () -> assertEquals(first.getMapLabel(), second.getMapLabel()),
-                () -> assertEquals(first.getLocationKindId(), second.getLocationKindId()),
-                () -> assertEquals(first.getActiveFlag(), second.getActiveFlag()),
+                () -> assertEquals(first.getLocationKind(), second.getLocationKind()),
+                () -> assertEquals(first.getActive(), second.getActive()),
                 () -> assertEquals(first.getDescription(), second.getDescription()),
                 () -> assertEquals(first.getLongName(), second.getLongName()),
                 () -> assertEquals(first.getPublicName(), second.getPublicName()),
                 () -> assertEquals(first.getVerticalDatum(), second.getVerticalDatum()),
-                () -> assertEquals(first.getElevUnitId(), second.getElevUnitId()),
+                () -> assertEquals(first.getElevationUnits(), second.getElevationUnits()),
                 () -> assertEquals(first.getElevation(), second.getElevation()),
                 () -> assertEquals(first.getHorizontalDatum(), second.getHorizontalDatum()),
                 () -> assertEquals(first.getLongitude(), second.getLongitude()),
                 () -> assertEquals(first.getLatitude(), second.getLatitude()),
-                () -> assertEquals(first.getTypeOfLocation(), second.getTypeOfLocation()),
-                () -> assertEquals(first.getTimeZoneName(), second.getTimeZoneName()),
+                () -> assertEquals(first.getLocationType(), second.getLocationType()),
+                () -> assertEquals(first.getTimezoneName(), second.getTimezoneName()),
                 () -> assertEquals(first.getCountyName(), second.getCountyName()),
                 () -> assertEquals(first.getStateInitial(), second.getStateInitial()),
-                () -> CwmsIdTest.assertSame(first.getLocationRef(), second.getLocationRef())
+                () -> assertEquals(first.getName(), second.getName())
         );
     }
 
