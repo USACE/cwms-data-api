@@ -3,7 +3,7 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
+import cwms.cda.api.errors.FieldException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -23,5 +23,17 @@ public abstract class CwmsDTO implements CwmsDTOBase {
 
     public String getOfficeId() {
         return officeId;
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        CwmsDTOValidator validator = new CwmsDTOValidator();
+        validateInternal(validator);
+        validator.validate();
+    }
+
+    protected void validateInternal(CwmsDTOValidator validator) {
+        //No-op for compatibility
+        //Eventually make validate() final and this method abstract
     }
 }

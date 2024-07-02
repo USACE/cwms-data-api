@@ -20,34 +20,34 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
-import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import java.util.ArrayList;
-import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public abstract class ProjectStructure implements CwmsDTOBase {
+public abstract class ProjectStructure extends CwmsDTO {
+    @JsonProperty(required = true)
     private final CwmsId projectId;
+    @JsonProperty(required = true)
     private final Location location;
 
     ProjectStructure(CwmsId projectId, Location location) {
+        super(null);
         this.location = location;
         this.projectId = projectId;
     }
 
+    @JsonIgnore
     @Override
-    public final void validate() throws FieldException {
-        List<String> missingFields = getMissingFields();
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
+    public String getOfficeId() {
+        return location.getOfficeId();
     }
 
     public final CwmsId getProjectId() {
@@ -58,36 +58,10 @@ public abstract class ProjectStructure implements CwmsDTOBase {
         return location;
     }
 
-    protected List<String> getMissingFields() {
-        List<String> output = new ArrayList<>();
-
-        if (getLocation() == null) {
-            output.add("Location");
-        } else {
-            try {
-                getLocation().validate();
-            } catch (FieldException ex) {
-				ex.getDetails().values().forEach(output::addAll);
-				if (ex.getDetails().isEmpty())
-				{
-					output.add(ex.getMessage());
-				}
-            }
-        }
-        if (getProjectId() == null) {
-            output.add("ProjectId");
-        } else {
-            try {
-                getProjectId().validate();
-            } catch (FieldException ex) {
-				ex.getDetails().values().forEach(output::addAll);
-				if (ex.getDetails().isEmpty())
-				{
-					output.add(ex.getMessage());
-				}
-            }
-        }
-
-        return output;
+    @Override
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getLocation(), "location");
+        validator.required(getProjectId(), "project-id");
     }
 }

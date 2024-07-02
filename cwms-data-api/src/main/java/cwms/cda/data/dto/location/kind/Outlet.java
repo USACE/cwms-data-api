@@ -21,6 +21,7 @@
 package cwms.cda.data.dto.location.kind;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -34,6 +35,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonPropertyOrder({ "projectId", "location" })
 public class Outlet extends ProjectStructure {
 
     private Outlet(Builder builder) {
