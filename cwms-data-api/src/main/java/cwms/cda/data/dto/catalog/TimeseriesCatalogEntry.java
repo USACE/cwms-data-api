@@ -4,33 +4,29 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
+
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@XmlRootElement(name = "entry")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class TimeseriesCatalogEntry extends CatalogEntry {
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private String name;
 
     private String units;
     private String interval;
 
     @Schema(description = "Offset from top of interval")
-    @XmlElement(name = "interval-offset")
     private Long intervalOffset;
 
-    @XmlElement(name = "time-zone")
     private String timeZone;
 
-    @XmlElementWrapper(name = "extents")
-    @XmlElement(name = "extents")
+    @JacksonXmlElementWrapper(localName = "extents")
+    @JacksonXmlProperty(localName = "extents")
     private List<TimeSeriesExtents> extents;
 
 

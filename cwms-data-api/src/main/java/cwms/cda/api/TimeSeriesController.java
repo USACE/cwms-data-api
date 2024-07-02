@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -43,7 +44,6 @@ import static cwms.cda.api.Controllers.requiredZdt;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.NotFoundException;
@@ -55,7 +55,6 @@ import cwms.cda.data.dao.TimeSeriesDeleteOptions;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -69,7 +68,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -80,9 +78,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -446,7 +441,7 @@ public class TimeSeriesController implements CrudHandler {
                     name(TimeSeriesController.class.getName(), GET_ALL));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
 
             String results;
             String version = contentType.getParameters().get(VERSION);
@@ -508,6 +503,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -585,36 +581,9 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
-        return deserializeTimeSeries(ctx.bodyAsInputStream(), getUserDataContentType(ctx).toString());
-    }
-
-    public static TimeSeries deserializeTimeSeries(InputStream inputStream, String contentType)
-            throws IOException {
-        TimeSeries retval;
-
-        if ((Formats.XMLV2).equals(contentType)) {
-            TimeSeries result;
-            try {
-                JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
-                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-                result = (TimeSeries) unmarshaller.unmarshal(inputStream);
-            } catch (JAXBException e) {
-                throw new IOException(e);
-            }
-            retval = result;
-        } else if ((Formats.JSONV2).equals(contentType)) {
-            ObjectMapper om = JsonV2.buildObjectMapper();
-            retval = om.readValue(inputStream, TimeSeries.class);
-        } else {
-            throw new IOException("Unexpected format:" + contentType);
-        }
-
-        return retval;
-    }
-
-    private ContentType getUserDataContentType(@NotNull Context ctx) {
         String contentTypeHeader = ctx.req.getContentType();
-        return Formats.parseHeader(contentTypeHeader);
+        ContentType contentType = Formats.parseHeader(contentTypeHeader);
+        return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeries.class);
     }
 
     /**

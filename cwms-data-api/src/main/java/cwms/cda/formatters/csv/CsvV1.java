@@ -1,5 +1,6 @@
 package cwms.cda.formatters.csv;
 
+import java.io.InputStream;
 import java.util.List;
 
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -37,6 +38,28 @@ public class CsvV1 implements OutputFormatter {
                 retVal = new CsvV1LocationGroup().format(dtoList);
             }
 
+        }
+        return retVal;
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        T retVal = null;
+        if (type.isAssignableFrom(Office.class)) {
+            retVal = new CsvV1Office().parseContent(content, type);
+        } else if (type.isAssignableFrom(LocationGroup.class)) {
+            retVal = new CsvV1LocationGroup().parseContent(content, type);
+        }
+        return retVal;
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
+        T retVal = null;
+        if (type.isAssignableFrom(Office.class)) {
+            retVal = new CsvV1Office().parseContent(content, type);
+        } else if (type.isAssignableFrom(LocationGroup.class)) {
+            retVal = new CsvV1LocationGroup().parseContent(content, type);
         }
         return retVal;
     }

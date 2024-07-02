@@ -25,18 +25,19 @@ public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
 
         CwmsDbLevelJooq jooq = new CwmsDbLevelJooq();
         connection(dsl, c -> {
-            ResultSet rs = jooq.catSpecifiedLevels(c, templateIdMask, office);
-            final List<String> specLevelColumnsList = Arrays.asList(OFFICE_ID, SPECIFIED_LEVEL_ID,
-                    DESCRIPTION);
-            OracleTypeMap.checkMetaData(rs.getMetaData(), specLevelColumnsList, "Specified Level");
-            while (rs.next()) {
-                String officeId = rs.getString(OFFICE_ID);
-                String id = rs.getString(SPECIFIED_LEVEL_ID);
-                String desc = rs.getString(DESCRIPTION);
+            try (ResultSet rs = jooq.catSpecifiedLevels(c, templateIdMask, office)) {
+                final List<String> specLevelColumnsList = Arrays.asList(OFFICE_ID, SPECIFIED_LEVEL_ID,
+                        DESCRIPTION);
+                OracleTypeMap.checkMetaData(rs.getMetaData(), specLevelColumnsList, "Specified Level");
+                while (rs.next()) {
+                    String officeId = rs.getString(OFFICE_ID);
+                    String id = rs.getString(SPECIFIED_LEVEL_ID);
+                    String desc = rs.getString(DESCRIPTION);
 
-                SpecifiedLevel specLevel = new SpecifiedLevel(id, officeId, desc);
+                    SpecifiedLevel specLevel = new SpecifiedLevel(id, officeId, desc);
 
-                retval.add(specLevel);
+                    retval.add(specLevel);
+                }
             }
         });
 
@@ -59,29 +60,25 @@ public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
 
     public void update(String oldSpecifiedLevelId, String newSpecifiedLevelId, String officeId) {
         try {
-            dsl.connection(c->
-            CWMS_LEVEL_PACKAGE.call_RENAME_SPECIFIED_LEVEL(
-                getDslContext(c,officeId).configuration(),
-                oldSpecifiedLevelId, newSpecifiedLevelId, officeId)
+            dsl.connection(c -> CWMS_LEVEL_PACKAGE.call_RENAME_SPECIFIED_LEVEL(
+                    getDslContext(c, officeId).configuration(),
+                    oldSpecifiedLevelId, newSpecifiedLevelId, officeId)
             );
-        } catch(RuntimeException ex) {
+        } catch (RuntimeException ex) {
             throw wrapException(ex);
         }
-        
-        
+
     }
 
     public void delete(String specifiedLevelId, String office) {
         String failIfNotFound = OracleTypeMap.formatBool(true);
         try {
-            dsl.connection(c->
-                CWMS_LEVEL_PACKAGE.call_DELETE_SPECIFIED_LEVEL(
-                    getDslContext(c,office).configuration(), specifiedLevelId, failIfNotFound,
-                    office)
+            dsl.connection(c -> CWMS_LEVEL_PACKAGE.call_DELETE_SPECIFIED_LEVEL(
+                    getDslContext(c, office).configuration(),
+                    specifiedLevelId, failIfNotFound, office)
             );
-        } catch(RuntimeException ex) {
+        } catch (RuntimeException ex) {
             throw wrapException(ex);
         }
-        
     }
 }

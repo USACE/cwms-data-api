@@ -23,8 +23,9 @@ public class BasinDao extends JooqDao<Basin> {
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
         try {
             connection(dsl, c -> {
-                ResultSet rs = basinJooq.catBasins(c, null, null, null, areaUnitIn, officeId);
-                retVal.addAll(buildBasinsFromResultSet(rs, unitSystem));
+                try (ResultSet rs = basinJooq.catBasins(c, null, null, null, areaUnitIn, officeId)) {
+                    retVal.addAll(buildBasinsFromResultSet(rs, unitSystem));
+                }
             });
         } catch (Exception ex) {
             throw new SQLException(ex);
@@ -64,28 +65,33 @@ public class BasinDao extends JooqDao<Basin> {
     private List<Basin> buildBasinsFromResultSet(ResultSet rs, String unitSystem) throws SQLException {
         List<Basin> retVal = new ArrayList<>();
         while (rs.next()) {
-            String officeId = rs.getString("OFFICE_ID");
-            String basinId = rs.getString("BASIN_ID");
-            String parentBasinId = rs.getString("PARENT_BASIN_ID");
-            Double sortOrder = rs.getDouble("SORT_ORDER");
-            String primaryStreamId = rs.getString("PRIMARY_STREAM_ID");
-            Double basinArea = rs.getDouble("TOTAL_DRAINAGE_AREA");
-            Double contributingArea = rs.getDouble("CONTRIBUTING_DRAINAGE_AREA");
-            Basin basin = new Basin.Builder(basinId, officeId)
-                    .withBasinArea(basinArea)
-                    .withContributingArea(contributingArea)
-                    .withParentBasinId(parentBasinId)
-                    .withSortOrder(sortOrder)
-                    .build();
-            if (primaryStreamId != null) {
-                StreamDao streamDao = new StreamDao(dsl);
-                Stream primaryStream = streamDao.getStream(primaryStreamId, unitSystem, officeId);
-                basin = new Basin.Builder(basin).withPrimaryStream(primaryStream).build();
-            }
+            Basin basin = buildBasinFromRow(rs, unitSystem);
             retVal.add(basin);
         }
 
         return retVal;
+    }
+
+    private Basin buildBasinFromRow(ResultSet rs, String unitSystem) throws SQLException {
+        String officeId = rs.getString("OFFICE_ID");
+        String basinId = rs.getString("BASIN_ID");
+        String parentBasinId = rs.getString("PARENT_BASIN_ID");
+        Double sortOrder = rs.getDouble("SORT_ORDER");
+        String primaryStreamId = rs.getString("PRIMARY_STREAM_ID");
+        Double basinArea = rs.getDouble("TOTAL_DRAINAGE_AREA");
+        Double contributingArea = rs.getDouble("CONTRIBUTING_DRAINAGE_AREA");
+        Basin basin = new Basin.Builder(basinId, officeId)
+                .withBasinArea(basinArea)
+                .withContributingArea(contributingArea)
+                .withParentBasinId(parentBasinId)
+                .withSortOrder(sortOrder)
+                .build();
+        if (primaryStreamId != null) {
+            StreamDao streamDao = new StreamDao(dsl);
+            Stream primaryStream = streamDao.getStream(primaryStreamId, unitSystem, officeId);
+            basin = new Basin.Builder(basin).withPrimaryStream(primaryStream).build();
+        }
+        return basin;
     }
 
 }

@@ -27,7 +27,9 @@ class LocationLevelTest
 	@Test
 	void test_exlusived_fields_monitored()
 	{
-		final LocationLevel noParameter = new LocationLevel.Builder("Test",ZonedDateTime.now()).build();
+		final LocationLevel noParameter = new LocationLevel.Builder("Test",ZonedDateTime.now())
+				.withOfficeId("SPK")
+				.build();
 
 		assertThrows(RequiredFieldException.class, () -> {
 			noParameter.validate();
@@ -35,6 +37,7 @@ class LocationLevelTest
 
 
 		final LocationLevel constAndSeasonalId = new LocationLevel.Builder("Test",ZonedDateTime.now())
+													.withOfficeId("SPK")
 													.withConstantValue(5.0)
 													.withSeasonalTimeSeriesId("The test timeseries")
 													.build();
@@ -46,6 +49,7 @@ class LocationLevelTest
 
 		// we don't need actual values for this test, just the system to think there might be
 		final LocationLevel constAndValBean = new LocationLevel.Builder("Test",ZonedDateTime.now())
+													.withOfficeId("SPK")
 													.withConstantValue(5.0)
 													.withSeasonalValues(new ArrayList<>())
 													.build();

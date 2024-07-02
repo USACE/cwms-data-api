@@ -18,4 +18,5 @@ import cwms.cda.formatters.OutputFormatter;
 public @interface FormattableWith {
     public String contentType();
     public Class<? extends OutputFormatter> formatter();
+    String[] aliases() default {};
 }

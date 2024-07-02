@@ -37,6 +37,8 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -47,21 +49,12 @@ public class JsonV2 implements OutputFormatter {
     private final ObjectMapper om;
 
     public JsonV2() {
-        this(new ObjectMapper());
-    }
-
-    public JsonV2(ObjectMapper om) {
-        this.om = buildObjectMapper(om);
+        this.om = buildObjectMapper();
     }
 
     @NotNull
     public static ObjectMapper buildObjectMapper() {
-        return buildObjectMapper(new ObjectMapper());
-    }
-
-    @NotNull
-    public static ObjectMapper buildObjectMapper(ObjectMapper om) {
-        ObjectMapper retVal = om.copy();
+        ObjectMapper retVal = new ObjectMapper();
 
         retVal.findAndRegisterModules();
         // Without these two disables an Instant gets written as 3333333.335000000
@@ -97,4 +90,21 @@ public class JsonV2 implements OutputFormatter {
         }
     }
 
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (JsonProcessingException e) {
+            throw new FormattingException("Could not deserialize:" + content, e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (IOException e) {
+            throw new FormattingException("Could not deserialize:" + content, e);
+        }
+    }
 }

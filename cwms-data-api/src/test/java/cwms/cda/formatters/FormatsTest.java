@@ -1,22 +1,32 @@
 package cwms.cda.formatters;
 
 
+import java.util.Arrays;
 import java.util.Map;
 
+import cwms.cda.data.dto.Blob;
+import cwms.cda.data.dto.Blobs;
+import cwms.cda.data.dto.Clob;
+import cwms.cda.data.dto.Clobs;
+import cwms.cda.data.dto.County;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.Office;
+import cwms.cda.data.dto.State;
+import cwms.cda.data.dto.basinconnectivity.Basin;
+import cwms.cda.formatters.annotations.FormattableWith;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class FormatsTest
+class FormatsTest
 {
 
 	@Test
-	public void testParseHeaderAndQueryParmJSON(){
+	void testParseHeaderAndQueryParmJSON(){
 		ContentType contentType =Formats.parseHeaderAndQueryParm("application/json", null);
 
 		assertNotNull(contentType);
@@ -27,7 +37,7 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseHeaderAndQueryParmJSONv2()
+	void testParseHeaderAndQueryParmJSONv2()
 	{
 		ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2", null);
 
@@ -41,15 +51,13 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseNullNull()
+	void testParseNullNull()
 	{
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
-			Formats.parseHeaderAndQueryParm(null, null);
-		});
+		assertThrows(FormattingException.class, () -> Formats.parseHeaderAndQueryParm(null, null));
 	}
 
 	@Test
-	public void testParseEmptyHeader(){
+	void testParseEmptyHeader(){
 
 		ContentType contentType =Formats.parseHeaderAndQueryParm("", "json");
 
@@ -60,7 +68,7 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseNullHeader(){
+	void testParseNullHeader(){
 
 		ContentType contentType =Formats.parseHeaderAndQueryParm(null, "json");
 
@@ -75,8 +83,8 @@ public class FormatsTest
 
 
 	@Test
-	public void testParseHeaderAndQueryParmXML(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+	void testParseHeaderAndQueryParmXML(){
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm(null, null);
 		});
 
@@ -101,8 +109,8 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseBoth(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+	void testParseBoth(){
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm("application/json", "json");
 		});
 
@@ -110,8 +118,8 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseBothv2(){
-		RuntimeException thrown = Assertions.assertThrows(FormattingException.class, () -> {
+	void testParseBothv2(){
+		assertThrows(FormattingException.class, () -> {
 			Formats.parseHeaderAndQueryParm("application/json;version=2", "json");
 		});
 
@@ -120,7 +128,7 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseHeader(){
+	void testParseHeader(){
 		ContentType contentType;
 
 		contentType = Formats.parseHeader("application/json");
@@ -131,31 +139,21 @@ public class FormatsTest
 		assertNotNull(contentType);
 		assertEquals("application/json", contentType.getType());
 
-		contentType = Formats.parseHeader(null);
-		assertNull(contentType);
+		assertThrows(FormattingException.class, () -> Formats.parseHeader(null));
 
-		contentType = Formats.parseHeader("");
-		assertNull(contentType);
+		assertThrows(FormattingException.class, () -> Formats.parseHeader(""));
 
 	}
 
-	@Test
-	public void testParseQueryParam(){
-		ContentType contentType;
-		contentType	= Formats.parseQueryParam("json");
-		assertNotNull(contentType);
-		assertEquals("application/json", contentType.getType());
-
-		contentType	= Formats.parseQueryParam("");
-		assertNull(contentType);
-
-		contentType	= Formats.parseQueryParam(null);
-		assertNull(contentType);
-
+	@EnumSource(ParseQueryParamTest.class)
+	@ParameterizedTest
+	void testParseQueryParam(ParseQueryParamTest test){
+		ContentType contentType = Formats.parseQueryParam(test._contentType, test._class);
+		assertEquals(test._expectedType, contentType);
 	}
 
 	@Test
-	public void testParseHeaderAndQueryParmJSONv2WithCharset() {
+	void testParseHeaderAndQueryParmJSONv2WithCharset() {
 		ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2; charset=utf-8", null);
 
 		assertNotNull(contentType);
@@ -163,14 +161,92 @@ public class FormatsTest
 	}
 
 	@Test
-	public void testParseHeaderJSONv2WithCharset() {
+	void testParseHeaderJSONv2WithCharset() {
 		ContentType contentType = Formats.parseHeader("application/json;version=2; charset=utf-8");
 
 		assertNotNull(contentType);
 		assertEquals("application/json", contentType.getType());
 	}
 
+	@Test
+	void testParseHeaderFromFirefox()
+	{
+		//The following header comes from firefox
+		ContentType contentType = Formats.parseHeader("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+		assertNotNull(contentType);
+		assertEquals(Formats.XML, contentType.toString());
+	}
 
+	@EnumSource(ParseHeaderClassAliasTest.class)
+	@ParameterizedTest
+	void testParseHeaderWithClass(ParseHeaderClassAliasTest test)
+	{
+		ContentType contentType = Formats.parseHeader(test._contentType, test._class);
+		assertNotNull(contentType);
+		assertEquals(test._expectedType, contentType.toString());
+	}
 
+	enum ParseHeaderClassAliasTest
+	{
+		COUNTY_DEFAULT(County.class, Formats.DEFAULT, Formats.JSONV2),
+		COUNTY_JSON(County.class, Formats.JSON, Formats.JSONV2),
+		COUNTY_JSONV2(County.class, Formats.JSONV2, Formats.JSONV2),
+		STATE_DEFAULT(State.class, Formats.DEFAULT, Formats.JSONV2),
+		STATE_JSON(State.class, Formats.JSON, Formats.JSONV2),
+		STATE_JSONV2(State.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_DEFAULT(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_JSON(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_JSONV2(Office.class, Formats.JSONV2, Formats.JSONV2),
+		OFFICE_XML(Office.class, Formats.XML, Formats.XMLV2),
+		OFFICE_XMLV2(Office.class, Formats.XMLV2, Formats.XMLV2),
+		BLOB_DEFAULT(Blob.class, Formats.DEFAULT, Formats.JSONV2),
+		BLOB_JSON(Blob.class, Formats.JSON, Formats.JSONV2),
+		BLOB_JSONV2(Blob.class, Formats.JSONV2, Formats.JSONV2),
+		BLOBS_DEFAULT(Blobs.class, Formats.DEFAULT, Formats.JSONV2),
+		BLOBS_JSON(Blobs.class, Formats.JSON, Formats.JSONV2),
+		BLOBS_JSONV2(Blobs.class, Formats.JSONV2, Formats.JSONV2),
+		CLOB_DEFAULT(Clob.class, Formats.DEFAULT, Formats.JSONV2),
+		CLOB_JSON(Clob.class, Formats.JSON, Formats.JSONV2),
+		CLOB_JSONV1(Clob.class, Formats.JSONV1, Formats.JSONV1),
+		CLOB_JSONV2(Clob.class, Formats.JSONV2, Formats.JSONV2),
+		CLOB_XML(Clob.class, Formats.XML, Formats.XMLV2),
+		CLOB_XMLV2(Clob.class, Formats.XMLV2, Formats.XMLV2),
+		CLOBS_DEFAULT(Clobs.class, Formats.DEFAULT, Formats.JSONV2),
+		CLOBS_JSON(Clobs.class, Formats.JSON, Formats.JSONV2),
+		CLOBS_JSONV2(Clobs.class, Formats.JSONV2, Formats.JSONV2),
+		BASIN_DEFAULT(Basin.class, Formats.DEFAULT, Formats.NAMED_PGJSON),
+		BASIN_PGJSON(Basin.class, Formats.PGJSON, Formats.PGJSON),
+		BASIN_NAMED_PGJSON(Basin.class, Formats.NAMED_PGJSON, Formats.NAMED_PGJSON),
+		;
 
+		final Class<? extends CwmsDTOBase> _class;
+		final String _contentType;
+		final String _expectedType;
+
+		ParseHeaderClassAliasTest(Class<? extends CwmsDTOBase> aClass, String contentType, String expectedType)
+		{
+			_class = aClass;
+			_contentType = contentType;
+			_expectedType = expectedType;
+		}
+	}
+
+	enum ParseQueryParamTest
+	{
+		JSON(null, "json", new ContentType(Formats.JSON)),
+		NULL(null, null, null),
+		EMPTY(null, "", null),
+		OFFICE(Office.class, "json", new ContentType(Formats.JSONV2)),
+		;
+		final Class<? extends CwmsDTOBase> _class;
+		final String _contentType;
+		final ContentType _expectedType;
+
+		ParseQueryParamTest(Class<? extends CwmsDTOBase> aClass, String contentType, ContentType expectedType)
+		{
+			_class = aClass;
+			_contentType = contentType;
+			_expectedType = expectedType;
+		}
+	}
 }

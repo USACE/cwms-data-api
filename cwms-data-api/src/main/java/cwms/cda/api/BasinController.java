@@ -90,17 +90,14 @@ public class BasinController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             List<Basin> basins = basinDao.getAllBasins(units, office);
             if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
                 String result = basinPgJsonFormatter.format(basins);
-                ctx.result(result);
+                ctx.result(result).contentType(contentType.toString());
             }
         } catch (SQLException ex) {
             LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
@@ -146,17 +143,14 @@ public class BasinController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.NAMED_PGJSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             BasinDao basinDao = new BasinDao(dsl);
             Basin basin = basinDao.getBasin(basinId, units, office);
             if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 NamedPgJsonFormatter basinPgJsonFormatter = new NamedPgJsonFormatter();
                 String result = basinPgJsonFormatter.format(basin);
-                ctx.result(result);
+                ctx.result(result).contentType(contentType.toString());
             } else {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unsupported "
                         + "format for basins"));

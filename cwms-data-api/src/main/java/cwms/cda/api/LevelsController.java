@@ -49,6 +49,7 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -67,7 +68,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
@@ -76,6 +76,7 @@ import cwms.cda.data.dto.SeasonalValueBean;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -88,13 +89,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 
 public class LevelsController implements CrudHandler {
@@ -132,20 +133,10 @@ public class LevelsController implements CrudHandler {
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            LocationLevel level = deserializeLocationLevel(ctx.body(), formatHeader);
-
-            if (level.getOfficeId() == null) {
-                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
-                        "The request body must specify the office.");
-            }
-
+            LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
             ZonedDateTime unmarshalledDateTime = level.getLevelDate(); //getUnmarshalledDateTime
 
             ZoneId timezoneId = unmarshalledDateTime.getZone();
@@ -155,6 +146,7 @@ public class LevelsController implements CrudHandler {
             level = new LocationLevel.Builder(level).withLevelDate(unmarshalledDateTime).build();
             level.validate();
 
+            DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level, timezoneId);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
@@ -168,7 +160,8 @@ public class LevelsController implements CrudHandler {
                         + "location level id of the Location Level to be deleted"),
             },
             queryParams = {
-                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class),
+                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, description = "Specifies"
+                        + " whether to cascade the delete.  Defaults to false."),
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                         + "the location level whose data is to be deleted. If this field is "
                         + "not specified, matching location level information will be deleted"
@@ -195,9 +188,10 @@ public class LevelsController implements CrudHandler {
                     name(LevelsController.class.getName(), DELETE));
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                     .getOrDefault("UTC");
-            Boolean cascadeDelete = Boolean.parseBoolean(ctx.queryParam(CASCADE_DELETE));
-            ZonedDateTime unmarshalledDateTime = dateString != null ?
-                    DateUtils.parseUserDate(dateString, timezone) : null;
+            Boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class)
+                    .getOrDefault(false);
+            ZonedDateTime unmarshalledDateTime = dateString != null
+                    ? DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_OK).json(levelId + " Deleted");
@@ -223,8 +217,7 @@ public class LevelsController implements CrudHandler {
                         + "the default SI units for their parameters."
                         + "\n* `Other`  "
                         + "Any unit returned in the response to the units URI request that is "
-                        + "appropriate for the requested parameters. The " + Formats.JSONV2
-                        + " format currently only supports SI."),
+                        + "appropriate for the requested parameters. "),
                 @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                         + " the response. This field affects only elevation location levels. "
                         + "Valid values for this field are:"
@@ -274,17 +267,12 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
 
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format);
-            String version = contentType.getParameters().get(VERSION);
-
             String levelIdMask = queryParamAsClass(ctx, new String[]{LEVEL_ID_MASK, NAME},
                     String.class, null, metrics,
                     name(LevelsController.class.getName(), GET_ALL));
 
             String office = ctx.queryParam(OFFICE);
-            String unit = ctx.queryParam(UNIT);
+            String unit = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.getValue());
             String datum = ctx.queryParam(DATUM);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
@@ -292,20 +280,20 @@ public class LevelsController implements CrudHandler {
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                     .getOrDefault("UTC");
 
-            if ("2".equals(version)) {
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format, LocationLevels.class);
+            String version = contentType.getParameters()
+                                          .getOrDefault(VERSION, "");
 
-                if (unit == null) {
-                    // The dao currently only supports SI.
-                    unit = UnitSystem.SI.getValue();
-                }
-                if (!UnitSystem.SI.getValue().equals(unit)) {
-                    throw new IllegalArgumentException("Levels Version 2 currently only supports SI");
-                }
+            boolean isLegacyVersion = version.equals("1");
 
+            if (format.isEmpty() && !isLegacyVersion)
+            {
                 String cursor = ctx.queryParamAsClass(PAGE, String.class)
-                        .getOrDefault("");
+                                   .getOrDefault("");
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
-                        .getOrDefault(DEFAULT_PAGE_SIZE);
+                                  .getOrDefault(DEFAULT_PAGE_SIZE);
 
                 ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
 
@@ -322,46 +310,29 @@ public class LevelsController implements CrudHandler {
                         office, unit, datum, beginZdt, endZdt);
                 String result = Formats.format(contentType, levels);
 
-                ctx.result(result).contentType(contentType.toString());
+                ctx.result(result);
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
             } else {
-                switch (format) {
-                    case "json": {
-                        ctx.contentType(Formats.JSON);
-                        break;
-                    }
-                    case "tab": {
-                        ctx.contentType(Formats.TAB);
-                        break;
-                    }
-                    case "csv": {
-                        ctx.contentType(Formats.CSV);
-                        break;
-                    }
-                    case "xml": {
-                        ctx.contentType(Formats.XML);
-                        break;
-                    }
-                    case "wml2": {
-                        ctx.contentType(Formats.WML2);
-                        break;
-                    }
-                    case "png": // fall next
-                    case "jpg": // fall next
-                    default: {
-                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                                .json(CdaError.notImplemented());
-                    }
-                }
-
+                //Use the type string, not the full string with properties.
+                //i.e. application/json not application/json;version=1
                 String results = levelsDao.getLocationLevels(format, levelIdMask, office, unit, datum,
                         begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
                 requestResultSize.update(results.length());
+                if (isLegacyVersion)
+                {
+                    ctx.contentType(contentType.toString());
+                }
+                else
+                {
+                    ctx.contentType(contentType.getType());
+                }
             }
+            addDeprecatedContentTypeWarning(ctx, contentType);
         }
     }
 
@@ -442,11 +413,8 @@ public class LevelsController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            LocationLevel levelFromBody = deserializeLocationLevel(ctx.body(),
-                contentType.getType());
+            LocationLevel levelFromBody = Formats.parseContent(contentType, ctx.body(),
+                LocationLevel.class);
             String officeId = levelFromBody.getOfficeId();
             if (officeId == null) {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
@@ -577,17 +545,6 @@ public class LevelsController implements CrudHandler {
         return new LocationLevelsDaoImpl(dsl);
     }
 
-    public static LocationLevel deserializeLocationLevel(String body, String format) {
-        ObjectMapper om = getObjectMapperForFormat(format);
-
-        try {
-            return new LocationLevel.Builder(om.readValue(body, LocationLevel.class)).build();
-        } catch (JsonProcessingException e) {
-            throw new JsonFieldsException(e);
-        }
-
-    }
-
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
         if ((Formats.XML).equals(format)) {
@@ -597,7 +554,7 @@ public class LevelsController implements CrudHandler {
         } else if (Formats.JSON.equals(format)) {
             om = new ObjectMapper();
         } else {
-            throw new FormattingException("Format is not currently supported for Levels");
+            throw new UnsupportedFormatException("Format is not currently supported for Levels: " + format);
         }
         om.registerModule(new JavaTimeModule());
         return om;

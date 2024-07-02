@@ -25,6 +25,7 @@
 package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
+import cwms.cda.api.LookupTypeController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
@@ -46,6 +47,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.EmbankmentController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
@@ -57,6 +59,8 @@ import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
+import cwms.cda.api.ProjectController;
+import cwms.cda.api.PropertyController;
 import cwms.cda.api.RatingController;
 import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
@@ -72,6 +76,7 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
+import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
@@ -86,6 +91,7 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.Role;
 import cwms.cda.spi.AccessManagers;
@@ -163,7 +169,12 @@ import org.owasp.html.PolicyFactory;
         "/specified-levels/*",
         "/forecast-spec/*",
         "/forecast-instance/*",
-        "/standard-text-id/*"
+        "/standard-text-id/*",
+        "/projects/*",
+        "/properties/*",
+        "/lookup-types/*",
+        "/embankments/*",
+        "/turbines/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -238,6 +249,11 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                })
+                .exception(UnsupportedFormatException.class, (e, ctx) -> {
+                    CdaError re = new CdaError(e.getMessage());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_NOT_ACCEPTABLE).json(re);
                 })
                 .exception(FormattingException.class, (fe, ctx) -> {
                     final CdaError re = new CdaError("Formatting error:" + fe.getMessage());
@@ -398,9 +414,9 @@ public class ApiServlet extends HttpServlet {
                 new ParametersController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
         cdaCrudCache("/timezones/{zone}",
                 new TimeZoneController(metrics), requiredRoles,60, TimeUnit.MINUTES);
-        cdaCrudCache("/levels/{" + Controllers.LEVEL_ID + "}",
+        cdaCrudCache(format("/levels/{%s}", Controllers.LEVEL_ID),
                 new LevelsController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String levelTsPath = "/levels/{" + Controllers.LEVEL_ID + "}/timeseries";
+        String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
         TimeSeriesController tsController = new TimeSeriesController(metrics);
@@ -450,15 +466,24 @@ public class ApiServlet extends HttpServlet {
                 new PoolController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/specified-levels/{specified-level-id}",
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/forecast-instance/{" + Controllers.NAME + "}",
+        cdaCrudCache(format("/forecast-instance/{%s}", Controllers.NAME),
                 new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/forecast-spec/{" + Controllers.NAME + "}",
+        cdaCrudCache(format("/forecast-spec/{%s}", Controllers.NAME),
                 new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String forecastFilePath = "/forecast-instance/{" + NAME + "}/file-data";
+        String forecastFilePath = format("/forecast-instance/{%s}/file-data", NAME);
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
-
+        cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
+                new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
+                new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
+                new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
+                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
+                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
 
     /**

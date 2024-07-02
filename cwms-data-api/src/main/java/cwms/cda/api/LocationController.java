@@ -40,6 +40,7 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -63,6 +64,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.UnsupportedFormatException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -176,30 +178,46 @@ public class LocationController implements CrudHandler {
 
             String formatParm = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm);
-            ctx.contentType(contentType.toString());
+            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Location.class);
 
-            final String results;
+            String results;
 
-            String version = contentType.getParameters().get(VERSION);
-            if (version != null && version.equals("2")) {
-                List<Location> locations = locationsDao.getLocations(names, units, datum, office);
-                ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-                results = om.writeValueAsString(locations);
-                ctx.result(results);
-                requestResultSize.update(results.length());
-            } else if (contentType.getType().equals(Formats.GEOJSON)) {
+            String version = contentType.getParameters().getOrDefault(VERSION, "");
+            boolean isLegacyFormat = version.equalsIgnoreCase("1");
+
+            if (contentType.getType().equals(Formats.GEOJSON)) {
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units,
                         office);
                 ctx.json(collection);
 
                 requestResultSize.update(ctx.res.getBufferSize());
-            } else {
-                String format = getFormatFromContent(contentType);
+                ctx.contentType(contentType.toString());
+            }
+            else if (formatParm.isEmpty() && !isLegacyFormat)
+            {
+                List<Location> locations = locationsDao.getLocations(names, units, datum, office);
+                results = Formats.format(contentType, locations, Location.class);
+                ctx.result(results);
+                requestResultSize.update(results.length());
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
                 requestResultSize.update(results.length());
+                if (isLegacyFormat)
+                {
+                    ctx.contentType(contentType.toString());
+                }
+                else
+                {
+                    ctx.contentType(contentType.getType());
+                }
             }
+
+            addDeprecatedContentTypeWarning(ctx, contentType);
 
             ctx.status(HttpServletResponse.SC_OK);
 
@@ -208,27 +226,6 @@ public class LocationController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private String getFormatFromContent(ContentType contentType) {
-        String format = "json";
-        if (contentType != null) {
-            // Seems weird to map back to format from contentType but we really want them to agree.
-            // What if format wasn't provided but an accept header for csv was?
-            // I think we would want to pass "csv" to the db procedure.
-            Map<String, String> lookup = new LinkedHashMap<>();
-            lookup.put(Formats.TAB, "tab");
-            lookup.put(Formats.CSV, "csv");
-            lookup.put(Formats.XML, "xml");
-            lookup.put(Formats.WML2, "wml2");
-            lookup.put(Formats.JSON, "json");
-
-            String type = contentType.getType();
-            if (lookup.containsKey(type)) {
-                format = lookup.get(type);
-            }
-        }
-        return format;
     }
 
     @OpenApi(
@@ -270,16 +267,13 @@ public class LocationController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
+            ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
             Location location = locationDao.getLocation(name, units, office);
-            ObjectMapper om = getObjectMapperForFormat(contentType.getType());
-            String serializedLocation = om.writeValueAsString(location);
+            String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
+            addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
             logger.log(Level.WARNING, re.toString(), e);
@@ -316,10 +310,7 @@ public class LocationController implements CrudHandler {
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
+            Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             locationsDao.storeLocation(locationFromBody);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location");
         } catch (IOException ex) {
@@ -332,8 +323,8 @@ public class LocationController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Location.class, type = Formats.JSON),
-                        @OpenApiContent(from = Location.class, type = Formats.XML)
+                        @OpenApiContent(from = Location.class, type = Formats.XML),
+                        @OpenApiContent(from = Location.class, type = Formats.JSON)
                     },
                     required = true),
             description = "Update CWMS Location",
@@ -356,10 +347,7 @@ public class LocationController implements CrudHandler {
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader);
-            if (contentType == null) {
-                throw new FormattingException("Format header could not be parsed");
-            }
-            Location locationFromBody = deserializeLocation(ctx.body(), contentType.getType());
+            Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,
                     UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
@@ -460,19 +448,6 @@ public class LocationController implements CrudHandler {
         return retVal;
     }
 
-    public static Location deserializeLocation(String body, String format)
-            throws IOException {
-        ObjectMapper om = getObjectMapperForFormat(format);
-        Location retVal;
-        try {
-            retVal = new Location.Builder(om.readValue(body, Location.class)).build();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to deserialize location", e);
-            throw new IOException("Failed to deserialize location");
-        }
-        return retVal;
-    }
-
     private static ObjectMapper getObjectMapperForFormat(String format) {
         ObjectMapper om;
         if ((Formats.XML).equals(format) || (Formats.XMLV2).equals(format)) {
@@ -480,7 +455,7 @@ public class LocationController implements CrudHandler {
         } else if (Formats.JSON.equals(format) || (Formats.JSONV2).equals(format)) {
             om = new ObjectMapper();
         } else {
-            throw new FormattingException("Format is not currently supported for Locations");
+            throw new UnsupportedFormatException("Format is not currently supported for Locations: " + format);
         }
         om.registerModule(new JavaTimeModule());
         return om;

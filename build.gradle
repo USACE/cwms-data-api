@@ -1,7 +1,10 @@
 plugins {
     id 'base'
+    id 'eclipse'
+    id 'idea'
 }
 allprojects {
+    apply plugin: 'cda.java-conventions'
     group = 'mil.army.usace.hec.cwms'
-    version = '3.1.3'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
+    version = '3.1.4-RC04' // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }

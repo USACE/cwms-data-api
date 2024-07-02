@@ -169,6 +169,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         )
                 .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
                 .withElevation(loc.get(AV_LOC.ELEVATION))
+                .withElevationUnits(loc.get(AV_LOC.UNIT_ID))
                 .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
                 .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
                 .withLongName(loc.get(AV_LOC.LONG_NAME))
@@ -179,7 +180,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .withMapLabel(loc.get(AV_LOC.MAP_LABEL))
                 .withBoundingOfficeId(loc.get(AV_LOC.BOUNDING_OFFICE_ID))
                 .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
-                .withNation(Nation.nationForName(loc.get(AV_LOC.NATION_ID)));
+                .withNation(Nation.nationForName(loc.get(AV_LOC.NATION_ID)))
+                ;
 
         BigDecimal pubLatitude = loc.get(AV_LOC.PUBLISHED_LATITUDE);
         BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
@@ -202,9 +204,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         connection(dsl, c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
             if (cascadeDelete) {
-                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC_CASCADE.getRule(), officeId);
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName,
+                        DELETE_LOC_CASCADE.getRule(), officeId);
             } else {
-                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName, DELETE_LOC.getRule(), officeId);
+                CWMS_LOC_PACKAGE.call_DELETE_LOCATION(configuration, locationName,
+                        DELETE_LOC.getRule(), officeId);
             }
         });
     }
@@ -216,7 +220,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             connection(dsl, c -> {
                 setOffice(c,location);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = Unit.METER.getValue();
+                String elevationUnits = location.getElevationUnits() == null
+                        ? Unit.METER.getValue() : location.getElevationUnits();
                 locJooq.store(c, location.getOfficeId(), location.getName(),
                         location.getStateInitial(), location.getCountyName(),
                         location.getTimezoneName(), location.getLocationType(),
@@ -244,7 +249,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             connection(dsl, c -> {
                 setOffice(c,renamedLocation);
                 CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = Unit.METER.getValue();
+                String elevationUnits = renamedLocation.getElevationUnits() == null
+                        ? Unit.METER.getValue() : renamedLocation.getElevationUnits();
                 locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,
                         renamedLocation.getName(), renamedLocation.getStateInitial(),
                         renamedLocation.getCountyName(), renamedLocation.getTimezoneName(),
@@ -332,9 +338,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
 
-    @Override
-    public Catalog getLocationCatalog(String page, int pageSize, String unitSystem, String office,
-                                      String idLike, String categoryLike, String groupLike, String boundingOfficeLike) {
+
+    public Catalog getLocationCatalog(String page, int pageSize, CatalogRequestParameters param) {
 
         // Parse provided page and pull out the parameters
 
@@ -345,28 +350,36 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             // The cursor urlencodes the initial query parameters, We should decode them and use the cursor values.
             // If the user provides a page parameter and query parameters they should match.
             // If they don't match its weird and we will log it.
-            office = warnIfMismatch(OFFICE, catPage.getSearchOffice(), office);
-            idLike = warnIfMismatch(LIKE, catPage.getIdLike(), idLike);
-            categoryLike = warnIfMismatch(LOCATION_CATEGORY_LIKE, catPage.getLocCategoryLike(), categoryLike);
-            groupLike = warnIfMismatch(LOCATION_GROUP_LIKE, catPage.getLocGroupLike(), groupLike);
-            boundingOfficeLike = warnIfMismatch(BOUNDING_OFFICE_LIKE, catPage.getBoundingOfficeLike(), boundingOfficeLike);
+            CatalogRequestParameters.Builder.from(param)
+                    .withOffice(warnIfMismatch(OFFICE,
+                            catPage.getSearchOffice(), param.getOffice()))
+                    .withIdLike(warnIfMismatch(LIKE,
+                            catPage.getIdLike(), param.getIdLike()))
+                    .withLocCatLike(warnIfMismatch(LOCATION_CATEGORY_LIKE,
+                            catPage.getLocCategoryLike(), param.getLocCatLike()))
+                    .withLocGroupLike(warnIfMismatch(LOCATION_GROUP_LIKE,
+                            catPage.getLocGroupLike(), param.getLocGroupLike()))
+                    .withBoundingOfficeLike(warnIfMismatch(BOUNDING_OFFICE_LIKE,
+                            catPage.getBoundingOfficeLike(), param.getBoundingOfficeLike()))
+                    .build();
+
         }
 
-        return getLocationCatalog(catPage, pageSize, unitSystem, office, idLike, categoryLike, groupLike, boundingOfficeLike);
+        return getLocationCatalog(catPage, pageSize, param);
     }
 
-    private Catalog getLocationCatalog(Catalog.CatalogPage catPage, int pageSize, String unitSystem, String office,
-                                      String idLike, String categoryLike, String groupLike, String boundingOfficeLike) {
+    private Catalog getLocationCatalog(Catalog.CatalogPage catPage, int pageSize, CatalogRequestParameters params) {
 
         final AV_LOC2 avLoc2 = AV_LOC2.AV_LOC2;  // ref the view just shorten the jooq
         //Now querying against AV_LOC2 as it gives us back the same information as querying against
         //location group views. This makes the code clearer and improves performance.
         //If there is a performance improvement by switching back to location groups and querying against
         //location codes (previous implementation used location_id) for joins, feel free to implement.
-        Objects.requireNonNull(idLike, "A value must be provided for the idLike field. Specifiy .* if you don't care.");
+        Objects.requireNonNull(params.getIdLike(),
+                "A value must be provided for the idLike field. Specify .* if you don't care.");
 
         // "condition" needs to be used by the count query and the results query.
-        Condition condition = buildWhereCondition(unitSystem, office, idLike, categoryLike, groupLike, boundingOfficeLike);
+        Condition condition = buildWhereCondition(params);
 
         int total;
         String cursorLocation; // The location-id of the cursor in the results
@@ -435,9 +448,38 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 return buildCatalogEntry(row, aliases);
             })
             .collect(toList());
-        return new Catalog(cursorLocation, total, pageSize, entries, office,
-                 idLike,  categoryLike,  groupLike,
-                 null, null, boundingOfficeLike);
+
+        return new Catalog(cursorLocation, total, pageSize, entries, params);
+    }
+
+    private static Condition buildWhereCondition(CatalogRequestParameters params) {
+        String idLike = params.getIdLike();
+
+        Condition condition = caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOCATION_ID, idLike)
+                .and(AV_LOC2.AV_LOC2.LOCATION_CODE.notEqual(DELETED_TS_MARKER))
+                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(params.getUnitSystem()));
+
+        String groupLike = params.getLocGroupLike();
+        String categoryLike = params.getLocCatLike();
+        if (categoryLike == null && groupLike == null) {
+            condition = condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull());
+        }
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike));
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP, groupLike));
+
+        String office = params.getOffice();
+        if (office != null) {
+            condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).eq(office.toUpperCase()));
+        }
+
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
+                params.getBoundingOfficeLike()));
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
+                params.getLocationKind()));
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
+                params.getLocationType()));
+
+        return condition;
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation) {
@@ -448,31 +490,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             condition = condition.and(officeEqualCur).and(curOfficeLocationIdGreater).or(officeGreaterThanCur);
         } else {
             condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.LOCATION_ID).gt(cursorLocation));
-        }
-        return condition;
-    }
-
-    private static Condition buildWhereCondition(String unitSystem, String office, String idLike,
-                 String categoryLike, String groupLike, String boundingOfficeLike) {
-
-        Condition condition = caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOCATION_ID, idLike)
-                .and(AV_LOC2.AV_LOC2.LOCATION_CODE.notEqual(DELETED_TS_MARKER))
-                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
-
-        if (categoryLike == null && groupLike == null) {
-            condition = condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull());
-        }
-        if (office != null) {
-            condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).eq(office.toUpperCase()));
-        }
-        if (categoryLike != null) {
-            condition = condition.and(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike));
-        }
-        if (groupLike != null) {
-            condition = condition.and(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP, groupLike));
-        }
-        if (boundingOfficeLike != null) {
-            condition = condition.and(caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID, boundingOfficeLike));
         }
         return condition;
     }

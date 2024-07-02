@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.annotation.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import kotlin.jvm.functions.Function1;
@@ -24,8 +26,8 @@ import kotlin.jvm.functions.Function1;
  * Implementation details are subject to inheritors.
  * @author Daniel Osborne
  */
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonPropertyOrder(alphabetic = true)
 public abstract class CwmsDTOPaginated implements CwmsDTOBase {
     private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
 
@@ -39,7 +41,6 @@ public abstract class CwmsDTOPaginated implements CwmsDTOBase {
         description = "The cursor to the next page of data; null if there is no more data",
         accessMode = AccessMode.READ_ONLY
     )
-    @XmlElement(name = "next-page")
     @JsonProperty("next-page")
     protected String nextPage;
 
@@ -54,7 +55,6 @@ public abstract class CwmsDTOPaginated implements CwmsDTOBase {
         description = "The number of records fetched per-page; this may be larger than the number of records actually retrieved",
         accessMode = AccessMode.READ_ONLY
     )
-    @XmlElement(name = "page-size")
     @JsonProperty("page-size")
     protected int pageSize;
 

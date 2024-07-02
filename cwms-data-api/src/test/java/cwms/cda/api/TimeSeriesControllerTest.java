@@ -42,6 +42,8 @@ import javax.xml.bind.Unmarshaller;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TimeSeriesControllerTest extends ControllerTest {
 
@@ -140,26 +142,15 @@ class TimeSeriesControllerTest extends ControllerTest {
         assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
     }
 
-    @Test
-    void testDeserializeTimeSeriesJaxb() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testDeserializeTimeSeries(String format) {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
-
-        XMLv2 out = new XMLv2();
-        String str = out.format(fakeTs);
-
-        TimeSeries result;
-        try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(TimeSeries.class);
-            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            result = (TimeSeries) unmarshaller.unmarshal(new StringReader(str));
-        } catch (JAXBException e) {
-            throw new IOException(e);
-        }
-        TimeSeries ts2 = result;
+        String formatted = Formats.format(Formats.parseHeader(format), fakeTs);
+        TimeSeries ts2 = Formats.parseContent(Formats.parseHeader(format), formatted, TimeSeries.class);
         assertNotNull(ts2);
-
         assertSimilar(fakeTs, ts2);
     }
 
@@ -172,7 +163,7 @@ class TimeSeriesControllerTest extends ControllerTest {
             String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
             InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-            TimeSeries ts = TimeSeriesController.deserializeTimeSeries(inputStream, Formats.XMLV2);  // Should this be XMLv2?
+            TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), inputStream, TimeSeries.class);
 
             assertNotNull(ts);
 
@@ -189,7 +180,7 @@ class TimeSeriesControllerTest extends ControllerTest {
             assertNotNull(xml);
 			 // Should this be XMLv2?
         InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        TimeSeries ts = TimeSeriesController.deserializeTimeSeries(inputStream, Formats.XMLV2);
+        TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), inputStream, TimeSeries.class);
 
             assertNotNull(ts);
 
@@ -202,7 +193,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         String jsonV2 = loadResourceAsString("cwms/cda/api/timeseries_create.json");
         assertNotNull(jsonV2);
         InputStream inputStream = new ByteArrayInputStream(jsonV2.getBytes(StandardCharsets.UTF_8));
-        TimeSeries ts = TimeSeriesController.deserializeTimeSeries(inputStream, Formats.JSONV2);
+        TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), inputStream, TimeSeries.class);
 
         assertNotNull(ts);
 

@@ -13,6 +13,10 @@ begin
   cwms_sec.add_user_to_group('&webuser','CWMS Users', 'SPK');
   cwms_sec.add_user_to_group('&webuser','CWMS PD Users', 'SPK');
   cwms_sec.add_user_to_group('&webuser','CWMS DBA Users', 'SPK');
+  cwms_sec.add_user_to_group('&webuser','All Users', 'SWT');
+  cwms_sec.add_user_to_group('&webuser','CWMS Users', 'SWT');
+  cwms_sec.add_user_to_group('&webuser','CWMS PD Users', 'SWT');
+  cwms_sec.add_user_to_group('&webuser','CWMS DBA Users', 'SWT');
   cwms_sec.add_user_to_group('&user','All Users', 'HQ');
   cwms_sec.add_user_to_group('&user','CWMS Users', 'HQ');
   cwms_sec.add_user_to_group('&user','CWMS PD Users', 'HQ');

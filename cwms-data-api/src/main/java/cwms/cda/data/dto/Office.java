@@ -1,10 +1,10 @@
 package cwms.cda.data.dto;
 
-import java.util.HashMap;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
@@ -14,16 +14,18 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.tab.TabV1;
 import cwms.cda.formatters.xml.XMLv1;
-import cwms.cda.formatters.xml.XMLv2;
+import cwms.cda.formatters.xml.XMLv2Office;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.HashMap;
+
 @Schema(description = "A representation of a CWMS office")
-@XmlRootElement(name="office")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@JsonRootName("office")
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2Office.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
 @FormattableWith(contentType = Formats.TAB, formatter = TabV1.class)
 public class Office implements CwmsDTOBase {
@@ -44,11 +46,9 @@ public class Office implements CwmsDTOBase {
     };
 
     private String name;
-    @XmlElement(name="long-name")
     private String longName;
     @Schema(allowableValues = {"unknown","corps headquarters","division headquarters","division regional","district","filed operating activity"})
     private String type;
-    @XmlElement(name="reports-to")
     @Schema(description = "Reference to another office, like a division, that this office reports to.")
     private String reportsTo;
 

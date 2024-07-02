@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -14,14 +15,20 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
 import hec.data.level.ILocationLevelRef;
 import hec.data.level.IParameterTypedValue;
 import hec.data.level.ISeasonalInterval;
 import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
 import hec.data.level.JDomLocationLevelImpl;
+import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
 import io.swagger.v3.oas.annotations.media.Schema;
+import rma.util.RMAConst;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.ZoneId;
@@ -30,56 +37,80 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
-import rma.util.RMAConst;
 
+@JsonRootName("LocationLevel")
 @JsonDeserialize(builder = LocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
+    
     private final String locationLevelId;
     @Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
             + "location level. Mutually exclusive with seasonalValues and "
             + "siParameterUnitsConstantValue")
+    
     private final String seasonalTimeSeriesId;
     @Schema(description = "Generic name of this location level. Common names are 'Top of Dam', "
             + "'Streambed', 'Bottom of Dam'.")
+    
     private final String specifiedLevelId;
-    @Schema(description = "To indicate if single or aggregate value", allowableValues = {"Inst",
-            "Ave", "Min", "Max", "Total"})
+    @Schema(description = "To indicate if single or aggregate value",
+            allowableValues = {"Inst", "Ave", "Min", "Max", "Total"})
+    
     private final String parameterTypeId;
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
+    
     private final String parameterId;
     @Schema(description = "Single value for this location level. Mutually exclusive with "
             + "seasonableTimeSeriesId and seasonValues.")
+    
     private final Double constantValue;
     @Schema(description = "Units the provided levels are in")
+    
     private final String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
+
     private final ZonedDateTime levelDate;
+    
     private final String levelComment;
     @Schema(description = "The start point of provided seasonal values")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
+
     private final ZonedDateTime intervalOrigin;
+    
     private final Integer intervalMonths;
+    
     private final Integer intervalMinutes;
     @Schema(description = "Indicating whether or not to interpolate between seasonal values.",
             allowableValues = {"T", "F"})
+    
     private final String interpolateString;
     @Schema(description = "0 if parameterTypeId is Inst. Otherwise duration indicating the time "
             + "window of the aggregate value.")
+    
     private final String durationId;
+    
     private final BigDecimal attributeValue;
+    
     private final String attributeUnitsId;
+    
     private final String attributeParameterTypeId;
+    
     private final String attributeParameterId;
+    
     private final String attributeDurationId;
+    
     private final String attributeComment;
 
     @Schema(description = "List of Repeating seasonal values. The values repeater after the "
@@ -87,6 +118,7 @@ public final class LocationLevel extends CwmsDTO {
             + " A yearly interval seasonable could have 12 different values, one for each month for"
             + " example. Mutually exclusive with seasonalTimeSeriesId and "
             + "siParameterUnitsConstantValue")
+    
     private final List<SeasonalValueBean> seasonalValues;
 
     private LocationLevel(Builder builder) {
@@ -291,10 +323,8 @@ public final class LocationLevel extends CwmsDTO {
             withParameterId(copyFrom.getParameterId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
-            ISeasonalValues values = copyFrom.getSeasonalValues();
-            if (values != null) {
-                withSeasonalValues(buildSeasonalValues(values));
-            }
+            withISeasonalValues(copyFrom.getSeasonalValues());
+
             IParameterTypedValue constantLevel = copyFrom.getConstantLevel();
             if (constantLevel != null) {
                 withConstantValue(constantLevel.getSiParameterUnitsValue());
@@ -374,13 +404,44 @@ public final class LocationLevel extends CwmsDTO {
             return this;
         }
 
+        @JsonIgnore
+        public Builder withISeasonalValues(ISeasonalValues values) {
+            if (values != null) {
+                // TODO: handle values.offset and values.origin
+                withSeasonalValues(buildSeasonalValues(values));
+            } else {
+                this.seasonalValues = null;
+            }
+
+            return this;
+        }
+
+        public Builder withSeasonalValue(SeasonalValueBean seasonalValue) {
+            if (seasonalValues == null) {
+                seasonalValues = new ArrayList<>();
+            }
+            seasonalValues.add(seasonalValue);
+            return this;
+        }
+
         public static SeasonalValueBean buildSeasonalValueBean(ISeasonalValue seasonalValue) {
-            ISeasonalInterval offset = seasonalValue.getOffset();
-            IParameterTypedValue value = seasonalValue.getValue();
-            return new SeasonalValueBean.Builder(value.getSiParameterUnitsValue())
-                    .withOffsetMinutes(BigInteger.valueOf(offset.getTotalMinutes()))
-                    .withOffsetMonths(offset.getTotalMonths())
-                    .build();
+            SeasonalValueBean retval = null;
+            if (seasonalValue != null) {
+                IParameterTypedValue value = seasonalValue.getValue();
+
+                if (value != null) {
+                    SeasonalValueBean.Builder builder =
+                            new SeasonalValueBean.Builder(value.getSiParameterUnitsValue());
+
+                    ISeasonalInterval offset = seasonalValue.getOffset();
+                    if (offset != null) {
+                        builder.withOffsetMinutes(BigInteger.valueOf(offset.getTotalMinutes()))
+                                .withOffsetMonths(offset.getTotalMonths());
+                    }
+                    retval = builder.build();
+                }
+            }
+            return retval;
         }
 
         public static List<SeasonalValueBean> buildSeasonalValues(ISeasonalValues seasonalValues) {
@@ -520,24 +581,35 @@ public final class LocationLevel extends CwmsDTO {
 
     @Override
     public void validate() throws FieldException {
-        ArrayList<String> fields = new ArrayList<>();
+        Set<String> requiredFields = new HashSet<>();
+        List<String> mutuallyExclusiveFields = new ArrayList<>();
+        if (getOfficeId() == null) {
+            requiredFields.add("office-id");
+        }
+        if (getLocationLevelId() == null) {
+            requiredFields.add("location-level-id");
+        }
         if (seasonalValues != null) {
-            fields.add("seasonal-values");
+            requiredFields.add("seasonal-values");
+            mutuallyExclusiveFields.add("seasonal-values");
         }
 
         if (constantValue != null) {
-            fields.add("constant-value");
+            requiredFields.add("constant-value");
+            mutuallyExclusiveFields.add("constant-value");
         }
 
         if (seasonalTimeSeriesId != null) {
-            fields.add("seasonable-time-series-id");
+            requiredFields.add("seasonable-time-series-id");
+            mutuallyExclusiveFields.add("seasonable-time-series-id");
         }
-        if (fields.isEmpty()) {
+        if (requiredFields.isEmpty()) {
             throw new RequiredFieldException(Arrays.asList("seasonal-values", "constant-value",
-                    "season-time-series-id"));
+                    "season-time-series-id", "office-id", "location-level-id"));
         }
-        if (fields.size() != 1) {
-            throw new ExclusiveFieldsException(fields);
+        //Requires level id, office id, and one of the level type identifiers
+        if (mutuallyExclusiveFields.size() != 1) {
+            throw new ExclusiveFieldsException(mutuallyExclusiveFields);
         }
     }
 }

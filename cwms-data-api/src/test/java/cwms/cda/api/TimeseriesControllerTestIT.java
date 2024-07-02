@@ -14,17 +14,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.Formats;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import java.io.InputStream;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
 class TimeseriesControllerTestIT extends DataApiTestIT {
@@ -68,7 +74,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .body(tsData)
+//                .body(tsData)
                 .header("Authorization",user.toHeaderValue())
                 .queryParam("office",officeId)
                 .queryParam("units","cfs")
@@ -133,7 +139,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .body(tsData)
+//                .body(tsData)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
                 .queryParam("units", "F")
@@ -290,7 +296,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .body(tsData)
+//                .body(tsData)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
                 .queryParam("units", "F")
@@ -363,7 +369,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(Formats.JSONV1)
                 .queryParam("office", officeId)
                 .queryParam("units", "F")
                 .queryParam("name", ts.get("name").asText())
@@ -400,23 +406,23 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
         // 1675335600000
         given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
-                .queryParam("begin", firstPoint)
-                .queryParam("end", firstPoint)
-                .queryParam("version-date", version)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .queryParam("office", officeId)
+            .queryParam("units", "F")
+            .queryParam("name", ts.get("name").asText())
+            .queryParam("begin", firstPoint)
+            .queryParam("end", firstPoint)
+            .queryParam("version-date", version)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
         ;
     }
 
@@ -507,7 +513,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
-                    .body(tsData)
+//                    .body(tsData)
                     .header("Authorization", user.toHeaderValue())
                     .queryParam("office", officeId)
                     .queryParam("units", "F")
@@ -534,7 +540,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
-                    .body(tsData)
+//                    .body(tsData)
                     .header("Authorization", user.toHeaderValue())
                     .queryParam("office", officeId)
                     .queryParam("units", "F")
@@ -559,7 +565,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             throw new RuntimeException("Unable to create location for TS", ex);
         }
     }
-
 
     @Test
     void test_big_create() throws Exception {
@@ -653,4 +658,196 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         return prefix + sb + "\n ]\n}";
     }
 
+    @Test
+    @Disabled("Referenced data set is missing")
+    void test_daylight_saving_retrieve()throws Exception {
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1hour.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        int count = 365 * 24 * 5; // 5 years of hourly data (43.8k points)
+
+        String giantString = buildBigString(tsData, count);
+        // 200k points looked like about 6MB.
+
+        // This creates data from  to May 21 2020 to May 20 2025
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode ts = mapper.readTree(tsData);
+        String name = ts.get("name").asText();
+        String location = name.split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        try {
+            deleteLocation(location, officeId);
+        } catch (Exception ex) {
+            // don't care.
+        }
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(giantString)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // this doesn't cross Daylight savings - should work
+        given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .queryParam("units","mm")
+                .queryParam("name", name)
+                .queryParam("begin","2021-02-08T08:00:00Z")
+                .queryParam("end","2021-03-08T08:00:00Z")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values[1][1]",closeTo(1724.4,0.1))
+                .body("values[0][1]",closeTo(1724.4,0.1))
+        ;
+
+       // these dates do cross daylight savings - won't work if seessiontimezone isn't set in 24.04.05
+        given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .queryParam("units","mm")
+                .queryParam("name", name)
+                .queryParam("begin","2021-03-08T08:00:00Z")
+                .queryParam("end","2021-03-15T08:00:00Z")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values[1][1]",closeTo(1724.4,0.1))
+                .body("values[0][1]",closeTo(1724.4,0.1))
+                ;
+    }
+
+    private static void deleteLocation(String location, String officeId) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c-> {
+            try(PreparedStatement stmt = c.prepareStatement("declare\n"
+                    + "    p_location varchar2(64) := ?;\n"
+                    + "    p_office varchar2(10) := ?;\n"
+                    + "begin\n"
+                    + "cwms_loc.delete_location(\n"
+                    + "        p_location_id   => p_location,\n"
+                    + "        p_delete_action => cwms_util.delete_all,\n"
+                    + "        p_db_office_id  => p_office);\n"
+                    + "end;")) {
+                stmt.setString(1, location);
+                stmt.setString(2, officeId);
+                stmt.execute();
+
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to delete location",ex);
+            }
+        }, "cwms_20");
+    }
+
+    @ParameterizedTest
+    @EnumSource(GetAllTest.class)
+    void test_lrl_1day_content_type_aliasing(GetAllTest test) throws Exception
+    {
+        //Based on test_lrl_1day()
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization",user.toHeaderValue())
+                .queryParam("office",officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .queryParam("units", "F")
+                .queryParam("name", ts.get("name").asText())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+    }
+
+    enum GetAllTest
+    {
+        DEFAULT(Formats.DEFAULT, Formats.JSONV2),
+        JSON(Formats.JSON, Formats.JSONV2),
+        JSONV2(Formats.JSONV2, Formats.JSONV2),
+        XML(Formats.XML, Formats.XMLV2),
+        XMLV2(Formats.XMLV2, Formats.XMLV2),
+        ;
+
+        final String _accept;
+        final String _expectedContentType;
+
+        GetAllTest(String accept, String expectedContentType)
+        {
+            _accept = accept;
+            _expectedContentType = expectedContentType;
+        }
+    }
 }
