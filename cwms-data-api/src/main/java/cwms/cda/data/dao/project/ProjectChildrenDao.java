@@ -27,17 +27,9 @@ package cwms.cda.data.dao.project;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.project.ProjectChildren;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import java.util.*;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.codegen.tables.AV_EMBANKMENT;
@@ -54,19 +46,14 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
 
 
     public List<ProjectChildren> children(String office, String projLike, String kindRegex) {
-
-        List<String> allKinds = getProjectKinds();
-
-        Set<String> kinds = getMatchingKinds(kindRegex, allKinds);
-
-        return children(office, projLike, kinds);
+        return children(office, projLike, ProjectKind.getMatchingKinds(kindRegex));
     }
 
-    private List<ProjectChildren> children(String office, String projLike, Set<String> kinds) {
+    private List<ProjectChildren> children(String office, String projLike, Set<ProjectKind> kinds) {
 
         Map<String, ProjectChildren.Builder> builderMap = new LinkedHashMap<>();  // proj-id->
 
-        for (String kind : kinds) {
+        for (ProjectKind kind : kinds) {
             Map<String, List<CwmsId>> locsOfKind = getChildrenOfKind(office, projLike, kind);
             if (locsOfKind != null) {
                 for (Map.Entry<String, List<CwmsId>> entry : locsOfKind.entrySet()) {
@@ -79,19 +66,19 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                                             .withName(projId)
                                             .build()));
                     switch (kind) {
-                        case "EMBANKMENT":
+                        case EMBANKMENT:
                             builder.withEmbankments(locs);
                             break;
-                        case "LOCK":
+                        case LOCK:
                             builder.withLocks(locs);
                             break;
-                        case "OUTLET":
+                        case OUTLET:
                             builder.withOutlets(locs);
                             break;
-                        case "TURBINE":
+                        case TURBINE:
                             builder.withTurbines(locs);
                             break;
-                        case "GATE":
+                        case GATE:
                             builder.withGates(locs);
                             break;
                         default:
@@ -109,18 +96,18 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
     }
 
     @Nullable
-    private Map<String, List<CwmsId>> getChildrenOfKind(String office, String projLike, String kind) {
+    private Map<String, List<CwmsId>> getChildrenOfKind(String office, String projLike, ProjectKind kind) {
         switch (kind) {
 
-            case "EMBANKMENT":
+            case EMBANKMENT:
                 return getEmbankmentChildren(office, projLike);
-            case "TURBINE":
+            case TURBINE:
                 return getTurbineChildren(office, projLike);
-            case "OUTLET":
+            case OUTLET:
                 return getOutletChildren(office, projLike);
-            case "LOCK":
+            case LOCK:
                 return getLockChildren(office, projLike);
-            case "GATE":
+            case GATE:
                 return getGateChildren(office, projLike);
             default:
                 return null;
@@ -138,11 +125,11 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.GATE_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
-                    CwmsId embankment = new CwmsId.Builder()
+                    CwmsId gate = new CwmsId.Builder()
                             .withOfficeId(row.get(view.OFFICE_ID))
                             .withName(row.get(view.GATE_ID))
                             .build();
-                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(embankment);
+                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(gate);
                 });
 
 
@@ -159,11 +146,11 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                 .orderBy(view.DB_OFFICE_ID, view.PROJECT_ID, view.LOCK_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
-                    CwmsId embankment = new CwmsId.Builder()
+                    CwmsId lock = new CwmsId.Builder()
                             .withOfficeId(row.get(view.DB_OFFICE_ID))
                             .withName(row.get(view.LOCK_ID))
                             .build();
-                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(embankment);
+                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(lock);
                 });
 
 
@@ -180,11 +167,11 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.OUTLET_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
-                    CwmsId embankment = new CwmsId.Builder()
+                    CwmsId outlet = new CwmsId.Builder()
                             .withOfficeId(row.get(view.OFFICE_ID))
                             .withName(row.get(view.OUTLET_ID))
                             .build();
-                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(embankment);
+                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(outlet);
                 });
 
 
@@ -201,13 +188,12 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.TURBINE_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
-                    CwmsId embankment = new CwmsId.Builder()
+                    CwmsId turbine = new CwmsId.Builder()
                             .withOfficeId(row.get(view.OFFICE_ID))
                             .withName(row.get(view.TURBINE_ID))
                             .build();
-                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(embankment);
+                    retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(turbine);
                 });
-
 
         return retval;
     }
@@ -234,29 +220,5 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
         return retval;
     }
 
-    private static @NotNull List<String> getProjectKinds() {
-        // Maybe this should be an enum?  Maybe just the Project types.
-        // "SITE", "EMBANKMENT", "OVERFLOW", "TURBINE", "STREAM", "PROJECT",
-        // "STREAMGAGE", "BASIN", "OUTLET", "LOCK", "GATE"
-        String [] kinds = { "EMBANKMENT",  "TURBINE", "OUTLET", "LOCK", "GATE"};
-        return Arrays.asList(kinds);
-    }
 
-    private Set<String> getMatchingKinds(String regex, List<String> allKinds) {
-        Set<String> kinds = new LinkedHashSet<>();
-
-        if (regex == null) {
-            kinds.addAll(allKinds);
-        } else {
-            Pattern p = Pattern.compile(regex);
-            for (String kind : allKinds) {
-                Matcher matcher = p.matcher(kind);
-                if (matcher.matches()) {
-                    kinds.add(kind);
-                }
-            }
-        }
-
-        return kinds;
-    }
 }
