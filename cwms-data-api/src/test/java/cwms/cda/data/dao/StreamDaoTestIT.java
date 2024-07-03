@@ -121,7 +121,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
             Stream retrievedStream2 = streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName(), stream2.getLengthUnits());
             DTOMatch.assertMatch(stream2, retrievedStream2);
             //also test retrieve in bulk
-            List<Stream> retrievedStreams = streamDao.retrieveStreams(OFFICE_ID, null, "km");
+            List<Stream> retrievedStreams = streamDao.retrieveStreams(OFFICE_ID, null, null, "km");
             assertFalse(retrievedStreams.isEmpty());
             retrievedStreams = retrievedStreams.stream()
                     .filter(s -> s.getId().getName().equalsIgnoreCase(stream.getId().getName()) || s.getId().getName().equalsIgnoreCase(stream2.getId().getName()))

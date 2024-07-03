@@ -29,13 +29,13 @@ import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.StreamReachTest;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import java.io.IOException;
@@ -197,10 +197,10 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             streamReachDao.storeStreamReach(reach2, false);
 
             StreamReach retrievedReach = streamReachDao.retrieveStreamReach(reach.getId().getOfficeId(), reach.getStreamId().getName(), reach.getId().getName(), reach.getUpstreamNode().getStreamNode().getStationUnits());
-            StreamReachTest.assertSame(reach, retrievedReach);
+            DTOMatch.assertMatch(reach, retrievedReach);
 
             StreamReach retrievedReach2 = streamReachDao.retrieveStreamReach(reach2.getId().getOfficeId(), reach2.getStreamId().getName(), reach2.getId().getName(), reach2.getUpstreamNode().getStreamNode().getStationUnits());
-            StreamReachTest.assertSame(reach2, retrievedReach2);
+            DTOMatch.assertMatch(reach2, retrievedReach2);
 
             List<StreamReach> retrievedReaches = streamReachDao.retrieveStreamReaches(OFFICE_ID, null, null, null, "km");
             assertFalse(retrievedReaches.isEmpty());
@@ -209,8 +209,8 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                     .collect(Collectors.toList());
 
             assertEquals(2, retrievedReaches.size());
-            StreamReachTest.assertSame(reach, retrievedReaches.get(0));
-            StreamReachTest.assertSame(reach2, retrievedReaches.get(1));
+            DTOMatch.assertMatch(reach, retrievedReaches.get(0));
+            DTOMatch.assertMatch(reach2, retrievedReaches.get(1));
 
             streamReachDao.deleteStreamReach(reach.getId().getOfficeId(), reach.getId().getName());
             streamReachDao.deleteStreamReach(reach2.getId().getOfficeId(), reach2.getId().getName());

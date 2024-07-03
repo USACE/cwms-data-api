@@ -25,16 +25,15 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
-import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.StreamLocationTest;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
+import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import java.io.IOException;
@@ -149,7 +148,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     streamLocation.getStageUnits(),
                     streamLocation.getAreaUnits()
             );
-            StreamLocationTest.assertSame(streamLocation, retrievedStreamLocation);
+            DTOMatch.assertMatch(streamLocation, retrievedStreamLocation);
 
             StreamLocation retrievedStreamLocation2 = streamLocationDao.retrieveStreamLocation(
                     streamLocation2.getStreamLocationNode().getId().getOfficeId(),
@@ -159,7 +158,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     streamLocation2.getStageUnits(),
                     streamLocation2.getAreaUnits()
             );
-            StreamLocationTest.assertSame(streamLocation2, retrievedStreamLocation2);
+            DTOMatch.assertMatch(streamLocation2, retrievedStreamLocation2);
 
             //also test retrieve in bulk
             List<StreamLocation> retrievedStreamLocations = streamLocationDao.retrieveStreamLocations(
@@ -172,8 +171,8 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     .collect(Collectors.toList());
 
             assertEquals(2, retrievedStreamLocations.size());
-            StreamLocationTest.assertSame(streamLocation, retrievedStreamLocations.get(0));
-            StreamLocationTest.assertSame(streamLocation2, retrievedStreamLocations.get(1));
+            DTOMatch.assertMatch(streamLocation, retrievedStreamLocations.get(0));
+            DTOMatch.assertMatch(streamLocation2, retrievedStreamLocations.get(1));
 
             //delete stream locations
             streamLocationDao.deleteStreamLocation(

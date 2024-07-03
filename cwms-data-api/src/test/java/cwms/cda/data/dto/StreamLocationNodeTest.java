@@ -30,6 +30,7 @@ import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -39,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 
-public final class StreamLocationNodeTest {
+final class StreamLocationNodeTest {
 
     @Test
     void createStreamLocationNode_allFieldsProvided_success() {
@@ -63,7 +64,7 @@ public final class StreamLocationNodeTest {
 
         assertAll(() -> assertEquals(streamLocationId.getName(), item.getId().getName(), "The stream location id does not match the provided value"),
                 () -> assertEquals(streamLocationId.getOfficeId(), item.getId().getOfficeId(), "The office id does not match the provided value"),
-                () -> StreamNodeTest.assertSame(streamNode, item.getStreamNode()));
+                () -> DTOMatch.assertMatch(streamNode, item.getStreamNode()));
     }
 
     @Test
@@ -112,7 +113,7 @@ public final class StreamLocationNodeTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, streamLocationNode);
         StreamLocationNode deserialized = Formats.parseContent(contentType, json, StreamLocationNode.class);
-        assertSame(streamLocationNode, deserialized);
+        DTOMatch.assertMatch(streamLocationNode, deserialized);
     }
 
     @Test
@@ -126,19 +127,12 @@ public final class StreamLocationNodeTest {
         assertAll(
                 () -> assertEquals("SPK", deserialized.getId().getOfficeId(), "The office ID does not match"),
                 () -> assertEquals("StreamLoc123", deserialized.getId().getName(), "The stream location ID name does not match"),
-                () -> StreamNodeTest.assertSame(deserialized.getStreamNode(), new StreamNode.Builder()
+                () -> DTOMatch.assertMatch(deserialized.getStreamNode(), new StreamNode.Builder()
                         .withStreamId(new CwmsId.Builder().withOfficeId("SPK").withName("Stream123").build())
                         .withBank(Bank.LEFT)
                         .withStation(123.45)
                         .withStationUnits("mi")
                         .build())
-        );
-    }
-
-    public static void assertSame(StreamLocationNode node1, StreamLocationNode node2) {
-        assertAll(
-            () -> CwmsIdTest.assertSame(node1.getId(), node2.getId()),
-            () -> StreamNodeTest.assertSame(node1.getStreamNode(), node2.getStreamNode())
         );
     }
 }

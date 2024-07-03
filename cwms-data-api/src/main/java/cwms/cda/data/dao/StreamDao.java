@@ -62,16 +62,17 @@ public final class StreamDao extends JooqDao<Stream> {
     /**
      * Retrieve a list of streams
      * @param officeIdMask - the office id mask
-     * @param streamIdMask - the stream id mask
+     * @param divertsFromStreamIdMask - the stream id of the stream that the retrieved streams divert from
+     * @param flowsIntStreamIdMask - the stream id of the stream that the retrieved streams flow into
      * @param stationUnits - the station units used for stations and length of stream
      * @return a list of streams
      */
-    public List<Stream> retrieveStreams(String officeIdMask, String streamIdMask, String stationUnits) {
+    public List<Stream> retrieveStreams(String officeIdMask, String divertsFromStreamIdMask, String flowsIntStreamIdMask, String stationUnits) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeIdMask);
-            Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(DSL.using(conn).configuration(), streamIdMask,
-                            stationUnits, null, null, null,
-                            null, null, null, null,
+            Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(DSL.using(conn).configuration(), null,
+                            stationUnits, null, flowsIntStreamIdMask, null,
+                            null, null, divertsFromStreamIdMask, null,
                             null, null, null, null, null,
                             null, null, officeIdMask);
             return records.stream().map(r -> fromJooqStreamRecord(r, stationUnits))
