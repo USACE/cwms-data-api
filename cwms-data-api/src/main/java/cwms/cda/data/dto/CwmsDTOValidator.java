@@ -24,10 +24,14 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.ExclusiveFieldsException;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -38,6 +42,8 @@ import java.util.concurrent.Callable;
  * This class is used to validate the fields of a CwmsDTO object.
  */
 public final class CwmsDTOValidator {
+
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private final Set<String> missingFields = new HashSet<>();
     private final Set<String> mutuallyExclusiveFields = new HashSet<>();
@@ -56,6 +62,42 @@ public final class CwmsDTOValidator {
             missingFields.add(fieldName);
         } else if (value instanceof CwmsDTO) {
             ((CwmsDTO) value).validateInternal(this);
+        }
+    }
+
+    public void validateRequiredFields(CwmsDTO cwmsDTO) {
+        Class<? extends CwmsDTO> type = cwmsDTO.getClass();
+        Field[] fields = type.getDeclaredFields();
+        try {
+            for (Field field : fields) {
+                JsonProperty annotation = field.getAnnotation(JsonProperty.class);
+                if (annotation != null && annotation.required()) {
+                    boolean accessible = field.isAccessible();
+                    synchronized (type) {
+                        if (!accessible) {
+                            field.setAccessible(true);
+                        }
+                        Object value = field.get(cwmsDTO);
+                        if (value == null) {
+                            missingFields.add(field.getName());
+                        } else if (value instanceof CwmsDTO) {
+                            validateRequiredFields((CwmsDTO) value);
+                        }
+                        if (!accessible) {
+                            field.setAccessible(false);
+                        }
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            LOGGER.atWarning().withCause(e).log("Unable to validate required fields are non-null in DTO: " +
+                type);
+        }
+    }
+
+    public void validateCollection(Collection<? extends CwmsDTO> collection) {
+        if (collection != null) {
+            collection.forEach(c -> c.validateInternal(this));
         }
     }
 
@@ -91,7 +133,7 @@ public final class CwmsDTOValidator {
      *
      * @param callable the Callable to be validated
      */
-    public void validate(Callable callable) {
+    public void validate(Callable<?> callable) {
         try {
             callable.call();
         } catch (Exception e) {

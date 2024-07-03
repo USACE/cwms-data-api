@@ -75,6 +75,7 @@ public final class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
     private final Set<T> settings;
 
     private PhysicalStructureChange(Builder<T> builder) {
+        //uses CwmsId instead of a separate office-id field
         super(null);
         this.projectId = builder.projectId;
         this.dischargeComputationType = builder.dischargeComputationType;
@@ -153,10 +154,8 @@ public final class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-        validator.required(getProjectId(), "project-id");
-        validator.required(getChangeDate(), "change-date");
-        validator.required(getDischargeComputationType(), "discharge-computation-type");
-        validator.required(getReasonType(), "reason-type");
+        validator.validateRequiredFields(this);
+        validator.validateCollection(getSettings());
     }
 
     public static final class Builder<T extends Setting> {

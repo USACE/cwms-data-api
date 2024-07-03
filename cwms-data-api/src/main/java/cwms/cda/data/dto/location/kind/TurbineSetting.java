@@ -30,6 +30,7 @@
 package cwms.cda.data.dto.location.kind;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -45,11 +46,15 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonTypeName("turbine-setting")
 public final class TurbineSetting extends Setting {
 
+    @JsonProperty(required = true)
     private final String dischargeUnits;
+    @JsonProperty(required = true)
     private final Double oldDischarge;
+    @JsonProperty(required = true)
     private final Double newDischarge;
-    private final Double scheduledLoad;
+    @JsonProperty(required = true)
     private final String generationUnits;
+    private final Double scheduledLoad;
     private final Double realPower;
 
     private TurbineSetting(Builder builder) {
