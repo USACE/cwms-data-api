@@ -24,18 +24,30 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsId;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({@JsonSubTypes.Type(value = TurbineSetting.class, name = "turbine-setting")})
-public abstract class Setting {
+public abstract class Setting extends CwmsDTO {
 
+    @JsonProperty(required = true)
     private final CwmsId locationId;
 
     protected Setting(Builder<?> builder) {
+        //uses CwmsId instead of a separate office-id field
+        super(null);
         this.locationId = builder.locationId;
+    }
+
+    @JsonIgnore
+    @Override
+    public String getOfficeId() {
+        return locationId.getOfficeId();
     }
 
     public CwmsId getLocationId() {
