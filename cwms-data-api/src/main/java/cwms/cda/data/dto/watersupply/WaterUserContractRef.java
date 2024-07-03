@@ -26,7 +26,9 @@
 
 package cwms.cda.data.dto.watersupply;
 
-public class WaterUserContractRef {
+import cwms.cda.data.dto.CwmsDTOBase;
+
+public class WaterUserContractRef implements CwmsDTOBase {
     private WaterUser waterUser;
     private String contractName;
 
@@ -44,5 +46,13 @@ public class WaterUserContractRef {
 
     public WaterUser getWaterUser() {
         return this.waterUser;
+    }
+
+    @Override
+    public void validate() {
+        if (this.contractName == null) {
+            throw new IllegalArgumentException("ContractName cannot be null");
+        }
+        this.waterUser.validate();
     }
 }
