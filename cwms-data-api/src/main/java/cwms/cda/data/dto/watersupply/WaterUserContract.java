@@ -26,7 +26,8 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import cwms.cda.data.dto.Location;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
 
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -34,14 +35,15 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+
 import java.util.Date;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = WaterUserContract.Builder.class)
-public class WaterUserContract {
+public class WaterUserContract implements CwmsDTOBase {
 
     private final WaterUserContractRef waterUserContractRef;
-    private final LookupType waterSupplyContract;
+    private final LookupType waterContract;
     private final Date contractEffectiveDate;
     private final Date contractExpirationDate;
     private final Double contractedStorage;
@@ -50,13 +52,13 @@ public class WaterUserContract {
     private final String storageUnitsId;
     private final Double futureUsePercentActivated;
     private final Double totalAllocPercentActivated;
-    private final Location pumpOutLocation;
-    private final Location pumpOutBelowLocation;
-    private final Location pumpInLocation;
+    private final WaterSupplyPump pumpOutLocation;
+    private final WaterSupplyPump  pumpOutBelowLocation;
+    private final WaterSupplyPump  pumpInLocation;
 
     private WaterUserContract(Builder builder) {
         this.waterUserContractRef = builder.waterUserContractRef;
-        this.waterSupplyContract = builder.waterSupplyContract;
+        this.waterContract = builder.waterContract;
         this.contractEffectiveDate = builder.contractEffectiveDate;
         this.contractExpirationDate = builder.contractExpirationDate;
         this.contractedStorage = builder.contractedStorage;
@@ -74,8 +76,8 @@ public class WaterUserContract {
         return this.waterUserContractRef;
     }
 
-    public LookupType getWaterSupplyContract() {
-        return this.waterSupplyContract;
+    public LookupType getWaterContract() {
+        return this.waterContract;
     }
 
     public Date getContractEffectiveDate() {
@@ -110,21 +112,21 @@ public class WaterUserContract {
         return this.totalAllocPercentActivated;
     }
 
-    public Location getPumpOutLocation() {
+    public WaterSupplyPump getPumpOutLocation() {
         return this.pumpOutLocation;
     }
 
-    public Location getPumpOutBelowLocation() {
+    public WaterSupplyPump getPumpOutBelowLocation() {
         return this.pumpOutBelowLocation;
     }
 
-    public Location getPumpInLocation() {
+    public WaterSupplyPump getPumpInLocation() {
         return this.pumpInLocation;
     }
 
     public static class Builder {
         private WaterUserContractRef waterUserContractRef;
-        private LookupType waterSupplyContract;
+        private LookupType waterContract;
         private Date contractEffectiveDate;
         private Date contractExpirationDate;
         private Double contractedStorage;
@@ -133,17 +135,17 @@ public class WaterUserContract {
         private String storageUnitsId;
         private Double futureUsePercentActivated;
         private Double totalAllocPercentActivated;
-        private Location pumpOutLocation;
-        private Location pumpOutBelowLocation;
-        private Location pumpInLocation;
+        private WaterSupplyPump pumpOutLocation;
+        private WaterSupplyPump pumpOutBelowLocation;
+        private WaterSupplyPump pumpInLocation;
 
         public Builder withWaterUserContractRef(WaterUserContractRef waterUserContractRef) {
             this.waterUserContractRef = waterUserContractRef;
             return this;
         }
 
-        public Builder withWaterSupplyContract(LookupType waterSupplyContract) {
-            this.waterSupplyContract = waterSupplyContract;
+        public Builder withWaterContract(LookupType waterContract) {
+            this.waterContract = waterContract;
             return this;
         }
 
@@ -187,23 +189,55 @@ public class WaterUserContract {
             return this;
         }
 
-        public Builder withPumpOutLocation(Location pumpOutLocation) {
+        public Builder withPumpOutLocation(WaterSupplyPump pumpOutLocation) {
             this.pumpOutLocation = pumpOutLocation;
             return this;
         }
 
-        public Builder withPumpOutBelowLocation(Location pumpOutBelowLocation) {
+        public Builder withPumpOutBelowLocation(WaterSupplyPump pumpOutBelowLocation) {
             this.pumpOutBelowLocation = pumpOutBelowLocation;
             return this;
         }
 
-        public Builder withPumpInLocation(Location pumpInLocation) {
+        public Builder withPumpInLocation(WaterSupplyPump pumpInLocation) {
             this.pumpInLocation = pumpInLocation;
             return this;
         }
 
         public WaterUserContract build() {
             return new WaterUserContract(this);
+        }
+    }
+
+    @Override
+    public void validate() {
+        if (this.waterUserContractRef == null) {
+            throw new FieldException("Water User Contract Ref cannot be null");
+        }
+        this.waterContract.validate();
+        if (this.contractEffectiveDate == null) {
+            throw new FieldException("Contract Effective Date cannot be null");
+        }
+        if (this.contractExpirationDate == null) {
+            throw new FieldException("Contract Expiration Date cannot be null");
+        }
+        if (this.contractedStorage == null) {
+            throw new FieldException("Contracted Storage cannot be null");
+        }
+        if (this.initialUseAllocation == null) {
+            throw new FieldException("Initial Use Allocation cannot be null");
+        }
+        if (this.futureUseAllocation == null) {
+            throw new FieldException("Future Use Allocation cannot be null");
+        }
+        if (this.storageUnitsId == null || this.storageUnitsId.isEmpty()) {
+            throw new FieldException("Storage Units Id cannot be null");
+        }
+        if (this.futureUsePercentActivated == null) {
+            throw new FieldException("Future Use Percent Activated cannot be null");
+        }
+        if (this.totalAllocPercentActivated == null) {
+            throw new FieldException("Total Allocation Percent Activated cannot be null");
         }
     }
 }

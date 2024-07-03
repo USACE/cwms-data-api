@@ -26,9 +26,11 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 
-public class WaterUser {
+public class WaterUser implements CwmsDTOBase {
 
     private String entityName;
     private CwmsId parentLocationRef;
@@ -53,5 +55,16 @@ public class WaterUser {
 
     public String getWaterRight() {
         return this.waterRight;
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        if (this.entityName == null || this.entityName.isEmpty()){
+            throw new FieldException("Entity Name cannot be null or empty");
+        }
+        if (this.waterRight == null || this.waterRight.isEmpty()){
+            throw new FieldException("Water Right cannot be null or empty");
+        }
+        this.parentLocationRef.validate();
     }
 }

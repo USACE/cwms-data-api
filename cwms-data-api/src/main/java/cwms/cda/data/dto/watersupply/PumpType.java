@@ -26,33 +26,18 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import cwms.cda.data.dto.CwmsDTOBase;
+public enum PumpType {
+    PUMP_IN("Pump In"),
+    PUMP_OUT("Pump Out"),
+    PUMP_OUT_BELOW("Pump Out Below Project");
 
-public class WaterUserContractRef implements CwmsDTOBase {
-    private WaterUser waterUser;
-    private String contractName;
+    private final String pumpName;
 
-    private WaterUserContractRef() {
+    PumpType(String name) {
+        this.pumpName = name;
     }
 
-    public WaterUserContractRef(WaterUser waterUser, String contractName) {
-        this.waterUser = waterUser;
-        this.contractName = contractName;
-    }
-
-    public String getContractName() {
-        return this.contractName;
-    }
-
-    public WaterUser getWaterUser() {
-        return this.waterUser;
-    }
-
-    @Override
-    public void validate() {
-        if (this.contractName == null) {
-            throw new IllegalArgumentException("ContractName cannot be null");
-        }
-        this.waterUser.validate();
+    public String getName() {
+        return pumpName;
     }
 }
