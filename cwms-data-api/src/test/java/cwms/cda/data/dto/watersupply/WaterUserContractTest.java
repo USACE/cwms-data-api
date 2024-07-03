@@ -79,15 +79,16 @@ final class WaterUserContractTest {
                 },
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                            .withWaterUserContractRef(new WaterUserContractRef(new WaterUser("Test User",
-                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"), "Test Contract"))
                             .withWaterContract(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
                                     .withTooltip("TEST TOOLTIP")
                                     .withDisplayValue("Test Display Value")
                                     .build())
+                            .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
+                            .withWaterUser(new WaterUser("Test User",
+                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
+                                    "Test Water Right"))
                             .withContractEffectiveDate(new Date(158000))
                             .withContractExpirationDate(new Date(167000))
                             .withFutureUseAllocation(27800.5)
@@ -101,9 +102,10 @@ final class WaterUserContractTest {
                 },
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                            .withWaterUserContractRef(new WaterUserContractRef(new WaterUser("Test User",
+                            .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
+                            .withWaterUser(new WaterUser("Test User",
                                     new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"), "Test Contract"))
+                                    "Test Water Right"))
                             .withWaterContract(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
@@ -123,9 +125,10 @@ final class WaterUserContractTest {
                 },
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                            .withWaterUserContractRef(new WaterUserContractRef(new WaterUser("Test User",
+                            .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
+                            .withWaterUser(new WaterUser("Test User",
                                     new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"), "Test Contract"))
+                                    "Test Water Right"))
                             .withWaterContract(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
@@ -145,9 +148,10 @@ final class WaterUserContractTest {
                 },
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                            .withWaterUserContractRef(new WaterUserContractRef(new WaterUser("Test User",
+                            .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
+                            .withWaterUser(new WaterUser("Test User",
                                     new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"), "Test Contract"))
+                                    "Test Water Right"))
                             .withWaterContract(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
@@ -191,9 +195,10 @@ final class WaterUserContractTest {
 
     private static WaterUserContract buildTestWaterUserContract() {
         return new WaterUserContract.Builder()
-                .withWaterUserContractRef(new WaterUserContractRef(new WaterUser("Test User",
+                .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
+                .withWaterUser(new WaterUser("Test User",
                         new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                        "Test Water Right"), "Test Contract"))
+                        "Test Water Right"))
                 .withWaterContract(new LookupType.Builder()
                         .withActive(true)
                         .withDisplayValue("Test Display Value")
@@ -246,7 +251,8 @@ final class WaterUserContractTest {
 
     public static void assertSame(WaterUserContract firstContract, WaterUserContract secondContract) {
         assertAll(
-            () -> assertSame(firstContract.getWaterUserContractRef(), secondContract.getWaterUserContractRef()),
+            () -> assertSame(firstContract.getWaterUser(), secondContract.getWaterUser()),
+            () -> CwmsIdTest.assertSame(firstContract.getContractId(), secondContract.getContractId()),
             () -> LookupTypeTest.assertSame(firstContract.getWaterContract(), secondContract.getWaterContract()),
             () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
                     secondContract.getContractEffectiveDate().toString()),
@@ -273,11 +279,6 @@ final class WaterUserContractTest {
             () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType()),
             () -> CwmsIdTest.assertSame(firstPump.getPumpId(), secondPump.getPumpId())
         );
-    }
-
-    private static void assertSame(WaterUserContractRef firstContractRef, WaterUserContractRef secondContractRef) {
-        assertSame(firstContractRef.getWaterUser(), secondContractRef.getWaterUser());
-        assertEquals(firstContractRef.getContractName(), secondContractRef.getContractName());
     }
 
     private static void assertSame(WaterUser firstUser, WaterUser secondUser) {
