@@ -30,6 +30,7 @@ import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.Test;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public final class StreamLocationTest {
+final class StreamLocationTest {
 
     @Test
     void createStreamLocation_allFieldsProvided_success() {
@@ -189,7 +190,7 @@ public final class StreamLocationTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, streamLocation);
         StreamLocation deserialized = Formats.parseContent(contentType, json, StreamLocation.class);
-        assertSame(streamLocation, deserialized);
+        DTOMatch.assertMatch(streamLocation, deserialized);
     }
 
     @Test
@@ -212,19 +213,6 @@ public final class StreamLocationTest {
                 () -> assertEquals(0.01, deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
                 () -> assertEquals("mi2", deserialized.getAreaUnits(), "The area unit does not match"),
                 () -> assertEquals("ft", deserialized.getStageUnits(), "The stage unit does not match")
-        );
-    }
-
-    public static void assertSame(StreamLocation streamLocation, StreamLocation deserialized) {
-        assertAll(
-                () -> StreamLocationNodeTest.assertSame(streamLocation.getStreamLocationNode(), deserialized.getStreamLocationNode()),
-                () -> assertEquals(streamLocation.getPublishedStation(), deserialized.getPublishedStation(), "The published station does not match"),
-                () -> assertEquals(streamLocation.getNavigationStation(), deserialized.getNavigationStation(), "The navigation station does not match"),
-                () -> assertEquals(streamLocation.getLowestMeasurableStage(), deserialized.getLowestMeasurableStage(), "The lowest measurable stage does not match"),
-                () -> assertEquals(streamLocation.getTotalDrainageArea(), deserialized.getTotalDrainageArea(), "The total drainage area does not match"),
-                () -> assertEquals(streamLocation.getUngagedDrainageArea(), deserialized.getUngagedDrainageArea(), "The ungaged drainage area does not match"),
-                () -> assertEquals(streamLocation.getAreaUnits(), deserialized.getAreaUnits(), "The area unit does not match"),
-                () -> assertEquals(streamLocation.getStageUnits(), deserialized.getStageUnits(), "The stage unit does not match")
         );
     }
 }
