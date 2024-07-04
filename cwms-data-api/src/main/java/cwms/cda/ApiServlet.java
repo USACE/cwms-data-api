@@ -100,7 +100,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
-import cwms.cda.api.project.ProjectChildrenHandler;
+import cwms.cda.api.project.ProjectChildLocationHandler;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
@@ -520,7 +520,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
 
-        get("/projects/children/", new ProjectChildrenHandler(metrics));
+        get("/projects/child-locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),

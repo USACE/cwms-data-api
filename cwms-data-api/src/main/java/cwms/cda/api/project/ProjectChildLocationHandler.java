@@ -37,8 +37,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.project.ProjectChildrenDao;
-import cwms.cda.data.dto.project.ProjectChildren;
+import cwms.cda.data.dao.project.ProjectChildLocationDao;
+import cwms.cda.data.dto.project.ProjectChildLocations;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -54,9 +54,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 
-public class ProjectChildrenHandler implements Handler {
+public class ProjectChildLocationHandler implements Handler {
     public static final String TAGS = "Projects";
-    public static final String PATH = "/projects/children";
+    public static final String PATH = "/projects/child-locations/";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -64,9 +64,9 @@ public class ProjectChildrenHandler implements Handler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectChildrenHandler(MetricRegistry metrics) {
+    public ProjectChildLocationHandler(MetricRegistry metrics) {
         this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(ProjectChildrenHandler.class, Controllers.RESULTS,
+        requestResultSize = this.metrics.histogram((name(ProjectChildLocationHandler.class, Controllers.RESULTS,
                 Controllers.SIZE)));
     }
 
@@ -80,14 +80,14 @@ public class ProjectChildrenHandler implements Handler {
                 @OpenApiParam(name = LOCATION_KIND_LIKE, description = "Posix <a "
                         + "href=\"regexp.html\">regular expression</a> matching against the "
                         + "location kind.  The pattern will be matched against "
-                        + "the valid location-kinds for Project Children:"
+                        + "the valid location-kinds for Project child locations:"
                         + "{\"EMBANKMENT\", \"TURBINE\", \"OUTLET\", \"LOCK\", \"GATE\"}. "
                         + "Multiple kinds can be matched by using Regular Expression "
                         + "OR clauses. For example: \"(TURBINE|OUTLET)\"")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON, from = ProjectChildren.class, isArray = true)})
+                    @OpenApiContent(type = Formats.JSON, from = ProjectChildLocations.class, isArray = true)})
             },
             tags = {TAGS},
             path = PATH,
@@ -97,14 +97,14 @@ public class ProjectChildrenHandler implements Handler {
     public void handle(@NotNull Context ctx) throws Exception {
         String office = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            ProjectChildrenDao lockDao = new ProjectChildrenDao(JooqDao.getDslContext(ctx));
+            ProjectChildLocationDao lockDao = new ProjectChildLocationDao(JooqDao.getDslContext(ctx));
             String projLike = ctx.queryParamAsClass(PROJECT_LIKE, String.class).getOrDefault(null);
             String kindLike = ctx.queryParamAsClass(LOCATION_KIND_LIKE, String.class).getOrDefault(null);
 
-            List<ProjectChildren> children = lockDao.children(office, projLike, kindLike);
+            List<ProjectChildLocations> childLocations = lockDao.retrieveProjectChildLocations(office, projLike, kindLike);
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, ProjectChildren.class);
-            String result = Formats.format(contentType, children, ProjectChildren.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, ProjectChildLocations.class);
+            String result = Formats.format(contentType, childLocations, ProjectChildLocations.class);
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);

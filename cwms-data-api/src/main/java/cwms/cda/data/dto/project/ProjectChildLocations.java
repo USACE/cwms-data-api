@@ -39,13 +39,13 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This class holds a project and lists of the project children by kind.
+ * This class holds a project and lists of the project child locations by kind.
  */
-@JsonDeserialize(builder = ProjectChildren.Builder.class)
+@JsonDeserialize(builder = ProjectChildLocations.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-public class ProjectChildren implements CwmsDTOBase {
+@FormattableWith(contentType = Formats.JSONV2, aliases = {Formats.JSON}, formatter = JsonV2.class)
+public class ProjectChildLocations implements CwmsDTOBase {
 
     private final CwmsId project;
 
@@ -55,7 +55,7 @@ public class ProjectChildren implements CwmsDTOBase {
     private final List<CwmsId> turbines;
     private final List<CwmsId> gates;
 
-    private ProjectChildren(Builder builder) {
+    private ProjectChildLocations(Builder builder) {
         this.project = builder.project;
         this.embankments = builder.embankments;
         this.locks = builder.locks;
@@ -142,8 +142,8 @@ public class ProjectChildren implements CwmsDTOBase {
             return retval;
         }
 
-        public ProjectChildren build() {
-            return new ProjectChildren(this);
+        public ProjectChildLocations build() {
+            return new ProjectChildLocations(this);
         }
     }
 }

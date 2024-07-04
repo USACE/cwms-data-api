@@ -40,7 +40,7 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-class ProjectChildrenTest {
+class ProjectChildLocationsTest {
 
     public static final String OFFICE = "SPK";
 
@@ -66,7 +66,7 @@ class ProjectChildrenTest {
         List<CwmsId> outlets = new ArrayList<>();
         outlets.add(buildId(OFFICE, "TestOutlet1"));
 
-        ProjectChildren projectChildren = new ProjectChildren.Builder()
+        ProjectChildLocations projectChildLocations = new ProjectChildLocations.Builder()
                 .withProject(proj)
                 .withEmbankments(embanks)
                 .withLocks(locks)
@@ -74,20 +74,20 @@ class ProjectChildrenTest {
                 .withTurbines(turbines)
                 .withOutlets(outlets)
                 .build();
-        assertNotNull(projectChildren);
+        assertNotNull(projectChildLocations);
 
-        assertEquals(proj, projectChildren.getProject());
-        assertEquals(embanks, projectChildren.getEmbankments());
-        assertEquals(locks, projectChildren.getLocks());
+        assertEquals(proj, projectChildLocations.getProject());
+        assertEquals(embanks, projectChildLocations.getEmbankments());
+        assertEquals(locks, projectChildLocations.getLocks());
 
-        String json = Formats.format(new ContentType(Formats.JSON), projectChildren);
+        String json = Formats.format(new ContentType(Formats.JSON), projectChildLocations);
 
 
         assertNotNull(json);
 
     }
 
-    private ProjectChildren buildTestProjectChildren(String office, String projectName) {
+    private ProjectChildLocations buildTestProjectChildLocations(String office, String projectName) {
         CwmsId proj = buildId(office, projectName);
 
         List<CwmsId> embanks = new ArrayList<>();
@@ -108,7 +108,7 @@ class ProjectChildrenTest {
         List<CwmsId> outlets = new ArrayList<>();
         outlets.add(buildId(office, "TestOutlet1"));
 
-        return new ProjectChildren.Builder()
+        return new ProjectChildLocations.Builder()
                 .withProject(proj)
                 .withEmbankments(embanks)
                 .withLocks(locks)
@@ -120,12 +120,12 @@ class ProjectChildrenTest {
 
     @Test
     void test_list_serialization(){
-        List<ProjectChildren> list = new ArrayList<>();
+        List<ProjectChildLocations> list = new ArrayList<>();
 
-        list.add(buildTestProjectChildren(OFFICE, "TestProject1"));
-        list.add(buildTestProjectChildren(OFFICE, "TestProject2"));
+        list.add(buildTestProjectChildLocations(OFFICE, "TestProject1"));
+        list.add(buildTestProjectChildLocations(OFFICE, "TestProject2"));
 
-        String json = Formats.format(new ContentType(Formats.JSON), list, ProjectChildren.class);
+        String json = Formats.format(new ContentType(Formats.JSON), list, ProjectChildLocations.class);
         assertNotNull(json);
         assertFalse(json.isEmpty());
         assertTrue(json.contains("TestProject1"));
@@ -140,7 +140,7 @@ class ProjectChildrenTest {
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        List<ProjectChildren> list = om.readValue(input, new TypeReference<List<ProjectChildren>>(){});
+        List<ProjectChildLocations> list = om.readValue(input, new TypeReference<List<ProjectChildLocations>>(){});
 
         assertNotNull(list);
         assertFalse(list.isEmpty());
@@ -155,15 +155,15 @@ class ProjectChildrenTest {
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        ProjectChildren projectChildren = om.readValue(input, ProjectChildren.class);
-        assertNotNull(projectChildren);
+        ProjectChildLocations projectChildLocations = om.readValue(input, ProjectChildLocations.class);
+        assertNotNull(projectChildLocations);
 
-        CwmsId project = projectChildren.getProject();
+        CwmsId project = projectChildLocations.getProject();
         assertNotNull(project);
         assertEquals("SPK", project.getOfficeId());
         assertEquals("TestProject", project.getName());
 
-        List<CwmsId> embankments = projectChildren.getEmbankments();
+        List<CwmsId> embankments = projectChildLocations.getEmbankments();
         assertNotNull(embankments);
         assertEquals(2, embankments.size());
         assertEquals("SPK", embankments.get(0).getOfficeId());
@@ -171,7 +171,7 @@ class ProjectChildrenTest {
         assertEquals("SPK", embankments.get(1).getOfficeId());
         assertEquals("TestEmbankment2", embankments.get(1).getName());
 
-        List<CwmsId> locks = projectChildren.getLocks();
+        List<CwmsId> locks = projectChildLocations.getLocks();
         assertNotNull(locks);
         assertEquals(3, locks.size());
         assertEquals("SPK", locks.get(0).getOfficeId());
@@ -181,19 +181,19 @@ class ProjectChildrenTest {
         assertEquals("SPK", locks.get(2).getOfficeId());
         assertEquals("TestLock3", locks.get(2).getName());
 
-        List<CwmsId> outlets = projectChildren.getOutlets();
+        List<CwmsId> outlets = projectChildLocations.getOutlets();
         assertNotNull(outlets);
         assertEquals(1, outlets.size());
         assertEquals("SPK", outlets.get(0).getOfficeId());
         assertEquals("TestOutlet1", outlets.get(0).getName());
 
-        List<CwmsId> turbines = projectChildren.getTurbines();
+        List<CwmsId> turbines = projectChildLocations.getTurbines();
         assertNotNull(turbines);
         assertEquals(1, turbines.size());
         assertEquals("SPK", turbines.get(0).getOfficeId());
         assertEquals("TestTurbine1", turbines.get(0).getName());
 
-        List<CwmsId> gates = projectChildren.getGates();
+        List<CwmsId> gates = projectChildLocations.getGates();
         assertNotNull(gates);
         assertEquals(1, gates.size());
         assertEquals("SPK", gates.get(0).getOfficeId());
@@ -208,25 +208,24 @@ class ProjectChildrenTest {
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        ProjectChildren projectChildren1 = om.readValue(input, ProjectChildren.class);
-        assertNotNull(projectChildren1);
+        ProjectChildLocations projectChildLocations1 = om.readValue(input, ProjectChildLocations.class);
+        assertNotNull(projectChildLocations1);
 
-        String json = om.writeValueAsString(projectChildren1);
-        ProjectChildren projectChildren2 = om.readValue(json, ProjectChildren.class);
-        assertNotNull(projectChildren2);
+        String json = om.writeValueAsString(projectChildLocations1);
+        ProjectChildLocations projectChildLocations2 = om.readValue(json, ProjectChildLocations.class);
+        assertNotNull(projectChildLocations2);
 
-        assertProjectChildrenEqual(projectChildren1, projectChildren2);
-
+        assertProjectChildLocationsEqual(projectChildLocations1, projectChildLocations2);
     }
 
-    private static void assertProjectChildrenEqual(ProjectChildren projectChildren1, ProjectChildren projectChildren2) {
-        assertAll("ProjectChildren",
-                () -> assertCwmsIdEqual(projectChildren1.getProject(), projectChildren2.getProject()),
-                () -> assertListEqual(projectChildren1.getEmbankments(), projectChildren2.getEmbankments()),
-                () -> assertListEqual(projectChildren1.getLocks(), projectChildren2.getLocks()),
-                () -> assertListEqual(projectChildren1.getGates(), projectChildren2.getGates()),
-                () -> assertListEqual(projectChildren1.getTurbines(), projectChildren2.getTurbines()),
-                () -> assertListEqual(projectChildren1.getOutlets(), projectChildren2.getOutlets())
+    private static void assertProjectChildLocationsEqual(ProjectChildLocations projectChildLocations1, ProjectChildLocations projectChildLocations2) {
+        assertAll("ProjectChildLocations",
+                () -> assertCwmsIdEqual(projectChildLocations1.getProject(), projectChildLocations2.getProject()),
+                () -> assertListEqual(projectChildLocations1.getEmbankments(), projectChildLocations2.getEmbankments()),
+                () -> assertListEqual(projectChildLocations1.getLocks(), projectChildLocations2.getLocks()),
+                () -> assertListEqual(projectChildLocations1.getGates(), projectChildLocations2.getGates()),
+                () -> assertListEqual(projectChildLocations1.getTurbines(), projectChildLocations2.getTurbines()),
+                () -> assertListEqual(projectChildLocations1.getOutlets(), projectChildLocations2.getOutlets())
         );
     }
 
