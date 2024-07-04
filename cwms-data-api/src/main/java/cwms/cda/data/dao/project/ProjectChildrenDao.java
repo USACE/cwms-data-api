@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.codegen.tables.AV_EMBANKMENT;
-import usace.cwms.db.jooq.codegen.tables.AV_GATE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOCK;
 import usace.cwms.db.jooq.codegen.tables.AV_OUTLET;
 import usace.cwms.db.jooq.codegen.tables.AV_TURBINE;
@@ -117,21 +116,23 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
 
     private Map<String, List<CwmsId>> getGateChildren(String office, @Nullable String projLike) {
         Map<String, List<CwmsId>> retval = new LinkedHashMap<>();
-        AV_GATE view = AV_GATE.AV_GATE;
-        dsl.selectDistinct(view.OFFICE_ID, view.GATE_ID, view.PROJECT_ID)
+        // AV_GATE is apparently not used.
+        AV_OUTLET view = AV_OUTLET.AV_OUTLET;
+        dsl.selectDistinct(view.OFFICE_ID, view.PROJECT_ID, view.OUTLET_ID)
                 .from(view)
-                .where(view.OFFICE_ID.eq(office))
+                .where(view.OFFICE_ID.eq(office)
+                        .and(view.OPENING_UNIT_EN.isNotNull().or(view.OPENING_UNIT_SI.isNotNull()))
+                )
                 .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projLike))
-                .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.GATE_ID)
+                .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.OUTLET_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
                     CwmsId gate = new CwmsId.Builder()
                             .withOfficeId(row.get(view.OFFICE_ID))
-                            .withName(row.get(view.GATE_ID))
+                            .withName(row.get(view.OUTLET_ID))
                             .build();
                     retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(gate);
                 });
-
 
         return retval;
     }
@@ -153,7 +154,6 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                     retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(lock);
                 });
 
-
         return retval;
     }
 
@@ -173,7 +173,6 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                             .build();
                     retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(outlet);
                 });
-
 
         return retval;
     }
@@ -215,7 +214,6 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                             .build();
                     retval.computeIfAbsent(projId, k -> new ArrayList<>()).add(embankment);
                 });
-
 
         return retval;
     }

@@ -38,6 +38,9 @@ import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class holds a project and lists of the project children by kind.
+ */
 @JsonDeserialize(builder = ProjectChildren.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
