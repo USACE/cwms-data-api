@@ -88,7 +88,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
-import cwms.cda.api.project.ProjectChildrenHandler;
+import cwms.cda.api.project.ProjectChildLocationHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -475,7 +475,7 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
-        get("/projects/children/", new ProjectChildrenHandler(metrics));
+        get("/projects/child-locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),

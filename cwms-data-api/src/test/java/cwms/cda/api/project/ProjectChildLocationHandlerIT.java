@@ -59,7 +59,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-public class ProjectChildrenHandlerIT extends DataApiTestIT {
+public class ProjectChildLocationHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
@@ -121,7 +121,7 @@ public class ProjectChildrenHandlerIT extends DataApiTestIT {
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
-                    .get("/projects/children/")
+                    .get("/projects/child-locations/")
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()

@@ -26,7 +26,7 @@ package cwms.cda.data.dao.project;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.project.ProjectChildren;
+import cwms.cda.data.dto.project.ProjectChildLocations;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,29 +37,29 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOCK;
 import usace.cwms.db.jooq.codegen.tables.AV_OUTLET;
 import usace.cwms.db.jooq.codegen.tables.AV_TURBINE;
 
-public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
+public class ProjectChildLocationDao extends JooqDao<ProjectChildLocations> {
 
-    public ProjectChildrenDao(DSLContext dsl) {
+    public ProjectChildLocationDao(DSLContext dsl) {
         super(dsl);
     }
 
 
-    public List<ProjectChildren> children(String office, String projLike, String kindRegex) {
-        return children(office, projLike, ProjectKind.getMatchingKinds(kindRegex));
+    public List<ProjectChildLocations> retrieveProjectChildLocations(String office, String projLike, String kindRegex) {
+        return retrieveProjectChildLocations(office, projLike, ProjectKind.getMatchingKinds(kindRegex));
     }
 
-    private List<ProjectChildren> children(String office, String projLike, Set<ProjectKind> kinds) {
+    private List<ProjectChildLocations> retrieveProjectChildLocations(String office, String projLike, Set<ProjectKind> kinds) {
 
-        Map<String, ProjectChildren.Builder> builderMap = new LinkedHashMap<>();  // proj-id->
+        Map<String, ProjectChildLocations.Builder> builderMap = new LinkedHashMap<>();  // proj-id->
 
         for (ProjectKind kind : kinds) {
-            Map<String, List<CwmsId>> locsOfKind = getChildrenOfKind(office, projLike, kind);
+            Map<String, List<CwmsId>> locsOfKind = getChildLocationsOfKind(office, projLike, kind);
             if (locsOfKind != null) {
                 for (Map.Entry<String, List<CwmsId>> entry : locsOfKind.entrySet()) {
                     String projId = entry.getKey();
                     List<CwmsId> locs = entry.getValue();
-                    ProjectChildren.Builder builder = builderMap.computeIfAbsent(projId, k ->
-                            new ProjectChildren.Builder()
+                    ProjectChildLocations.Builder builder = builderMap.computeIfAbsent(projId, k ->
+                            new ProjectChildLocations.Builder()
                                     .withProject(new CwmsId.Builder()
                                             .withOfficeId(office)
                                             .withName(projId)
@@ -83,38 +83,35 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                         default:
                             break;
                     }
-
                 }
             }
         }
 
         return builderMap.values().stream()
-                .map(ProjectChildren.Builder::build)
+                .map(ProjectChildLocations.Builder::build)
                 .collect(Collectors.toList());
-
     }
 
     @Nullable
-    private Map<String, List<CwmsId>> getChildrenOfKind(String office, String projLike, ProjectKind kind) {
+    private Map<String, List<CwmsId>> getChildLocationsOfKind(String office, String projRegex, ProjectKind kind) {
         switch (kind) {
-
             case EMBANKMENT:
-                return getEmbankmentChildren(office, projLike);
+                return getEmbankmentChildLocations(office, projRegex);
             case TURBINE:
-                return getTurbineChildren(office, projLike);
+                return getTurbineChildLocations(office, projRegex);
             case OUTLET:
-                return getOutletChildren(office, projLike);
+                return getOutletChildLocations(office, projRegex);
             case LOCK:
-                return getLockChildren(office, projLike);
+                return getLockChildLocations(office, projRegex);
             case GATE:
-                return getGateChildren(office, projLike);
+                return getGateChildLocations(office, projRegex);
             default:
                 return null;
         }
 
     }
 
-    private Map<String, List<CwmsId>> getGateChildren(String office, @Nullable String projLike) {
+    private Map<String, List<CwmsId>> getGateChildLocations(String office, @Nullable String projRegex) {
         Map<String, List<CwmsId>> retval = new LinkedHashMap<>();
         // AV_GATE is apparently not used.
         AV_OUTLET view = AV_OUTLET.AV_OUTLET;
@@ -123,7 +120,7 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
                 .where(view.OFFICE_ID.eq(office)
                         .and(view.OPENING_UNIT_EN.isNotNull().or(view.OPENING_UNIT_SI.isNotNull()))
                 )
-                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projLike))
+                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projRegex))
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.OUTLET_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
@@ -137,13 +134,13 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
         return retval;
     }
 
-    private Map<String, List<CwmsId>> getLockChildren(String office, String projLike) {
+    private Map<String, List<CwmsId>> getLockChildLocations(String office, @Nullable String projRegex) {
         Map<String, List<CwmsId>> retval = new LinkedHashMap<>();
         AV_LOCK view = AV_LOCK.AV_LOCK;
         dsl.selectDistinct(view.DB_OFFICE_ID, view.LOCK_ID, view.PROJECT_ID)
                 .from(view)
                 .where(view.DB_OFFICE_ID.eq(office))
-                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projLike))
+                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projRegex))
                 .orderBy(view.DB_OFFICE_ID, view.PROJECT_ID, view.LOCK_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
@@ -157,13 +154,13 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
         return retval;
     }
 
-    private Map<String, List<CwmsId>> getOutletChildren(String office, String projLike) {
+    private Map<String, List<CwmsId>> getOutletChildLocations(String office, @Nullable String projRegex) {
         Map<String, List<CwmsId>> retval = new LinkedHashMap<>();
         AV_OUTLET view = AV_OUTLET.AV_OUTLET;
         dsl.selectDistinct(view.OFFICE_ID, view.OUTLET_ID, view.PROJECT_ID)
                 .from(view)
                 .where(view.OFFICE_ID.eq(office))
-                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projLike))
+                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projRegex))
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.OUTLET_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
@@ -177,13 +174,13 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
         return retval;
     }
 
-    private Map<String, List<CwmsId>> getTurbineChildren(String office, String projLike) {
+    private Map<String, List<CwmsId>> getTurbineChildLocations(String office, @Nullable String projRegex) {
         Map<String, List<CwmsId>> retval = new LinkedHashMap<>();
         AV_TURBINE view = AV_TURBINE.AV_TURBINE;
         dsl.selectDistinct(view.OFFICE_ID, view.TURBINE_ID, view.PROJECT_ID)
                 .from(view)
                 .where(view.OFFICE_ID.eq(office))
-                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projLike))
+                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projRegex))
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.TURBINE_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
@@ -197,14 +194,14 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
         return retval;
     }
 
-    private Map<String, List<CwmsId>> getEmbankmentChildren(String office, String projLike) {
+    private Map<String, List<CwmsId>> getEmbankmentChildLocations(String office, @Nullable String projRegex) {
         Map<String, List<CwmsId>> retval = new LinkedHashMap<>();
         AV_EMBANKMENT view = AV_EMBANKMENT.AV_EMBANKMENT;
         dsl.selectDistinct(view.OFFICE_ID, view.EMBANKMENT_LOCATION_ID, view.PROJECT_ID)
                 .from(view)
                 .where(view.OFFICE_ID.eq(office)
                         .and(view.UNIT_SYSTEM.eq("SI")))
-                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projLike))
+                .and(caseInsensitiveLikeRegexNullTrue(view.PROJECT_ID, projRegex))
                 .orderBy(view.OFFICE_ID, view.PROJECT_ID, view.EMBANKMENT_LOCATION_ID)
                 .forEach(row -> {
                     String projId = row.get(view.PROJECT_ID);
@@ -217,6 +214,5 @@ public class ProjectChildrenDao extends JooqDao<ProjectChildren> {
 
         return retval;
     }
-
 
 }
