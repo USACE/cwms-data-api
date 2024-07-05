@@ -136,7 +136,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             List<TurbineChange> retval = new ArrayList<>();
             if (turbineChanges != null) {
                 turbineChanges.stream()
-                    .map(this::map)
+                    .map(TurbineDao::map)
                     .forEach(retval::add);
             }
             return retval;
@@ -152,7 +152,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             setOffice(conn, physicalStructureChange.get(0).getOfficeId());
             TURBINE_CHANGE_TAB_T changes = new TURBINE_CHANGE_TAB_T();
             physicalStructureChange.stream()
-                .map(this::map)
+                .map(TurbineDao::map)
                 .forEach(changes::add);
             CWMS_TURBINE_PACKAGE.call_STORE_TURBINE_CHANGES(dsl.configuration(), changes, null, null,
                 "UTC", "T", "T",
@@ -175,11 +175,11 @@ public class TurbineDao extends JooqDao<Turbine> {
         });
     }
 
-    private TurbineChange map(TURBINE_CHANGE_OBJ_T change) {
+    static TurbineChange map(TURBINE_CHANGE_OBJ_T change) {
         List<TurbineSetting> settings = new ArrayList<>();
         if (change.getSETTINGS() != null) {
             change.getSETTINGS().stream()
-                .map(this::map)
+                .map(TurbineDao::map)
                 .forEach(settings::add);
         }
         return new TurbineChange.Builder()
@@ -199,10 +199,10 @@ public class TurbineDao extends JooqDao<Turbine> {
             .build();
     }
 
-    private TURBINE_CHANGE_OBJ_T map(TurbineChange change) {
+    static TURBINE_CHANGE_OBJ_T map(TurbineChange change) {
         TURBINE_SETTING_TAB_T settings = new TURBINE_SETTING_TAB_T();
         change.getSettings().stream()
-            .map(this::map)
+            .map(TurbineDao::map)
             .forEach(settings::add);
         TURBINE_CHANGE_OBJ_T retval = new TURBINE_CHANGE_OBJ_T();
         retval.setELEV_TAILWATER(change.getTailwaterElevation());
@@ -221,7 +221,7 @@ public class TurbineDao extends JooqDao<Turbine> {
         return retval;
     }
 
-    private TurbineSetting map(TURBINE_SETTING_OBJ_T setting) {
+    private static TurbineSetting map(TURBINE_SETTING_OBJ_T setting) {
         return new TurbineSetting.Builder()
             .withLocationId(LocationUtil.getLocationIdentifier(setting.getTURBINE_LOCATION_REF()))
             .withGenerationUnits(setting.getGENERATION_UNITS())
@@ -233,7 +233,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             .build();
     }
 
-    private TURBINE_SETTING_OBJ_T map(TurbineSetting setting) {
+    private static TURBINE_SETTING_OBJ_T map(TurbineSetting setting) {
         TURBINE_SETTING_OBJ_T retval = new TURBINE_SETTING_OBJ_T();
         retval.setTURBINE_LOCATION_REF(LocationUtil.getLocationRef(setting.getLocationId()));
         retval.setGENERATION_UNITS(setting.getGenerationUnits());
