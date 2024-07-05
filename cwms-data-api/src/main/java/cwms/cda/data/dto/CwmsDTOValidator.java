@@ -67,13 +67,20 @@ public final class CwmsDTOValidator {
 
     public void validateRequiredFields(CwmsDTO cwmsDTO) {
         Class<? extends CwmsDTO> type = cwmsDTO.getClass();
+        while (CwmsDTO.class.isAssignableFrom(type)) {
+            validateFieldsInClass(cwmsDTO, type);
+            type = (Class<? extends CwmsDTO>) type.getSuperclass();
+        }
+    }
+
+    private void validateFieldsInClass(CwmsDTO cwmsDTO, Class<? extends CwmsDTO> type) {
         Field[] fields = type.getDeclaredFields();
         try {
             for (Field field : fields) {
                 JsonProperty annotation = field.getAnnotation(JsonProperty.class);
                 if (annotation != null && annotation.required()) {
                     boolean accessible = field.isAccessible();
-                    synchronized (type) {
+                    synchronized (CwmsDTO.class) {
                         try {
                             if (!accessible) {
                                 field.setAccessible(true);
@@ -93,8 +100,7 @@ public final class CwmsDTOValidator {
                 }
             }
         } catch (IllegalAccessException e) {
-            LOGGER.atWarning().withCause(e).log("Unable to validate required fields are non-null in DTO: " +
-                type);
+            LOGGER.atWarning().withCause(e).log("Unable to validate required fields are non-null in DTO: " + type);
         }
     }
 

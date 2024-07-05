@@ -160,8 +160,9 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         private Double tailwaterElevation;
         private String elevationUnits;
         private String notes;
-        private Set<T> settings;
         private Instant changeDate;
+        private final Set<T> settings = new TreeSet<>(comparing(Setting::getLocationId,
+            comparing(CwmsId::getOfficeId).thenComparing(CwmsId::getName)));;
 
 
         public B withProjectId(CwmsId projectId) {
@@ -226,13 +227,12 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         }
 
         public B withSettings(List<T> settings) {
-            this.settings = new TreeSet<>(comparing(Setting::getLocationId,
-                comparing(CwmsId::getOfficeId).thenComparing(CwmsId::getName)));
-            boolean receivedDuplicates = this.settings.addAll(settings);
-            if(receivedDuplicates) {
-                throw new FormattingException(
-                    "Received duplicate settings. Only a single setting per location per timestep is supported");
-            }
+            settings.forEach(s -> {
+                if (!this.settings.add(s)) {
+                    throw new FormattingException(
+                        "Received duplicate settings. Only a single setting per location per timestep is supported");
+                }
+            });
             return self();
         }
         
