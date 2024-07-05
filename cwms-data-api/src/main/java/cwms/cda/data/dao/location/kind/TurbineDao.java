@@ -124,18 +124,17 @@ public class TurbineDao extends JooqDao<Turbine> {
     }
 
     public List<PhysicalStructureChange<TurbineSetting>> retrieveOperationalChanges(CwmsId projectId, Instant startTime,
-        Instant endTime, String unitSystem, long rowLimit) {
+        Instant endTime, boolean startInclusive, boolean endInclusive, String unitSystem, long rowLimit) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, projectId.getOfficeId());
-            String startInclusive = "T";
-            String endInclusive = "T";
             LOCATION_REF_T locationRef = getLocationRef(projectId);
             Timestamp startTimestamp = Timestamp.from(startTime);
             Timestamp endTimestamp = Timestamp.from(endTime);
             BigInteger rowLimitBig = BigInteger.valueOf(rowLimit);
             TURBINE_CHANGE_TAB_T turbineChanges = CWMS_TURBINE_PACKAGE.call_RETRIEVE_TURBINE_CHANGES(
                 DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp,
-                "UTC", unitSystem, startInclusive, endInclusive, rowLimitBig);
+                "UTC", unitSystem, OracleTypeMap.formatBool(startInclusive), OracleTypeMap.formatBool(endInclusive),
+                rowLimitBig);
             List<PhysicalStructureChange<TurbineSetting>> retval = new ArrayList<>();
             if (turbineChanges != null) {
                 turbineChanges.stream()
@@ -157,7 +156,7 @@ public class TurbineDao extends JooqDao<Turbine> {
                 .map(this::map)
                 .forEach(changes::add);
             CWMS_TURBINE_PACKAGE.call_STORE_TURBINE_CHANGES(dsl.configuration(), changes, null, null,
-                "UTC", null, null,
+                "UTC", "T", "T",
                 OracleTypeMap.formatBool(overrideProtection));
         });
     }
