@@ -235,9 +235,9 @@ public class Formats {
         return formats.parseContentFromType(type, inputStream, rootType);
     }
 
-    public static <T extends CwmsDTOBase> List<T> parseContentList(ContentType type, String inputStream, Class<T> rootType)
+    public static <T extends CwmsDTOBase> List<T> parseContentList(ContentType type, String content, Class<T> rootType)
         throws FormattingException {
-        return formats.parseContentListFromType(type, inputStream, rootType);
+        return formats.parseContentListFromType(type, content, rootType);
     }
 
     /**
