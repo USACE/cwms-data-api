@@ -54,8 +54,7 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.location.kind.PhysicalStructureChange;
-import cwms.cda.data.dto.location.kind.TurbineSetting;
+import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -120,7 +119,7 @@ public final class TurbineChangesController implements CrudHandler {
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(isArray = true, type = Formats.JSONV1, from = PhysicalStructureChange.class)
+                @OpenApiContent(isArray = true, type = Formats.JSONV1, from = TurbineChange.class)
             })
         },
         description = "Returns matching CWMS Turbine Change Data for a Reservoir Project.",
@@ -146,13 +145,13 @@ public final class TurbineChangesController implements CrudHandler {
                 .build();
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
-            List<PhysicalStructureChange<TurbineSetting>> turbineChanges = dao.retrieveOperationalChanges(cwmsId,
+            List<TurbineChange> turbineChanges = dao.retrieveOperationalChanges(cwmsId,
                 begin, end, startTimeInclusive, endTimeInclusive, unitSystem.getValue(), rowLimit);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                 Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, PhysicalStructureChange.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
             ctx.contentType(contentType.toString());
-            String serialized = Formats.format(contentType, turbineChanges, PhysicalStructureChange.class);
+            String serialized = Formats.format(contentType, turbineChanges, TurbineChange.class);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
@@ -162,8 +161,8 @@ public final class TurbineChangesController implements CrudHandler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = PhysicalStructureChange.class, type = Formats.JSONV1),
-                @OpenApiContent(from = PhysicalStructureChange.class, type = Formats.JSON)
+                @OpenApiContent(from = TurbineChange.class, type = Formats.JSONV1),
+                @OpenApiContent(from = TurbineChange.class, type = Formats.JSON)
             },
             required = true),
         queryParams = {
@@ -185,8 +184,8 @@ public final class TurbineChangesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String acceptHeader = ctx.req.getContentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, PhysicalStructureChange.class);
-            List turbine = Formats.parseContentList(contentType, ctx.body(), PhysicalStructureChange.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
+            List<TurbineChange> turbine = Formats.parseContentList(contentType, ctx.body(), TurbineChange.class);
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                 .getOrDefault(false);
             DSLContext dsl = getDslContext(ctx);

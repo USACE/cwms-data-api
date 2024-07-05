@@ -35,6 +35,7 @@ import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.data.dto.location.kind.PhysicalStructureChange;
 import cwms.cda.data.dto.location.kind.Turbine;
+import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.data.dto.location.kind.TurbineSetting;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
@@ -145,9 +146,8 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(PhysicalStructureChange<TurbineSetting> first,
-        PhysicalStructureChange<TurbineSetting> second) {
-        assertAll(() -> assertMatch(first.getProjectId(), second.getProjectId(), "Project IDs do not match"),
+    public static void assertMatch(TurbineChange first, TurbineChange second) {
+        assertAll(() -> assertMatch(first.getProjectId(), second.getProjectId()),
             () -> assertMatch(first.getReasonType(), second.getReasonType()),
             () -> assertMatch(first.getDischargeComputationType(), second.getDischargeComputationType()),
             () -> assertSettingsMatch(first.getSettings(), second.getSettings()),

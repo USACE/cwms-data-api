@@ -66,7 +66,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 @Tag("integration")
-final class TurbineDaoIT extends DataApiTestIT {
+final class TurbineDaoTest extends DataApiTestIT {
     private static final String OFFICE = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1dao2");
     private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2dao2");
@@ -216,7 +216,8 @@ final class TurbineDaoIT extends DataApiTestIT {
             .getResourceAsStream("/cwms/cda/data/dao/location/kind/turbine-settings.json");
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = Formats.parseHeader(Formats.JSONV1, TurbineChange.class);
-        List<TurbineChange> settingsFromDisk = Formats.parseContentList(contentType, serialized, TurbineChange.class);
+        List<TurbineChange> settingsFromDisk = Formats.parseContentList(contentType, serialized,
+            TurbineChange.class);
         CwmsId projectId = new CwmsId.Builder()
             .withOfficeId(PROJECT_LOC.getOfficeId()).withName(PROJECT_LOC.getName()).build();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -229,8 +230,8 @@ final class TurbineDaoIT extends DataApiTestIT {
             Instant begin = ZonedDateTime.of(2024, 3, 4, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles")).toInstant();
             Instant end = ZonedDateTime.of(2024, 3, 4, 2, 0, 0, 0, ZoneId.of("America/Los_Angeles")).toInstant();
             turbineDao.storeOperationalChanges(settingsFromDisk, true);
-            List<TurbineChange> settings =
-                turbineDao.retrieveOperationalChanges(projectId, begin, end, true, true, "SI", 3);
+            List<TurbineChange> settings = turbineDao.retrieveOperationalChanges(projectId, begin, end, true, true,
+                "SI", 3);
             assertEquals(settingsFromDisk.size(), settings.size());
             for (int i = 0; i < settingsFromDisk.size(); i++) {
                 DTOMatch.assertMatch(settingsFromDisk.get(i), settings.get(i));

@@ -34,8 +34,8 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.location.kind.PhysicalStructureChange;
 import cwms.cda.data.dto.location.kind.Turbine;
+import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.data.dto.location.kind.TurbineSetting;
 import java.math.BigInteger;
 import java.sql.Timestamp;
@@ -123,7 +123,7 @@ public class TurbineDao extends JooqDao<Turbine> {
         });
     }
 
-    public List<PhysicalStructureChange<TurbineSetting>> retrieveOperationalChanges(CwmsId projectId, Instant startTime,
+    public List<TurbineChange> retrieveOperationalChanges(CwmsId projectId, Instant startTime,
         Instant endTime, boolean startInclusive, boolean endInclusive, String unitSystem, long rowLimit) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, projectId.getOfficeId());
@@ -135,7 +135,7 @@ public class TurbineDao extends JooqDao<Turbine> {
                 DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp,
                 "UTC", unitSystem, OracleTypeMap.formatBool(startInclusive), OracleTypeMap.formatBool(endInclusive),
                 rowLimitBig);
-            List<PhysicalStructureChange<TurbineSetting>> retval = new ArrayList<>();
+            List<TurbineChange> retval = new ArrayList<>();
             if (turbineChanges != null) {
                 turbineChanges.stream()
                     .map(this::map)
@@ -145,7 +145,7 @@ public class TurbineDao extends JooqDao<Turbine> {
         });
     }
 
-    public void storeOperationalChanges(List<PhysicalStructureChange<TurbineSetting>> physicalStructureChange,
+    public void storeOperationalChanges(List<TurbineChange> physicalStructureChange,
         boolean overrideProtection) {
         if (physicalStructureChange.isEmpty()) {
             return;
@@ -177,14 +177,14 @@ public class TurbineDao extends JooqDao<Turbine> {
         });
     }
 
-    private PhysicalStructureChange<TurbineSetting> map(TURBINE_CHANGE_OBJ_T change) {
+    private TurbineChange map(TURBINE_CHANGE_OBJ_T change) {
         Set<TurbineSetting> settings = new HashSet<>();
         if (change.getSETTINGS() != null) {
             change.getSETTINGS().stream()
                 .map(this::map)
                 .forEach(settings::add);
         }
-        return new PhysicalStructureChange.Builder<TurbineSetting>()
+        return new TurbineChange.Builder()
             .withTailwaterElevation(change.getELEV_TAILWATER())
             .withPoolElevation(change.getELEV_POOL())
             .withElevationUnits(change.getELEV_UNITS())
@@ -201,7 +201,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             .build();
     }
 
-    private TURBINE_CHANGE_OBJ_T map(PhysicalStructureChange<TurbineSetting> change) {
+    private TURBINE_CHANGE_OBJ_T map(TurbineChange change) {
         TURBINE_SETTING_TAB_T settings = new TURBINE_SETTING_TAB_T();
         change.getSettings().stream()
             .map(this::map)

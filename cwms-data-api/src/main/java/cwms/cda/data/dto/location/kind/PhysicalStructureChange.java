@@ -32,29 +32,16 @@ package cwms.cda.data.dto.location.kind;
 import static java.util.Comparator.comparing;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV1;
 import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
 
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonDeserialize(builder = PhysicalStructureChange.Builder.class)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"project-id", "change-date", "protected", "discharge-computation-type", "reason-type", "notes"})
-public final class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
+public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
     @JsonProperty(required = true)
     private final CwmsId projectId;
     @JsonProperty(value = "protected", required = true)
@@ -74,7 +61,7 @@ public final class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
     private final String notes;
     private final Set<T> settings;
 
-    private PhysicalStructureChange(Builder<T> builder) {
+    PhysicalStructureChange(Builder<?,T> builder) {
         //uses CwmsId instead of a separate office-id field
         super(null);
         this.projectId = builder.projectId;
@@ -157,8 +144,8 @@ public final class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
         validator.validateRequiredFields(this);
         validator.validateCollection(getSettings());
     }
-
-    public static final class Builder<T extends Setting> {
+    
+    public abstract static class Builder<B extends Builder<B, T>, T extends Setting> {
         private CwmsId projectId;
         private LookupType dischargeComputationType;
         private LookupType reasonType;
@@ -175,76 +162,76 @@ public final class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
         private Instant changeDate;
 
 
-        public Builder<T> withProjectId(CwmsId projectId) {
+        public B withProjectId(CwmsId projectId) {
             this.projectId = projectId;
-            return this;
+            return self();
         }
 
-        public Builder<T> withDischargeComputationType(LookupType dischargeComputationType) {
+        public B withDischargeComputationType(LookupType dischargeComputationType) {
             this.dischargeComputationType = dischargeComputationType;
-            return this;
+            return self();
         }
 
-        public Builder<T> withReasonType(LookupType reasonType) {
+        public B withReasonType(LookupType reasonType) {
             this.reasonType = reasonType;
-            return this;
+            return self();
         }
 
         @JsonProperty("protected")
-        public Builder<T> withProtected(boolean isProtected) {
+        public B withProtected(boolean isProtected) {
             this.isProtected = isProtected;
-            return this;
+            return self();
         }
 
-        public Builder<T> withNewTotalDischargeOverride(Double newTotalDischargeOverride) {
+        public B withNewTotalDischargeOverride(Double newTotalDischargeOverride) {
             this.newTotalDischargeOverride = newTotalDischargeOverride;
-            return this;
+            return self();
         }
 
-        public Builder<T> withOldTotalDischargeOverride(Double oldTotalDischargeOverride) {
+        public B withOldTotalDischargeOverride(Double oldTotalDischargeOverride) {
             this.oldTotalDischargeOverride = oldTotalDischargeOverride;
-            return this;
+            return self();
         }
 
-        public Builder<T> withDischargeUnits(String dischargeUnits) {
+        public B withDischargeUnits(String dischargeUnits) {
             this.dischargeUnits = dischargeUnits;
-            return this;
+            return self();
         }
 
-        public Builder<T> withPoolElevation(Double poolElevation) {
+        public B withPoolElevation(Double poolElevation) {
             this.poolElevation = poolElevation;
-            return this;
+            return self();
         }
 
-        public Builder<T> withTailwaterElevation(Double tailwaterElevation) {
+        public B withTailwaterElevation(Double tailwaterElevation) {
             this.tailwaterElevation = tailwaterElevation;
-            return this;
+            return self();
         }
 
-        public Builder<T> withElevationUnits(String elevationUnits) {
+        public B withElevationUnits(String elevationUnits) {
             this.elevationUnits = elevationUnits;
-            return this;
+            return self();
         }
 
-        public Builder<T> withNotes(String notes) {
+        public B withNotes(String notes) {
             this.notes = notes;
-            return this;
+            return self();
         }
 
-        public Builder<T> withChangeDate(Instant changeDate) {
+        public B withChangeDate(Instant changeDate) {
             this.changeDate = changeDate;
-            return this;
+            return self();
         }
 
-        public Builder<T> withSettings(Set<T> settings) {
+        public B withSettings(Set<T> settings) {
             this.settings = new TreeSet<>(comparing(Setting::getLocationId,
                 comparing(CwmsId::getOfficeId).thenComparing(CwmsId::getName)));
             this.settings.addAll(settings);
-            return this;
+            return self();
         }
+        
+        abstract B self();
 
-        public PhysicalStructureChange<T> build() {
-            return new PhysicalStructureChange<>(this);
-        }
+        public abstract PhysicalStructureChange<T> build();
     }
 }
