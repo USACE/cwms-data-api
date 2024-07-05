@@ -41,9 +41,7 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -178,7 +176,7 @@ public class TurbineDao extends JooqDao<Turbine> {
     }
 
     private TurbineChange map(TURBINE_CHANGE_OBJ_T change) {
-        Set<TurbineSetting> settings = new HashSet<>();
+        List<TurbineSetting> settings = new ArrayList<>();
         if (change.getSETTINGS() != null) {
             change.getSETTINGS().stream()
                 .map(this::map)
