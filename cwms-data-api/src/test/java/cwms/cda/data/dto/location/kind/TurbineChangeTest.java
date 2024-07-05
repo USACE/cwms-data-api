@@ -51,11 +51,10 @@ final class TurbineChangeTest {
     @ParameterizedTest
     @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
     void testTurbineSerializationRoundTrip(String format) {
-        PhysicalStructureChange<TurbineSetting> turbine = buildTestChange(Instant.now(), true);
-        ContentType contentType = Formats.parseHeader(format, PhysicalStructureChange.class);
+        TurbineChange turbine = buildTestChange(Instant.now(), true);
+        ContentType contentType = Formats.parseHeader(format, TurbineChange.class);
         String serialized = Formats.format(contentType, turbine);
-        PhysicalStructureChange<TurbineSetting> deserialized = Formats.parseContent(contentType, serialized,
-            PhysicalStructureChange.class);
+        TurbineChange deserialized = Formats.parseContent(contentType, serialized, TurbineChange.class);
         DTOMatch.assertMatch(turbine, deserialized);
     }
 
@@ -65,15 +64,14 @@ final class TurbineChangeTest {
         ZonedDateTime first = ZonedDateTime.of(2024, 3, 4, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         ZonedDateTime second = ZonedDateTime.of(2024, 3, 4, 1, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         ZonedDateTime third = ZonedDateTime.of(2024, 3, 4, 2, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        PhysicalStructureChange<TurbineSetting> turbineChange1 = buildTestChange(first.toInstant(), true);
-        PhysicalStructureChange<TurbineSetting> turbineChange2 = buildTestChange(second.toInstant(), false);
-        PhysicalStructureChange<TurbineSetting> turbineChange3 = buildTestChange(third.toInstant(), true);
+        TurbineChange turbineChange1 = buildTestChange(first.toInstant(), true);
+        TurbineChange turbineChange2 = buildTestChange(second.toInstant(), false);
+        TurbineChange turbineChange3 = buildTestChange(third.toInstant(), true);
         InputStream resource =
             this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/turbine-settings.json");
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        ContentType contentType = Formats.parseHeader(format, PhysicalStructureChange.class);
-        List<PhysicalStructureChange> deserialized = Formats.parseContentList(contentType, serialized,
-            PhysicalStructureChange.class);
+        ContentType contentType = Formats.parseHeader(format, TurbineChange.class);
+        List<TurbineChange> deserialized = Formats.parseContentList(contentType, serialized, TurbineChange.class);
         DTOMatch.assertMatch(turbineChange1, deserialized.get(0));
         DTOMatch.assertMatch(turbineChange2, deserialized.get(1));
         DTOMatch.assertMatch(turbineChange3, deserialized.get(2));
@@ -82,12 +80,12 @@ final class TurbineChangeTest {
     @Test
     void testValidate() {
         assertAll(() -> {
-                PhysicalStructureChange<TurbineSetting> turbineChange = new PhysicalStructureChange.Builder<TurbineSetting>()
+                TurbineChange turbineChange = new TurbineChange.Builder()
                     .build();
                 assertThrows(FieldException.class, turbineChange::validate,
                     "Expected validate() to throw FieldException because project-id field can't be null, but it didn't");
             }, () -> {
-                PhysicalStructureChange<TurbineSetting> turbineChange = new PhysicalStructureChange.Builder<TurbineSetting>()
+                TurbineChange turbineChange = new TurbineChange.Builder()
                     .withProjectId(new CwmsId.Builder()
                         .withName("PROJECT")
                         .build())
@@ -96,7 +94,7 @@ final class TurbineChangeTest {
                 assertThrows(FieldException.class, turbineChange::validate,
                     "Expected validate() to throw FieldException because project-id must contain an office, but it didn't");
             }, () -> {
-                PhysicalStructureChange<TurbineSetting> turbineChange = new PhysicalStructureChange.Builder<TurbineSetting>()
+                TurbineChange turbineChange = new TurbineChange.Builder()
                     .withProjectId(new CwmsId.Builder()
                         .withName("PROJECT")
                         .withOfficeId("SPK")
@@ -106,7 +104,7 @@ final class TurbineChangeTest {
                 assertThrows(FieldException.class, turbineChange::validate,
                     "Expected validate() to throw FieldException because discharge-computation-type field can't be null, but it didn't");
             }, () -> {
-                PhysicalStructureChange<TurbineSetting> turbineChange = new PhysicalStructureChange.Builder<TurbineSetting>()
+                TurbineChange turbineChange = new TurbineChange.Builder()
                     .withChangeDate(Instant.now())
                     .withDischargeComputationType(new LookupType.Builder()
                         .withOfficeId("SPK")
@@ -118,7 +116,7 @@ final class TurbineChangeTest {
         );
     }
 
-    private static PhysicalStructureChange<TurbineSetting> buildTestChange(Instant changeDate, boolean isProtected) {
+    private static TurbineChange buildTestChange(Instant changeDate, boolean isProtected) {
         Set<TurbineSetting> settings = new HashSet<>();
         settings.add(new TurbineSetting.Builder()
             .withLocationId(new CwmsId.Builder()
@@ -156,7 +154,7 @@ final class TurbineChangeTest {
             .withScheduledLoad(35.0)
             .withGenerationUnits("MW")
             .build());
-        return new PhysicalStructureChange.Builder<TurbineSetting>()
+        return new TurbineChange.Builder()
             .withChangeDate(changeDate)
             .withDischargeUnits("cms")
             .withElevationUnits("m")
