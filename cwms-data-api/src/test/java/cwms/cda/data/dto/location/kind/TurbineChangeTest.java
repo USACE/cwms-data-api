@@ -32,12 +32,14 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.FormattingException;
 import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,6 +77,28 @@ final class TurbineChangeTest {
         DTOMatch.assertMatch(turbineChange1, deserialized.get(0));
         DTOMatch.assertMatch(turbineChange2, deserialized.get(1));
         DTOMatch.assertMatch(turbineChange3, deserialized.get(2));
+    }
+
+    @ParameterizedTest
+    @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
+    void testMismatchSettingImpl(String format) throws Exception {
+        //Includes one setting typed as an outlet
+        InputStream resource = getClass()
+            .getResourceAsStream("/cwms/cda/data/dto/location/kind/turbine-bad-setting.json");
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        ContentType contentType = Formats.parseHeader(format, TurbineChange.class);
+        assertThrows(FormattingException.class, () -> Formats.parseContent(contentType, serialized, TurbineChange.class));
+    }
+
+    @ParameterizedTest
+    @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
+    void testDuplicateSetting(String format) throws Exception {
+        //Includes one setting typed as an outlet
+        InputStream resource = getClass()
+            .getResourceAsStream("/cwms/cda/data/dto/location/kind/turbine-duplicate-setting.json");
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        ContentType contentType = Formats.parseHeader(format, TurbineChange.class);
+        assertThrows(FormattingException.class, () -> Formats.parseContent(contentType, serialized, TurbineChange.class));
     }
 
     @Test
@@ -117,7 +141,7 @@ final class TurbineChangeTest {
     }
 
     private static TurbineChange buildTestChange(Instant changeDate, boolean isProtected) {
-        Set<TurbineSetting> settings = new HashSet<>();
+        List<TurbineSetting> settings = new ArrayList<>();
         settings.add(new TurbineSetting.Builder()
             .withLocationId(new CwmsId.Builder()
                 .withOfficeId("SPK")

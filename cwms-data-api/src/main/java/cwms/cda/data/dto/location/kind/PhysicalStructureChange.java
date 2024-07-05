@@ -37,7 +37,9 @@ import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.formatters.FormattingException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -223,10 +225,14 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
             return self();
         }
 
-        public B withSettings(Set<T> settings) {
+        public B withSettings(List<T> settings) {
             this.settings = new TreeSet<>(comparing(Setting::getLocationId,
                 comparing(CwmsId::getOfficeId).thenComparing(CwmsId::getName)));
-            this.settings.addAll(settings);
+            boolean receivedDuplicates = this.settings.addAll(settings);
+            if(receivedDuplicates) {
+                throw new FormattingException(
+                    "Received duplicate settings. Only a single setting per location per timestep is supported");
+            }
             return self();
         }
         
