@@ -74,17 +74,20 @@ public final class CwmsDTOValidator {
                 if (annotation != null && annotation.required()) {
                     boolean accessible = field.isAccessible();
                     synchronized (type) {
-                        if (!accessible) {
-                            field.setAccessible(true);
-                        }
-                        Object value = field.get(cwmsDTO);
-                        if (value == null) {
-                            missingFields.add(field.getName());
-                        } else if (value instanceof CwmsDTO) {
-                            validateRequiredFields((CwmsDTO) value);
-                        }
-                        if (!accessible) {
-                            field.setAccessible(false);
+                        try {
+                            if (!accessible) {
+                                field.setAccessible(true);
+                            }
+                            Object value = field.get(cwmsDTO);
+                            if (value == null) {
+                                missingFields.add(field.getName());
+                            } else if (value instanceof CwmsDTO) {
+                                validateRequiredFields((CwmsDTO) value);
+                            }
+                        } finally {
+                            if (!accessible) {
+                                field.setAccessible(false);
+                            }
                         }
                     }
                 }
