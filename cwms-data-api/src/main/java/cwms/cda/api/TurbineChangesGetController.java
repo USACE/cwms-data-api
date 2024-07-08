@@ -52,6 +52,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.TurbineChange;
@@ -60,6 +61,7 @@ import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -72,14 +74,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public final class TurbineChangesController implements CrudHandler {
+public final class TurbineChangesGetController implements Handler {
     private static final int DEFAULT_PAGE_SIZE = 500;
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
 
 
-    public TurbineChangesController(MetricRegistry metrics) {
+    public TurbineChangesGetController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
 
@@ -125,8 +127,8 @@ public final class TurbineChangesController implements CrudHandler {
         description = "Returns matching CWMS Turbine Change Data for a Reservoir Project.",
         tags = {TurbineController.TAG}
     )
-    @Override
-    public void getOne(@NotNull Context ctx, @NotNull String projectId) {
+    public void handle(@NotNull Context ctx) throws Exception {
+        String projectId = ctx.pathParam(NAME);
         String office = ctx.queryParam(OFFICE);
         Instant begin = requiredInstant(ctx, BEGIN);
         Instant end = requiredInstant(ctx, END);
@@ -156,98 +158,5 @@ public final class TurbineChangesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
         }
-    }
-
-    @OpenApi(
-        requestBody = @OpenApiRequestBody(
-            content = {
-                @OpenApiContent(from = TurbineChange.class, type = Formats.JSONV1),
-                @OpenApiContent(from = TurbineChange.class, type = Formats.JSON)
-            },
-            required = true),
-        queryParams = {
-            @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "A flag "
-                + "('True'/'False') specifying whether to delete protected data. "
-                + "Default is False")
-        },
-        description = "Create CWMS Turbine Changes",
-        method = HttpMethod.POST,
-        tags = {TurbineController.TAG},
-        responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Turbine successfully stored to CWMS."),
-            @OpenApiResponse(status = STATUS_404, description = "Project Id or Turbine location Ids not found.")
-        }
-    )
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Override
-    public void create(@NotNull Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
-            List<TurbineChange> turbine = Formats.parseContentList(contentType, ctx.body(), TurbineChange.class);
-            boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
-                .getOrDefault(false);
-            DSLContext dsl = getDslContext(ctx);
-            TurbineDao dao = new TurbineDao(dsl);
-            dao.storeOperationalChanges(turbine, overrideProtection);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Turbine Changes");
-        }
-    }
-
-    @OpenApi(
-        pathParams = {
-            @OpenApiParam(name = NAME, required = true, description = "Specifies the name of project for the " +
-                "turbine changes to be deleted."),
-        },
-        queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                + "the project for changes to be deleted."),
-            @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
-            @OpenApiParam(name = END, required = true, description = "The end of the time window."),
-            @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "A flag "
-                + "('True'/'False') specifying whether to delete protected data. "
-                + "Default is False")
-        },
-        description = "Delete CWMS Turbine Changes",
-        method = HttpMethod.DELETE,
-        tags = {TurbineController.TAG},
-        responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Turbine successfully deleted from CWMS."),
-            @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                + "inputs provided the project was not found.")
-        }
-    )
-    @Override
-    public void delete(@NotNull Context ctx, @NotNull String projectId) {
-        String office = requiredParam(ctx, OFFICE);
-        Instant begin = requiredInstant(ctx, BEGIN);
-        Instant end = requiredInstant(ctx, END);
-        boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
-            .getOrDefault(false);
-        try (Timer.Context ignored = markAndTime(DELETE)) {
-            DSLContext dsl = getDslContext(ctx);
-            TurbineDao dao = new TurbineDao(dsl);
-            CwmsId cwmsId = new CwmsId.Builder()
-                .withName(projectId)
-                .withOfficeId(office)
-                .build();
-            dao.deleteOperationalChanges(cwmsId, begin, end, overrideProtection);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(projectId + " Deleted");
-        }
-    }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void getAll(@NotNull Context ctx) {
-
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-    }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void update(@NotNull Context ctx, @NotNull String s) {
-
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 }

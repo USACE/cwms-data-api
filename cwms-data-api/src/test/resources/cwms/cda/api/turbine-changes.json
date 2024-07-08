@@ -1,0 +1,128 @@
+[
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "PROJ"
+    },
+    "change-date": 1709539200000,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "R",
+      "tooltip": "Reported by powerhouse",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "S",
+      "tooltip": "Scheduled release to meet loads",
+      "active": true
+    },
+    "notes": "from SCADA",
+    "new-total-discharge-override": 161.406026,
+    "old-total-discharge-override": 158.574341,
+    "discharge-units": "cms",
+    "pool-elevation": 221.62008,
+    "tailwater-elevation": 195.352416,
+    "elevation-units": "m",
+    "settings": [
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "PROJ-TURBINE_LOC"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 164.004096,
+        "new-discharge": 164.004096,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.1
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "PROJ"
+    },
+    "change-date": 1709542800000,
+    "protected": false,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "R",
+      "tooltip": "Reported by powerhouse",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "S",
+      "tooltip": "Scheduled release to meet loads",
+      "active": true
+    },
+    "notes": "from SCADA",
+    "new-total-discharge-override": 148.15368,
+    "old-total-discharge-override": 161.406026,
+    "discharge-units": "cms",
+    "pool-elevation": 220.816,
+    "tailwater-elevation": 195.51894,
+    "elevation-units": "m",
+    "settings": [
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "PROJ-TURBINE_LOC"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 164.004096,
+        "new-discharge": 166.1125,
+        "scheduled-load": 34.0,
+        "generation-units": "MW",
+        "real-power": 38.6
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "PROJ"
+    },
+    "change-date": 1709546400000,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "R",
+      "tooltip": "Reported by powerhouse",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "S",
+      "tooltip": "Scheduled release to meet loads",
+      "active": true
+    },
+    "notes": "from SCADA",
+    "new-total-discharge-override": 131.406026,
+    "old-total-discharge-override": 148.15368,
+    "discharge-units": "cms",
+    "pool-elevation": 222.51981,
+    "tailwater-elevation": 194.46198,
+    "elevation-units": "m",
+    "settings": [
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "PROJ-TURBINE_LOC"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 166.1125,
+        "new-discharge": 195.519861,
+        "scheduled-load": 37.5,
+        "generation-units": "MW",
+        "real-power": 35.6
+      }
+    ]
+  }
+]
