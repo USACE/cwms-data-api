@@ -42,15 +42,15 @@ import java.util.List;
 
 public final class StreamReachDao extends JooqDao<StreamReach> {
 
-    static final int REACH_OFFICE_ID_COLUMN_INDEX = 0;
-    static final int REACH_CONFIGURATION_COLUMN_INDEX = 1;
-    static final int REACH_STREAM_ID_COLUMN_INDEX = 2;
-    static final int REACH_REACH_LOCATION_COLUMN_INDEX = 3;
-    static final int REACH_UPSTREAM_LOCATION_COLUMN_INDEX = 4;
-    static final int REACH_UPSTREAM_STATION_COLUMN_INDEX = 5;
-    static final int REACH_DOWNSTREAM_LOCATION_COLUMN_INDEX = 7;
-    static final int REACH_DOWNSTREAM_STATION_COLUMN_INDEX = 8;
-    static final int REACH_COMMENTS_COLUMN_INDEX = 10;
+    static final String REACH_OFFICE_ID_COLUMN = "OFFICE_ID";
+    static final String REACH_CONFIGURATION_COLUMN = "CONFIGURATION";
+    static final String REACH_STREAM_ID_COLUMN = "STREAM_LOCATION";
+    static final String REACH_REACH_LOCATION_COLUMN = "REACH_LOCATION";
+    static final String REACH_UPSTREAM_LOCATION_COLUMN = "UPSTREAM_LOCATION";
+    static final String REACH_UPSTREAM_STATION_COLUMN = "UPSTREAM_STATION";
+    static final String REACH_DOWNSTREAM_LOCATION_COLUMN = "DOWNSTREAM_LOCATION";
+    static final String REACH_DOWNSTREAM_STATION_COLUMN = "DOWNSTREAM_STATION";
+    static final String REACH_COMMENTS_COLUMN = "COMMENTS";
     private final StreamLocationDao _streamLocationDao;
 
     public StreamReachDao(DSLContext dsl) {
@@ -73,12 +73,12 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
                     streamIdMask, reachIdMask, configurationIdMask, null, stationUnits, officeIdMask);
             return records.stream().map(r ->
                         fromJooqStreamReachRecord(r, stationUnits,
-                            getBank(r.get(REACH_OFFICE_ID_COLUMN_INDEX, String.class),
-                                    r.get(REACH_STREAM_ID_COLUMN_INDEX, String.class),
-                                    r.get(REACH_UPSTREAM_LOCATION_COLUMN_INDEX, String.class)),
-                            getBank(r.get(REACH_OFFICE_ID_COLUMN_INDEX, String.class),
-                                    r.get(REACH_STREAM_ID_COLUMN_INDEX, String.class),
-                                    r.get(REACH_DOWNSTREAM_LOCATION_COLUMN_INDEX, String.class))))
+                            getBank(r.get(REACH_OFFICE_ID_COLUMN, String.class),
+                                    r.get(REACH_STREAM_ID_COLUMN, String.class),
+                                    r.get(REACH_UPSTREAM_LOCATION_COLUMN, String.class)),
+                            getBank(r.get(REACH_OFFICE_ID_COLUMN, String.class),
+                                    r.get(REACH_STREAM_ID_COLUMN, String.class),
+                                    r.get(REACH_DOWNSTREAM_LOCATION_COLUMN, String.class))))
                     .collect(toList());
         });
     }
@@ -190,34 +190,34 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
     }
 
     static StreamReach fromJooqStreamReachRecord(Record record, String stationUnits, Bank upstreamBank, Bank downstreamBank) {
-        String officeId = record.get(REACH_OFFICE_ID_COLUMN_INDEX, String.class);
-        String streamId = record.get(REACH_STREAM_ID_COLUMN_INDEX, String.class);
+        String officeId = record.get(REACH_OFFICE_ID_COLUMN, String.class);
+        String streamId = record.get(REACH_STREAM_ID_COLUMN, String.class);
         return new StreamReach.Builder()
-                .withComment(record.get(REACH_COMMENTS_COLUMN_INDEX, String.class))
+                .withComment(record.get(REACH_COMMENTS_COLUMN, String.class))
                 .withDownstreamNode(buildStreamLocationNode(
                         officeId,
                         streamId,
-                        record.get(REACH_DOWNSTREAM_LOCATION_COLUMN_INDEX, String.class),
-                        record.get(REACH_DOWNSTREAM_STATION_COLUMN_INDEX, Double.class),
+                        record.get(REACH_DOWNSTREAM_LOCATION_COLUMN, String.class),
+                        record.get(REACH_DOWNSTREAM_STATION_COLUMN, Double.class),
                         downstreamBank,
                         stationUnits))
                 .withUpstreamNode(buildStreamLocationNode(
                         officeId,
                         streamId,
-                        record.get(REACH_UPSTREAM_LOCATION_COLUMN_INDEX, String.class),
-                        record.get(REACH_UPSTREAM_STATION_COLUMN_INDEX, Double.class),
+                        record.get(REACH_UPSTREAM_LOCATION_COLUMN, String.class),
+                        record.get(REACH_UPSTREAM_STATION_COLUMN, Double.class),
                         upstreamBank,
                         stationUnits))
                 .withConfigurationId(new CwmsId.Builder()
                         .withOfficeId(officeId)
-                        .withName(record.get(REACH_CONFIGURATION_COLUMN_INDEX, String.class))
+                        .withName(record.get(REACH_CONFIGURATION_COLUMN, String.class))
                         .build())
                 .withStreamId(new CwmsId.Builder()
                         .withOfficeId(officeId)
-                        .withName(record.get(REACH_STREAM_ID_COLUMN_INDEX, String.class))
+                        .withName(record.get(REACH_STREAM_ID_COLUMN, String.class))
                         .build())
                 .withId(new CwmsId.Builder()
-                        .withName(record.get(REACH_REACH_LOCATION_COLUMN_INDEX, String.class))
+                        .withName(record.get(REACH_REACH_LOCATION_COLUMN, String.class))
                         .withOfficeId(officeId)
                         .build())
                 .build();

@@ -78,6 +78,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
     private static void createAndStoreTestStream(String testLoc) throws SQLException {
         createAndStoreTestLocation(testLoc, "STREAM");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String webUser = CwmsDataApiSetupCallback.getWebUser();
         db.connection(c-> {
             StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
             Stream streamToStore = new Stream.Builder()
@@ -90,7 +91,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     .build();
             STREAMS_CREATED.add(streamToStore);
             streamDao.storeStream(streamToStore, true);
-        });
+        }, webUser);
     }
 
     @AfterAll
@@ -98,10 +99,11 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
         for(Location location : LOCATIONS_CREATED){
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+                String webUser = CwmsDataApiSetupCallback.getWebUser();
                 db.connection(c-> {
                     LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
                     locationsDao.deleteLocation(location.getName(), location.getOfficeId(), true);
-                });
+                }, webUser);
             } catch(SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -111,10 +113,16 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
         for(Stream stream : STREAMS_CREATED){
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+                String webUser = CwmsDataApiSetupCallback.getWebUser();
                 db.connection(c-> {
-                    StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
-                    streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
-                });
+                    try
+                    {
+                        StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
+                        streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
+                    } catch (Exception e) {
+                        //ignore
+                    }
+                }, webUser);
             } catch(SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -126,6 +134,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
     @Test
     void testRoundTrip() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        String webUser = CwmsDataApiSetupCallback.getWebUser();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             StreamLocationDao streamLocationDao = new StreamLocationDao(context);
@@ -203,7 +212,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     streamLocation2.getStageUnits(),
                     streamLocation2.getAreaUnits()
             ));
-        });
+        }, webUser);
     }
 
     private static StreamLocation buildTestStreamLocation(String streamId, String locationId, double station, Bank bank) {
@@ -248,6 +257,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                 .build();
         LOCATIONS_CREATED.add(location);
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String webUser = CwmsDataApiSetupCallback.getWebUser();
         db.connection(c -> {
             LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
             try {
@@ -255,6 +265,6 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, webUser);
     }
 }

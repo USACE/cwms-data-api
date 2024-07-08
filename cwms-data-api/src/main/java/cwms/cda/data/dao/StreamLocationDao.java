@@ -42,16 +42,19 @@ import static java.util.stream.Collectors.toList;
 
 public final class StreamLocationDao extends JooqDao<StreamLocation> {
 
-    static final int STREAM_LOCATION_OFFICE_ID_COLUMN_INDEX = 0;
-    static final int STREAM_LOCATION_STREAM_ID_COLUMN_INDEX = 1;
-    static final int STREAM_LOCATION_LOCATION_ID_COLUMN_INDEX = 2;
-    static final int STREAM_LOCATION_STATION_COLUMN_INDEX = 3;
-    static final int STREAM_LOCATION_PUBLISHED_STATION_COLUMN_INDEX = 4;
-    static final int STREAM_LOCATION_NAVIGATION_STATION_COLUMN_INDEX = 5;
-    static final int STREAM_LOCATION_BANK_COLUMN_INDEX = 6;
-    static final int STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN_INDEX = 7;
-    static final int STREAM_LOCATION_DRAINAGE_AREA_COLUMN_INDEX = 8;
-    static final int STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN_INDEX = 9;
+    static final String STREAM_LOCATION_OFFICE_ID_COLUMN = "OFFICE_ID";
+    static final String STREAM_LOCATION_STREAM_ID_COLUMN = "STREAM_ID";
+    static final String STREAM_LOCATION_LOCATION_ID_COLUMN = "LOCATION_ID";
+    static final String STREAM_LOCATION_STATION_COLUMN = "STATION";
+    static final String STREAM_LOCATION_PUBLISHED_STATION_COLUMN = "PUBLISHED_STATION";
+    static final String STREAM_LOCATION_NAVIGATION_STATION_COLUMN = "NAVIGATION_STATION";
+    static final String STREAM_LOCATION_BANK_COLUMN = "BANK";
+    static final String STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN = "LOWEST_MEASURABLE_STAGE";
+    static final String STREAM_LOCATION_DRAINAGE_AREA_COLUMN = "DRAINAGE_AREA";
+    static final String STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN = "UNGAGED_DRAINAGE_AREA";
+    static final String STREAM_LOCATION_AREA_UNITS_COLUMN = "AREA_UNIT";
+    static final String STREAM_LOCATION_STAGE_UNITS_COLUMN = "STAGE_UNIT";
+    static final String STREAM_LOCATION_STATION_UNITS_COLUMN = "STATION_UNIT";
 
     public StreamLocationDao(DSLContext dsl) {
         super(dsl);
@@ -71,7 +74,7 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
         return connectionResult(dsl, conn -> {
             Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(DSL.using(conn).configuration(),
                     streamIdMask, locationIdMask, stationUnit, stageUnit, areaUnit, officeIdMask);
-            return records.stream().map(r -> fromJooqStreamLocationRecord(r, stationUnit, stageUnit, areaUnit))
+            return records.stream().map(StreamLocationDao::fromJooqStreamLocationRecord)
                     .collect(toList());
         });
     }
@@ -163,22 +166,22 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
                 .build();
     }
 
-    static StreamLocation fromJooqStreamLocationRecord(Record record, String stationUnit, String stageUnit, String areaUnit) {
+    static StreamLocation fromJooqStreamLocationRecord(Record record) {
         return new StreamLocation.Builder()
                 .withStreamLocationNode(buildStreamLocationNode(
-                        record.get(STREAM_LOCATION_OFFICE_ID_COLUMN_INDEX, String.class),
-                        record.get(STREAM_LOCATION_STREAM_ID_COLUMN_INDEX, String.class),
-                        record.get(STREAM_LOCATION_LOCATION_ID_COLUMN_INDEX, String.class),
-                        record.get(STREAM_LOCATION_STATION_COLUMN_INDEX, Double.class),
-                        Bank.fromCode(record.get(STREAM_LOCATION_BANK_COLUMN_INDEX, String.class)),
-                        stationUnit))
-                .withPublishedStation(record.get(STREAM_LOCATION_PUBLISHED_STATION_COLUMN_INDEX, Double.class))
-                .withNavigationStation(record.get(STREAM_LOCATION_NAVIGATION_STATION_COLUMN_INDEX, Double.class))
-                .withLowestMeasurableStage(record.get(STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN_INDEX, Double.class))
-                .withTotalDrainageArea(record.get(STREAM_LOCATION_DRAINAGE_AREA_COLUMN_INDEX, Double.class))
-                .withUngagedDrainageArea(record.get(STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN_INDEX, Double.class))
-                .withAreaUnits(areaUnit)
-                .withStageUnits(stageUnit)
+                        record.get(STREAM_LOCATION_OFFICE_ID_COLUMN, String.class),
+                        record.get(STREAM_LOCATION_STREAM_ID_COLUMN, String.class),
+                        record.get(STREAM_LOCATION_LOCATION_ID_COLUMN, String.class),
+                        record.get(STREAM_LOCATION_STATION_COLUMN, Double.class),
+                        Bank.fromCode(record.get(STREAM_LOCATION_BANK_COLUMN, String.class)),
+                        record.get(STREAM_LOCATION_STATION_UNITS_COLUMN, String.class)))
+                .withPublishedStation(record.get(STREAM_LOCATION_PUBLISHED_STATION_COLUMN, Double.class))
+                .withNavigationStation(record.get(STREAM_LOCATION_NAVIGATION_STATION_COLUMN, Double.class))
+                .withLowestMeasurableStage(record.get(STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN, Double.class))
+                .withTotalDrainageArea(record.get(STREAM_LOCATION_DRAINAGE_AREA_COLUMN, Double.class))
+                .withUngagedDrainageArea(record.get(STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN, Double.class))
+                .withAreaUnits(record.get(STREAM_LOCATION_AREA_UNITS_COLUMN, String.class))
+                .withStageUnits(record.get(STREAM_LOCATION_STAGE_UNITS_COLUMN, String.class))
                 .build();
     }
 }

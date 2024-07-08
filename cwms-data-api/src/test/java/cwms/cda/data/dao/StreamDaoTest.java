@@ -79,18 +79,18 @@ final class StreamDaoTest {
     @Test
     void testFromJooqStreamRecord() {
         Record record = Mockito.mock(Record.class);
-        Mockito.when(record.get(StreamDao.STATIONING_STARTS_DS_COLUMN_INDEX, Boolean.class)).thenReturn(true);
-        Mockito.when(record.get(StreamDao.STREAM_STREAM_ID_COLUMN_INDEX, String.class)).thenReturn("STREAM_ID");
-        Mockito.when(record.get(StreamDao.STREAM_OFFICE_ID_COLUMN_INDEX, String.class)).thenReturn("SPK");
-        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_STREAM_COLUMN_INDEX, String.class)).thenReturn("INTO_STREAM");
-        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_STATION_COLUMN_INDEX, Double.class)).thenReturn(10.0);
-        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_BANK_COLUMN_INDEX, String.class)).thenReturn("L");
-        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_STREAM_COLUMN_INDEX, String.class)).thenReturn("FROM_STREAM");
-        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_STATION_COLUMN_INDEX, Double.class)).thenReturn(20.0);
-        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_BANK_COLUMN_INDEX, String.class)).thenReturn("R");
-        Mockito.when(record.get(StreamDao.STREAM_STREAM_LENGTH_COLUMN_INDEX, Double.class)).thenReturn(100.0);
-        Mockito.when(record.get(StreamDao.STREAM_AVERAGE_SLOPE_COLUMN_INDEX, Double.class)).thenReturn(5.0);
-        Mockito.when(record.get(StreamDao.STREAM_COMMENTS_COLUMN_INDEX, String.class)).thenReturn("Test Comment");
+        Mockito.when(record.get(StreamDao.STATIONING_STARTS_DS_COLUMN, Boolean.class)).thenReturn(true);
+        Mockito.when(record.get(StreamDao.STREAM_STREAM_ID_COLUMN, String.class)).thenReturn("STREAM_ID");
+        Mockito.when(record.get(StreamDao.STREAM_OFFICE_ID_COLUMN, String.class)).thenReturn("SPK");
+        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_STREAM_COLUMN, String.class)).thenReturn("INTO_STREAM");
+        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_STATION_COLUMN, Double.class)).thenReturn(10.0);
+        Mockito.when(record.get(StreamDao.STREAM_FLOWS_INTO_BANK_COLUMN, String.class)).thenReturn("L");
+        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_STREAM_COLUMN, String.class)).thenReturn("FROM_STREAM");
+        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_STATION_COLUMN, Double.class)).thenReturn(20.0);
+        Mockito.when(record.get(StreamDao.STREAM_DIVERTS_FROM_BANK_COLUMN, String.class)).thenReturn("R");
+        Mockito.when(record.get(StreamDao.STREAM_STREAM_LENGTH_COLUMN, Double.class)).thenReturn(100.0);
+        Mockito.when(record.get(StreamDao.STREAM_AVERAGE_SLOPE_COLUMN, Double.class)).thenReturn(5.0);
+        Mockito.when(record.get(StreamDao.STREAM_COMMENTS_COLUMN, String.class)).thenReturn("Test Comment");
 
         Stream stream = StreamDao.fromJooqStreamRecord(record, "km");
 

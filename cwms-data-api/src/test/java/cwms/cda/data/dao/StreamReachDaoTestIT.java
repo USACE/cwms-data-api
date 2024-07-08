@@ -97,7 +97,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                     .build();
             STREAMS_CREATED.add(streamToStore);
             streamDao.storeStream(streamToStore, true);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     private static void createAndStoreTestStreamLocation(String testLoc, String streamId, Double station) throws SQLException {
@@ -123,7 +123,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                     .build();
             STREAM_LOCATIONS_CREATED.add(streamLoc);
             streamLocationDao.storeStreamLocation(streamLoc, true);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -134,7 +134,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                 db.connection(c -> {
                     LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
                     locationsDao.deleteLocation(location.getName(), location.getOfficeId(), true);
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -151,7 +151,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                     } catch (NotFoundException e) {
                         //ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -171,7 +171,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                     } catch (NotFoundException e) {
                         //ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -221,7 +221,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             String stationUnits2 = reach2.getUpstreamNode().getStreamNode().getStationUnits();
             assertThrows(NotFoundException.class, () -> streamReachDao.retrieveStreamReach(reach1Id.getOfficeId(), reach.getStreamId().getName(), reach1Id.getName(), stationUnits1));
             assertThrows(NotFoundException.class, () -> streamReachDao.retrieveStreamReach(reach2Id.getOfficeId(), reach.getStreamId().getName(), reach2Id.getName(), stationUnits2));
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -247,7 +247,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             assertEquals(newId, retrievedReach.getId().getName());
 
             streamReachDao.deleteStreamReach(office, newId);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     private static StreamReach buildTestStreamReach(String reachId) {
@@ -323,6 +323,6 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 }
