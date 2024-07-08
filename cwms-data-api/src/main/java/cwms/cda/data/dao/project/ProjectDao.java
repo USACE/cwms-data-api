@@ -49,12 +49,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.Result;
-import org.jooq.SelectConditionStep;
+import org.jooq.*;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_project.CAT_PROJECT;
@@ -118,9 +113,11 @@ public class ProjectDao extends JooqDao<Project> {
      */
     public Project retrieveProject(String office, String projectId) {
 
-        PROJECT_OBJ_T projectObjT = connectionResult(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_RETRIEVE_PROJECT(
-                        getDslContext(c, office).configuration(), projectId, office)
+        PROJECT_OBJ_T projectObjT = connectionResult(dsl, c -> {
+                    Configuration conf = getDslContext(c, office).configuration();
+                    return CWMS_PROJECT_PACKAGE.call_RETRIEVE_PROJECT(conf,
+                            projectId, office);
+                }
         );
 
         return projectObjT == null ? null : getProject(projectObjT);
@@ -325,9 +322,11 @@ public class ProjectDao extends JooqDao<Project> {
         String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
-                projectT, OracleTypeMap.formatBool(failIfExists)));
+        connection(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(conf,
+            projectT, OracleTypeMap.formatBool(failIfExists));
+        });
     }
 
     /**
@@ -341,9 +340,11 @@ public class ProjectDao extends JooqDao<Project> {
         String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
-                projectT, OracleTypeMap.formatBool(failIfExists)));
+        connection(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(conf,
+            projectT, OracleTypeMap.formatBool(failIfExists));
+        });
 
     }
 
@@ -361,9 +362,11 @@ public class ProjectDao extends JooqDao<Project> {
         }
 
         PROJECT_OBJ_T projectT = toProjectT(project);
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(getDslContext(c, office).configuration(),
-                projectT, OracleTypeMap.formatBool(false)));
+        connection(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(conf,
+            projectT, OracleTypeMap.formatBool(false));
+        });
 
     }
 
@@ -376,11 +379,11 @@ public class ProjectDao extends JooqDao<Project> {
      * @param deleteRule  The delete rule specifying the deletion behavior.
      */
     public void delete(String office, String id, DeleteRule deleteRule) {
-
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(getDslContext(c, office).configuration(),
-                id, deleteRule.getRule(), office
-        ));
+        connection(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(conf,
+            id, deleteRule.getRule(), office);
+        });
     }
 
 
@@ -411,10 +414,12 @@ public class ProjectDao extends JooqDao<Project> {
                                       @Nullable Instant start, @Nullable Instant end) {
         BigInteger startTime = toBigInteger(start);
         BigInteger endTime = toBigInteger(end);
-        BigInteger millis = connectionResult(dsl, c -> CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE(
-                getDslContext(c, office).configuration(),
-                projectId, applicationId, sourceId,
-                tsId, startTime, endTime, office)
+        BigInteger millis = connectionResult(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+                    return CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE( conf,
+                            projectId, applicationId, sourceId,
+                            tsId, startTime, endTime, office);
+                }
         );
 
         Instant retval = null;
@@ -454,8 +459,8 @@ public class ProjectDao extends JooqDao<Project> {
     public List<Location> catProject(String office) {
 
         return connectionResult(dsl, c -> {
-            CAT_PROJECT catProject = CWMS_PROJECT_PACKAGE.call_CAT_PROJECT(getDslContext(c,
-                    office).configuration(), office);
+            Configuration conf = getDslContext(c, office).configuration();
+            CAT_PROJECT catProject = CWMS_PROJECT_PACKAGE.call_CAT_PROJECT(conf, office);
 
             // catProject has two open ResultSets.
             // Other places close the basin one we aren't using
@@ -510,6 +515,5 @@ public class ProjectDao extends JooqDao<Project> {
 
         return builder.build();
     }
-
 
 }
