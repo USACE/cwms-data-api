@@ -77,7 +77,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                 stmt.setString(i++, request.getProjectId());
                 stmt.setString(i++, request.getApplicationId());
                 stmt.setString(i++, OracleTypeMap.formatBool(revokeExisting));
-                stmt.setObject(i++, toBigInteger(revokeTimeout));
+                stmt.setObject(i++, BigInteger.valueOf(revokeTimeout));
                 stmt.setString(i++, office);
                 stmt.setString(i++, request.getSessionUser());
                 stmt.setString(i++, request.getOsUser());
@@ -99,9 +99,11 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @return true if a lock is active, false otherwise
      */
     public boolean isLocked(String office, String projectId, String appId) {
-        String s = connectionResult(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_IS_LOCKED(getDslContext(c, office).configuration(),
-                projectId, appId, office));
+        String s = connectionResult(dsl, c -> {
+                    Configuration conf = getDslContext(c, office).configuration();
+                    return CWMS_PROJECT_PACKAGE.call_IS_LOCKED(conf,
+                    projectId, appId, office);
+                });
         return OracleTypeMap.parseBool(s);
     }
 
@@ -148,9 +150,10 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @param lockId  the ID of the lock to release
      */
     public void releaseLock(String office, String lockId) {
-        connection(dsl, c -> CWMS_PROJECT_PACKAGE.call_RELEASE_LOCK(
-                getDslContext(c, office).configuration(),
-                lockId));
+        connection(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+            CWMS_PROJECT_PACKAGE.call_RELEASE_LOCK(conf, lockId);
+        });
     }
 
     /**
@@ -163,10 +166,12 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      */
     public void revokeLock(String office, String projId, String appId,
                            int revokeTimeout) {
-        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_REVOKE_LOCK(getDslContext(c, office).configuration(),
-                        projId, appId, revokeTimeoutBI, office));
+        BigInteger revokeTimeoutBI = BigInteger.valueOf(revokeTimeout);
+        connection(dsl, c -> {
+            Configuration conf = getDslContext(c, office).configuration();
+            CWMS_PROJECT_PACKAGE.call_REVOKE_LOCK(conf,
+                    projId, appId, revokeTimeoutBI, office);
+        });
     }
 
 
@@ -176,10 +181,10 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @param lockId the ID of the lock to deny revocation for
      */
     public void denyLockRevocation(String lockId) {
-        connection(dsl, c ->
-                CWMS_PROJECT_PACKAGE.call_DENY_LOCK_REVOCATION(
-                        DSL.using(c, SQLDialect.ORACLE18C).configuration(),
-                        lockId));
+        connection(dsl, c -> {
+            Configuration conf = DSL.using(c, SQLDialect.ORACLE18C).configuration();
+            CWMS_PROJECT_PACKAGE.call_DENY_LOCK_REVOCATION(conf, lockId);
+        });
     }
 
     /**
@@ -254,11 +259,12 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @return the list of LockRevokerRights
      */
     public List<LockRevokerRights> catLockRevokerRights(String officeMask, String projectMask, String applicationMask) {
-        return connectionResult(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_CAT_LOCK_REVOKER_RIGHTS(
-                        DSL.using(c, SQLDialect.ORACLE18C).configuration(),
-                        projectMask, applicationMask, officeMask)
-                        .map(ProjectLockDao::buildLockRevokerRightsFromCatRightsRecord));
+        return connectionResult(dsl, c -> {
+                    Configuration conf = DSL.using(c, SQLDialect.ORACLE18C).configuration();
+                    return CWMS_PROJECT_PACKAGE.call_CAT_LOCK_REVOKER_RIGHTS(conf,
+                            projectMask, applicationMask, officeMask)
+                            .map(ProjectLockDao::buildLockRevokerRightsFromCatRightsRecord);
+                });
     }
 
     private static @NotNull LockRevokerRights buildLockRevokerRightsFromCatRightsRecord(Record r) {
@@ -281,9 +287,11 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      */
     public boolean hasLockRevokerRights(String office, String projectId, String applicationId, String userId) {
 
-        String s = connectionResult(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_HAS_REVOKER_RIGHTS(getDslContext(c, office).configuration(),
-                projectId, applicationId, userId, office, null));
+        String s = connectionResult(dsl, c -> {
+                    Configuration conf = getDslContext(c, office).configuration();
+                    return CWMS_PROJECT_PACKAGE.call_HAS_REVOKER_RIGHTS(conf,
+                    projectId, applicationId, userId, office, null);
+                });
         return OracleTypeMap.parseBool(s);
     }
 
