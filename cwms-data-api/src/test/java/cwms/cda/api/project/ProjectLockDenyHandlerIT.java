@@ -47,11 +47,13 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 
 @Tag("integration")
@@ -63,7 +65,7 @@ public class ProjectLockDenyHandlerIT extends DataApiTestIT {
     // browse/hec-db-integration-testing/src/test/java/wcds/dbi/oracle/project/
     // TestProjectLocks.java#475,492,537
 
-
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
     @Test
     void test_can_deny_revoke() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
