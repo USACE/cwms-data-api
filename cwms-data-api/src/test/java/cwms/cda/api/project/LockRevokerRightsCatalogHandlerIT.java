@@ -131,7 +131,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
                 lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
 
     }
 

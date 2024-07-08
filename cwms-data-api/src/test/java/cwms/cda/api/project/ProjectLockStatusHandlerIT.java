@@ -127,7 +127,7 @@ public class ProjectLockStatusHandlerIT extends DataApiTestIT {
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
 
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
 
     }
 

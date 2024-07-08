@@ -74,7 +74,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             testCanRequest(dsl, user, projId, appId);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
 
     }
 
@@ -149,7 +149,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             testCanRequest(dsl, user2, projId, appId);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
 
     }
 
@@ -185,7 +185,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                 assertNotNull(lockId[0]);
                 assertFalse(lockId[0].isEmpty());
                 // now user1 has a lock.
-            });
+            }, CwmsDataApiSetupCallback.getWebUser());
 
 
             // other user - try request user1 lock - this should wait until about revokeTimeout.
@@ -242,7 +242,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                 revokeLock(lockDao, OFFICE, projId, appId);
 
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
-            });
+            }, CwmsDataApiSetupCallback.getWebUser());
         }
 
     }
