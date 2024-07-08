@@ -44,7 +44,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -169,7 +168,7 @@ public class ProjectDao extends JooqDao<Project> {
 
         // There are lots of ways the variables can be null or not so we need to build the query
         // based on the parameters.
-        String query = buildTableQuery(projectIdMask, office, cursorOffice, cursorProjectId);
+        String query = buildTableQuery(projectIdMask, office, cursorOffice != null || cursorProjectId != null);
 
         int finalPageSize = pageSize;
         List<Project> projs = connectionResult(dsl, c -> {
@@ -283,10 +282,10 @@ public class ProjectDao extends JooqDao<Project> {
     }
 
     private static String buildTableQuery(@Nullable String projectIdMask, @Nullable String office,
-                                          String cursorOffice, String cursorProjectId) {
+                                          boolean useCursor) {
         String sql = SELECT_PART;
 
-        if (projectIdMask != null || office != null || cursorOffice != null || cursorProjectId != null) {
+        if (projectIdMask != null || office != null || useCursor) {
             sql += " where (";
 
             if (projectIdMask != null && office != null) {
@@ -298,7 +297,7 @@ public class ProjectDao extends JooqDao<Project> {
                 sql += "office_id = ?\n";          // office
             }
 
-            if (cursorOffice != null || cursorProjectId != null) {
+            if (useCursor) {
                 sql += " and (\n"
                         + "    (\n"
                         + "      OFFICE_ID = ?\n"  // cursorOffice
@@ -445,10 +444,6 @@ public class ProjectDao extends JooqDao<Project> {
         return retval;
     }
 
-    public static BigInteger toBigInteger(int revokeTimeout) {
-        return BigInteger.valueOf(revokeTimeout);
-    }
-
 
     /**
      * Retrieves the locations associated with a project.
@@ -488,7 +483,7 @@ public class ProjectDao extends JooqDao<Project> {
 
         String timeZoneName = r.get(TIME_ZONE_NAME, String.class);
         if (timeZoneName != null) {
-            builder.withTimeZoneName(ZoneId.of(timeZoneName));
+            builder.withTimeZoneName(OracleTypeMap.toZoneId(timeZoneName, name));
         }
         Double latitude = r.get(LATITUDE, Double.class);
         if (latitude != null) {
