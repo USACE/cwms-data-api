@@ -24,11 +24,9 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.api.DataApiTestIT;
-import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
@@ -38,9 +36,7 @@ import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
-import java.io.IOException;
 import java.sql.SQLException;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,24 +54,23 @@ import org.junit.jupiter.api.Test;
 final class StreamReachDaoTestIT extends DataApiTestIT {
 
     private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
-    private static final List<Location> LOCATIONS_CREATED = new ArrayList<>();
     private static final List<String> REACH_IDS = new ArrayList<>();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
-    private static final List<StreamLocation> STREAM_LOCATIONS_CREATED = new ArrayList<>();
+    private static final List<StreamLocation> STREAM_locationsCreated = new ArrayList<>();
 
     @BeforeAll
     public static void setup() {
         try {
             for (int i = 0; i < 2; i++) {
-                String testLoc = "LOC" + System.currentTimeMillis() / 10;
-                createAndStoreTestLocation(testLoc, "STREAM_REACH");
+                String testLoc = "TEST_REACH" + i;
+                createLocation(testLoc, true, OFFICE_ID, "STREAM_REACH");
                 REACH_IDS.add(testLoc);
-                createAndStoreTestLocation(testLoc + "U", "STREAM_LOCATION");
-                createAndStoreTestLocation(testLoc + "D", "STREAM_LOCATION");
-                String streamId = testLoc + "S";
+                createLocation(testLoc + "_UP", true, OFFICE_ID, "STREAM_LOCATION");
+                createLocation(testLoc + "_DOWN", true, OFFICE_ID, "STREAM_LOCATION");
+                String streamId = testLoc + "_STREAM";
                 createAndStoreTestStream(streamId);
-                createAndStoreTestStreamLocation(testLoc + "U", streamId, 25.0);
-                createAndStoreTestStreamLocation(testLoc + "D", streamId, 20.0);
+                createAndStoreTestStreamLocation(testLoc + "_UP", streamId, 25.0);
+                createAndStoreTestStreamLocation(testLoc + "_DOWN", streamId, 20.0);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -83,7 +78,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
     }
 
     private static void createAndStoreTestStream(String testStreamId) throws SQLException {
-        createAndStoreTestLocation(testStreamId, "STREAM");
+        createLocation(testStreamId, true, OFFICE_ID, "STREAM");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c-> {
             StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
@@ -121,26 +116,13 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                                     .build())
                             .build())
                     .build();
-            STREAM_LOCATIONS_CREATED.add(streamLoc);
+            STREAM_locationsCreated.add(streamLoc);
             streamLocationDao.storeStreamLocation(streamLoc, true);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
     public static void tearDown() {
-        for (Location location : LOCATIONS_CREATED) {
-            try {
-                CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-                db.connection(c -> {
-                    LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
-                    locationsDao.deleteLocation(location.getName(), location.getOfficeId(), true);
-                }, CwmsDataApiSetupCallback.getWebUser());
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        LOCATIONS_CREATED.clear();
-
         for (Stream stream : STREAMS_CREATED) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -159,7 +141,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
 
         STREAMS_CREATED.clear();
 
-        for (StreamLocation streamLocation : STREAM_LOCATIONS_CREATED) {
+        for (StreamLocation streamLocation : STREAM_locationsCreated) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
                 db.connection(c -> {
@@ -177,7 +159,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             }
         }
 
-        STREAM_LOCATIONS_CREATED.clear();
+        STREAM_locationsCreated.clear();
         REACH_IDS.clear();
     }
 
@@ -231,7 +213,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             StreamReachDao streamReachDao = new StreamReachDao(context);
 
-            String reachId = LOCATIONS_CREATED.get(0).getName();
+            String reachId = REACH_IDS.get(0);
             StreamReach reach = buildTestStreamReach(reachId);
 
             streamReachDao.storeStreamReach(reach, false);
@@ -239,7 +221,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             String office = reach.getId().getOfficeId();
             String newId = reach.getId().getName() + "N";
             streamReachDao.renameStreamReach(office, originalId, newId);
-            String streamId = reachId + "S";
+            String streamId = reachId + "_STREAM";
 
             assertThrows(NotFoundException.class, () -> streamReachDao.retrieveStreamReach(office, streamId, originalId, reach.getUpstreamNode().getStreamNode().getStationUnits()));
 
@@ -258,12 +240,12 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                         .build())
                 .withDownstreamNode(new StreamLocationNode.Builder()
                         .withId(new CwmsId.Builder()
-                                .withName(reachId + "D")
+                                .withName(reachId + "_DOWN")
                                 .withOfficeId(OFFICE_ID)
                                 .build())
                         .withStreamNode(new StreamNode.Builder()
                                 .withStreamId(new CwmsId.Builder()
-                                        .withName(reachId + "S")
+                                        .withName(reachId + "_STREAM")
                                         .withOfficeId(OFFICE_ID)
                                         .build())
                                 .withBank(Bank.LEFT)
@@ -273,12 +255,12 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                         .build())
                 .withUpstreamNode(new StreamLocationNode.Builder()
                         .withId(new CwmsId.Builder()
-                                .withName(reachId + "U")
+                                .withName(reachId + "_UP")
                                 .withOfficeId(OFFICE_ID)
                                 .build())
                         .withStreamNode(new StreamNode.Builder()
                                 .withStreamId(new CwmsId.Builder()
-                                        .withName(reachId + "S")
+                                        .withName(reachId + "_STREAM")
                                         .withOfficeId(OFFICE_ID)
                                         .build())
                                 .withBank(Bank.LEFT)
@@ -287,7 +269,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                                 .build())
                         .build())
                 .withStreamId(new CwmsId.Builder()
-                        .withName(reachId + "S")
+                        .withName(reachId + "_STREAM")
                         .withOfficeId(OFFICE_ID)
                         .build())
                 .withConfigurationId(new CwmsId.Builder()
@@ -296,33 +278,5 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
                         .build())
                 .withComment("Test Comment")
                 .build();
-    }
-
-    private static void createAndStoreTestLocation(String locationName, String kind) throws SQLException {
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        Location locationForReach = new Location.Builder(locationName,
-                kind,
-                ZoneId.of("UTC"),
-                0.0,
-                0.0,
-                "WGS84",
-                OFFICE_ID)
-                .withActive(true)
-                .withCountyName("Douglas")
-                .withNation(Nation.US)
-                .withStateInitial("CO")
-                .build();
-        if (LOCATIONS_CREATED.contains(locationForReach)) {
-            return;
-        }
-        db.connection(c -> {
-            try {
-                LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
-                locationsDao.storeLocation(locationForReach);
-                LOCATIONS_CREATED.add(locationForReach);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, CwmsDataApiSetupCallback.getWebUser());
     }
 }
