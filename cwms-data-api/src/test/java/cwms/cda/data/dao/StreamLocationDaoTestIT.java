@@ -57,16 +57,12 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
     @BeforeAll
-    public static void setup() {
-        try {
-            for (int i = 0; i < 2; i++) {
-                String testLoc = "STREAM_LOC" + i;
-                STREAM_LOC_IDS.add(testLoc);
-                createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
-                createAndStoreTestStream(testLoc + "_STREAM");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    public static void setup() throws SQLException {
+        for (int i = 0; i < 2; i++) {
+            String testLoc = "STREAM_LOC" + i;
+            STREAM_LOC_IDS.add(testLoc);
+            createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
+            createAndStoreTestStream(testLoc + "_STREAM");
         }
     }
 

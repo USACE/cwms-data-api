@@ -210,19 +210,7 @@ final class StreamReachTest {
                             .withId(reachId)
                             .build();
                     item.validate();
-                }, "The validate method should have thrown a FieldException because the downstream node field is missing"),
-
-                // When ConfigurationId is missing
-                () -> assertThrows(FieldException.class, () -> {
-                    StreamReach item = new StreamReach.Builder()
-                            .withComment("This is a comment for the stream reach.")
-                            .withDownstreamNode(downstreamNode)
-                            .withUpstreamNode(upstreamNode)
-                            .withStreamId(streamId)
-                            .withId(reachId)
-                            .build();
-                    item.validate();
-                }, "The validate method should have thrown a FieldException because the configuration ID field is missing"));
+                }, "The validate method should have thrown a FieldException because the downstream node field is missing"));
     }
 
     @Test

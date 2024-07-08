@@ -25,10 +25,12 @@
 package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -39,45 +41,27 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamReach.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamReach implements CwmsDTOBase {
+public final class StreamReach extends CwmsDTO {
 
     private final String comment;
+    @JsonProperty(required = true)
     private final StreamLocationNode downstreamNode;
+    @JsonProperty(required = true)
     private final StreamLocationNode upstreamNode;
     private final CwmsId configurationId;
+    @JsonProperty(required = true)
     private final CwmsId streamId;
+    @JsonProperty(required = true)
     private final CwmsId id;
 
     private StreamReach(Builder builder) {
+        super(null);
         this.comment = builder.comment;
         this.downstreamNode = builder.downstreamNode;
         this.upstreamNode = builder.upstreamNode;
         this.configurationId = builder.configurationId;
         this.streamId = builder.streamId;
         this.id = builder.id;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        if (this.id == null) {
-            throw new FieldException("The 'id' field of a StreamReach cannot be null.");
-        }
-        id.validate();
-        if (this.streamId == null) {
-            throw new FieldException("The 'streamId' field of a StreamReach cannot be null or empty.");
-        }
-        streamId.validate();
-        if (this.upstreamNode == null) {
-            throw new FieldException("The 'upstreamNode' field of a StreamReach cannot be null or empty.");
-        }
-        upstreamNode.validate();
-        if (this.downstreamNode == null) {
-            throw new FieldException("The 'downstreamNode' field of a StreamReach cannot be null or empty.");
-        }
-        downstreamNode.validate();
-        if (this.configurationId == null) {
-            throw new FieldException("The 'configurationId' field of a StreamReach cannot be null or empty.");
-        }
     }
 
     public String getComment() {

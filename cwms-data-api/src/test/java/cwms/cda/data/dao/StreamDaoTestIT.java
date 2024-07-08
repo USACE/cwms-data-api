@@ -54,19 +54,15 @@ final class StreamDaoTestIT extends DataApiTestIT {
     private static final List<String> STREAM_IDS = new ArrayList<>();
 
     @BeforeAll
-    public static void setup() {
-        try {
-            for (int i = 0; i < 2; i++) {
-                String testLoc = "TEST_STREAM" + i;
-                createLocation(testLoc, true, OFFICE_ID, "STREAM");
-                STREAM_IDS.add(testLoc);
-                createLocation("INTO_" + testLoc, true, OFFICE_ID, "STREAM");
-                STREAM_IDS.add("INTO_" + testLoc);
-                createLocation("FROM_" + testLoc, true, OFFICE_ID, "STREAM");
-                STREAM_IDS.add("FROM_" + testLoc);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    public static void setup() throws SQLException {
+        for (int i = 0; i < 2; i++) {
+            String testLoc = "TEST_STREAM" + i;
+            createLocation(testLoc, true, OFFICE_ID, "STREAM");
+            STREAM_IDS.add(testLoc);
+            createLocation("INTO_" + testLoc, true, OFFICE_ID, "STREAM");
+            STREAM_IDS.add("INTO_" + testLoc);
+            createLocation("FROM_" + testLoc, true, OFFICE_ID, "STREAM");
+            STREAM_IDS.add("FROM_" + testLoc);
         }
     }
 
@@ -143,7 +139,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
             streamDao.storeStream(stream, false);
             String originalId = stream.getId().getName();
             String office = stream.getId().getOfficeId();
-            String newId = stream.getId().getName() + "N";
+            String newId = stream.getId().getName() + "Rename";
             streamDao.renameStream(office, originalId, newId);
             assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(office, originalId, stream.getLengthUnits()));
             Stream retrievedStream = streamDao.retrieveStream(office, newId, stream.getLengthUnits());
@@ -151,6 +147,8 @@ final class StreamDaoTestIT extends DataApiTestIT {
             streamDao.deleteStream(office, newId, DeleteRule.DELETE_ALL);
             streamDao.deleteStream(flowsIntoStream.getId().getOfficeId(), flowsIntoStream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(divertsFromStream.getId().getOfficeId(), divertsFromStream.getId().getName(), DeleteRule.DELETE_ALL);
+            LocationsDaoImpl locationDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
+            locationDao.deleteLocation(newId, OFFICE_ID);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
