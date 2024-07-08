@@ -20,89 +20,81 @@
 
 package cwms.cda.data.dto.location.kind;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.RequiredFieldException;
+import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonDeserialize(builder = Outlet.Builder.class)
+@JsonDeserialize(builder = CompoundOutletRecord.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectId", "location"})
-public class Outlet extends ProjectStructure {
-    private final List<CompoundOutletRecord> compoundOutletRecords = new ArrayList<>();
-    private final String ratingGroupId;
+public class CompoundOutletRecord extends CwmsDTO {
+    @JsonProperty(required = true)
+    private final CwmsId outletId;
+    private final List<CwmsId> downstreamOutletIds = new ArrayList<>();
 
-    private Outlet(Builder builder) {
-        super(builder.projectId, builder.location);
-        ratingGroupId = builder.ratingGroupId;
-        if (builder.compoundOutletRecords != null) {
-            compoundOutletRecords.addAll(builder.compoundOutletRecords);
+    private CompoundOutletRecord(Builder builder) {
+        super(null);
+        outletId = builder.outletId;
+        if (builder.downstreamOutletIds != null) {
+            downstreamOutletIds.addAll(builder.downstreamOutletIds);
         }
     }
 
-    public List<CompoundOutletRecord> getCompoundOutletRecords() {
-        return new ArrayList<>(compoundOutletRecords);
+    public List<CwmsId> getDownstreamOutletIds() {
+        return new ArrayList<>(downstreamOutletIds);
     }
 
-    public String getRatingGroupId() {
-        return ratingGroupId;
+    public CwmsId getOutletId() {
+        return outletId;
     }
 
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-        validator.validateCollection(compoundOutletRecords);
+        validator.required(outletId, "outlet-id");
+        validator.validateCollection(downstreamOutletIds);
     }
 
     public static final class Builder {
-        private CwmsId projectId;
-        private Location location;
-        private List<CompoundOutletRecord> compoundOutletRecords;
-        private String ratingGroupId;
+        @JsonProperty(required = true)
+        private CwmsId outletId;
+        private List<CwmsId> downstreamOutletIds;
 
         public Builder() {
         }
 
-        public Builder(Outlet outlet) {
-            projectId = outlet.getProjectId();
-            location = outlet.getLocation();
-            compoundOutletRecords = new ArrayList<>(outlet.getCompoundOutletRecords());
-            ratingGroupId = outlet.getRatingGroupId();
+        public Builder(CompoundOutletRecord clone) {
+            outletId = clone.outletId;
+            downstreamOutletIds = new ArrayList<>(clone.downstreamOutletIds);
         }
 
-        public Outlet build() {
-            return new Outlet(this);
+        public CompoundOutletRecord build() {
+            return new CompoundOutletRecord(this);
         }
 
-        public Builder withProjectId(CwmsId projectIdentifier) {
-            this.projectId = projectIdentifier;
+        @JsonProperty(required = true)
+        public Builder withOutletId(CwmsId outletId) {
+            this.outletId = outletId;
             return this;
         }
 
-        public Builder withLocation(Location location) {
-            this.location = location;
-            return this;
-        }
-
-        public Builder withCompoundOutletRecords(List<CompoundOutletRecord> compoundOutletRecords) {
-            this.compoundOutletRecords = compoundOutletRecords;
-            return this;
-        }
-
-        public Builder withRatingGroupId(String ratingGroupId) {
-            this.ratingGroupId = ratingGroupId;
+        public Builder withDownstreamOutletIds(List<CwmsId> downstreamOutletIds) {
+            this.downstreamOutletIds = downstreamOutletIds;
             return this;
         }
     }

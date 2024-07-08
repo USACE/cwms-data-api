@@ -14,5 +14,6 @@
     "location-kind": "Outlet",
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
-  }
+  },
+  "rating-group-id": "Rating-location-outlet"
 }

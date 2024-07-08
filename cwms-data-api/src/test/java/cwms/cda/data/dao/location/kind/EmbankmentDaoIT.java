@@ -30,8 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import cwms.cda.api.DataApiTestIT;
-import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
@@ -61,24 +59,20 @@ import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 @Tag("integration")
 @TestInstance(Lifecycle.PER_CLASS)
-final class EmbankmentDaoIT extends DataApiTestIT {
-    
-    private static final String PROJECT_OFFICE_ID = "SPK";
-    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1emdao");
-    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2emdao");
-    private static final Location EMBANK_LOC1 = buildEmbankmentLocation("PROJECT-EMBANK_LOC1dao");
-    private static final Location EMBANK_LOC2 = buildEmbankmentLocation("EMBANK_LOC2dao");
-    private static final Location EMBANK_LOC3 = buildEmbankmentLocation("EMBANK_LOC3dao");
+final class EmbankmentDaoIT extends ProjectStructureDaoIT {
+    private static final String EMBANKMENT_KIND = "EMBANKMENT";
+    private static final Location EMBANK_LOC1 = buildProjectStructureLocation("PROJECT-EMBANK_LOC1", EMBANKMENT_KIND);
+    private static final Location EMBANK_LOC2 = buildProjectStructureLocation("EMBANK_LOC2", EMBANKMENT_KIND);
+    private static final Location EMBANK_LOC3 = buildProjectStructureLocation("EMBANK_LOC3", EMBANKMENT_KIND);
 
     @BeforeAll
     public void setup() throws Exception {
+        setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, PROJECT_OFFICE_ID);
+            DSLContext context = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             try {
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "T");
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "T");
                 locationsDao.storeLocation(EMBANK_LOC1);
                 locationsDao.storeLocation(EMBANK_LOC2);
                 locationsDao.storeLocation(EMBANK_LOC3);
@@ -91,21 +85,15 @@ final class EmbankmentDaoIT extends DataApiTestIT {
 
     @AfterAll
     public void tearDown() throws Exception {
-
+        tearDownProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, PROJECT_OFFICE_ID);
+            DSLContext context = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             try {
-                locationsDao.deleteLocation(EMBANK_LOC1.getName(), PROJECT_OFFICE_ID, true);
-                locationsDao.deleteLocation(EMBANK_LOC2.getName(), PROJECT_OFFICE_ID, true);
-                locationsDao.deleteLocation(EMBANK_LOC3.getName(), PROJECT_OFFICE_ID, true);
-                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                        DeleteRule.DELETE_ALL.getRule(), PROJECT_OFFICE_ID);
-                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
-                        DeleteRule.DELETE_ALL.getRule(), PROJECT_OFFICE_ID);
-                locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_OFFICE_ID, true);
-                locationsDao.deleteLocation(PROJECT_LOC2.getName(), PROJECT_OFFICE_ID, true);
+                locationsDao.deleteLocation(EMBANK_LOC1.getName(), OFFICE_ID, true);
+                locationsDao.deleteLocation(EMBANK_LOC2.getName(), OFFICE_ID, true);
+                locationsDao.deleteLocation(EMBANK_LOC3.getName(), OFFICE_ID, true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
             }
@@ -117,7 +105,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
     void testRoundTrip() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, PROJECT_OFFICE_ID);
+            DSLContext context = getDslContext(c, OFFICE_ID);
             EmbankmentDao embankmentDao = new EmbankmentDao(context);
             Embankment embankment = buildTestEmbankment(EMBANK_LOC1, PROJECT_LOC.getName());
             embankmentDao.storeEmbankment(embankment, false);
@@ -137,7 +125,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
     void testRoundTripMulti() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, PROJECT_OFFICE_ID);
+            DSLContext context = getDslContext(c, OFFICE_ID);
             EmbankmentDao embankmentDao = new EmbankmentDao(context);
             Embankment embankment1 = buildTestEmbankment(EMBANK_LOC1, PROJECT_LOC.getName());
             embankmentDao.storeEmbankment(embankment1, false);
@@ -165,7 +153,7 @@ final class EmbankmentDaoIT extends DataApiTestIT {
     void testRename() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, PROJECT_OFFICE_ID);
+            DSLContext context = getDslContext(c, OFFICE_ID);
             EmbankmentDao embankmentDao = new EmbankmentDao(context);
             Embankment embankment = buildTestEmbankment(EMBANK_LOC1, PROJECT_LOC.getName());
             embankmentDao.storeEmbankment(embankment, false);
@@ -214,66 +202,5 @@ final class EmbankmentDaoIT extends DataApiTestIT {
                 .withStructureLength(25.0)
                 .withDownstreamSideSlope(90.0)
                 .build();
-    }
-
-    private static Location buildProjectLocation(String locationId) {
-        return new Location.Builder(locationId, "PROJECT", ZoneId.of("UTC"),
-                38.5613824, -121.7298432, "NVGD29", PROJECT_OFFICE_ID)
-                .withElevation(10.0)
-                .withElevationUnits("m")
-                .withLocationType("SITE")
-                .withCountyName("Sacramento")
-                .withNation(Nation.US)
-                .withActive(true)
-                .withStateInitial("CA")
-                .withPublishedLatitude(38.5613824)
-                .withPublishedLongitude(-121.7298432)
-                .withBoundingOfficeId(PROJECT_OFFICE_ID)
-                .withLongName("UNITED STATES")
-                .withDescription("for testing")
-                .withNearestCity("Davis")
-                .build();
-    }
-
-    private static Location buildEmbankmentLocation(String locationId) {
-        return new Location.Builder(locationId, "EMBANKMENT", ZoneId.of("UTC"),
-                38.5613824, -121.7298432, "NVGD29", PROJECT_OFFICE_ID)
-                .withElevation(10.0)
-                .withElevationUnits("m")
-                .withLocationType("SITE")
-                .withCountyName("Sacramento")
-                .withNation(Nation.US)
-                .withActive(true)
-                .withStateInitial("CA")
-                .withBoundingOfficeId(PROJECT_OFFICE_ID)
-                .withPublishedLatitude(38.5613824)
-                .withPublishedLongitude(-121.7298432)
-                .withLongName("UNITED STATES")
-                .withDescription("for testing")
-                .withNearestCity("Davis")
-                .build();
-    }
-
-    private static PROJECT_OBJ_T buildProject(Location location) {
-        PROJECT_OBJ_T retval = new PROJECT_OBJ_T();
-        retval.setPROJECT_LOCATION(LocationUtil.getLocation(location));
-        retval.setPUMP_BACK_LOCATION(null);
-        retval.setNEAR_GAGE_LOCATION(null);
-        retval.setAUTHORIZING_LAW(null);
-        retval.setCOST_YEAR(Timestamp.from(Instant.now()));
-        retval.setFEDERAL_COST(BigDecimal.ONE);
-        retval.setNONFEDERAL_COST(BigDecimal.TEN);
-        retval.setFEDERAL_OM_COST(BigDecimal.ZERO);
-        retval.setNONFEDERAL_OM_COST(BigDecimal.valueOf(15.0));
-        retval.setCOST_UNITS_ID("$");
-        retval.setREMARKS("TEST RESERVOIR PROJECT");
-        retval.setPROJECT_OWNER("CDA");
-        retval.setHYDROPOWER_DESCRIPTION("HYDRO DESCRIPTION");
-        retval.setSEDIMENTATION_DESCRIPTION("SEDIMENTATION DESCRIPTION");
-        retval.setDOWNSTREAM_URBAN_DESCRIPTION("DOWNSTREAM URBAN DESCRIPTION");
-        retval.setBANK_FULL_CAPACITY_DESCRIPTION("BANK FULL CAPACITY DESCRIPTION");
-        retval.setYIELD_TIME_FRAME_START(Timestamp.from(Instant.now()));
-        retval.setYIELD_TIME_FRAME_END(Timestamp.from(Instant.now()));
-        return retval;
     }
 }
