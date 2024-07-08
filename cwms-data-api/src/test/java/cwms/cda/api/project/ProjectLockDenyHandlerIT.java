@@ -98,11 +98,11 @@ public class ProjectLockDenyHandlerIT extends DataApiTestIT {
 
                 assertFalse(lockId[0].isEmpty());
                 // now user1 has a lock.
-            });
+            }, CwmsDataApiSetupCallback.getWebUser());
 
 
             // have user2 try to get the lock on another thread.
-            new Thread(() -> {
+            Thread thread = new Thread(() -> {
                 try {
                     databaseLink.connection(c -> {
                         DSLContext dsl = getDslContext(c, OFFICE);
@@ -121,11 +121,13 @@ public class ProjectLockDenyHandlerIT extends DataApiTestIT {
                         long elapsed = after - before;
                         assertFalse(Math.abs((1000 * revokeTimeout) - elapsed) < 1000);
 
-                    });
+                    }, CwmsDataApiSetupCallback.getWebUser());
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
-            }).start();
+            });
+            thread.setDaemon(true);
+            thread.start();
 
             // while the above is waiting on thread for revokeTimeout we deny the revoke.
             given()
@@ -154,7 +156,7 @@ public class ProjectLockDenyHandlerIT extends DataApiTestIT {
 
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
 
-            });
+            }, CwmsDataApiSetupCallback.getWebUser());
         }
 
     }

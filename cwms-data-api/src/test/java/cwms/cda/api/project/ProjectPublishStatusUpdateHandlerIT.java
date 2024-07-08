@@ -105,7 +105,7 @@ public class ProjectPublishStatusUpdateHandlerIT extends DataApiTestIT {
                         .body("value", is(lessThan(Instant.now().toEpochMilli())))
                     .statusCode(is(HttpServletResponse.SC_OK));
 
-            });
+            }, CwmsDataApiSetupCallback.getWebUser());
 
 
         } finally {
@@ -120,7 +120,7 @@ public class ProjectPublishStatusUpdateHandlerIT extends DataApiTestIT {
                     logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
                 }
 
-            });
+            }, CwmsDataApiSetupCallback.getWebUser());
         }
 
     }

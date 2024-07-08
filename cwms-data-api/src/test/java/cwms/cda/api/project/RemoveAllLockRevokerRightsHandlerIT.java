@@ -82,21 +82,21 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
 
                 // first removeALL
                 given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .header("Authorization", user.toHeaderValue())
-                        .queryParam(OFFICE_MASK, officeMask)
-                        .queryParam(Controllers.OFFICE, OFFICE)
-                        .queryParam(USER_ID, userName)
-                        .queryParam(APPLICATION_MASK, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .post("/project-lock-rights/remove-all")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_OK))
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(OFFICE_MASK, officeMask)
+                    .queryParam(Controllers.OFFICE, OFFICE)
+                    .queryParam(USER_ID, userName)
+                    .queryParam(APPLICATION_MASK, appId)
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/project-lock-rights/remove-all")
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
                 ;
 
                 // Add an allow
@@ -109,21 +109,21 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
 
                 // Now remove all again
                 given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .header("Authorization", user.toHeaderValue())
-                        .queryParam(Controllers.OFFICE, OFFICE)
-                        .queryParam(OFFICE_MASK, officeMask)
-                        .queryParam(USER_ID, userName)
-                        .queryParam(APPLICATION_MASK, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .post("/project-lock-rights/remove-all")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_OK))
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(Controllers.OFFICE, OFFICE)
+                    .queryParam(OFFICE_MASK, officeMask)
+                    .queryParam(USER_ID, userName)
+                    .queryParam(APPLICATION_MASK, appId)
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/project-lock-rights/remove-all")
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
                 ;
 
                 // make sure its gone.
@@ -131,12 +131,11 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
                 assertNotNull(lockRevokerRights);
                 assertTrue(lockRevokerRights.isEmpty());
 
-
             } finally {
                 lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
                 deleteProject(prjDao, projId, lockDao, OFFICE, appId);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
 
     }
 

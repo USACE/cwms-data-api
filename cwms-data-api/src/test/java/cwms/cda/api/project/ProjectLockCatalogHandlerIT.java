@@ -133,7 +133,7 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
                 deleteProject(prjDao, projId1, lockDao, OFFICE, appId);
                 deleteProject(prjDao, projId2, lockDao, OFFICE, appId);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
 }
