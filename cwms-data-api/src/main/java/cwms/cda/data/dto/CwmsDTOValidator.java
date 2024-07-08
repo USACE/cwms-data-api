@@ -82,7 +82,10 @@ public final class CwmsDTOValidator {
                             if (value == null) {
                                 missingFields.add(field.getName());
                             } else if (value instanceof CwmsDTO) {
+                                ((CwmsDTO) value).validateInternal(this);
                                 validateRequiredFields((CwmsDTO) value);
+                            } else if (value instanceof CwmsDTOBase) {
+                                ((CwmsDTOBase) value).validate();
                             }
                         } finally {
                             if (!accessible) {

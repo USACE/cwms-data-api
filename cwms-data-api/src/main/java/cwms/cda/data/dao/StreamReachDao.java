@@ -103,6 +103,7 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
      */
     public void storeStreamReach(StreamReach streamReach, boolean failIfExists) {
         connectionResult(dsl, conn -> {
+            setOffice(conn, streamReach.getId().getOfficeId());
             String failsIfExistsStr = OracleTypeMap.formatBool(failIfExists);
             String ignoreNullsStr = OracleTypeMap.formatBool(true);
             String downstreamLocId = streamReach.getDownstreamNode().getId().getName();
@@ -123,6 +124,7 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
      */
     public void renameStreamReach(String officeId, String oldReachId, String newReachId) {
         connection(dsl, conn -> {
+            setOffice(conn, officeId);
             CWMS_STREAM_PACKAGE.call_RENAME_STREAM_REACH(DSL.using(conn).configuration(), oldReachId, newReachId, officeId);
         });
     }
@@ -133,9 +135,9 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
      * @param officeId - the office id
      */
     public void deleteStreamReach(String officeId, String reachId) {
-        connectionResult(dsl, conn -> {
+        connection(dsl, conn -> {
+            setOffice(conn, officeId);
             CWMS_STREAM_PACKAGE.call_DELETE_STREAM_REACH(DSL.using(conn).configuration(), reachId, officeId);
-            return null;
         });
     }
 

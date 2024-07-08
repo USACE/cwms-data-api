@@ -29,6 +29,7 @@ public abstract class CwmsDTO implements CwmsDTOBase {
     public final void validate() throws FieldException {
         CwmsDTOValidator validator = new CwmsDTOValidator();
         validateInternal(validator);
+        validator.validateRequiredFields(this);
         validator.validate();
     }
 

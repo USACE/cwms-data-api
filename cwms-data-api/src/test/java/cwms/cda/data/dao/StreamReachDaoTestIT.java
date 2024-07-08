@@ -59,21 +59,17 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
     private static final List<StreamLocation> STREAM_locationsCreated = new ArrayList<>();
 
     @BeforeAll
-    public static void setup() {
-        try {
-            for (int i = 0; i < 2; i++) {
-                String testLoc = "TEST_REACH" + i;
-                createLocation(testLoc, true, OFFICE_ID, "STREAM_REACH");
-                REACH_IDS.add(testLoc);
-                createLocation(testLoc + "_UP", true, OFFICE_ID, "STREAM_LOCATION");
-                createLocation(testLoc + "_DOWN", true, OFFICE_ID, "STREAM_LOCATION");
-                String streamId = testLoc + "_STREAM";
-                createAndStoreTestStream(streamId);
-                createAndStoreTestStreamLocation(testLoc + "_UP", streamId, 25.0);
-                createAndStoreTestStreamLocation(testLoc + "_DOWN", streamId, 20.0);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    public static void setup() throws SQLException {
+        for (int i = 0; i < 2; i++) {
+            String testLoc = "TEST_REACH" + i;
+            createLocation(testLoc, true, OFFICE_ID, "STREAM_REACH");
+            REACH_IDS.add(testLoc);
+            createLocation(testLoc + "_UP", true, OFFICE_ID, "STREAM_LOCATION");
+            createLocation(testLoc + "_DOWN", true, OFFICE_ID, "STREAM_LOCATION");
+            String streamId = testLoc + "_STREAM";
+            createAndStoreTestStream(streamId);
+            createAndStoreTestStreamLocation(testLoc + "_UP", streamId, 25.0);
+            createAndStoreTestStreamLocation(testLoc + "_DOWN", streamId, 20.0);
         }
     }
 
@@ -219,7 +215,7 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
             streamReachDao.storeStreamReach(reach, false);
             String originalId = reach.getId().getName();
             String office = reach.getId().getOfficeId();
-            String newId = reach.getId().getName() + "N";
+            String newId = reach.getId().getName() + "Rename";
             streamReachDao.renameStreamReach(office, originalId, newId);
             String streamId = reachId + "_STREAM";
 
@@ -227,8 +223,9 @@ final class StreamReachDaoTestIT extends DataApiTestIT {
 
             StreamReach retrievedReach = streamReachDao.retrieveStreamReach(office, streamId, newId, reach.getUpstreamNode().getStreamNode().getStationUnits());
             assertEquals(newId, retrievedReach.getId().getName());
-
             streamReachDao.deleteStreamReach(office, newId);
+            LocationsDaoImpl locationDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
+            locationDao.deleteLocation(newId, OFFICE_ID);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 

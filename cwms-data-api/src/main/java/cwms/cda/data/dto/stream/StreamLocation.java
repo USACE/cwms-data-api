@@ -26,11 +26,14 @@ package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -40,8 +43,9 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamLocation.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamLocation implements CwmsDTOBase {
+public final class StreamLocation extends CwmsDTO {
 
+    @JsonProperty(required = true)
     private final StreamLocationNode streamLocationNode; //the node representation of this location containing the loc id, stream id, bank, and station
     private final Double publishedStation;
     private final Double navigationStation;
@@ -52,6 +56,7 @@ public final class StreamLocation implements CwmsDTOBase {
     private final String stageUnits;
 
     private StreamLocation(Builder builder) {
+        super(null);
         this.streamLocationNode = builder.streamLocationNode;
         this.publishedStation = builder.publishedStation;
         this.navigationStation = builder.navigationStation;
@@ -60,14 +65,6 @@ public final class StreamLocation implements CwmsDTOBase {
         this.ungagedDrainageArea = builder.ungagedDrainageArea;
         this.areaUnits = builder.areaUnits;
         this.stageUnits = builder.stageUnits;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        if(this.streamLocationNode == null){
-            throw new FieldException("The 'streamNode' field of a StreamLocation cannot be null.");
-        }
-        streamLocationNode.validate();
     }
 
     public StreamLocationNode getStreamLocationNode() {
@@ -100,6 +97,11 @@ public final class StreamLocation implements CwmsDTOBase {
 
     public String getStageUnits() {
         return stageUnits;
+    }
+
+    @JsonIgnore
+    public CwmsId getId() {
+        return getStreamLocationNode().getId();
     }
 
     @JsonIgnore

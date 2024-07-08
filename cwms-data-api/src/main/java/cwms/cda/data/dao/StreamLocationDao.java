@@ -101,6 +101,7 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
      */
     public void storeStreamLocation(StreamLocation streamLocation, boolean failIfExists) {
         connectionResult(dsl, conn -> {
+            setOffice(conn, streamLocation.getId().getOfficeId());
             String failsIfExistsStr = OracleTypeMap.formatBool(failIfExists);
             String ignoreNullsStr = OracleTypeMap.formatBool(true);
             StreamLocationNode streamLocationNode = streamLocation.getStreamLocationNode();
@@ -124,9 +125,9 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
      * @param officeId - the office id
      */
     public void deleteStreamLocation(String officeId, String streamId, String locationId) {
-        connectionResult(dsl, conn -> {
+        connection(dsl, conn -> {
+            setOffice(conn, officeId);
             CWMS_STREAM_PACKAGE.call_DELETE_STREAM_LOCATION(DSL.using(conn).configuration(), locationId, streamId, officeId);
-            return null;
         });
     }
 
