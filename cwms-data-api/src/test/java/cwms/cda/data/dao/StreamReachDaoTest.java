@@ -38,15 +38,15 @@ final class StreamReachDaoTest {
     @Test
     void testFromJooqStreamReachRecord() {
         Record record = Mockito.mock(Record.class);
-        Mockito.when(record.get(StreamReachDao.REACH_OFFICE_ID_COLUMN_INDEX, String.class)).thenReturn("SPK");
-        Mockito.when(record.get(StreamReachDao.REACH_CONFIGURATION_COLUMN_INDEX, String.class)).thenReturn("CONFIG_ID");
-        Mockito.when(record.get(StreamReachDao.REACH_STREAM_ID_COLUMN_INDEX, String.class)).thenReturn("STREAM_ID");
-        Mockito.when(record.get(StreamReachDao.REACH_REACH_LOCATION_COLUMN_INDEX, String.class)).thenReturn("REACH_ID");
-        Mockito.when(record.get(StreamReachDao.REACH_UPSTREAM_LOCATION_COLUMN_INDEX, String.class)).thenReturn("UPSTREAM_LOC");
-        Mockito.when(record.get(StreamReachDao.REACH_UPSTREAM_STATION_COLUMN_INDEX, Double.class)).thenReturn(1.0);
-        Mockito.when(record.get(StreamReachDao.REACH_DOWNSTREAM_LOCATION_COLUMN_INDEX, String.class)).thenReturn("DOWNSTREAM_LOC");
-        Mockito.when(record.get(StreamReachDao.REACH_DOWNSTREAM_STATION_COLUMN_INDEX, Double.class)).thenReturn(2.0);
-        Mockito.when(record.get(StreamReachDao.REACH_COMMENTS_COLUMN_INDEX, String.class)).thenReturn("Test Comment");
+        Mockito.when(record.get(StreamReachDao.REACH_OFFICE_ID_COLUMN, String.class)).thenReturn("SPK");
+        Mockito.when(record.get(StreamReachDao.REACH_CONFIGURATION_COLUMN, String.class)).thenReturn("CONFIG_ID");
+        Mockito.when(record.get(StreamReachDao.REACH_STREAM_ID_COLUMN, String.class)).thenReturn("STREAM_ID");
+        Mockito.when(record.get(StreamReachDao.REACH_REACH_LOCATION_COLUMN, String.class)).thenReturn("REACH_ID");
+        Mockito.when(record.get(StreamReachDao.REACH_UPSTREAM_LOCATION_COLUMN, String.class)).thenReturn("UPSTREAM_LOC");
+        Mockito.when(record.get(StreamReachDao.REACH_UPSTREAM_STATION_COLUMN, Double.class)).thenReturn(1.0);
+        Mockito.when(record.get(StreamReachDao.REACH_DOWNSTREAM_LOCATION_COLUMN, String.class)).thenReturn("DOWNSTREAM_LOC");
+        Mockito.when(record.get(StreamReachDao.REACH_DOWNSTREAM_STATION_COLUMN, Double.class)).thenReturn(2.0);
+        Mockito.when(record.get(StreamReachDao.REACH_COMMENTS_COLUMN, String.class)).thenReturn("Test Comment");
 
         StreamReach result = StreamReachDao.fromJooqStreamReachRecord(record, "km", Bank.fromCode("L"), Bank.fromCode("R"));
 

@@ -41,18 +41,18 @@ import java.util.List;
 
 public final class StreamDao extends JooqDao<Stream> {
 
-    static final int STREAM_OFFICE_ID_COLUMN_INDEX = 0;
-    static final int STREAM_STREAM_ID_COLUMN_INDEX = 1;
-    static final int STATIONING_STARTS_DS_COLUMN_INDEX = 2;
-    static final int STREAM_FLOWS_INTO_STREAM_COLUMN_INDEX = 3;
-    static final int STREAM_FLOWS_INTO_STATION_COLUMN_INDEX = 4;
-    static final int STREAM_FLOWS_INTO_BANK_COLUMN_INDEX = 5;
-    static final int STREAM_DIVERTS_FROM_STREAM_COLUMN_INDEX = 6;
-    static final int STREAM_DIVERTS_FROM_STATION_COLUMN_INDEX = 7;
-    static final int STREAM_DIVERTS_FROM_BANK_COLUMN_INDEX = 8;
-    static final int STREAM_STREAM_LENGTH_COLUMN_INDEX = 9;
-    static final int STREAM_AVERAGE_SLOPE_COLUMN_INDEX = 10;
-    static final int STREAM_COMMENTS_COLUMN_INDEX = 11;
+    static final String STREAM_OFFICE_ID_COLUMN = "OFFICE_ID";
+    static final String STREAM_STREAM_ID_COLUMN = "STREAM_ID";
+    static final String STATIONING_STARTS_DS_COLUMN = "STATIONING_STARTS_DS";
+    static final String STREAM_FLOWS_INTO_STREAM_COLUMN = "FLOWS_INTO_STREAM";
+    static final String STREAM_FLOWS_INTO_STATION_COLUMN = "FLOWS_INTO_STATION";
+    static final String STREAM_FLOWS_INTO_BANK_COLUMN = "FLOWS_INTO_BANK";
+    static final String STREAM_DIVERTS_FROM_STREAM_COLUMN = "DIVERTS_FROM_STREAM";
+    static final String STREAM_DIVERTS_FROM_STATION_COLUMN = "DIVERTS_FROM_STATION";
+    static final String STREAM_DIVERTS_FROM_BANK_COLUMN = "DIVERTS_FROM_BANK";
+    static final String STREAM_STREAM_LENGTH_COLUMN = "STREAM_LENGTH";
+    static final String STREAM_AVERAGE_SLOPE_COLUMN = "AVERAGE_SLOPE";
+    static final String STREAM_COMMENTS_COLUMN = "COMMENTS";
     public static final String DB_STREAM_SLOPE_UNITS = "%";
 
     public StreamDao(DSLContext dsl) {
@@ -206,26 +206,26 @@ public final class StreamDao extends JooqDao<Stream> {
 
     static Stream fromJooqStreamRecord(Record record, String stationUnits) {
         return new Stream.Builder()
-                .withStartsDownstream(record.get(STATIONING_STARTS_DS_COLUMN_INDEX, Boolean.class))
+                .withStartsDownstream(record.get(STATIONING_STARTS_DS_COLUMN, Boolean.class))
                 .withId(new CwmsId.Builder()
-                        .withName(record.get(STREAM_STREAM_ID_COLUMN_INDEX, String.class))
-                        .withOfficeId(record.get(STREAM_OFFICE_ID_COLUMN_INDEX, String.class))
+                        .withName(record.get(STREAM_STREAM_ID_COLUMN, String.class))
+                        .withOfficeId(record.get(STREAM_OFFICE_ID_COLUMN, String.class))
                         .build())
                 .withFlowsIntoStreamNode(buildStreamNode(
-                        record.get(STREAM_OFFICE_ID_COLUMN_INDEX, String.class),
-                        record.get(STREAM_FLOWS_INTO_STREAM_COLUMN_INDEX, String.class),
-                        record.get(STREAM_FLOWS_INTO_STATION_COLUMN_INDEX, Double.class),
-                        Bank.fromCode(record.get(STREAM_FLOWS_INTO_BANK_COLUMN_INDEX, String.class)),
+                        record.get(STREAM_OFFICE_ID_COLUMN, String.class),
+                        record.get(STREAM_FLOWS_INTO_STREAM_COLUMN, String.class),
+                        record.get(STREAM_FLOWS_INTO_STATION_COLUMN, Double.class),
+                        Bank.fromCode(record.get(STREAM_FLOWS_INTO_BANK_COLUMN, String.class)),
                         stationUnits))
                 .withDivertsFromStreamNode(buildStreamNode(
-                        record.get(STREAM_OFFICE_ID_COLUMN_INDEX, String.class),
-                        record.get(STREAM_DIVERTS_FROM_STREAM_COLUMN_INDEX, String.class),
-                        record.get(STREAM_DIVERTS_FROM_STATION_COLUMN_INDEX, Double.class),
-                        Bank.fromCode(record.get(STREAM_DIVERTS_FROM_BANK_COLUMN_INDEX, String.class)),
+                        record.get(STREAM_OFFICE_ID_COLUMN, String.class),
+                        record.get(STREAM_DIVERTS_FROM_STREAM_COLUMN, String.class),
+                        record.get(STREAM_DIVERTS_FROM_STATION_COLUMN, Double.class),
+                        Bank.fromCode(record.get(STREAM_DIVERTS_FROM_BANK_COLUMN, String.class)),
                         stationUnits))
-                .withLength(record.get(STREAM_STREAM_LENGTH_COLUMN_INDEX, Double.class))
-                .withAverageSlope(record.get(STREAM_AVERAGE_SLOPE_COLUMN_INDEX, Double.class))
-                .withComment(record.get(STREAM_COMMENTS_COLUMN_INDEX, String.class))
+                .withLength(record.get(STREAM_STREAM_LENGTH_COLUMN, Double.class))
+                .withAverageSlope(record.get(STREAM_AVERAGE_SLOPE_COLUMN, Double.class))
+                .withComment(record.get(STREAM_COMMENTS_COLUMN, String.class))
                 .withLengthUnits(stationUnits)
                 .withSlopeUnits(DB_STREAM_SLOPE_UNITS)
                 .build();

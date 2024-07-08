@@ -80,7 +80,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
                 db.connection(c-> {
                     LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
                     locationsDao.deleteLocation(location.getName(), location.getOfficeId(), true);
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch(SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -137,7 +137,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
             assertThrows(NotFoundException.class, () -> streamDao.retrieveStream(stream2.getId().getOfficeId(), stream2.getId().getName(), stream.getLengthUnits()));
             streamDao.deleteStream(flowsIntoStream.getId().getOfficeId(), flowsIntoStream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(divertsFromStream.getId().getOfficeId(), divertsFromStream.getId().getName(), DeleteRule.DELETE_ALL);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -164,7 +164,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
             streamDao.deleteStream(office, newId, DeleteRule.DELETE_ALL);
             streamDao.deleteStream(flowsIntoStream.getId().getOfficeId(), flowsIntoStream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(divertsFromStream.getId().getOfficeId(), divertsFromStream.getId().getName(), DeleteRule.DELETE_ALL);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     private static Stream buildTestStream(String streamId, StreamNode flowsIntoNode, StreamNode divertsFromNode) {
@@ -221,6 +221,6 @@ final class StreamDaoTestIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 }

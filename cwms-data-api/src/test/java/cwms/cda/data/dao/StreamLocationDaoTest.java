@@ -68,18 +68,22 @@ final class StreamLocationDaoTest {
     @Test
     void testFromJooqStreamLocationRecord() {
         Record record = Mockito.mock(Record.class);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_OFFICE_ID_COLUMN_INDEX, String.class)).thenReturn("SPK");
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_STREAM_ID_COLUMN_INDEX, String.class)).thenReturn("STREAM_ID");
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_LOCATION_ID_COLUMN_INDEX, String.class)).thenReturn("LOCATION_ID");
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_STATION_COLUMN_INDEX, Double.class)).thenReturn(10.0);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_PUBLISHED_STATION_COLUMN_INDEX, Double.class)).thenReturn(100.0);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_NAVIGATION_STATION_COLUMN_INDEX, Double.class)).thenReturn(200.0);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN_INDEX, Double.class)).thenReturn(2.5);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_DRAINAGE_AREA_COLUMN_INDEX, Double.class)).thenReturn(500.0);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN_INDEX, Double.class)).thenReturn(100.0);
-        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_BANK_COLUMN_INDEX, String.class)).thenReturn("L");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_OFFICE_ID_COLUMN, String.class)).thenReturn("SPK");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_STREAM_ID_COLUMN, String.class)).thenReturn("STREAM_ID");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_LOCATION_ID_COLUMN, String.class)).thenReturn("LOCATION_ID");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_STATION_COLUMN, Double.class)).thenReturn(10.0);
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_PUBLISHED_STATION_COLUMN, Double.class)).thenReturn(100.0);
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_NAVIGATION_STATION_COLUMN, Double.class)).thenReturn(200.0);
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN, Double.class)).thenReturn(2.5);
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_DRAINAGE_AREA_COLUMN, Double.class)).thenReturn(500.0);
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN, Double.class)).thenReturn(100.0);
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_BANK_COLUMN, String.class)).thenReturn("L");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_STATION_UNITS_COLUMN, String.class)).thenReturn("km");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_STAGE_UNITS_COLUMN, String.class)).thenReturn("m");
+        Mockito.when(record.get(StreamLocationDao.STREAM_LOCATION_AREA_UNITS_COLUMN, String.class)).thenReturn("km2");
 
-        StreamLocation result = StreamLocationDao.fromJooqStreamLocationRecord(record, "km", "m", "km2");
+
+        StreamLocation result = StreamLocationDao.fromJooqStreamLocationRecord(record);
 
         assertNotNull(result);
         assertEquals("LOCATION_ID", result.getStreamLocationNode().getId().getName());

@@ -60,7 +60,7 @@ public final class DTOMatch {
     }
 
     public static void assertMatch(CwmsId first, CwmsId second) {
-        assertMatch(first, second, "LocationIdentifier");
+        assertMatch(first, second, "CwmsId");
     }
 
 
@@ -87,9 +87,9 @@ public final class DTOMatch {
     public static void assertMatch(StreamNode node1, StreamNode node2) {
         assertAll(
             () -> assertMatch(node1.getStreamId(), node2.getStreamId(), "Stream ID does not match"),
-            () -> assertEquals(node1.getBank(), node2.getBank(), "Bank does not match"),
-            () -> assertEquals(node1.getStation(), node2.getStation(), "Station does not match"),
-            () -> assertEquals(node1.getStationUnits(), node2.getStationUnits(), "Station Units do not match")
+            () -> assertEquals(node1.getBank(), node2.getBank(), "The bank does not match"),
+            () -> assertEquals(node1.getStation(), node2.getStation(), "The station does not match"),
+            () -> assertEquals(node1.getStationUnits(), node2.getStationUnits(), "The station unit does not match")
         );
     }
 
