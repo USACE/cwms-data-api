@@ -27,7 +27,9 @@ package cwms.cda;
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.LookupTypeController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
@@ -76,7 +78,9 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
-import cwms.cda.api.TurbineChangesController;
+import cwms.cda.api.TurbineChangesDeleteController;
+import cwms.cda.api.TurbineChangesGetController;
+import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.auth.ApiKeyController;
@@ -175,8 +179,8 @@ import org.owasp.html.PolicyFactory;
         "/properties/*",
         "/lookup-types/*",
         "/embankments/*",
-        "/turbines/*",
-        "/turbine-changes/*"
+        "/projects/turbines/*",
+        "/projects/turbine-changes/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -476,6 +480,13 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+        cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
+            new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String turbineChanges = format("/projects/{%s}/turbine-changes", Controllers.NAME);
+        get(turbineChanges,new TurbineChangesGetController(metrics));
+        addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
+        post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
+        delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
@@ -484,10 +495,6 @@ public class ApiServlet extends HttpServlet {
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
                 new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
-                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/projects/turbine-changes/{%s}", Controllers.PROJECT_ID),
-            new TurbineChangesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
     }
 
     /**

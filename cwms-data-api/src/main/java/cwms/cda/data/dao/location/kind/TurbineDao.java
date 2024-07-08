@@ -154,7 +154,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             physicalStructureChange.stream()
                 .map(TurbineDao::map)
                 .forEach(changes::add);
-            CWMS_TURBINE_PACKAGE.call_STORE_TURBINE_CHANGES(dsl.configuration(), changes, null, null,
+            CWMS_TURBINE_PACKAGE.call_STORE_TURBINE_CHANGES(DSL.using(conn).configuration(), changes, null, null,
                 "UTC", "T", "T",
                 OracleTypeMap.formatBool(overrideProtection));
         });
