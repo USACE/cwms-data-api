@@ -25,14 +25,12 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -122,7 +120,7 @@ public class ProjectController implements CrudHandler {
 
     private static @NotNull ContentType getContentType(Context ctx) {
         String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
-        return Formats.parseHeader(formatHeader);
+        return Formats.parseHeader(formatHeader, Project.class);
     }
 
     @OpenApi(
@@ -137,7 +135,8 @@ public class ProjectController implements CrudHandler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(from = Project.class, type = Formats.JSON)}),
+                    @OpenApiContent(from = Project.class, type = Formats.JSONV1)
+                }),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the Project was not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
@@ -164,7 +163,7 @@ public class ProjectController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
                 ctx.contentType(contentType.toString());
 
                 String result = Formats.format(contentType, project);
@@ -180,7 +179,10 @@ public class ProjectController implements CrudHandler {
     @OpenApi(
             description = "Create new Project",
             requestBody = @OpenApiRequestBody(required = true,
-                    content = {@OpenApiContent(from = Project.class, type = Formats.JSON)}
+                content = {
+                    @OpenApiContent(from = Project.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = Project.class, type = Formats.JSON)
+                }
             ),
             method = HttpMethod.POST,
             tags = {TAG}
@@ -192,7 +194,7 @@ public class ProjectController implements CrudHandler {
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             ProjectDao dao = new ProjectDao(dsl);
 
@@ -209,6 +211,7 @@ public class ProjectController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                 content = {
                     @OpenApiContent(from = Project.class, type = Formats.JSON),
+                    @OpenApiContent(from = Project.class, type = Formats.JSONV1),
                 },
                 required = true
             ),
@@ -221,7 +224,7 @@ public class ProjectController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             DSLContext dsl = getDslContext(ctx);
 
@@ -256,28 +259,11 @@ public class ProjectController implements CrudHandler {
                     .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
 
             ProjectDao dao = new ProjectDao(dsl);
-            dao.delete(office, name, getDeleteRule(deleteMethod));
+            dao.delete(office, name, deleteMethod.getRule());
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
-    private static @NotNull DeleteRule getDeleteRule(JooqDao.DeleteMethod deleteMethod) {
-        DeleteRule deleteRule;
-        switch (deleteMethod) {
-            case DELETE_ALL:
-                deleteRule = DeleteRule.DELETE_ALL;
-                break;
-            case DELETE_DATA:
-                deleteRule = DeleteRule.DELETE_DATA;
-                break;
-            case DELETE_KEY:
-                deleteRule = DeleteRule.DELETE_KEY;
-                break;
-            default:
-                throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
-                        + deleteMethod);
-        }
-        return deleteRule;
-    }
+
 }
