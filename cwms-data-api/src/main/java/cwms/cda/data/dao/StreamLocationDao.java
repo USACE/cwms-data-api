@@ -23,6 +23,7 @@
  */
 package cwms.cda.data.dao;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.StreamLocation;
@@ -31,6 +32,7 @@ import cwms.cda.data.dto.stream.StreamNode;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
@@ -88,9 +90,14 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
      */
     public StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit) {
         return connectionResult(dsl, conn -> {
-            RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
-                    locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
-            return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
+            try {
+                setOffice(conn, officeId);
+                RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
+                        locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
+                return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
+            } catch (DataAccessException e) {
+                throw new NotFoundException("Stream location " + locationId + " not found on stream " + streamId);
+            }
         });
     }
 
@@ -136,7 +143,7 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
                 .withStreamLocationNode(buildStreamLocationNode(officeId,
                         streamId,
                         locationId,
-                        streamLocation.getP_PUBLISHED_STATION(),
+                        streamLocation.getP_STATION(),
                         Bank.fromCode(streamLocation.getP_BANK()),
                         stationUnit))
                 .withPublishedStation(streamLocation.getP_PUBLISHED_STATION())

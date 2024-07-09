@@ -27,6 +27,7 @@ package cwms.cda;
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -170,6 +171,7 @@ import org.owasp.html.PolicyFactory;
         "/levels/*",
         "/basins/*",
         "/streams/*",
+        "/stream-locations/*",
         "/blobs/*",
         "/clobs/*",
         "/pools/*",
@@ -468,6 +470,8 @@ public class ApiServlet extends HttpServlet {
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/streams/{stream-id}",
                 new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/stream-locations/{stream-location-id}",
+                new StreamLocationController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
