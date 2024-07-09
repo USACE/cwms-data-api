@@ -30,15 +30,18 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.data.dto.watersupply.WaterUserContractRef;
+import java.time.ZoneId;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
 import usace.cwms.db.dao.ifc.loc.LocationType;
 import usace.cwms.db.dao.ifc.watersupply.WaterUserContractRefType;
 import usace.cwms.db.dao.ifc.watersupply.WaterUserContractType;
 import usace.cwms.db.dao.ifc.watersupply.WaterUserType;
+
 
 public class WaterSupplyUtils {
 
@@ -82,13 +85,37 @@ public class WaterSupplyUtils {
                 projectLocation.getOfficeId());
     }
 
-    public static WaterSupplyPump map(LocationType locationType) {
+    public static WaterSupplyPump map(LocationType locationType, PumpType pumpType) {
+        if (locationType == null) {
+            return null;
+        }
         return new WaterSupplyPump(new Location.Builder(locationType.getLocationRef().getOfficeId(),
                 locationType.getLocationRef().getBaseLocationId())
                 .withNearestCity(locationType.getNearestCity())
-                .withNation(Nation.valueOf(locationType.getNationId()))
+                .withLocationType(locationType.getLocationType())
+                .withNation(Nation.nationForName(locationType.getNationId()))
+                .withLatitude(locationType.getLatitude())
+                .withLongitude(locationType.getLongitude())
+                .withPublicName(locationType.getPublicName())
+                .withLongName(locationType.getLongName())
+                .withDescription(locationType.getDescription())
+                .withBoundingOfficeId(locationType.getBoundingOfficeId())
+                .withActive(locationType.getActiveFlag())
+                .withName(locationType.getLocationRef().getBaseLocationId())
+                .withStateInitial(locationType.getStateInitial())
+                .withCountyName(locationType.getCountyName())
+                .withTimeZoneName(ZoneId.of(locationType.getTimeZoneName()))
+                .withElevationUnits(locationType.getElevUnitId())
+                .withElevation(locationType.getElevation())
+                .withHorizontalDatum(locationType.getHorizontalDatum())
+                .withVerticalDatum(locationType.getVerticalDatum())
+                .withLocationKind(locationType.getLocationKindId())
+                .withMapLabel(locationType.getMapLabel())
+                .withPublishedLatitude(locationType.getPublishedLatitude())
+                .withPublishedLongitude(locationType.getPublishedLongitude())
+                .withOfficeId(locationType.getLocationRef().getOfficeId())
                 .build(),
-                null,
+                pumpType,
                 new CwmsId.Builder()
                         .withName(locationType.getLocationRef().getBaseLocationId())
                         .withOfficeId(locationType.getLocationRef().getOfficeId())
@@ -123,7 +150,8 @@ public class WaterSupplyUtils {
     }
 
     public static WaterUserContractType map(WaterUserContract contract) {
-        return new WaterUserContractType(new WaterUserContractRefType(map(contract.getWaterUser()), contract.getContractId().getName()),
+        return new WaterUserContractType(new WaterUserContractRefType(map(contract.getWaterUser()),
+                    contract.getContractId().getName()),
                 map(contract.getWaterContract()), contract.getContractEffectiveDate(),
                 contract.getContractExpirationDate(), contract.getContractedStorage(),
                 contract.getInitialUseAllocation(), contract.getFutureUseAllocation(),
