@@ -30,24 +30,23 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Timer;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.DIVERTS_FROM_STREAM_ID;
+import static cwms.cda.api.Controllers.DIVERTS_FROM_STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.FLOWS_INTO_STREAM_ID;
+import static cwms.cda.api.Controllers.FLOWS_INTO_STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.UNIT_SYSTEM;
 import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredParam;
-import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StreamDao;
@@ -90,13 +89,14 @@ public final class StreamController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location " +
+                    @OpenApiParam(name = OFFICE_MASK, description = "Office id for the reservoir project location " +
                             "associated with the streams."),
-                    @OpenApiParam(name = DIVERTS_FROM_STREAM_ID, description = "Specifies the stream-id of the " +
+                    @OpenApiParam(name = DIVERTS_FROM_STREAM_ID_MASK, description = "Specifies the stream-id of the " +
                             "stream that the returned streams flow from."),
-                    @OpenApiParam(name = FLOWS_INTO_STREAM_ID, description = "Specifies the stream-id of the " +
+                    @OpenApiParam(name = FLOWS_INTO_STREAM_ID_MASK, description = "Specifies the stream-id of the " +
                             "stream that the returned streams flow into."),
-                    @OpenApiParam(name = UNIT_SYSTEM, type = UnitSystem.class, description = UnitSystem.DESCRIPTION)
+                    @OpenApiParam(name = STATION_UNIT, description = "Specifies the unit of measure for the station. " +
+                            "Defaults to mi.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
@@ -108,20 +108,14 @@ public final class StreamController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String divertsFromStream = ctx.queryParam(DIVERTS_FROM_STREAM_ID);
-        String flowsIntoStream = ctx.queryParam(FLOWS_INTO_STREAM_ID);
+    public void getAll(@NotNull Context ctx) {
+        String office = ctx.queryParam(OFFICE_MASK);
+        String divertsFromStream = ctx.queryParam(DIVERTS_FROM_STREAM_ID_MASK);
+        String flowsIntoStream = ctx.queryParam(FLOWS_INTO_STREAM_ID_MASK);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
-            String unitSystem = queryParamAsClass(ctx, new String[]{UNIT_SYSTEM, },
-                    String.class, UnitSystem.SI.getValue(), metrics,
-                    name(StreamController.class.getName(), GET_ALL));
-            String stationUnits = "km";
-            if(UnitSystem.EN.getValue().equals(unitSystem)) {
-                stationUnits = "mi";
-            }
+            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
             List<Stream> streams = dao.retrieveStreams(office, divertsFromStream, flowsIntoStream, stationUnits);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
@@ -142,7 +136,8 @@ public final class StreamController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the stream to be retrieved."),
-                    @OpenApiParam(name = UNIT_SYSTEM, type = UnitSystem.class, description = UnitSystem.DESCRIPTION)
+                    @OpenApiParam(name = STATION_UNIT, description = "Specifies the unit of measure for the station. " +
+                            "Defaults to mi.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -160,13 +155,7 @@ public final class StreamController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
-            String unitSystem = queryParamAsClass(ctx, new String[]{UNIT_SYSTEM, },
-                    String.class, UnitSystem.SI.getValue(), metrics,
-                    name(StreamController.class.getName(), GET_ONE));
-            String stationUnits = "km";
-            if(UnitSystem.EN.getValue().equals(unitSystem)) {
-                stationUnits = "mi";
-            }
+            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
             Stream stream = dao.retrieveStream(office, streamId, stationUnits);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;

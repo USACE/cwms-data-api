@@ -96,7 +96,7 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
                         locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
                 return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
             } catch (DataAccessException e) {
-                throw new NotFoundException("Stream location " + locationId + " not found on stream " + streamId);
+                throw wrapException(e);
             }
         });
     }

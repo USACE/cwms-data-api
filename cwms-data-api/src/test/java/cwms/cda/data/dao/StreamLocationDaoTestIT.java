@@ -24,6 +24,7 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.stream.Bank;
@@ -172,7 +173,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     streamLocation2.getStreamLocationNode().getId().getName()
             );
 
-            assertThrows(DataAccessException.class, () -> streamLocationDao.retrieveStreamLocation(
+            assertThrows(NotFoundException.class, () -> streamLocationDao.retrieveStreamLocation(
                     streamLocation.getStreamLocationNode().getId().getOfficeId(),
                     streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName(),
                     streamLocation.getStreamLocationNode().getId().getName(),
@@ -181,7 +182,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     streamLocation.getAreaUnits()
             ));
 
-            assertThrows(DataAccessException.class, () -> streamLocationDao.retrieveStreamLocation(
+            assertThrows(NotFoundException.class, () -> streamLocationDao.retrieveStreamLocation(
                     streamLocation2.getStreamLocationNode().getId().getOfficeId(),
                     streamLocation2.getStreamLocationNode().getStreamNode().getStreamId().getName(),
                     streamLocation2.getStreamLocationNode().getId().getName(),

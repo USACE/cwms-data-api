@@ -26,6 +26,8 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.STATION_UNIT;
 import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
@@ -149,6 +151,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSON)
                 .queryParam(NAME, streamId)
                 .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(STATION_UNIT, "km")
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -279,8 +282,8 @@ final class StreamControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
-                .queryParam(Controllers.OFFICE, office)
-                .queryParam(NAME, streamId)
+                .queryParam(OFFICE_MASK, office)
+                .queryParam(STATION_UNIT, "km")
        .when()
                 .redirects().follow(true)
                 .redirects().max(3)

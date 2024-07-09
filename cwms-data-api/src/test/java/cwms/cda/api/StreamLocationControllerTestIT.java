@@ -24,9 +24,14 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.AREA_UNIT;
 import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NAME_MASK;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STREAM_ID;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.STAGE_UNIT;
+import static cwms.cda.api.Controllers.STATION_UNIT;
+import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
@@ -149,7 +154,10 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSON)
                 .queryParam(NAME, streamLocationId)
                 .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
+                .queryParam(STREAM_ID_MASK, streamLocation.getStreamId().getName())
+                .queryParam(STATION_UNIT, "km")
+                .queryParam(AREA_UNIT, "km2")
+                .queryParam(STAGE_UNIT, "m")
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -179,7 +187,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSON)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
+                .queryParam(STREAM_ID_MASK, streamLocation.getStreamId().getName())
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -195,7 +203,10 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSON)
                 .queryParam(NAME, streamLocationId)
                 .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
+                .queryParam(STREAM_ID_MASK, streamLocation.getStreamId().getName())
+                .queryParam(STATION_UNIT, "km")
+                .queryParam(AREA_UNIT, "km2")
+                .queryParam(STAGE_UNIT, "m")
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -231,7 +242,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .queryParam(Controllers.OFFICE, user.getOperatingOffice())
                 .queryParam(Controllers.NAME, "NewBogus")
-                .queryParam(STREAM_ID, STREAMS_CREATED.get(0).getId().getName())
+                .queryParam(STREAM_ID_MASK, STREAMS_CREATED.get(0).getId().getName())
                 .header(AUTH_HEADER, user.toHeaderValue())
         .when()
                 .redirects().follow(true)
@@ -279,9 +290,12 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
-                .queryParam(Controllers.OFFICE, office)
-                .queryParam(NAME, streamLocationId)
-                .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
+                .queryParam(OFFICE_MASK, office)
+                .queryParam(NAME_MASK, streamLocationId)
+                .queryParam(STREAM_ID_MASK, streamLocation.getStreamId().getName())
+                .queryParam(STATION_UNIT, "km")
+                .queryParam(AREA_UNIT, "km2")
+                .queryParam(STAGE_UNIT, "m")
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -309,7 +323,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .queryParam(Controllers.OFFICE, office)
-                .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
+                .queryParam(STREAM_ID_MASK, streamLocation.getStreamId().getName())
                 .header(AUTH_HEADER, user.toHeaderValue())
         .when()
                 .redirects().follow(true)

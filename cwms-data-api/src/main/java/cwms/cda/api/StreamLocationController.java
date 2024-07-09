@@ -28,6 +28,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Timer;
+import static cwms.cda.api.Controllers.AREA_UNIT;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
@@ -35,17 +36,19 @@ import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NAME_MASK;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STAGE_UNIT;
+import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STREAM_ID;
-import static cwms.cda.api.Controllers.UNIT_SYSTEM;
-import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.requiredParam;
-import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.StreamLocationDao;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
@@ -86,13 +89,15 @@ public final class StreamLocationController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location " +
+                    @OpenApiParam(name = OFFICE_MASK, description = "Office id for the reservoir project location " +
                             "associated with the stream locations."),
-                    @OpenApiParam(name = STREAM_ID, description = "Specifies the stream-id of the " +
+                    @OpenApiParam(name = STREAM_ID_MASK, description = "Specifies the stream-id of the " +
                             "stream that the returned stream locations belong to."),
-                    @OpenApiParam(name = NAME, description = "Specifies the location-id of the " +
+                    @OpenApiParam(name = NAME_MASK, description = "Specifies the location-id of the " +
                             "stream location to be retrieved."),
-                    @OpenApiParam(name = UNIT_SYSTEM, type = UnitSystem.class, description = UnitSystem.DESCRIPTION)
+                    @OpenApiParam(name = STATION_UNIT, description = "Specifies the unit of measure for the station. Default units are mi."),
+                    @OpenApiParam(name = STAGE_UNIT, description = "Specifies the unit of measure for the stage. Default units are ft."),
+                    @OpenApiParam(name = AREA_UNIT, description = "Specifies the unit of measure for the area. Default units are mi2.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
@@ -105,24 +110,16 @@ public final class StreamLocationController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String streamId = ctx.queryParam(STREAM_ID);
-        String locationId = ctx.queryParam(NAME);
+        String office = ctx.queryParam(OFFICE_MASK);
+        String streamId = ctx.queryParam(STREAM_ID_MASK);
+        String locationId = ctx.queryParam(NAME_MASK);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
-            String unitSystem = queryParamAsClass(ctx, new String[]{UNIT_SYSTEM, },
-                    String.class, UnitSystem.SI.getValue(), metrics,
-                    name(StreamLocationController.class.getName(), GET_ALL));
-            String stationUnits = "km";
-            String areaUnits = "km2";
-            String stageUnits = "m";
-            if(UnitSystem.EN.getValue().equals(unitSystem)) {
-                stationUnits = "mi";
-                areaUnits = "mi2";
-                stageUnits = "ft";
-            }
-
+            //db doesn't return default units, and null units causes a db exception, so defaulting to english if nothing is provided
+            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
+            String areaUnits = ctx.queryParam(AREA_UNIT) == null ? "mi2" : ctx.queryParam(AREA_UNIT);
+            String stageUnits = ctx.queryParam(STAGE_UNIT) == null ? "ft" : ctx.queryParam(STAGE_UNIT);
             List<StreamLocation> streamLocations = dao.retrieveStreamLocations(streamId, locationId, stationUnits, stageUnits, areaUnits, office);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
@@ -145,7 +142,9 @@ public final class StreamLocationController implements CrudHandler {
                             + "the stream location to be retrieved."),
                     @OpenApiParam(name = STREAM_ID, required = true, description = "Specifies the stream-id of the "
                             + "stream location to be retrieved."),
-                    @OpenApiParam(name = UNIT_SYSTEM, type = UnitSystem.class, description = UnitSystem.DESCRIPTION)
+                    @OpenApiParam(name = STATION_UNIT, description = "Specifies the unit of measure for the station. Default units are mi."),
+                    @OpenApiParam(name = STAGE_UNIT, description = "Specifies the unit of measure for the stage. Default units are ft."),
+                    @OpenApiParam(name = AREA_UNIT, description = "Specifies the unit of measure for the area. Default units are mi2.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -160,21 +159,14 @@ public final class StreamLocationController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
         String office = requiredParam(ctx, OFFICE);
-        String streamId = requiredParam(ctx, STREAM_ID);
+        String streamId = requiredParam(ctx, STREAM_ID_MASK);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
-            String unitSystem = queryParamAsClass(ctx, new String[]{UNIT_SYSTEM, },
-                    String.class, UnitSystem.SI.getValue(), metrics,
-                    name(StreamLocationController.class.getName(), GET_ONE));
-            String stationUnits = "km";
-            String areaUnits = "km2";
-            String stageUnits = "m";
-            if(UnitSystem.EN.getValue().equals(unitSystem)) {
-                stationUnits = "mi";
-                areaUnits = "mi2";
-                stageUnits = "ft";
-            }
+            //db doesn't return default units, and null units causes a db exception, so defaulting to english if nothing is provided
+            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
+            String areaUnits = ctx.queryParam(AREA_UNIT) == null ? "mi2" : ctx.queryParam(AREA_UNIT);
+            String stageUnits = ctx.queryParam(STAGE_UNIT) == null ? "ft" : ctx.queryParam(STAGE_UNIT);
             StreamLocation streamLocation = dao.retrieveStreamLocation(office, streamId, locationId, stationUnits, stageUnits, areaUnits);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;
@@ -254,7 +246,7 @@ public final class StreamLocationController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the stream location to be deleted."),
-                    @OpenApiParam(name = STREAM_ID, required = true, description = "Specifies the stream-id of the "
+                    @OpenApiParam(name = STREAM_ID_MASK, required = true, description = "Specifies the stream-id of the "
                             + "stream location to be deleted.")
             },
             description = "Delete CWMS Stream Location",
@@ -268,7 +260,7 @@ public final class StreamLocationController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String locationId) {
         String officeId = requiredParam(ctx, OFFICE);
-        String streamId = requiredParam(ctx, STREAM_ID);
+        String streamId = requiredParam(ctx, STREAM_ID_MASK);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);

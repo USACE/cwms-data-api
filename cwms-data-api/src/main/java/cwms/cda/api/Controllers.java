@@ -166,9 +166,13 @@ public final class Controllers {
     public static final String MAX_ATTRIBUTE = "max-attribute";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
+    public static final String STREAM_ID_MASK = "stream-id-mask";
     public static final String STREAM_ID = "stream-id";
-    public static final String DIVERTS_FROM_STREAM_ID = "diverts-from-stream-id";
-    public static final String FLOWS_INTO_STREAM_ID = "flows-into-stream-id";
+    public static final String DIVERTS_FROM_STREAM_ID_MASK = "diverts-from-stream-id-mask";
+    public static final String FLOWS_INTO_STREAM_ID_MASK = "flows-into-stream-id-mask";
+    public static final String AREA_UNIT = "area-unit";
+    public static final String STATION_UNIT = "station-unit";
+    public static final String STAGE_UNIT = "stage-unit";
     public static final String TRIM = "trim";
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
