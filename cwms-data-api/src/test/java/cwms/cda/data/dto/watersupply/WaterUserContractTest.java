@@ -29,11 +29,10 @@ package cwms.cda.data.dto.watersupply;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.LookupTypeTest;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -252,8 +251,8 @@ public final class WaterUserContractTest {
     public static void assertSame(WaterUserContract firstContract, WaterUserContract secondContract) {
         assertAll(
                 () -> assertSame(firstContract.getWaterUser(), secondContract.getWaterUser()),
-                () -> CwmsIdTest.assertSame(firstContract.getContractId(), secondContract.getContractId()),
-                () -> LookupTypeTest.assertSame(firstContract.getWaterContract(), secondContract.getWaterContract()),
+                () -> DTOMatch.assertMatch(firstContract.getContractId(), secondContract.getContractId()),
+                () -> DTOMatch.assertMatch(firstContract.getWaterContract(), secondContract.getWaterContract()),
                 () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
                         secondContract.getContractEffectiveDate().toString()),
                 () -> assertEquals(firstContract.getContractExpirationDate().toString(),
@@ -277,24 +276,15 @@ public final class WaterUserContractTest {
         assertAll(
                 () -> assertSame(firstPump.getPumpLocation(), secondPump.getPumpLocation()),
                 () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType()),
-                () -> CwmsIdTest.assertSame(firstPump.getPumpId(), secondPump.getPumpId())
+                () -> DTOMatch.assertMatch(firstPump.getPumpId(), secondPump.getPumpId())
         );
     }
 
     public static void assertSame(WaterUser firstUser, WaterUser secondUser) {
         assertAll(
                 () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
-                () -> CwmsIdTest.assertSame(firstUser.getParentLocationRef(), secondUser.getParentLocationRef()),
+                () -> DTOMatch.assertMatch(firstUser.getParentLocationRef(), secondUser.getParentLocationRef()),
                 () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
-        );
-    }
-
-    public static void assertSame(LookupType first, LookupType second){
-        assertAll(
-                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
-                () -> assertEquals(first.getDisplayValue(), second.getDisplayValue()),
-                () -> assertEquals(first.getTooltip(), second.getTooltip()),
-                () -> assertEquals(first.getActive(), second.getActive())
         );
     }
 
