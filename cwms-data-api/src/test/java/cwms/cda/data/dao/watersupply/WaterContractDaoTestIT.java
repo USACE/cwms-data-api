@@ -40,7 +40,7 @@ import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.data.dto.watersupply.WaterUserContractRef;
-import cwms.cda.data.dto.watersupply.WaterUserContractTest;
+import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -101,8 +101,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterUser(buildTestWaterUser("TEST RETRIEVE USER 1"), false);
             dao.storeWaterUser(buildTestWaterUser("TEST RETRIEVE USER 2"), false);
             List<WaterUser> results = dao.getAllWaterUsers(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName(testLocation.getName()).build());
-            WaterUserContractTest.assertSame(results.get(0), buildTestWaterUser("TEST RETRIEVE USER 1"));
-            WaterUserContractTest.assertSame(results.get(1), buildTestWaterUser("TEST RETRIEVE USER 2"));
+            DTOMatch.assertMatch(results.get(0), buildTestWaterUser("TEST RETRIEVE USER 1"));
+            DTOMatch.assertMatch(results.get(1), buildTestWaterUser("TEST RETRIEVE USER 2"));
         });
         cleanupUserRoutine(buildTestWaterUser("TEST RETRIEVE USER 1"));
         cleanupUserRoutine(buildTestWaterUser("TEST RETRIEVE USER 2"));
@@ -123,7 +123,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(newUser, true);
             WaterUser retrievedUser = dao.getWaterUser(projectLocation, entityName);
-            WaterUserContractTest.assertSame(newUser, retrievedUser);
+            DTOMatch.assertMatch(newUser, retrievedUser);
         });
         cleanupUserRoutine(newUser);
     }
@@ -138,7 +138,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterContract(contract, true, false);
             List<WaterUserContract> retrievedContract = dao.getAllWaterContracts(contract.getWaterUser().getParentLocationRef(), contract.getWaterUser().getEntityName());
             WaterUserContract result = retrievedContract.get(0);
-            WaterUserContractTest.assertSame(contract, result);
+            DTOMatch.assertMatch(contract, result);
         });
         cleanupContractRoutine(contract);
     }
@@ -162,8 +162,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     .withOfficeId(OFFICE_ID).build());
             dao.storeWaterContractTypes(contractType, false);
             List<LookupType> results = dao.getAllWaterContractTypes(OFFICE_ID);
-            WaterUserContractTest.assertSame(contractType.get(0), results.get(0));
-            WaterUserContractTest.assertSame(contractType.get(1), results.get(1));
+            DTOMatch.assertMatch(contractType.get(0), results.get(0));
+            DTOMatch.assertMatch(contractType.get(1), results.get(1));
         });
     }
 
@@ -178,7 +178,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterUser(newUser, true);
             dao.renameWaterUser(newUser.getEntityName(), updatedUser.getEntityName(), newUser.getParentLocationRef());
             WaterUser retrievedUser = dao.getWaterUser(newUser.getParentLocationRef(), updatedUser.getEntityName());
-            WaterUserContractTest.assertSame(updatedUser, retrievedUser);
+            DTOMatch.assertMatch(updatedUser, retrievedUser);
         });
         cleanupUserRoutine(updatedUser);
     }
@@ -200,7 +200,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     renamedContract.getWaterUser().getParentLocationRef(), renamedContract.getWaterUser()
                             .getEntityName());
             assertFalse(retrievedContracts.isEmpty());
-            WaterUserContractTest.assertSame(retrievedContracts.get(0), renamedContract);
+            DTOMatch.assertMatch(retrievedContracts.get(0), renamedContract);
         });
         cleanupContractRoutine(renamedContract);
     }
