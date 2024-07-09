@@ -43,7 +43,7 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public final class WaterUserContractTest {
+final class WaterUserContractTest {
     private static final String OFFICE_ID = "MVR";
 
     @Test
@@ -53,7 +53,7 @@ public final class WaterUserContractTest {
                 waterUserContract);
         WaterUserContract deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 WaterUserContract.class), serialized, WaterUserContract.class);
-        assertSame(waterUserContract, deserialized);
+        DTOMatch.assertMatch(waterUserContract, deserialized);
     }
 
     @Test
@@ -65,7 +65,7 @@ public final class WaterUserContractTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         WaterUserContract deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 WaterUserContract.class), serialized, WaterUserContract.class);
-        assertSame(waterUserContract, deserialized);
+        DTOMatch.assertMatch(waterUserContract, deserialized);
     }
 
     @Test
@@ -246,73 +246,5 @@ public final class WaterUserContractTest {
                 .withMapLabel("Test Map Label")
                 .withBoundingOfficeId(OFFICE_ID)
                 .build();
-    }
-
-    public static void assertSame(WaterUserContract firstContract, WaterUserContract secondContract) {
-        assertAll(
-                () -> assertSame(firstContract.getWaterUser(), secondContract.getWaterUser()),
-                () -> DTOMatch.assertMatch(firstContract.getContractId(), secondContract.getContractId()),
-                () -> DTOMatch.assertMatch(firstContract.getWaterContract(), secondContract.getWaterContract()),
-                () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
-                        secondContract.getContractEffectiveDate().toString()),
-                () -> assertEquals(firstContract.getContractExpirationDate().toString(),
-                        secondContract.getContractExpirationDate().toString()),
-                () -> assertEquals(firstContract.getContractedStorage(), secondContract.getContractedStorage()),
-                () -> assertEquals(firstContract.getInitialUseAllocation(), secondContract.getInitialUseAllocation()),
-                () -> assertEquals(firstContract.getFutureUseAllocation(), secondContract.getFutureUseAllocation()),
-                () -> assertEquals(firstContract.getStorageUnitsId(), secondContract.getStorageUnitsId()),
-                () -> assertEquals(firstContract.getFutureUsePercentActivated(),
-                        secondContract.getFutureUsePercentActivated()),
-                () -> assertEquals(firstContract.getTotalAllocPercentActivated(),
-                        secondContract.getTotalAllocPercentActivated()),
-                () -> assertSame(firstContract.getPumpOutLocation(), secondContract.getPumpOutLocation()),
-                () -> assertSame(firstContract.getPumpOutBelowLocation(), secondContract.getPumpOutBelowLocation()),
-                () -> assertSame(firstContract.getPumpInLocation(), secondContract.getPumpInLocation())
-        );
-
-    }
-
-    public static void assertSame(WaterSupplyPump firstPump, WaterSupplyPump secondPump) {
-        assertAll(
-                () -> assertSame(firstPump.getPumpLocation(), secondPump.getPumpLocation()),
-                () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType()),
-                () -> DTOMatch.assertMatch(firstPump.getPumpId(), secondPump.getPumpId())
-        );
-    }
-
-    public static void assertSame(WaterUser firstUser, WaterUser secondUser) {
-        assertAll(
-                () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
-                () -> DTOMatch.assertMatch(firstUser.getParentLocationRef(), secondUser.getParentLocationRef()),
-                () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
-        );
-    }
-
-    public static void assertSame(Location first, Location second) {
-        assertAll(
-                () -> assertEquals(first.getName(), second.getName()),
-                () -> assertEquals(first.getLatitude(), second.getLatitude()),
-                () -> assertEquals(first.getLongitude(), second.getLongitude()),
-                () -> assertEquals(first.getHorizontalDatum(), second.getHorizontalDatum()),
-                () -> assertEquals(first.getElevation(), second.getElevation()),
-                () -> assertEquals(first.getElevationUnits(), second.getElevationUnits()),
-                () -> assertEquals(first.getVerticalDatum(), second.getVerticalDatum()),
-                () -> assertEquals(first.getPublicName(), second.getPublicName()),
-                () -> assertEquals(first.getLongName(), second.getLongName()),
-                () -> assertEquals(first.getDescription(), second.getDescription()),
-                () -> assertEquals(first.getActive(), second.getActive()),
-                () -> assertEquals(first.getLocationKind(), second.getLocationKind()),
-                () -> assertEquals(first.getMapLabel(), second.getMapLabel()),
-                () -> assertEquals(first.getPublishedLatitude(), second.getPublishedLatitude()),
-                () -> assertEquals(first.getPublishedLongitude(), second.getPublishedLongitude()),
-                () -> assertEquals(first.getBoundingOfficeId(), second.getBoundingOfficeId()),
-                () -> assertEquals(first.getNation(), second.getNation()),
-                () -> assertEquals(first.getNearestCity(), second.getNearestCity()),
-                () -> assertEquals(first.getStateInitial(), second.getStateInitial()),
-                () -> assertEquals(first.getCountyName(), second.getCountyName()),
-                () -> assertEquals(first.getTimezoneName(), second.getTimezoneName()),
-                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
-                () -> assertEquals(first.getLocationType(), second.getLocationType())
-        );
     }
 }
