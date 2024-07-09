@@ -88,7 +88,7 @@ public class OutletDao extends JooqDao<Outlet> {
                 records.put(locationId, compoundOutletRecords);
             } catch (DataAccessException e) {
                 if (isNotFound(e)) {
-                    LOGGER.atFinest().withCause(e).log("No compound outlet records for outlet " + officeId + ":" + locationId);
+                    LOGGER.atFinest().withCause(e).log("No compound outlet records for outlet " + officeId + "." + locationId);
                 } else {
                     throw e;
                 }
@@ -146,7 +146,7 @@ public class OutletDao extends JooqDao<Outlet> {
                     recordMap.put(compoundOutletId, compoundOutletRecords);
                 } catch (DataAccessException e) {
                     if (isNotFound(e)) {
-                        LOGGER.atFinest().withCause(e).log("No compound outlet records for outlet " + officeId + ":" + compoundOutletId);
+                        LOGGER.atFinest().withCause(e).log("No compound outlet records for outlet " + officeId + "." + compoundOutletId);
                     } else {
                         throw e;
                     }
