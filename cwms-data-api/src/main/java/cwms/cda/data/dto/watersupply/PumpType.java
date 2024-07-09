@@ -27,9 +27,9 @@
 package cwms.cda.data.dto.watersupply;
 
 public enum PumpType {
-    PUMP_IN("Pump In"),
-    PUMP_OUT("Pump Out"),
-    PUMP_OUT_BELOW("Pump Out Below Project");
+    PUMP_IN("IN"),
+    PUMP_OUT("OUT"),
+    PUMP_OUT_BELOW("BELOW");
 
     private final String pumpName;
 

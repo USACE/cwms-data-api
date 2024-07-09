@@ -31,11 +31,11 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.LookupTypeTest;
 import cwms.cda.formatters.Formats;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-import cwms.cda.data.dto.LookupType;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -44,7 +44,7 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class WaterUserContractTest {
+public final class WaterUserContractTest {
     private static final String OFFICE_ID = "MVR";
 
     @Test
@@ -251,41 +251,78 @@ final class WaterUserContractTest {
 
     public static void assertSame(WaterUserContract firstContract, WaterUserContract secondContract) {
         assertAll(
-            () -> assertSame(firstContract.getWaterUser(), secondContract.getWaterUser()),
-            () -> CwmsIdTest.assertSame(firstContract.getContractId(), secondContract.getContractId()),
-            () -> LookupTypeTest.assertSame(firstContract.getWaterContract(), secondContract.getWaterContract()),
-            () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
-                    secondContract.getContractEffectiveDate().toString()),
-            () -> assertEquals(firstContract.getContractExpirationDate().toString(),
-                    secondContract.getContractExpirationDate().toString()),
-            () -> assertEquals(firstContract.getContractedStorage(), secondContract.getContractedStorage()),
-            () -> assertEquals(firstContract.getInitialUseAllocation(), secondContract.getInitialUseAllocation()),
-            () -> assertEquals(firstContract.getFutureUseAllocation(), secondContract.getFutureUseAllocation()),
-            () -> assertEquals(firstContract.getStorageUnitsId(), secondContract.getStorageUnitsId()),
-            () -> assertEquals(firstContract.getFutureUsePercentActivated(),
-                    secondContract.getFutureUsePercentActivated()),
-            () -> assertEquals(firstContract.getTotalAllocPercentActivated(),
-                    secondContract.getTotalAllocPercentActivated()),
-            () -> assertSame(firstContract.getPumpOutLocation(), secondContract.getPumpOutLocation()),
-            () -> assertSame(firstContract.getPumpOutBelowLocation(), secondContract.getPumpOutBelowLocation()),
-            () -> assertSame(firstContract.getPumpInLocation(), secondContract.getPumpInLocation())
+                () -> assertSame(firstContract.getWaterUser(), secondContract.getWaterUser()),
+                () -> CwmsIdTest.assertSame(firstContract.getContractId(), secondContract.getContractId()),
+                () -> LookupTypeTest.assertSame(firstContract.getWaterContract(), secondContract.getWaterContract()),
+                () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
+                        secondContract.getContractEffectiveDate().toString()),
+                () -> assertEquals(firstContract.getContractExpirationDate().toString(),
+                        secondContract.getContractExpirationDate().toString()),
+                () -> assertEquals(firstContract.getContractedStorage(), secondContract.getContractedStorage()),
+                () -> assertEquals(firstContract.getInitialUseAllocation(), secondContract.getInitialUseAllocation()),
+                () -> assertEquals(firstContract.getFutureUseAllocation(), secondContract.getFutureUseAllocation()),
+                () -> assertEquals(firstContract.getStorageUnitsId(), secondContract.getStorageUnitsId()),
+                () -> assertEquals(firstContract.getFutureUsePercentActivated(),
+                        secondContract.getFutureUsePercentActivated()),
+                () -> assertEquals(firstContract.getTotalAllocPercentActivated(),
+                        secondContract.getTotalAllocPercentActivated()),
+                () -> assertSame(firstContract.getPumpOutLocation(), secondContract.getPumpOutLocation()),
+                () -> assertSame(firstContract.getPumpOutBelowLocation(), secondContract.getPumpOutBelowLocation()),
+                () -> assertSame(firstContract.getPumpInLocation(), secondContract.getPumpInLocation())
         );
 
     }
 
-    private static void assertSame(WaterSupplyPump firstPump, WaterSupplyPump secondPump) {
+    public static void assertSame(WaterSupplyPump firstPump, WaterSupplyPump secondPump) {
         assertAll(
-            () -> assertEquals(firstPump.getPumpLocation(), secondPump.getPumpLocation()),
-            () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType()),
-            () -> CwmsIdTest.assertSame(firstPump.getPumpId(), secondPump.getPumpId())
+                () -> assertSame(firstPump.getPumpLocation(), secondPump.getPumpLocation()),
+                () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType()),
+                () -> CwmsIdTest.assertSame(firstPump.getPumpId(), secondPump.getPumpId())
         );
     }
 
-    private static void assertSame(WaterUser firstUser, WaterUser secondUser) {
+    public static void assertSame(WaterUser firstUser, WaterUser secondUser) {
         assertAll(
-            () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
-            () -> CwmsIdTest.assertSame(firstUser.getParentLocationRef(), secondUser.getParentLocationRef()),
-            () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
+                () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
+                () -> CwmsIdTest.assertSame(firstUser.getParentLocationRef(), secondUser.getParentLocationRef()),
+                () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
+        );
+    }
+
+    public static void assertSame(LookupType first, LookupType second){
+        assertAll(
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
+                () -> assertEquals(first.getDisplayValue(), second.getDisplayValue()),
+                () -> assertEquals(first.getTooltip(), second.getTooltip()),
+                () -> assertEquals(first.getActive(), second.getActive())
+        );
+    }
+
+    public static void assertSame(Location first, Location second) {
+        assertAll(
+                () -> assertEquals(first.getName(), second.getName()),
+                () -> assertEquals(first.getLatitude(), second.getLatitude()),
+                () -> assertEquals(first.getLongitude(), second.getLongitude()),
+                () -> assertEquals(first.getHorizontalDatum(), second.getHorizontalDatum()),
+                () -> assertEquals(first.getElevation(), second.getElevation()),
+                () -> assertEquals(first.getElevationUnits(), second.getElevationUnits()),
+                () -> assertEquals(first.getVerticalDatum(), second.getVerticalDatum()),
+                () -> assertEquals(first.getPublicName(), second.getPublicName()),
+                () -> assertEquals(first.getLongName(), second.getLongName()),
+                () -> assertEquals(first.getDescription(), second.getDescription()),
+                () -> assertEquals(first.getActive(), second.getActive()),
+                () -> assertEquals(first.getLocationKind(), second.getLocationKind()),
+                () -> assertEquals(first.getMapLabel(), second.getMapLabel()),
+                () -> assertEquals(first.getPublishedLatitude(), second.getPublishedLatitude()),
+                () -> assertEquals(first.getPublishedLongitude(), second.getPublishedLongitude()),
+                () -> assertEquals(first.getBoundingOfficeId(), second.getBoundingOfficeId()),
+                () -> assertEquals(first.getNation(), second.getNation()),
+                () -> assertEquals(first.getNearestCity(), second.getNearestCity()),
+                () -> assertEquals(first.getStateInitial(), second.getStateInitial()),
+                () -> assertEquals(first.getCountyName(), second.getCountyName()),
+                () -> assertEquals(first.getTimezoneName(), second.getTimezoneName()),
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
+                () -> assertEquals(first.getLocationType(), second.getLocationType())
         );
     }
 }

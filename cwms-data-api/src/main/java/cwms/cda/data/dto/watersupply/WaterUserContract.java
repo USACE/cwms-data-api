@@ -27,17 +27,14 @@
 package cwms.cda.data.dto.watersupply;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import cwms.cda.data.dto.CwmsDTO;
-
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-
 import java.util.Date;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
@@ -71,7 +68,7 @@ public class WaterUserContract extends CwmsDTO {
     private final WaterSupplyPump  pumpInLocation;
 
     private WaterUserContract(Builder builder) {
-        super(null);
+        super(builder.officeId);
         this.waterUser = builder.waterUser;
         this.contractId = builder.contractId;
         this.waterContract = builder.waterContract;
@@ -86,11 +83,6 @@ public class WaterUserContract extends CwmsDTO {
         this.pumpOutLocation = builder.pumpOutLocation;
         this.pumpOutBelowLocation = builder.pumpOutBelowLocation;
         this.pumpInLocation = builder.pumpInLocation;
-    }
-
-    @Override
-    public String getOfficeId() {
-        return contractId.getOfficeId();
     }
 
     public LookupType getWaterContract() {
@@ -152,7 +144,6 @@ public class WaterUserContract extends CwmsDTO {
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-
         validator.required(waterContract, "water-contract");
         validator.required(contractEffectiveDate, "contract-effective-date");
         validator.required(contractExpirationDate, "contract-expiration-date");
@@ -171,6 +162,7 @@ public class WaterUserContract extends CwmsDTO {
     }
 
     public static class Builder {
+        private String officeId;
         private WaterUser waterUser;
         private CwmsId contractId;
         private LookupType waterContract;
@@ -185,6 +177,11 @@ public class WaterUserContract extends CwmsDTO {
         private WaterSupplyPump pumpOutLocation;
         private WaterSupplyPump pumpOutBelowLocation;
         private WaterSupplyPump pumpInLocation;
+
+        public Builder withOfficeId(String officeId) {
+            this.officeId = officeId;
+            return this;
+        }
 
         public Builder withWaterUser(WaterUser waterUser) {
             this.waterUser = waterUser;

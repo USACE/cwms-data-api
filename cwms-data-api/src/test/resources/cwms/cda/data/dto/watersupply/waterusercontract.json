@@ -1,14 +1,16 @@
 {
-  "water-user-contract-ref": {
-    "water-user": {
-      "entity-name": "Test User",
-      "parent-location-ref": {
-        "office-id": "MVR",
-        "name": "TEST_LOCATION1"
-      },
-      "water-right": "Test Water Right"
+  "office-id": "MVR",
+  "water-user": {
+    "entity-name": "Test User",
+    "parent-location-ref": {
+      "office-id": "MVR",
+      "name": "TEST_LOCATION1"
     },
-    "contract-name": "Test Contract"
+    "water-right": "Test Water Right"
+  },
+  "contract-id": {
+    "office-id": "MVR",
+    "name": "TEST_CONTRACT"
   },
   "water-contract": {
     "office-id": "MVR",
