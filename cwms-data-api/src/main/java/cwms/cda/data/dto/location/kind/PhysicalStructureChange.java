@@ -134,7 +134,6 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-        validator.validateRequiredFields(this);
         validator.validateCollection(getSettings());
     }
     

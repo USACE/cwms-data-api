@@ -9,7 +9,6 @@ public abstract class CwmsDTOBase {
 
     public final void validate() throws FieldException {
         CwmsDTOValidator validator = new CwmsDTOValidator();
-        validator.validateRequiredFields(this);
         validateInternal(validator);
         validator.validate();
     }
@@ -19,6 +18,6 @@ public abstract class CwmsDTOBase {
      * @param validator validator that will aggregate all validation errors
      */
     protected void validateInternal(CwmsDTOValidator validator) {
-
+        validator.validateRequiredFields(this);
     }
 }

@@ -15,6 +15,7 @@ public class Blob extends CwmsDTO
 	private String id;
 	private String description;
 	private String mediaTypeId;
+	@JsonProperty(required=true)
 	private byte[] value;
 
 	private Blob() {
