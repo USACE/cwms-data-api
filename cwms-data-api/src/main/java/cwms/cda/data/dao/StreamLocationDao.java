@@ -29,6 +29,7 @@ import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
+import java.sql.Connection;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -92,13 +93,17 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
         return connectionResult(dsl, conn -> {
             try {
                 setOffice(conn, officeId);
-                RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
-                        locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
-                return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
+                return retrieveStreamLocation(officeId, streamId, locationId, stationUnit, stageUnit, areaUnit, conn);
             } catch (DataAccessException e) {
                 throw wrapException(e);
             }
         });
+    }
+
+    static StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit, Connection conn) {
+        RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
+                locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
+        return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
     }
 
     /**

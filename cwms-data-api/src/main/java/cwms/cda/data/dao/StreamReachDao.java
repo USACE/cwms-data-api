@@ -30,6 +30,7 @@ import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import java.sql.Connection;
 import static java.util.stream.Collectors.toList;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -51,11 +52,9 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
     static final String REACH_DOWNSTREAM_LOCATION_COLUMN = "DOWNSTREAM_LOCATION";
     static final String REACH_DOWNSTREAM_STATION_COLUMN = "DOWNSTREAM_STATION";
     static final String REACH_COMMENTS_COLUMN = "COMMENTS";
-    private final StreamLocationDao _streamLocationDao;
 
     public StreamReachDao(DSLContext dsl) {
         super(dsl);
-        _streamLocationDao = new StreamLocationDao(dsl);
     }
 
     /**
@@ -75,10 +74,12 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
                         fromJooqStreamReachRecord(r, stationUnits,
                             getBank(r.get(REACH_OFFICE_ID_COLUMN, String.class),
                                     r.get(REACH_STREAM_ID_COLUMN, String.class),
-                                    r.get(REACH_UPSTREAM_LOCATION_COLUMN, String.class)),
+                                    r.get(REACH_UPSTREAM_LOCATION_COLUMN, String.class),
+                                    conn),
                             getBank(r.get(REACH_OFFICE_ID_COLUMN, String.class),
                                     r.get(REACH_STREAM_ID_COLUMN, String.class),
-                                    r.get(REACH_DOWNSTREAM_LOCATION_COLUMN, String.class))))
+                                    r.get(REACH_DOWNSTREAM_LOCATION_COLUMN, String.class),
+                                    conn)))
                     .collect(toList());
         });
     }
@@ -226,9 +227,9 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
     }
 
     //This should get removed once db is fixed to return bank
-    private Bank getBank(String officeId, String streamId, String streamLocationId) {
+    private Bank getBank(String officeId, String streamId, String streamLocationId, Connection conn) {
         Bank retVal = null;
-        StreamLocation streamLoc = _streamLocationDao.retrieveStreamLocation(officeId, streamId, streamLocationId, "km", "m", "km2");
+        StreamLocation streamLoc = StreamLocationDao.retrieveStreamLocation(officeId, streamId, streamLocationId, "km", "m", "km2", conn);
         if(streamLoc != null)
         {
             retVal = streamLoc.getStreamLocationNode().getStreamNode().getBank();
