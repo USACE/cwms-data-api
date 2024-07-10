@@ -87,7 +87,7 @@ public class LockRevokerRightsCatalog implements Handler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON, from = LockRevokerRights.class)}
+                    @OpenApiContent(type = Formats.JSON, from = LockRevokerRights.class, isArray = true)}
                 )},
             tags = {TAGS},
             path = PATH,

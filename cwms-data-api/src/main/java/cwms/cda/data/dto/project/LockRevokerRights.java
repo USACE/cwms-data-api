@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -38,7 +37,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = LockRevokerRights.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV1.class)
 public class LockRevokerRights extends CwmsDTO {
 
     private final String projectId;

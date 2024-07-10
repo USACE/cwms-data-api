@@ -12,6 +12,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
+import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -216,6 +217,9 @@ class FormatsTest
 		BASIN_NAMED_PGJSON(Basin.class, Formats.NAMED_PGJSON, Formats.NAMED_PGJSON),
 		PROJECT_JSONV1(Project.class, Formats.JSONV1, Formats.JSONV1),
 		PROJECT_JSON(Project.class, Formats.JSON, Formats.JSONV1),
+		LOCK_REVOKER_RIGHTS_JSON(LockRevokerRights.class, Formats.JSON, Formats.JSONV1),
+		LOCK_REVOKER_RIGHTS_JSONV1(LockRevokerRights.class, Formats.JSONV1, Formats.JSONV1),
+		LOCK_REVOKER_RIGHTS_DEFAULT(LockRevokerRights.class, Formats.DEFAULT, Formats.JSONV1)
 		;
 
 		final Class<? extends CwmsDTOBase> _class;
