@@ -29,13 +29,23 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.ExclusiveFieldsException;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -44,7 +54,7 @@ import java.util.concurrent.Callable;
 public final class CwmsDTOValidator {
 
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-
+    private static final Map<Class<?>, List<Method>> REQUIRED_FIELD_GETTERS = new ConcurrentHashMap<>();
     private final Set<String> missingFields = new HashSet<>();
     private final Set<String> mutuallyExclusiveFields = new HashSet<>();
     private final Set<Exception> validationExceptions = new HashSet<>();
@@ -67,42 +77,67 @@ public final class CwmsDTOValidator {
 
     public void validateRequiredFields(CwmsDTOBase cwmsDTO) {
         Class<? extends CwmsDTOBase> type = cwmsDTO.getClass();
-        while (CwmsDTOBase.class.isAssignableFrom(type)) {
-            validateFieldsInClass(cwmsDTO, type);
-            type = (Class<? extends CwmsDTOBase>) type.getSuperclass();
-        }
+        validateFieldsInClass(cwmsDTO, type);
     }
 
     private void validateFieldsInClass(CwmsDTOBase cwmsDTO, Class<? extends CwmsDTOBase> type) {
-        Field[] fields = type.getDeclaredFields();
+        List<Method> getters = REQUIRED_FIELD_GETTERS.computeIfAbsent(type, this::getRequiredFields);
         try {
-            for (Field field : fields) {
-                JsonProperty annotation = field.getAnnotation(JsonProperty.class);
-                if (annotation != null && annotation.required()) {
-                    boolean accessible = field.isAccessible();
-                    synchronized (CwmsDTOBase.class) {
-                        try {
-                            if (!accessible) {
-                                field.setAccessible(true);
-                            }
-                            Object value = field.get(cwmsDTO);
-                            if (value == null) {
-                                missingFields.add(field.getName());
-                            } else if (value instanceof CwmsDTOBase) {
-                                ((CwmsDTOBase) value).validateInternal(this);
-                                validateRequiredFields((CwmsDTOBase) value);
-                            }
-                        } finally {
-                            if (!accessible) {
-                                field.setAccessible(false);
-                            }
+            for (Method getter : getters) {
+                Object value = getter.invoke(cwmsDTO);
+                if (value == null) {
+                    missingFields.add(getter.getName());
+                } else if (value instanceof CwmsDTOBase) {
+                    ((CwmsDTOBase) value).validateInternal(this);
+                    validateRequiredFields((CwmsDTOBase) value);
+                }
+            }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            LOGGER.atWarning().withCause(e).log("Unable to validate required fields are non-null in DTO: " + type);
+        }
+    }
+
+    private List<Method> getRequiredFields(Class<?> type) {
+        List<Method> retval = new ArrayList<>();
+        try {
+            BeanInfo beanInfo = Introspector.getBeanInfo(type);
+            PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
+            for(PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+                Method readMethod = propertyDescriptor.getReadMethod();
+                if(readMethod != null) {
+                    if (readMethod.getDeclaringClass().getPackage().getName().equals("java.lang")) {
+                        continue;
+                    }
+                    String fieldName = propertyDescriptor.getName();
+                    Field field = getDeclaredField(type, fieldName);
+                    if(field != null) {
+                        JsonProperty annotation = field.getAnnotation(JsonProperty.class);
+                        if (annotation != null && annotation.required()) {
+                            retval.add(readMethod);
                         }
                     }
                 }
             }
-        } catch (IllegalAccessException e) {
-            LOGGER.atWarning().withCause(e).log("Unable to validate required fields are non-null in DTO: " + type);
+        } catch (IntrospectionException e) {
+            LOGGER.atWarning().withCause(e)
+                .log("Unable to validate required field are non-null in DTO: %s", type);
         }
+        return retval;
+    }
+
+    private Field getDeclaredField(Class<?> type, String fieldName) {
+        Field retval = null;
+        if (type != null) {
+            try {
+                retval = type.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                LOGGER.atFinest().withCause(e)
+                    .log("Field does not exist. Will not validate its existence in DTO: %s and field name: %s",
+                        type, fieldName);
+                retval = getDeclaredField(type.getSuperclass(), fieldName);
+            }
+        }
+        return retval;
     }
 
     public void validateCollection(Collection<? extends CwmsDTOBase> collection) {
