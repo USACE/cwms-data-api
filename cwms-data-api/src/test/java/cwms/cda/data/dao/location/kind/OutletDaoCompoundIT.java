@@ -24,7 +24,7 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.location.kind.CompoundOutletRecord;
+import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -68,29 +67,17 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     private static final Location CO3_I3 = buildProjectStructureLocation("I3", OUTLET_KIND);
     private static final Location CO3_CONDUIT = buildProjectStructureLocation("Conduit", OUTLET_KIND);
 
-    private static final Outlet EXISTING_COMPOUND_OUTLET = buildTestOutlet(COMPOUND_OUTLET_1_LOC, PROJECT_LOC2,
-                                                                           buildCompoundOutletRecord(CO1_I25,
-                                                                                                     CO1_LOW_FLOW),
-                                                                           buildCompoundOutletRecord(CO1_I53,
-                                                                                                     CO1_LOW_FLOW),
-                                                                           buildCompoundOutletRecord(CO1_LOW_FLOW));
+    private static final List<VirtualOutletRecord> EXISTING_COMPOUND_OUTLET = Arrays.asList(
+            buildCompoundOutletRecord(CO1_I25, CO1_LOW_FLOW), buildCompoundOutletRecord(CO1_I53, CO1_LOW_FLOW),
+            buildCompoundOutletRecord(CO1_LOW_FLOW));
 
-    private static final Outlet BASE_AND_SUB_LOC_COMPOUND_OUTLET = buildTestOutlet(COMPOUND_OUTLET_2_LOC, PROJECT_LOC2,
-                                                                                   buildCompoundOutletRecord(CO2_INTAKE,
-                                                                                                             CO2_WEIR,
-                                                                                                             CO2_CONDUIT),
-                                                                                   buildCompoundOutletRecord(CO2_WEIR),
-                                                                                   buildCompoundOutletRecord(
-                                                                                           CO2_CONDUIT));
+    private static final List<VirtualOutletRecord> BASE_AND_SUB_LOC_COMPOUND_OUTLET = Arrays.asList(
+            buildCompoundOutletRecord(CO2_INTAKE, CO2_WEIR, CO2_CONDUIT), buildCompoundOutletRecord(CO2_WEIR),
+            buildCompoundOutletRecord(CO2_CONDUIT));
 
-    private static final Outlet BASE_LOC_ONLY_COMPOUND_OUTLET = buildTestOutlet(COMPOUND_OUTLET_3_LOC, PROJECT_LOC2,
-                                                                                buildCompoundOutletRecord(CO3_I1,
-                                                                                                          CO3_CONDUIT),
-                                                                                buildCompoundOutletRecord(CO3_I2,
-                                                                                                          CO3_CONDUIT),
-                                                                                buildCompoundOutletRecord(CO3_I3,
-                                                                                                          CO3_CONDUIT),
-                                                                                buildCompoundOutletRecord(CO3_CONDUIT));
+    private static final List<VirtualOutletRecord> BASE_LOC_ONLY_COMPOUND_OUTLET = Arrays.asList(
+            buildCompoundOutletRecord(CO3_I1, CO3_CONDUIT), buildCompoundOutletRecord(CO3_I2, CO3_CONDUIT),
+            buildCompoundOutletRecord(CO3_I3, CO3_CONDUIT), buildCompoundOutletRecord(CO3_CONDUIT));
     private static final Outlet CO1_I25_OUTLET = buildTestOutlet(CO1_I25, PROJECT_LOC2);
     private static final Outlet CO1_I53_OUTLET = buildTestOutlet(CO1_I53, PROJECT_LOC2);
     private static final Outlet CO1_LOW_FLOW_OUTLET = buildTestOutlet(CO1_LOW_FLOW, PROJECT_LOC2);
@@ -136,15 +123,10 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                 outletDao.storeOutlet(CO3_I3_OUTLET, COMPOUND_OUTLET_RATING_GROUP, false);
                 outletDao.storeOutlet(CO3_CONDUIT_OUTLET, COMPOUND_OUTLET_RATING_GROUP, false);
 
-                //Stored last, so the db has all the compound outlets
-                outletDao.storeOutlet(EXISTING_COMPOUND_OUTLET, COMPOUND_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(BASE_AND_SUB_LOC_COMPOUND_OUTLET, COMPOUND_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(BASE_LOC_ONLY_COMPOUND_OUTLET, COMPOUND_OUTLET_RATING_GROUP, false);
-
                 //Should always have outlet 1 as a compound outlet
                 outletDao.storeCompoundOutlet(PROJECT_LOC2.getName(), COMPOUND_OUTLET_1_LOC.getName(),
                                               COMPOUND_OUTLET_1_LOC.getOfficeId(),
-                                              EXISTING_COMPOUND_OUTLET.getCompoundOutletRecords(), false);
+                                              EXISTING_COMPOUND_OUTLET, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -160,7 +142,7 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
             OutletDao outletDao = new OutletDao(context);
 
             //Compound outlets
-            outletDao.deleteCompoundOutlet(PROJECT_LOC2.getName(), EXISTING_COMPOUND_OUTLET.getLocation().getName(),
+            outletDao.deleteCompoundOutlet(PROJECT_LOC2.getName(), COMPOUND_OUTLET_1_LOC.getName(),
                                            PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
 
             outletDao.deleteOutlet(CO1_I25.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
@@ -211,12 +193,11 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                                            .findFirst()
                                            .orElse(null);
             assertNotNull(compoundOutlet);
-            List<CompoundOutletRecord> compoundOutletRecords = compoundOutlet.getCompoundOutletRecords();
-            assertEquals(EXISTING_COMPOUND_OUTLET.getCompoundOutletRecords().size(), compoundOutletRecords.size());
-            assertAll(EXISTING_COMPOUND_OUTLET.getCompoundOutletRecords()
-                                              .stream()
+            List<VirtualOutletRecord> virtualOutletRecords = compoundOutlet.getCompoundOutletRecords();
+            assertEquals(EXISTING_COMPOUND_OUTLET.size(), virtualOutletRecords.size());
+            assertAll(EXISTING_COMPOUND_OUTLET.stream()
                                               .map(compoundOutletRecord -> () -> compareOutletRecords(
-                                                      compoundOutletRecord, compoundOutletRecords)));
+                                                      compoundOutletRecord, virtualOutletRecords)));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -231,18 +212,18 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                                     BASE_LOC_ONLY_COMPOUND_OUTLET.getLocation().getOfficeId(),
                                     BASE_LOC_ONLY_COMPOUND_OUTLET.getCompoundOutletRecords(), false);
 
-            List<CompoundOutletRecord> compoundOutletRecords = dao.retrieveOutlet(
+            List<VirtualOutletRecord> virtualOutletRecords = dao.retrieveOutlet(
                     BASE_LOC_ONLY_COMPOUND_OUTLET.getLocation().getName(),
                     BASE_LOC_ONLY_COMPOUND_OUTLET.getLocation().getOfficeId()).getCompoundOutletRecords();
             dao.deleteCompoundOutlet(BASE_LOC_ONLY_COMPOUND_OUTLET.getProjectId().getName(),
                                      BASE_LOC_ONLY_COMPOUND_OUTLET.getLocation().getName(),
                                      BASE_LOC_ONLY_COMPOUND_OUTLET.getLocation().getOfficeId(), DeleteRule.DELETE_ALL);
 
-            assertEquals(BASE_LOC_ONLY_COMPOUND_OUTLET.getCompoundOutletRecords().size(), compoundOutletRecords.size());
+            assertEquals(BASE_LOC_ONLY_COMPOUND_OUTLET.getCompoundOutletRecords().size(), virtualOutletRecords.size());
             assertAll(BASE_LOC_ONLY_COMPOUND_OUTLET.getCompoundOutletRecords()
                                                    .stream()
                                                    .map(compoundOutletRecord -> () -> compareOutletRecords(
-                                                           compoundOutletRecord, compoundOutletRecords)));
+                                                           compoundOutletRecord, virtualOutletRecords)));
 
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -259,7 +240,7 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                                     BASE_AND_SUB_LOC_COMPOUND_OUTLET.getLocation().getOfficeId(),
                                     BASE_AND_SUB_LOC_COMPOUND_OUTLET.getCompoundOutletRecords(), false);
 
-            List<CompoundOutletRecord> compoundOutletRecords = dao.retrieveOutlet(
+            List<VirtualOutletRecord> virtualOutletRecords = dao.retrieveOutlet(
                     BASE_AND_SUB_LOC_COMPOUND_OUTLET.getLocation().getName(),
                     BASE_AND_SUB_LOC_COMPOUND_OUTLET.getLocation().getOfficeId()).getCompoundOutletRecords();
             dao.deleteCompoundOutlet(BASE_AND_SUB_LOC_COMPOUND_OUTLET.getProjectId().getName(),
@@ -268,21 +249,21 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                                      DeleteRule.DELETE_ALL);
 
             assertEquals(BASE_AND_SUB_LOC_COMPOUND_OUTLET.getCompoundOutletRecords().size(),
-                         compoundOutletRecords.size());
+                         virtualOutletRecords.size());
             assertAll(BASE_AND_SUB_LOC_COMPOUND_OUTLET.getCompoundOutletRecords()
                                                       .stream()
                                                       .map(compoundOutletRecord -> () -> compareOutletRecords(
-                                                              compoundOutletRecord, compoundOutletRecords)));
+                                                              compoundOutletRecord, virtualOutletRecords)));
 
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    private static void compareOutletRecords(CompoundOutletRecord expectedRecord,
-                                             List<CompoundOutletRecord> receivedRecords) {
+    private static void compareOutletRecords(VirtualOutletRecord expectedRecord,
+                                             List<VirtualOutletRecord> receivedRecords) {
         //the received record outlet ids are unique, so we should assert that others don't exist in there.
-        CompoundOutletRecord receivedRecord = null;
+        VirtualOutletRecord receivedRecord = null;
         List<String> errors = new ArrayList<>();
-        for (CompoundOutletRecord outletRecord : receivedRecords) {
+        for (VirtualOutletRecord outletRecord : receivedRecords) {
             if (outletRecord.getOutletId().getName().equalsIgnoreCase(expectedRecord.getOutletId().getName())
                     && outletRecord.getOutletId().getOfficeId().equalsIgnoreCase(expectedRecord.getOutletId().getOfficeId())) {
                 if (receivedRecord != null) {
@@ -304,19 +285,19 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
 
 
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc,
-                                          CompoundOutletRecord... compoundOutletRecords) {
+                                          VirtualOutletRecord... virtualOutletRecords) {
         Outlet.Builder builder = new Outlet.Builder().withProjectId(
                                                              new CwmsId.Builder().withName(projectLoc.getName()).withOfficeId(projectLoc.getOfficeId()).build())
                                                      .withLocation(outletLoc);
-        if (compoundOutletRecords != null) {
-            builder.withCompoundOutletRecords(Arrays.asList(compoundOutletRecords));
+        if (virtualOutletRecords != null) {
+            builder.withCompoundOutletRecords(Arrays.asList(virtualOutletRecords));
         }
         return builder.build();
     }
 
-    private static CompoundOutletRecord buildCompoundOutletRecord(Location upstream, Location... downstream) {
+    private static VirtualOutletRecord buildCompoundOutletRecord(Location upstream, Location... downstream) {
         if (downstream == null || downstream.length == 0) {
-            return new CompoundOutletRecord.Builder().withOutletId(
+            return new VirtualOutletRecord.Builder().withOutletId(
                     new CwmsId.Builder().withName(upstream.getName()).withOfficeId(upstream.getOfficeId()).build()).build();
         }
 
@@ -325,9 +306,9 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                                                                                  .withOfficeId(loc.getOfficeId())
                                                                                  .build())
                                                  .collect(Collectors.toList());
-        return new CompoundOutletRecord.Builder().withOutletId(
+        return new VirtualOutletRecord.Builder().withOutletId(
                                                          new CwmsId.Builder().withName(upstream.getName()).withOfficeId(upstream.getOfficeId()).build())
-                                                 .withDownstreamOutletIds(downstreamOutletIds)
-                                                 .build();
+                                                .withDownstreamOutletIds(downstreamOutletIds)
+                                                .build();
     }
 }

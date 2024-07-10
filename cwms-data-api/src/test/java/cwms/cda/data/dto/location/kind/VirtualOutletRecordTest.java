@@ -23,7 +23,6 @@ package cwms.cda.data.dto.location.kind;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -33,39 +32,39 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class CompoundOutletRecordTest {
+class VirtualOutletRecordTest {
     private static final String SPK = "SPK";
     @Test
     void test_serialization() {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
-        CompoundOutletRecord data = buildTestData();
+        VirtualOutletRecord data = buildTestData();
         String json = Formats.format(contentType, data);
 
-        CompoundOutletRecord deserialized = Formats.parseContent(contentType, json, CompoundOutletRecord.class);
+        VirtualOutletRecord deserialized = Formats.parseContent(contentType, json, VirtualOutletRecord.class);
         DTOMatch.assertMatch(data, deserialized);
     }
 
     @Test
     void test_serialize_from_file() throws Exception {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
-        CompoundOutletRecord data = buildTestData();
+        VirtualOutletRecord data = buildTestData();
         InputStream resource = this.getClass()
                                    .getResourceAsStream("/cwms/cda/data/dto/location/kind/compound_outlet_record.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        CompoundOutletRecord deserialized = Formats.parseContent(contentType, serialized, CompoundOutletRecord.class);
+        VirtualOutletRecord deserialized = Formats.parseContent(contentType, serialized, VirtualOutletRecord.class);
         DTOMatch.assertMatch(data, deserialized);
     }
 
-    private CompoundOutletRecord buildTestData() {
-        return new CompoundOutletRecord.Builder().withOutletId(new CwmsId.Builder().withName("TG01").withOfficeId(SPK).build())
-                                                 .withDownstreamOutletIds(Arrays.asList(
+    private VirtualOutletRecord buildTestData() {
+        return new VirtualOutletRecord.Builder().withOutletId(new CwmsId.Builder().withName("TG01").withOfficeId(SPK).build())
+                                                .withDownstreamOutletIds(Arrays.asList(
                                                          new CwmsId.Builder().withName("TG02")
                                                                              .withOfficeId(SPK)
                                                                              .build(),
                                                          new CwmsId.Builder().withName("TG03")
                                                                              .withOfficeId(SPK)
                                                                              .build()))
-                                                 .build();
+                                                .build();
     }
 }

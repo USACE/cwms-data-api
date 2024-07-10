@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.location.kind.CompoundOutletRecord;
+import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.data.dto.location.kind.Turbine;
@@ -204,7 +204,7 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(CompoundOutletRecord first, CompoundOutletRecord second) {
+    public static void assertMatch(VirtualOutletRecord first, VirtualOutletRecord second) {
         assertAll(() -> assertMatch(first.getOutletId(), second.getOutletId()),
                   () -> assertEquals(first.getDownstreamOutletIds().size(), second.getDownstreamOutletIds().size()),
                   () -> assertAll(IntStream.range(0, first.getDownstreamOutletIds().size())
