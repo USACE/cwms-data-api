@@ -126,16 +126,14 @@ public class ProjectDao extends JooqDao<Project> {
     /**
      * Retrieves projects based on the given parameters.
      *
-     * @param cursor         The cursor to retrieve the next page of projects. If null or empty,
-     *                       retrieves the first page.
-     * @param pageSize       The number of projects to retrieve per page.
-     * @param projectIdMask  The mask to match the project IDs against. Can be null.
-     * @param office         The office ID to filter the projects by. Can be null.
+     * @param cursor        The cursor to retrieve the next page of projects. If null or empty,
+     *                      retrieves the first page.
+     * @param office        The office ID to filter the projects by. Can be null.
+     * @param projectIdMask The mask to match the project IDs against. Can be null.
+     * @param pageSize      The number of projects to retrieve per page.
      * @return A Projects object containing the retrieved projects.
      */
-    public Projects retrieveProjects(String cursor, int pageSize,
-                                     @Nullable String projectIdMask,
-                                     @Nullable String office) {
+    public Projects retrieveProjects(String cursor, @Nullable String office, @Nullable String projectIdMask, int pageSize) {
         final String cursorOffice;
         final String cursorProjectId;
         int total;
@@ -165,13 +163,13 @@ public class ProjectDao extends JooqDao<Project> {
 
         // There are lots of ways the variables can be null or not so we need to build the query
         // based on the parameters.
-        String query = buildTableQuery(projectIdMask, office, cursorOffice != null || cursorProjectId != null);
+        String query = buildTableQuery(office, projectIdMask, cursorOffice != null || cursorProjectId != null);
 
         int finalPageSize = pageSize;
         List<Project> projs = connectionResult(dsl, c -> {
             List<Project> projects;
             try (PreparedStatement ps = c.prepareStatement(query)) {
-                fillTableQueryParameters(ps, projectIdMask, office, cursorOffice, cursorProjectId, finalPageSize);
+                fillTableQueryParameters(ps, cursorOffice, cursorProjectId, office, projectIdMask, finalPageSize);
 
                 try (ResultSet resultSet = ps.executeQuery()) {
                     projects = new ArrayList<>();
@@ -257,8 +255,7 @@ public class ProjectDao extends JooqDao<Project> {
         return builder.build();
     }
 
-    private void fillTableQueryParameters(PreparedStatement ps, String projectIdMask, String office,
-                                          String cursorOffice, String cursorProjectId,
+    private void fillTableQueryParameters(PreparedStatement ps, String cursorOffice, String cursorProjectId, String office, String projectIdMask,
                                           int finalPageSize) throws SQLException {
         int index = 1;
         if (projectIdMask != null) {
@@ -278,7 +275,7 @@ public class ProjectDao extends JooqDao<Project> {
         ps.setInt(index, finalPageSize);
     }
 
-    private static String buildTableQuery(@Nullable String projectIdMask, @Nullable String office,
+    private static String buildTableQuery(@Nullable String office, @Nullable String projectIdMask,
                                           boolean useCursor) {
         String sql = SELECT_PART;
 
@@ -434,16 +431,6 @@ public class ProjectDao extends JooqDao<Project> {
         BigInteger retval = null;
         if (timestamp != null) {
             retval = BigInteger.valueOf(timestamp.toEpochMilli());
-        }
-
-        return retval;
-    }
-
-    @Nullable
-    public static BigInteger toBigInteger(@Nullable Long value) {
-        BigInteger retval = null;
-        if (value != null) {
-            retval = BigInteger.valueOf(value);
         }
 
         return retval;

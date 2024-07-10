@@ -72,12 +72,12 @@ public class ProjectLockStatus implements Handler {
     @OpenApi(
             description = "Return a lock if the specified project is locked. Otherwise 404",
             queryParams = {
+                @OpenApiParam(name = OFFICE, required = true,
+                        description = "The office id."),
                 @OpenApiParam(name = PROJECT_ID, required = true,
                         description = "The id of the project."),
                 @OpenApiParam(name = APPLICATION_ID, required = true,
                         description = "The application-id"),
-                @OpenApiParam(name = OFFICE, required = true,
-                        description = "The office id."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
