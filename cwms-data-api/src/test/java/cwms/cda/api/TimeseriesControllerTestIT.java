@@ -292,6 +292,9 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
+        //     1675335600000 is Thursday, February 2, 2023 11:00:00 AM
+        // fyi 1675422000000 is Friday, February 3, 2023 11:00:00 AM
+
         // get it back
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -303,6 +306,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam("name", ts.get("name").asText())
                 .queryParam("begin", "2023-02-02T11:00:00+00:00")
                 .queryParam("end", "2023-02-03T11:00:00+00:00")
+                .queryParam(Controllers.TRIM, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -311,6 +315,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(2))
                 .body("values[0][1]", nullValue());
     }
 
