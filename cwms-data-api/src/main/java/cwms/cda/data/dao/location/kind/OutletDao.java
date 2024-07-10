@@ -57,9 +57,6 @@ public class OutletDao extends JooqDao<Outlet> {
     public List<Outlet> retrieveOutletsForProject(String projectId, String officeId) {
         return connectionResult(dsl, conn -> {
             Configuration config = DSL.using(conn).configuration();
-            Map<String, List<CompoundOutletRecord>> compoundOutlets = retrieveCompoundOutletsForProject(config,
-                                                                                                        projectId,
-                                                                                                        officeId);
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(projectId, officeId);
 
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
@@ -125,13 +122,14 @@ public class OutletDao extends JooqDao<Outlet> {
                                                                        deleteRule.getRule(), officeId));
     }
 
-    private Map<String, List<CompoundOutletRecord>> retrieveCompoundOutletsForProject(Configuration config,
+    public Map<CwmsId, List<CompoundOutletRecord>> retrieveCompoundOutletsForProject(Configuration config,
                                                                                       String projectId,
                                                                                       String officeId) {
-        Map<String, List<CompoundOutletRecord>> recordMap = new HashMap<>();
+        Map<CwmsId, List<CompoundOutletRecord>> recordMap = new HashMap<>();
         //projectId and officeId are used as a mask in RETRIEVE_COMPOUND_OUTLETS, however this usage expects a specific
         //id, since retrieveOutlets does not use a mask.
         STR_TAB_TAB_T tabs = CWMS_OUTLET_PACKAGE.call_RETRIEVE_COMPOUND_OUTLETS(config, projectId, officeId);
+        CwmsId.Builder builder = new CwmsId.Builder().withOfficeId(officeId);
 
         if (!tabs.isEmpty()) {
             STR_TAB_T tab = tabs.get(0);
@@ -143,7 +141,7 @@ public class OutletDao extends JooqDao<Outlet> {
                 try {
                     List<CompoundOutletRecord> compoundOutletRecords = retrieveCompoundOutlet(config, compoundOutletId,
                                                                                               projectId, officeId);
-                    recordMap.put(compoundOutletId, compoundOutletRecords);
+                    recordMap.put(builder.withName(compoundOutletId).build(), compoundOutletRecords);
                 } catch (DataAccessException e) {
                     if (isNotFound(e)) {
                         LOGGER.atFinest().withCause(e).log("No compound outlet records for outlet " + officeId + "." + compoundOutletId);
@@ -190,17 +188,14 @@ public class OutletDao extends JooqDao<Outlet> {
     }
 
     private Outlet mapToOutlet(PROJECT_STRUCTURE_OBJ_T projectStructure,
-                               Map<String, List<CompoundOutletRecord>> compoundOutletsMap,
                                List<LocationGroup> groups) {
         Location location = LocationUtil.getLocation(projectStructure.getSTRUCTURE_LOCATION());
         String ratingGroupId = getRatingGroupId(location.getName(), groups);
         CwmsId projectId = LocationUtil.getLocationIdentifier(projectStructure.getPROJECT_LOCATION_REF());
-        List<CompoundOutletRecord> compoundOutletRecords = compoundOutletsMap.get(location.getName());
 
         return new Outlet.Builder().withLocation(location)
                                    .withProjectId(projectId)
                                    .withRatingGroupId(ratingGroupId)
-                                   .withCompoundOutletRecords(compoundOutletRecords)
                                    .build();
     }
 

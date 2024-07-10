@@ -20,19 +20,16 @@
 
 package cwms.cda.data.dto.location.kind;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.ArrayList;
 import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
@@ -41,35 +38,20 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"projectId", "location"})
 public class Outlet extends ProjectStructure {
-    private final List<CompoundOutletRecord> compoundOutletRecords = new ArrayList<>();
     private final String ratingGroupId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
         ratingGroupId = builder.ratingGroupId;
-        if (builder.compoundOutletRecords != null) {
-            compoundOutletRecords.addAll(builder.compoundOutletRecords);
-        }
-    }
-
-    public List<CompoundOutletRecord> getCompoundOutletRecords() {
-        return new ArrayList<>(compoundOutletRecords);
     }
 
     public String getRatingGroupId() {
         return ratingGroupId;
     }
 
-    @Override
-    protected void validateInternal(CwmsDTOValidator validator) {
-        super.validateInternal(validator);
-        validator.validateCollection(compoundOutletRecords);
-    }
-
     public static final class Builder {
         private CwmsId projectId;
         private Location location;
-        private List<CompoundOutletRecord> compoundOutletRecords;
         private String ratingGroupId;
 
         public Builder() {
@@ -78,7 +60,6 @@ public class Outlet extends ProjectStructure {
         public Builder(Outlet outlet) {
             projectId = outlet.getProjectId();
             location = outlet.getLocation();
-            compoundOutletRecords = new ArrayList<>(outlet.getCompoundOutletRecords());
             ratingGroupId = outlet.getRatingGroupId();
         }
 
@@ -93,11 +74,6 @@ public class Outlet extends ProjectStructure {
 
         public Builder withLocation(Location location) {
             this.location = location;
-            return this;
-        }
-
-        public Builder withCompoundOutletRecords(List<CompoundOutletRecord> compoundOutletRecords) {
-            this.compoundOutletRecords = compoundOutletRecords;
             return this;
         }
 
