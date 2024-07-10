@@ -66,12 +66,12 @@ public class UpdateLockRevokerRights implements Handler {
                         "Specifies the session office."),
                 @OpenApiParam(name = OFFICE_MASK, description =
                         "Specifies the office mask. If not provided defaults to provided OFFICE"),
-                @OpenApiParam(name = USER_ID, required = true,
-                        description = "Specifies the user."),
                 @OpenApiParam(name = PROJECT_MASK, description =
                         "Specifies the project mask to be used Defaults to '*'"),
                 @OpenApiParam(name = APPLICATION_MASK, required = true, description =
                         "Specifies the application mask."),
+                @OpenApiParam(name = USER_ID, required = true,
+                        description = "Specifies the user."),
                 @OpenApiParam(name = Controllers.ALLOW, required = true, type = Boolean.class, description =
                         "True to add the user to the allow list, False to add to the deny list")
             },

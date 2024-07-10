@@ -129,9 +129,10 @@ public class ProjectController implements CrudHandler {
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(ProjectController.class.getName(), GET_ALL));
 
-            Projects projects = dao.retrieveProjects(cursor, pageSize, projectIdMask, office);
+            Projects projects = dao.retrieveProjects(cursor, office, projectIdMask, pageSize);
 
-            ContentType contentType = getContentType(ctx);
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
+            ContentType contentType = Formats.parseHeader(formatHeader, Projects.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, projects);
             ctx.result(serialized);
@@ -140,11 +141,6 @@ public class ProjectController implements CrudHandler {
 
         }
 
-    }
-
-    private static @NotNull ContentType getContentType(Context ctx) {
-        String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
-        return Formats.parseHeader(formatHeader, Project.class);
     }
 
     @OpenApi(

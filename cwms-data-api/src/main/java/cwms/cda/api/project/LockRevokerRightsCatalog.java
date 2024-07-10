@@ -73,6 +73,9 @@ public class LockRevokerRightsCatalog implements Handler {
     @OpenApi(
             description = "Get a list of project lock revoker rights ",
             queryParams = {
+                @OpenApiParam(name = OFFICE_MASK, required = true, description = "Specifies "
+                        + "the office mask to be used to filter the lock revoker rights. "
+                        + "Supports '*' but is typically a single office."),
                 @OpenApiParam(name = PROJECT_MASK, description =
                         "Specifies the "
                                 + "project mask to be used to filter the lock revoker rights. "
@@ -81,9 +84,6 @@ public class LockRevokerRightsCatalog implements Handler {
                         "Specifies the "
                                 + "application mask to be used to filter the lock revoker rights. "
                                 + "Defaults to '*'"),
-                @OpenApiParam(name = OFFICE_MASK, required = true, description = "Specifies "
-                        + "the office mask to be used to filter the lock revoker rights. "
-                        + "Supports '*' but is typically a single office."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -97,9 +97,9 @@ public class LockRevokerRightsCatalog implements Handler {
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
+            String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the office.
             String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
             String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault("*");
-            String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the office.
 
             List<LockRevokerRights> rights = lockDao.catLockRevokerRights(officeMask, projMask, appMask);
             String formatHeader = ctx.header(Header.ACCEPT);

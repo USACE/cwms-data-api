@@ -73,6 +73,10 @@ public class ProjectLockCatalog implements Handler {
     @OpenApi(
             description = "Get a list of project locks",
             queryParams = {
+                @OpenApiParam(name = OFFICE_MASK, required = true, description = "Specifies"
+                        + " the "
+                        + "office mask to be used to filter the locks. "
+                        + "Supports '*' but is typically a single office."),
                 @OpenApiParam(name = PROJECT_MASK, description =
                         "Specifies the "
                                 + "project mask to be used to filter the locks. "
@@ -81,10 +85,6 @@ public class ProjectLockCatalog implements Handler {
                         "Specifies the "
                                 + "application mask to be used to filter the locks. "
                                 + "Defaults to '*'"),
-                @OpenApiParam(name = OFFICE_MASK, required = true, description = "Specifies"
-                        + " the "
-                        + "office mask to be used to filter the locks. "
-                        + "Supports '*' but is typically a single office."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
