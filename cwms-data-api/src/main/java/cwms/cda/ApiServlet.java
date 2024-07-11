@@ -178,9 +178,7 @@ import org.owasp.html.PolicyFactory;
         "/projects/*",
         "/properties/*",
         "/lookup-types/*",
-        "/embankments/*",
-        "/projects/turbines/*",
-        "/projects/turbine-changes/*"
+        "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -480,9 +478,11 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+        cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
+            new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
             new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        String turbineChanges = format("/projects/{%s}/turbine-changes", Controllers.NAME);
+        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", Controllers.OFFICE, Controllers.NAME);
         get(turbineChanges,new TurbineChangesGetController(metrics));
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
         post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
@@ -493,8 +493,6 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
-                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
 
     /**
