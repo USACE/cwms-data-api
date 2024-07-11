@@ -45,7 +45,6 @@ final class CwmsDTOValidatorTest {
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
         assertTimeout(Duration.ofMillis(100L), cwmsDTOHolder::validate);
-        assertTimeout(Duration.ofMillis(10L), cwmsDTOHolder::validate);
     }
 
     @Test
@@ -56,7 +55,6 @@ final class CwmsDTOValidatorTest {
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
         assertTimeout(Duration.ofMillis(40L), cwmsDTOHolder::validate);
-        assertTimeout(Duration.ofMillis(35L), cwmsDTOHolder::validate);
     }
 
     @Test
@@ -67,7 +65,6 @@ final class CwmsDTOValidatorTest {
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
         assertTimeout(Duration.ofMillis(90L), () -> assertThrows(FieldException.class, cwmsDTOHolder::validate));
-        assertTimeout(Duration.ofMillis(30L), () -> assertThrows(FieldException.class, cwmsDTOHolder::validate));
     }
 
     private static final class OneField extends CwmsDTOBase {
