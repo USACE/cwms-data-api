@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -160,6 +159,28 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
             assertEquals(2, retrievedStreamLocations.size());
             DTOMatch.assertMatch(streamLocation, retrievedStreamLocations.get(0));
             DTOMatch.assertMatch(streamLocation2, retrievedStreamLocations.get(1));
+
+            StreamLocation updatedStreamLocation = new StreamLocation.Builder()
+                    //update the values of the stream location
+                    .withStreamLocationNode(streamLocation.getStreamLocationNode())
+                    .withPublishedStation(20.0)
+                    .withNavigationStation(21.0)
+                    .withLowestMeasurableStage(19.0)
+                    .withTotalDrainageArea(200.0)
+                    .withUngagedDrainageArea(20.0)
+                    .build();
+            streamLocationDao.updateStreamLocation(updatedStreamLocation);
+
+            StreamLocation retrievedStreamLocationThatWasUpdated = streamLocationDao.retrieveStreamLocation(
+                    streamLocation.getStreamLocationNode().getId().getOfficeId(),
+                    streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName(),
+                    streamLocation.getStreamLocationNode().getId().getName(),
+                    streamLocation.getStationUnits(),
+                    streamLocation.getStageUnits(),
+                    streamLocation.getAreaUnits()
+            );
+
+            DTOMatch.assertMatch(updatedStreamLocation, retrievedStreamLocationThatWasUpdated);
 
             //delete stream locations
             streamLocationDao.deleteStreamLocation(

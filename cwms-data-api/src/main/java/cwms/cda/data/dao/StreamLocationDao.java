@@ -131,6 +131,19 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
     }
 
     /**
+     * Update a stream location
+     * @param streamLocation - the stream location to update
+     */
+    public void updateStreamLocation(StreamLocation streamLocation) {
+        StreamLocation existingStreamLocation = retrieveStreamLocation(streamLocation.getId().getOfficeId(), streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName(), streamLocation.getId().getName(),
+                streamLocation.getStreamLocationNode().getStreamNode().getStationUnits(), streamLocation.getStageUnits(), streamLocation.getAreaUnits());
+        if (existingStreamLocation == null) {
+            throw new NotFoundException("Could not find stream location to update.");
+        }
+        storeStreamLocation(streamLocation, false);
+    }
+
+    /**
      * Delete a stream location
      * @param locationId - the id of the stream location
      * @param streamId - the id of the stream

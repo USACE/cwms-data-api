@@ -233,7 +233,7 @@ public final class StreamLocationController implements CrudHandler {
             StreamLocation streamLocation = Formats.parseContent(contentType, ctx.body(), StreamLocation.class);
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
-            dao.storeStreamLocation(streamLocation, false);
+            dao.updateStreamLocation(streamLocation);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Updated Stream Location");
         }
     }
