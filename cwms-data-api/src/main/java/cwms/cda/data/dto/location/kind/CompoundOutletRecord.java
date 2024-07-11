@@ -25,9 +25,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
@@ -36,19 +33,17 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = CompoundOutletRecord.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class CompoundOutletRecord extends CwmsDTO {
+public class CompoundOutletRecord extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId outletId;
     private final List<CwmsId> downstreamOutletIds = new ArrayList<>();
 
     private CompoundOutletRecord(Builder builder) {
-        super(null);
         outletId = builder.outletId;
         if (builder.downstreamOutletIds != null) {
             downstreamOutletIds.addAll(builder.downstreamOutletIds);
@@ -66,7 +61,6 @@ public class CompoundOutletRecord extends CwmsDTO {
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-        validator.required(outletId, "outlet-id");
         validator.validateCollection(downstreamOutletIds);
     }
 

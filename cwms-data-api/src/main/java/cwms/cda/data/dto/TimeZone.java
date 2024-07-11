@@ -7,6 +7,7 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -20,30 +21,26 @@ import java.time.ZoneId;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeZone extends CwmsDTO
-{
-	private String timeZone;
+public final class TimeZone extends CwmsDTOBase {
+    @JsonProperty(required = true)
+    private String timeZone;
 
-	public TimeZone()
-	{
-		super(null);
-	}
+    public TimeZone() {
+        super();
+    }
 
-	public TimeZone(String timeZone)
-	{
-		this();
-		this.timeZone = timeZone;
-	}
+    public TimeZone(String timeZone) {
+        this();
+        this.timeZone = timeZone;
+    }
 
-	public String getTimeZone()
-	{
-		return timeZone;
-	}
+    public String getTimeZone() {
+        return timeZone;
+    }
 
-	@Override
-	protected void validateInternal(CwmsDTOValidator validator) {
-		super.validateInternal(validator);
-		validator.required(getTimeZone(), "time-zone");
-		validator.validate(() -> ZoneId.of(getTimeZone()));
-	}
+    @Override
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.validate(() -> ZoneId.of(getTimeZone()));
+    }
 }

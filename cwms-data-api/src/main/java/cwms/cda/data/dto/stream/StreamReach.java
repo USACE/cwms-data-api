@@ -29,8 +29,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -41,7 +39,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamReach.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamReach extends CwmsDTO {
+public final class StreamReach extends CwmsDTOBase {
 
     private final String comment;
     @JsonProperty(required = true)
@@ -55,7 +53,6 @@ public final class StreamReach extends CwmsDTO {
     private final CwmsId id;
 
     private StreamReach(Builder builder) {
-        super(null);
         this.comment = builder.comment;
         this.downstreamNode = builder.downstreamNode;
         this.upstreamNode = builder.upstreamNode;

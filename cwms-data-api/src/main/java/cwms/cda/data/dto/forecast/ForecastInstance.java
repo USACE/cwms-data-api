@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -22,7 +21,7 @@ import java.util.Map;
 @JsonDeserialize(builder = ForecastInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class ForecastInstance implements CwmsDTOBase {
+public class ForecastInstance extends CwmsDTOBase {
 
     @Schema(description = "Forecast Spec")
     private final ForecastSpec spec;
@@ -137,10 +136,6 @@ public class ForecastInstance implements CwmsDTOBase {
 
     public String getFileDataUrl() {
         return fileDataUrl;
-    }
-
-    public void validate() throws FieldException {
-        //TODO
     }
 
     @Override

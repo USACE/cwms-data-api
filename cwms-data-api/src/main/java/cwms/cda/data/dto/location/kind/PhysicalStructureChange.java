@@ -31,9 +31,8 @@ package cwms.cda.data.dto.location.kind;
 
 import static java.util.Comparator.comparing;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
@@ -43,7 +42,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO {
+public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId projectId;
     @JsonProperty(value = "protected", required = true)
@@ -64,8 +63,6 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
     private final Set<T> settings;
 
     PhysicalStructureChange(Builder<?,T> builder) {
-        //uses CwmsId instead of a separate office-id field
-        super(null);
         this.projectId = builder.projectId;
         this.dischargeComputationType = builder.dischargeComputationType;
         this.reasonType = builder.reasonType;
@@ -79,12 +76,6 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         this.notes = builder.notes;
         this.changeDate = builder.changeDate;
         this.settings = builder.settings;
-    }
-
-    @JsonIgnore
-    @Override
-    public String getOfficeId() {
-        return projectId.getOfficeId();
     }
 
     public CwmsId getProjectId() {
@@ -143,7 +134,6 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-        validator.validateRequiredFields(this);
         validator.validateCollection(getSettings());
     }
     

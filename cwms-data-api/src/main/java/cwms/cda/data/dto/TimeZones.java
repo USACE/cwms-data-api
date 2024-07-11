@@ -21,19 +21,18 @@ import java.util.List;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeZones extends CwmsDTO
+public final class TimeZones extends CwmsDTOBase
 {
 	private List<TimeZone> timeZones;
 
-	@SuppressWarnings("unused") // for JAXB to handle marshalling
+	@SuppressWarnings("unused")
 	private TimeZones()
 	{
-		super(null);
+		// for JAXB to handle marshalling
 	}
 
 	public TimeZones(List<TimeZone> timeZones)
 	{
-		super(null);
 		this.timeZones = timeZones;
 	}
 

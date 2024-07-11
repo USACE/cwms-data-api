@@ -30,10 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -43,7 +40,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamLocation.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamLocation extends CwmsDTO {
+public final class StreamLocation extends CwmsDTOBase {
 
     @JsonProperty(required = true)
     private final StreamLocationNode streamLocationNode; //the node representation of this location containing the loc id, stream id, bank, and station
@@ -56,7 +53,6 @@ public final class StreamLocation extends CwmsDTO {
     private final String stageUnits;
 
     private StreamLocation(Builder builder) {
-        super(null);
         this.streamLocationNode = builder.streamLocationNode;
         this.publishedStation = builder.publishedStation;
         this.navigationStation = builder.navigationStation;

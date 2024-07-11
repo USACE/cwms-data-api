@@ -20,34 +20,25 @@
 
 package cwms.cda.data.dto.location.kind;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.CwmsDTO;
-import cwms.cda.data.dto.CwmsDTOValidator;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public abstract class ProjectStructure extends CwmsDTO {
+public abstract class ProjectStructure extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId projectId;
     @JsonProperty(required = true)
     private final Location location;
 
     ProjectStructure(CwmsId projectId, Location location) {
-        super(null);
         this.location = location;
         this.projectId = projectId;
-    }
-
-    @JsonIgnore
-    @Override
-    public String getOfficeId() {
-        return location.getOfficeId();
     }
 
     public final CwmsId getProjectId() {
@@ -56,12 +47,5 @@ public abstract class ProjectStructure extends CwmsDTO {
 
     public final Location getLocation() {
         return location;
-    }
-
-    @Override
-    protected void validateInternal(CwmsDTOValidator validator) {
-        super.validateInternal(validator);
-        validator.required(getLocation(), "location");
-        validator.required(getProjectId(), "project-id");
     }
 }
