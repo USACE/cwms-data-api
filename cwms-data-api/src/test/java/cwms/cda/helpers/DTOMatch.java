@@ -200,7 +200,6 @@ public final class DTOMatch {
                 () -> assertMatch(first.getProjectId(), second.getProjectId()),
                 () -> assertEquals(first.getLocation(), second.getLocation()),
                 () -> assertEquals(first.getRatingGroupId(), second.getRatingGroupId()),
-                () -> assertMatch(first.getCompoundOutletRecords(), second.getCompoundOutletRecords(), DTOMatch::assertMatch)
         );
     }
 

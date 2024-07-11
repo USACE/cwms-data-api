@@ -49,7 +49,7 @@ class VirtualOutletRecordTest {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
         VirtualOutletRecord data = buildTestData();
         InputStream resource = this.getClass()
-                                   .getResourceAsStream("/cwms/cda/data/dto/location/kind/compound_outlet_record.json");
+                                   .getResourceAsStream("/cwms/cda/data/dto/location/kind/virtual_outlet_record.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         VirtualOutletRecord deserialized = Formats.parseContent(contentType, serialized, VirtualOutletRecord.class);
