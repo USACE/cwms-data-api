@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -40,7 +41,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"projectId", "virtualOutletId", "virtualRecords"})
-public class VirtualOutlet implements CwmsDTOBase {
+public class VirtualOutlet extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId projectId;
     @JsonProperty(required = true)
@@ -68,8 +69,9 @@ public class VirtualOutlet implements CwmsDTOBase {
     }
 
     @Override
-    public void validate() throws FieldException {
-        //Temporary until I can pull in the new PR from Adam.
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.validateCollection(virtualRecords);
     }
 
     public static class Builder {
