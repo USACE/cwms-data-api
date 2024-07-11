@@ -168,6 +168,8 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                     .withLowestMeasurableStage(19.0)
                     .withTotalDrainageArea(200.0)
                     .withUngagedDrainageArea(20.0)
+                    .withAreaUnits("km2")
+                    .withStageUnits("m")
                     .build();
             streamLocationDao.updateStreamLocation(updatedStreamLocation);
 

@@ -115,7 +115,7 @@ public final class StreamController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
-            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
+            String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             List<Stream> streams = dao.retrieveStreams(office, divertsFromStream, flowsIntoStream, stationUnits);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
@@ -155,7 +155,7 @@ public final class StreamController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
-            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
+            String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             Stream stream = dao.retrieveStream(office, streamId, stationUnits);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;

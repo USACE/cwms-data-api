@@ -91,12 +91,8 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
      */
     public StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit) {
         return connectionResult(dsl, conn -> {
-            try {
-                setOffice(conn, officeId);
-                return retrieveStreamLocation(officeId, streamId, locationId, stationUnit, stageUnit, areaUnit, conn);
-            } catch (DataAccessException e) {
-                throw wrapException(e);
-            }
+            setOffice(conn, officeId);
+            return retrieveStreamLocation(officeId, streamId, locationId, stationUnit, stageUnit, areaUnit, conn);
         });
     }
 

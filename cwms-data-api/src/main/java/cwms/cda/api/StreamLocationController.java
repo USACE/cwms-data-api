@@ -117,9 +117,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             //db doesn't return default units, and null units causes a db exception, so defaulting to english if nothing is provided
-            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
-            String areaUnits = ctx.queryParam(AREA_UNIT) == null ? "mi2" : ctx.queryParam(AREA_UNIT);
-            String stageUnits = ctx.queryParam(STAGE_UNIT) == null ? "ft" : ctx.queryParam(STAGE_UNIT);
+            String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
+            String areaUnits = ctx.queryParamAsClass(AREA_UNIT, String.class).getOrDefault("mi2");
+            String stageUnits = ctx.queryParamAsClass(STAGE_UNIT, String.class).getOrDefault("ft");
             List<StreamLocation> streamLocations = dao.retrieveStreamLocations(streamId, locationId, stationUnits, stageUnits, areaUnits, office);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
@@ -164,9 +164,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             //db doesn't return default units, and null units causes a db exception, so defaulting to english if nothing is provided
-            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
-            String areaUnits = ctx.queryParam(AREA_UNIT) == null ? "mi2" : ctx.queryParam(AREA_UNIT);
-            String stageUnits = ctx.queryParam(STAGE_UNIT) == null ? "ft" : ctx.queryParam(STAGE_UNIT);
+            String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
+            String areaUnits = ctx.queryParamAsClass(AREA_UNIT, String.class).getOrDefault("mi2");
+            String stageUnits = ctx.queryParamAsClass(STAGE_UNIT, String.class).getOrDefault("ft");
             StreamLocation streamLocation = dao.retrieveStreamLocation(office, streamId, locationId, stationUnits, stageUnits, areaUnits);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;

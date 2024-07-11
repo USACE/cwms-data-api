@@ -113,7 +113,7 @@ public final class StreamReachController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             StreamReachDao dao = new StreamReachDao(dsl);
-            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
+            String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             List<StreamReach> streamReaches = dao.retrieveStreamReaches(office, streamIdMask, reachIdMask, configurationIdMask, stationUnits);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, StreamReach.class);
@@ -155,7 +155,7 @@ public final class StreamReachController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamReachDao dao = new StreamReachDao(dsl);
-            String stationUnits = ctx.queryParam(STATION_UNIT) == null ? "mi" : ctx.queryParam(STATION_UNIT);
+            String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             StreamReach streamReach = dao.retrieveStreamReach(office, streamId, reachId, stationUnits);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;
