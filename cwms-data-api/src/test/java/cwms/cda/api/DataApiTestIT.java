@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
@@ -607,5 +608,15 @@ public class DataApiTestIT {
         public Map<String, Object> getModel() {
             return Collections.unmodifiableMap(dataModel);
         }
+    }
+
+    /**
+     * Many Integration Tests want to use a web user connection in order to setup or verify
+     * @param function
+     * @throws SQLException
+     */
+    public static void connectionAsWebUser(Consumer<Connection> function) throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(function, CwmsDataApiSetupCallback.getWebUser());
     }
 }
