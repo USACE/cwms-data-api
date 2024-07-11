@@ -23,14 +23,17 @@
  */
 package cwms.cda.data.dao;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
+import java.sql.Connection;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
@@ -88,10 +91,15 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
      */
     public StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit) {
         return connectionResult(dsl, conn -> {
-            RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
-                    locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
-            return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
+            setOffice(conn, officeId);
+            return retrieveStreamLocation(officeId, streamId, locationId, stationUnit, stageUnit, areaUnit, conn);
         });
+    }
+
+    static StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit, Connection conn) {
+        RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
+                locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
+        return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
     }
 
     /**
@@ -119,6 +127,19 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
     }
 
     /**
+     * Update a stream location
+     * @param streamLocation - the stream location to update
+     */
+    public void updateStreamLocation(StreamLocation streamLocation) {
+        StreamLocation existingStreamLocation = retrieveStreamLocation(streamLocation.getId().getOfficeId(), streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName(), streamLocation.getId().getName(),
+                streamLocation.getStreamLocationNode().getStreamNode().getStationUnits(), streamLocation.getStageUnits(), streamLocation.getAreaUnits());
+        if (existingStreamLocation == null) {
+            throw new NotFoundException("Could not find stream location to update.");
+        }
+        storeStreamLocation(streamLocation, false);
+    }
+
+    /**
      * Delete a stream location
      * @param locationId - the id of the stream location
      * @param streamId - the id of the stream
@@ -136,7 +157,7 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
                 .withStreamLocationNode(buildStreamLocationNode(officeId,
                         streamId,
                         locationId,
-                        streamLocation.getP_PUBLISHED_STATION(),
+                        streamLocation.getP_STATION(),
                         Bank.fromCode(streamLocation.getP_BANK()),
                         stationUnit))
                 .withPublishedStation(streamLocation.getP_PUBLISHED_STATION())
