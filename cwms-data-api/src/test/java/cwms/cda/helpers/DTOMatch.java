@@ -24,6 +24,7 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -212,6 +213,11 @@ public final class DTOMatch {
                                                    second.getDownstreamOutletIds().get(i),
                                                    "Downstream Outlet Id " + i)))
         );
+    }
+
+    public static void assertMatch(VirtualOutlet first, VirtualOutlet second) {
+        assertAll(() -> assertMatch(first.getVirtualOutletId(), second.getVirtualOutletId()),
+                  () -> assertMatch(first.getVirtualRecords(), second.getVirtualRecords(), DTOMatch::assertMatch));
     }
 
     private static <T> void assertMatch(List<T> first, List<T> second, AssertMatchMethod<T> matcher) {

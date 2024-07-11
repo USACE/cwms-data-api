@@ -21,63 +21,78 @@
 package cwms.cda.data.dto.location.kind;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.ArrayList;
+import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonDeserialize(builder = Outlet.Builder.class)
+@JsonDeserialize(builder = VirtualOutlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectId", "location", "ratingGroupId"})
-public class Outlet extends ProjectStructure {
-    private final String ratingGroupId;
+@JsonPropertyOrder({"projectId", "virtualOutletId", "virtualRecords"})
+public class VirtualOutlet implements CwmsDTOBase {
+    @JsonProperty(required = true)
+    private final CwmsId projectId;
+    @JsonProperty(required = true)
+    private final CwmsId virtualOutletId;
+    private final List<VirtualOutletRecord> virtualRecords = new ArrayList<>();
 
-    private Outlet(Builder builder) {
-        super(builder.projectId, builder.location);
-        ratingGroupId = builder.ratingGroupId;
+    public VirtualOutlet(Builder builder) {
+        this.projectId = builder.projectId;
+        this.virtualOutletId = builder.virtualOutletId;
+        if (builder.virtualRecords != null) {
+            virtualRecords.addAll(builder.virtualRecords);
+        }
     }
 
-    public String getRatingGroupId() {
-        return ratingGroupId;
+    public CwmsId getVirtualOutletId() {
+        return virtualOutletId;
     }
 
-    public static final class Builder {
+    public List<VirtualOutletRecord> getVirtualRecords() {
+        return virtualRecords;
+    }
+
+    public CwmsId getProjectId() {
+        return projectId;
+    }
+
+    @Override
+    public void validate() throws FieldException {
+        //Temporary until I can pull in the new PR from Adam.
+    }
+
+    public static class Builder {
         private CwmsId projectId;
-        private Location location;
-        private String ratingGroupId;
+        private CwmsId virtualOutletId;
+        private List<VirtualOutletRecord> virtualRecords = new ArrayList<>();
 
-        public Builder() {
+        public VirtualOutlet build() {
+            return new VirtualOutlet(this);
         }
 
-        public Builder(Outlet outlet) {
-            projectId = outlet.getProjectId();
-            location = outlet.getLocation();
-            ratingGroupId = outlet.getRatingGroupId();
-        }
-
-        public Outlet build() {
-            return new Outlet(this);
-        }
-
-        public Builder withProjectId(CwmsId projectIdentifier) {
-            this.projectId = projectIdentifier;
+        public Builder withVirtualOutletId(CwmsId virtualOutletId) {
+            this.virtualOutletId = virtualOutletId;
             return this;
         }
 
-        public Builder withLocation(Location location) {
-            this.location = location;
+        public Builder withVirtualRecords(List<VirtualOutletRecord> virtualRecords) {
+            this.virtualRecords = virtualRecords;
             return this;
         }
 
-        public Builder withRatingGroupId(String ratingGroupId) {
-            this.ratingGroupId = ratingGroupId;
+        public Builder withProjectId(CwmsId projectId) {
+            this.projectId = projectId;
             return this;
         }
     }

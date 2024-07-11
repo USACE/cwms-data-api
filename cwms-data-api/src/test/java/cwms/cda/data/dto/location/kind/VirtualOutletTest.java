@@ -27,44 +27,55 @@ import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class VirtualOutletRecordTest {
+class VirtualOutletTest {
     private static final String SPK = "SPK";
+
     @Test
     void test_serialization() {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
-        VirtualOutletRecord data = buildTestData();
+        VirtualOutlet data = buildTestData();
         String json = Formats.format(contentType, data);
 
-        VirtualOutletRecord deserialized = Formats.parseContent(contentType, json, VirtualOutletRecord.class);
+        VirtualOutlet deserialized = Formats.parseContent(contentType, json, VirtualOutlet.class);
         DTOMatch.assertMatch(data, deserialized);
     }
 
     @Test
     void test_serialize_from_file() throws Exception {
         ContentType contentType = Formats.parseHeader(Formats.JSON, Outlet.class);
-        VirtualOutletRecord data = buildTestData();
+        VirtualOutlet data = buildTestData();
         InputStream resource = this.getClass()
-                                   .getResourceAsStream("/cwms/cda/data/dto/location/kind/virtual-outlet-record.json");
+                                   .getResourceAsStream("/cwms/cda/data/dto/location/kind/virtual-outlet.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        VirtualOutletRecord deserialized = Formats.parseContent(contentType, serialized, VirtualOutletRecord.class);
+        VirtualOutlet deserialized = Formats.parseContent(contentType, serialized, VirtualOutlet.class);
         DTOMatch.assertMatch(data, deserialized);
     }
 
-    private VirtualOutletRecord buildTestData() {
-        return new VirtualOutletRecord.Builder().withOutletId(new CwmsId.Builder().withName("TG01").withOfficeId(SPK).build())
-                                                .withDownstreamOutletIds(Arrays.asList(
-                                                         new CwmsId.Builder().withName("TG02")
-                                                                             .withOfficeId(SPK)
-                                                                             .build(),
-                                                         new CwmsId.Builder().withName("TG03")
-                                                                             .withOfficeId(SPK)
-                                                                             .build()))
+    private VirtualOutlet buildTestData() {
+        CwmsId.Builder builder = new CwmsId.Builder().withOfficeId(SPK);
+        return new VirtualOutlet.Builder().withProjectId(builder.withName("BIGH").build())
+                                          .withVirtualOutletId(builder.withName("Compound Tainter Gate").build())
+                                          .withVirtualRecords(
+                                                  Arrays.asList(buildRecord("TG1", "TG2"), buildRecord("TG2", "TG3"),
+                                                                buildRecord("TG3", "TG4", "TG5"), buildRecord("TG4"),
+                                                                buildRecord("TG5")))
+                                          .build();
+    }
+
+    private VirtualOutletRecord buildRecord(String upstream, String ... downstream) {
+        CwmsId.Builder builder = new CwmsId.Builder().withOfficeId(SPK);
+        List<CwmsId> downstreamIds = Arrays.stream(downstream)
+                                     .map(id -> builder.withName(id).build())
+                                     .collect(Collectors.toList());
+        return new VirtualOutletRecord.Builder().withOutletId(builder.withName(upstream).build())
+                                                .withDownstreamOutletIds(downstreamIds)
                                                 .build();
     }
 }
