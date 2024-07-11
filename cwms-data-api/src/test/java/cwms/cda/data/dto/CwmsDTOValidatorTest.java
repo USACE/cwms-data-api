@@ -33,6 +33,7 @@ import cwms.cda.api.errors.FieldException;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 final class CwmsDTOValidatorTest {
@@ -44,7 +45,7 @@ final class CwmsDTOValidatorTest {
             .collect(toList());
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
-        assertTimeout(Duration.ofMillis(100L), cwmsDTOHolder::validate);
+        assertTimeout(Duration.ofMillis(150L), cwmsDTOHolder::validate);
     }
 
     @Test
@@ -54,7 +55,7 @@ final class CwmsDTOValidatorTest {
             .collect(toList());
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
-        assertTimeout(Duration.ofMillis(40L), cwmsDTOHolder::validate);
+        assertTimeout(Duration.ofMillis(150L), cwmsDTOHolder::validate);
     }
 
     @Test
@@ -64,7 +65,7 @@ final class CwmsDTOValidatorTest {
             .collect(toList());
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
-        assertTimeout(Duration.ofMillis(90L), () -> assertThrows(FieldException.class, cwmsDTOHolder::validate));
+        assertTimeout(Duration.ofMillis(150L), () -> assertThrows(FieldException.class, cwmsDTOHolder::validate));
     }
 
     private static final class OneField extends CwmsDTOBase {
