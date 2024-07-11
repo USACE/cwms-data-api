@@ -27,8 +27,8 @@ package cwms.cda.api.project;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -53,9 +53,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectLockStatus implements Handler {
+public class ProjectLockGetOne implements Handler {
     public static final String TAGS = "Project Locks";
-    public static final String PATH = "/project-locks/status";
+
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -63,10 +63,10 @@ public class ProjectLockStatus implements Handler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectLockStatus(MetricRegistry metrics) {
+    public ProjectLockGetOne(MetricRegistry metrics) {
         this.metrics = metrics;
         requestResultSize = this.metrics.histogram((
-                name(ProjectLockStatus.class, Controllers.RESULTS, Controllers.SIZE)));
+                name(ProjectLockGetOne.class, Controllers.RESULTS, Controllers.SIZE)));
     }
 
     @OpenApi(
@@ -74,35 +74,33 @@ public class ProjectLockStatus implements Handler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true,
                         description = "The office id."),
-                @OpenApiParam(name = PROJECT_ID, required = true,
-                        description = "The id of the project."),
                 @OpenApiParam(name = APPLICATION_ID, required = true,
                         description = "The application-id"),
+            },
+            pathParams = {
+                @OpenApiParam(name = NAME, required = true,
+                        description = "The id of the project."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON, from = ProjectLock.class)}
                 ),
-                @OpenApiResponse(status = STATUS_404, description = "Not matching Lock was found.")
+                @OpenApiResponse(status = STATUS_404, description = "No matching Lock was found.")
             },
             tags = {TAGS},
-            path = PATH,
             method = HttpMethod.GET
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        String prjId = ctx.pathParam(NAME);
 
-        String prjId = requiredParam(ctx, PROJECT_ID);
-        String appId = requiredParam(ctx, APPLICATION_ID);
         String office = requiredParam(ctx, OFFICE);
+        String appId = requiredParam(ctx, APPLICATION_ID);
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            boolean locked = lockDao.isLocked(office, prjId, appId);
-            if (locked) {
-                // should we call catLocks instead and get the full lock
-                // with acquireTime and other fields?
-                ProjectLock lock = new ProjectLock.Builder(office, prjId, appId).build();
+            ProjectLock lock = lockDao.retrieveLock(office, prjId, appId);
+            if(lock != null) {
                 String acceptHeader = ctx.header(Header.ACCEPT);
                 ContentType acceptType = Formats.parseHeader(acceptHeader, ProjectLock.class);
                 String result = Formats.format(acceptType, lock);

@@ -27,8 +27,8 @@ package cwms.cda.api.project;
 import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.SOURCE_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
@@ -56,9 +56,10 @@ import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
+
 public class ProjectPublishStatusUpdate implements Handler {
     public static final String TAG = ProjectController.TAG;
-    public static final String PATH = "/projects/status-update";
+
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -75,8 +76,6 @@ public class ProjectPublishStatusUpdate implements Handler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "The office "
                         + "generating the message (and owning the project)."),
-                @OpenApiParam(name = PROJECT_ID, required = true, description = "The location "
-                        + "identifier of the project that has been updated"),
                 @OpenApiParam(name = APPLICATION_ID, required = true, description = "A text "
                         + "string identifying the application for which the update applies."),
                 @OpenApiParam(name = SOURCE_ID, description = "An application-defined string "
@@ -93,22 +92,25 @@ public class ProjectPublishStatusUpdate implements Handler {
                         + "time series. If NULL or not specified, the generated message will "
                         + "not include this item.")
             },
+            pathParams = {
+                    @OpenApiParam(name = NAME,  description = "The location "
+                            + "identifier of the project that has been updated"),
+            },
             method = HttpMethod.POST,
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON, from = PublishStatusUpdateResult.class)}
                     )},
-            tags = {TAG},
-            path = PATH
+            tags = {TAG}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        String projectId = ctx.pathParam(NAME);
 
         try (final Timer.Context ignored = markAndTime("publish")) {
             ProjectDao prjDao = new ProjectDao(JooqDao.getDslContext(ctx));
             String office = requiredParam(ctx, OFFICE);
             String appId = requiredParam(ctx, APPLICATION_ID);
-            String projectId = requiredParam(ctx, PROJECT_ID);
 
             String sourceId = ctx.queryParam(SOURCE_ID);
             String tsId = ctx.queryParam(TIMESERIES_ID);

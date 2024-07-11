@@ -76,8 +76,8 @@ public class ProjectLockRequest implements Handler {
     @OpenApi(
             description = "Requests the creation of a new Reservoir Project Lock",
             requestBody = @OpenApiRequestBody(
-                    description = "Users must provide a Lock object specifying the projectId,"
-                            + " applicationId and officeId. Other fields will be ignored.",
+                    description = "Users must provide a Lock object specifying the officeId, "
+                            + "projectId and applicationId. Other fields will be ignored.",
                     content = {
                         @OpenApiContent(from = ProjectLock.class, type = Formats.JSON),
                     },
@@ -131,7 +131,7 @@ public class ProjectLockRequest implements Handler {
                         lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId());
 
                 // or see what the locs are:
-                List<ProjectLock> locks = lockDao.catLocks(
+                List<ProjectLock> locks = lockDao.retrieveLocks(
                         lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId());
 
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

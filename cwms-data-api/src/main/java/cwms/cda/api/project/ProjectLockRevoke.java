@@ -25,8 +25,8 @@
 package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_ID;
+import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.REVOKE_TIMEOUT;
 import static cwms.cda.api.Controllers.requiredParam;
 
@@ -44,7 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockRevoke implements Handler {
-    public static final String PATH = "/project-locks/{project-id}";
+    public static final String PATH = "/project-locks/{name}";
     public static final String TAGS = "Project Locks";
     private final MetricRegistry metrics;
 
@@ -60,7 +60,7 @@ public class ProjectLockRevoke implements Handler {
     @OpenApi(
             description = "Revokes a project lock, if successful the lock is deleted",
             pathParams = {
-                @OpenApiParam(name = PROJECT_ID, required = true,
+                @OpenApiParam(name = NAME, required = true,
                         description = "Specifies the project-id to be deleted"),
             },
             queryParams = {
@@ -75,7 +75,7 @@ public class ProjectLockRevoke implements Handler {
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
-        String projectId = ctx.pathParam(PROJECT_ID);
+        String projectId = ctx.pathParam(NAME);
 
         String office = requiredParam(ctx, OFFICE);
         String appId = requiredParam(ctx, APPLICATION_ID);

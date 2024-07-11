@@ -26,7 +26,6 @@ package cwms.cda.api.project;
 
 
 import static cwms.cda.api.Controllers.APPLICATION_ID;
-import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.revokeLock;
@@ -50,85 +49,102 @@ import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-public class ProjectLockStatusHandlerIT extends DataApiTestIT {
+public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+    String projId = "stProj";
+    String appId = "isLocked_test";
+    String officeMask = OFFICE;
+    int revokeTimeout = 10;
+    boolean revokeExisting = true;
+    String lockId = null;
 
-    @Test
-    void test_lock_status() throws SQLException {
+    @BeforeEach
+    void setUp() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectDao prjDao = new ProjectDao(dsl);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-            String projId = "stProj";
-            String appId = "isLocked_test";
-            String officeMask = OFFICE;
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
-            String lockId;
 
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
 
-            try {
-                int revokeTimeout = 10;
-                boolean revokeExisting = true;
+            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+            lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
 
-                lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
-                ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
-                lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
-
-                assertNotNull(lockId);
-                assertTrue(lockId.length() > 8);  // FYI its 32 hex chars guid
-
-                // This is a little different.  Returns a 200 if locked, 404 if not.
-                given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .queryParam(Controllers.OFFICE, OFFICE)
-                        .queryParam(PROJECT_ID, projId)
-                        .queryParam(APPLICATION_ID, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .get("/project-locks/status")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_OK))
-                ;
-
-                lockDao.releaseLock(OFFICE, lockId);
-
-                given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .queryParam(Controllers.OFFICE, OFFICE)
-                        .queryParam(PROJECT_ID, projId)
-                        .queryParam(APPLICATION_ID, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .get("/project-locks/status")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
-                ;
-
-            } finally {
-                revokeLock(lockDao, OFFICE, projId, appId);
-                deleteProject(prjDao, projId, lockDao, OFFICE, appId);
-            }
+            assertNotNull(lockId);
+            assertTrue(lockId.length() > 8);  // FYI its 32 hex chars guid
 
         }, CwmsDataApiSetupCallback.getWebUser());
+    }
 
+    @AfterEach
+    void tearDown() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+
+            revokeLock(dsl, OFFICE, projId, appId);
+            deleteProject(dsl, projId, OFFICE, appId);
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @Test
+    void test_lock_status() throws SQLException {
+
+        // This is a little different.  Returns a 200 if locked, 404 if not.
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(APPLICATION_ID, appId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/project-locks/" + projId)
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+
+        releaseLock();
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(APPLICATION_ID, appId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+                .get("/project-locks/" + projId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+
+    }
+
+    private void releaseLock() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            lockDao.releaseLock(OFFICE, lockId);
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
 }

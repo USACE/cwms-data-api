@@ -35,9 +35,9 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
+import cwms.cda.data.dto.project.ProjectLock;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -279,7 +279,7 @@ class ProjectLockDaoTest {
             prjDao.delete(OFFICE, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
             logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
-            List<ProjectLock> locks = lockDao.catLocks(OFFICE, projId, appId);
+            List<ProjectLock> locks = lockDao.retrieveLocks(OFFICE, projId, appId);
             locks.forEach(lock -> {
                logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
                         lock.getApplicationId() + " " + lock.getAcquireTime() + " " +
@@ -333,7 +333,7 @@ class ProjectLockDaoTest {
 
 
     @Test
-    void test_catLocks() throws SQLException {
+    void test_retrieveLocks() throws SQLException {
 
         DSLContext dsl = getDslContext(OFFICE);
         ProjectDao prjDao = new ProjectDao(dsl);
@@ -363,7 +363,7 @@ class ProjectLockDaoTest {
             assertTrue(lock2.length() > 8);
             assertNotEquals(lock1, lock2);
 
-            List<ProjectLock> locks = lockDao.catLocks(officeMask, projId + "*", appId);
+            List<ProjectLock> locks = lockDao.retrieveLocks(officeMask, projId + "*", appId);
             assertNotNull(locks);
             assertFalse(locks.isEmpty());
 
