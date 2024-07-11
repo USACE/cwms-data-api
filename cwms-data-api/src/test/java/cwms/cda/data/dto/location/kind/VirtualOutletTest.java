@@ -61,7 +61,7 @@ class VirtualOutletTest {
     private VirtualOutlet buildTestData() {
         CwmsId.Builder builder = new CwmsId.Builder().withOfficeId(SPK);
         return new VirtualOutlet.Builder().withProjectId(builder.withName("BIGH").build())
-                                          .withVirtualOutletId(builder.withName("Compound Tainter Gate").build())
+                                          .withVirtualOutletId(builder.withName("Compound Tainter Gates").build())
                                           .withVirtualRecords(
                                                   Arrays.asList(buildRecord("TG1", "TG2"), buildRecord("TG2", "TG3"),
                                                                 buildRecord("TG3", "TG4", "TG5"), buildRecord("TG4"),

@@ -20,24 +20,21 @@
 
 package cwms.cda.data.dao.location.kind;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
-import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.data.dto.location.kind.ProjectStructure;
+import cwms.cda.data.dto.location.kind.VirtualOutlet;
+import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_OUTLET_PACKAGE;
@@ -47,14 +44,13 @@ import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_TAB_T;
 
 public class OutletDao extends JooqDao<Outlet> {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String RATING_LOC_GROUP_CATEGORY = "Rating";
 
     public OutletDao(DSLContext dsl) {
         super(dsl);
     }
 
-    public List<Outlet> retrieveOutletsForProject(String projectId, String officeId) {
+    public List<Outlet> retrieveOutletsForProject(String officeId, String projectId) {
         return connectionResult(dsl, conn -> {
             Configuration config = DSL.using(conn).configuration();
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(projectId, officeId);
@@ -69,7 +65,7 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    public Outlet retrieveOutlet(String locationId, String officeId) {
+    public Outlet retrieveOutlet(String officeId, String locationId) {
         return connectionResult(dsl, conn -> {
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(locationId, officeId);
             Configuration config = DSL.using(conn).configuration();
@@ -101,7 +97,7 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    public void deleteOutlet(String locationId, String officeId, DeleteRule deleteRule) {
+    public void deleteOutlet(String officeId, String locationId, DeleteRule deleteRule) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
             CWMS_OUTLET_PACKAGE.call_DELETE_OUTLET(DSL.using(conn).configuration(), locationId, deleteRule.getRule(),
@@ -109,15 +105,13 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    public Map<CwmsId, List<VirtualOutletRecord>> retrieveVirtualOutletsForProject(String projectId,
-                                                                                   String officeId) {
+    public List<VirtualOutlet> retrieveVirtualOutletsForProject(String officeId, String projectId) {
         return connectionResult(dsl, conn -> {
             Configuration config = DSL.using(conn).configuration();
-            Map<CwmsId, List<VirtualOutletRecord>> recordMap = new HashMap<>();
+            List<VirtualOutlet> output = new ArrayList<>();
             //projectId and officeId are used as a mask in RETRIEVE_COMPOUND_OUTLETS, however this usage expects a specific
             //id, since retrieveOutlets does not use a mask.
             STR_TAB_TAB_T tabs = CWMS_OUTLET_PACKAGE.call_RETRIEVE_COMPOUND_OUTLETS(config, projectId, officeId);
-            CwmsId.Builder builder = new CwmsId.Builder().withOfficeId(officeId);
 
             if (!tabs.isEmpty()) {
                 STR_TAB_T tab = tabs.get(0);
@@ -126,45 +120,40 @@ public class OutletDao extends JooqDao<Outlet> {
                 //the actual virtual outlet records for each outlet.
                 for (int i = 2; i < tab.size(); i++) {
                     String virtualOutletId = tab.get(i);
-                    try {
-                        List<VirtualOutletRecord> virtualOutletRecords = retrieveVirtualOutlet(config,
-                                                                                               virtualOutletId,
-                                                                                               projectId, officeId);
-                        recordMap.put(builder.withName(virtualOutletId).build(), virtualOutletRecords);
-                    } catch (DataAccessException e) {
-                        if (isNotFound(e)) {
-                            LOGGER.atFinest()
-                                  .withCause(e)
-                                  .log("No virtual outlet records for outlet " + virtualOutletId);
-                        } else {
-                            throw e;
-                        }
-                    }
+                    VirtualOutlet virtualOutlet = retrieveVirtualOutlet(config, virtualOutletId, projectId,
+                                                                        officeId);
+                    output.add(virtualOutlet);
                 }
             }
 
-            return recordMap;
+            return output;
         });
     }
 
-    public List<VirtualOutletRecord> retrieveVirtualOutlet(String virtualOutletId,
-                                                           String projectId, String officeId) {
+    public VirtualOutlet retrieveVirtualOutlet(String officeId, String projectId, String virtualOutletId) {
         return connectionResult(dsl, conn -> {
             Configuration config = DSL.using(conn).configuration();
             return retrieveVirtualOutlet(config, virtualOutletId, projectId, officeId);
         });
     }
 
-    private List<VirtualOutletRecord> retrieveVirtualOutlet(Configuration config, String virtualOutletId, String projectId,
-                                                            String officeId) {
-        return CWMS_OUTLET_PACKAGE.call_RETRIEVE_COMPOUND_OUTLET(config, virtualOutletId, projectId, officeId)
-                                  .stream()
-                                  .map(ArrayList::new)
-                                  .map(table -> mapToVirtualRecord(table, officeId))
-                                  .collect(Collectors.toList());
+    private VirtualOutlet retrieveVirtualOutlet(Configuration config, String virtualOutletId, String projectId,
+                                                String officeId) {
+        List<VirtualOutletRecord> outletRecords = CWMS_OUTLET_PACKAGE.call_RETRIEVE_COMPOUND_OUTLET(config, virtualOutletId,
+                                                                                              projectId, officeId)
+                                                               .stream()
+                                                               .map(ArrayList::new)
+                                                               .map(table -> mapToVirtualRecord(table, officeId))
+                                                               .collect(Collectors.toList());
+        CwmsId.Builder builder = new CwmsId.Builder().withOfficeId(officeId);
+
+        return new VirtualOutlet.Builder().withVirtualOutletId(builder.withName(virtualOutletId).build())
+                                          .withProjectId(builder.withName(projectId).build())
+                                          .withVirtualRecords(outletRecords)
+                                          .build();
     }
 
-    public void storeVirtualOutlet(String projectId, String virtualOutletId, String officeId,
+    public void storeVirtualOutlet(String officeId, String projectId, String virtualOutletId,
                                    List<VirtualOutletRecord> records, boolean failIfExists) {
         List<List<String>> virtualOutlets = records.stream()
                                                     .map(this::mapVirtualRecords)
@@ -179,8 +168,7 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    public void deleteVirtualOutlet(String projectId, String virtualOutletId, String officeId,
-                                    DeleteRule deleteRule) {
+    public void deleteVirtualOutlet(String officeId, String projectId, String virtualOutletId, DeleteRule deleteRule) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
             CWMS_OUTLET_PACKAGE.call_DELETE_COMPOUND_OUTLET(DSL.using(conn).configuration(), projectId,

@@ -206,12 +206,7 @@ public final class DTOMatch {
 
     public static void assertMatch(VirtualOutletRecord first, VirtualOutletRecord second) {
         assertAll(() -> assertMatch(first.getOutletId(), second.getOutletId()),
-                  () -> assertEquals(first.getDownstreamOutletIds().size(), second.getDownstreamOutletIds().size()),
-                  () -> assertAll(IntStream.range(0, first.getDownstreamOutletIds().size())
-                                           .mapToObj(i -> () -> DTOMatch.assertMatch(
-                                                   first.getDownstreamOutletIds().get(i),
-                                                   second.getDownstreamOutletIds().get(i),
-                                                   "Downstream Outlet Id " + i)))
+                  () -> assertMatch(first.getDownstreamOutletIds(), second.getDownstreamOutletIds(), DTOMatch::assertMatch)
         );
     }
 
@@ -220,14 +215,14 @@ public final class DTOMatch {
                   () -> assertMatch(first.getVirtualRecords(), second.getVirtualRecords(), DTOMatch::assertMatch));
     }
 
-    private static <T> void assertMatch(List<T> first, List<T> second, AssertMatchMethod<T> matcher) {
+    public static <T> void assertMatch(List<T> first, List<T> second, AssertMatchMethod<T> matcher) {
         assertAll(() -> assertEquals(first.size(), second.size()),
                   () -> assertAll(IntStream.range(0, first.size())
                                            .mapToObj(i -> () -> matcher.assertMatch(first.get(i), second.get(i)))));
     }
 
     @FunctionalInterface
-    private interface AssertMatchMethod<T>{
+    public interface AssertMatchMethod<T>{
         void assertMatch(T first, T second);
     }
 }

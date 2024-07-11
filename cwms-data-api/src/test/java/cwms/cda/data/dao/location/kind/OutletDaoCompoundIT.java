@@ -24,15 +24,15 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.data.dto.location.kind.Outlet;
+import cwms.cda.data.dto.location.kind.VirtualOutlet;
+import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -50,9 +50,8 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     private static final CwmsId EXISTING_VIRTUAL_OUTLET_ID = new CwmsId.Builder().withName("Virtual Outlet 1")
                                                                                  .withOfficeId(OFFICE_ID)
                                                                                  .build();
-    private static final CwmsId BASE_AND_SUB_VIRTUAL_OUTLET_ID = new CwmsId.Builder().withName(PROJECT_LOC2.getName() + "-Virtual Outlet 2")
-                                                                                     .withOfficeId(OFFICE_ID)
-                                                                                     .build();
+    private static final CwmsId BASE_AND_SUB_VIRTUAL_OUTLET_ID = new CwmsId.Builder().withName(
+            PROJECT_LOC2.getName() + "-Virtual Outlet 2").withOfficeId(OFFICE_ID).build();
     private static final CwmsId BASE_ONLY_VIRTUAL_OUTLET_ID = new CwmsId.Builder().withName("Virtual Outlet 3")
                                                                                   .withOfficeId(OFFICE_ID)
                                                                                   .build();
@@ -126,9 +125,8 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                 outletDao.storeOutlet(CO3_I3_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
                 outletDao.storeOutlet(CO3_CONDUIT_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
 
-                //Should always have outlet 1 as a virtual outlet
-                outletDao.storeVirtualOutlet(PROJECT_LOC2.getName(), EXISTING_VIRTUAL_OUTLET_ID.getName(),
-                                             EXISTING_VIRTUAL_OUTLET_ID.getOfficeId(), EXISTING_VIRTUAL_OUTLET, false);
+                outletDao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
+                                             EXISTING_VIRTUAL_OUTLET_ID.getName(), EXISTING_VIRTUAL_OUTLET, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -143,31 +141,30 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             OutletDao outletDao = new OutletDao(context);
 
-            //Virtual outlets
-            outletDao.deleteVirtualOutlet(PROJECT_LOC2.getName(), EXISTING_VIRTUAL_OUTLET_ID.getName(),
-                                          PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
+            outletDao.deleteVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
+                                          EXISTING_VIRTUAL_OUTLET_ID.getName(), DeleteRule.DELETE_ALL);
 
-            outletDao.deleteOutlet(CO1_I25.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO1_I53.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO1_LOW_FLOW.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO2_CONDUIT.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO2_INTAKE.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO2_WEIR.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO3_I1.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO3_I2.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO3_I3.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(CO3_CONDUIT.getName(), PROJECT_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO1_I25.getOfficeId(), CO1_I25.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO1_I53.getOfficeId(), CO1_I53.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO1_LOW_FLOW.getOfficeId(), CO1_LOW_FLOW.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO2_CONDUIT.getOfficeId(), CO2_CONDUIT.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO2_INTAKE.getOfficeId(), CO2_INTAKE.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO2_WEIR.getOfficeId(), CO2_WEIR.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO3_I1.getOfficeId(), CO3_I1.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO3_I2.getOfficeId(), CO3_I2.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO3_I3.getOfficeId(), CO3_I3.getName(), DeleteRule.DELETE_ALL);
+            outletDao.deleteOutlet(CO3_CONDUIT.getOfficeId(), CO3_CONDUIT.getName(), DeleteRule.DELETE_ALL);
 
-            locationsDao.deleteLocation(CO1_I25.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO1_I53.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO1_LOW_FLOW.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO2_CONDUIT.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO2_INTAKE.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO2_WEIR.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_I1.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_I2.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_I3.getName(), PROJECT_LOC.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_CONDUIT.getName(), PROJECT_LOC.getOfficeId(), true);
+            locationsDao.deleteLocation(CO1_I25.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO1_I53.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO1_LOW_FLOW.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO2_CONDUIT.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO2_INTAKE.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO2_WEIR.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO3_I1.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO3_I2.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO3_I3.getName(), PROJECT_LOC2.getOfficeId(), true);
+            locationsDao.deleteLocation(CO3_CONDUIT.getName(), PROJECT_LOC2.getOfficeId(), true);
         }, CwmsDataApiSetupCallback.getWebUser());
         tearDownProject();
     }
@@ -178,24 +175,28 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            Map<CwmsId, List<VirtualOutletRecord>> records = dao.retrieveVirtualOutletsForProject(
-                    PROJECT_LOC2.getName(), PROJECT_LOC.getOfficeId());
-            CwmsId key = records.keySet()
-                                       .stream()
-                                       .filter(id -> equals(EXISTING_VIRTUAL_OUTLET_ID, id))
-                                       .findFirst()
-                                       .orElse(null);
-            assertNotNull(key);
-            List<VirtualOutletRecord> virtualRecords = records.get(key);
+            List<VirtualOutlet> records = dao.retrieveVirtualOutletsForProject(PROJECT_LOC2.getOfficeId(),
+                                                                               PROJECT_LOC2.getName());
+            VirtualOutlet outlet = records.stream()
+                                          .filter(vo -> equals(EXISTING_VIRTUAL_OUTLET_ID, vo.getVirtualOutletId()))
+                                          .findFirst()
+                                          .orElse(null);
+            assertNotNull(outlet);
+            DTOMatch.assertMatch(outlet.getVirtualOutletId(), EXISTING_VIRTUAL_OUTLET_ID);
+            DTOMatch.assertMatch(outlet.getProjectId(), PROJECT_2_ID);
+            DTOMatch.assertMatch(outlet.getVirtualRecords(), EXISTING_VIRTUAL_OUTLET, DTOMatch::assertMatch);
+
+            List<VirtualOutletRecord> virtualRecords = outlet.getVirtualRecords();
             assertEquals(EXISTING_VIRTUAL_OUTLET.size(), virtualRecords.size());
             assertAll(EXISTING_VIRTUAL_OUTLET.stream()
-                                             .map(virtualOutletRecord -> () -> compareOutletRecords(
-                                                      virtualOutletRecord, virtualRecords)));
+                                             .map(virtualOutletRecord -> () -> compareOutletRecords(virtualOutletRecord,
+                                                                                                    virtualRecords)));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     private boolean equals(CwmsId left, CwmsId right) {
-        return left.getName().equalsIgnoreCase(right.getName()) && left.getOfficeId().equalsIgnoreCase(right.getOfficeId());
+        return left.getName().equalsIgnoreCase(right.getName()) && left.getOfficeId()
+                                                                       .equalsIgnoreCase(right.getOfficeId());
     }
 
     @Test
@@ -204,24 +205,20 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            dao.storeVirtualOutlet(PROJECT_LOC2.getName(),
-                                   BASE_ONLY_VIRTUAL_OUTLET_ID.getName(),
-                                   BASE_ONLY_VIRTUAL_OUTLET_ID.getOfficeId(), BASE_ONLY_VIRTUAL_OUTLET, false);
+            dao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
+                                   BASE_ONLY_VIRTUAL_OUTLET_ID.getName(), BASE_ONLY_VIRTUAL_OUTLET, false);
 
-            List<VirtualOutletRecord> virtualOutletRecords = dao.retrieveVirtualOutlet(
-                    BASE_ONLY_VIRTUAL_OUTLET_ID.getName(),
-                    PROJECT_LOC2.getName(),
-                    BASE_ONLY_VIRTUAL_OUTLET_ID.getOfficeId());
-            dao.deleteVirtualOutlet(PROJECT_LOC2.getName(),
-                                    BASE_ONLY_VIRTUAL_OUTLET_ID.getName(),
-                                    BASE_ONLY_VIRTUAL_OUTLET_ID.getOfficeId(), DeleteRule.DELETE_ALL);
+            VirtualOutlet virtualOutlet = dao.retrieveVirtualOutlet(PROJECT_2_ID.getOfficeId(),
+                                                                    PROJECT_LOC2.getName(),
+                                                                    BASE_ONLY_VIRTUAL_OUTLET_ID.getName());
+            assertNotNull(virtualOutlet);
+            dao.deleteVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_2_ID.getName(),
+                                    BASE_ONLY_VIRTUAL_OUTLET_ID.getName(), DeleteRule.DELETE_ALL);
 
 
-
-            assertEquals(BASE_ONLY_VIRTUAL_OUTLET.size(), virtualOutletRecords.size());
             assertAll(BASE_ONLY_VIRTUAL_OUTLET.stream()
                                               .map(virtualOutletRecord -> () -> compareOutletRecords(
-                                                           virtualOutletRecord, virtualOutletRecords)));
+                                                      virtualOutletRecord, virtualOutlet.getVirtualRecords())));
 
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -233,23 +230,20 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            dao.storeVirtualOutlet(PROJECT_LOC2.getName(),
-                                   BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(),
-                                   BASE_AND_SUB_VIRTUAL_OUTLET_ID.getOfficeId(), BASE_AND_SUB_VIRTUAL_OUTLET, false);
+            dao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
+                                   BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(), BASE_AND_SUB_VIRTUAL_OUTLET, false);
 
-            List<VirtualOutletRecord> virtualOutletRecords = dao.retrieveVirtualOutlet(
-                    BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(),
-                    PROJECT_LOC2.getName(),
-                    BASE_AND_SUB_VIRTUAL_OUTLET_ID.getOfficeId());
-            dao.deleteVirtualOutlet(PROJECT_LOC2.getName(),
-                                    BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(),
-                                    BASE_AND_SUB_VIRTUAL_OUTLET_ID.getOfficeId(),
-                                    DeleteRule.DELETE_ALL);
+            VirtualOutlet outlet = dao.retrieveVirtualOutlet(PROJECT_LOC2.getOfficeId(),
+                                                             PROJECT_LOC2.getName(),
+                                                             BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName());
+            dao.deleteVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
+                                    BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(), DeleteRule.DELETE_ALL);
+            List<VirtualOutletRecord> virtualOutletRecords = outlet.getVirtualRecords();
 
-            assertEquals(BASE_AND_SUB_VIRTUAL_OUTLET.size(),
-                         virtualOutletRecords.size());
+            assertEquals(BASE_AND_SUB_VIRTUAL_OUTLET.size(), virtualOutletRecords.size());
             assertAll(BASE_AND_SUB_VIRTUAL_OUTLET.stream()
-                                                 .map(virtualOutletRecord -> () -> compareOutletRecords(virtualOutletRecord, virtualOutletRecords)));
+                                                 .map(virtualOutletRecord -> () -> compareOutletRecords(
+                                                         virtualOutletRecord, virtualOutletRecords)));
 
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -260,8 +254,13 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
         VirtualOutletRecord receivedRecord = null;
         List<String> errors = new ArrayList<>();
         for (VirtualOutletRecord outletRecord : receivedRecords) {
-            if (outletRecord.getOutletId().getName().equalsIgnoreCase(expectedRecord.getOutletId().getName())
-                    && outletRecord.getOutletId().getOfficeId().equalsIgnoreCase(expectedRecord.getOutletId().getOfficeId())) {
+            if (outletRecord.getOutletId()
+                            .getName()
+                            .equalsIgnoreCase(expectedRecord.getOutletId().getName()) && outletRecord.getOutletId()
+                                                                                                     .getOfficeId()
+                                                                                                     .equalsIgnoreCase(
+                                                                                                             expectedRecord.getOutletId()
+                                                                                                                           .getOfficeId())) {
                 if (receivedRecord != null) {
                     errors.add("Duplicate record for: " + outletRecord.getOutletId());
                 } else {
@@ -290,7 +289,8 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     private static VirtualOutletRecord buildVirtualOutletRecord(Location upstream, Location... downstream) {
         if (downstream == null || downstream.length == 0) {
             return new VirtualOutletRecord.Builder().withOutletId(
-                    new CwmsId.Builder().withName(upstream.getName()).withOfficeId(upstream.getOfficeId()).build()).build();
+                                                            new CwmsId.Builder().withName(upstream.getName()).withOfficeId(upstream.getOfficeId()).build())
+                                                    .build();
         }
 
         List<CwmsId> downstreamOutletIds = Arrays.stream(downstream)
@@ -299,7 +299,7 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                                                                                  .build())
                                                  .collect(Collectors.toList());
         return new VirtualOutletRecord.Builder().withOutletId(
-                                                         new CwmsId.Builder().withName(upstream.getName()).withOfficeId(upstream.getOfficeId()).build())
+                                                        new CwmsId.Builder().withName(upstream.getName()).withOfficeId(upstream.getOfficeId()).build())
                                                 .withDownstreamOutletIds(downstreamOutletIds)
                                                 .build();
     }
