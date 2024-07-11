@@ -31,12 +31,12 @@ import java.math.BigInteger;
 import java.sql.CallableStatement;
 import java.time.Instant;
 import java.util.List;
-import java.util.TimeZone;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.SQLDialect;
+import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
@@ -113,14 +113,33 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @param appMask the application mask
      * @return the list of project locks
      */
-    public List<ProjectLock> catLocks(String officeMask, String projMask, String appMask) {
-        return catLocks(officeMask, projMask, appMask, TimeZone.getTimeZone("UTC"));
+    public List<ProjectLock> retrieveLocks(String officeMask, String projMask, String appMask) {
+        return CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
+                        projMask, appMask, "UTC", officeMask)
+                .map(ProjectLockDao::buildLockFromCatLocksRecord);
     }
 
-    private List<ProjectLock> catLocks(String officeMask, String projMask, String appMask, TimeZone tz) {
-        return CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
-                projMask, appMask, tz.getID(), officeMask)
+    /**
+     * Returns the requested lock based on given office, project, and application.
+     *
+     * @param office the office
+     * @param projectName the project
+     * @param applicationName the application
+     * @return the matching project lock or null
+     */
+    public ProjectLock retrieveLock(String office, String projectName, String applicationName) {
+        ProjectLock retval = null;
+
+        List<ProjectLock> locks = CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
+                        projectName, applicationName, "UTC", office)
                 .map(ProjectLockDao::buildLockFromCatLocksRecord);
+        if(locks.size() > 1) {
+            throw new TooManyRowsException("Provided arguments matched " + locks.size() + " rows");
+        } else if(locks.size() == 1) {
+            retval = locks.get(0);
+        }
+
+        return retval;
     }
 
     private static @NotNull ProjectLock buildLockFromCatLocksRecord(Record catRecord) {

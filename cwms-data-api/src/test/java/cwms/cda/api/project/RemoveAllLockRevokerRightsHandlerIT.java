@@ -44,14 +44,14 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.formatters.Formats;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -59,83 +59,95 @@ import org.junit.jupiter.api.Test;
 public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+    String projId = "remAllIT";
+    String appId = "test_remAll";
+    String officeMask = OFFICE;
 
-    @Test
-    void test_removeAll_rights() throws SQLException {
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
+    @BeforeEach
+    void setUp() throws SQLException {
+        connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
             ProjectDao prjDao = new ProjectDao(dsl);
 
-            String projId = "remAllIT";
-            String appId = "test_remAll";
-            String officeMask = OFFICE;
 
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
+        });
+    }
 
-            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-            String userName = user.getName();
+    @AfterEach
+    void tearDown() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
+            deleteProject(dsl, projId, OFFICE, appId);
+        });
+    }
 
-            try {
+    @Test
+    void test_removeAll_rights() throws SQLException {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .queryParam(OFFICE_MASK, officeMask)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(USER_ID, TestAccounts.KeyUser.SPK_NORMAL.getName())
+            .queryParam(APPLICATION_MASK, appId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/project-lock-rights/remove-all")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
 
-                // first removeALL
-                given()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
-                    .header("Authorization", user.toHeaderValue())
-                    .queryParam(OFFICE_MASK, officeMask)
-                    .queryParam(Controllers.OFFICE, OFFICE)
-                    .queryParam(USER_ID, userName)
-                    .queryParam(APPLICATION_MASK, appId)
-                .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .post("/project-lock-rights/remove-all")
-                .then()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK))
-                ;
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectDao prjDao = new ProjectDao(dsl);
+            // Add an allow
+            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
 
-                // Add an allow
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, userName, true);
+            // make sure its there.
+            List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
+            assertNotNull(lockRevokerRights);
+            assertFalse(lockRevokerRights.isEmpty());
+        });
 
-                // make sure its there.
-                List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
-                assertNotNull(lockRevokerRights);
-                assertFalse(lockRevokerRights.isEmpty());
+        // Now remove all again
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(OFFICE_MASK, officeMask)
+            .queryParam(USER_ID, TestAccounts.KeyUser.SPK_NORMAL.getName())
+            .queryParam(APPLICATION_MASK, appId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/project-lock-rights/remove-all")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
 
-                // Now remove all again
-                given()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
-                    .header("Authorization", user.toHeaderValue())
-                    .queryParam(Controllers.OFFICE, OFFICE)
-                    .queryParam(OFFICE_MASK, officeMask)
-                    .queryParam(USER_ID, userName)
-                    .queryParam(APPLICATION_MASK, appId)
-                .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .post("/project-lock-rights/remove-all")
-                .then()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK))
-                ;
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-                // make sure its gone.
-                lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
-                assertNotNull(lockRevokerRights);
-                assertTrue(lockRevokerRights.isEmpty());
+            // make sure its gone.
+            List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
+            assertNotNull(lockRevokerRights);
+            assertTrue(lockRevokerRights.isEmpty());
+        });
 
-            } finally {
-                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
-                deleteProject(prjDao, projId, lockDao, OFFICE, appId);
-            }
-        }, CwmsDataApiSetupCallback.getWebUser());
 
     }
 

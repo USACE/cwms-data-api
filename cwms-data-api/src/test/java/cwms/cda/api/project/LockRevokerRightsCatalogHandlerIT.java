@@ -40,13 +40,13 @@ import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.formatters.Formats;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -55,24 +55,16 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
+    String projId = "catRightsIT";
+    String appId = "test_catRights";
+    String officeMask = OFFICE;
 
-    @Test
-    void test_allow_cat_deny_cat() throws SQLException {
-        // Remove All,
-        // Add an allow
-        // Do a catalog and verify its there
-        // Add a deny
-        // Do a catalog and verify its gone
-        // Remove All
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
+    @BeforeEach
+    void setup() throws SQLException {
+        connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
             ProjectDao prjDao = new ProjectDao(dsl);
-
-            String projId = "catRightsIT";
-            String appId = "test_catRights";
-            String officeMask = OFFICE;
 
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
@@ -80,65 +72,76 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
 
-            try {
-                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
-                lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
+            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+        });
+    }
 
+    @AfterEach
+    void cleanup() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
 
-                given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .queryParam(OFFICE_MASK, OFFICE)
-                        .queryParam(PROJECT_MASK, projId)
-                        .queryParam(APPLICATION_MASK, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .get("/project-lock-rights/")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_OK))
-                        .body("$.size()", is(1))
-                        .body("[0].office-id", equalTo(OFFICE))
-                        .body("[0].project-id", equalTo(projId))
-                        .body("[0].application-id", equalToIgnoringCase(appId))  // actually lowercases it.
-                        .body("[0].user-id", equalTo(userName))
-                ;
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
 
-
-                // Now deny
-                lockDao.denyLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
-
-                given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .queryParam(OFFICE_MASK, OFFICE)
-                        .queryParam(PROJECT_MASK, projId)
-                        .queryParam(APPLICATION_MASK, appId)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .get("/project-lock-rights/")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                    .assertThat()
-                        .body("$.size()", is(0))
-                        .statusCode(is(HttpServletResponse.SC_OK))
-                ;
-
-            } finally {
-                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
-                deleteProject(prjDao, projId, lockDao, OFFICE, appId);
-            }
-        }, CwmsDataApiSetupCallback.getWebUser());
-
+            deleteProject(dsl, projId, OFFICE, appId);
+        });
     }
 
 
+    @Test
+    void test_allow_cat_deny_cat() throws SQLException {
 
 
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE_MASK, OFFICE)
+            .queryParam(PROJECT_MASK, projId)
+            .queryParam(APPLICATION_MASK, appId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/project-lock-rights/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("$.size()", is(1))
+            .body("[0].office-id", equalTo(OFFICE))
+            .body("[0].project-id", equalTo(projId))
+            .body("[0].application-id", equalToIgnoringCase(appId))  // actually lowercases it.
+            .body("[0].user-id", equalTo(TestAccounts.KeyUser.SPK_NORMAL.getName()))
+        ;
 
+        denyRights();
 
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE_MASK, OFFICE)
+            .queryParam(PROJECT_MASK, projId)
+            .queryParam(APPLICATION_MASK, appId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/project-lock-rights/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .body("$.size()", is(0))
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+    }
+
+    private void denyRights() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+
+            lockDao.denyLockRevokerRights(OFFICE, officeMask, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
+        });
+    }
 
 }

@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.logging.Level;
+import org.jooq.DSLContext;
 
 public class ProjectLockHandlerUtil {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -81,12 +82,14 @@ public class ProjectLockHandlerUtil {
     }
 
 
-    public static void deleteProject(ProjectDao prjDao, String projId, ProjectLockDao lockDao, String office, String appId) {
+    public static void deleteProject(DSLContext dsl, String projId, String office, String appId) {
+        ProjectDao prjDao = new ProjectDao(dsl);
         try {
             prjDao.delete(office, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
             logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
-            List<ProjectLock> locks = lockDao.catLocks(office, projId, appId);
+            List<ProjectLock> locks = lockDao.retrieveLocks(office, projId, appId);
             locks.forEach(lock -> {
                 logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
                         lock.getApplicationId() + " " + lock.getAcquireTime() + " " +
@@ -96,7 +99,8 @@ public class ProjectLockHandlerUtil {
         }
     }
 
-    public static void revokeLock(ProjectLockDao lockDao, String office, String projId, String appId) {
+    public static void revokeLock(DSLContext dsl, String office, String projId, String appId) {
+        ProjectLockDao lockDao = new ProjectLockDao(dsl);
         try {
             lockDao.revokeLock(office, projId, appId, 0);
         } catch (Exception e) {
@@ -104,14 +108,17 @@ public class ProjectLockHandlerUtil {
         }
     }
 
-    public static void releaseLock(ProjectLockDao lockDao, String office, String[] lockId2) {
-        if (lockId2 != null && lockId2.length > 0) {
-            releaseLock(lockDao, office, lockId2[0]);
+    public static void releaseLock(DSLContext dsl, String office, String[] lockId2) {
+        if(lockId2 != null ) {
+            for (String lockId : lockId2) {
+                releaseLock(dsl, office, lockId);
+            }
         }
-    }
 
-    public static void releaseLock(ProjectLockDao lockDao, String office, String lockId) {
+    }
+    public static void releaseLock(DSLContext dsl,  String office, String lockId) {
         if (lockId != null) {
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
             try {
                 lockDao.releaseLock(office, lockId);
             } catch (Exception e) {
@@ -119,5 +126,6 @@ public class ProjectLockHandlerUtil {
             }
         }
     }
+
 
 }

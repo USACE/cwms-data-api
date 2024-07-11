@@ -104,7 +104,7 @@ public class ProjectLockCatalog implements Handler {
             String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the
             // office.
 
-            List<ProjectLock> locks = lockDao.catLocks(officeMask, projMask, appMask);
+            List<ProjectLock> locks = lockDao.retrieveLocks(officeMask, projMask, appMask);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
             String result = Formats.format(contentType, locks, ProjectLock.class);

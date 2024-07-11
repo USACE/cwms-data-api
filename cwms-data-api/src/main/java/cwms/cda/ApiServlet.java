@@ -110,10 +110,10 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.project.LockRevokerRightsCatalog;
 import cwms.cda.api.project.ProjectLockCatalog;
 import cwms.cda.api.project.ProjectLockDeny;
+import cwms.cda.api.project.ProjectLockGetOne;
 import cwms.cda.api.project.ProjectLockRelease;
 import cwms.cda.api.project.ProjectLockRequest;
 import cwms.cda.api.project.ProjectLockRevoke;
-import cwms.cda.api.project.ProjectLockStatus;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
@@ -519,7 +519,7 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
-        post("/projects/status-update", new ProjectPublishStatusUpdate(metrics), requiredRoles);
+        post(format("/projects/status-update/{%s}", NAME), new ProjectPublishStatusUpdate(metrics), requiredRoles);
         cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
@@ -549,7 +549,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
                 new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
-        addProjectLocksHandlers("/project-locks/{project-id}", requiredRoles);
+        addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
     }
 
@@ -557,7 +557,7 @@ public class ApiServlet extends HttpServlet {
     private void addProjectLocksHandlers(String path, RouteRole[] requiredRoles) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
 
-        get(pathWithoutResource + "status", new ProjectLockStatus(metrics));
+        get(path, new ProjectLockGetOne(metrics));
         get(pathWithoutResource, new ProjectLockCatalog(metrics));
         post(pathWithoutResource + "deny", new ProjectLockDeny(metrics), requiredRoles);
         post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);

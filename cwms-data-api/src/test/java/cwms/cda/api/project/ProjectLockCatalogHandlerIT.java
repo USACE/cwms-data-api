@@ -25,10 +25,10 @@
 package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_MASK;
-import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
+import static cwms.cda.api.project.ProjectLockHandlerUtil.releaseLock;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.revokeLock;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
@@ -43,13 +43,13 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -58,19 +58,19 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
+    String projId1 = "catLocks1";
+    String projId2 = "catLocks2";
+    String appId = "catLocks_test";
+    int revokeTimeout = 10;
+    String lock1;
+    String lock2;
 
-    @Test
-    void test_cat_locks() throws SQLException {
-
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
+    @BeforeEach
+    void setUp() throws SQLException {
+        connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectDao prjDao = new ProjectDao(dsl);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-            String projId1 = "catLocks1";
-            String projId2 = "catLocks2";
-            String appId = "catLocks_test";
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
             String officeMask = OFFICE;
@@ -78,62 +78,68 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             prjDao.create(testProject1);
             Project testProject2 = buildTestProject(OFFICE, projId2);
             prjDao.create(testProject2);
-            try {
-                int revokeTimeout = 10;
 
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId1, appId, userName, true);
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId2, appId, userName, true);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId1, appId, userName, true);
+            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId2, appId, userName, true);
 
-                ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
+            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
+            String lock1 = lockDao.requestLock(req1, true, revokeTimeout);
+            assertTrue(lock1.length() > 8);
 
-                String lock1 = lockDao.requestLock(req1, true, revokeTimeout);
-                assertTrue(lock1.length() > 8);
+            ProjectLock req2 = new ProjectLock.Builder(OFFICE, projId2, appId).build();
+            String lock2 = lockDao.requestLock(req2, false, revokeTimeout);
+            assertTrue(lock2.length() > 8);
+            assertNotEquals(lock1, lock2);
+        });
+    }
 
-                ProjectLock req2 = new ProjectLock.Builder(OFFICE, projId2, appId).build();
-                String lock2 = lockDao.requestLock(req2, false, revokeTimeout);
-                assertTrue(lock2.length() > 8);
-                assertNotEquals(lock1, lock2);
+    @AfterEach
+    void tearDown() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
 
-                given()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
-                    .queryParam(PROJECT_MASK, "catLocks*")
-                    .queryParam(APPLICATION_MASK, appId)
-                    .queryParam(OFFICE_MASK, officeMask)
-                .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                .get("/project-locks/")
-                .then()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK))
-                    .body("size()", is(2))
-                    .body("[0].office-id", equalToIgnoringCase(OFFICE))
-                    .body("[0].project-id", equalToIgnoringCase(projId1))
-                    .body("[0].application-id", equalToIgnoringCase(appId))
-                    .body("[0].session-user", equalToIgnoringCase(userName))
-//                                .body("[0].session-program", equalToIgnoringCase("JDBC Thin Client"))
-                    .body("[1].office-id", equalToIgnoringCase(OFFICE))
-                    .body("[1].project-id", equalToIgnoringCase(projId2))
-                    .body("[1].application-id", equalToIgnoringCase(appId))
-                    .body("[1].session-user", equalToIgnoringCase(userName))
-                ;
+            releaseLock(dsl, OFFICE, lock1);
+            releaseLock(dsl, OFFICE, lock2);
 
-                lockDao.releaseLock(OFFICE,  lock1);
-                lockDao.releaseLock(OFFICE, lock2);
+            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            lockDao.updateLockRevokerRights(OFFICE, null, projId1, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
+            lockDao.updateLockRevokerRights(OFFICE, null, projId2, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
 
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId1, appId, userName, true);
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId2, appId, userName, true);
+            revokeLock(dsl, OFFICE, projId1, appId);
+            revokeLock(dsl, OFFICE, projId2, appId);
 
-            } finally {
-                revokeLock(lockDao, OFFICE, projId1, appId);
-                revokeLock(lockDao, OFFICE, projId2, appId);
+            deleteProject(dsl, projId1, OFFICE, appId);
+            deleteProject(dsl, projId2, OFFICE, appId);
+        });
+    }
 
-                deleteProject(prjDao, projId1, lockDao, OFFICE, appId);
-                deleteProject(prjDao, projId2, lockDao, OFFICE, appId);
-            }
-        }, CwmsDataApiSetupCallback.getWebUser());
+    @Test
+    void test_cat_locks() {
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(PROJECT_MASK, "catLocks*")
+            .queryParam(APPLICATION_MASK, appId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+        .get("/project-locks/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(2))
+            .body("[0].office-id", equalToIgnoringCase(OFFICE))
+            .body("[0].project-id", equalToIgnoringCase(projId1))
+            .body("[0].application-id", equalToIgnoringCase(appId))
+            .body("[0].session-user", equalToIgnoringCase(TestAccounts.KeyUser.SPK_NORMAL.getName()))
+            .body("[1].office-id", equalToIgnoringCase(OFFICE))
+            .body("[1].project-id", equalToIgnoringCase(projId2))
+            .body("[1].application-id", equalToIgnoringCase(appId))
+            .body("[1].session-user", equalToIgnoringCase(TestAccounts.KeyUser.SPK_NORMAL.getName()))
+        ;
     }
 
 }

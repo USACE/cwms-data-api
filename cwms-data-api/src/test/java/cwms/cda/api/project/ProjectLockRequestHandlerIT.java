@@ -43,19 +43,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
-import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -63,31 +62,56 @@ import org.junit.jupiter.api.Test;
 public class ProjectLockRequestHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+    static String lockReqPrj = "lockReq";
+    static String lockReqPrj2 = "lockReq2";
+    static String revPrj = "revProj";
+    static String appId = "MockREGI";
 
+    @BeforeAll
+    static void beforeAll() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectDao prjDao = new ProjectDao(dsl);
+            prjDao.create(buildTestProject(OFFICE, lockReqPrj));
+            prjDao.create(buildTestProject(OFFICE, lockReqPrj2));
+            prjDao.create(buildTestProject(OFFICE, revPrj));
+        });
+    }
+
+    @AfterAll
+    static void afterAll() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+
+            deleteProject(dsl, lockReqPrj, OFFICE, appId);
+            deleteProject(dsl, lockReqPrj2, OFFICE, appId);
+            deleteProject(dsl, revPrj, OFFICE, appId);
+        });
+    }
 
     @Test
     void test_request() throws SQLException {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-            String projId = "lockReq";
-            String appId = "test_req";
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
+        connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            testCanRequest(dsl, user, projId, appId);
-        }, CwmsDataApiSetupCallback.getWebUser());
-
+            testCanRequest(dsl, TestAccounts.KeyUser.SPK_NORMAL, lockReqPrj, appId);
+        });
     }
+
+    @Test
+    void test_request_user2() throws SQLException {
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            testCanRequest(dsl, TestAccounts.KeyUser.SPK_NORMAL2, lockReqPrj2, appId);
+        });
+    }
+
 
     private static void testCanRequest(DSLContext dsl, TestAccounts.KeyUser user, String projId, String appId) {
         ProjectLockDao lockDao = new ProjectLockDao(dsl);
-        ProjectDao prjDao = new ProjectDao(dsl);
 
         String officeMask = OFFICE;
-
         String userName = user.getName();
 
-        Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
         try {
             lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
             lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
@@ -136,31 +160,18 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
             throw new RuntimeException(e);
         } finally {
             lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
-            deleteProject(prjDao, projId, lockDao, OFFICE, appId);
+
         }
     }
 
-    @Test
-    void test_request_user2() throws SQLException {
-        TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SPK_NORMAL2;
-        String projId = "lockReq2";
-        String appId = "test_req2";
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
-            DSLContext dsl = getDslContext(c, OFFICE);
-            testCanRequest(dsl, user2, projId, appId);
-        }, CwmsDataApiSetupCallback.getWebUser());
 
-    }
 
     @Test
     void test_can_request_revoke() throws SQLException, JsonProcessingException {
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         final String[] lockId = {null};
         final String[] lockId2 = {null};
 
-        String projId = "revProj";
-        String appId = "revoke_test";
+
         String officeMask = OFFICE;
         TestAccounts.KeyUser user1 = TestAccounts.KeyUser.SPK_NORMAL;
         TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SPK_NORMAL2;
@@ -169,29 +180,25 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
 
         try {
             // setup
-            databaseLink.connection(c -> {
+            connectionAsWebUser(c -> {
                 DSLContext dsl = getDslContext(c, OFFICE);
-                ProjectDao prjDao = new ProjectDao(dsl);
+
                 ProjectLockDao lockDao = new ProjectLockDao(dsl);
+                lockDao.updateLockRevokerRights(OFFICE, officeMask, revPrj, appId, user1.getName(), true);
+                lockDao.updateLockRevokerRights(OFFICE, officeMask, revPrj, appId, user2.getName(), true);
 
-                Project testProject = buildTestProject(OFFICE, projId);
-                prjDao.create(testProject);
-
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, user1.getName(), true);
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, user2.getName(), true);
-
-                ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+                ProjectLock req1 = new ProjectLock.Builder(OFFICE, revPrj, appId).build();
                 lockId[0] = lockDao.requestLock(req1, dontRevoke, revokeTimeout);
                 assertNotNull(lockId[0]);
                 assertFalse(lockId[0].isEmpty());
                 // now user1 has a lock.
-            }, CwmsDataApiSetupCallback.getWebUser());
+            });
 
 
             // other user - try request user1 lock - this should wait until about revokeTimeout.
             ProjectLock toRequest = new ProjectLock.Builder()
                     .withOfficeId(OFFICE)
-                    .withProjectId(projId)
+                    .withProjectId(revPrj)
                     .withApplicationId(appId)
                     .withOsUser("fake_osuser")
                     .withSessionProgram("fake_program")
@@ -205,23 +212,23 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
             long before = System.currentTimeMillis();
 
             ExtractableResponse<Response> response =
-                    given()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSON)
-                        .header("Authorization", user2.toHeaderValue())
-                        .queryParam(REVOKE_EXISTING, true)
-                        .queryParam(REVOKE_TIMEOUT, revokeTimeout)
-                        .contentType(Formats.JSON)
-                        .body(serializedProject)
-                    .when()
-                        .redirects().follow(true)
-                        .redirects().max(3)
-                        .post("/project-locks/")
-                    .then()
-                        .log().ifValidationFails(LogDetail.ALL, true)
-                        .assertThat()
-                        .statusCode(is(HttpServletResponse.SC_CREATED))
-                        .extract();
+                given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .header("Authorization", user2.toHeaderValue())
+                    .queryParam(REVOKE_EXISTING, true)
+                    .queryParam(REVOKE_TIMEOUT, revokeTimeout)
+                    .contentType(Formats.JSON)
+                    .body(serializedProject)
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/project-locks/")
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_CREATED))
+                    .extract();
             lockId2[0] = response.path("id");
             assertNotNull(lockId2[0]);
 
@@ -231,18 +238,14 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
 
         } finally {
             // clean up
-            databaseLink.connection(c -> {
+            connectionAsWebUser(c -> {
                 DSLContext dsl = getDslContext(c, OFFICE);
-                ProjectDao prjDao = new ProjectDao(dsl);
-                ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-                releaseLock(lockDao, OFFICE, lockId);
-                releaseLock(lockDao, OFFICE, lockId2);
+                releaseLock(dsl, OFFICE, lockId);
+                releaseLock(dsl, OFFICE, lockId2);
 
-                revokeLock(lockDao, OFFICE, projId, appId);
-
-                deleteProject(prjDao, projId, lockDao, OFFICE, appId);
-            }, CwmsDataApiSetupCallback.getWebUser());
+                revokeLock(dsl, OFFICE, revPrj, appId);
+            });
         }
 
     }
