@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.CwmsDTO;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -38,13 +38,12 @@ import java.util.List;
 @JsonDeserialize(builder = VirtualOutletRecord.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class VirtualOutletRecord extends CwmsDTO {
+public class VirtualOutletRecord extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId outletId;
     private final List<CwmsId> downstreamOutletIds = new ArrayList<>();
 
     private VirtualOutletRecord(Builder builder) {
-        super(null);
         outletId = builder.outletId;
         if (builder.downstreamOutletIds != null) {
             downstreamOutletIds.addAll(builder.downstreamOutletIds);
