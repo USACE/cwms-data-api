@@ -100,6 +100,16 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.watersupply.WaterContractCatalogController;
+import cwms.cda.api.watersupply.WaterContractController;
+import cwms.cda.api.watersupply.WaterContractCreateController;
+import cwms.cda.api.watersupply.WaterContractTypeController;
+import cwms.cda.api.watersupply.WaterContractUpdateController;
+import cwms.cda.api.watersupply.WaterUserCatalogController;
+import cwms.cda.api.watersupply.WaterUserController;
+import cwms.cda.api.watersupply.WaterUserCreateController;
+import cwms.cda.api.watersupply.WaterUserDeleteController;
+import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
@@ -501,6 +511,12 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+        addWaterUserHandlers("/projects/{office}/{project-id}/water-user", requiredRoles);
+        addWaterContractHandlers("/projects/{office}/{project-id}/water-user/{water-user}/contracts", requiredRoles);
+        addWaterContractTypeHandlers("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/types", requiredRoles);
+        delete("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{pump-id}",
+                new WaterUserController(metrics), requiredRoles);
+
         cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
@@ -525,6 +541,28 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
+    }
+
+
+    private void addWaterUserHandlers(String path, RouteRole[] requiredRoles) {
+        get(path + "/{water-user}", new WaterUserController(metrics));
+        get(path, new WaterUserCatalogController(metrics));
+        post(path, new WaterUserCreateController(metrics), requiredRoles);
+        patch(path + "/{water-user}", new WaterUserUpdateController(metrics), requiredRoles);
+        delete(path + "/{water-user}", new WaterUserDeleteController(metrics), requiredRoles);
+    }
+
+    private void addWaterContractHandlers(String path, RouteRole[] requiredRoles) {
+        get(path + "/{contract-id}", new WaterContractController(metrics));
+        get(path, new WaterContractCatalogController(metrics));
+        post(path, new WaterContractCreateController(metrics), requiredRoles);
+        patch(path + "/{contract-id}", new WaterContractUpdateController(metrics), requiredRoles);
+        delete(path + "/{contract-id}", new WaterUserDeleteController(metrics), requiredRoles);
+    }
+
+    private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {
+        post(path, new WaterContractTypeController(metrics), requiredRoles);
+        get(path, new WaterContractCatalogController(metrics));
     }
 
     /**
