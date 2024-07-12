@@ -96,7 +96,7 @@ public final class TurbineChangesGetController implements Handler {
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
                 "associated with the turbine changes."),
-            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the name of project of the " +
                 "Turbine changes whose data is to be included in the response."),
         },
         queryParams = {
