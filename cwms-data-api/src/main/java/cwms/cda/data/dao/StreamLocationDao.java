@@ -33,7 +33,6 @@ import java.sql.Connection;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
-import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
@@ -42,6 +41,7 @@ import usace.cwms.db.jooq.codegen.packages.cwms_stream.RETRIEVE_STREAM_LOCATION;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 
 public final class StreamLocationDao extends JooqDao<StreamLocation> {
 
@@ -73,11 +73,58 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
      * @param officeIdMask - the office id mask
      * @return a list of stream locations
      */
-    public List<StreamLocation> retrieveStreamLocations(String streamIdMask, String locationIdMask, String stationUnit, String stageUnit, String areaUnit, String officeIdMask) {
+    public List<StreamLocation> retrieveStreamLocations(String officeIdMask, String streamIdMask, String locationIdMask, String stationUnit, String stageUnit, String areaUnit) {
+        return connectionResult(dsl, conn -> retrieveStreamLocations(officeIdMask, streamIdMask, locationIdMask, stationUnit, stageUnit, areaUnit, conn));
+    }
+
+    /**
+     * Retrieve a list of stream locations
+     * @param officeId - the office id
+     * @param locationId - the location id
+     * @param allDownstream - if true, retrieve all downstream locations
+     * @param sameStreamOnly - if true, retrieve only locations on the same stream
+     * @param stationUnits - the station units
+     * @param stageUnits - the stage units
+     * @param areaUnits - the area units
+     * @return a list of downstream locations
+     */
+    public List<StreamLocation> retrieveDownstreamLocations(String officeId, String locationId, Boolean allDownstream, Boolean sameStreamOnly,
+                                                            String stationUnits, String stageUnits, String areaUnits) {
         return connectionResult(dsl, conn -> {
-            Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(DSL.using(conn).configuration(),
-                    streamIdMask, locationIdMask, stationUnit, stageUnit, areaUnit, officeIdMask);
-            return records.stream().map(StreamLocationDao::fromJooqStreamLocationRecord)
+            String allDsLocationsStr = OracleTypeMap.formatBool(allDownstream);
+            String sameStreamOnlyStr = OracleTypeMap.formatBool(sameStreamOnly);
+            STR_TAB_T downstreamLocIds = CWMS_STREAM_PACKAGE.call_GET_DS_LOCATIONS__2(DSL.using(conn).configuration(),
+                    locationId, allDsLocationsStr, sameStreamOnlyStr, officeId);
+            return downstreamLocIds.stream()
+                    .map(dl -> retrieveStreamLocations(officeId, null, dl, stationUnits, stageUnits, areaUnits, conn).stream()
+                            .findFirst()
+                            .orElseThrow(() -> new NotFoundException("Downstream location " + dl + "not found.")))
+                    .collect(toList());
+        });
+    }
+
+    /**
+     *
+     * @param officeId - the office id
+     * @param locationId - the location id
+     * @param allUpstream - if true, retrieve all upstream locations
+     * @param sameStreamOnly - if true, retrieve only locations on the same stream
+     * @param stationUnits - the station units
+     * @param stageUnits - the stage units
+     * @param areaUnits - the area units
+     * @return a list of upstream locations
+     */
+    public List<StreamLocation> retrieveUpstreamLocations(String officeId, String locationId, Boolean allUpstream, Boolean sameStreamOnly,
+                                                            String stationUnits, String stageUnits, String areaUnits) {
+        return connectionResult(dsl, conn -> {
+            String allUsLocationsStr = OracleTypeMap.formatBool(allUpstream);
+            String sameStreamOnlyStr = OracleTypeMap.formatBool(sameStreamOnly);
+            STR_TAB_T upstreamLocIds = CWMS_STREAM_PACKAGE.call_GET_US_LOCATIONS__2(DSL.using(conn).configuration(),
+                    locationId, allUsLocationsStr, sameStreamOnlyStr, officeId);
+            return upstreamLocIds.stream()
+                    .map(ul -> retrieveStreamLocations(officeId, null, ul, stationUnits, stageUnits, areaUnits, conn).stream()
+                            .findFirst()
+                            .orElseThrow(() -> new NotFoundException("Upstream location " + ul + "not found.")))
                     .collect(toList());
         });
     }
@@ -100,6 +147,13 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
         RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
                 locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
         return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
+    }
+
+    private static List<StreamLocation> retrieveStreamLocations(String officeIdMask, String streamIdMask, String locationIdMask, String stationUnit, String stageUnit, String areaUnit, Connection conn) {
+        Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(DSL.using(conn).configuration(),
+                streamIdMask, locationIdMask, stationUnit, stageUnit, areaUnit, officeIdMask);
+        return records.stream().map(StreamLocationDao::fromJooqStreamLocationRecord)
+                .collect(toList());
     }
 
     /**
