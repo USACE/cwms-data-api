@@ -74,17 +74,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class TurbineChangesPostController implements Handler {
-    private static final int DEFAULT_PAGE_SIZE = 500;
     private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
 
 
     public TurbineChangesPostController(MetricRegistry metrics) {
         this.metrics = metrics;
-        String className = this.getClass().getName();
-
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -92,6 +86,12 @@ public final class TurbineChangesPostController implements Handler {
     }
 
     @OpenApi(
+        pathParams = {
+            @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
+                "associated with the turbine changes."),
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the name of project of the " +
+                "Turbine changes whose data is to stored."),
+        },
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TurbineChange.class, type = Formats.JSONV1),
@@ -111,7 +111,6 @@ public final class TurbineChangesPostController implements Handler {
             @OpenApiResponse(status = STATUS_404, description = "Project Id or Turbine location Ids not found.")
         }
     )
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(CREATE)) {

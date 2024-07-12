@@ -89,12 +89,12 @@ public final class TurbineChangesDeleteController implements Handler {
 
     @OpenApi(
         pathParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                + "the project for changes to be deleted."),
             @OpenApiParam(name = NAME, required = true, description = "Specifies the name of project for the " +
                 "turbine changes to be deleted."),
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                + "the project for changes to be deleted."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
             @OpenApiParam(name = END, required = true, description = "The end of the time window."),
             @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "A flag "
@@ -112,7 +112,7 @@ public final class TurbineChangesDeleteController implements Handler {
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String projectId = ctx.pathParam(NAME);
-        String office = requiredParam(ctx, OFFICE);
+        String office = ctx.pathParam(OFFICE);
         Instant begin = requiredInstant(ctx, BEGIN);
         Instant end = requiredInstant(ctx, END);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)

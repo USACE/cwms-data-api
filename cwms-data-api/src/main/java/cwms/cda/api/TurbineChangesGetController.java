@@ -94,12 +94,12 @@ public final class TurbineChangesGetController implements Handler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
+            @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
+                "associated with the turbine changes."),
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the name of project of the " +
                 "Turbine changes whose data is to be included in the response."),
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
-                "associated with the turbine changes."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
             @OpenApiParam(name = END, required = true, description = "The end of the time window."),
             @OpenApiParam(name = START_TIME_INCLUSIVE, type = Boolean.class, description = "A flag "
@@ -129,7 +129,7 @@ public final class TurbineChangesGetController implements Handler {
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String projectId = ctx.pathParam(NAME);
-        String office = ctx.queryParam(OFFICE);
+        String office = ctx.pathParam(OFFICE);
         Instant begin = requiredInstant(ctx, BEGIN);
         Instant end = requiredInstant(ctx, END);
         boolean startTimeInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class)
