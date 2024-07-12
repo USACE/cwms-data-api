@@ -18,11 +18,12 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.location.kind;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.Outlet;
@@ -98,11 +99,11 @@ public class OutletController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
-                            "Outlets whose data is to be included in the response."),
+            pathParams = {
                     @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
                             "associated with the outlets.  Defaults to the user session id."),
+                    @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
+                            "Outlets whose data is to be included in the response."),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
@@ -115,12 +116,12 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String projectId = ctx.queryParam(PROJECT_ID);
+        String office = ctx.pathParam(OFFICE);
+        String projectId = ctx.pathParam(PROJECT_ID);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            List<Outlet> outlets = dao.retrieveOutletsForProject(projectId, office);
+            List<Outlet> outlets = dao.retrieveOutletsForProject(office, projectId);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);

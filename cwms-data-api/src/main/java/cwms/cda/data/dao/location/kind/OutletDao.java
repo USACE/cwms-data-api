@@ -51,6 +51,7 @@ public class OutletDao extends JooqDao<Outlet> {
 
     public List<Outlet> retrieveOutletsForProject(String officeId, String projectId) {
         return connectionResult(dsl, conn -> {
+            setOffice(conn, officeId);
             Configuration config = DSL.using(conn).configuration();
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(projectId, officeId);
 

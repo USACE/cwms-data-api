@@ -26,7 +26,7 @@ package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.DownstreamLocationsGetController;
-import cwms.cda.api.VirtualOutletController;
+import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
@@ -65,7 +65,7 @@ import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.OfficeController;
-import cwms.cda.api.OutletController;
+import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
@@ -410,10 +410,13 @@ public class ApiServlet extends HttpServlet {
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
         //Temporarily at top to speed up testing.
-        cdaCrudCache(format("/projects/outlets/{%s}", Controllers.NAME),
-                     new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        cdaCrudCache(format("/projects/compound-outlets/{%s}", Controllers.NAME),
-                     new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        String outletPath = format("/projects/{%s}/{%s}/outlets/{%s}", Controllers.OFFICE, Controllers.PROJECT_ID,
+                                   NAME);
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
+                                          Controllers.PROJECT_ID, NAME);
+        cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+
         crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
         cdaCrudCache("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);

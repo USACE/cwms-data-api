@@ -18,10 +18,11 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.location.kind;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
