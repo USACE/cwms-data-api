@@ -21,15 +21,15 @@ import java.time.ZoneId;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeZone extends CwmsDTOBase {
+public final class TimeZoneId extends CwmsDTOBase {
     @JsonProperty(required = true)
     private String timeZone;
 
-    public TimeZone() {
+    public TimeZoneId() {
         super();
     }
 
-    public TimeZone(String timeZone) {
+    public TimeZoneId(String timeZone) {
         this();
         this.timeZone = timeZone;
     }

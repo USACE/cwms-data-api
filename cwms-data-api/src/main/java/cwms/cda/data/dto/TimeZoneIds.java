@@ -7,6 +7,7 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -21,23 +22,24 @@ import java.util.List;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeZones extends CwmsDTOBase
+public final class TimeZoneIds extends CwmsDTOBase
 {
-	private List<TimeZone> timeZones;
+	@JsonProperty("time-zones")
+	private List<TimeZoneId> timeZoneIds;
 
 	@SuppressWarnings("unused")
-	private TimeZones()
+	private TimeZoneIds()
 	{
 		// for JAXB to handle marshalling
 	}
 
-	public TimeZones(List<TimeZone> timeZones)
+	public TimeZoneIds(List<TimeZoneId> timeZoneIds)
 	{
-		this.timeZones = timeZones;
+		this.timeZoneIds = timeZoneIds;
 	}
 
-	public List<TimeZone> getTimeZones()
+	public List<TimeZoneId> getTimeZones()
 	{
-		return timeZones;
+		return timeZoneIds;
 	}
 }
