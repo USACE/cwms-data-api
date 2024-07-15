@@ -2,7 +2,7 @@
   {
     "project-id": {
       "office-id": "SWT",
-      "name": "PROJ"
+      "name": "PROJ_TURB"
     },
     "change-date": 1709539200000,
     "protected": true,
@@ -30,7 +30,7 @@
         "type": "turbine-setting",
         "location-id": {
           "office-id": "SWT",
-          "name": "PROJ-TURBINE_LOC"
+          "name": "PROJ_TURB-TURBINE_LOC"
         },
         "discharge-units": "cms",
         "old-discharge": 164.004096,
@@ -44,7 +44,7 @@
   {
     "project-id": {
       "office-id": "SWT",
-      "name": "PROJ"
+      "name": "PROJ_TURB"
     },
     "change-date": 1709542800000,
     "protected": false,
@@ -72,7 +72,7 @@
         "type": "turbine-setting",
         "location-id": {
           "office-id": "SWT",
-          "name": "PROJ-TURBINE_LOC"
+          "name": "PROJ_TURB-TURBINE_LOC"
         },
         "discharge-units": "cms",
         "old-discharge": 164.004096,
@@ -86,7 +86,7 @@
   {
     "project-id": {
       "office-id": "SWT",
-      "name": "PROJ"
+      "name": "PROJ_TURB"
     },
     "change-date": 1709546400000,
     "protected": true,
@@ -114,7 +114,7 @@
         "type": "turbine-setting",
         "location-id": {
           "office-id": "SWT",
-          "name": "PROJ-TURBINE_LOC"
+          "name": "PROJ_TURB-TURBINE_LOC"
         },
         "discharge-units": "cms",
         "old-discharge": 166.1125,
