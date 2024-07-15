@@ -61,8 +61,16 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
         for (int i = 0; i < 2; i++) {
             String testLoc = "STREAM_LOC" + i;
             STREAM_LOC_IDS.add(testLoc);
-            createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
-            createAndStoreTestStream(testLoc + "_STREAM");
+            try {
+                createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
+            } catch (Exception e) {
+                //ignore if already exists
+            }
+            try {
+                createAndStoreTestStream("TEST_STREAM_123");
+            } catch (Exception e) {
+                //ignore if already exists
+            }
         }
     }
 
@@ -79,6 +87,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                             .build())
                     .withLength(100.0)
                     .withLengthUnits("km")
+                    .withStartsDownstream(true)
                     .build();
             STREAMS_CREATED.add(streamToStore);
             streamDao.storeStream(streamToStore, true);
@@ -86,7 +95,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() {
+    public static void tearDown() throws SQLException {
         for(Stream stream : STREAMS_CREATED){
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -117,9 +126,9 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
             StreamLocationDao streamLocationDao = new StreamLocationDao(context);
             //build stream locations
             String streamLocId = STREAM_LOC_IDS.get(0);
-            StreamLocation streamLocation = buildTestStreamLocation(streamLocId+"_STREAM", streamLocId, 10.0, Bank.LEFT);
+            StreamLocation streamLocation = buildTestStreamLocation("TEST_STREAM_123", streamLocId, 10.0, Bank.LEFT);
             String streamLocId2 = STREAM_LOC_IDS.get(1);
-            StreamLocation streamLocation2 = buildTestStreamLocation(streamLocId2+"_STREAM", streamLocId2, 11.0, Bank.RIGHT);
+            StreamLocation streamLocation2 = buildTestStreamLocation("TEST_STREAM_123", streamLocId2, 11.0, Bank.RIGHT);
 
             //store stream locations
             streamLocationDao.storeStreamLocation(streamLocation, false);
@@ -147,9 +156,8 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
             DTOMatch.assertMatch(streamLocation2, retrievedStreamLocation2);
 
             //also test retrieve in bulk
-            List<StreamLocation> retrievedStreamLocations = streamLocationDao.retrieveStreamLocations(
-                    null, null, "km", "m", "km2", OFFICE_ID
-            );
+            List<StreamLocation> retrievedStreamLocations = streamLocationDao.retrieveStreamLocations(OFFICE_ID,
+                    null, null, "km", "m", "km2");
             assertFalse(retrievedStreamLocations.isEmpty());
             retrievedStreamLocations = retrievedStreamLocations.stream()
                     .filter(s -> s.getStreamLocationNode().getStreamNode().getStreamId().getName().equalsIgnoreCase(streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName())
@@ -159,6 +167,27 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
             assertEquals(2, retrievedStreamLocations.size());
             DTOMatch.assertMatch(streamLocation, retrievedStreamLocations.get(0));
             DTOMatch.assertMatch(streamLocation2, retrievedStreamLocations.get(1));
+
+            List<StreamLocation> dsLocs = streamLocationDao.retrieveDownstreamLocations(streamLocation2.getStreamLocationNode().getId().getOfficeId(),
+                    streamLocation2.getStreamLocationNode().getId().getName(),
+                    true,
+                    true,
+                    streamLocation2.getStationUnits(),
+                    streamLocation2.getStageUnits(),
+                    streamLocation2.getAreaUnits());
+
+            List<StreamLocation> usLocs = streamLocationDao.retrieveUpstreamLocations(streamLocation.getStreamLocationNode().getId().getOfficeId(),
+                    streamLocation.getStreamLocationNode().getId().getName(),
+                    true,
+                    true,
+                    streamLocation.getStationUnits(),
+                    streamLocation.getStageUnits(),
+                    streamLocation.getAreaUnits());
+
+            assertEquals(1, dsLocs.size());
+            assertEquals(1, usLocs.size());
+            DTOMatch.assertMatch(streamLocation, dsLocs.get(0));
+            DTOMatch.assertMatch(streamLocation2, usLocs.get(0));
 
             StreamLocation updatedStreamLocation = new StreamLocation.Builder()
                     //update the values of the stream location

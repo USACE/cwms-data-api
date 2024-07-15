@@ -31,6 +31,12 @@ import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
 
+import cwms.cda.api.DownstreamLocationsGetController;
+import cwms.cda.api.LookupTypeController;
+import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
+import cwms.cda.api.StreamReachController;
+import cwms.cda.api.UpstreamLocationsGetController;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -484,6 +490,12 @@ public class ApiServlet extends HttpServlet {
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/streams/{%s}", NAME),
                 new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations", Controllers.OFFICE, Controllers.NAME);
+        get(downstreamLocations,new DownstreamLocationsGetController(metrics));
+        addCacheControl(downstreamLocations, 5, TimeUnit.MINUTES);
+        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations", Controllers.OFFICE, Controllers.NAME);
+        get(upstreamLocations,new UpstreamLocationsGetController(metrics));
+        addCacheControl(upstreamLocations, 5, TimeUnit.MINUTES);
         cdaCrudCache(format("/stream-locations/{%s}", NAME),
                 new StreamLocationController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/stream-reaches/{%s}", NAME),

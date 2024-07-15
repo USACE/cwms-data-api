@@ -2,7 +2,7 @@
   "stream-location-node":{
     "id": {
       "office-id": "SPK",
-      "name": "StreamLoc123"
+      "name": "StreamLoc2"
     },
     "stream-node": {
       "stream-id": {
@@ -10,11 +10,11 @@
         "name": "ImOnThisStream"
       },
       "bank": "R",
-      "station": 690,
+      "station": 680,
       "station-units": "km"
     }
   },
-  "published-station": 690,
+  "published-station": 680,
   "navigation-station": 12,
   "lowest-measurable-stage": 1.5,
   "total-drainage-area": 10.5,

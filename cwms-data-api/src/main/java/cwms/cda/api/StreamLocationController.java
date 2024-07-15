@@ -120,7 +120,7 @@ public final class StreamLocationController implements CrudHandler {
             String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             String areaUnits = ctx.queryParamAsClass(AREA_UNIT, String.class).getOrDefault("mi2");
             String stageUnits = ctx.queryParamAsClass(STAGE_UNIT, String.class).getOrDefault("ft");
-            List<StreamLocation> streamLocations = dao.retrieveStreamLocations(streamId, locationId, stationUnits, stageUnits, areaUnits, office);
+            List<StreamLocation> streamLocations = dao.retrieveStreamLocations(office, streamId, locationId, stationUnits, stageUnits, areaUnits);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
@@ -159,7 +159,7 @@ public final class StreamLocationController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
         String office = requiredParam(ctx, OFFICE);
-        String streamId = requiredParam(ctx, STREAM_ID_MASK);
+        String streamId = requiredParam(ctx, STREAM_ID);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
@@ -246,7 +246,7 @@ public final class StreamLocationController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the stream location to be deleted."),
-                    @OpenApiParam(name = STREAM_ID_MASK, required = true, description = "Specifies the stream-id of the "
+                    @OpenApiParam(name = STREAM_ID, required = true, description = "Specifies the stream-id of the "
                             + "stream location to be deleted.")
             },
             description = "Delete CWMS Stream Location",
@@ -260,7 +260,7 @@ public final class StreamLocationController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String locationId) {
         String officeId = requiredParam(ctx, OFFICE);
-        String streamId = requiredParam(ctx, STREAM_ID_MASK);
+        String streamId = requiredParam(ctx, STREAM_ID);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
