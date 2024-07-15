@@ -82,7 +82,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
         Class<TurbineChangesControllerIT> c = TurbineChangesControllerIT.class;
         Charset utf8 = StandardCharsets.UTF_8;
         ContentType contentType = new ContentType(Formats.JSONV1);
-        try(InputStream projectStream = c.getResourceAsStream("/cwms/cda/api/project_location.json");
+        try(InputStream projectStream = c.getResourceAsStream("/cwms/cda/api/project_location_turb.json");
             InputStream turbineStream = c.getResourceAsStream("/cwms/cda/api/turbine.json");
             InputStream turbineChangesStream = c.getResourceAsStream("/cwms/cda/api/turbine-changes.json")) {
             String json = IOUtils.toString(Objects.requireNonNull(projectStream), utf8);
