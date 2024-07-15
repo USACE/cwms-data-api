@@ -26,17 +26,13 @@ package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
 
-import cwms.cda.api.DownstreamLocationsGetController;
-import cwms.cda.api.LookupTypeController;
-import cwms.cda.api.StreamController;
-import cwms.cda.api.StreamLocationController;
-import cwms.cda.api.StreamReachController;
-import cwms.cda.api.UpstreamLocationsGetController;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
@@ -52,6 +48,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.EmbankmentController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
@@ -61,14 +58,6 @@ import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
-import cwms.cda.api.LookupTypeController;
-import cwms.cda.api.LookupTypeController;
-import cwms.cda.api.StreamController;
-import cwms.cda.api.StreamLocationController;
-import cwms.cda.api.StreamReachController;
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.put;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
@@ -82,6 +71,9 @@ import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
+import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
+import cwms.cda.api.StreamReachController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -95,6 +87,7 @@ import cwms.cda.api.TurbineChangesGetController;
 import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
+import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
@@ -532,10 +525,6 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
-                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
-                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
@@ -546,7 +535,9 @@ public class ApiServlet extends HttpServlet {
         String pathWithoutResource = path.replace(getResourceId(path), "");
 
         get(path, new ProjectLockGetOne(metrics));
+        addCacheControl(path, 5, TimeUnit.MINUTES);
         get(pathWithoutResource, new ProjectLockCatalog(metrics));
+        addCacheControl(pathWithoutResource, 5, TimeUnit.MINUTES);
         post(pathWithoutResource + "deny", new ProjectLockDeny(metrics), requiredRoles);
         post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
         post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
@@ -556,6 +547,7 @@ public class ApiServlet extends HttpServlet {
     private void addProjectLockRightsHandlers(String path, RouteRole[] requiredRoles) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
         get(pathWithoutResource, new LockRevokerRightsCatalog(metrics));
+        addCacheControl(pathWithoutResource, 5, TimeUnit.MINUTES);
         post(pathWithoutResource + "remove-all", new RemoveAllLockRevokerRights(metrics), requiredRoles);
         post(pathWithoutResource + "update", new UpdateLockRevokerRights(metrics), requiredRoles);
 
