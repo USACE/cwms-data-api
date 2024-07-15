@@ -41,27 +41,21 @@ import java.util.Objects;
 @JsonDeserialize(builder = Property.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Property extends CwmsDTOBase {
+public final class Property extends CwmsDTO {
 
     @JsonProperty(required = true)
     private final String category;
     @JsonProperty(required = true)
     private final String name;
-    @JsonProperty(required = true)
-    private final String officeId;
     private final String value;
     private final String comment; // added comment field
 
     private Property(Builder builder) {
+        super(builder.officeId);
         this.category = builder.category;
         this.name = builder.name;
-        this.officeId = builder.officeId;
         this.value = builder.value;
         this.comment = builder.comment; // included comment in constructor
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     public String getName() {
