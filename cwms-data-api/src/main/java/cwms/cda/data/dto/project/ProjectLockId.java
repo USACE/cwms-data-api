@@ -35,7 +35,7 @@ import cwms.cda.formatters.json.JsonV1;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV1.class)
 public class ProjectLockId extends CwmsDTOBase {
     private final String id;
 

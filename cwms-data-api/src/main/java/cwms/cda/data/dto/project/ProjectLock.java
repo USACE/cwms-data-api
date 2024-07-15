@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -39,7 +38,7 @@ import java.time.Instant;
 @JsonDeserialize(builder = ProjectLock.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV2.class)
 public class ProjectLock extends CwmsDTO {
     // officeId held by CwmsDTO
     private final String projectId;

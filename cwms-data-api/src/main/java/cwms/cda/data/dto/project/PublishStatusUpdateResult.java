@@ -28,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -37,8 +36,8 @@ import java.time.Instant;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-public class PublishStatusUpdateResult implements CwmsDTOBase {
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV2.class)
+public class PublishStatusUpdateResult extends CwmsDTOBase {
     private final Instant value;
 
     public PublishStatusUpdateResult(@JsonProperty ("value") Instant value) {
@@ -49,8 +48,4 @@ public class PublishStatusUpdateResult implements CwmsDTOBase {
         return value;
     }
 
-    @Override
-    public void validate() throws FieldException {
-
-    }
 }
