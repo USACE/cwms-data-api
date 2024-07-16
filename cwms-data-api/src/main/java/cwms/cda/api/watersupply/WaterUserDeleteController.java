@@ -65,8 +65,6 @@ public class WaterUserDeleteController implements Handler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = LOCATION_ID, description =
-                    "Specifies the parent location id of the contract.", required = true),
             @OpenApiParam(name = DELETE_MODE, description = "Specifies the delete method used."),
         },
         pathParams = {
@@ -90,14 +88,14 @@ public class WaterUserDeleteController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String office = ctx.queryParam(OFFICE);
-            String locationId = ctx.queryParam(LOCATION_ID);
+            String office = ctx.pathParam(OFFICE);
+            String locationId = ctx.pathParam(PROJECT_ID);
             String deleteMode = ctx.queryParam(DELETE_MODE);
             String entityName = ctx.pathParam(WATER_USER);
             CwmsId location = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.deleteWaterUser(location, entityName, deleteMode);
-            ctx.status(HttpServletResponse.SC_OK).json("Water user deleted successfully.");
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Water user deleted successfully.");
         }
     }
 }

@@ -26,30 +26,32 @@
 
 package cwms.cda.api;
 
-import cwms.cda.api.watersupply.WaterContractController;
-import cwms.cda.data.dto.watersupply.WaterUserContract;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.formatters.Formats;
-import fixtures.TestAccounts;
-import io.restassured.filter.log.LogDetail;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
-import static cwms.cda.api.Controllers.*;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import cwms.cda.api.watersupply.WaterContractController;
+import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.watersupply.WaterUserContract;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
+import fixtures.TestAccounts;
+import io.restassured.filter.log.LogDetail;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+
 @Tag("integration")
-class WaterContractTypeControllerTestIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SPK";
+class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
+    private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
     static {
         try (InputStream contractStream = WaterContractController.class.getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
@@ -61,31 +63,46 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
         }
     }
 
+    @BeforeAll
+    static void setup() {
+
+    }
+
+
+    @AfterAll
+    static void cleanup() {
+
+    }
+
     @Test
-    void test_create_get_WaterContractType() {
+    void test_create_get_WaterContractType() throws Exception {
         // Test Structure
         // 1) Create a WaterContractType
         // 2) Get the WaterContractType, assert it exists
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+        LookupType contractType = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
+                .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        String json = JsonV1.buildObjectMapper().writeValueAsString(contractType);
 
         // create water contract type
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .body(json)
+            .queryParam("fail-if-exists", false)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
-                        + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                        + CONTRACT.getContractId().getName())
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
+                    + CONTRACT.getContractId().getName() + "/types")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
+            .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
         // get water contract type and assert that it exists
@@ -93,9 +110,6 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .contentType(Formats.JSONV1)
                 .header(AUTH_HEADER, user.toHeaderValue())
-                .pathParam(OFFICE, OFFICE_ID)
-                .pathParam(PROJECT_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
-                .pathParam(WATER_USER, CONTRACT.getWaterUser().getEntityName())
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -106,10 +120,10 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(OFFICE_ID))
-            .body("display-value", equalTo(CONTRACT.getWaterContract().getDisplayValue()))
-            .body("tooltip", equalTo(CONTRACT.getWaterContract().getTooltip()))
-            .body("active", equalTo(CONTRACT.getWaterContract().getActive()))
+            .body("[0].office-id", equalTo(OFFICE_ID))
+            .body("[0].display-value", equalTo(contractType.getDisplayValue()))
+            .body("[0].tooltip", equalTo(contractType.getTooltip()))
+            .body("[0].active", equalTo(contractType.getActive()))
         ;
 
     }

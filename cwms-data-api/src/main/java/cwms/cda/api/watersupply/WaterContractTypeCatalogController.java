@@ -91,7 +91,7 @@ public class WaterContractTypeCatalogController implements Handler {
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Get all water contract types",
-        // path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{office}/{project-id}/types",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/types",
         method = HttpMethod.GET,
         tags = {TAG}
     )
@@ -99,7 +99,7 @@ public class WaterContractTypeCatalogController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            String officeId = ctx.queryParam(OFFICE);
+            String officeId = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
             String result;
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;

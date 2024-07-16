@@ -98,8 +98,8 @@ public class WaterUserController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
-            String location = ctx.queryParam(PROJECT_ID);
-            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(ctx.queryParam(OFFICE))
+            String location = ctx.pathParam(PROJECT_ID);
+            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(ctx.pathParam(OFFICE))
                     .withName(location).build();
             DSLContext dsl = getDslContext(ctx);
             String entityName = ctx.pathParam(WATER_USER);

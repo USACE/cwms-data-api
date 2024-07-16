@@ -59,6 +59,7 @@ public class WaterContractController implements Handler {
     public static final String TAG = "Water Contracts";
     private static final String WATER_USER = "water-user";
     private final MetricRegistry metrics;
+    private static final String CONTRACT_ID = "contract-id";
 
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
@@ -75,7 +76,7 @@ public class WaterContractController implements Handler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = NAME, description = "The name of the contract to retrieve.", required = true),
+            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract to retrieve.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
@@ -102,18 +103,18 @@ public class WaterContractController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
-            final String office = ctx.queryParam("office");
-            final String name = ctx.queryParam("name");
-            final String locationId = ctx.queryParam("locationId");
+            final String office = ctx.pathParam(OFFICE);
+            final String locationId = ctx.pathParam(PROJECT_ID);
             DSLContext dsl = getDslContext(ctx);
-            String contractName = ctx.pathParam(NAME);
+            final String contractName = ctx.pathParam(CONTRACT_ID);
+            final String waterUser = ctx.pathParam(WATER_USER);
             String result;
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
-            List<WaterUserContract> contracts = contractDao.getAllWaterContracts(projectLocation, name);
+            List<WaterUserContract> contracts = contractDao.getAllWaterContracts(projectLocation, waterUser);
 
             if (contracts.isEmpty()) {
                 CdaError error = new CdaError("No contracts found for the provided parameters.");

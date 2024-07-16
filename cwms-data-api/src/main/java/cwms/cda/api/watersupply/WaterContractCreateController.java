@@ -41,16 +41,17 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public class WaterContractCreateController implements Handler {
     public static final String TAG = "Water Contracts";
-    private static final String WATER_USER = "water-user";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -67,9 +68,14 @@ public class WaterContractCreateController implements Handler {
     }
 
     @OpenApi(
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = WaterUserContract.class, type = Formats.JSONV1)
+            },
+            required = true),
         responses = {
-            @OpenApiResponse(status = "204", description = "Basin successfully stored to CWMS."),
-            @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
+            @OpenApiResponse(status = STATUS_204, description = "Water contract successfully stored to CWMS."),
+            @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented.")
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
@@ -81,7 +87,7 @@ public class WaterContractCreateController implements Handler {
         },
         description = "Create a new water contract",
         method = HttpMethod.POST,
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts",
         tags = {TAG}
     )
 
@@ -94,9 +100,9 @@ public class WaterContractCreateController implements Handler {
             ctx.contentType(contentType.toString());
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
 
-            String newContractName = waterContract.getContractId().getName();
+            String newContractName = ctx.pathParam(WATER_USER);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContract(waterContract, true, false);
+            contractDao.storeWaterContract(waterContract, true, true);
             ctx.status(HttpServletResponse.SC_CREATED).json(newContractName + " created successfully");
         }
     }

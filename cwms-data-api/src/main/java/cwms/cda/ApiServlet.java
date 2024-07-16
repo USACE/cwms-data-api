@@ -103,8 +103,10 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
-import cwms.cda.api.watersupply.WaterContractTypeController;
+import cwms.cda.api.watersupply.WaterContractTypeCatalogController;
+import cwms.cda.api.watersupply.WaterContractTypeCreateController;
 import cwms.cda.api.watersupply.WaterContractUpdateController;
+import cwms.cda.api.watersupply.WaterPumpDeleteController;
 import cwms.cda.api.watersupply.WaterUserCatalogController;
 import cwms.cda.api.watersupply.WaterUserController;
 import cwms.cda.api.watersupply.WaterUserCreateController;
@@ -514,8 +516,8 @@ public class ApiServlet extends HttpServlet {
         addWaterUserHandlers("/projects/{office}/{project-id}/water-user", requiredRoles);
         addWaterContractHandlers("/projects/{office}/{project-id}/water-user/{water-user}/contracts", requiredRoles);
         addWaterContractTypeHandlers("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/types", requiredRoles);
-        delete("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{pump-id}",
-                new WaterUserController(metrics), requiredRoles);
+        delete("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{name}",
+                new WaterPumpDeleteController(metrics), requiredRoles);
 
         cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
@@ -561,8 +563,8 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {
-        post(path, new WaterContractTypeController(metrics), requiredRoles);
-        get(path, new WaterContractCatalogController(metrics));
+        post(path, new WaterContractTypeCreateController(metrics), requiredRoles);
+        get(path, new WaterContractTypeCatalogController(metrics));
     }
 
     /**

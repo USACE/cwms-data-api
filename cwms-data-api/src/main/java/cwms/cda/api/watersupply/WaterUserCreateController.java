@@ -41,7 +41,9 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -66,6 +68,11 @@ public class WaterUserCreateController implements Handler {
     }
 
     @OpenApi(
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = WaterUser.class, type = Formats.JSONV1)
+            },
+            required = true),
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "Water user successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")

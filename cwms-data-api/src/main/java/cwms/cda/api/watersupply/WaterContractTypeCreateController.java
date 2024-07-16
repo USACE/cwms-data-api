@@ -41,7 +41,9 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractTypeController implements Handler {
+public class WaterContractTypeCreateController implements Handler {
     public static final String TAG = "Water Contracts";
     private final MetricRegistry metrics;
 
@@ -58,7 +60,7 @@ public class WaterContractTypeController implements Handler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public WaterContractTypeController(MetricRegistry metrics) {
+    public WaterContractTypeCreateController(MetricRegistry metrics) {
         this.metrics = metrics;
     }
 
@@ -68,6 +70,15 @@ public class WaterContractTypeController implements Handler {
     }
 
     @OpenApi(
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = LookupType.class, type = Formats.JSONV1)
+            },
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = boolean.class, description = "Create will fail if provided"
+                    + "display value already exists. Default: true")
+        },
         pathParams = {
             @OpenApiParam(name = NAME, description = "The name of the contract.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
@@ -91,6 +102,8 @@ public class WaterContractTypeController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
+            boolean failIfExists = ctx.queryParam(FAIL_IF_EXISTS) == null || Boolean.parseBoolean(ctx
+                    .queryParam(FAIL_IF_EXISTS));
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
@@ -98,7 +111,7 @@ public class WaterContractTypeController implements Handler {
             List<LookupType> types = new ArrayList<>();
             types.add(contractType);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContractTypes(types, true);
+            contractDao.storeWaterContractTypes(types, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
         }
     }

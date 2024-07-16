@@ -97,10 +97,10 @@ public class WaterContractDeleteController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String contractName = ctx.pathParam(NAME);
-            String deleteMethod = ctx.queryParam(DELETE_MODE);
-            String locationId = ctx.queryParam(PROJECT_ID);
-            String office = ctx.queryParam(OFFICE);
+            final String contractName = ctx.pathParam(NAME);
+            final String deleteMethod = ctx.queryParam(DELETE_MODE);
+            final String locationId = ctx.pathParam(PROJECT_ID);
+            final String office = ctx.pathParam(OFFICE);
             WaterContractDao contractDao = getContractDao(dsl);
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
 

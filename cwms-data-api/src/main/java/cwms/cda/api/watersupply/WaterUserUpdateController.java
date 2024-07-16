@@ -27,7 +27,6 @@
 package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -35,7 +34,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.watersupply.WaterUserContract;
+import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -43,7 +42,9 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -68,6 +69,11 @@ public class WaterUserUpdateController implements Handler {
     }
 
     @OpenApi(
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = WaterUser.class, type = Formats.JSONV1)
+            },
+            required = true),
         queryParams = {
             @OpenApiParam(name = NAME, description = "Specifies the"
                     + " new name of the water user entity.", required = true),
@@ -96,10 +102,10 @@ public class WaterUserUpdateController implements Handler {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             String newName = ctx.queryParam(NAME);
-            String office = ctx.queryParam(OFFICE);
+            String office = ctx.pathParam(OFFICE);
             String oldName = ctx.pathParam(WATER_USER);
             String locationId = ctx.queryParam(LOCATION_ID);
             CwmsId location = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();

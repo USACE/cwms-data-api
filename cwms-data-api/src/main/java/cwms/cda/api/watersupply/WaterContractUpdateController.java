@@ -42,7 +42,9 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +54,7 @@ import org.jooq.DSLContext;
 public class WaterContractUpdateController implements Handler {
     public static final String TAG = "Water Contracts";
     private static final String WATER_USER = "water-user";
-    private static final String CONTRACT_NAME = "contract-name";
+    private static final String CONTRACT_ID = "contract-id";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -69,11 +71,16 @@ public class WaterContractUpdateController implements Handler {
     }
 
     @OpenApi(
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = WaterUserContract.class, type = Formats.JSONV1)
+            },
+            required = true),
         queryParams = {
             @OpenApiParam(name = NAME, description = "Specifies the new name of the contract.", required = true)
         },
         pathParams = {
-            @OpenApiParam(name = CONTRACT_NAME, description = "Specifies the name of the contract to be renamed.",
+            @OpenApiParam(name = CONTRACT_ID, description = "Specifies the name of the contract to be renamed.",
                     required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
@@ -89,7 +96,7 @@ public class WaterContractUpdateController implements Handler {
         },
         description = "Renames a water contract",
         method = HttpMethod.PATCH,
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-name}",
+        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-id}",
         tags = {TAG}
     )
 
@@ -97,7 +104,7 @@ public class WaterContractUpdateController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String contractName = ctx.pathParam(CONTRACT_NAME);
+            String contractName = ctx.pathParam(CONTRACT_ID);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
