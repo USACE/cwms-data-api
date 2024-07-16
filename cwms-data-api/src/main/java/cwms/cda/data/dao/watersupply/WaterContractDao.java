@@ -69,6 +69,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
 
         waterUserContractTypes.addAll(connectionResult(dsl, c -> {
+            setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
             WATER_USER_CONTRACT_TAB_T waterUserContractObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
                     DSL.using(c).configuration(), projectLocationRef, entityName);
@@ -112,6 +113,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
     public List<LookupType> getAllWaterContractTypes(String officeId) {
         List<LookupType> retVal = new ArrayList<>();
         List<usace.cwms.db.dao.ifc.cat.LookupType> contractTypeList = connectionResult(dsl, c -> {
+            setOffice(c, officeId);
             LOOKUP_TYPE_TAB_T lookupTypeObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_GET_CONTRACT_TYPES(
                     DSL.using(c).configuration(), officeId);
             return lookupTypeObjTs.stream()
@@ -130,6 +132,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         List<WaterUser> retVal = new ArrayList<>();
         LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
         List<WaterUserType> waterUserTypes = connectionResult(dsl, c -> {
+            setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
             WATER_USER_TAB_T waterUserObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
                 DSL.using(c).configuration(), projectLocationRef);
@@ -147,6 +150,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
     public WaterUser getWaterUser(CwmsId projectLocation, String entityName) {
         LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
         List<WaterUserType> userList = connectionResult(dsl, c -> {
+            setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
             WATER_USER_TAB_T waterUserObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
                     DSL.using(c).configuration(), projectLocationRef);
@@ -166,14 +170,13 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         List<WaterUserContractType> waterUserContractTypeModified = new ArrayList<>();
         waterUserContractTypeModified.add(WaterSupplyUtils.map(waterContractType));
 
-        storeWaterUser(waterContractType.getWaterUser(), false);
-
         connection(dsl, c -> {
+            setOffice(c, waterContractType.getOfficeId());
             String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
             String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
-            WATER_USER_CONTRACT_TAB_T pontracts = WaterUserTypeUtil
+            WATER_USER_CONTRACT_TAB_T pContracts = WaterUserTypeUtil
                     .toWaterUserContractTs(waterUserContractTypeModified);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), pontracts,
+            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), pContracts,
                     pFailIfExists, pIgnoreNulls);
         });
     }
@@ -183,6 +186,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
 
         connection(dsl, c -> {
+            setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRefT =  LocationTypeUtil.toLocationRefT(locationRefType);
             CWMS_WATER_SUPPLY_PACKAGE.call_RENAME_WATER_USER(DSL.using(c).configuration(), projectLocationRefT,
                     oldWaterUser, newWaterUser);
@@ -199,6 +203,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
                 locationRefType, waterUser.getWaterRight()));
 
         connection(dsl, c -> {
+            setOffice(c, waterUser.getParentLocationRef().getOfficeId());
             WATER_USER_TAB_T waterUsers = WaterUserTypeUtil.toWaterUserTs(waterUserTypeModified);
             String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USERS(DSL.using(c).configuration(), waterUsers, pFailIfExists);
@@ -212,6 +217,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
                 WaterSupplyUtils.map(waterContractRefType, waterContractRefType.getWaterUser().getParentLocationRef());
 
         connection(dsl, c -> {
+            setOffice(c, waterContractRefType.getWaterUser().getParentLocationRef().getOfficeId());
             WATER_USER_OBJ_T waterUser = WaterUserTypeUtil.toWaterUserT(waterUserContractRefType.getWaterUserType());
             String contractName = waterUserContractRefType.getContractName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUser, contractName);
@@ -226,6 +232,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         LocationRefType locationRefType = WaterSupplyUtils.map(location);
 
         connection(dsl, c -> {
+            setOffice(c, location.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_WATER_USER(DSL.using(c).configuration(), projectLocationRef,
                     entityName, deleteAction);
@@ -242,6 +249,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
                         .getWaterUser().getParentLocationRef());
 
         connection(dsl, c -> {
+            setOffice(c, contract.getOfficeId());
             WATER_USER_OBJ_T waterUser = WaterUserTypeUtil.toWaterUserT(waterUserContractRefTypeModified
                     .getWaterUserType());
             String contractName = waterUserContractRefType.getContractName();
@@ -260,6 +268,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
             lookups.add(WaterSupplyUtils.map(lookupType));
         }
         connection(dsl, c -> {
+            setOffice(c, lookupTypes.get(0).getOfficeId());
             LOOKUP_TYPE_TAB_T contractTypes = LookupTypeUtil.buildLookupTypeTab(lookups);
             String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
@@ -274,6 +283,7 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
                 .map(contract.getWaterUser()),
                 contract.getContractId().getName());
         connection(dsl, c -> {
+            setOffice(c, contract.getOfficeId());
             WATER_USER_CONTRACT_REF_T waterUserContractRefT = WaterUserTypeUtil
                     .toWaterUserContractReft(contractRefType);
             String pDeleteAccountingData = OracleTypeMap.formatBool(deleteAccountingData);
