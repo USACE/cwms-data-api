@@ -26,24 +26,18 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.Location;
 
-public class WaterSupplyPump implements CwmsDTOBase {
+public class WaterSupplyPump extends CwmsDTOBase {
     private Location pumpLocation;
     private PumpType pumpType;
-    private CwmsId pumpId;
 
     public WaterSupplyPump() {
     }
 
     public WaterSupplyPump(WaterSupplyPump waterSupplyPump, PumpType pumpType) {
-        CwmsId pumpIdLocal = waterSupplyPump.getPumpId();
-        if (pumpIdLocal != null) {
-            this.pumpId = new CwmsId.Builder().withName(pumpIdLocal.getName()).withOfficeId(pumpIdLocal.getOfficeId()).build();
-        }
         Location pumpLocationLocal = waterSupplyPump.getPumpLocation();
         if (pumpLocationLocal != null) {
             this.pumpLocation = new Location.Builder(pumpLocationLocal).build();
@@ -54,10 +48,9 @@ public class WaterSupplyPump implements CwmsDTOBase {
         this.pumpType = pumpType;
     }
 
-    public WaterSupplyPump(Location pumpLocation, PumpType pumpType, CwmsId pumpId) {
+    public WaterSupplyPump(Location pumpLocation, PumpType pumpType) {
         this.pumpLocation = pumpLocation;
         this.pumpType = pumpType;
-        this.pumpId = pumpId;
     }
 
     public Location getPumpLocation() {
@@ -68,28 +61,10 @@ public class WaterSupplyPump implements CwmsDTOBase {
         return this.pumpType;
     }
 
-    public CwmsId getPumpId() {
-        return this.pumpId;
-    }
-
-    public void setPumpLocation(Location pumpLocation) {
-        this.pumpLocation = pumpLocation;
-    }
-
-    public void setPumpType(PumpType pumpType) {
-        this.pumpType = pumpType;
-    }
-
-    public void setPumpId(CwmsId pumpId) {
-        this.pumpId = pumpId;
-    }
-
     @Override
-    public void validate() {
-        this.pumpLocation.validate();
-        if (this.pumpType == null) {
-            throw new FieldException("Pump Type cannot be null");
-        }
-        this.pumpId.validate();
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getPumpLocation(), "pump-location");
+        validator.required(getPumpType(), "pump-type");
     }
 }

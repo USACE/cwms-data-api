@@ -23,13 +23,13 @@
   "contracted-storage": 200000.5,
   "initial-use-allocation": 15600,
   "future-use-allocation": 27800.5,
-  "storage-units-id": "%",
+  "storage-units-id": "m3",
   "future-use-percent-activated": 15.6,
   "total-alloc-percent-activated": 65.2,
   "pump-out-location": {
     "pump-location": {
       "office-id": "MVR",
-      "name": "Test Location",
+      "name": "PUMP1",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -52,16 +52,12 @@
       "bounding-office-id": "MVR",
       "elevation-units": "m"
     },
-    "pump-type": "PUMP_OUT",
-    "pump-id": {
-      "office-id": "MVR",
-      "name": "PUMP1"
-    }
+    "pump-type": "PUMP_OUT"
   },
   "pump-out-below-location": {
     "pump-location": {
       "office-id": "MVR",
-      "name": "Test Location",
+      "name": "PUMP2",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -84,16 +80,12 @@
       "bounding-office-id": "MVR",
       "elevation-units": "m"
     },
-    "pump-type": "PUMP_OUT_BELOW",
-    "pump-id": {
-      "office-id": "MVR",
-      "name": "PUMP2"
-    }
+    "pump-type": "PUMP_OUT_BELOW"
   },
   "pump-in-location": {
     "pump-location": {
       "office-id": "MVR",
-      "name": "Test Location",
+      "name": "PUMP3",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -116,10 +108,6 @@
       "bounding-office-id": "MVR",
       "elevation-units": "m"
     },
-    "pump-type": "PUMP_IN",
-    "pump-id": {
-      "office-id": "MVR",
-      "name": "PUMP3"
-    }
+    "pump-type": "PUMP_IN"
   }
 }

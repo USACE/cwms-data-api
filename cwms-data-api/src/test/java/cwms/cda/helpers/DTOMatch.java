@@ -227,8 +227,7 @@ public final class DTOMatch {
     public static void assertMatch(WaterSupplyPump firstPump, WaterSupplyPump secondPump) {
         assertAll(
                 () -> assertMatch(firstPump.getPumpLocation(), secondPump.getPumpLocation()),
-                () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType()),
-                () -> DTOMatch.assertMatch(firstPump.getPumpId(), secondPump.getPumpId())
+                () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType())
         );
     }
 
