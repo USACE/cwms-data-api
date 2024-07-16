@@ -29,7 +29,6 @@ package cwms.cda.data.dto.watersupply;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.data.dto.CwmsDTO;
-import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
@@ -139,22 +138,6 @@ public class WaterUserContract extends CwmsDTO {
 
     public CwmsId getContractId() {
         return this.contractId;
-    }
-
-    @Override
-    protected void validateInternal(CwmsDTOValidator validator) {
-        super.validateInternal(validator);
-        validator.required(getWaterContract(), "water-contract");
-        validator.required(getContractEffectiveDate(), "contract-effective-date");
-        validator.required(getContractExpirationDate(), "contract-expiration-date");
-        validator.required(getContractedStorage(), "contracted-storage");
-        validator.required(getInitialUseAllocation(), "initial-use-allocation");
-        validator.required(getFutureUseAllocation(), "future-use-allocation");
-        validator.required(getStorageUnitsId(), "storage-units-id");
-        validator.required(getFutureUsePercentActivated(), "future-use-percent-activated");
-        validator.required(getTotalAllocPercentActivated(), "total-alloc-percent-activated");
-        validator.required(getContractId(), "contract-id");
-        validator.required(getWaterUser(), "water-user");
     }
 
     public static class Builder {

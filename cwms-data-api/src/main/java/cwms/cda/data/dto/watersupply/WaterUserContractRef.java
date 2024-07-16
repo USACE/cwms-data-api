@@ -26,11 +26,13 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.CwmsDTOValidator;
 
 public class WaterUserContractRef extends CwmsDTOBase {
+    @JsonProperty(required = true)
     private WaterUser waterUser;
+    @JsonProperty(required = true)
     private String contractName;
 
     private WaterUserContractRef() {
@@ -47,12 +49,5 @@ public class WaterUserContractRef extends CwmsDTOBase {
 
     public WaterUser getWaterUser() {
         return this.waterUser;
-    }
-
-    @Override
-    protected void validateInternal(CwmsDTOValidator validator) {
-        super.validateInternal(validator);
-        validator.required(getContractName(), "contract-name");
-        validator.required(getWaterUser(), "water-user");
     }
 }

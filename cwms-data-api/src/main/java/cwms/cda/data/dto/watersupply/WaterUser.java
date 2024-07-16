@@ -26,14 +26,27 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 
+
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
+        aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class WaterUser extends CwmsDTOBase {
-
+    @JsonProperty(required = true)
     private String entityName;
+    @JsonProperty(required = true)
     private CwmsId parentLocationRef;
+    @JsonProperty(required = true)
     private String waterRight;
 
     private WaterUser() {
@@ -55,13 +68,5 @@ public class WaterUser extends CwmsDTOBase {
 
     public String getWaterRight() {
         return this.waterRight;
-    }
-
-    @Override
-    protected void validateInternal(CwmsDTOValidator validator) {
-        super.validateInternal(validator);
-        validator.required(getEntityName(), "entity-name");
-        validator.required(getWaterRight(), "water-right");
-        validator.required(getParentLocationRef(), "parent-location-ref");
     }
 }

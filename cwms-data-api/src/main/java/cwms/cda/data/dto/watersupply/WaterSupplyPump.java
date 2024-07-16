@@ -26,12 +26,14 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.Location;
 
 public class WaterSupplyPump extends CwmsDTOBase {
+    @JsonProperty(required = true)
     private Location pumpLocation;
+    @JsonProperty(required = true)
     private PumpType pumpType;
 
     public WaterSupplyPump() {
@@ -59,12 +61,5 @@ public class WaterSupplyPump extends CwmsDTOBase {
 
     public PumpType getPumpType() {
         return this.pumpType;
-    }
-
-    @Override
-    protected void validateInternal(CwmsDTOValidator validator) {
-        super.validateInternal(validator);
-        validator.required(getPumpLocation(), "pump-location");
-        validator.required(getPumpType(), "pump-type");
     }
 }
