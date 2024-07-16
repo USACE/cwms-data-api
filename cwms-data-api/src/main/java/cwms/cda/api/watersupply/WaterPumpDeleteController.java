@@ -53,8 +53,7 @@ import org.jooq.DSLContext;
 public class WaterPumpDeleteController implements Handler {
     private static final Logger LOGGER = Logger.getLogger(WaterPumpDeleteController.class.getName());
     public static final String TAG = "Water Contracts";
-    private static final String USAGE_ID = "usage-id";
-    private static final String CONTRACT_NAME = "contract-name";
+    private static final String CONTRACT_ID = "contract-id";
     private static final String PUMP_TYPE = "pump-type";
     private final MetricRegistry metrics;
 
@@ -73,8 +72,6 @@ public class WaterPumpDeleteController implements Handler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = USAGE_ID, required = true,
-                    description = "The pump usage id associated with the contract."),
             @OpenApiParam(name = PUMP_TYPE, required = true,
                     description = "The type of pump to be removed from the contract."
                             + " Expected values: IN, OUT, OUT BELOW"),
@@ -86,8 +83,10 @@ public class WaterPumpDeleteController implements Handler {
                     + "removed from the specified contract.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office the project is associated with.", required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The name of the project.", required = true),
-            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract the pump is associated with.",
+            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract the pump is associated with.",
                     required = true),
+            @OpenApiParam(name = WATER_USER, description = "The name of the water user the contract "
+                    + "is associated with.", required = true)
         },
         responses = {
             @OpenApiResponse(status = "404", description = "The provided combination of parameters"
@@ -95,8 +94,7 @@ public class WaterPumpDeleteController implements Handler {
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Delete a pump from a contract",
-        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{office}/{contract-name}"
-                + "/pumps/{office}/{name}",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{name}",
         method = HttpMethod.DELETE,
         tags = {TAG}
     )
@@ -106,15 +104,15 @@ public class WaterPumpDeleteController implements Handler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             boolean deleteAccounting = Boolean.parseBoolean(ctx.queryParam(DELETE));
-            String usageId = ctx.queryParam(USAGE_ID);
             String officeId = ctx.pathParam(OFFICE);
             String projectName = ctx.pathParam(PROJECT_ID);
-            String contractName = ctx.pathParam(CONTRACT_NAME);
+            String entityName = ctx.pathParam(WATER_USER);
             String pumpType = ctx.queryParam(PUMP_TYPE);
+            String contractName = ctx.pathParam(CONTRACT_ID);
             assert pumpType != null;
             WaterContractDao contractDao = getContractDao(dsl);
             CwmsId projectLocation = new CwmsId.Builder().withName(projectName).withOfficeId(officeId).build();
-            List<WaterUserContract> contract = contractDao.getAllWaterContracts(projectLocation, contractName);
+            List<WaterUserContract> contract = contractDao.getAllWaterContracts(projectLocation, entityName);
 
             if (contract.isEmpty()) {
                 CdaError error = new CdaError("No contract found for the provided name.");
@@ -128,19 +126,22 @@ public class WaterPumpDeleteController implements Handler {
                     switch (pumpType) {
                         case "IN":
                             contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpInLocation().getPumpLocation().getName(),
-                                    usageId, deleteAccounting);
-                            break;
+                                    waterUserContract.getPumpInLocation().getPumpId().getName(),
+                                    pumpType, deleteAccounting);
+                            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+                            return;
                         case "OUT":
                             contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpOutLocation().getPumpLocation().getName(),
-                                    usageId, deleteAccounting);
-                            break;
-                        case "OUT BELOW":
+                                    waterUserContract.getPumpOutLocation().getPumpId().getName(),
+                                    pumpType, deleteAccounting);
+                            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+                            return;
+                        case "BELOW":
                             contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName(),
-                                    usageId, deleteAccounting);
-                            break;
+                                    waterUserContract.getPumpOutBelowLocation().getPumpId().getName(),
+                                    pumpType, deleteAccounting);
+                            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+                            return;
                         default:
                             CdaError error = new CdaError("Invalid pump type provided.");
                             LOGGER.log(Level.SEVERE, "Invalid pump type provided.");
@@ -150,6 +151,9 @@ public class WaterPumpDeleteController implements Handler {
 
                 }
             }
+            CdaError error = new CdaError("No contract found for the provided name.");
+            LOGGER.log(Level.SEVERE, "No matching contract found.");
+            ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
         }
     }
 
