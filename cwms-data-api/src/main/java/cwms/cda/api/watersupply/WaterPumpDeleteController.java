@@ -126,19 +126,19 @@ public class WaterPumpDeleteController implements Handler {
                     switch (pumpType) {
                         case "IN":
                             contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpInLocation().getPumpId().getName(),
+                                    waterUserContract.getPumpInLocation().getPumpLocation().getName(),
                                     pumpType, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
                         case "OUT":
                             contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpOutLocation().getPumpId().getName(),
+                                    waterUserContract.getPumpOutLocation().getPumpLocation().getName(),
                                     pumpType, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
                         case "BELOW":
                             contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpOutBelowLocation().getPumpId().getName(),
+                                    waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName(),
                                     pumpType, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
