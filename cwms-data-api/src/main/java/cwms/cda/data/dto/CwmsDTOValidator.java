@@ -120,7 +120,7 @@ public final class CwmsDTOValidator {
             }
         } catch (IntrospectionException e) {
             LOGGER.atWarning().withCause(e)
-                .log("Unable to validate required field are non-null in DTO: %s", type);
+                .log("Unable to validate required fields are non-null in DTO: %s", type);
         }
         return retval;
     }

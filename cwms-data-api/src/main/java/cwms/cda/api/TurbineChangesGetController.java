@@ -114,7 +114,10 @@ public final class TurbineChangesGetController implements Handler {
                 + "Can be SI (International Scientific) or EN (Imperial.) If unspecified, "
                 + "defaults to EN."),
             @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
-                description = "How many entries per page returned. " + "Default " + DEFAULT_PAGE_SIZE + "." +
+                description = "the maximum number of turbine changes to retrieve, regardless of time window. " +
+                    "A positive integer is interpreted as the maximum number of changes from the " +
+                    "beginning of the time window. A negative integer is interpreted as the maximum number " +
+                    "from the end of the time window. " + "Default " + DEFAULT_PAGE_SIZE + "." +
                     "A page cursor will not be returned by this DTO. Instead, the next page can be determined " +
                     "by querying the next set of changes using the last returned change date and using " +
                     "start-time-inclusive=false")
