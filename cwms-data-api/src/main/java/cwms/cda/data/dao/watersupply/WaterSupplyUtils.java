@@ -115,16 +115,12 @@ public class WaterSupplyUtils {
                 .withPublishedLongitude(locationType.getPublishedLongitude())
                 .withOfficeId(locationType.getLocationRef().getOfficeId())
                 .build(),
-                pumpType,
-                new CwmsId.Builder()
-                        .withName(locationType.getLocationRef().getBaseLocationId())
-                        .withOfficeId(locationType.getLocationRef().getOfficeId())
-                        .build());
+                pumpType);
     }
 
     public static LocationType map(WaterSupplyPump pump) {
-        return new LocationType(new LocationRefType(pump.getPumpId().getName(),
-                "", pump.getPumpId().getOfficeId()),
+        return new LocationType(new LocationRefType(pump.getPumpLocation().getName(),
+                "", pump.getPumpLocation().getOfficeId()),
                 pump.getPumpLocation().getStateInitial(),
                 pump.getPumpLocation().getCountyName(),
                 pump.getPumpLocation().getTimezoneName(),

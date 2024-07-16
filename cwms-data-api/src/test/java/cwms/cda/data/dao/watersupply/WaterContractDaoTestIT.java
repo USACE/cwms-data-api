@@ -135,12 +135,14 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            dao.storeWaterContract(contract, true, false);
+            dao.storeWaterUser(contract.getWaterUser(), true);
+            dao.storeWaterContract(contract, true, true);
             List<WaterUserContract> retrievedContract = dao.getAllWaterContracts(contract.getWaterUser().getParentLocationRef(), contract.getWaterUser().getEntityName());
             WaterUserContract result = retrievedContract.get(0);
             DTOMatch.assertMatch(contract, result);
         });
         cleanupContractRoutine(contract);
+        cleanupUserRoutine(contract.getWaterUser());
     }
 
     @Test
@@ -191,6 +193,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
+            dao.storeWaterUser(oldContract.getWaterUser(), true);
             dao.storeWaterContract(oldContract, true, false);
             WaterUserContractRef contractRef = new WaterUserContractRef(oldContract.getWaterUser(),
                     oldContract.getContractId().getName());
@@ -203,6 +206,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DTOMatch.assertMatch(retrievedContracts.get(0), renamedContract);
         });
         cleanupContractRoutine(renamedContract);
+        cleanupUserRoutine(renamedContract.getWaterUser());
     }
 
     @Test
@@ -216,6 +220,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.deleteWaterUser(newUser.getParentLocationRef(), newUser.getEntityName(), DELETE_ACTION);
             assertNull(dao.getWaterUser(newUser.getParentLocationRef(), newUser.getEntityName()));
         });
+        cleanupUserRoutine(newUser);
     }
 
     @Test
@@ -225,11 +230,13 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
+            dao.storeWaterUser(contract.getWaterUser(), true);
             dao.storeWaterContract(contract, true, false);
             dao.deleteWaterContract(contract, DELETE_ACTION);
             List<WaterUserContract> contracts = dao.getAllWaterContracts(contract.getWaterUser().getParentLocationRef(), contract.getWaterUser().getEntityName());
             assertTrue(contracts.isEmpty());
         });
+        cleanupUserRoutine(contract.getWaterUser());
     }
 
     @Test
@@ -240,14 +247,16 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             assertNotNull(contract);
+            dao.storeWaterUser(contract.getWaterUser(), true);
             dao.storeWaterContract(contract, true, false);
-            dao.removePumpFromContract(contract, contract.getPumpInLocation().getPumpId().getName(), "IN", false);
+            dao.removePumpFromContract(contract, contract.getPumpInLocation().getPumpLocation().getName(), "IN", false);
             List<WaterUserContract> contracts = dao.getAllWaterContracts(contract.getWaterUser().getParentLocationRef(), contract.getWaterUser().getEntityName());
             WaterUserContract retrievedContract = contracts.get(0);
             assertNotNull(retrievedContract);
             assertNull(retrievedContract.getPumpInLocation());
         });
         cleanupContractRoutine(contract);
+        cleanupUserRoutine(contract.getWaterUser());
     }
 
     private void cleanupUserRoutine(WaterUser user) throws Exception {
@@ -298,12 +307,9 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                             .build())
                     .withFutureUsePercentActivated(35.7)
                     .withWaterUser(testUser)
-                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1 " + entityName, "PUMP"), PumpType.PUMP_IN,
-                            new CwmsId.Builder().withName("Pump 1 " + entityName).withOfficeId(OFFICE_ID).build()))
-                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2 " + entityName, "PUMP"), PumpType.PUMP_OUT, new CwmsId.Builder()
-                            .withName("Pump 2 " + entityName).withOfficeId(OFFICE_ID).build()))
-                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3 " + entityName, "PUMP"), PumpType.PUMP_OUT_BELOW,
-                            new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("Pump 3 " + entityName).build()))
+                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1 " + entityName, "PUMP"), PumpType.PUMP_IN))
+                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2 " + entityName, "PUMP"), PumpType.PUMP_OUT))
+                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3 " + entityName, "PUMP"), PumpType.PUMP_OUT_BELOW))
                     .build();
         } else {
             return new WaterUserContract.Builder()
@@ -326,12 +332,9 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                             .build())
                     .withFutureUsePercentActivated(35.7)
                     .withWaterUser(buildTestWaterUser("Water User Name"))
-                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1", "PUMP"), PumpType.PUMP_IN,
-                            new CwmsId.Builder().withName("Pump 1").withOfficeId(OFFICE_ID).build()))
-                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2", "PUMP"), PumpType.PUMP_OUT, new CwmsId.Builder()
-                            .withName("Pump 2").withOfficeId(OFFICE_ID).build()))
-                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3", "PUMP"), PumpType.PUMP_OUT_BELOW,
-                            new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("Pump 3").build()))
+                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1", "PUMP"), PumpType.PUMP_IN))
+                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2", "PUMP"), PumpType.PUMP_OUT))
+                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3", "PUMP"), PumpType.PUMP_OUT_BELOW))
                     .build();
         }
 
