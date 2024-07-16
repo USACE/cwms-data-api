@@ -40,8 +40,6 @@ import cwms.cda.formatters.json.JsonV1;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
@@ -61,17 +59,6 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         } catch(Exception ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    @BeforeAll
-    static void setup() {
-
-    }
-
-
-    @AfterAll
-    static void cleanup() {
-
     }
 
     @Test
