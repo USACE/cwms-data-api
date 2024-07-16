@@ -228,7 +228,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
             .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
                     + CONTRACT.getContractId().getName() + "/pumps/"
-                    + CONTRACT.getPumpInLocation().getPumpId().getName())
+                    + CONTRACT.getPumpInLocation().getPumpLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -272,7 +272,6 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                     .getPumpLocation().getOfficeId()))
             .body("[0].pump-out-location.pump-location.name", hasToString(String.valueOf(CONTRACT.getPumpOutLocation().getPumpLocation()
                     .getName())))
-            .body("[0].pump-out-location.pump-id.name", equalTo(CONTRACT.getPumpOutLocation().getPumpId().getName()))
             .body("[0].pump-out-location.pump-location.latitude", hasToString(String.valueOf(CONTRACT.getPumpOutLocation()
                     .getPumpLocation().getLatitude())))
             .body("[0].pump-out-location.pump-location.longitude", hasToString(String.valueOf(CONTRACT.getPumpOutLocation()
@@ -319,7 +318,6 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                     .getPumpLocation().getOfficeId()))
             .body("[0].pump-out-below-location.pump-location.name", hasToString(String.valueOf(CONTRACT.getPumpOutBelowLocation()
                     .getPumpLocation().getName())))
-            .body("[0].pump-out-below-location.pump-id.name", equalTo(CONTRACT.getPumpOutBelowLocation().getPumpId().getName()))
             .body("[0].pump-out-below-location.pump-location.latitude", hasToString(String.valueOf(CONTRACT.getPumpOutBelowLocation()
                     .getPumpLocation().getLatitude())))
             .body("[0].pump-out-below-location.pump-location.longitude", hasToString(String.valueOf(CONTRACT.getPumpOutBelowLocation()
