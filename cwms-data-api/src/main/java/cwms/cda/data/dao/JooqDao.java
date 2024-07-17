@@ -522,8 +522,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
 
     /**
-     * JooqDao provides its own connection method because the DSL.connection
-     * method does not cause thrown exception to be wrapped.
+     * JooqDao provides its own connection() which wraps throw exceptions
+     * because the DSL.connection() method does not wrap exceptions.
      * @param dslContext the DSLContext to use
      * @param cr the ConnectionRunnable to run with the connection
      */
@@ -538,7 +538,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     /**
      * Like DSL.connection the DSL.connectionResult method does not cause thrown
      * exceptions to be wrapped.  This method delegates to DSL.connectionResult
-     * but will wrap exceptions into more specific exception types were possible.
+     * but will wrap exceptions into more specific exception types where possible.
      * @param dslContext the DSLContext to use
      * @param var1 the ConnectionCallable to run with the connection
      */

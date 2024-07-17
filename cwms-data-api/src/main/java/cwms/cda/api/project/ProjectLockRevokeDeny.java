@@ -40,7 +40,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectLockDeny implements Handler {
+public class ProjectLockRevokeDeny implements Handler {
     public static final String TAGS = "Project Locks";
     public static final String PATH = "/project-locks/";
     private final MetricRegistry metrics;
@@ -49,7 +49,7 @@ public class ProjectLockDeny implements Handler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectLockDeny(MetricRegistry metrics) {
+    public ProjectLockRevokeDeny(MetricRegistry metrics) {
         this.metrics = metrics;
 
     }

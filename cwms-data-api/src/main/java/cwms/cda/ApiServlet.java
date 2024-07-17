@@ -108,11 +108,11 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.project.LockRevokerRightsCatalog;
 import cwms.cda.api.project.ProjectLockCatalog;
-import cwms.cda.api.project.ProjectLockDeny;
 import cwms.cda.api.project.ProjectLockGetOne;
 import cwms.cda.api.project.ProjectLockRelease;
 import cwms.cda.api.project.ProjectLockRequest;
 import cwms.cda.api.project.ProjectLockRevoke;
+import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
@@ -554,7 +554,7 @@ public class ApiServlet extends HttpServlet {
 
         get(path, new ProjectLockGetOne(metrics));
         get(pathWithoutResource, new ProjectLockCatalog(metrics));
-        post(pathWithoutResource + "deny", new ProjectLockDeny(metrics), requiredRoles);
+        post(pathWithoutResource + "deny", new ProjectLockRevokeDeny(metrics), requiredRoles);
         post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
         post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
         delete(path, new ProjectLockRevoke(metrics), requiredRoles);

@@ -50,7 +50,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
@@ -124,19 +123,8 @@ public class ProjectLockRequest implements Handler {
                 requestResultSize.update(result.length());
                 ctx.status(HttpServletResponse.SC_CREATED);
             } else {
-                // We don't have any idea exactly why the create failed - right?
-                // we could try and see if its already locked.
-
-                boolean alreadyLocked = lockDao.isLocked(
-                        lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId());
-
-                // or see what the locs are:
-                List<ProjectLock> locks = lockDao.retrieveLocks(
-                        lock.getOfficeId(), lock.getProjectId(), lock.getApplicationId());
-
                 ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                CdaError re =  new CdaError("Requested lock was not retrieved. Already locked: "
-                                + alreadyLocked + ", locks: " + locks, true);
+                CdaError re =  new CdaError("Requested lock was not retrieved.", true);
                 ctx.json(re);
             }
 
