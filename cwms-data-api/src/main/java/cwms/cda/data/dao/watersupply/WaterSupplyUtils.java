@@ -34,7 +34,6 @@ import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
-import cwms.cda.data.dto.watersupply.WaterUserContractRef;
 import java.time.ZoneId;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
 import usace.cwms.db.dao.ifc.loc.LocationType;
@@ -63,7 +62,7 @@ public class WaterSupplyUtils {
 
     public static WaterUserType map(WaterUser waterUser) {
         return new WaterUserType(waterUser.getEntityName(),
-                map(waterUser.getParentLocationRef()), waterUser.getWaterRight());
+                map(waterUser.getProjectLocationRef()), waterUser.getWaterRight());
     }
 
     public static LookupType map(usace.cwms.db.dao.ifc.cat.LookupType lookupType) {
@@ -148,7 +147,7 @@ public class WaterSupplyUtils {
     public static WaterUserContractType map(WaterUserContract contract) {
         return new WaterUserContractType(new WaterUserContractRefType(map(contract.getWaterUser()),
                     contract.getContractId().getName()),
-                map(contract.getWaterContract()), contract.getContractEffectiveDate(),
+                map(contract.getContractType()), contract.getContractEffectiveDate(),
                 contract.getContractExpirationDate(), contract.getContractedStorage(),
                 contract.getInitialUseAllocation(), contract.getFutureUseAllocation(),
                 contract.getStorageUnitsId(), contract.getFutureUsePercentActivated(),
@@ -157,15 +156,15 @@ public class WaterSupplyUtils {
     }
 
 
-    public static WaterUserContractRefType map(WaterUserContractRef contract,
-            CwmsId projectLocation) {
-        return new WaterUserContractRefType(map(contract.getWaterUser(),
-                projectLocation), contract.getContractName());
+    public static WaterUserContractRefType map(WaterUser user,
+            CwmsId projectLocation, String contractName) {
+        return new WaterUserContractRefType(map(user,
+                projectLocation), contractName);
     }
 
-    public static WaterUserContractRef map(WaterUserContractRefType contract,
-            CwmsId projectLocation) {
-        return new WaterUserContractRef(map(contract.getWaterUserType(), projectLocation),
-                contract.getContractName());
+    public static WaterUser map(WaterUserContractRefType contract,
+            CwmsId projectLocation, String contractName) {
+        return new WaterUser(contract.getContractName(),
+                projectLocation, contractName);
     }
 }
