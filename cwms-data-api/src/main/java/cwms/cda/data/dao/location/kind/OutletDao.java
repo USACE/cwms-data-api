@@ -90,11 +90,11 @@ public class OutletDao extends JooqDao<Outlet> {
                      .orElse(null);
     }
 
-    public void storeOutlet(ProjectStructure outlet, String ratingGroup, boolean failIfExists) {
+    public void storeOutlet(Outlet outlet, boolean failIfExists) {
         connection(dsl, conn -> {
             setOffice(conn, outlet.getProjectId().getOfficeId());
             PROJECT_STRUCTURE_OBJ_T structure = mapToProjectStructure(outlet);
-            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, ratingGroup,
+            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, outlet.getRatingGroupId(),
                                                   OracleTypeMap.formatBool(failIfExists));
         });
     }

@@ -83,16 +83,16 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     private static final List<VirtualOutletRecord> BASE_ONLY_VIRTUAL_OUTLET = Arrays.asList(
             buildVirtualOutletRecord(CO3_I1, CO3_CONDUIT), buildVirtualOutletRecord(CO3_I2, CO3_CONDUIT),
             buildVirtualOutletRecord(CO3_I3, CO3_CONDUIT), buildVirtualOutletRecord(CO3_CONDUIT));
-    private static final Outlet CO1_I25_OUTLET = buildTestOutlet(CO1_I25);
-    private static final Outlet CO1_I53_OUTLET = buildTestOutlet(CO1_I53);
-    private static final Outlet CO1_LOW_FLOW_OUTLET = buildTestOutlet(CO1_LOW_FLOW);
-    private static final Outlet CO2_CONDUIT_OUTLET = buildTestOutlet(CO2_CONDUIT);
-    private static final Outlet CO2_INTAKE_OUTLET = buildTestOutlet(CO2_INTAKE);
-    private static final Outlet CO2_WEIR_OUTLET = buildTestOutlet(CO2_WEIR);
-    private static final Outlet CO3_I1_OUTLET = buildTestOutlet(CO3_I1);
-    private static final Outlet CO3_I2_OUTLET = buildTestOutlet(CO3_I2);
-    private static final Outlet CO3_I3_OUTLET = buildTestOutlet(CO3_I3);
-    private static final Outlet CO3_CONDUIT_OUTLET = buildTestOutlet(CO3_CONDUIT);
+    private static final Outlet CO1_I25_OUTLET = buildTestOutlet(CO1_I25, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO1_I53_OUTLET = buildTestOutlet(CO1_I53, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO1_LOW_FLOW_OUTLET = buildTestOutlet(CO1_LOW_FLOW, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO2_CONDUIT_OUTLET = buildTestOutlet(CO2_CONDUIT, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO2_INTAKE_OUTLET = buildTestOutlet(CO2_INTAKE, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO2_WEIR_OUTLET = buildTestOutlet(CO2_WEIR, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO3_I1_OUTLET = buildTestOutlet(CO3_I1, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO3_I2_OUTLET = buildTestOutlet(CO3_I2, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO3_I3_OUTLET = buildTestOutlet(CO3_I3, VIRTUAL_OUTLET_RATING_GROUP);
+    private static final Outlet CO3_CONDUIT_OUTLET = buildTestOutlet(CO3_CONDUIT, VIRTUAL_OUTLET_RATING_GROUP);
 
     @BeforeAll
     static void setup() throws Exception {
@@ -114,16 +114,16 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
                 locationsDao.storeLocation(CO3_I3);
                 locationsDao.storeLocation(CO3_CONDUIT);
 
-                outletDao.storeOutlet(CO1_I25_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO1_I53_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO1_LOW_FLOW_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO2_CONDUIT_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO2_INTAKE_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO2_WEIR_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO3_I1_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO3_I2_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO3_I3_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
-                outletDao.storeOutlet(CO3_CONDUIT_OUTLET, VIRTUAL_OUTLET_RATING_GROUP, false);
+                outletDao.storeOutlet(CO1_I25_OUTLET, false);
+                outletDao.storeOutlet(CO1_I53_OUTLET, false);
+                outletDao.storeOutlet(CO1_LOW_FLOW_OUTLET, false);
+                outletDao.storeOutlet(CO2_CONDUIT_OUTLET, false);
+                outletDao.storeOutlet(CO2_INTAKE_OUTLET, false);
+                outletDao.storeOutlet(CO2_WEIR_OUTLET, false);
+                outletDao.storeOutlet(CO3_I1_OUTLET, false);
+                outletDao.storeOutlet(CO3_I2_OUTLET, false);
+                outletDao.storeOutlet(CO3_I3_OUTLET, false);
+                outletDao.storeOutlet(CO3_CONDUIT_OUTLET, false);
 
                 outletDao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
                                              EXISTING_VIRTUAL_OUTLET_ID.getName(), EXISTING_VIRTUAL_OUTLET, false);
@@ -279,11 +279,11 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     }
 
 
-    private static Outlet buildTestOutlet(Location outletLoc) {
+    private static Outlet buildTestOutlet(Location outletLoc, String ratingGroup) {
         return new Outlet.Builder().withProjectId(
                 new CwmsId.Builder().withName(ProjectStructureDaoIT.PROJECT_LOC2.getName())
                                     .withOfficeId(ProjectStructureDaoIT.PROJECT_LOC2.getOfficeId())
-                                    .build()).withLocation(outletLoc).build();
+                                    .build()).withLocation(outletLoc).withRatingGroupId(ratingGroup).build();
     }
 
     private static VirtualOutletRecord buildVirtualOutletRecord(Location upstream, Location... downstream) {
