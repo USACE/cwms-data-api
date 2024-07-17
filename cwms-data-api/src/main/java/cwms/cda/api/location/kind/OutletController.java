@@ -24,6 +24,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.Outlet;
@@ -98,49 +99,19 @@ public class OutletController implements CrudHandler {
         }
     }
 
-    @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
-                            "associated with the outlets.  Defaults to the user session id."),
-                    @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
-                            "Outlets whose data is to be included in the response."),
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Outlet.class),
-                            @OpenApiContent(from = Outlet.class, type = Formats.JSON)
-                    })
-            },
-            description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
-            tags = {TAG}
-    )
+    @OpenApi(ignore = true)
     @Override
     public void getAll(@NotNull Context ctx) {
-        String office = ctx.pathParam(OFFICE);
-        String projectId = ctx.pathParam(PROJECT_ID);
-        try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            DSLContext dsl = getDslContext(ctx);
-            OutletDao dao = new OutletDao(dsl);
-            List<Outlet> outlets = dao.retrieveOutletsForProject(office, projectId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
-            ctx.contentType(contentType.toString());
-            String serialized = Formats.format(contentType, outlets, Outlet.class);
-            ctx.result(serialized);
-            ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
-        }
+        //Implemented in OutletGetAllController since the path params are different
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
             pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the outlet to be retrieved."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the " +
                             "Outlet to be created."),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be retrieved.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -154,11 +125,11 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
-        String office = requiredParam(ctx, OFFICE);
+        String office = ctx.pathParam(OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            Outlet outlet = dao.retrieveOutlet(name, office);
+            Outlet outlet = dao.retrieveOutlet(office, name);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
@@ -172,13 +143,13 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the outlet to be renamed."),
                     @OpenApiParam(name = NAME, description = "Specifies the location-id of "
                             + "the outlet to be renamed."),
             },
             queryParams = {
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the new outlet location-id. "),
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be renamed.")
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the new outlet location-id."),
             },
             description = "Rename CWMS Outlet",
             method = HttpMethod.PATCH,
@@ -189,11 +160,11 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
-        String office = requiredParam(ctx, OFFICE);
+        String office = ctx.pathParam(OFFICE);
+        String newOutletId = requiredParam(ctx, NAME);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            String newOutletId = requiredParam(ctx, LOCATION_ID);
             dao.renameOutlet(name, newOutletId, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
         }
@@ -201,12 +172,12 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the outlet to be deleted."),
                     @OpenApiParam(name = NAME, description = "Specifies the location-id of the outlet to be" +
                             " deleted."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be deleted."),
                     @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
                             "Defaults to \"DELETE_KEY\"",
                             type = JooqDao.DeleteMethod.class)
@@ -222,13 +193,13 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
-        String office = requiredParam(ctx, OFFICE);
-        JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
-                                               .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
+        String office = ctx.pathParam(OFFICE);
+        JooqDao.DeleteMethod deleteMethod = queryParamAsClass(ctx, JooqDao.DeleteMethod.class,
+                                                              JooqDao.DeleteMethod.DELETE_KEY, METHOD);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            dao.deleteOutlet(name, office, deleteMethod.getRule());
+            dao.deleteOutlet(office, name, deleteMethod.getRule());
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
         }
     }
