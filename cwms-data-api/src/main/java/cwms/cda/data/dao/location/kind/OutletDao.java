@@ -222,7 +222,7 @@ public class OutletDao extends JooqDao<Outlet> {
         return output;
     }
 
-    public void renameOutlet(String oldOutletId, String newOutletId, String officeId) {
+    public void renameOutlet(String officeId, String oldOutletId, String newOutletId) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
             CWMS_OUTLET_PACKAGE.call_RENAME_OUTLET(DSL.using(conn).configuration(), oldOutletId, newOutletId, officeId);
