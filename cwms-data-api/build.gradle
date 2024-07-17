@@ -243,7 +243,7 @@ task run(type: JavaExec) {
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("cda") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
 
     def context = project.findProperty("cda.war.context") ?: "spk-data"
 
