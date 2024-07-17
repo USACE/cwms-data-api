@@ -30,7 +30,6 @@
     <core xmlns="urn:activemq:core">
         <name>ActiveMQServer</name>
         <persistence-enabled>false</persistence-enabled>
-        <security-enabled>false</security-enabled>
         <acceptors>
             <acceptor name="artemis">tcp://localhost:61616?httpEnabled=true</acceptor>
             <acceptor name="invm">vm://0</acceptor>

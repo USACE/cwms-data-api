@@ -29,10 +29,18 @@ import {WebSocket} from 'ws';
 Object.assign(global, {WebSocket});
 const client = new Client({
     logRawCommunication: true,
+    connectHeaders: {
+        login: 'M5HECTEST',
+        passcode: 'testkey',
+    },
     brokerURL: 'ws://localhost:61616/topic', connectionTimeout: 1000, onConnect: () => {
         console.log("Connected")
-        client.subscribe('SWT_TS_STORED', message => {
-            console.log(`Received: ${message.body}`);
+        client.subscribe('CDA.SWT.ALL', message => {
+            console.log(`Received: ${message.body} from CDA.SWT.ALL`);
+            message.ack();
+        }, {ack: 'client'});
+        client.subscribe('CDA.SWT.TS_STORED', message => {
+            console.log(`Received: ${message.body} from CDA.SWT.TS_STORED`);
             message.ack();
         }, {ack: 'client'});
     }, onStompError: (frame) => {

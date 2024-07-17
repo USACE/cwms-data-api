@@ -98,6 +98,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.messaging.CdaTopicHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -187,7 +188,8 @@ import org.owasp.html.PolicyFactory;
         "/projects/*",
         "/properties/*",
         "/lookup-types/*",
-        "/embankments/*"
+        "/embankments/*",
+        "/cda-topics"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -219,12 +221,13 @@ public class ApiServlet extends HttpServlet {
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
-
+    private CdaTopicHandler cdaTopicHandler;
 
 
     @Override
     public void destroy() {
         javalin.destroy();
+        cdaTopicHandler.shutdown();
     }
 
     @Override
@@ -514,6 +517,12 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        if(true || Boolean.getBoolean("cwms.data.api.messaging.enabled")) {
+            //TODO: setup separate data source for persistent connections to Oracle AQ
+            cdaTopicHandler = new CdaTopicHandler(cwms, metrics);
+            get("/cda-topics", cdaTopicHandler);
+            addCacheControl("/cda-topics", 1, TimeUnit.DAYS);
+        }
     }
 
     /**
