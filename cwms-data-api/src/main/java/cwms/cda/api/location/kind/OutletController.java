@@ -94,7 +94,7 @@ public class OutletController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            dao.storeOutlet(outlet, outlet.getRatingGroupId(), failIfExists);
+            dao.storeOutlet(outlet, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
         }
     }
