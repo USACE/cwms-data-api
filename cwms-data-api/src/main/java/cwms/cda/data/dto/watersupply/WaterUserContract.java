@@ -45,7 +45,7 @@ public class WaterUserContract extends CwmsDTO {
     @JsonProperty(required = true)
     private final CwmsId contractId;
     @JsonProperty(required = true)
-    private final LookupType waterContract;
+    private final LookupType contractType;
     @JsonProperty(required = true)
     private final Date contractEffectiveDate;
     @JsonProperty(required = true)
@@ -70,7 +70,7 @@ public class WaterUserContract extends CwmsDTO {
         super(builder.officeId);
         this.waterUser = builder.waterUser;
         this.contractId = builder.contractId;
-        this.waterContract = builder.waterContract;
+        this.contractType = builder.contractType;
         this.contractEffectiveDate = builder.contractEffectiveDate;
         this.contractExpirationDate = builder.contractExpirationDate;
         this.contractedStorage = builder.contractedStorage;
@@ -84,8 +84,8 @@ public class WaterUserContract extends CwmsDTO {
         this.pumpInLocation = builder.pumpInLocation;
     }
 
-    public LookupType getWaterContract() {
-        return this.waterContract;
+    public LookupType getContractType() {
+        return this.contractType;
     }
 
     public Date getContractEffectiveDate() {
@@ -144,7 +144,7 @@ public class WaterUserContract extends CwmsDTO {
         private String officeId;
         private WaterUser waterUser;
         private CwmsId contractId;
-        private LookupType waterContract;
+        private LookupType contractType;
         private Date contractEffectiveDate;
         private Date contractExpirationDate;
         private Double contractedStorage;
@@ -172,8 +172,8 @@ public class WaterUserContract extends CwmsDTO {
             return this;
         }
 
-        public Builder withWaterContract(LookupType waterContract) {
-            this.waterContract = waterContract;
+        public Builder withContractType(LookupType contractType) {
+            this.contractType = contractType;
             return this;
         }
 

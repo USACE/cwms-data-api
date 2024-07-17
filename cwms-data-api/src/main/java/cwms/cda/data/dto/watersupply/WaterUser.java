@@ -45,7 +45,7 @@ public class WaterUser extends CwmsDTOBase {
     @JsonProperty(required = true)
     private String entityName;
     @JsonProperty(required = true)
-    private CwmsId parentLocationRef;
+    private CwmsId projectLocationRef;
     @JsonProperty(required = true)
     private String waterRight;
 
@@ -54,12 +54,12 @@ public class WaterUser extends CwmsDTOBase {
 
     public WaterUser(String entityName, CwmsId locationRef, String waterRight) {
         this.entityName = entityName;
-        this.parentLocationRef = locationRef;
+        this.projectLocationRef = locationRef;
         this.waterRight = waterRight;
     }
 
-    public CwmsId getParentLocationRef() {
-        return this.parentLocationRef;
+    public CwmsId getProjectLocationRef() {
+        return this.projectLocationRef;
     }
 
     public String getEntityName() {

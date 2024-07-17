@@ -78,7 +78,7 @@ final class WaterUserContractTest {
                 },
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                            .withWaterContract(new LookupType.Builder()
+                            .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
                                     .withTooltip("TEST TOOLTIP")
@@ -105,7 +105,7 @@ final class WaterUserContractTest {
                             .withWaterUser(new WaterUser("Test User",
                                     new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
                                     "Test Water Right"))
-                            .withWaterContract(new LookupType.Builder()
+                            .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
                                     .withTooltip("TEST TOOLTIP")
@@ -128,7 +128,7 @@ final class WaterUserContractTest {
                             .withWaterUser(new WaterUser("Test User",
                                     new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
                                     "Test Water Right"))
-                            .withWaterContract(new LookupType.Builder()
+                            .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
                                     .withTooltip("TEST TOOLTIP")
@@ -151,7 +151,7 @@ final class WaterUserContractTest {
                             .withWaterUser(new WaterUser("Test User",
                                     new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
                                     "Test Water Right"))
-                            .withWaterContract(new LookupType.Builder()
+                            .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
                                     .withTooltip("TEST TOOLTIP")
@@ -170,7 +170,7 @@ final class WaterUserContractTest {
                 },
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                            .withWaterContract(new LookupType.Builder()
+                            .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
                                     .withTooltip("TEST TOOLTIP")
@@ -198,7 +198,7 @@ final class WaterUserContractTest {
                 .withWaterUser(new WaterUser("Test User",
                         new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
                         "Test Water Right"))
-                .withWaterContract(new LookupType.Builder()
+                .withContractType(new LookupType.Builder()
                         .withActive(true)
                         .withDisplayValue("Test Display Value")
                         .withOfficeId(OFFICE_ID)
@@ -213,9 +213,9 @@ final class WaterUserContractTest {
                 .withContractedStorage(200000.5)
                 .withFutureUsePercentActivated(15.6)
                 .withTotalAllocPercentActivated(65.2)
-                .withPumpOutLocation(new WaterSupplyPump(buildTestLocation(true, 1), PumpType.PUMP_OUT))
-                .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation(true, 2), PumpType.PUMP_OUT_BELOW))
-                .withPumpInLocation(new WaterSupplyPump(buildTestLocation(true, 3), PumpType.PUMP_IN))
+                .withPumpOutLocation(new WaterSupplyPump(buildTestLocation(true, 1), PumpType.OUT))
+                .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation(true, 2), PumpType.BELOW))
+                .withPumpInLocation(new WaterSupplyPump(buildTestLocation(true, 3), PumpType.IN))
                 .build();
     }
 

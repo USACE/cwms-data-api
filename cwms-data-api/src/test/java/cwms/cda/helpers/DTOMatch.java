@@ -234,7 +234,7 @@ public final class DTOMatch {
     public static void assertMatch(WaterUser firstUser, WaterUser secondUser) {
         assertAll(
                 () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
-                () -> DTOMatch.assertMatch(firstUser.getParentLocationRef(), secondUser.getParentLocationRef()),
+                () -> DTOMatch.assertMatch(firstUser.getProjectLocationRef(), secondUser.getProjectLocationRef()),
                 () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
         );
     }
@@ -271,7 +271,7 @@ public final class DTOMatch {
         assertAll(
                 () -> assertMatch(firstContract.getWaterUser(), secondContract.getWaterUser()),
                 () -> DTOMatch.assertMatch(firstContract.getContractId(), secondContract.getContractId()),
-                () -> DTOMatch.assertMatch(firstContract.getWaterContract(), secondContract.getWaterContract()),
+                () -> DTOMatch.assertMatch(firstContract.getContractType(), secondContract.getContractType()),
                 () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
                         secondContract.getContractEffectiveDate().toString()),
                 () -> assertEquals(firstContract.getContractExpirationDate().toString(),
