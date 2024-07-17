@@ -284,11 +284,17 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 20998);
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034);
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
+
+            if(!retVal)
+            {
+                segments = Collections.singletonList("does not exist as a stream location");
+                retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
+            }
         }
         return retVal;
     }    
