@@ -517,7 +517,7 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        if(true || Boolean.getBoolean("cwms.data.api.messaging.enabled")) {
+        if(Boolean.getBoolean("cwms.data.api.messaging.enabled")) {
             //TODO: setup separate data source for persistent connections to Oracle AQ
             cdaTopicHandler = new CdaTopicHandler(cwms, metrics);
             get("/cda-topics", cdaTopicHandler);
