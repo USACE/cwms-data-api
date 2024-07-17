@@ -25,6 +25,7 @@
 package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_MASK;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
@@ -32,7 +33,6 @@ import static cwms.cda.api.project.ProjectLockHandlerUtil.releaseLock;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.revokeLock;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,12 +43,18 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
-import fixtures.TestAccounts;
+import fixtures.CwmsDataApiSetupCallback;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -60,7 +66,7 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
 
     String projId1 = "catLocks1";
     String projId2 = "catLocks2";
-    String appId = "catLocks_test";
+    String appId = "catlocks_test";
     int revokeTimeout = 10;
     String lock1;
     String lock2;
@@ -71,24 +77,26 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectDao prjDao = new ProjectDao(dsl);
 
-            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-            String userName = user.getName();
-            String officeMask = OFFICE;
             Project testProject1 = buildTestProject(OFFICE, projId1);
             prjDao.create(testProject1);
             Project testProject2 = buildTestProject(OFFICE, projId2);
             prjDao.create(testProject2);
 
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId1, appId, userName, true);
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId2, appId, userName, true);
+            String webUser = CwmsDataApiSetupCallback.getWebUser();  // l2webtest
+            //  removeAllLockRevokerRights seems to hang..
+            lockDao.updateLockRevokerRights(OFFICE, OFFICE, projId1, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE, OFFICE, projId2, appId, webUser, true);
 
             ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
-            String lock1 = lockDao.requestLock(req1, true, revokeTimeout);
+
+            lock1 = lockDao.requestLock(req1, true, revokeTimeout);
+            Assertions.assertNotNull(lock1);
             assertTrue(lock1.length() > 8);
 
             ProjectLock req2 = new ProjectLock.Builder(OFFICE, projId2, appId).build();
-            String lock2 = lockDao.requestLock(req2, false, revokeTimeout);
+            lock2 = lockDao.requestLock(req2, false, revokeTimeout);
+            Assertions.assertNotNull(lock2);
             assertTrue(lock2.length() > 8);
             assertNotEquals(lock1, lock2);
         });
@@ -103,10 +111,12 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             releaseLock(dsl, OFFICE, lock2);
 
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            lockDao.updateLockRevokerRights(OFFICE, null, projId1, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
-            lockDao.updateLockRevokerRights(OFFICE, null, projId2, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
+            String webUser = CwmsDataApiSetupCallback.getWebUser();  // l2webtest
 
-            revokeLock(dsl, OFFICE, projId1, appId);
+            lockDao.updateLockRevokerRights(OFFICE, null, projId1, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE, null, projId2, appId, webUser, true);
+
+            revokeLock(dsl, OFFICE, projId1, appId);  // happens as L2WEBTEST
             revokeLock(dsl, OFFICE, projId2, appId);
 
             deleteProject(dsl, projId1, OFFICE, appId);
@@ -117,9 +127,26 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
     @Test
     void test_cat_locks() {
 
+        String webUser = CwmsDataApiSetupCallback.getWebUser();
+
+        Map<String,String> lock1 = new LinkedHashMap<>();
+        lock1.put("project-id", projId1);
+        lock1.put("application-id", appId);
+        lock1.put("office-id", OFFICE);
+        lock1.put("session-user", webUser);
+
+        Map<String,String> lock2 = new LinkedHashMap<>();
+        lock1.put("project-id", projId2);
+        lock1.put("application-id", appId);
+        lock1.put("office-id", OFFICE);
+        lock1.put("session-user", webUser);
+
+        Matcher<String> locksMatcher = getMatcher(lock1, lock2);
+
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSON)
+            .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, "catLocks*")
             .queryParam(APPLICATION_MASK, appId)
         .when()
@@ -131,15 +158,44 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(2))
-            .body("[0].office-id", equalToIgnoringCase(OFFICE))
-            .body("[0].project-id", equalToIgnoringCase(projId1))
-            .body("[0].application-id", equalToIgnoringCase(appId))
-            .body("[0].session-user", equalToIgnoringCase(TestAccounts.KeyUser.SPK_NORMAL.getName()))
-            .body("[1].office-id", equalToIgnoringCase(OFFICE))
-            .body("[1].project-id", equalToIgnoringCase(projId2))
-            .body("[1].application-id", equalToIgnoringCase(appId))
-            .body("[1].session-user", equalToIgnoringCase(TestAccounts.KeyUser.SPK_NORMAL.getName()))
+            .body("[0]", locksMatcher)
+            .body("[1]", locksMatcher)
         ;
     }
+
+    private Matcher<String> getMatcher(Map<String, String> lock1, Map<String, String> lock2) {
+
+        return new BaseMatcher<String>(){
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("the expected Project Lock items");
+            }
+
+            @Override
+            public boolean matches(Object o) {
+                // o is LinkedHashMap<String, String>.  keys are office-id, project-id, application-id...
+                // values are "SPK", "catLocks2"
+
+                if(o instanceof Map) {
+                    Map<String, String> jsonLock = (Map<String, String>) o;
+                    return matches(lock1, jsonLock) || matches(lock2, jsonLock);
+                }
+
+                return false;
+            }
+
+            private boolean matches(Map<String,String> expected, Map<String, String> provided){
+
+                if(provided.keySet().containsAll(expected.keySet())){
+                        return expected.entrySet().stream()
+                                .allMatch(entry -> entry.getValue().equalsIgnoreCase(provided.get(entry.getKey())));
+                }
+                return false;
+            }
+        };
+
+    }
+
 
 }

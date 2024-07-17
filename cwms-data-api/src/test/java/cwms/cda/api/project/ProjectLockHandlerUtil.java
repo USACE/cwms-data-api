@@ -104,7 +104,7 @@ public class ProjectLockHandlerUtil {
         try {
             lockDao.revokeLock(office, projId, appId, 0);
         } catch (Exception e) {
-            logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", appId);
+            // don't care
         }
     }
 

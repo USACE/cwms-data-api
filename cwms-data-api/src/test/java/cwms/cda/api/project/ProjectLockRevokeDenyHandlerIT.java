@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Timeout;
 
 
 @Tag("integration")
-public class ProjectLockDenyHandlerIT extends DataApiTestIT {
+public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
 
     // other lock tests at : https://bitbucket.hecdev.net/projects/CWMS/repos/hec-cwms-data-access/
     // browse/hec-db-integration-testing/src/test/java/wcds/dbi/oracle/project/
