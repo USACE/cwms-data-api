@@ -188,7 +188,6 @@ import org.owasp.html.PolicyFactory;
         "/projects/*",
         "/properties/*",
         "/lookup-types/*",
-        "/embankments/*",
         "/cda-topics"
 })
 public class ApiServlet extends HttpServlet {
