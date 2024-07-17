@@ -145,7 +145,7 @@ public class OutletController implements CrudHandler {
             pathParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the outlet to be renamed."),
-                    @OpenApiParam(name = NAME, description = "Specifies the location-id of "
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of "
                             + "the outlet to be renamed."),
             },
             queryParams = {
@@ -165,8 +165,8 @@ public class OutletController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            dao.renameOutlet(name, newOutletId, office);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            dao.renameOutlet(office, name, newOutletId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " successfully renamed to " + newOutletId);
         }
     }
 
