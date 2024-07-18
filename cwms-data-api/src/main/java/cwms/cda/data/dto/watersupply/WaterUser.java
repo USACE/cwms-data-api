@@ -43,16 +43,13 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class WaterUser extends CwmsDTOBase {
     @JsonProperty(required = true)
-    private String entityName;
+    private final String entityName;
     @JsonProperty(required = true)
-    private CwmsId projectLocationRef;
+    private final CwmsId projectLocationRef;
     @JsonProperty(required = true)
-    private String waterRight;
+    private final String waterRight;
 
-    private WaterUser() {
-    }
-
-    public WaterUser(String entityName, CwmsId locationRef, String waterRight) {
+    public WaterUser(@JsonProperty("entity-name") String entityName, @JsonProperty("project-location-ref") CwmsId locationRef, @JsonProperty("water-right") String waterRight) {
         this.entityName = entityName;
         this.projectLocationRef = locationRef;
         this.waterRight = waterRight;
