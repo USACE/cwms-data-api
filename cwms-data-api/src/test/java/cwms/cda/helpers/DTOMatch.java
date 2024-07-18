@@ -43,6 +43,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -291,6 +292,19 @@ public final class DTOMatch {
                 () -> assertMatch(firstContract.getPumpInLocation(), secondContract.getPumpInLocation())
         );
     }
+
+    public static void assertMatch(WaterSupplyAccounting first, WaterSupplyAccounting second) {
+        assertAll(
+                () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
+                () -> assertEquals(first.getContractName(), second.getContractName()),
+                () -> assertMatch(first.getPumpLocation(), second.getPumpLocation()),
+                () -> assertMatch(first.getTransferType(), second.getTransferType()),
+                () -> assertEquals(first.getFlow(), second.getFlow()),
+                () -> assertEquals(first.getTransferDate(), second.getTransferDate()),
+                () -> assertEquals(first.getComment(), second.getComment())
+        );
+    }
+
 
 
     @FunctionalInterface
