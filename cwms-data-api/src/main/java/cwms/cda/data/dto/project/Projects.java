@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV2.class)
 public class Projects extends CwmsDTOPaginated {
 
     List<Project> projects;
