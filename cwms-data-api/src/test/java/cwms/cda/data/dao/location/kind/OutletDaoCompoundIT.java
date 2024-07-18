@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Test;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
-class OutletDaoCompoundIT extends ProjectStructureDaoIT {
+class OutletDaoCompoundIT extends ProjectStructureIT {
     private static final String OUTLET_KIND = "OUTLET";
     private static final CwmsId VIRTUAL_OUTLET_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_LOC2.getName() + "-VirtualOutlet")
                                                                                   .withOfficeId(OFFICE_ID)
@@ -283,8 +283,8 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
 
     private static Outlet buildTestOutlet(Location outletLoc, CwmsId ratingGroup) {
         return new Outlet.Builder().withProjectId(
-                new CwmsId.Builder().withName(ProjectStructureDaoIT.PROJECT_LOC2.getName())
-                                    .withOfficeId(ProjectStructureDaoIT.PROJECT_LOC2.getOfficeId())
+                new CwmsId.Builder().withName(ProjectStructureIT.PROJECT_LOC2.getName())
+                                    .withOfficeId(ProjectStructureIT.PROJECT_LOC2.getOfficeId())
                                     .build()).withLocation(outletLoc).withRatingGroupId(ratingGroup).build();
     }
 

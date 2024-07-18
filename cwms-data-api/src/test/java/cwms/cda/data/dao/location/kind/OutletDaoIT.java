@@ -42,7 +42,7 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
-class OutletDaoIT extends ProjectStructureDaoIT {
+class OutletDaoIT extends ProjectStructureIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId TAINTER_GATE_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId BOX_CULVERT_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert").withOfficeId(OFFICE_ID).build();

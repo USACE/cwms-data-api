@@ -27,19 +27,19 @@ import java.time.ZoneId;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 
-abstract class ProjectStructureDaoIT extends DataApiTestIT
+public abstract class ProjectStructureIT extends DataApiTestIT
 {
 	protected static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
-	static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
-	static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
-	static final CwmsId PROJECT_1_ID = new CwmsId.Builder().withName(PROJECT_LOC.getName())
+	public static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
+	public static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
+	public static final CwmsId PROJECT_1_ID = new CwmsId.Builder().withName(PROJECT_LOC.getName())
 																   .withOfficeId(PROJECT_LOC.getOfficeId())
 																   .build();
-	static final CwmsId PROJECT_2_ID = new CwmsId.Builder().withName(PROJECT_LOC2.getName())
+	public static final CwmsId PROJECT_2_ID = new CwmsId.Builder().withName(PROJECT_LOC2.getName())
 																   .withOfficeId(PROJECT_LOC2.getOfficeId())
 																   .build();
 
-	static void setupProject() throws Exception {
+	public static void setupProject() throws Exception {
 		//Don't tag this as a @BeforeAll - JUnit can't guarantee this occurs first.
 		CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
 		databaseLink.connection(c -> {
@@ -49,7 +49,7 @@ abstract class ProjectStructureDaoIT extends DataApiTestIT
 		}, CwmsDataApiSetupCallback.getWebUser());
 	}
 
-	static void tearDownProject() throws Exception
+	public static void tearDownProject() throws Exception
 	{
 		//Don't tag this as a @AfterAll - JUnit can't guarantee this occurs first.
 		CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -65,7 +65,7 @@ abstract class ProjectStructureDaoIT extends DataApiTestIT
 		}, CwmsDataApiSetupCallback.getWebUser());
 	}
 
-	static Location buildProjectLocation(String locationId) {
+	public static Location buildProjectLocation(String locationId) {
 		return new Location.Builder(locationId, "PROJECT", ZoneId.of("UTC"),
 				38.5613824, -121.7298432, "NVGD29", OFFICE_ID)
 				.withElevation(10.0)
@@ -84,7 +84,7 @@ abstract class ProjectStructureDaoIT extends DataApiTestIT
 				.build();
 	}
 
-	static PROJECT_OBJ_T buildProject(Location location) {
+	public static PROJECT_OBJ_T buildProject(Location location) {
 		PROJECT_OBJ_T retval = new PROJECT_OBJ_T();
 		retval.setPROJECT_LOCATION(LocationUtil.getLocation(location));
 		retval.setPUMP_BACK_LOCATION(null);
@@ -107,7 +107,7 @@ abstract class ProjectStructureDaoIT extends DataApiTestIT
 		return retval;
 	}
 
-	static Location buildProjectStructureLocation(String locationId, String locationKind) {
+	public static Location buildProjectStructureLocation(String locationId, String locationKind) {
 		return new Location.Builder(locationId, locationKind, ZoneId.of("UTC"),
 			38.5613824, -121.7298432, "NVGD29", OFFICE_ID)
 			.withPublicName("Integration Test " + locationId)
