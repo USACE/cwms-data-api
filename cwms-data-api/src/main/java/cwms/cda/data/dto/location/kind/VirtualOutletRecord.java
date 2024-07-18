@@ -38,7 +38,7 @@ import java.util.List;
 @JsonDeserialize(builder = VirtualOutletRecord.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class VirtualOutletRecord extends CwmsDTOBase {
+public final class VirtualOutletRecord extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId outletId;
     private final List<CwmsId> downstreamOutletIds = new ArrayList<>();

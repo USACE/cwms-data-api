@@ -36,7 +36,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"projectId", "location", "ratingGroupId"})
-public class Outlet extends ProjectStructure {
+public final class Outlet extends ProjectStructure {
     private final String ratingGroupId;
 
     private Outlet(Builder builder) {

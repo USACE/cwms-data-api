@@ -41,7 +41,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"projectId", "virtualOutletId", "virtualRecords"})
-public class VirtualOutlet extends CwmsDTOBase {
+public final class VirtualOutlet extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId projectId;
     @JsonProperty(required = true)
@@ -74,7 +74,7 @@ public class VirtualOutlet extends CwmsDTOBase {
         validator.validateCollection(virtualRecords);
     }
 
-    public static class Builder {
+    public static final class Builder {
         private CwmsId projectId;
         private CwmsId virtualOutletId;
         private List<VirtualOutletRecord> virtualRecords = new ArrayList<>();
