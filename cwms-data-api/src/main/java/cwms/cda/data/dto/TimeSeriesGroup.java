@@ -28,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -161,10 +160,5 @@ public class TimeSeriesGroup extends CwmsDTO {
         result = 31 * result + (getSharedRefTsId() != null ? getSharedRefTsId().hashCode() : 0);
         result = 31 * result + (assignedTimeSeries != null ? assignedTimeSeries.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // Nothing to validate
     }
 }

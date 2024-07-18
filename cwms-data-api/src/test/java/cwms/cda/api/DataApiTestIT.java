@@ -314,9 +314,13 @@ public class DataApiTestIT {
      * @throws SQLException Any error saving the data
      */
     protected static void createLocation(String location, boolean active, String office) throws SQLException {
+        createLocation(location,active,office, "STREAM");
+    }
+
+    protected static void createLocation(String location, boolean active, String office, String kind) throws SQLException {
         createLocation(location,active,office,
                        0.0,0.0,"WGS84",
-                       "UTC","STREAM");
+                       "UTC", kind);
     }
 
     /**

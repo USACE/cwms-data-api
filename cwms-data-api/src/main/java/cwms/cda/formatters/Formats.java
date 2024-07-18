@@ -170,6 +170,25 @@ public class Formats {
         }
     }
 
+    private <T extends CwmsDTOBase> List<T> parseContentListFromType(ContentType type, String content, Class<T> rootType)
+        throws FormattingException {
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        if (outputFormatter != null) {
+            List<T> retval = outputFormatter.parseContentList(content, rootType);
+            if (retval == null) {
+                throw new UnsupportedFormatException("Cannot deserialize empty content array");
+            }
+            for (T obj : retval) {
+                obj.validate();
+            }
+            return retval;
+        } else {
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                type.toString(), rootType.getName());
+            throw new UnsupportedFormatException(message);
+        }
+    }
+
     private OutputFormatter getOutputFormatter(ContentType type,
                                                Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
@@ -214,6 +233,11 @@ public class Formats {
     public static <T extends CwmsDTOBase> T parseContent(ContentType type, InputStream inputStream, Class<T> rootType)
             throws FormattingException {
         return formats.parseContentFromType(type, inputStream, rootType);
+    }
+
+    public static <T extends CwmsDTOBase> List<T> parseContentList(ContentType type, String content, Class<T> rootType)
+        throws FormattingException {
+        return formats.parseContentListFromType(type, content, rootType);
     }
 
     /**

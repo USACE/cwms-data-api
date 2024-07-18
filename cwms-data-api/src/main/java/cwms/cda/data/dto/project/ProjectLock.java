@@ -89,11 +89,6 @@ public class ProjectLock extends CwmsDTO {
         return sessionMachine;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        // Nothing to do
-    }
-
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {

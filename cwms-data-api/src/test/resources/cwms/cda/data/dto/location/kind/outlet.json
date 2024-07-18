@@ -15,8 +15,5 @@
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
   },
-  "characteristic-ref": {
-    "office-id": "SPK",
-    "characteristic-id": "Ogee Weir Depth"
-  }
+  "rating-group-id": "Rating-location-outlet"
 }

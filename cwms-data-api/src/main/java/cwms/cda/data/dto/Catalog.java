@@ -3,7 +3,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dao.CatalogRequestParameters;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
@@ -64,11 +63,6 @@ public class Catalog extends CwmsDTOPaginated {
      */
     public List<? extends CatalogEntry> getEntries() {
         return entries;
-    }
-
-    @Override
-    public void validate() throws FieldException{
-        // catalogs are never accepted as user input
     }
 
     public static class CatalogPage {

@@ -29,6 +29,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,7 +40,7 @@ import org.junit.jupiter.api.Test;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public final class StreamTest {
+final class StreamTest {
 
     @Test
     void createStream_allFieldsProvided_success() {
@@ -177,7 +178,7 @@ public final class StreamTest {
         String json = Formats.format(contentType, stream);
         Stream deserialized = Formats.parseContent(contentType, json, Stream.class);
 
-        assertSame(stream, deserialized);
+        DTOMatch.assertMatch(stream, deserialized);
     }
 
     @Test
@@ -225,20 +226,6 @@ public final class StreamTest {
         ContentType contentType = new ContentType(Formats.JSON);
         Stream deserialized = Formats.parseContent(contentType, json, Stream.class);
 
-        assertSame(expectedStream, deserialized);
-    }
-
-    public static void assertSame(Stream stream1, Stream stream2) {
-        assertAll(
-            () -> assertEquals(stream1.getStartsDownstream(), stream2.getStartsDownstream()),
-            () -> StreamNodeTest.assertSame(stream1.getFlowsIntoStreamNode(), stream2.getFlowsIntoStreamNode()),
-            () -> StreamNodeTest.assertSame(stream1.getDivertsFromStreamNode(), stream2.getDivertsFromStreamNode()),
-            () -> assertEquals(stream1.getLength(), stream2.getLength()),
-            () -> assertEquals(stream1.getAverageSlope(), stream2.getAverageSlope()),
-            () -> assertEquals(stream1.getLengthUnits(), stream2.getLengthUnits()),
-            () -> assertEquals(stream1.getSlopeUnits(), stream2.getSlopeUnits()),
-            () -> assertEquals(stream1.getComment(), stream2.getComment()),
-            () -> CwmsIdTest.assertSame(stream1.getId(), stream2.getId())
-        );
+        DTOMatch.assertMatch(expectedStream, deserialized);
     }
 }

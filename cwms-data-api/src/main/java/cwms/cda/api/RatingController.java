@@ -488,10 +488,9 @@ public class RatingController implements CrudHandler {
     }
 
     /**
-     * This is a marker interface only used by <code>Formats</code> to support <code>ContentType</code> aliases.
-     * There's no reason to implement this interface.
+     * This is a marker class only used by <code>Formats</code> to support <code>ContentType</code> aliases.
      */
     @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON})
     @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML, Formats.DEFAULT})
-    private interface RatingAliasMarker extends CwmsDTOBase { }
+    private static final class RatingAliasMarker extends CwmsDTOBase { }
 }

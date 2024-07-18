@@ -24,17 +24,40 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.location.kind.Turbine;
+import cwms.cda.data.dto.location.kind.TurbineChange;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.TestAccounts;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -42,112 +65,137 @@ import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.List;
-
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
-
 @Tag("integration")
 final class TurbineDaoIT extends DataApiTestIT {
-
-    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
-    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
-    private static final Location TURBINE_LOC1 = buildTurbineLocation("PROJECT-TURB_LOC1");
-    private static final Location TURBINE_LOC2 = buildTurbineLocation("TURB_LOC2");
-    private static final Location TURBINE_LOC3 = buildTurbineLocation("TURB_LOC3");
+    private static final String OFFICE = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
+    private static final Location PROJECT_LOC = buildProjectLocation("PROJECT1dao2");
+    private static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2dao2");
+    private static final Location TURBINE_LOC1 = buildTurbineLocation("PROJECT1dao2-TURB_LOC1dao2");
+    private static final Location TURBINE_LOC2 = buildTurbineLocation("TURB_LOC2dao2");
+    private static final Location TURBINE_LOC3 = buildTurbineLocation("TURB_LOC3dao2");
 
     @BeforeAll
     public static void setup() throws Exception {
+        tearDown();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            try {
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "T");
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "T");
-                locationsDao.storeLocation(TURBINE_LOC1);
-                locationsDao.storeLocation(TURBINE_LOC2);
-                locationsDao.storeLocation(TURBINE_LOC3);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+                DSLContext context = getDslContext(c, OFFICE);
+                LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
+                try {
+                    CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "T");
+                    CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "T");
+                    locationsDao.storeLocation(TURBINE_LOC1);
+                    locationsDao.storeLocation(TURBINE_LOC2);
+                    locationsDao.storeLocation(TURBINE_LOC3);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            },
+            CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
     public static void tearDown() throws Exception {
-
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(TURBINE_LOC1.getName(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(TURBINE_LOC2.getName(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(TURBINE_LOC3.getName(), databaseLink.getOfficeId());
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC2.getName(), databaseLink.getOfficeId());
-        });
+                DSLContext context = getDslContext(c, OFFICE);
+                cleanTurbine(context, TURBINE_LOC1);
+                cleanTurbine(context, TURBINE_LOC2);
+                cleanTurbine(context, TURBINE_LOC3);
+                cleanProject(context, PROJECT_LOC);
+                cleanProject(context, PROJECT_LOC2);
+            },
+            CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    private static void cleanTurbine(DSLContext context, Location turbine) {
+        try {
+            new TurbineDao(context).deleteTurbine(turbine.getName(), OFFICE, DeleteRule.DELETE_ALL);
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
+
+        try {
+            new LocationsDaoImpl(context).deleteLocation(turbine.getName(), OFFICE, true);
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
+    }
+
+    private static void cleanProject(DSLContext context, Location project) {
+        try {
+            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), project.getName(),
+                DeleteRule.DELETE_ALL.getRule(), OFFICE);
+        } catch (DataAccessException ex) {
+            if (!JooqDao.isNotFound(ex)) {
+                throw ex;
+            }
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
+
+        try {
+            new LocationsDaoImpl(context).deleteLocation(project.getName(), OFFICE, true);
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
     }
 
     @Test
     void testRoundTrip() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            TurbineDao turbineDao = new TurbineDao(context);
-            Turbine turbine = buildTestTurbine(TURBINE_LOC1, PROJECT_LOC.getName());
-            turbineDao.storeTurbine(turbine, false);
-            String turbineId = turbine.getLocation().getName();
-            String turbineOfficeId = turbine.getLocation().getOfficeId();
-            Turbine retrievedTurbine = turbineDao.retrieveTurbine(turbineId,
-                    turbineOfficeId);
-            assertEquals(turbine, retrievedTurbine);
-            turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
-            assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
+                DSLContext context = getDslContext(c, OFFICE);
+                TurbineDao turbineDao = new TurbineDao(context);
+                Turbine turbine = buildTestTurbine(TURBINE_LOC1, PROJECT_LOC.getName());
+                turbineDao.storeTurbine(turbine, false);
+                String turbineId = turbine.getLocation().getName();
+                String turbineOfficeId = turbine.getLocation().getOfficeId();
+                Turbine retrievedTurbine = turbineDao.retrieveTurbine(turbineId, turbineOfficeId);
+                DTOMatch.assertMatch(turbine, retrievedTurbine);
+                turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
+                assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
                     turbineOfficeId));
-        });
+            },
+            CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
     void testRoundTripMulti() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            TurbineDao turbineDao = new TurbineDao(context);
-            Turbine turbine1 = buildTestTurbine(TURBINE_LOC1, PROJECT_LOC.getName());
-            turbineDao.storeTurbine(turbine1, false);
-            Turbine turbine2 = buildTestTurbine(TURBINE_LOC2, PROJECT_LOC.getName());
-            turbineDao.storeTurbine(turbine2, false);
-            Turbine turbine3 = buildTestTurbine(TURBINE_LOC3, PROJECT_LOC2.getName());
-            turbineDao.storeTurbine(turbine2, false);
-            String turbineId = turbine2.getLocation().getName();
-            String turbineOfficeId = turbine2.getLocation().getOfficeId();
-            List<Turbine> retrievedTurbine = turbineDao.retrieveTurbines(turbine1.getProjectId().getName(),
+                DSLContext context = getDslContext(c, OFFICE);
+                TurbineDao turbineDao = new TurbineDao(context);
+                Turbine turbine1 = buildTestTurbine(TURBINE_LOC1, PROJECT_LOC.getName());
+                turbineDao.storeTurbine(turbine1, false);
+                Turbine turbine2 = buildTestTurbine(TURBINE_LOC2, PROJECT_LOC.getName());
+                turbineDao.storeTurbine(turbine2, false);
+                Turbine turbine3 = buildTestTurbine(TURBINE_LOC3, PROJECT_LOC2.getName());
+                turbineDao.storeTurbine(turbine3, false);
+                turbineDao.storeTurbine(turbine2, false);
+                String turbineId = turbine2.getLocation().getName();
+                String turbineOfficeId = turbine2.getLocation().getOfficeId();
+                List<Turbine> retrievedTurbine = turbineDao.retrieveTurbines(turbine1.getProjectId().getName(),
                     turbine1.getProjectId().getOfficeId());
-            assertEquals(2, retrievedTurbine.size());
-            assertTrue(retrievedTurbine.contains(turbine1));
-            assertTrue(retrievedTurbine.contains(turbine2));
-            assertFalse(retrievedTurbine.contains(turbine3));
-            turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
-            assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
+                assertEquals(2, retrievedTurbine.size());
+                assertTrue(retrievedTurbine.stream()
+                    .anyMatch(t -> t.getLocation().getName().equals(turbine1.getLocation().getName())));
+                assertTrue(retrievedTurbine.stream()
+                    .anyMatch(t -> t.getLocation().getName().equals(turbine2.getLocation().getName())));
+                assertFalse(retrievedTurbine.stream()
+                    .anyMatch(t -> t.getLocation().getName().equals(turbine3.getLocation().getName())));
+                turbineDao.deleteTurbine(turbineId, turbineOfficeId, DeleteRule.DELETE_ALL);
+                assertThrows(NotFoundException.class, () -> turbineDao.retrieveTurbine(turbineId,
                     turbineOfficeId));
-        });
+            },
+            CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
     void testRename() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+            DSLContext context = getDslContext(c, OFFICE);
             TurbineDao turbineDao = new TurbineDao(context);
             Turbine turbine = buildTestTurbine(TURBINE_LOC1, PROJECT_LOC.getName());
             turbineDao.storeTurbine(turbine, false);
@@ -162,54 +210,89 @@ final class TurbineDaoIT extends DataApiTestIT {
         });
     }
 
+    @Test
+    void testTurbineChangesRoundTrip() throws Exception {
+        InputStream resource = this.getClass()
+            .getResourceAsStream("/cwms/cda/data/dao/location/kind/turbine-settings.json");
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, TurbineChange.class);
+        List<TurbineChange> settingsFromDisk = Formats.parseContentList(contentType, serialized, TurbineChange.class);
+        CwmsId projectId = new CwmsId.Builder()
+            .withOfficeId(PROJECT_LOC.getOfficeId()).withName(PROJECT_LOC.getName()).build();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, OFFICE);
+            TurbineDao turbineDao = new TurbineDao(context);
+            turbineDao.storeTurbine(buildTestTurbine(TURBINE_LOC1, PROJECT_LOC.getName()), false);
+            turbineDao.storeTurbine(buildTestTurbine(TURBINE_LOC2, PROJECT_LOC.getName()), false);
+            turbineDao.storeTurbine(buildTestTurbine(TURBINE_LOC3, PROJECT_LOC.getName()), false);
+            Instant begin = ZonedDateTime.of(2024, 3, 4, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles")).toInstant();
+            Instant end = ZonedDateTime.of(2024, 3, 4, 2, 0, 0, 0, ZoneId.of("America/Los_Angeles")).toInstant();
+            turbineDao.storeOperationalChanges(settingsFromDisk, true);
+            List<TurbineChange> settings =
+                turbineDao.retrieveOperationalChanges(projectId, begin, end, true, true, "SI", 3);
+            assertEquals(settingsFromDisk.size(), settings.size());
+            for (int i = 0; i < settingsFromDisk.size(); i++) {
+                DTOMatch.assertMatch(settingsFromDisk.get(i), settings.get(i));
+            }
+            turbineDao.deleteOperationalChanges(projectId, begin, end, true);
+            settings = turbineDao.retrieveOperationalChanges(projectId, begin, end, true, true, "SI", 3);
+            assertTrue(settings.isEmpty());
+            turbineDao.deleteTurbine(TURBINE_LOC1.getName(), TURBINE_LOC1.getOfficeId(), DeleteRule.DELETE_ALL);
+            turbineDao.deleteTurbine(TURBINE_LOC2.getName(), TURBINE_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
+            turbineDao.deleteTurbine(TURBINE_LOC3.getName(), TURBINE_LOC3.getOfficeId(), DeleteRule.DELETE_ALL);
+        });
+
+    }
+
     private static Location buildProjectLocation(String projectId) {
-        String officeId = CwmsDataApiSetupCallback.getDatabaseLink().getOfficeId();
         return new Location.Builder(projectId, "PROJECT", ZoneId.of("UTC"),
-                38.5613824, -121.7298432, "NVGD29", officeId)
-                .withElevation(10.0)
-                .withElevationUnits("m")
-                .withLocationType("SITE")
-                .withCountyName("Sacramento")
-                .withNation(Nation.US)
-                .withActive(true)
-                .withStateInitial("CA")
-                .withPublishedLatitude(38.5613824)
-                .withPublishedLongitude(-121.7298432)
-                .withBoundingOfficeId(officeId)
-                .withLongName("UNITED STATES")
-                .withDescription("for testing")
-                .withNearestCity("Davis")
-                .build();
+            38.5613824, -121.7298432, "NVGD29", OFFICE)
+            .withElevation(10.0)
+            .withElevationUnits("m")
+            .withLocationType("SITE")
+            .withCountyName("Sacramento")
+            .withNation(Nation.US)
+            .withActive(true)
+            .withStateInitial("CA")
+            .withPublishedLatitude(38.5613824)
+            .withPublishedLongitude(-121.7298432)
+            .withBoundingOfficeId(OFFICE)
+            .withNation(Nation.US)
+            .withLongName(projectId + ".long name")
+            .withDescription("for testing")
+            .withNearestCity("Davis")
+            .build();
     }
 
     private static Turbine buildTestTurbine(Location location, String projectId) {
         return new Turbine.Builder()
-                .withLocation(location)
-                .withProjectId(new CwmsId.Builder()
-                        .withName(projectId)
-                        .withOfficeId(PROJECT_LOC.getOfficeId())
-                        .build())
-                .build();
+            .withLocation(location)
+            .withProjectId(new CwmsId.Builder()
+                .withName(projectId)
+                .withOfficeId(PROJECT_LOC.getOfficeId())
+                .build())
+            .build();
     }
 
     private static Location buildTurbineLocation(String locationId) {
-        String officeId = CwmsDataApiSetupCallback.getDatabaseLink().getOfficeId();
         return new Location.Builder(locationId, "TURBINE", ZoneId.of("UTC"),
-                38.5613824, -121.7298432, "NVGD29", officeId)
-                .withElevation(10.0)
-                .withElevationUnits("m")
-                .withLocationType("SITE")
-                .withCountyName("Sacramento")
-                .withNation(Nation.US)
-                .withActive(true)
-                .withStateInitial("CA")
-                .withBoundingOfficeId(officeId)
-                .withPublishedLatitude(38.5613824)
-                .withPublishedLongitude(-121.7298432)
-                .withLongName("UNITED STATES")
-                .withDescription("for testing")
-                .withNearestCity("Davis")
-                .build();
+            38.5613824, -121.7298432, "NVGD29", OFFICE)
+            .withElevation(10.0)
+            .withElevationUnits("m")
+            .withLocationType("SITE")
+            .withCountyName("Sacramento")
+            .withNation(Nation.US)
+            .withActive(true)
+            .withStateInitial("CA")
+            .withBoundingOfficeId(OFFICE)
+            .withPublishedLatitude(38.5613824)
+            .withPublishedLongitude(-121.7298432)
+            .withNation(Nation.US)
+            .withLongName(locationId + ".long name")
+            .withDescription("for testing")
+            .withNearestCity("Davis")
+            .build();
     }
 
     private static PROJECT_OBJ_T buildProject(Location location) {

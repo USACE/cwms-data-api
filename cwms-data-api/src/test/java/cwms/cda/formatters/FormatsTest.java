@@ -1,8 +1,7 @@
 package cwms.cda.formatters;
 
 
-import java.util.Arrays;
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
@@ -13,14 +12,12 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
-import cwms.cda.formatters.annotations.FormattableWith;
-import org.junit.jupiter.api.Assertions;
+import cwms.cda.data.dto.project.Project;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.*;
 
 class FormatsTest
 {
@@ -217,6 +214,8 @@ class FormatsTest
 		BASIN_DEFAULT(Basin.class, Formats.DEFAULT, Formats.NAMED_PGJSON),
 		BASIN_PGJSON(Basin.class, Formats.PGJSON, Formats.PGJSON),
 		BASIN_NAMED_PGJSON(Basin.class, Formats.NAMED_PGJSON, Formats.NAMED_PGJSON),
+		PROJECT_JSONV1(Project.class, Formats.JSONV1, Formats.JSONV1),
+		PROJECT_JSON(Project.class, Formats.JSON, Formats.JSONV1),
 		;
 
 		final Class<? extends CwmsDTOBase> _class;

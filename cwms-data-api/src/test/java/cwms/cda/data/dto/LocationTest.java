@@ -94,8 +94,8 @@ class LocationTest
 			assertNotNull(details);
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
 			List<String> missingFields = details.get(RequiredFieldException.MISSING_FIELDS);
-			assertTrue(missingFields.contains("Latitude"));
-			assertTrue(missingFields.contains("Longitude"));
+			assertTrue(missingFields.contains("latitude"));
+			assertTrue(missingFields.contains("longitude"));
 		}
 	}
 

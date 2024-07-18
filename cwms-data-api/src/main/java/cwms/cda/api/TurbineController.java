@@ -72,7 +72,7 @@ public final class TurbineController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
+                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location " +
                             "associated with the turbines."),
                     @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
                             "Turbines whose data is to be included in the response."),
@@ -88,8 +88,8 @@ public final class TurbineController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String projectId = ctx.queryParam(PROJECT_ID);
+        String office = requiredParam(ctx, OFFICE);
+        String projectId = requiredParam(ctx, PROJECT_ID);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);

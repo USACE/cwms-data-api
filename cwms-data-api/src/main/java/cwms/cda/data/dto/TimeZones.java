@@ -10,7 +10,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -22,30 +21,23 @@ import java.util.List;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeZones extends CwmsDTO
+public final class TimeZones extends CwmsDTOBase
 {
 	private List<TimeZone> timeZones;
 
-	@SuppressWarnings("unused") // for JAXB to handle marshalling
+	@SuppressWarnings("unused")
 	private TimeZones()
 	{
-		super(null);
+		// for JAXB to handle marshalling
 	}
 
 	public TimeZones(List<TimeZone> timeZones)
 	{
-		super(null);
 		this.timeZones = timeZones;
 	}
 
 	public List<TimeZone> getTimeZones()
 	{
 		return timeZones;
-	}
-
-	@Override
-	public void validate() throws FieldException
-	{
-		//No validation needed
 	}
 }

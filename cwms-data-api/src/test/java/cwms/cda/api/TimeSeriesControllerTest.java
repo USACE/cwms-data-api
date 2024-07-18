@@ -16,15 +16,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -36,9 +35,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
@@ -70,7 +67,7 @@ class TimeSeriesControllerTest extends ControllerTest {
 
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull(), eq(false) )).thenReturn(expected);
+                         isNotNull(), isNotNull(), isNull(), eq(true) )).thenReturn(expected);
 
 
         // build mock request and response
@@ -116,7 +113,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull(), eq(false));
+                         isNotNull(), isNotNull(), isNull(), eq(true));//
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -148,14 +145,15 @@ class TimeSeriesControllerTest extends ControllerTest {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
-        String formatted = Formats.format(Formats.parseHeader(format), fakeTs);
-        TimeSeries ts2 = Formats.parseContent(Formats.parseHeader(format), formatted, TimeSeries.class);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilar(fakeTs, ts2);
     }
 
     @Test
-    void testDeserializeTimeSeriesXmlUTC() throws IOException {
+    void testDeserializeTimeSeriesXmlUTC() {
         TimeZone aDefault = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -163,7 +161,8 @@ class TimeSeriesControllerTest extends ControllerTest {
             String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
             InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-            TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), inputStream, TimeSeries.class);
+            ContentType contentType = Formats.parseHeader(Formats.XMLV2, TimeSeries.class);
+            TimeSeries ts = Formats.parseContent(contentType, inputStream, TimeSeries.class);
 
             assertNotNull(ts);
 
@@ -175,12 +174,13 @@ class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    void testDeserializeTimeSeriesXml() throws IOException {
+    void testDeserializeTimeSeriesXml() {
             String xml = loadResourceAsString("cwms/cda/api/timeseries_create.xml");
             assertNotNull(xml);
 			 // Should this be XMLv2?
         InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), inputStream, TimeSeries.class);
+        ContentType contentType = Formats.parseHeader(Formats.XMLV2, TimeSeries.class);
+        TimeSeries ts = Formats.parseContent(contentType, inputStream, TimeSeries.class);
 
             assertNotNull(ts);
 
@@ -189,11 +189,12 @@ class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
-    void testDeserializeTimeSeriesJSON() throws IOException     {
+    void testDeserializeTimeSeriesJSON() {
         String jsonV2 = loadResourceAsString("cwms/cda/api/timeseries_create.json");
         assertNotNull(jsonV2);
         InputStream inputStream = new ByteArrayInputStream(jsonV2.getBytes(StandardCharsets.UTF_8));
-        TimeSeries ts = Formats.parseContent(Formats.parseHeader(Formats.JSONV2), inputStream, TimeSeries.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
+        TimeSeries ts = Formats.parseContent(contentType, inputStream, TimeSeries.class);
 
         assertNotNull(ts);
 

@@ -7,6 +7,7 @@ import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.selectDistinct;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -74,6 +75,9 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableLike;
 import org.jooq.TableOnConditionStep;
+import org.jooq.WindowOrderByStep;
+import org.jooq.WindowSpecification;
+import org.jooq.WindowSpecificationRowsStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -101,6 +105,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public static final String PROP_BASE = "cwms.cda.data.dao.ts";
 
     public static final String VERSIONED_NAME = "isVersioned";
+
+    /** To be able to use a named inner table (otherwise JOOQ creates a random alias which messes
+     * with the planner) we need to use fixed names to be able to reference the required columns.
+    ) */
+    private static final AV_CWMS_TS_ID cwmsTsIdView = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
+    private static final AV_TS_GRP_ASSGN tsGroupView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+    private static final AV_LOC_GRP_ASSGN locGroupView = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+
+    /**
+     * This two tables share common names and are used in the same query, this
+     * requires an "column as name" place holder to allow distinction.
+     */
+    private static final Field<String> tsGroupField = tsGroupView.GROUP_ID;
+    private static final Field<String> tsCategoryField = tsGroupView.CATEGORY_ID;
+
+    private static final Field<String> locGroupField = locGroupView.GROUP_ID;
+    private static final Field<String> locCategoryField = locGroupView.CATEGORY_ID;
 
     private static final Cache<List<String>, Boolean> isVersionedCache = CacheBuilder.newBuilder()
             .maximumSize(Integer.getInteger(PROP_BASE + "." + VERSIONED_NAME
@@ -480,10 +501,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
-            SelectConditionStep<Record1<Integer>> totalQuery = dsl
-                    .select(countDistinct(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE))
-                    .from(buildFromTable(inputParams))
-                    .where(buildWhereConditions(inputParams));
+            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<Condition>(), pageSize, true);
+            SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
+                    .select(countDistinct(limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
+                    .from(limiter);
             logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
             total = totalQuery.fetchOne(0, int.class);
         } else {
@@ -509,47 +530,28 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
         final CatalogRequestParameters params = inputParams;
 
-        List<TableField> pageEntryFields = new ArrayList<>(getCwmsTsIdFields());
+        List<TableField<?,?>> pageEntryFields = new ArrayList<>(getCwmsTsIdFields());
         if (params.isIncludeExtents()) {
             pageEntryFields.addAll(getExtentsFields());
         }
 
-        TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
-        if (params.needs(AV_TS_EXTENTS_UTC)) {
-            fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID.leftJoin(AV_TS_EXTENTS_UTC)
-                    .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
-                            .eq(AV_TS_EXTENTS_UTC.TS_CODE
-                                    .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
-        }
-
         List<Condition> whereConditions = buildWhereConditions(params);
         List<Condition> pagingConditions = buildPagingConditions(cursorOffice, cursorTsId);
+        CommonTableExpression<?> limiter = buildWithClause(params, whereConditions, pagingConditions, pageSize, false);
+        Field<BigDecimal> limiterCode = limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE);
+        SelectJoinStep<?> tmpQuery = dsl.with(limiter)
+                                        .select(pageEntryFields)
+                                        .from(limiter)
+                                        .join(AV_CWMS_TS_ID.AV_CWMS_TS_ID).on(limiterCode.eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE));
 
+        if (params.isIncludeExtents()) {
 
-        TableLike innerFrom = buildFromTable(params);
-        Field codeField = innerFrom.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE);
-
-        SelectSeekStep2<? extends Record, String, String> innerSelect = dsl.select(codeField)
-                .from(innerFrom)
-                .where(whereConditions).and(DSL.and(pagingConditions))
-                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
-                        DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID));
-
-        Field codeField2 = innerSelect.field(codeField);
-
-        SelectConditionStep codes = dsl.select(codeField2)
-                .from(innerSelect)
-                .where(field("rownum").lessOrEqual(pageSize));
-
-        SelectSeekStep2<Record, String, String> overallQuery = dsl.select(pageEntryFields)
-                .from(fromTable)
-                .where(
-                        codeField.in(codes)
-                )
-                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
-                        DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID));
-
-        logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
+            tmpQuery = tmpQuery.leftOuterJoin(AV_TS_EXTENTS_UTC)
+                                       .on(limiterCode
+                                         .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
+        }
+        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID, AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
+        logger.info(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
@@ -596,7 +598,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> pagingConditions = new ArrayList<>();
 
         // Can't do the rownum thing here b/c we want global ordering, not ordering within the page.
-        pagingConditions.add(DSL.noCondition());
+        //pagingConditions.add(DSL.noCondition());
 
         if (cursorOffice != null) {
             Condition moreInSameOffice = AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID
@@ -610,8 +612,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return pagingConditions;
     }
 
-    private static @NotNull List<TableField> getExtentsFields() {
-        List<TableField> extentsFields = new ArrayList<>();
+    private static @NotNull List<TableField<?,?>> getExtentsFields() {
+        List<TableField<?,?>> extentsFields = new ArrayList<>();
         extentsFields.add(AV_TS_EXTENTS_UTC.VERSION_TIME);
         extentsFields.add(AV_TS_EXTENTS_UTC.EARLIEST_TIME);
         extentsFields.add(AV_TS_EXTENTS_UTC.LATEST_TIME);
@@ -619,8 +621,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return extentsFields;
     }
 
-    private @NotNull List<TableField> getCwmsTsIdFields() {
-        List<TableField> cwmsTsIdFields = new ArrayList<>();
+    private @NotNull List<TableField<?,?>> getCwmsTsIdFields() {
+        List<TableField<?,?>> cwmsTsIdFields = new ArrayList<>();
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID);
@@ -642,26 +644,32 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return conditions;
     }
 
-    private static @NotNull TableLike buildFromTable(CatalogRequestParameters params) {
-        TableLike fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
-        TableOnConditionStep<Record> on = null;
+    private static @NotNull CommonTableExpression<?> buildWithClause(CatalogRequestParameters params, List<Condition> whereConditions, List<Condition> pagingConditions, int pageSize, boolean forCount) {
+        TableLike<?> fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
 
-        if (params.needs(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)) {
+        TableOnConditionStep<Record> on = null;
+        List<Field<?>> selectFields = new ArrayList<>();
+        selectFields.add(fromTable.field(cwmsTsIdView.TS_CODE));
+        selectFields.add(fromTable.field(cwmsTsIdView.DB_OFFICE_ID));
+
+        selectFields.add(fromTable.field(cwmsTsIdView.CWMS_TS_ID));
+
+        if (params.needs(tsGroupView)) {
             on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
-                    .join(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)
-                    .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE.eq(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE));
+                    .join(tsGroupView)
+                    .on(cwmsTsIdView.TS_CODE.eq(tsGroupView.TS_CODE));
             fromTable = on;
         }
 
         if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
             if (on == null) {
                 on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
-                        .join(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
+                        .leftJoin(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
                         .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
                                 .eq(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.LOCATION_CODE));
             } else {
                 on = on
-                        .join(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
+                        .leftJoin(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
                         .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
                                 .eq(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.LOCATION_CODE));
             }
@@ -671,17 +679,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (params.needs(AV_LOC.AV_LOC)) {
             if (on == null) {
                 on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
-                        .join(AV_LOC.AV_LOC)
+                        .leftJoin(AV_LOC.AV_LOC)
                         .on(AV_LOC.AV_LOC.LOCATION_CODE
                                 .eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
                                         .coerce(AV_LOC.AV_LOC.LOCATION_CODE)));
             } else {
                 on = on
-                        .join(AV_LOC.AV_LOC)
+                        .leftJoin(AV_LOC.AV_LOC)
                         .on(AV_LOC.AV_LOC.LOCATION_CODE
                                 .eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
                                         .coerce(AV_LOC.AV_LOC.LOCATION_CODE)));
             }
+            selectFields.add(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID);
             fromTable = on;
         }
 
@@ -702,7 +711,25 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             fromTable = on;
         }
 
-        return fromTable;
+        TableLike<?> innerSelect = selectDistinct(selectFields)
+                                     .from(fromTable)
+                                     .where(whereConditions).and(DSL.and(pagingConditions))
+                                     .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID, AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
+                                     .asTable("limiterInner");
+        if (forCount) {
+            return name("limiter").as(
+                    select(asterisk())
+                    .from(innerSelect)
+                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID), innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                    );
+        } else {
+            return name("limiter").as(
+                    select(asterisk())
+                    .from(innerSelect)
+                    .where(field("rownum").lessOrEqual(pageSize))
+                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID), innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                    );
+        }
     }
 
     private Collection<? extends Condition> buildLocConditions(CatalogRequestParameters params) {
@@ -724,10 +751,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> retval = new ArrayList<>();
 
         if (params.isExcludeEmpty()) {
-            retval.add(DSL.or(AV_TS_EXTENTS_UTC.VERSION_TIME.isNotNull(),
+            retval.add(DSL.or(
+                    AV_TS_EXTENTS_UTC.VERSION_TIME.isNotNull(),
                     AV_TS_EXTENTS_UTC.EARLIEST_TIME.isNotNull(),
                     AV_TS_EXTENTS_UTC.LATEST_TIME.isNotNull(),
-                    AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull()));
+                    AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
+                    );
         }
 
         return retval;
@@ -737,9 +766,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.GROUP_ID,
+            retval.add(caseInsensitiveLikeRegexNullTrue(locGroupField,
                     params.getLocGroupLike()));
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.CATEGORY_ID,
+            retval.add(caseInsensitiveLikeRegexNullTrue(locCategoryField,
                     params.getLocCatLike()));
         }
         return retval;
@@ -749,9 +778,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> retval = new ArrayList<>();
 
         if (params.needs(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)) {
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID,
+            retval.add(caseInsensitiveLikeRegexNullTrue(tsGroupField,
                     params.getTsGroupLike()));
-            retval.add(caseInsensitiveLikeRegexNullTrue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID,
+            retval.add(caseInsensitiveLikeRegexNullTrue(tsCategoryField,
                     params.getTsCatLike()));
         }
         return retval;
@@ -764,7 +793,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             retval.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID.eq(params.getOffice().toUpperCase()));
         }
 
-        retval.add(caseInsensitiveLikeRegexNullTrue(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID, params.getIdLike()));
+        retval.add(
+            caseInsensitiveLikeRegexNullTrue(
+                AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID,
+                params.getIdLike()));
 
         return retval;
     }

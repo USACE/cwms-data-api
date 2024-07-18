@@ -25,9 +25,16 @@
 package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
+import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.LookupTypeController;
+import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
+import cwms.cda.api.StreamReachController;
+import cwms.cda.api.UpstreamLocationsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
@@ -76,6 +83,9 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
+import cwms.cda.api.TurbineChangesDeleteController;
+import cwms.cda.api.TurbineChangesGetController;
+import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.auth.ApiKeyController;
@@ -164,6 +174,9 @@ import org.owasp.html.PolicyFactory;
         "/ratings/*",
         "/levels/*",
         "/basins/*",
+        "/streams/*",
+        "/stream-locations/*",
+        "/stream-reaches/*",
         "/blobs/*",
         "/clobs/*",
         "/pools/*",
@@ -174,8 +187,7 @@ import org.owasp.html.PolicyFactory;
         "/projects/*",
         "/properties/*",
         "/lookup-types/*",
-        "/embankments/*",
-        "/turbines/*"
+        "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -459,6 +471,18 @@ public class ApiServlet extends HttpServlet {
                 new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/basins/{basin-id}",
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/streams/{%s}", NAME),
+                new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations", Controllers.OFFICE, Controllers.NAME);
+        get(downstreamLocations,new DownstreamLocationsGetController(metrics));
+        addCacheControl(downstreamLocations, 5, TimeUnit.MINUTES);
+        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations", Controllers.OFFICE, Controllers.NAME);
+        get(upstreamLocations,new UpstreamLocationsGetController(metrics));
+        addCacheControl(upstreamLocations, 5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/stream-locations/{%s}", NAME),
+                new StreamLocationController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/stream-reaches/{%s}", NAME),
+                new StreamReachController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
@@ -475,6 +499,16 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+        cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
+            new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
+            new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", Controllers.OFFICE, Controllers.NAME);
+        get(turbineChanges,new TurbineChangesGetController(metrics));
+        addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
+        post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
+        delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
+
         get("/projects/child-locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -482,10 +516,6 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
-                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
-                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
     }
 
     /**

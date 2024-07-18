@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import java.text.MessageFormat;
 import java.util.Date;
 
@@ -82,11 +81,6 @@ public class TsvDqu extends CwmsDTO {
                         + "dataEntryDate={5}, value={6}, qualityCode={7}, startDate={8}, endDate={9}'}'",
                 officeId, cwmsTsId, unitId, dateTime, versionDate,
                 dataEntryDate, value, qualityCode, startDate, endDate);
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     @JsonPOJOBuilder

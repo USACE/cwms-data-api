@@ -39,6 +39,7 @@ import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
@@ -125,7 +126,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/embankments/")
+            .post("/projects/embankments/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -140,7 +141,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/" + EMBANKMENT.getLocation().getName())
+            .get("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -167,7 +168,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + EMBANKMENT.getLocation().getName())
+            .delete("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -182,7 +183,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/" + EMBANKMENT.getLocation().getName())
+            .get("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -201,7 +202,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/embankments/bogus")
+            .patch("/projects/embankments/bogus")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -220,7 +221,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + Instant.now().toEpochMilli())
+            .delete("/projects/embankments/" + Instant.now().toEpochMilli())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -247,7 +248,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/embankments/")
+            .post("/projects/embankments/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -263,7 +264,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/")
+            .get("/projects/embankments/")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -290,7 +291,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + EMBANKMENT.getLocation().getName())
+            .delete("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()

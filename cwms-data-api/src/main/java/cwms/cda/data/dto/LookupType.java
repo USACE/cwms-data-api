@@ -25,23 +25,23 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.util.Objects;
-
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonDeserialize(builder = LookupType.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class LookupType implements CwmsDTOBase {
+public final class LookupType extends CwmsDTOBase {
 
+    @JsonProperty(required = true)
     private final String officeId;
+    @JsonProperty(required = true)
     private final String displayValue;
     private final String tooltip;
     private final boolean active;
@@ -51,16 +51,6 @@ public final class LookupType implements CwmsDTOBase {
         this.displayValue = builder.displayValue;
         this.tooltip = builder.tooltip;
         this.active = builder.active;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        if (this.officeId == null || this.officeId.trim().isEmpty()) {
-            throw new FieldException("The 'officeId' field of a LookupType cannot be null or empty.");
-        }
-        if (this.displayValue == null || this.displayValue.trim().isEmpty()) {
-            throw new FieldException("The 'displayValue' field of a LookupType cannot be null or empty.");
-        }
     }
 
     public String getOfficeId() {

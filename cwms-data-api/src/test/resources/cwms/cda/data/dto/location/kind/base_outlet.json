@@ -1,0 +1,19 @@
+{
+  "project-id": {
+    "office-id": "SPK",
+    "name": "location"
+  },
+  "location": {
+    "office-id": "SPK",
+    "name": "outlet",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "active": true,
+    "public-name": "outlet",
+    "timezone-name": "UTC",
+    "location-kind": "Outlet",
+    "horizontal-datum": "NAD84",
+    "vertical-datum": "NAVD88"
+  },
+  "rating-group-id": "Rating-location-outlet"
+}
