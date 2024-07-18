@@ -1,0 +1,44 @@
+{
+  "water-user": {
+    "entity-name": "Test Entity",
+    "project-location-ref": {
+      "name": "Test Location",
+      "office-id": "SPK"
+    },
+    "water-right": "Test Water Right"
+  },
+  "contract-name": "Test Contract",
+  "pump-location": {
+    "name": "Test Pump",
+    "office-id": "SPK",
+    "latitude": 45.0,
+    "longitude": -120.0,
+    "active": true,
+    "description": "Test Description",
+    "map-label": "Test Map Label",
+    "elevation": 1000.0,
+    "elevation-units": "m",
+    "vertical-datum": "NGVD29",
+    "horizontal-datum": "WGS84",
+    "published-latitude": 45.0,
+    "published-longitude": -120.0,
+    "state-initial": "OR",
+    "location-kind": "PUMP",
+    "location-type": "PUMP",
+    "nation": "US",
+    "county-name": "Test County",
+    "timezone-name": "UTC",
+    "long-name": "Test Long Name",
+    "public-name": "Test Public Name",
+    "bounding-office-id": "SPK"
+  },
+  "transfer-type": {
+    "office-id": "SPK",
+    "display-value": "Test Transfer Type",
+    "tooltip": "Test Tool Tip",
+    "active": true
+  },
+  "flow": 1.0,
+  "transfer-date": 10000012648112,
+  "comment": "Test Comment"
+}
