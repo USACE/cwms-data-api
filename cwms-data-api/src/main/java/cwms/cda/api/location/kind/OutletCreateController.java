@@ -26,57 +26,56 @@ import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class OutletGetAllController extends BaseOutletHandler {
+public class OutletCreateController extends BaseOutletHandler {
 
-    public OutletGetAllController(MetricRegistry metrics) {
+    public OutletCreateController(MetricRegistry metrics) {
         super(metrics);
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
-                            "associated with the outlets.  Defaults to the user session id."),
-                    @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
-                            "Outlets whose data is to be included in the response."),
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = Outlet.class, type = Formats.JSONV1),
+                            @OpenApiContent(from = Outlet.class, type = Formats.JSON)
+                    },
+                    required = true),
+            queryParams = {
+                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                            description = "Create will fail if provided ID already exists. Default: true")
             },
+            description = "Create CWMS Outlet",
+            method = HttpMethod.POST,
+            tags = {OutletController.TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = Outlet.class, isArray = true, type = Formats.JSONV1),
-                            @OpenApiContent(from = Outlet.class, isArray = true, type = Formats.JSON)
-                    })
-            },
-            description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
-            tags = {OutletController.TAG}
+                    @OpenApiResponse(status = STATUS_204, description = "Outlet successfully stored to CWMS.")
+            }
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
-        String office = ctx.pathParam(OFFICE);
-        String projectId = ctx.pathParam(PROJECT_ID);
-        try (Timer.Context ignored = markAndTime(GET_ALL)) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
+            String acceptHeader = ctx.req.getContentType();
+            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
+            Outlet outlet = Formats.parseContent(contentType, ctx.body(), Outlet.class);
+            outlet.validate();
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-            List<Outlet> outlets = dao.retrieveOutletsForProject(office, projectId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
-            ctx.contentType(contentType.toString());
-            String serialized = Formats.format(contentType, outlets, Outlet.class);
-            ctx.result(serialized);
-            ctx.status(HttpServletResponse.SC_OK);
-            addToHistogram(serialized.length());
+            dao.storeOutlet(outlet, failIfExists);
+            ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
         }
     }
 }

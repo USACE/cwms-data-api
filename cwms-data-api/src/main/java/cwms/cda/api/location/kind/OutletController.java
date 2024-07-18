@@ -37,9 +37,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -64,45 +62,17 @@ public class OutletController implements CrudHandler {
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
-
-    @OpenApi(
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Outlet.class, type = Formats.JSONV1),
-                            @OpenApiContent(from = Outlet.class, type = Formats.JSON)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true")
-            },
-            description = "Create CWMS Outlet",
-            method = HttpMethod.POST,
-            tags = {TAG},
-            responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Outlet successfully stored to CWMS.")
-            }
-    )
+    @OpenApi(ignore = true)
     @Override
     public void create(@NotNull Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
-            Outlet outlet = Formats.parseContent(contentType, ctx.body(), Outlet.class);
-            outlet.validate();
-            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-            DSLContext dsl = getDslContext(ctx);
-            OutletDao dao = new OutletDao(dsl);
-            dao.storeOutlet(outlet, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
-        }
+        //Implemented in OutletCreateController
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void getAll(@NotNull Context ctx) {
-        //Implemented in OutletGetAllController since the path params are different
+        //Implemented in OutletGetAllController
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 

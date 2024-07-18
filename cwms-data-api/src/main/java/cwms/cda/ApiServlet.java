@@ -26,6 +26,7 @@ package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.DownstreamLocationsGetController;
+import cwms.cda.api.location.kind.OutletCreateController;
 import cwms.cda.api.location.kind.OutletGetAllController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.LookupTypeController;
@@ -101,6 +102,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -415,10 +417,14 @@ public class ApiServlet extends HttpServlet {
         String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
                                           Controllers.PROJECT_ID, NAME);
         String outletGetAllPath = format("/projects/{%s}/{%s}/outlets", Controllers.OFFICE, Controllers.PROJECT_ID);
+        String outletCreatePath = "/projects/outlets";
+        String virtualOutletCreatePath = "/projects/virtual-outlets";
         get(outletGetAllPath, new OutletGetAllController(metrics));
         addCacheControl(outletPath, 1, TimeUnit.DAYS);
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(outletCreatePath, new OutletCreateController(metrics));
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
 
         crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
         cdaCrudCache("/location/category/{category-id}",
