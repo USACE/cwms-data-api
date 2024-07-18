@@ -86,8 +86,8 @@ class WaterUserControllerTestIT extends DataApiTestIT {
                 .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
                 .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
                 .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getParentLocationRef().getOfficeId(),
-                CONTRACT.getWaterUser().getParentLocationRef().getName()).withLocationKind("PROJECT")
+        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectLocationRef().getOfficeId(),
+                CONTRACT.getWaterUser().getProjectLocationRef().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
                 .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
@@ -119,8 +119,8 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
                 CONTRACT.getContractId().getName()).withLocationKind("PROJECT").withTimeZoneName(ZoneId.of("UTC"))
                 .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getParentLocationRef().getOfficeId(),
-                CONTRACT.getWaterUser().getParentLocationRef().getName()).withLocationKind("PROJECT")
+        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectLocationRef().getOfficeId(),
+                CONTRACT.getWaterUser().getProjectLocationRef().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).build();
 
@@ -129,7 +129,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
-            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getParentLocationRef().getName(),
+            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectLocationRef().getName(),
                     DeleteRule.DELETE_ALL);
             locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
             locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
@@ -157,7 +157,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName() + "/water-user")
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName() + "/water-user")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -170,19 +170,19 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectLocationRef().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("entity-name[0]", equalTo(CONTRACT.getWaterUser().getEntityName()))
-            .body("parent-location-ref.name[0]", equalTo(CONTRACT.getWaterUser().getParentLocationRef().getName()))
-            .body("parent-location-ref.office-id[0]", equalTo(CONTRACT.getWaterUser().getParentLocationRef().getOfficeId()))
+            .body("project-location-ref.name[0]", equalTo(CONTRACT.getWaterUser().getProjectLocationRef().getName()))
+            .body("project-location-ref.office-id[0]", equalTo(CONTRACT.getWaterUser().getProjectLocationRef().getOfficeId()))
             .body("water-right[0]", equalTo(CONTRACT.getWaterUser().getWaterRight()))
         ;
 
@@ -191,12 +191,12 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectLocationRef().getName())
             .queryParam(DELETE_MODE, "DELETE ALL")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -210,11 +210,11 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectLocationRef().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -244,7 +244,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -259,12 +259,12 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .body(json)
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectLocationRef().getName())
             .queryParam(NAME, "NEW USER NAME")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .patch("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -281,7 +281,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + "NEW USER NAME")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -296,12 +296,12 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectLocationRef().getName())
             .queryParam(DELETE_MODE, "DELETE ALL")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -316,7 +316,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
 
-        WaterUser waterUser = new WaterUser("ENTITY_NAME", CONTRACT.getWaterUser().getParentLocationRef(), "WATER_RIGHT");
+        WaterUser waterUser = new WaterUser("ENTITY_NAME", CONTRACT.getWaterUser().getProjectLocationRef(), "WATER_RIGHT");
         String json2 = JsonV1.buildObjectMapper().writeValueAsString(waterUser);
 
         // Create WaterUser
@@ -329,7 +329,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName() + "/water-user")
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName() + "/water-user")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -346,7 +346,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName() + "/water-user")
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName() + "/water-user")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -361,18 +361,18 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName() + "/water-user")
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName() + "/water-user")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].entity-name", equalTo(waterUser.getEntityName()))
-            .body("[0].parent-location-ref.name", equalTo(waterUser.getParentLocationRef().getName()))
-            .body("[0].parent-location-ref.office-id", equalTo(waterUser.getParentLocationRef().getOfficeId()))
+            .body("[0].project-location-ref.name", equalTo(waterUser.getProjectLocationRef().getName()))
+            .body("[0].project-location-ref.office-id", equalTo(waterUser.getProjectLocationRef().getOfficeId()))
             .body("[0].water-right", equalTo(waterUser.getWaterRight()))
             .body("[1].entity-name", equalTo(CONTRACT.getWaterUser().getEntityName()))
-            .body("[1].parent-location-ref.name", equalTo(CONTRACT.getWaterUser().getParentLocationRef().getName()))
-            .body("[1].parent-location-ref.office-id", equalTo(CONTRACT.getWaterUser().getParentLocationRef().getOfficeId()))
+            .body("[1].project-location-ref.name", equalTo(CONTRACT.getWaterUser().getProjectLocationRef().getName()))
+            .body("[1].project-location-ref.office-id", equalTo(CONTRACT.getWaterUser().getProjectLocationRef().getOfficeId()))
             .body("[1].water-right", equalTo(CONTRACT.getWaterUser().getWaterRight()))
         ;
 
@@ -382,12 +382,12 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getParentLocationRef().getName())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectLocationRef().getName())
             .queryParam(DELETE_MODE, "DELETE ALL")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getParentLocationRef().getName()
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)

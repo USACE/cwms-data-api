@@ -33,8 +33,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
-import cwms.cda.data.dto.watersupply.WaterUserContractRef;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -111,8 +111,8 @@ public class WaterContractUpdateController implements Handler {
             String newName = ctx.queryParam(NAME);
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
             WaterContractDao contractDao = getContractDao(dsl);
-            WaterUserContractRef ref = new WaterUserContractRef(waterContract.getWaterUser(),
-                    waterContract.getContractId().getName());
+            WaterUser ref = new WaterUser(waterContract.getWaterUser().getEntityName(),
+                    waterContract.getWaterUser().getProjectLocationRef(), waterContract.getWaterUser().getWaterRight());
             contractDao.renameWaterContract(ref, contractName, newName);
             ctx.status(HttpServletResponse.SC_OK).json("Contract renamed successfully");
         }

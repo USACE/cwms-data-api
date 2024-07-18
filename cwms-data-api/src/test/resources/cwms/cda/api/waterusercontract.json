@@ -2,7 +2,7 @@
   "office-id": "SWT",
   "water-user": {
     "entity-name": "Test User",
-    "parent-location-ref": {
+    "project-location-ref": {
       "office-id": "SWT",
       "name": "SACRAMENTO"
     },
@@ -12,7 +12,7 @@
     "office-id": "SWT",
     "name": "TEST_CONTRACT"
   },
-  "water-contract": {
+  "contract-type": {
     "office-id": "SWT",
     "display-value": "Test Display Value",
     "tooltip": "Test Tooltip",
@@ -52,7 +52,7 @@
       "bounding-office-id": "SWT",
       "elevation-units": "m"
     },
-    "pump-type": "PUMP_OUT"
+    "pump-type": "OUT"
   },
   "pump-out-below-location": {
     "pump-location": {
@@ -80,7 +80,7 @@
       "bounding-office-id": "SWT",
       "elevation-units": "m"
     },
-    "pump-type": "PUMP_OUT_BELOW"
+    "pump-type": "BELOW"
   },
   "pump-in-location": {
     "pump-location": {
@@ -108,6 +108,6 @@
       "bounding-office-id": "SWT",
       "elevation-units": "m"
     },
-    "pump-type": "PUMP_IN"
+    "pump-type": "IN"
   }
 }
