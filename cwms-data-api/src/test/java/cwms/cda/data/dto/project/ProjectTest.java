@@ -24,6 +24,11 @@
 
 package cwms.cda.data.dto.project;
 
+import static helpers.SameEpochMillis.assertSameEpoch;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -37,8 +42,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class ProjectTest {
 
@@ -104,7 +107,6 @@ class ProjectTest {
         Location loc = project.getLocation();
         assertNotNull(loc);
 
-
         assertAll(
                 () -> assertEquals("SPK", loc.getOfficeId(), "Office ID does not match"),
                 () -> assertEquals("Project Id", loc.getName(), "Project ID does not match"),
@@ -114,10 +116,10 @@ class ProjectTest {
                 () -> assertEquals(50.0, project.getNonFederalCost().doubleValue(), "Non-federal Cost does not match"),
                 () -> assertEquals(10.0, project.getFederalOAndMCost().doubleValue(), "Federal O And M Cost does not match"),
                 () -> assertEquals(5.0, project.getNonFederalOAndMCost().doubleValue(), "Non-Federal O And M Cost does not match"),
-                () -> assertEquals(1717199914902L, project.getCostYear().toEpochMilli(), "Cost Year does not match"),
+                () -> assertSameEpoch( 1717199914902L, project.getCostYear(), "Cost Year does not match"),
                 () -> assertEquals("$", project.getCostUnit(), "Cost Unit does not match"),
-                () -> assertEquals(1717199914902L, project.getYieldTimeFrameStart().toEpochMilli(), "Yield Time Frame Start does not match"),
-                () -> assertEquals(1717199914902L, project.getYieldTimeFrameEnd().toEpochMilli(), "Yield Time Frame End does not match"),
+                () -> assertSameEpoch( 1717199914902L, project.getYieldTimeFrameStart(), "Yield Time Frame Start does not match"),
+                () -> assertSameEpoch( 1717199914902L, project.getYieldTimeFrameEnd(), "Yield Time Frame End does not match"),
                 () -> assertEquals("Remarks", project.getProjectRemarks(), "Project Remarks do not match"),
                 () -> assertEquals("Pumpback Location Id", project.getPumpBackLocation().getName(), "Pumpback Location ID does not match"),
                 () -> assertEquals("SPK", project.getPumpBackLocation().getOfficeId(), "Pumpback Location Office ID does not match"),
