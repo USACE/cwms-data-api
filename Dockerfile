@@ -14,7 +14,7 @@ RUN apk add --no-cache bash
 RUN mkdir /download && \
     cd /download && \
     wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.91/bin/apache-tomcat-9.0.91.tar.gz && \
-    echo "e77b47d7ded86da81018d38c4f728f5f804c1a65bb941a138a7989b69c859031e88d113ccf4fc3a409062ee24511fa5ccf15dfad333f570838ee2a36dae23e19 *apache-tomcat-9.0.91.tar.gz" > checksum.txt && \
+    echo "b22054c9141782232a693765d23d944f0f50774af17dd8968331e020b425e71459b5877a7ba8c2121246a5ce47e6b6a31c3f4215ef133e942da45b49cb534948 *apache-tomcat-9.0.91.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
     mv apache-tomcat-9.0.91 /usr/local/tomcat/ && \
