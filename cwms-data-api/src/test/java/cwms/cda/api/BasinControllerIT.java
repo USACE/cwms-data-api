@@ -56,7 +56,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-class BasinControllerTestIT extends DataApiTestIT
+class BasinControllerIT extends DataApiTestIT
 {
 	private static final String OFFICE = "SWT";
 	private static final Basin BASIN;
@@ -130,7 +130,7 @@ class BasinControllerTestIT extends DataApiTestIT
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-		});
+		}, CwmsDataApiSetupCallback.getWebUser());
 
 
 	}
@@ -145,7 +145,7 @@ class BasinControllerTestIT extends DataApiTestIT
 			locationsDao.deleteLocation(BASIN.getBasinId().getName(), OFFICE, true);
 			basinDao.deleteBasin(BASIN_CONNECT.getBasinId(), DELETE_ACTION);
 			locationsDao.deleteLocation(BASIN_CONNECT.getBasinId().getName(), OFFICE, true);
-		});
+		}, CwmsDataApiSetupCallback.getWebUser());
 	}
 
 	@Test
