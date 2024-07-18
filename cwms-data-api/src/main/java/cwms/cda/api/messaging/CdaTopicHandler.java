@@ -30,7 +30,6 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.queryParamAsClass;
 import static java.util.stream.Collectors.toList;
 
 import com.codahale.metrics.Histogram;
@@ -63,7 +62,6 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.impl.FileConfiguration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
-import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -79,25 +77,31 @@ public final class CdaTopicHandler implements Handler {
     public CdaTopicHandler(DataSource cwms, MetricRegistry metrics) {
         this.metrics = metrics;
         this.requestResultSize = this.metrics.histogram((name(CdaTopicHandler.class.getName(), RESULTS, SIZE)));
+        String brokerFile = System.getProperty("cwms.data.api.messaging.artemis.broker.file",
+            System.getenv("CDA_ARTEMIS_BROKER_FILE"));
+        if (brokerFile == null) {
+            return;
+        }
+        File brokerXmlFile = new File(brokerFile).getAbsoluteFile();
+        if (!brokerXmlFile.exists()) {
+            return;
+        }
         try {
-            File brokerXmlFile = new File("src/test/resources/tomcat/conf/broker.xml").getAbsoluteFile();
-            if (brokerXmlFile.exists()) {
-                DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-                dbFactory.setExpandEntityReferences(false);
-                dbFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                dbFactory.setNamespaceAware(true);
-                DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-                Document doc = dBuilder.parse(brokerXmlFile);
-                doc.getDocumentElement().normalize();
-                Element rootElement = doc.getDocumentElement();
-                FileConfiguration configuration = new FileConfiguration();
-                configuration.parse(rootElement, brokerXmlFile.toURI().toURL());
-                artemis = ActiveMQServers.newActiveMQServer(configuration);
-                router = new CamelRouter(cwms);
-                artemis.registerBrokerPlugin(router);
-                artemis.setSecurityManager(new ArtemisSecurityManager(cwms));
-                artemis.start();
-            }
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            dbFactory.setExpandEntityReferences(false);
+            dbFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            dbFactory.setNamespaceAware(true);
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(brokerXmlFile);
+            doc.getDocumentElement().normalize();
+            Element rootElement = doc.getDocumentElement();
+            FileConfiguration configuration = new FileConfiguration();
+            configuration.parse(rootElement, brokerXmlFile.toURI().toURL());
+            artemis = ActiveMQServers.newActiveMQServer(configuration);
+            router = new CamelRouter(cwms);
+            artemis.registerBrokerPlugin(router);
+            artemis.setSecurityManager(new ArtemisSecurityManager(cwms));
+            artemis.start();
         } catch (Exception e) {
             throw new IllegalStateException("Unable to setup Queues", e);
         }
@@ -134,7 +138,7 @@ public final class CdaTopicHandler implements Handler {
             ContentType contentType = Formats.parseHeader(formatHeader, CdaTopics.class);
             Collection<String> topics = router.getTopics(office);
             List<Map<String, Object>> configurations = new ArrayList<>();
-            if(artemis.isStarted()) {
+            if (artemis.isStarted()) {
                 configurations = artemis.getConfiguration().getAcceptorConfigurations().stream()
                     .map(TransportConfiguration::getParams)
                     //Need to filter out the In-VM acceptor

@@ -31,3 +31,4 @@ cda.war.context=cwms-data
 ## Turns on messaging via Oracle AQ/ArtemisMQ/Apache Camel
 ## - make sure to increase number of connections in pool to support queues
 #cwms.data.api.messaging.enabled=true
+#cwms.data.api.messaging.artemis.broker.file=src/test/resources/tomcat/conf/broker.xml
