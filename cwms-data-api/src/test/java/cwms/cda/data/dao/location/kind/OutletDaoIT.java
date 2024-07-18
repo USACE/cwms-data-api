@@ -41,21 +41,24 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class OutletDaoIT extends ProjectStructureDaoIT {
-    private static final String TAINTER_GATE_RATING_GROUP = "Rating-" + PROJECT_LOC.getName() + "-TainterGate";
-    private static final String BOX_CULVERT_RATING_GROUP = "Rating-" + PROJECT_LOC2.getName() + "-BoxCulvert";
-    private static final String TAINTER_GATE_RATING_GROUP_MODIFIED = "Rating-" + PROJECT_LOC.getName() + "-TainterGate Modified";
+    private static final String TAINTER_GATE_RATING_GROUP = "Rating-" + PROJECT_1_ID.getName() + "-TainterGate";
+    private static final String BOX_CULVERT_RATING_GROUP = "Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert";
+    private static final String TAINTER_GATE_RATING_GROUP_MODIFIED = "Rating-" + PROJECT_1_ID.getName() + "-TainterGate Modified";
     private static final String OUTLET_KIND = "OUTLET";
-    private static final Location TAINTER_GATE_1_LOC = buildProjectStructureLocation(PROJECT_LOC.getName() + "-TG1",
+    private static final Location TAINTER_GATE_1_LOC = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-TG1",
                                                                                      OUTLET_KIND);
-    private static final Location TAINTER_GATE_2_LOC = buildProjectStructureLocation(PROJECT_LOC.getName() + "-TG2",
+    private static final Location TAINTER_GATE_2_LOC = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-TG2",
                                                                                      OUTLET_KIND);
-    private static final Location TAINTER_GATE_3_LOC = buildProjectStructureLocation(PROJECT_LOC.getName() + "-TG3",
+    private static final Location TAINTER_GATE_3_LOC = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-TG3",
                                                                                      OUTLET_KIND);
     private static final Location BOX_CULVERT_1_LOC = buildProjectStructureLocation("BC1", OUTLET_KIND);
     private static final Outlet TAINTER_GATE_1_OUTLET = buildTestOutlet(TAINTER_GATE_1_LOC, PROJECT_LOC, TAINTER_GATE_RATING_GROUP);
     private static final Outlet TAINTER_GATE_2_OUTLET = buildTestOutlet(TAINTER_GATE_2_LOC, PROJECT_LOC, TAINTER_GATE_RATING_GROUP);
     private static final Outlet TAINTER_GATE_3_OUTLET = buildTestOutlet(TAINTER_GATE_3_LOC, PROJECT_LOC, TAINTER_GATE_RATING_GROUP);
     private static final Outlet BOX_CULVERT_1_OUTLET = buildTestOutlet(BOX_CULVERT_1_LOC, PROJECT_LOC2, BOX_CULVERT_RATING_GROUP);
+    private static final CwmsId TG_LOC4_ID = new CwmsId.Builder().withOfficeId(OFFICE_ID)
+                                                                 .withName(PROJECT_2_ID.getName() + "-TG4")
+                                                                 .build();
 
     @BeforeAll
     static void setup() throws Exception {
@@ -86,15 +89,15 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             DSLContext context = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             OutletDao outletDao = new OutletDao(context);
-            outletDao.deleteOutlet(TAINTER_GATE_1_LOC.getName(), TAINTER_GATE_1_LOC.getOfficeId(),
+            outletDao.deleteOutlet(TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getName(), TAINTER_GATE_2_LOC.getOfficeId(),
+            outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(BOX_CULVERT_1_LOC.getName(), BOX_CULVERT_1_LOC.getOfficeId(), DeleteRule.DELETE_ALL);
-            locationsDao.deleteLocation(TAINTER_GATE_1_LOC.getName(), TAINTER_GATE_1_LOC.getBoundingOfficeId(), true);
-            locationsDao.deleteLocation(TAINTER_GATE_2_LOC.getName(), TAINTER_GATE_2_LOC.getBoundingOfficeId(), true);
-            locationsDao.deleteLocation(TAINTER_GATE_3_LOC.getName(), TAINTER_GATE_3_LOC.getBoundingOfficeId(), true);
-            locationsDao.deleteLocation(BOX_CULVERT_1_LOC.getName(), BOX_CULVERT_1_LOC.getBoundingOfficeId(), true);
+            outletDao.deleteOutlet(BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName(), DeleteRule.DELETE_ALL);
+            locationsDao.deleteLocation(TAINTER_GATE_1_LOC.getName(), TAINTER_GATE_1_LOC.getOfficeId(), true);
+            locationsDao.deleteLocation(TAINTER_GATE_2_LOC.getName(), TAINTER_GATE_2_LOC.getOfficeId(), true);
+            locationsDao.deleteLocation(TAINTER_GATE_3_LOC.getName(), TAINTER_GATE_3_LOC.getOfficeId(), true);
+            locationsDao.deleteLocation(BOX_CULVERT_1_LOC.getName(), BOX_CULVERT_1_LOC.getOfficeId(), true);
         }, CwmsDataApiSetupCallback.getWebUser());
         tearDownProject();
     }
@@ -105,7 +108,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            Outlet outlet = dao.retrieveOutlet(BOX_CULVERT_1_LOC.getName(), BOX_CULVERT_1_LOC.getOfficeId());
+            Outlet outlet = dao.retrieveOutlet(BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName());
             DTOMatch.assertMatch(BOX_CULVERT_1_OUTLET, outlet);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -116,14 +119,14 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            List<Outlet> initialOutlets = dao.retrieveOutletsForProject(PROJECT_LOC.getName(),
-                                                                        PROJECT_LOC.getBoundingOfficeId());
+            List<Outlet> initialOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
+                                                                        PROJECT_1_ID.getName());
 
-            //This shouldn't exist in the DB yet.
+            //This shouldn't exist in the DB
             dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId(), true);
 
-            List<Outlet> retrievedOutlets = dao.retrieveOutletsForProject(PROJECT_LOC.getName(),
-                                                                          PROJECT_LOC.getBoundingOfficeId());
+            List<Outlet> retrievedOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
+                                                                          PROJECT_1_ID.getName());
             assertNotEquals(initialOutlets.size(), retrievedOutlets.size());
             DTOMatch.assertMatch(TAINTER_GATE_3_OUTLET, retrievedOutlets.get(2));
 
@@ -131,21 +134,21 @@ class OutletDaoIT extends ProjectStructureDaoIT {
                     .withRatingGroupId(TAINTER_GATE_RATING_GROUP_MODIFIED)
                     .build();
             dao.storeOutlet(newOutlet, TAINTER_GATE_RATING_GROUP_MODIFIED, false);
-            Outlet updatedOutlet = dao.retrieveOutlet(TAINTER_GATE_3_LOC.getName(),
-                                                      TAINTER_GATE_3_LOC.getBoundingOfficeId());
+            Outlet updatedOutlet = dao.retrieveOutlet(TAINTER_GATE_3_LOC.getOfficeId(),
+                                                      TAINTER_GATE_3_LOC.getName());
             
             //DELETE_KEY will just remove the AT_OUTLET key, and since we don't have any changes this will be fine.
-            dao.deleteOutlet(TAINTER_GATE_3_LOC.getName(), TAINTER_GATE_3_LOC.getBoundingOfficeId(),
+            dao.deleteOutlet(TAINTER_GATE_3_LOC.getOfficeId(), TAINTER_GATE_3_LOC.getName(),
                              DeleteRule.DELETE_KEY);
 
             DTOMatch.assertMatch(newOutlet, updatedOutlet);
 
-            List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_LOC.getName(),
-                                                                      PROJECT_LOC.getBoundingOfficeId());
+            List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
+                                                                      PROJECT_1_ID.getName());
             assertEquals(initialOutlets.size(), finalOutlets.size());
 
-            assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(TAINTER_GATE_3_LOC.getName(),
-                                                                           TAINTER_GATE_3_LOC.getBoundingOfficeId()));
+            assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(TAINTER_GATE_3_LOC.getOfficeId(),
+                                                                           TAINTER_GATE_3_LOC.getName()));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -156,8 +159,8 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
 
-            List<Outlet> outlets = dao.retrieveOutletsForProject(PROJECT_LOC.getName(),
-                                                                 PROJECT_LOC.getBoundingOfficeId());
+            List<Outlet> outlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
+                                                                 PROJECT_1_ID.getName());
 
             assertEquals(2, outlets.size());
             DTOMatch.assertMatch(TAINTER_GATE_1_OUTLET, outlets.get(0));
@@ -165,9 +168,35 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
+    @Test
+    void test_rename_outlets() throws Exception {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, OFFICE_ID);
+            OutletDao dao = new OutletDao(context);
+
+            //Shouldn't exist in the db.
+            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId(), true);
+            dao.renameOutlet(OFFICE_ID, TAINTER_GATE_3_LOC.getName(), TG_LOC4_ID.getName());
+            Outlet outlet = dao.retrieveOutlet(PROJECT_1_ID.getOfficeId(), TG_LOC4_ID.getName());
+            assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(OFFICE_ID, TAINTER_GATE_3_LOC.getName()));
+            assertNotNull(outlet);
+            dao.deleteOutlet(OFFICE_ID, TG_LOC4_ID.getName(), DeleteRule.DELETE_KEY);
+
+            //Location gets renamed, so let's delete the new location, then store the old one.
+            LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
+            locationsDao.deleteLocation(TG_LOC4_ID.getName(), TG_LOC4_ID.getOfficeId(), true);
+            try {
+                locationsDao.storeLocation(TAINTER_GATE_3_LOC);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, String ratingId) {
         return new Outlet.Builder().withProjectId(new CwmsId.Builder().withName(projectLoc.getName())
-                                                                      .withOfficeId(projectLoc.getBoundingOfficeId())
+                                                                      .withOfficeId(projectLoc.getOfficeId())
                                                                       .build())
                                    .withLocation(outletLoc)
                                    .withRatingGroupId(ratingId)

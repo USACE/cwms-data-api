@@ -35,15 +35,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonDeserialize(builder = CompoundOutletRecord.Builder.class)
+@JsonDeserialize(builder = VirtualOutletRecord.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class CompoundOutletRecord extends CwmsDTOBase {
+public final class VirtualOutletRecord extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId outletId;
     private final List<CwmsId> downstreamOutletIds = new ArrayList<>();
 
-    private CompoundOutletRecord(Builder builder) {
+    private VirtualOutletRecord(Builder builder) {
         outletId = builder.outletId;
         if (builder.downstreamOutletIds != null) {
             downstreamOutletIds.addAll(builder.downstreamOutletIds);
@@ -72,13 +72,13 @@ public class CompoundOutletRecord extends CwmsDTOBase {
         public Builder() {
         }
 
-        public Builder(CompoundOutletRecord clone) {
+        public Builder(VirtualOutletRecord clone) {
             outletId = clone.outletId;
             downstreamOutletIds = new ArrayList<>(clone.downstreamOutletIds);
         }
 
-        public CompoundOutletRecord build() {
-            return new CompoundOutletRecord(this);
+        public VirtualOutletRecord build() {
+            return new VirtualOutletRecord(this);
         }
 
         @JsonProperty(required = true)
