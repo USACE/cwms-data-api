@@ -2,12 +2,12 @@
   "stream-location-node":{
     "id": {
       "office-id": "SWT",
-      "name": "StreamLoc123"
+      "name": "StreamLoc1234"
     },
     "stream-node": {
       "stream-id": {
         "office-id": "SWT",
-        "name": "ImOnThisStream"
+        "name": "ImOnThisStream3"
       },
       "bank": "R",
       "station": 690,

@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 @Tag("integration")
 final class DownstreamLocationsGetControllerIT extends DataApiTestIT {
 
-    private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
+    private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
     @BeforeAll
@@ -68,7 +68,7 @@ final class DownstreamLocationsGetControllerIT extends DataApiTestIT {
                     .build();
             STREAMS_CREATED.add(streamToStore);
             streamDao.storeStream(streamToStore, true);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -83,7 +83,7 @@ final class DownstreamLocationsGetControllerIT extends DataApiTestIT {
                     } catch (NotFoundException e) {
                         // ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -104,7 +104,7 @@ final class DownstreamLocationsGetControllerIT extends DataApiTestIT {
         // 2) Retrieve the StreamLocation and assert that it exists
         // 3) Delete the StreamLocation
         // 4) Retrieve the StreamLocation and assert that it does not exist
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 
         // Create the StreamLocation
         given()

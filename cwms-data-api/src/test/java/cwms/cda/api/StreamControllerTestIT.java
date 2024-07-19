@@ -28,6 +28,7 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.STATION_UNIT;
+import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
@@ -89,7 +90,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
                     .build();
             STREAMS_CREATED.add(streamToStore);
             streamDao.storeStream(streamToStore, true);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -104,7 +105,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
                     } catch (NotFoundException e) {
                         //ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch(SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -283,6 +284,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
                 .queryParam(OFFICE_MASK, office)
+                .queryParam(STREAM_ID_MASK, streamId)
                 .queryParam(STATION_UNIT, "km")
        .when()
                 .redirects().follow(true)
