@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-final class TimeSeriesProfileTest {
+final public class TimeSeriesProfileTest {
     @Test
     void testTimeSeriesProfileSerializationRoundTrip() {
         TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile();
@@ -51,13 +51,18 @@ final class TimeSeriesProfileTest {
                 .build();
     }
 
-    static void testAssertEquals(TimeSeriesProfile expected, TimeSeriesProfile actual, String message) {
+    public static void testAssertEquals(TimeSeriesProfile expected, TimeSeriesProfile actual, String message) {
         assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
         assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
         assertEquals(expected.getDescription(), actual.getDescription(), message);
         assertEquals(expected.getParameterList(), actual.getParameterList(), message);
         assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
-        assertEquals(expected.getReferenceTsId().getName(), actual.getReferenceTsId().getName(), message);
-        assertEquals(expected.getReferenceTsId().getOfficeId(), actual.getReferenceTsId().getOfficeId(), message);
+        if(expected.getReferenceTsId()!=null &&  actual.getReferenceTsId()!=null) {
+            assertEquals(expected.getReferenceTsId().getName(), actual.getReferenceTsId().getName(), message);
+            assertEquals(expected.getReferenceTsId().getOfficeId(), actual.getReferenceTsId().getOfficeId(), message);
+        }
+        else {
+            assertEquals(expected.getReferenceTsId(), actual.getReferenceTsId(),message);
+        }
     }
 }

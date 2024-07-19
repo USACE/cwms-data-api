@@ -74,9 +74,19 @@ final class TimeSeriesProfileParserTest {
         assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
         assertEquals(expected.getTimeField(), actual.getTimeField(), message);
         assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
-        assertEquals(expected.getParameterInfoList(), actual.getParameterInfoList(),message);
+        testAssertEquals(expected.getParameterInfoList(), actual.getParameterInfoList(),message);
         assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
         assertEquals(expected.getTimeZone(), actual.getTimeZone());
         assertEquals(expected.getTimeInTwoFields(), actual.getTimeInTwoFields());
+    }
+
+    private void testAssertEquals(List<ParameterInfo> expected, List<ParameterInfo> actual, String message) {
+        assertEquals(expected.size(), actual.size());
+        for(int i=0;i<expected.size();i++)
+        {
+            assertEquals(expected.get(i).getIndex(), actual.get(i).getIndex());
+            assertEquals(expected.get(i).getParameter(), actual.get(i).getParameter());
+            assertEquals(expected.get(i).getUnit(), actual.get(i).getUnit());
+        }
     }
 }
