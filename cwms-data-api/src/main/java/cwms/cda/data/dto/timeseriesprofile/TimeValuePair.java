@@ -19,7 +19,7 @@ public class TimeValuePair {
     private final Instant dateTime;
     private final double value;
 
-    protected TimeValuePair(Builder builder)
+    private TimeValuePair(Builder builder)
     {
         dateTime = builder.dateTime;
         value = builder.value;

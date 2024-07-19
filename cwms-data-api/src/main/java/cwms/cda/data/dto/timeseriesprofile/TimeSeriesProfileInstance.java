@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 
+import java.time.Instant;
 import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
@@ -20,11 +22,19 @@ import java.util.List;
 public final class TimeSeriesProfileInstance implements CwmsDTOBase {
     private final TimeSeriesProfile timeSeriesProfile;
     private final List<ProfileTimeSeries> timeSeriesList;
+    private final String version;
+    private final Instant versionDate;
+    private final Instant firstDate;
+    private final Instant lastDate;
 
     private TimeSeriesProfileInstance(Builder builder)
     {
         timeSeriesList = builder.timeSeriesList;
         timeSeriesProfile = builder.timeSeriesProfile;
+        version = builder.version;
+        versionDate = builder.versionDate;
+        firstDate = builder.firstDate;
+        lastDate = builder.lastDate;
     }
 
     public TimeSeriesProfile getTimeSeriesProfile() {
@@ -35,15 +45,38 @@ public final class TimeSeriesProfileInstance implements CwmsDTOBase {
         return timeSeriesList;
     }
 
+    public String getVersion()
+    {
+        return version;
+    }
+    public Instant getVersionDate()
+    {
+        return versionDate;
+    }
+    public Instant getFirstDate()
+    {
+        return firstDate;
+    }
+    public Instant getLastDate()
+    {
+        return lastDate;
+    }
     @Override
     public void validate() throws FieldException {
-
+        if(timeSeriesProfile==null)
+        {
+            throw new RequiredFieldException("timeSeriesProfile");
+        }
     }
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
         private List<ProfileTimeSeries> timeSeriesList;
         private TimeSeriesProfile timeSeriesProfile;
+        private String version;
+        private Instant versionDate;
+        private Instant firstDate;
+        private Instant lastDate;
 
         public TimeSeriesProfileInstance.Builder withTimeSeriesProfile(TimeSeriesProfile timeSeriesProfile) {
             this.timeSeriesProfile = timeSeriesProfile;
@@ -55,6 +88,26 @@ public final class TimeSeriesProfileInstance implements CwmsDTOBase {
             return this;
         }
 
+        public TimeSeriesProfileInstance.Builder withVersion(String version)
+        {
+            this.version = version;
+            return this;
+        }
+        public TimeSeriesProfileInstance.Builder withVersionDate(Instant instant)
+        {
+            this.versionDate = instant;
+            return this;
+        }
+        public TimeSeriesProfileInstance.Builder withFirstDate(Instant instant)
+        {
+            this.firstDate = instant;
+            return this;
+        }
+        public TimeSeriesProfileInstance.Builder withLastDate(Instant instant)
+        {
+            this.lastDate = instant;
+            return this;
+        }
         public TimeSeriesProfileInstance build() {
             return new TimeSeriesProfileInstance(this);
         }
