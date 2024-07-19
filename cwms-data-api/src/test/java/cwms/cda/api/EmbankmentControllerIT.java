@@ -90,7 +90,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -118,7 +118,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
