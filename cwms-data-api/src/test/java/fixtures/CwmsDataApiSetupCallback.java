@@ -13,6 +13,7 @@ import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import mil.army.usace.hec.test.database.TeamCityUtilities;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -61,7 +62,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
-                            .withVolumeName(ORACLE_VOLUME)
+                            .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
             cwmsDb.start();
 
