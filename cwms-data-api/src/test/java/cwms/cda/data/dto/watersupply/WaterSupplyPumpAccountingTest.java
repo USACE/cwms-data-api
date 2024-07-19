@@ -26,10 +26,10 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import cwms.cda.api.enums.Nation;
+import static org.junit.jupiter.api.Assertions.*;
+
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
@@ -37,10 +37,8 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.*;
 
 class WaterSupplyPumpAccountingTest {
     private static final String OFFICE = "SPK";
@@ -54,9 +52,7 @@ class WaterSupplyPumpAccountingTest {
             "Test Water Right");
 
         WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(user, "Test Contract",
-            new Location.Builder(OFFICE, "NAME").withLocationType("PUMP").withNation(Nation.US)
-                .withPublicName("PUMP 1").withLatitude(56.8).withLongitude(31.9).withDescription("PUMP")
-                .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGSV84").build(),
+            new CwmsId.Builder().withOfficeId(OFFICE).withName("NAME").build(),
             new LookupType.Builder().withActive(true).withTooltip("Test transfer Tip").withOfficeId(OFFICE)
                 .withDisplayValue("Transfer").build(), 1.0, new Date(), "Test Comment");
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyPumpAccounting.class),
@@ -71,14 +67,7 @@ class WaterSupplyPumpAccountingTest {
         WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
             new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
             "Test Contract",
-            new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
-                .withPublicName("Test Public Name").withLatitude(45.0).withLongitude(-120.0).withDescription("PUMP")
-                .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGS84")
-                .withElevation(1000.0).withMapLabel("Test Map Label").withBoundingOfficeId("SPK")
-                .withElevationUnits("m").withActive(true).withTimeZoneName(ZoneId.of("UTC"))
-                .withVerticalDatum("NGVD29").withDescription("Test Description").withLocationKind("PUMP")
-                .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
-                .withStateInitial("OR").withCountyName("Test County").build(),
+                new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
             new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                 .withDisplayValue("Test Transfer Type").build(), 1.0, new Date(10000012648112L), "Test Comment");
         InputStream resource = this.getClass().getResourceAsStream(
@@ -98,14 +87,7 @@ class WaterSupplyPumpAccountingTest {
                 WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     "Test Contract",
-                    new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
-                        .withPublicName("Test Public Name").withLatitude(45.0).withLongitude(-120.0).withDescription("PUMP")
-                        .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGS84")
-                        .withElevation(1000.0).withMapLabel("Test Map Label").withBoundingOfficeId("SPK")
-                        .withElevationUnits("m").withActive(true).withTimeZoneName(ZoneId.of("UTC"))
-                        .withVerticalDatum("NGVD29").withDescription("Test Description").withLocationKind("PUMP")
-                        .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
-                        .withStateInitial("OR").withCountyName("Test County").build(),
+                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, new Date(10000012648112L), "Test Comment");
                 assertDoesNotThrow(waterSupplyPumpAccounting::validate, "Expected validation to pass");
@@ -114,14 +96,7 @@ class WaterSupplyPumpAccountingTest {
                 WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     null,
-                    new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
-                        .withPublicName("Test Public Name").withLatitude(45.0).withLongitude(-120.0).withDescription("PUMP")
-                        .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGS84")
-                        .withElevation(1000.0).withMapLabel("Test Map Label").withBoundingOfficeId("SPK")
-                        .withElevationUnits("m").withActive(true).withTimeZoneName(ZoneId.of("UTC"))
-                        .withVerticalDatum("NGVD29").withDescription("Test Description").withLocationKind("PUMP")
-                        .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
-                        .withStateInitial("OR").withCountyName("Test County").build(),
+                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, new Date(10000012648112L), "Test Comment");
                 assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
@@ -141,14 +116,7 @@ class WaterSupplyPumpAccountingTest {
                 WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     "Test Contract",
-                    new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
-                        .withPublicName("Test Public Name").withLatitude(45.0).withLongitude(-120.0).withDescription("PUMP")
-                        .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGS84")
-                        .withElevation(1000.0).withMapLabel("Test Map Label").withBoundingOfficeId("SPK")
-                        .withElevationUnits("m").withActive(true).withTimeZoneName(ZoneId.of("UTC"))
-                        .withVerticalDatum("NGVD29").withDescription("Test Description").withLocationKind("PUMP")
-                        .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
-                        .withStateInitial("OR").withCountyName("Test County").build(),
+                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     null, 1.0, new Date(10000012648112L), "Test Comment");
                 assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null transfer type");
@@ -157,14 +125,7 @@ class WaterSupplyPumpAccountingTest {
                 WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     null,
-                    new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
-                        .withPublicName("Test Public Name").withLatitude(45.0).withLongitude(-120.0).withDescription("PUMP")
-                        .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGS84")
-                        .withElevation(1000.0).withMapLabel("Test Map Label").withBoundingOfficeId("SPK")
-                        .withElevationUnits("m").withActive(true).withTimeZoneName(ZoneId.of("UTC"))
-                        .withVerticalDatum("NGVD29").withDescription("Test Description").withLocationKind("PUMP")
-                        .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
-                        .withStateInitial("OR").withCountyName("Test County").build(),
+                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), null, new Date(10000012648112L), "Test Comment");
                 assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
@@ -174,14 +135,7 @@ class WaterSupplyPumpAccountingTest {
                 WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     null,
-                    new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
-                        .withPublicName("Test Public Name").withLatitude(45.0).withLongitude(-120.0).withDescription("PUMP")
-                        .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGS84")
-                        .withElevation(1000.0).withMapLabel("Test Map Label").withBoundingOfficeId("SPK")
-                        .withElevationUnits("m").withActive(true).withTimeZoneName(ZoneId.of("UTC"))
-                        .withVerticalDatum("NGVD29").withDescription("Test Description").withLocationKind("PUMP")
-                        .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
-                        .withStateInitial("OR").withCountyName("Test County").build(),
+                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, null, "Test Comment");
                 assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
