@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
@@ -99,10 +100,24 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId(), true);
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
+            try {
+                locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId(), true);
+
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
+            try {
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
                     DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
+
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
+            try {
+                locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
         });
     }
 
