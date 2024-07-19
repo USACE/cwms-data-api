@@ -54,6 +54,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -82,7 +83,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
-                DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+                DSLContext context = getDslContext(c, OFFICE);
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
@@ -98,23 +99,23 @@ final class EmbankmentControllerIT extends DataApiTestIT {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+            DSLContext context = getDslContext(c, OFFICE);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             try {
-                locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId(), true);
+                locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), EMBANKMENT_LOC.getOfficeId(), true);
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
             }
             try {
                 CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
+                    DeleteRule.DELETE_ALL.getRule(), PROJECT_LOC.getOfficeId());
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
             }
             try {
-                locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
+                locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_LOC.getOfficeId(), true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
             }
