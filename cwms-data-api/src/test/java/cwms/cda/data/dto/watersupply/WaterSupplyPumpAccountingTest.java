@@ -35,7 +35,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
-
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -43,33 +42,33 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class WaterSupplyAccountingTest {
+class WaterSupplyPumpAccountingTest {
     private static final String OFFICE = "SPK";
 
     @Test
-    void testWaterSupplyAccountingSerializationRoundTrip() {
+    void testWaterSupplyPumpAccountingSerializationRoundTrip() {
         WaterUser user = new WaterUser("Test Entity", new CwmsId.Builder()
             .withOfficeId(OFFICE)
             .withName("Test Location")
             .build(),
             "Test Water Right");
 
-        WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(user, "Test Contract",
+        WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(user, "Test Contract",
             new Location.Builder(OFFICE, "NAME").withLocationType("PUMP").withNation(Nation.US)
                 .withPublicName("PUMP 1").withLatitude(56.8).withLongitude(31.9).withDescription("PUMP")
                 .withTimeZoneName(ZoneId.of("UTC")).withLocationKind("PUMP").withHorizontalDatum("WGSV84").build(),
             new LookupType.Builder().withActive(true).withTooltip("Test transfer Tip").withOfficeId(OFFICE)
                 .withDisplayValue("Transfer").build(), 1.0, new Date(), "Test Comment");
-        String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccounting.class),
-            waterSupplyAccounting);
-        WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
-            WaterSupplyAccounting.class), serialized, WaterSupplyAccounting.class);
-        DTOMatch.assertMatch(waterSupplyAccounting, deserialized);
+        String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyPumpAccounting.class),
+            waterSupplyPumpAccounting);
+        WaterSupplyPumpAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
+            WaterSupplyPumpAccounting.class), serialized, WaterSupplyPumpAccounting.class);
+        DTOMatch.assertMatch(waterSupplyPumpAccounting, deserialized);
     }
 
     @Test
-    void testWaterSupplyAccountingSerializationRoundTripFromFile() throws Exception {
-        WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+    void testWaterSupplyPumpAccountingSerializationRoundTripFromFile() throws Exception {
+        WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
             new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
             "Test Contract",
             new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
@@ -86,9 +85,9 @@ class WaterSupplyAccountingTest {
             "/cwms/cda/data/dto/watersupply/water_supply_accounting.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
-                WaterSupplyAccounting.class), serialized, WaterSupplyAccounting.class);
-        DTOMatch.assertMatch(waterSupplyAccounting, deserialized);
+        WaterSupplyPumpAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
+                WaterSupplyPumpAccounting.class), serialized, WaterSupplyPumpAccounting.class);
+        DTOMatch.assertMatch(waterSupplyPumpAccounting, deserialized);
     }
 
 
@@ -96,7 +95,7 @@ class WaterSupplyAccountingTest {
     void testValidate() {
         assertAll(
             () -> {
-                WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     "Test Contract",
                     new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
@@ -109,10 +108,10 @@ class WaterSupplyAccountingTest {
                         .withStateInitial("OR").withCountyName("Test County").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, new Date(10000012648112L), "Test Comment");
-                assertDoesNotThrow(waterSupplyAccounting::validate, "Expected validation to pass");
+                assertDoesNotThrow(waterSupplyPumpAccounting::validate, "Expected validation to pass");
             },
             () -> {
-                WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     null,
                     new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
@@ -125,21 +124,21 @@ class WaterSupplyAccountingTest {
                         .withStateInitial("OR").withCountyName("Test County").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, new Date(10000012648112L), "Test Comment");
-                assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
+                assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null contract name");
             },
             () -> {
-                WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     "Test Contract",
                     null,
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, new Date(10000012648112L), "Test Comment");
-                assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
+                assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null location");
             },
             () -> {
-                WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     "Test Contract",
                     new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
@@ -151,11 +150,11 @@ class WaterSupplyAccountingTest {
                         .withPublishedLatitude(45.0).withPublishedLongitude(-120.0).withLongName("Test Long Name")
                         .withStateInitial("OR").withCountyName("Test County").build(),
                     null, 1.0, new Date(10000012648112L), "Test Comment");
-                assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
+                assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null transfer type");
             },
             () -> {
-                WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     null,
                     new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
@@ -168,11 +167,11 @@ class WaterSupplyAccountingTest {
                         .withStateInitial("OR").withCountyName("Test County").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), null, new Date(10000012648112L), "Test Comment");
-                assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
+                assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null flow value");
             },
             () -> {
-                WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting(new WaterUser("Test Entity",
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
                     null,
                     new Location.Builder(OFFICE, "Test Pump").withLocationType("PUMP").withNation(Nation.US)
@@ -185,7 +184,7 @@ class WaterSupplyAccountingTest {
                         .withStateInitial("OR").withCountyName("Test County").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
                         .withDisplayValue("Test Transfer Type").build(), 1.0, null, "Test Comment");
-                assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
+                assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null transfer date");
             }
         );
