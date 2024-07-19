@@ -1,21 +1,13 @@
 {
   "project-id": {
     "office-id": "SPK",
-    "name": "location"
+    "name": "BIGH"
   },
-  "location": {
+  "virtual-outlet-id": {
     "office-id": "SPK",
-    "name": "CO1",
-    "latitude": 0.0,
-    "longitude": 0.0,
-    "active": true,
-    "public-name": "CO1",
-    "timezone-name": "UTC",
-    "location-kind": "Outlet",
-    "horizontal-datum": "NAD84",
-    "vertical-datum": "NAVD88"
+    "name": "Compound Tainter Gates"
   },
-  "compound-outlet-records": [
+  "virtual-records": [
     {
       "outlet-id": {
         "office-id": "SPK",
@@ -70,6 +62,5 @@
       },
       "downstream-outlet-ids": []
     }
-  ],
-  "rating-group-id": "Rating-location-outlet"
+  ]
 }

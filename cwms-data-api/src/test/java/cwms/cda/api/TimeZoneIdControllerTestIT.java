@@ -13,7 +13,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-class TimeZoneControllerTestIT extends DataApiTestIT
+class TimeZoneIdControllerTestIT extends DataApiTestIT
 {
 	@ParameterizedTest
 	@EnumSource(GetAllTest.class)

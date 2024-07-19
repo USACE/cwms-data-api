@@ -9,10 +9,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.List;
@@ -21,7 +18,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TimeZoneTest
+class TimeZoneIdTest
 {
 
 	@ParameterizedTest
@@ -29,9 +26,9 @@ class TimeZoneTest
 	void test_serialization(SerializationType test)
 	{
 		String tz = "UTC";
-		TimeZone expectedTz = new TimeZone(tz);
+		TimeZoneId expectedTz = new TimeZoneId(tz);
 		String json = Formats.format(test._contentType, expectedTz);
-		TimeZone receivedTz = Formats.parseContent(test._contentType, json, TimeZone.class);
+		TimeZoneId receivedTz = Formats.parseContent(test._contentType, json, TimeZoneId.class);
 		assertEquals(expectedTz.getTimeZone(), receivedTz.getTimeZone());
 	}
 
@@ -39,7 +36,7 @@ class TimeZoneTest
 	void test_getTimeZone()
 	{
 		String expectedTz = "UTC";
-		TimeZone zone = new TimeZone(expectedTz);
+		TimeZoneId zone = new TimeZoneId(expectedTz);
 		String receivedZone = zone.getTimeZone();
 		assertEquals(expectedTz, receivedZone);
 	}
@@ -47,7 +44,7 @@ class TimeZoneTest
 	@Test
 	void test_getTimeZone_null()
 	{
-		TimeZone zone = new TimeZone();
+		TimeZoneId zone = new TimeZoneId();
 		String receivedZone = zone.getTimeZone();
 		assertNull(receivedZone);
 	}
@@ -56,7 +53,7 @@ class TimeZoneTest
 	void test_validate()
 	{
 		String expectedTz = "UTC";
-		TimeZone zone = new TimeZone(expectedTz);
+		TimeZoneId zone = new TimeZoneId(expectedTz);
 		assertDoesNotThrow(zone::validate);
 	}
 
@@ -64,7 +61,7 @@ class TimeZoneTest
 	void test_validate_failure()
 	{
 		String expectedTz = "Not a Time Zone";
-		TimeZone zone = new TimeZone(expectedTz);
+		TimeZoneId zone = new TimeZoneId(expectedTz);
 		assertThrows(FieldException.class, zone::validate);
 	}
 
@@ -72,15 +69,15 @@ class TimeZoneTest
 	void test_serialize_list()
 	{
 		ContentType contentType = new ContentType(Formats.JSONV2);
-		TimeZones tzs = new TimeZones(ZoneId.getAvailableZoneIds()
+		TimeZoneIds tzs = new TimeZoneIds(ZoneId.getAvailableZoneIds()
 									   .stream()
-									   .map(TimeZone::new)
+									   .map(TimeZoneId::new)
 									   .collect(Collectors.toList()));
 		String json = Formats.format(contentType, tzs);
-		TimeZones receivedTzs = Formats.parseContent(contentType, json, TimeZones.class);
+		TimeZoneIds receivedTzs = Formats.parseContent(contentType, json, TimeZoneIds.class);
 
-		List<TimeZone> expectedZones = tzs.getTimeZones();
-		List<TimeZone> receivedZones = receivedTzs.getTimeZones();
+		List<TimeZoneId> expectedZones = tzs.getTimeZones();
+		List<TimeZoneId> receivedZones = receivedTzs.getTimeZones();
 
 		assertEquals(expectedZones.size(), receivedZones.size());
 
@@ -96,11 +93,11 @@ class TimeZoneTest
 		assertNotNull(resource);
 		String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
 		ContentType contentType = new ContentType(Formats.JSONV2);
-		TimeZones receivedTzs = Formats.parseContent(contentType, json, TimeZones.class);
+		TimeZoneIds receivedTzs = Formats.parseContent(contentType, json, TimeZoneIds.class);
 		assertTrue(!receivedTzs.getTimeZones().isEmpty());
 	}
 
-	private Executable testZone(TimeZone expected, TimeZone received)
+	private Executable testZone(TimeZoneId expected, TimeZoneId received)
 	{
 		return () -> assertEquals(expected.getTimeZone(), received.getTimeZone());
 	}

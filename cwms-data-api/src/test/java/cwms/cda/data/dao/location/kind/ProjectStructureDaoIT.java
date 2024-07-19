@@ -11,6 +11,7 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
@@ -31,6 +32,12 @@ abstract class ProjectStructureDaoIT extends DataApiTestIT
 	protected static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
 	static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
 	static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
+	static final CwmsId PROJECT_1_ID = new CwmsId.Builder().withName(PROJECT_LOC.getName())
+																   .withOfficeId(PROJECT_LOC.getOfficeId())
+																   .build();
+	static final CwmsId PROJECT_2_ID = new CwmsId.Builder().withName(PROJECT_LOC2.getName())
+																   .withOfficeId(PROJECT_LOC2.getOfficeId())
+																   .build();
 
 	static void setupProject() throws Exception {
 		//Don't tag this as a @BeforeAll - JUnit can't guarantee this occurs first.
