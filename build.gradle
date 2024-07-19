@@ -6,5 +6,5 @@ plugins {
 allprojects {
     apply plugin: 'cda.java-conventions'
     group = 'mil.army.usace.hec.cwms'
-    version = '3.1.5-build-SNAPSHOT' // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
+    version = '3.1.5-SNAPSHOT' // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
 }
