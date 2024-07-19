@@ -6,11 +6,10 @@
   "location": {
     "office-id": "SWT",
     "name": "PROJ_TURB-TURBINE_LOC",
-    "latitude": 36.153980,
-    "longitude": -95.992775,
+    "latitude": 38.5613824,
+    "longitude": -121.7298432,
     "active": true,
-    "public-name": "TURBINE_LOC",
-    "long-name": "TURBINE_LOC",
+    "long-name": "PROJ_TURB-TURBINE_LOC.long name",
     "description": "for testing",
     "timezone-name": "UTC",
     "location-type": "SITE",
@@ -19,10 +18,11 @@
     "state-initial": "CA",
     "county-name": "Sacramento",
     "horizontal-datum": "NVGD29",
-    "published-longitude": -95.992775,
-    "published-latitude": 36.153980,
+    "published-longitude": -121.7298432,
+    "published-latitude": 38.5613824,
     "elevation": 10.0,
     "bounding-office-id": "SWT",
-    "elevation-units": "m"
+    "elevation-units": "m",
+    "nearest-city": "Davis"
   }
 }
