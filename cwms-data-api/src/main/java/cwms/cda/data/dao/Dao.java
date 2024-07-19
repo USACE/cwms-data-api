@@ -26,11 +26,14 @@ package cwms.cda.data.dao;
 
 import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LOG;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -42,15 +45,17 @@ public abstract class Dao<T> {
     public static final int CWMS_21_1_1 = 210101;
     public static final int CWMS_23_03_16 = 230316;
 
+    public static final String PROP_BASE = "cwms.cda.data.dao.dao";
+    public static final String VERSION_NAME = "version";
+    private static final Cache<String, Integer> versionCache = CacheBuilder.newBuilder()
+            .maximumSize(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
+                    + ".maxSize", 8))
+            .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
+                    + ".expireAfterSeconds", 300), TimeUnit.SECONDS)
+            .build();
+
     @SuppressWarnings("unused")
     protected DSLContext dsl;
-
-    /* We only need this once per instance of a DAO.
-     * would probably be good to cache at a larger level but
-     * this does strike a balance between performance and picking
-     * up new database features in real-time.
-     */
-    private Integer theDbVersion = null;
 
     protected Dao(DSLContext dsl) {
         this.dsl = dsl;
@@ -66,14 +71,22 @@ public abstract class Dao<T> {
     }
 
     public int getDbVersion() {
-        if (theDbVersion == null) {
-            String version = getVersion(dsl);
-            String[] parts = version.split("\\.");
-            theDbVersion = Integer.parseInt(parts[0]) * 10000
-                    + Integer.parseInt(parts[1]) * 100
-                    + Integer.parseInt(parts[2]);
+        Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
+        if (cachedValue == null) {
+            int newValue = versionAsInteger(getVersion(dsl));
+            versionCache.put(VERSION_NAME, newValue);
+            return newValue;
+        } else {
+            return cachedValue;
         }
-        return theDbVersion; // the unboxing is still cheaper than a database call (the logging was nuts.)
+    }
+
+    private static int versionAsInteger(String version) {
+        String[] parts = version.split("\\.");
+
+        return Integer.parseInt(parts[0]) * 10000
+                + Integer.parseInt(parts[1]) * 100
+                + Integer.parseInt(parts[2]);
     }
 
 
