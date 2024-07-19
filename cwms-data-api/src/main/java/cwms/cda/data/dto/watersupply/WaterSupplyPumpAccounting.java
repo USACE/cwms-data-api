@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -48,7 +48,7 @@ public class WaterSupplyPumpAccounting extends CwmsDTOBase {
     @JsonProperty(required = true)
     private String contractName;
     @JsonProperty(required = true)
-    private Location pumpLocation;
+    private CwmsId pumpLocation;
     @JsonProperty(required = true)
     private LookupType transferType;
     @JsonProperty(required = true)
@@ -60,7 +60,7 @@ public class WaterSupplyPumpAccounting extends CwmsDTOBase {
     private WaterSupplyPumpAccounting() {
     }
 
-    public WaterSupplyPumpAccounting(WaterUser waterUser, String contractName, Location pumpLocation,
+    public WaterSupplyPumpAccounting(WaterUser waterUser, String contractName, CwmsId pumpLocation,
             LookupType transferType, Double flow, Date transferDate, String comment) {
         this.waterUser = waterUser;
         this.contractName = contractName;
@@ -79,7 +79,7 @@ public class WaterSupplyPumpAccounting extends CwmsDTOBase {
         return this.contractName;
     }
 
-    public Location getPumpLocation() {
+    public CwmsId getPumpLocation() {
         return this.pumpLocation;
     }
 
