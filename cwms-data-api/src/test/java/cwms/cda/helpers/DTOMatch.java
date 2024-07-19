@@ -43,7 +43,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
-import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
+import cwms.cda.data.dto.watersupply.WaterSupplyPumpAccounting;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -293,7 +293,7 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(WaterSupplyAccounting first, WaterSupplyAccounting second) {
+    public static void assertMatch(WaterSupplyPumpAccounting first, WaterSupplyPumpAccounting second) {
         assertAll(
                 () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
                 () -> assertEquals(first.getContractName(), second.getContractName()),
