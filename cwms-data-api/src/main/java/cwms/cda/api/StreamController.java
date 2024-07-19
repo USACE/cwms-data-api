@@ -45,6 +45,7 @@ import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.data.dao.DeleteRule;
@@ -91,6 +92,8 @@ public final class StreamController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Office id for the reservoir project location " +
                             "associated with the streams."),
+                    @OpenApiParam(name = STREAM_ID_MASK, description = "Specifies the stream-id of the stream to be " +
+                            "retrieved."),
                     @OpenApiParam(name = DIVERTS_FROM_STREAM_ID_MASK, description = "Specifies the stream-id of the " +
                             "stream that the returned streams flow from."),
                     @OpenApiParam(name = FLOWS_INTO_STREAM_ID_MASK, description = "Specifies the stream-id of the " +
@@ -110,13 +113,14 @@ public final class StreamController implements CrudHandler {
     @Override
     public void getAll(@NotNull Context ctx) {
         String office = ctx.queryParam(OFFICE_MASK);
+        String streamId = ctx.queryParam(STREAM_ID_MASK);
         String divertsFromStream = ctx.queryParam(DIVERTS_FROM_STREAM_ID_MASK);
         String flowsIntoStream = ctx.queryParam(FLOWS_INTO_STREAM_ID_MASK);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
             String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
-            List<Stream> streams = dao.retrieveStreams(office, divertsFromStream, flowsIntoStream, stationUnits);
+            List<Stream> streams = dao.retrieveStreams(office, streamId, divertsFromStream, flowsIntoStream, stationUnits);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                     Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Stream.class);

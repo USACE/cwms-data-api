@@ -124,7 +124,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                     .build();
             STREAMS_CREATED.add(streamToStore);
             streamDao.storeStream(streamToStore, false);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -139,7 +139,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                     } catch (NotFoundException e) {
                         // ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }

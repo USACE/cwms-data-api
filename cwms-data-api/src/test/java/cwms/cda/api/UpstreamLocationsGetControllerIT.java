@@ -2,13 +2,13 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.ALL_UPSTREAM;
 import static cwms.cda.api.Controllers.AREA_UNIT;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.SAME_STREAM_ONLY;
 import static cwms.cda.api.Controllers.STAGE_UNIT;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STREAM_ID;
-import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
@@ -42,14 +42,14 @@ import org.junit.jupiter.api.Test;
 @Tag("integration")
 final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
 
-    private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
+    private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
     @BeforeAll
     public static void setup() throws SQLException {
-        createLocation("StreamLoc123", true, OFFICE_ID, "STREAM_LOCATION");
-        createLocation("StreamLoc2", true, OFFICE_ID, "STREAM_LOCATION");
-        createAndStoreTestStream("ImOnThisStream");
+        createLocation("StreamLoc1234", true, OFFICE_ID, "STREAM_LOCATION");
+        createLocation("StreamLoc23", true, OFFICE_ID, "STREAM_LOCATION");
+        createAndStoreTestStream("ImOnThisStream3");
     }
 
     private static void createAndStoreTestStream(String testLoc) throws SQLException {
@@ -67,8 +67,8 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
                     .withStartsDownstream(true)
                     .build();
             STREAMS_CREATED.add(streamToStore);
-            streamDao.storeStream(streamToStore, true);
-        });
+            streamDao.storeStream(streamToStore, false);
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -80,10 +80,10 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
                     StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
                     try {
                         streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
-                    } catch (NotFoundException e) {
+                    } catch (Exception e) {
                         // ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -93,7 +93,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
 
     @Test
     void test_getUpstreamLocations() throws IOException {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location4.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
@@ -105,12 +105,13 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // 3) Retrieve upstream locations and assert they exist
         // 4) Delete the StreamLocation
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 
         // Create the StreamLocation
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
+                .queryParam(FAIL_IF_EXISTS, false)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -158,7 +159,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
                 .body("area-units", equalTo(streamLocation.getAreaUnits()))
                 .body("stage-units", equalTo(streamLocation.getStageUnits()));
 
-        resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location2.json");
+        resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location5.json");
         assertNotNull(resource);
         json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
@@ -170,6 +171,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
+                .queryParam(FAIL_IF_EXISTS, false)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
