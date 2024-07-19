@@ -24,12 +24,10 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -99,7 +97,6 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        tearDown();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
@@ -115,12 +112,11 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
                         .build())
                     .withLocation(TURBINE_LOC)
                     .build();
-                new TurbineDao(context).storeTurbine(turbine, false);
+                new TurbineDao(context).storeTurbine(turbine, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -151,7 +147,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(OVERRIDE_PROTECTION, "true")
         .when()
             .redirects().follow(true)
             .redirects().max(3)

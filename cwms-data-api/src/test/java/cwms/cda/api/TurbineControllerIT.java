@@ -68,7 +68,7 @@ final class TurbineControllerIT extends DataApiTestIT {
     private static final Location TURBINE_LOC;
     private static final Turbine TURBINE;
     static {
-        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
+        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location_turb.json");
             InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine.json")) {
             String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
             PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
@@ -82,7 +82,6 @@ final class TurbineControllerIT extends DataApiTestIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        tearDown();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
@@ -94,8 +93,7 @@ final class TurbineControllerIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -105,8 +103,7 @@ final class TurbineControllerIT extends DataApiTestIT {
             DSLContext context = getDslContext(c, OFFICE);
             cleanTurbine(context, TURBINE_LOC);
             cleanProject(context, PROJECT_LOC);
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
