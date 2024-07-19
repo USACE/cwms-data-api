@@ -15,5 +15,12 @@
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
   },
-  "rating-group-id": "Rating-location-outlet"
+  "rating-category-id": {
+    "office-id": "SPK",
+    "name": "Rating"
+  },
+  "rating-group-id": {
+    "office-id": "SPK",
+    "name": "Rating-location-outlet"
+  }
 }

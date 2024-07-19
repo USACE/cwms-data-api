@@ -44,9 +44,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("integration")
 class OutletDaoIT extends ProjectStructureDaoIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-    private static final String TAINTER_GATE_RATING_GROUP = "Rating-" + PROJECT_1_ID.getName() + "-TainterGate";
-    private static final String BOX_CULVERT_RATING_GROUP = "Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert";
-    private static final String TAINTER_GATE_RATING_GROUP_MODIFIED = "Rating-" + PROJECT_1_ID.getName() + "-TainterGate Modified";
+    private static final CwmsId TAINTER_GATE_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate").withOfficeId(OFFICE_ID).build();
+    private static final CwmsId BOX_CULVERT_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert").withOfficeId(OFFICE_ID).build();
+    private static final CwmsId TAINTER_GATE_RATING_GROUP_MODIFIED = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate Modified").withOfficeId(OFFICE_ID).build();
     private static final String OUTLET_KIND = "OUTLET";
     private static final Location TAINTER_GATE_1_LOC = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-TG1",
                                                                                      OUTLET_KIND);
@@ -76,9 +76,9 @@ class OutletDaoIT extends ProjectStructureDaoIT {
                 storeLocation(context, TAINTER_GATE_2_LOC);
                 storeLocation(context, TAINTER_GATE_3_LOC);
                 storeLocation(context, BOX_CULVERT_1_LOC);
-                outletDao.storeOutlet(TAINTER_GATE_1_OUTLET, TAINTER_GATE_1_OUTLET.getRatingGroupId(), false);
-                outletDao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId(), false);
-                outletDao.storeOutlet(BOX_CULVERT_1_OUTLET, BOX_CULVERT_1_OUTLET.getRatingGroupId(), false);
+                outletDao.storeOutlet(TAINTER_GATE_1_OUTLET, TAINTER_GATE_1_OUTLET.getRatingGroupId().getName(), false);
+                outletDao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId().getName(), false);
+                outletDao.storeOutlet(BOX_CULVERT_1_OUTLET, BOX_CULVERT_1_OUTLET.getRatingGroupId().getName(), false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -213,7 +213,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             OutletDao dao = new OutletDao(context);
 
             //Shouldn't exist in the db.
-            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId(), true);
+            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId().getName(), true);
             dao.renameOutlet(OFFICE_ID, TAINTER_GATE_3_LOC.getName(), TG_LOC4_ID.getName());
             Outlet outlet = dao.retrieveOutlet(TG_LOC4_ID.getOfficeId(), TG_LOC4_ID.getName());
             assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(OFFICE_ID, TAINTER_GATE_3_LOC.getName()));
@@ -231,7 +231,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, String ratingId) {
+    private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId) {
         return new Outlet.Builder().withProjectId(new CwmsId.Builder().withName(projectLoc.getName())
                                                                       .withOfficeId(projectLoc.getOfficeId())
                                                                       .build())

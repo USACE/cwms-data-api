@@ -38,7 +38,7 @@ final class OutletTest {
     private static final String PROJECT_LOC = "location";
     private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
     private static final String BASE_OUTLET_LOC = "outlet";
-    private static final String RATING_GROUP_ID = "Rating-" + OUTLET_LOC;
+    private static final CwmsId RATING_GROUP_ID = new CwmsId.Builder().withName("Rating-" + OUTLET_LOC).withOfficeId(SPK).build();
 
     @Test
     void test_serialization() {

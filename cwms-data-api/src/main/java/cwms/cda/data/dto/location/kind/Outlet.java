@@ -20,6 +20,7 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -35,23 +36,33 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectId", "location", "ratingGroupId"})
+@JsonPropertyOrder({"projectId", "location", "ratingCatId", "ratingGroupId"})
 public final class Outlet extends ProjectStructure {
-    private final String ratingGroupId;
+    public static final String RATING_LOC_GROUP_CATEGORY = "Rating";
+    private final CwmsId ratingCategoryId;
+    private final CwmsId ratingGroupId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
         ratingGroupId = builder.ratingGroupId;
+        ratingCategoryId = new CwmsId.Builder().withOfficeId(builder.projectId.getOfficeId())
+                                               .withName(RATING_LOC_GROUP_CATEGORY)
+                                               .build();
     }
 
-    public String getRatingGroupId() {
+    public CwmsId getRatingGroupId() {
         return ratingGroupId;
     }
 
+    public CwmsId getRatingCategoryId() {
+        return ratingCategoryId;
+    }
+
+    @JsonIgnoreProperties(value = {"rating-category-id"})
     public static final class Builder {
         private CwmsId projectId;
         private Location location;
-        private String ratingGroupId;
+        private CwmsId ratingGroupId;
 
         public Builder() {
         }
@@ -76,7 +87,7 @@ public final class Outlet extends ProjectStructure {
             return this;
         }
 
-        public Builder withRatingGroupId(String ratingGroupId) {
+        public Builder withRatingGroupId(CwmsId ratingGroupId) {
             this.ratingGroupId = ratingGroupId;
             return this;
         }

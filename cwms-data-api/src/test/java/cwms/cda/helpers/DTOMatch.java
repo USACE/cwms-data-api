@@ -200,7 +200,7 @@ public final class DTOMatch {
         assertAll(
                 () -> assertMatch(first.getProjectId(), second.getProjectId()),
                 () -> assertEquals(first.getLocation(), second.getLocation()),
-                () -> assertEquals(first.getRatingGroupId(), second.getRatingGroupId())
+                () -> assertMatch(first.getRatingGroupId(), second.getRatingGroupId())
         );
     }
 
