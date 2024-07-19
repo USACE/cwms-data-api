@@ -61,9 +61,9 @@ import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 @TestInstance(Lifecycle.PER_CLASS)
 final class EmbankmentDaoIT extends ProjectStructureDaoIT {
     private static final String EMBANKMENT_KIND = "EMBANKMENT";
-    private static final Location EMBANK_LOC1 = buildProjectStructureLocation("PROJECT-EMBANK_LOC1", EMBANKMENT_KIND);
-    private static final Location EMBANK_LOC2 = buildProjectStructureLocation("EMBANK_LOC2", EMBANKMENT_KIND);
-    private static final Location EMBANK_LOC3 = buildProjectStructureLocation("EMBANK_LOC3", EMBANKMENT_KIND);
+    private static final Location EMBANK_LOC1 = buildProjectStructureLocation("PROJECT-EMBANK_LOC1_IT", EMBANKMENT_KIND);
+    private static final Location EMBANK_LOC2 = buildProjectStructureLocation("EMBANK_LOC2_IT", EMBANKMENT_KIND);
+    private static final Location EMBANK_LOC3 = buildProjectStructureLocation("EMBANK_LOC3_IT", EMBANKMENT_KIND);
 
     @BeforeAll
     public void setup() throws Exception {
