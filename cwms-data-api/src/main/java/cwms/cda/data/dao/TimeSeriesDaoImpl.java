@@ -78,7 +78,6 @@ import org.jooq.TableOnConditionStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -291,13 +290,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 trim, startInclusive, endInclusive, previous, next,
                 versionDateMilli, maxVersion, officeId);
 
-        Field<String> tzName;
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
-        } else {
-            tzName = DSL.inline(null, SQLDataType.VARCHAR);
-        }
-
+        Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
         Field<Integer> totalField;
         if (total != null) {
@@ -551,7 +544,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         logger.info(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
-        int dbVersion = this.getDbVersion();
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
         result.forEach(row -> {
             String officeTsId = row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID)
@@ -564,9 +556,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .units(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID))
                         .interval(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID))
                         .intervalOffset(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET));
-                if (dbVersion > Dao.CWMS_21_1_1) {
-                    builder.timeZone(row.get("TIME_ZONE_ID", String.class));
-                }
+
+                builder.timeZone(row.get("TIME_ZONE_ID", String.class));
+
                 if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
@@ -626,9 +618,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET);
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
-        }
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
+
         return cwmsTsIdFields;
     }
 
