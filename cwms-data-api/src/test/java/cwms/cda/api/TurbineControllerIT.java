@@ -93,8 +93,7 @@ final class TurbineControllerIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -104,8 +103,7 @@ final class TurbineControllerIT extends DataApiTestIT {
             DSLContext context = getDslContext(c, OFFICE);
             cleanTurbine(context, TURBINE_LOC);
             cleanProject(context, PROJECT_LOC);
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test

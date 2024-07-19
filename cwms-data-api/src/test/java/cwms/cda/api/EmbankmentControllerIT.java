@@ -83,7 +83,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
-                DSLContext context = getDslContext(c, OFFICE);
+                DSLContext context = getDslContext(c, EMBANKMENT_LOC.getOfficeId());
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
@@ -99,7 +99,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, OFFICE);
+            DSLContext context = getDslContext(c, EMBANKMENT_LOC.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             try {
                 locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), EMBANKMENT_LOC.getOfficeId(), true);
