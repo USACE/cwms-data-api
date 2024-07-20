@@ -143,7 +143,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
                                                                         PROJECT_1_ID.getName());
 
             //This shouldn't exist in the DB
-            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId(), true);
+            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId(), false);
 
             List<Outlet> retrievedOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                           PROJECT_1_ID.getName());
