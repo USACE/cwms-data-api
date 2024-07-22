@@ -13,7 +13,7 @@ configurations {
 }
 
 configurations.implementation {
-    exclude group: 'com.oracle.database.jdbc'
+    exclude group: 'com.oracle.database.jdbc', module: 'ojdbc'
 }
 
 dependencies {
@@ -113,6 +113,21 @@ dependencies {
     implementation(libs.bundles.metrics)
 
     implementation(libs.bundles.jackson)
+
+    implementation(libs.aqapi)
+    implementation(libs.jmscommon)
+    //For some reason the caffeine transitive dependency makes gradle angry
+    implementation(libs.activemq.artemis.server) {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+    }
+    implementation(libs.activemq.artemis.client) {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+    }
+    implementation(libs.activemq.artemis.stomp) {
+        exclude group: "com.github.ben-manes.caffeine", module: "caffeine"
+    }
+    implementation(libs.camel.core)
+    implementation(libs.camel.jms)
 
     testImplementation(libs.bundles.junit)
     testRuntimeOnly(libs.junit.jupiter.engine)
@@ -228,6 +243,7 @@ task run(type: JavaExec) {
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
 
     def context = project.findProperty("cda.war.context") ?: "spk-data"
 

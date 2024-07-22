@@ -25,12 +25,6 @@
 package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
-import cwms.cda.api.DownstreamLocationsGetController;
-import cwms.cda.api.LookupTypeController;
-import cwms.cda.api.StreamController;
-import cwms.cda.api.StreamLocationController;
-import cwms.cda.api.StreamReachController;
-import cwms.cda.api.UpstreamLocationsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -54,6 +48,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.EmbankmentController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
@@ -63,6 +58,7 @@ import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
+import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
@@ -75,6 +71,9 @@ import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
+import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
+import cwms.cda.api.StreamReachController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -88,6 +87,7 @@ import cwms.cda.api.TurbineChangesGetController;
 import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
+import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
@@ -98,6 +98,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.messaging.CdaTopicHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -148,6 +149,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.owasp.html.HtmlPolicyBuilder;
@@ -186,7 +188,7 @@ import org.owasp.html.PolicyFactory;
         "/projects/*",
         "/properties/*",
         "/lookup-types/*",
-        "/embankments/*"
+        "/cda-topics"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -218,12 +220,13 @@ public class ApiServlet extends HttpServlet {
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
-
+    private CdaTopicHandler cdaTopicHandler;
 
 
     @Override
     public void destroy() {
         javalin.destroy();
+        cdaTopicHandler.shutdown();
     }
 
     @Override
@@ -237,7 +240,7 @@ public class ApiServlet extends HttpServlet {
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     @Override
-    public void init() {
+    public void init() throws ServletException {
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
 
@@ -513,6 +516,12 @@ public class ApiServlet extends HttpServlet {
                 new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        if(Boolean.getBoolean("cwms.data.api.messaging.enabled")) {
+            //TODO: setup separate data source for persistent connections to Oracle AQ
+            cdaTopicHandler = new CdaTopicHandler(cwms, metrics);
+            get("/cda-topics", cdaTopicHandler);
+            addCacheControl("/cda-topics", 1, TimeUnit.DAYS);
+        }
     }
 
     /**

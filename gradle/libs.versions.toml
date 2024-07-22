@@ -74,6 +74,14 @@ jackson-dataformat-csv = { module = "com.fasterxml.jackson.dataformat:jackson-da
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 
+aqapi = { module = "com.oracle.database.jdbc:aqapi", version = "19.3.0.0" }
+jmscommon = { module = "com.oracle.database.jdbc:jmscommon", version = "19.3.0.0" }
+activemq-artemis-server = { module = "org.apache.activemq:artemis-server", version = "2.19.1" }
+activemq-artemis-client = { module = "org.apache.activemq:artemis-jms-client-all", version = "2.19.1" }
+activemq-artemis-stomp = { module = "org.apache.activemq:artemis-stomp-protocol", version = "2.19.1" }
+#apache camel 2.x is the last to support JDK 8
+camel-core = {module = 'org.apache.camel:camel-core', version ='2.25.4' }
+camel-jms = {module = 'org.apache.camel:camel-jms', version ='2.25.4' }
 
 
 #compile compileOnly
