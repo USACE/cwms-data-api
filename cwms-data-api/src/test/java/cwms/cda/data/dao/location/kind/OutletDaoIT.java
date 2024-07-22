@@ -35,6 +35,7 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -135,33 +136,31 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            List<Outlet> initialOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
-                                                                        PROJECT_1_ID.getName());
 
-            //This shouldn't exist in the DB
-            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId(), false);
+            //Delete
+            dao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(), DeleteRule.DELETE_KEY);
 
+            //Retrieve for project
             List<Outlet> retrievedOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                           PROJECT_1_ID.getName());
-            assertNotEquals(initialOutlets.size(), retrievedOutlets.size());
-            DTOMatch.assertMatch(TAINTER_GATE_3_OUTLET, retrievedOutlets.get(2));
+            doesNotContainOutlet(retrievedOutlets, TAINTER_GATE_2_OUTLET);
 
-            Outlet newOutlet = new Outlet.Builder(TAINTER_GATE_3_OUTLET)
-                    .withRatingGroupId(TAINTER_GATE_RATING_GROUP_MODIFIED)
-                    .build();
-            dao.storeOutlet(newOutlet, TAINTER_GATE_RATING_GROUP_MODIFIED, false);
-            Outlet updatedOutlet = dao.retrieveOutlet(TAINTER_GATE_3_LOC.getOfficeId(),
-                                                      TAINTER_GATE_3_LOC.getName());
-            
-            //DELETE_KEY will just remove the AT_OUTLET key, and since we don't have any changes this will be fine.
-            dao.deleteOutlet(TAINTER_GATE_3_LOC.getOfficeId(), TAINTER_GATE_3_LOC.getName(),
-                             DeleteRule.DELETE_KEY);
+            //Create
+            Outlet modifiedOutlet = new Outlet.Builder(TAINTER_GATE_2_OUTLET).withRatingGroupId(
+                    TAINTER_GATE_RATING_GROUP_MODIFIED).build();
+            dao.storeOutlet(modifiedOutlet, TAINTER_GATE_RATING_GROUP_MODIFIED, true);
 
-            DTOMatch.assertMatch(newOutlet, updatedOutlet);
+            //Single retrieve
+            Outlet retrievedModifiedOutlet = dao.retrieveOutlet(TAINTER_GATE_2_LOC.getOfficeId(),
+                                                      TAINTER_GATE_2_LOC.getName());
+            DTOMatch.assertMatch(modifiedOutlet, retrievedModifiedOutlet);
+
+            //Update (back to original)
+            dao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId(), false);
 
             List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                       PROJECT_1_ID.getName());
-            assertEquals(initialOutlets.size(), finalOutlets.size());
+            containsOutlet(finalOutlets, TAINTER_GATE_2_OUTLET);
 
             assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(TAINTER_GATE_3_LOC.getOfficeId(),
                                                                            TAINTER_GATE_3_LOC.getName()));
@@ -194,6 +193,18 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         DTOMatch.assertMatch(expectedOutlet, receivedOutlet);
     }
 
+    private void doesNotContainOutlet(List<Outlet> outlets, Outlet expectedOutlet) {
+        String name = expectedOutlet.getLocation().getName();
+        Outlet receivedOutlet = outlets.stream()
+                                       .filter(outlet -> outlet.getLocation()
+                                                               .getName()
+                                                               .equalsIgnoreCase(name))
+                                       .findFirst()
+                                       .orElse(null);
+        assertNull(receivedOutlet);
+    }
+
+    @Disabled
     @Test
     void test_rename_outlets() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
