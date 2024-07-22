@@ -204,7 +204,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
         assertNull(receivedOutlet);
     }
 
-    @Disabled
+    @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
     @Test
     void test_rename_outlets() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
