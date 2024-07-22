@@ -234,7 +234,7 @@ public final class DTOMatch {
     public static void assertMatch(WaterUser firstUser, WaterUser secondUser) {
         assertAll(
                 () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
-                () -> DTOMatch.assertMatch(firstUser.getProjectLocationRef(), secondUser.getProjectLocationRef()),
+                () -> DTOMatch.assertMatch(firstUser.getProjectId(), secondUser.getProjectId()),
                 () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
         );
     }
