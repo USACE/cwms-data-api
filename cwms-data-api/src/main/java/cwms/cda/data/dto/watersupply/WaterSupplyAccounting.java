@@ -34,8 +34,9 @@ import cwms.cda.formatters.json.JsonV1;
 import hec.data.DataObjectException;
 import hec.data.TimeWindow;
 import hec.data.TimeWindowMap;
+
+import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,16 +48,17 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import rma.util.RMAConst;
+import java.util.Date;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public class WaterSupplyAccounting extends CwmsDTOBase {
     private final String contractName;
     private final WaterUser waterUser;
-    private final Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> pumpLocationMap;
+    private final Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> pumpLocationMap;
     private final Map<CwmsId, TimeWindowMap> pumpTimeWindowMap;
 
     public WaterSupplyAccounting(String contractName, WaterUser waterUser,
-            Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> pumpLocationMap,
+            Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> pumpLocationMap,
             Map<CwmsId, TimeWindowMap> pumpTimeWindowMap) {
         this.contractName = contractName;
         this.waterUser = waterUser;
@@ -72,7 +74,7 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
         return this.waterUser;
     }
 
-    public Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> getPumpLocationMap() {
+    public Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> getPumpLocationMap() {
         return this.pumpLocationMap;
     }
 
@@ -80,10 +82,10 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
         return this.pumpTimeWindowMap;
     }
 
-    public Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> getAllPumpAccounting() {
-        Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> output = new HashMap<>();
+    public Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> getAllPumpAccounting() {
+        Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> output = new HashMap<>();
 
-        for (Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> cwmsIdNavigableMapEntry : this.pumpLocationMap.entrySet()) {
+        for (Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> cwmsIdNavigableMapEntry : this.pumpLocationMap.entrySet()) {
             output.put(cwmsIdNavigableMapEntry.getKey(), new TreeMap<>(cwmsIdNavigableMapEntry.getValue()));
         }
         return output;
@@ -91,48 +93,48 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
 
     public int size() {
         int size = 0;
-        Collection<NavigableMap<Date, WaterSupplyPumpAccounting>> values = this.pumpLocationMap.values();
+        Collection<NavigableMap<Instant, WaterSupplyPumpAccounting>> values = this.pumpLocationMap.values();
 
-        NavigableMap<Date, WaterSupplyPumpAccounting> value;
-        for (Iterator<NavigableMap<Date, WaterSupplyPumpAccounting>> it = values.iterator(); it.hasNext(); size += value.size()) {
+        NavigableMap<Instant, WaterSupplyPumpAccounting> value;
+        for (Iterator<NavigableMap<Instant, WaterSupplyPumpAccounting>> it = values.iterator(); it.hasNext(); size += value.size()) {
             value = it.next();
         }
         return size;
     }
 
-    public Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> getAllPumpAccounting(Date startDate,
-            Date endDate) {
-        Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> output = new HashMap<>();
-        Set<Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>>> entrySet
+    public Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> getAllPumpAccounting(Instant startInstant,
+            Instant endInstant) {
+        Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> output = new HashMap<>();
+        Set<Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>>> entrySet
                 = this.pumpLocationMap.entrySet();
 
-        for (Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> cwmsIdNavigableMapEntry : entrySet) {
-            NavigableMap<Date, WaterSupplyPumpAccounting> value = cwmsIdNavigableMapEntry.getValue();
-            output.put(cwmsIdNavigableMapEntry.getKey(), value.subMap(startDate, true, endDate, true));
+        for (Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> cwmsIdNavigableMapEntry : entrySet) {
+            NavigableMap<Instant, WaterSupplyPumpAccounting> value = cwmsIdNavigableMapEntry.getValue();
+            output.put(cwmsIdNavigableMapEntry.getKey(), value.subMap(startInstant, true, endInstant, true));
         }
         return output;
     }
 
-    public NavigableMap<Date, WaterSupplyPumpAccounting> getPumpAccounting(CwmsId pumpId) {
-        NavigableMap<Date, WaterSupplyPumpAccounting> map = this.pumpLocationMap.get(pumpId);
+    public NavigableMap<Instant, WaterSupplyPumpAccounting> getPumpAccounting(CwmsId pumpId) {
+        NavigableMap<Instant, WaterSupplyPumpAccounting> map = this.pumpLocationMap.get(pumpId);
         if (map == null) {
             map = this.buildPumpAccounting(pumpId);
         }
         return map;
     }
 
-    public NavigableMap<Date, WaterSupplyPumpAccounting> getPumpAccounting(CwmsId pumpId, Date startDate,
-            Date endDate) {
-        NavigableMap<Date, WaterSupplyPumpAccounting> map = this.pumpLocationMap.get(pumpId);
+    public NavigableMap<Instant, WaterSupplyPumpAccounting> getPumpAccounting(CwmsId pumpId, Instant startInstant,
+            Instant endInstant) {
+        NavigableMap<Instant, WaterSupplyPumpAccounting> map = this.pumpLocationMap.get(pumpId);
         if (map == null) {
             map = this.buildPumpAccounting(pumpId);
             return map;
         }
-        return map.subMap(startDate, true, endDate, true);
+        return map.subMap(startInstant, true, endInstant, true);
     }
 
-    public NavigableMap<Date, WaterSupplyPumpAccounting> buildPumpAccounting(CwmsId pumpId) {
-        NavigableMap<Date, WaterSupplyPumpAccounting> accountingMap = this.pumpLocationMap.get(pumpId);
+    public NavigableMap<Instant, WaterSupplyPumpAccounting> buildPumpAccounting(CwmsId pumpId) {
+        NavigableMap<Instant, WaterSupplyPumpAccounting> accountingMap = this.pumpLocationMap.get(pumpId);
         if (accountingMap != null) {
             return accountingMap;
         } else {
@@ -142,10 +144,10 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
         }
     }
 
-    public void mergeAccounting(CwmsId pumpLocRef, NavigableMap<Date, WaterSupplyPumpAccounting> accountingMap,
+    public void mergeAccounting(CwmsId pumpLocRef, NavigableMap<Instant, WaterSupplyPumpAccounting> accountingMap,
             boolean generateModifiedTimeWindow, boolean preserveModifiedData) {
         if (pumpLocRef != null && accountingMap != null && !accountingMap.isEmpty()) {
-            NavigableMap<Date, WaterSupplyPumpAccounting> cacheMap
+            NavigableMap<Instant, WaterSupplyPumpAccounting> cacheMap
                     = this.buildPumpAccounting(pumpLocRef);
             TimeWindowMap timeWindowMap;
             if (cacheMap != null) {
@@ -154,8 +156,8 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
                     timeWindowMap = this.pumpTimeWindowMap.computeIfAbsent(pumpLocRef, k -> new TimeWindowMap());
                     if (!accountingMap.isEmpty()) {
                         try {
-                            timeWindowMap.addTimeWindow(accountingMap.firstKey(), true,
-                                    accountingMap.lastKey(), true);
+                            timeWindowMap.addTimeWindow(new Date(accountingMap.firstKey().toEpochMilli()), true,
+                                    new Date(accountingMap.lastKey().toEpochMilli()), true);
                         } catch (IllegalArgumentException ex) {
                             Logger.getLogger(WaterSupplyAccounting.class.getName()).log(Level.SEVERE,
                                     "Start time cannot be after end time", ex);
@@ -163,36 +165,36 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
                     }
                 }
             } else {
-                Date key;
+                Instant key;
                 if (preserveModifiedData) {
                     timeWindowMap = this.getTimeWindowMap(pumpLocRef);
                     if (timeWindowMap != null && !timeWindowMap.isEmpty()) {
                         Set<TimeWindow> timeWindowSet = timeWindowMap.getTimeWindowSet();
 
                         for (TimeWindow timeWindow : timeWindowSet) {
-                            Date timeWindowStartDate = timeWindow.getStartDate();
-                            key = timeWindow.getStartDate();
-                            SortedMap<Date, WaterSupplyPumpAccounting> modSet
-                                    = accountingMap.subMap(timeWindowStartDate, true, key, true);
+                            Instant timeWindowStartInstant = timeWindow.getStartDate().toInstant();
+                            key = timeWindow.getStartDate().toInstant();
+                            SortedMap<Instant, WaterSupplyPumpAccounting> modSet
+                                    = accountingMap.subMap(timeWindowStartInstant, true, key, true);
                             if (modSet != null && !modSet.isEmpty()) {
-                                Set<Date> modSetKeys = new HashSet<>(modSet.keySet());
+                                Set<Instant> modSetKeys = new HashSet<>(modSet.keySet());
                                 accountingMap.keySet().removeAll(modSetKeys);
                             }
                         }
                     }
                 }
 
-                NavigableMap<Date, WaterSupplyPumpAccounting> tempCache = new TreeMap<>(accountingMap);
+                NavigableMap<Instant, WaterSupplyPumpAccounting> tempCache = new TreeMap<>(accountingMap);
                 tempCache = tempCache.subMap(accountingMap.firstKey(), true,
                         accountingMap.lastKey(), true);
                 boolean valuesRemoved = tempCache.keySet().removeAll(accountingMap.keySet());
                 if (valuesRemoved) {
-                    Set<Map.Entry<Date, WaterSupplyPumpAccounting>> entrySet = tempCache.entrySet();
-                    Iterator<Map.Entry<Date, WaterSupplyPumpAccounting>> it = entrySet.iterator();
+                    Set<Map.Entry<Instant, WaterSupplyPumpAccounting>> entrySet = tempCache.entrySet();
+                    Iterator<Map.Entry<Instant, WaterSupplyPumpAccounting>> it = entrySet.iterator();
 
                     breakLabel:
                     while (true) {
-                        Map.Entry<Date, WaterSupplyPumpAccounting> entry;
+                        Map.Entry<Instant, WaterSupplyPumpAccounting> entry;
                         TimeWindowMap pumpTwMap;
                         do {
                             if (!it.hasNext()) {
@@ -206,7 +208,7 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
                             }
 
                             pumpTwMap = this.getTimeWindowMap(pumpLocRef);
-                        } while (pumpTwMap != null && pumpTwMap.containedInTimeWindow(key, true));
+                        } while (pumpTwMap != null && pumpTwMap.containedInTimeWindow(new Date(key.toEpochMilli()), true));
 
                         WaterSupplyPumpAccounting value = entry.getValue();
                         value.setUndefined();
@@ -222,8 +224,8 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
                     }
 
                     try {
-                        timeWindowMap1.addTimeWindow(accountingMap.firstKey(), true,
-                                accountingMap.lastKey(), true);
+                        timeWindowMap1.addTimeWindow(new Date(accountingMap.firstKey().toEpochMilli()), true,
+                                new Date(accountingMap.lastKey().toEpochMilli()), true);
                     } catch (IllegalArgumentException ex) {
                         Logger.getLogger(WaterSupplyAccounting.class.getName()).log(Level.SEVERE,
                                 "Start time cannot be after end time", ex);
@@ -238,12 +240,12 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
         if (!this.getWaterUser().equals(waterSupplyAccounting.getWaterUser())) {
             throw new DataObjectException("Cannot merge accountings for different contracts.");
         } else {
-            Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> allPumpAccounting
+            Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> allPumpAccounting
                     = waterSupplyAccounting.getAllPumpAccounting();
-            Set<Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>>> entrySet
+            Set<Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>>> entrySet
                     = allPumpAccounting.entrySet();
 
-            for (Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> entry : entrySet) {
+            for (Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> entry : entrySet) {
                 this.mergeAccounting(entry.getKey(), entry.getValue(),
                         generateModifiedTimeWindow, preserveModifiedData);
             }
@@ -251,15 +253,15 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
     }
 
     public void removeUndefinedValues() {
-        Set<Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>>> entrySet
+        Set<Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>>> entrySet
                 = this.pumpLocationMap.entrySet();
 
-        for (Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> cwmsIdNavigableMapEntry : entrySet) {
-            NavigableMap<Date, WaterSupplyPumpAccounting> pumpAccounting = cwmsIdNavigableMapEntry.getValue();
-            Set<Map.Entry<Date, WaterSupplyPumpAccounting>> valueEntrySet = pumpAccounting.entrySet();
-            Set<Date> removeKeys = new HashSet<>();
+        for (Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> cwmsIdNavigableMapEntry : entrySet) {
+            NavigableMap<Instant, WaterSupplyPumpAccounting> pumpAccounting = cwmsIdNavigableMapEntry.getValue();
+            Set<Map.Entry<Instant, WaterSupplyPumpAccounting>> valueEntrySet = pumpAccounting.entrySet();
+            Set<Instant> removeKeys = new HashSet<>();
 
-            for (Map.Entry<Date, WaterSupplyPumpAccounting> valueEntry : valueEntrySet) {
+            for (Map.Entry<Instant, WaterSupplyPumpAccounting> valueEntry : valueEntrySet) {
                 WaterSupplyPumpAccounting value = valueEntry.getValue();
 
                 if (!RMAConst.isValidValue(value.getFlow())) {
@@ -281,58 +283,5 @@ public class WaterSupplyAccounting extends CwmsDTOBase {
 
     public TimeWindowMap getTimeWindowMap(CwmsId pumpId) {
         return this.pumpTimeWindowMap.get(pumpId);
-    }
-
-    public WaterSupplyAccounting windowAndLimit(Date startTime, Date endTime, boolean headFlag, int rowLimit) {
-        WaterSupplyAccounting dst = new WaterSupplyAccounting(this.contractName, this.waterUser, new HashMap<>(),
-                new HashMap<>());
-        Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> allPumpAccounting
-                = this.getAllPumpAccounting(startTime, endTime);
-        if (allPumpAccounting != null && !allPumpAccounting.isEmpty()) {
-            Set<Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>>> entrySet
-                    = allPumpAccounting.entrySet();
-            Iterator<Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>>> it = entrySet.iterator();
-
-            while (true) {
-                NavigableMap<Date, WaterSupplyPumpAccounting> dstPumpAccounting;
-                NavigableMap<Date, WaterSupplyPumpAccounting> srcPumpAccounting;
-                do {
-                    if (!it.hasNext()) {
-                        return dst;
-                    }
-
-                    Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> entry = it.next();
-                    CwmsId pumpId = entry.getKey();
-                    dstPumpAccounting = dst.buildPumpAccounting(pumpId);
-                    srcPumpAccounting = entry.getValue();
-                } while (srcPumpAccounting.isEmpty());
-
-                Object keySet;
-                if (headFlag) {
-                    keySet = srcPumpAccounting.keySet();
-                } else {
-                    keySet = srcPumpAccounting.descendingKeySet();
-                }
-
-                int num = 0;
-
-                for (Iterator<Set<NavigableMap<Date, WaterSupplyPumpAccounting>>> srcIt
-                     = ((Set) keySet).iterator(); srcIt.hasNext(); ++num) {
-                    Date key = (Date) srcIt.next();
-                    if (num >= rowLimit) {
-                        break;
-                    }
-
-                    WaterSupplyPumpAccounting srcValue = srcPumpAccounting.get(key);
-                    WaterSupplyPumpAccounting srcClone = new WaterSupplyPumpAccounting(srcValue.getWaterUser(),
-                            srcValue.getContractName(), srcValue.getPumpLocation(), srcValue.getTransferType(),
-                            srcValue.getFlow(), srcValue.getTransferDate(), srcValue.getComment());
-                    dstPumpAccounting.put(key, srcClone);
-                }
-
-            }
-        } else {
-            return dst;
-        }
     }
 }
