@@ -74,10 +74,6 @@ public class WaterContractCatalogController implements Handler {
     }
 
     @OpenApi(
-        queryParams = {
-            @OpenApiParam(name = LOCATION_ID, description =
-                    "Specifies the parent location id of the contract.", required = true),
-        },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the"
                     + " office that the contract is associated with.", required = true),
@@ -104,9 +100,9 @@ public class WaterContractCatalogController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            final String office = ctx.queryParam("office");
-            final String name = ctx.queryParam("name");
-            final String locationId = ctx.queryParam("locationId");
+            final String office = ctx.queryParam(OFFICE);
+            final String name = ctx.queryParam(NAME);
+            final String locationId = ctx.pathParam(PROJECT_ID);
             DSLContext dsl = getDslContext(ctx);
             String result;
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();

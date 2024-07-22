@@ -59,7 +59,6 @@ public class WaterContractController implements Handler {
     public static final String TAG = "Water Contracts";
     private static final String WATER_USER = "water-user";
     private final MetricRegistry metrics;
-    private static final String CONTRACT_ID = "contract-id";
 
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
@@ -76,7 +75,7 @@ public class WaterContractController implements Handler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract to retrieve.", required = true),
+            @OpenApiParam(name = NAME, description = "The name of the contract to retrieve.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
@@ -106,7 +105,7 @@ public class WaterContractController implements Handler {
             final String office = ctx.pathParam(OFFICE);
             final String locationId = ctx.pathParam(PROJECT_ID);
             DSLContext dsl = getDslContext(ctx);
-            final String contractName = ctx.pathParam(CONTRACT_ID);
+            final String contractName = ctx.pathParam(NAME);
             final String waterUser = ctx.pathParam(WATER_USER);
             String result;
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();

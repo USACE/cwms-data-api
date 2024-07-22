@@ -83,7 +83,7 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
                     + CONTRACT.getContractId().getName() + "/types")
         .then()
@@ -100,7 +100,7 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
+                .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                         + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
                         + CONTRACT.getContractId().getName() + "/types")
         .then()

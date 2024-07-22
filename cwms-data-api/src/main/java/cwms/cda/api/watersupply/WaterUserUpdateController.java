@@ -77,8 +77,6 @@ public class WaterUserUpdateController implements Handler {
         queryParams = {
             @OpenApiParam(name = NAME, description = "Specifies the"
                     + " new name of the water user entity.", required = true),
-            @OpenApiParam(name = LOCATION_ID, description =
-                    "Specifies the parent location id of the contract.", required = true)
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
@@ -107,7 +105,7 @@ public class WaterUserUpdateController implements Handler {
             String newName = ctx.queryParam(NAME);
             String office = ctx.pathParam(OFFICE);
             String oldName = ctx.pathParam(WATER_USER);
-            String locationId = ctx.queryParam(LOCATION_ID);
+            String locationId = ctx.queryParam(PROJECT_ID);
             CwmsId location = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.renameWaterUser(oldName, newName, location);
