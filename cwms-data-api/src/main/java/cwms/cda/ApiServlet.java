@@ -520,7 +520,7 @@ public class ApiServlet extends HttpServlet {
         String outletCreatePath = "/projects/outlets";
         String virtualOutletCreatePath = "/projects/virtual-outlets";
         get(outletGetAllPath, new OutletGetAllController(metrics));
-        addCacheControl(outletPath, 1, TimeUnit.DAYS);
+        addCacheControl(outletGetAllPath, 1, TimeUnit.DAYS);
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(outletCreatePath, new OutletCreateController(metrics));
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);

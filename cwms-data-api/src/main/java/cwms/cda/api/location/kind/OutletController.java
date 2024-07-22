@@ -97,7 +97,7 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
-        String office = ctx.pathParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
@@ -132,7 +132,7 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
-        String office = ctx.pathParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         String newOutletId = requiredParam(ctx, NAME);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -144,12 +144,12 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be deleted."),
                     @OpenApiParam(name = NAME, description = "Specifies the location-id of the outlet to be" +
                             " deleted."),
             },
             queryParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the outlet to be deleted."),
                     @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
                             "Defaults to \"DELETE_KEY\"",
                             type = JooqDao.DeleteMethod.class)
@@ -165,7 +165,7 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
-        String office = ctx.pathParam(OFFICE);
+        String office = requiredParam(ctx, OFFICE);
         JooqDao.DeleteMethod deleteMethod = queryParamAsClass(ctx, JooqDao.DeleteMethod.class,
                                                               JooqDao.DeleteMethod.DELETE_KEY, METHOD);
         try (Timer.Context ignored = markAndTime(DELETE)) {
