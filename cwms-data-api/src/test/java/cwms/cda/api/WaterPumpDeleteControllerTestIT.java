@@ -100,15 +100,15 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                 .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
                 .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
                 .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectLocationRef().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectLocationRef().getName()).withLocationKind("PROJECT")
+        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
+                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
                 .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
                 .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
                 .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getOfficeId(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getName()).withLocationKind("PROJECT")
+        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId(),
+                CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
                 .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
@@ -121,10 +121,10 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                 .withAuthorizingLaw("NEW LAW").withCostUnit("$").withProjectOwner(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
                 .build();
         WaterUser waterUser = new WaterUser(CONTRACT.getWaterUser().getEntityName(),
-                CONTRACT.getWaterUser().getProjectLocationRef(),
+                CONTRACT.getWaterUser().getProjectId(),
                 CONTRACT.getWaterUser().getWaterRight());
         WaterUser waterUserNoPump = new WaterUser(CONTRACT_NO_PUMP.getWaterUser().getEntityName(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef(),
+                CONTRACT_NO_PUMP.getWaterUser().getProjectId(),
                 CONTRACT_NO_PUMP.getWaterUser().getWaterRight());
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -152,19 +152,19 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
                 CONTRACT.getContractId().getName()).withLocationKind("PROJECT").withTimeZoneName(ZoneId.of("UTC"))
                 .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectLocationRef().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectLocationRef().getName()).withLocationKind("PROJECT")
+        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
+                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).build();
-        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getOfficeId(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getName()).withLocationKind("PROJECT")
+        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId(),
+                CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).build();
         WaterUser waterUser = new WaterUser(CONTRACT.getWaterUser().getEntityName(),
-                CONTRACT.getWaterUser().getProjectLocationRef(),
+                CONTRACT.getWaterUser().getProjectId(),
                 CONTRACT.getWaterUser().getWaterRight());
         WaterUser waterUserNoPump = new WaterUser(CONTRACT_NO_PUMP.getWaterUser().getEntityName(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef(),
+                CONTRACT_NO_PUMP.getWaterUser().getProjectId(),
                 CONTRACT_NO_PUMP.getWaterUser().getWaterRight());
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -173,13 +173,13 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
-            waterContractDao.deleteWaterUser(waterUser.getProjectLocationRef(), waterUser.getEntityName(),
+            waterContractDao.deleteWaterUser(waterUser.getProjectId(), waterUser.getEntityName(),
                     DeleteRule.DELETE_ALL.toString());
-            waterContractDao.deleteWaterUser(waterUserNoPump.getProjectLocationRef(), waterUserNoPump.getEntityName(),
+            waterContractDao.deleteWaterUser(waterUserNoPump.getProjectId(), waterUserNoPump.getEntityName(),
                     DeleteRule.DELETE_ALL.toString());
-            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectLocationRef().getName(),
+            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
                     DeleteRule.DELETE_ALL);
-            projectDao.delete(CONTRACT_NO_PUMP.getOfficeId(), CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getName(),
+            projectDao.delete(CONTRACT_NO_PUMP.getOfficeId(), CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName(),
                     DeleteRule.DELETE_ALL);
             locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
             locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
@@ -209,7 +209,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -225,7 +225,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
                     + CONTRACT.getContractId().getName() + "/pumps/"
                     + CONTRACT.getPumpInLocation().getPumpLocation().getName())
@@ -242,7 +242,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
                     + CONTRACT.getContractId().getName())
         .then()
@@ -251,9 +251,9 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].office-id", equalTo(CONTRACT.getOfficeId()))
             .body("[0].water-user.entity-name", equalTo(CONTRACT.getWaterUser().getEntityName()))
-            .body("[0].water-user.project-location-ref.office-id", equalTo(CONTRACT.getWaterUser()
-                    .getProjectLocationRef().getOfficeId()))
-            .body("[0].water-user.project-location-ref.name", equalTo(CONTRACT.getWaterUser().getProjectLocationRef()
+            .body("[0].water-user.project-id.office-id", equalTo(CONTRACT.getWaterUser()
+                    .getProjectId().getOfficeId()))
+            .body("[0].water-user.project-id.name", equalTo(CONTRACT.getWaterUser().getProjectId()
                     .getName()))
             .body("[0].water-user.water-right", equalTo(CONTRACT.getWaterUser().getWaterRight()))
             .body("[0].contract-type.office-id", equalTo(CONTRACT.getContractType().getOfficeId()))
@@ -372,7 +372,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectLocationRef().getName()
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/" + CONTRACT.getContractId().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -401,7 +401,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getName()
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT_NO_PUMP.getWaterUser().getEntityName() + "/contracts")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -437,7 +437,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT_NO_PUMP.getWaterUser().getProjectLocationRef().getName()
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT_NO_PUMP.getWaterUser().getEntityName()
                     + "/contracts/" + CONTRACT_NO_PUMP.getContractId().getName())
         .then()
