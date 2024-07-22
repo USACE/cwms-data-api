@@ -78,10 +78,12 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be retrieved."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the " +
                             "Outlet to be created."),
+            },
+            queryParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the outlet to be retrieved."),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -113,12 +115,12 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be renamed."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of "
                             + "the outlet to be renamed."),
             },
             queryParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the outlet to be renamed."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the new outlet location-id."),
             },
             description = "Rename CWMS Outlet",

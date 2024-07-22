@@ -412,20 +412,6 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
-        //Temporarily at top to speed up testing.
-        String outletPath = format("/projects/{%s}/outlets/{%s}", Controllers.OFFICE, NAME);
-        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
-                                          Controllers.PROJECT_ID, NAME);
-        String outletGetAllPath = format("/projects/{%s}/{%s}/outlets", Controllers.OFFICE, Controllers.PROJECT_ID);
-        String outletCreatePath = "/projects/outlets";
-        String virtualOutletCreatePath = "/projects/virtual-outlets";
-        get(outletGetAllPath, new OutletGetAllController(metrics));
-        addCacheControl(outletPath, 1, TimeUnit.DAYS);
-        cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(outletCreatePath, new OutletCreateController(metrics));
-        cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
-
         crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
         cdaCrudCache("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
@@ -526,6 +512,20 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
         post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
         delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
+
+        String outletPath = format("/projects/outlets/{%s}", NAME);
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
+                                          Controllers.PROJECT_ID, NAME);
+        String outletGetAllPath = format("/projects/{%s}/{%s}/outlets", Controllers.OFFICE, Controllers.PROJECT_ID);
+        String outletCreatePath = "/projects/outlets";
+        String virtualOutletCreatePath = "/projects/virtual-outlets";
+        get(outletGetAllPath, new OutletGetAllController(metrics));
+        addCacheControl(outletPath, 1, TimeUnit.DAYS);
+        cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(outletCreatePath, new OutletCreateController(metrics));
+        cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
+
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
