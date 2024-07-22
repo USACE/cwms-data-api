@@ -1,7 +1,7 @@
 {
   "water-user": {
     "entity-name": "Test Entity",
-    "project-location-ref": {
+    "project-id": {
       "name": "Test Location",
       "office-id": "SPK"
     },
