@@ -136,7 +136,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(contract.getWaterUser(), true);
             dao.storeWaterContract(contract, true, true);
-            List<WaterUserContract> retrievedContract = dao.getAllWaterContracts(contract.getWaterUser().getProjectLocationRef(), contract.getWaterUser().getEntityName());
+            List<WaterUserContract> retrievedContract = dao.getAllWaterContracts(contract.getWaterUser().getProjectId(), contract.getWaterUser().getEntityName());
             WaterUserContract result = retrievedContract.get(0);
             DTOMatch.assertMatch(contract, result);
         });
@@ -177,8 +177,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(newUser, true);
-            dao.renameWaterUser(newUser.getEntityName(), updatedUser.getEntityName(), newUser.getProjectLocationRef());
-            WaterUser retrievedUser = dao.getWaterUser(newUser.getProjectLocationRef(), updatedUser.getEntityName());
+            dao.renameWaterUser(newUser.getEntityName(), updatedUser.getEntityName(), newUser.getProjectId());
+            WaterUser retrievedUser = dao.getWaterUser(newUser.getProjectId(), updatedUser.getEntityName());
             DTOMatch.assertMatch(updatedUser, retrievedUser);
         });
         cleanupUserRoutine(updatedUser);
@@ -195,12 +195,12 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterUser(oldContract.getWaterUser(), true);
             dao.storeWaterContract(oldContract, true, false);
             WaterUser user = new WaterUser(oldContract.getWaterUser().getEntityName(),
-                    oldContract.getWaterUser().getProjectLocationRef(),
+                    oldContract.getWaterUser().getProjectId(),
                     oldContract.getContractId().getName());
             dao.renameWaterContract(user, oldContract.getContractId().getName(),
                     renamedContract.getContractId().getName());
             List<WaterUserContract> retrievedContracts = dao.getAllWaterContracts(
-                    renamedContract.getWaterUser().getProjectLocationRef(), renamedContract.getWaterUser()
+                    renamedContract.getWaterUser().getProjectId(), renamedContract.getWaterUser()
                             .getEntityName());
             assertFalse(retrievedContracts.isEmpty());
             DTOMatch.assertMatch(retrievedContracts.get(0), renamedContract);
@@ -217,8 +217,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(newUser, true);
-            dao.deleteWaterUser(newUser.getProjectLocationRef(), newUser.getEntityName(), DELETE_ACTION);
-            assertNull(dao.getWaterUser(newUser.getProjectLocationRef(), newUser.getEntityName()));
+            dao.deleteWaterUser(newUser.getProjectId(), newUser.getEntityName(), DELETE_ACTION);
+            assertNull(dao.getWaterUser(newUser.getProjectId(), newUser.getEntityName()));
         });
         cleanupUserRoutine(newUser);
     }
@@ -234,7 +234,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterContract(contract, true, false);
             dao.deleteWaterContract(contract, DELETE_ACTION);
             List<WaterUserContract> contracts = dao.getAllWaterContracts(contract.getWaterUser()
-                    .getProjectLocationRef(), contract.getWaterUser().getEntityName());
+                    .getProjectId(), contract.getWaterUser().getEntityName());
             assertTrue(contracts.isEmpty());
         });
         cleanupUserRoutine(contract.getWaterUser());
@@ -253,7 +253,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.removePumpFromContract(contract, contract.getPumpInLocation().getPumpLocation().getName(),
                     "IN", false);
             List<WaterUserContract> contracts = dao.getAllWaterContracts(contract.getWaterUser()
-                    .getProjectLocationRef(), contract.getWaterUser().getEntityName());
+                    .getProjectId(), contract.getWaterUser().getEntityName());
             WaterUserContract retrievedContract = contracts.get(0);
             assertNotNull(retrievedContract);
             assertNull(retrievedContract.getPumpInLocation());
@@ -267,7 +267,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            dao.deleteWaterUser(user.getProjectLocationRef(), user.getEntityName(), TEST_DELETE_ACTION);
+            dao.deleteWaterUser(user.getProjectId(), user.getEntityName(), TEST_DELETE_ACTION);
         });
     }
 

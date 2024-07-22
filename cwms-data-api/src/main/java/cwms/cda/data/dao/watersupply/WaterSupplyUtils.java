@@ -62,7 +62,7 @@ public class WaterSupplyUtils {
 
     public static WaterUserType map(WaterUser waterUser) {
         return new WaterUserType(waterUser.getEntityName(),
-                map(waterUser.getProjectLocationRef()), waterUser.getWaterRight());
+                map(waterUser.getProjectId()), waterUser.getWaterRight());
     }
 
     public static LookupType map(usace.cwms.db.dao.ifc.cat.LookupType lookupType) {

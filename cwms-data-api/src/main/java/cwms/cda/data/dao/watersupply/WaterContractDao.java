@@ -195,14 +195,14 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
     public void storeWaterUser(WaterUser waterUser, boolean failIfExists) {
 
         usace.cwms.db.dao.ifc.loc.LocationRefType locationRefType = WaterSupplyUtils
-                .map(waterUser.getProjectLocationRef());
+                .map(waterUser.getProjectId());
 
         List<WaterUserType> waterUserTypeModified = new ArrayList<>();
         waterUserTypeModified.add(new usace.cwms.db.dao.ifc.watersupply.WaterUserType(waterUser.getEntityName(),
                 locationRefType, waterUser.getWaterRight()));
 
         connection(dsl, c -> {
-            setOffice(c, waterUser.getProjectLocationRef().getOfficeId());
+            setOffice(c, waterUser.getProjectId().getOfficeId());
             WATER_USER_TAB_T waterUsers = WaterUserTypeUtil.toWaterUserTs(waterUserTypeModified);
             String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USERS(DSL.using(c).configuration(), waterUsers, pFailIfExists);
@@ -213,10 +213,10 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
             String newContractName) {
 
         WaterUserContractRefType waterUserContractRefType =
-                WaterSupplyUtils.map(waterUser, waterUser.getProjectLocationRef(), newContractName);
+                WaterSupplyUtils.map(waterUser, waterUser.getProjectId(), newContractName);
 
         connection(dsl, c -> {
-            setOffice(c, waterUser.getProjectLocationRef().getOfficeId());
+            setOffice(c, waterUser.getProjectId().getOfficeId());
             WATER_USER_OBJ_T waterUserT = WaterUserTypeUtil.toWaterUserT(waterUserContractRefType.getWaterUserType());
             String contractName = waterUserContractRefType.getContractName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
@@ -241,10 +241,10 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
     public void deleteWaterContract(WaterUserContract contract, String deleteAction) {
 
         WaterUser waterUser = new WaterUser(contract.getWaterUser().getEntityName(),
-                contract.getWaterUser().getProjectLocationRef(), contract.getWaterUser().getWaterRight());
+                contract.getWaterUser().getProjectId(), contract.getWaterUser().getWaterRight());
 
         WaterUserContractRefType waterUserContractRefTypeModified =
-                WaterSupplyUtils.map(waterUser, waterUser.getProjectLocationRef(), contract.getContractId().getName());
+                WaterSupplyUtils.map(waterUser, waterUser.getProjectId(), contract.getContractId().getName());
 
         connection(dsl, c -> {
             setOffice(c, contract.getOfficeId());
