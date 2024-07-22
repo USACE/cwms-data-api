@@ -95,11 +95,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
 
     static void storeLocation(DSLContext context, Location loc) throws IOException {
         LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-        try {
-            locationsDao.deleteLocation(loc.getName(), loc.getOfficeId(), true);
-        } catch (NotFoundException e) {
-            LOGGER.atFinest().withCause(e).log("No data found for " + loc.getOfficeId() + "." + loc.getName());
-        }
+        deleteLocation(context, loc.getName(), loc.getOfficeId());
         locationsDao.storeLocation(loc);
     }
 
