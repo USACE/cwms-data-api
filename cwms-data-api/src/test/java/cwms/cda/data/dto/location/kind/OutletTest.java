@@ -35,9 +35,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class OutletTest {
     private static final String SPK = "SPK";
-    private static final String PROJECT_LOC = "location";
-    private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
-    private static final String BASE_OUTLET_LOC = "outlet";
+    private static final String PROJECT_LOC = "BIGH";
+    private static final String OUTLET_LOC = PROJECT_LOC + "-TG1";
+    private static final String BASE_OUTLET_LOC = "TG2";
     private static final CwmsId RATING_GROUP_ID = new CwmsId.Builder().withName("Rating-" + OUTLET_LOC).withOfficeId(SPK).build();
 
     @Test
