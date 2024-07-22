@@ -36,7 +36,7 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.Date;
+import java.time.Instant;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
         aliases = {Formats.DEFAULT, Formats.JSON})
@@ -54,14 +54,14 @@ public class WaterSupplyPumpAccounting extends CwmsDTOBase {
     @JsonProperty(required = true)
     private Double flow;
     @JsonProperty(required = true)
-    private Date transferDate;
+    private Instant transferDate;
     private String comment;
 
     private WaterSupplyPumpAccounting() {
     }
 
     public WaterSupplyPumpAccounting(WaterUser waterUser, String contractName, CwmsId pumpLocation,
-            LookupType transferType, Double flow, Date transferDate, String comment) {
+            LookupType transferType, Double flow, Instant transferDate, String comment) {
         this.waterUser = waterUser;
         this.contractName = contractName;
         this.pumpLocation = pumpLocation;
@@ -91,7 +91,7 @@ public class WaterSupplyPumpAccounting extends CwmsDTOBase {
         return this.flow;
     }
 
-    public Date getTransferDate() {
+    public Instant getTransferDate() {
         return this.transferDate;
     }
 
