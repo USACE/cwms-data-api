@@ -26,8 +26,6 @@ package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.DownstreamLocationsGetController;
-import cwms.cda.api.location.kind.OutletCreateController;
-import cwms.cda.api.location.kind.OutletGetAllController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.StreamController;
@@ -516,13 +514,8 @@ public class ApiServlet extends HttpServlet {
         String outletPath = format("/projects/outlets/{%s}", NAME);
         String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
                                           Controllers.PROJECT_ID, NAME);
-        String outletGetAllPath = format("/projects/{%s}/{%s}/outlets", Controllers.OFFICE, Controllers.PROJECT_ID);
-        String outletCreatePath = "/projects/outlets";
         String virtualOutletCreatePath = "/projects/virtual-outlets";
-        get(outletGetAllPath, new OutletGetAllController(metrics));
-        addCacheControl(outletGetAllPath, 1, TimeUnit.DAYS);
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(outletCreatePath, new OutletCreateController(metrics));
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
 
