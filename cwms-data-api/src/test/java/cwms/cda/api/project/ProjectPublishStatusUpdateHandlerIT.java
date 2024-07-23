@@ -28,9 +28,7 @@ package cwms.cda.api.project;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
@@ -95,8 +93,6 @@ public class ProjectPublishStatusUpdateHandlerIT extends DataApiTestIT {
         Instant end = Instant.now();
         String endStr = end.toString();
 
-        long before = Instant.now().toEpochMilli();
-
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSON)
@@ -113,8 +109,6 @@ public class ProjectPublishStatusUpdateHandlerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .body("value", is(greaterThan(before)))
-            .body("value", is(lessThan(Instant.now().toEpochMilli())))
             .statusCode(is(HttpServletResponse.SC_OK));
 
     }

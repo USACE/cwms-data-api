@@ -404,26 +404,20 @@ public class ProjectDao extends JooqDao<Project> {
      * @param end           The UTC end time of the updates to the time series, in Java
      *                      milliseconds. If NULL or not specified, the generated message will
      *                      not include this item.
-     * @return The timestamp of the generated message
      */
-    public Instant publishStatusUpdate(String office, String projectId, String applicationId,
+    public void publishStatusUpdate(String office, String projectId, String applicationId,
                                       @Nullable String sourceId, @Nullable String tsId,
                                       @Nullable Instant start, @Nullable Instant end) {
         BigInteger startTime = toBigInteger(start);
         BigInteger endTime = toBigInteger(end);
-        BigInteger millis = connectionResult(dsl, c -> {
+        connection(dsl, c -> {
             Configuration conf = getDslContext(c, office).configuration();
-                    return CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE( conf,
+                    CWMS_PROJECT_PACKAGE.call_PUBLISH_STATUS_UPDATE( conf,
                             projectId, applicationId, sourceId,
                             tsId, startTime, endTime, office);
                 }
         );
 
-        Instant retval = null;
-        if (millis != null) {
-            retval = Instant.ofEpochMilli(millis.longValue());
-        }
-        return retval;
     }
 
     @Nullable
