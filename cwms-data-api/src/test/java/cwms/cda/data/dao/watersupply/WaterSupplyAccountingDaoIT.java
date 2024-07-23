@@ -48,12 +48,12 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
+import java.util.Date;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.NavigableMap;
 import java.util.TimeZone;
@@ -65,12 +65,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
     private static final String TEST_DELETE_ACTION = "DELETE ALL";
-    private static final Location testLocation = buildTestLocation("Test Location Name", "Test Location");
+    private static final Location testLocation = buildTestLocation("Test Project Name", "Test Location");
     private static final Project testProject = buildTestProject();
     private static final WaterUser testUser = buildTestWaterUser("Test User");
-    private static final Location testPumpInLocation = buildTestLocation("Test Pump IN", "PUMP");
-    private static final Location testPumpOutLocation = buildTestLocation("Test Pump OUT", "PUMP");
-    private static final Location testPumpBelowLocation = buildTestLocation("Test Pump BELOW", "PUMP");
 
     @BeforeAll
     static void setup() throws Exception {
@@ -82,9 +79,6 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             try {
                 dao.storeLocation(testLocation);
                 projectDao.store(testProject, true);
-                dao.storeLocation(testPumpInLocation);
-                dao.storeLocation(testPumpOutLocation);
-                dao.storeLocation(testPumpBelowLocation);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to store location or project", e);
             }
@@ -101,9 +95,6 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             projectDao.delete(testProject.getLocation().getOfficeId(), testProject.getLocation().getName(),
                     DeleteRule.DELETE_ALL);
             dao.deleteLocation(testLocation.getName(), OFFICE_ID);
-            dao.deleteLocation(testPumpInLocation.getName(), OFFICE_ID);
-            dao.deleteLocation(testPumpOutLocation.getName(), OFFICE_ID);
-            dao.deleteLocation(testPumpBelowLocation.getName(), OFFICE_ID);
         });
     }
 
@@ -115,7 +106,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         // 2) Create and store Water Supply Pump Accounting
         // 3) Retrieve Water Supply Pump Accounting and assert it is the same
 
-        WaterUserContract contract = buildTestWaterContract("Test entity", false);
+        WaterUserContract contract = buildTestWaterContract("Test entity");
 
         WaterSupplyAccounting accounting = new WaterSupplyAccounting(contract.getContractId().getName(), testUser,
                 new HashMap<>(), new HashMap<>());
@@ -123,13 +114,13 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         WaterSupplyPump pumpIn = buildTestWaterSupplyPump(contract.getPumpInLocation().getPumpLocation().getName(), PumpType.IN);
 
         Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        instance.set(Calendar.MILLISECOND, 0);
+        instance.clear();
 
         boolean generateModifiedTimeWindow = true;
         boolean preserveModifiedData = true;
-        instance.set(2025, Calendar.NOVEMBER, 1, 0, 0);
-        Date pumpChangeDate = instance.getTime();
-        NavigableMap<Date, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(new CwmsId.Builder()
+        instance.set(2025, 10, 1, 0, 0);
+        Instant pumpChangeDate = instance.getTime().toInstant();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(new CwmsId.Builder()
                 .withOfficeId(OFFICE_ID).withName(pumpIn.getPumpLocation().getName()).build(),
                 contract.getWaterUser(), contract, pumpChangeDate);
         accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
@@ -141,15 +132,16 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao contractDao = new WaterContractDao(ctx);
             WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
-            contractDao.storeWaterUser(testUser, true);
+            contractDao.storeWaterUser(testUser, false);
             contractDao.storeWaterContract(contract, true, false);
             accountingDao.storeAccounting(accounting);
         }, CwmsDataApiSetupCallback.getWebUser());
 
-        instance.set(2000, Calendar.MARCH, 1);
-        Date startTime = instance.getTime();
-        instance.set(2026, Calendar.MARCH, 1);
-        Date endTime = instance.getTime();
+        instance.clear();
+        instance.set(2000, 2, 1);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2026, 2, 1);
+        Instant endTime = instance.getTime().toInstant();
         int rowLimit = 20;
         boolean headFlag = false;
         boolean startInclusive = true;
@@ -187,19 +179,20 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     @Test
     void testRetrieveWaterSupplyPumpAccounting_endInclusiveFalse() {
         // test
+
     }
 
     private WaterSupplyPump buildTestWaterSupplyPump(String locationName, PumpType pumpType) {
         return new WaterSupplyPump(buildTestLocation(locationName, "PUMP"), pumpType);
     }
 
-    private NavigableMap<Date, WaterSupplyPumpAccounting> createPumpChangesMap(CwmsId pumpLocation, WaterUser user,
-            WaterUserContract contract, Date date) {
-        NavigableMap<Date, WaterSupplyPumpAccounting> changeMap = new TreeMap<>();
+    private NavigableMap<Instant, WaterSupplyPumpAccounting> createPumpChangesMap(CwmsId pumpLocation, WaterUser user,
+            WaterUserContract contract, Instant date) {
+        NavigableMap<Instant, WaterSupplyPumpAccounting> changeMap = new TreeMap<>();
         double randomAccountingFlow = 100 + (int) (Math.random() * ((1000 - 100) + 1));
         String comment = "Test Comment";
-        LookupType transferType = new LookupType.Builder().withDisplayValue("Transfer").withOfficeId(OFFICE_ID)
-                .withTooltip("Tooltip test").withActive(true).build();
+        LookupType transferType = new LookupType.Builder().withDisplayValue("Conduit").withOfficeId(OFFICE_ID)
+                .withTooltip("Transfer by Conduit").withActive(true).build();
         WaterSupplyPumpAccounting pumpAccounting = new WaterSupplyPumpAccounting(user, contract.getContractId().getName(),
                 pumpLocation, transferType, randomAccountingFlow, date, comment);
         changeMap.put(date, pumpAccounting);
@@ -207,8 +200,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     }
 
     private void assertPumpAccountingInDB(WaterUserContract contract,
-            NavigableMap<Date, WaterSupplyPumpAccounting> pumpChangesMap, Date pumpChangeDate, WaterSupplyPump pumpIn, Date startTime,
-            Date endTime, boolean startInclusive, boolean endInclusive, boolean headFlag, int rowLimit) throws Exception {
+            NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap, Instant pumpChangeDate, WaterSupplyPump pumpIn, Instant startTime,
+            Instant endTime, boolean startInclusive, boolean endInclusive, boolean headFlag, int rowLimit) throws Exception {
 
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
@@ -217,7 +210,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             WaterSupplyAccounting pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), startTime, endTime, startInclusive, endInclusive,
                     headFlag, rowLimit);
-            NavigableMap<Date, WaterSupplyPumpAccounting> returnedPumpAccounting
+            NavigableMap<Instant, WaterSupplyPumpAccounting> returnedPumpAccounting
                     = pumpAccounting.getPumpAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
                     .withOfficeId(OFFICE_ID).build());
             assertNotNull(returnedPumpAccounting.get(pumpChangeDate));
@@ -240,7 +233,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            dao.deleteWaterUser(user.getProjectLocationRef(), user.getEntityName(), TEST_DELETE_ACTION);
+            dao.deleteWaterUser(user.getProjectId(), user.getEntityName(), TEST_DELETE_ACTION);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -255,70 +248,40 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
 
     protected static WaterUser buildTestWaterUser(String entityName) {
         return new WaterUser(entityName, new CwmsId.Builder()
-                .withName("Test Location Name")
+                .withName("Test Project Name")
                 .withOfficeId(OFFICE_ID)
                 .build(),
                 "Test Water Right");
     }
 
-    protected WaterUserContract buildTestWaterContract(String entityName, boolean renameTest) {
-        if (!renameTest){
-            return new WaterUserContract.Builder()
-                    .withContractType(new LookupType.Builder()
-                            .withTooltip("Test Tooltip")
-                            .withActive(true)
-                            .withDisplayValue("Test Display Value")
-                            .withOfficeId(OFFICE_ID).build())
-                    .withStorageUnitsId("m3")
-                    .withOfficeId(OFFICE_ID)
-                    .withFutureUseAllocation(158900.6)
-                    .withContractedStorage(1589005.6)
-                    .withInitialUseAllocation(1500.2)
-                    .withContractExpirationDate(new Date(1979252516))
-                    .withContractEffectiveDate(new Date(1766652851))
-                    .withTotalAllocPercentActivated(55.1)
-                    .withContractId(new CwmsId.Builder()
-                            .withName(entityName)
-                            .withOfficeId(OFFICE_ID)
-                            .build())
-                    .withFutureUsePercentActivated(35.7)
-                    .withWaterUser(testUser)
-                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1 " + entityName,
-                            "PUMP"), PumpType.IN))
-                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2 " + entityName,
-                            "PUMP"), PumpType.OUT))
-                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3 " + entityName,
-                            "PUMP"), PumpType.BELOW))
-                    .build();
-        } else {
-            return new WaterUserContract.Builder()
-                    .withContractType(new LookupType.Builder()
-                            .withTooltip("Test Tooltip")
-                            .withActive(true)
-                            .withDisplayValue("Test Display Value")
-                            .withOfficeId(OFFICE_ID).build())
-                    .withStorageUnitsId("m3")
-                    .withOfficeId(OFFICE_ID)
-                    .withFutureUseAllocation(158900.6)
-                    .withContractedStorage(1589005.6)
-                    .withInitialUseAllocation(1500.2)
-                    .withContractExpirationDate(new Date(1979252516))
-                    .withContractEffectiveDate(new Date(1766652851))
-                    .withTotalAllocPercentActivated(55.1)
-                    .withContractId(new CwmsId.Builder()
-                            .withName(entityName)
-                            .withOfficeId(OFFICE_ID)
-                            .build())
-                    .withFutureUsePercentActivated(35.7)
-                    .withWaterUser(buildTestWaterUser("Water User Name"))
-                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1",
-                            "PUMP"), PumpType.IN))
-                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2",
-                            "PUMP"), PumpType.OUT))
-                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3",
-                            "PUMP"), PumpType.BELOW))
-                    .build();
-        }
+    protected WaterUserContract buildTestWaterContract(String entityName) {
+        return new WaterUserContract.Builder()
+                .withContractType(new LookupType.Builder()
+                        .withTooltip("Storage contract")
+                        .withActive(true)
+                        .withDisplayValue("Storage")
+                        .withOfficeId(OFFICE_ID).build())
+                .withStorageUnitsId("m3")
+                .withOfficeId(OFFICE_ID)
+                .withFutureUseAllocation(158900.6)
+                .withContractedStorage(1589005.6)
+                .withInitialUseAllocation(1500.2)
+                .withContractExpirationDate(new Date(Instant.ofEpochMilli(1979252516000L).toEpochMilli()))
+                .withContractEffectiveDate(new Date(Instant.ofEpochMilli(1766652851000L).toEpochMilli()))
+                .withTotalAllocPercentActivated(55.1)
+                .withContractId(new CwmsId.Builder()
+                        .withName(entityName)
+                        .withOfficeId(OFFICE_ID)
+                        .build())
+                .withFutureUsePercentActivated(35.7)
+                .withWaterUser(testUser)
+                .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1 " + entityName,
+                        "PUMP"), PumpType.IN))
+                .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2 " + entityName,
+                        "PUMP"), PumpType.OUT))
+                .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3 " + entityName,
+                        "PUMP"), PumpType.BELOW))
+                .build();
 
     }
 
@@ -332,7 +295,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 .withCountyName("Sacramento")
                 .withTimeZoneName(ZoneId.of("UTC"))
                 .withElevationUnits("m")
-                .withVerticalDatum("LOCAL")
+                .withVerticalDatum("NGVD29")
                 .withHorizontalDatum("WGS84")
                 .withPublicName("Test Public Name")
                 .withLongName("Test Long Name")
@@ -349,7 +312,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     }
 
     protected static Project buildTestProject() {
-        return new Project.Builder().withLocation(buildTestLocation("Test Location Name",
+        return new Project.Builder().withLocation(buildTestLocation("Test Project Name",
                         "Test Location Type"))
                 .withFederalCost(new BigDecimal("15980654.55"))
                 .build();

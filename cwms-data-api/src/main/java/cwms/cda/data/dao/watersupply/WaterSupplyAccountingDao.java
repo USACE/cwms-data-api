@@ -35,6 +35,7 @@ import cwms.cda.data.dto.watersupply.WaterUser;
 import hec.data.TimeWindow;
 import hec.data.TimeWindowMap;
 import hec.lang.Const;
+import java.time.Instant;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import rma.util.RMAConst;
@@ -66,15 +67,15 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
         super(dsl);
     }
 
-    public WaterSupplyAccounting retrieveAccounting(String contractName, WaterUser waterUser, Date startTime,
-            Date endTime, boolean startInclusive, boolean endInclusive, boolean headFlag, int rowLimit) {
+    public WaterSupplyAccounting retrieveAccounting(String contractName, WaterUser waterUser, Instant startTime,
+            Instant endTime, boolean startInclusive, boolean endInclusive, boolean headFlag, int rowLimit) {
         WaterSupplyAccounting accounting = new WaterSupplyAccounting(contractName, waterUser, new HashMap<>(),
                 new HashMap<>());
         TimeZone timeZone = null;
         String transferType = null;
 
         List<WaterSupplyPumpAccounting> waterSupplyPumpAccountingList = retrieveAccountingSet(contractName, waterUser,
-                waterUser.getProjectLocationRef(), null, startTime, endTime, timeZone, startInclusive,
+                waterUser.getProjectId(), null, startTime, endTime, timeZone, startInclusive,
                 endInclusive, headFlag, rowLimit, transferType);
         buildAccountingMap(waterSupplyPumpAccountingList, accounting);
         return accounting;
@@ -82,28 +83,28 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
 
     public void storeAccounting(WaterSupplyAccounting accounting) {
         List<WaterSupplyPumpAccounting> accountingList = new ArrayList<>();
-        Map<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> allPumpAccounting
+        Map<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> allPumpAccounting
                 = accounting.getAllPumpAccounting();
-        Set<Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>>> entrySet
+        Set<Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>>> entrySet
                 = allPumpAccounting.entrySet();
 
         List<TimeWindowType> timeWindowTypes = new ArrayList<>();
-        for (Map.Entry<CwmsId, NavigableMap<Date, WaterSupplyPumpAccounting>> entry : entrySet) {
+        for (Map.Entry<CwmsId, NavigableMap<Instant, WaterSupplyPumpAccounting>> entry : entrySet) {
             CwmsId pumpLocation = entry.getKey();
             LocationRefType pumpLocRef = new LocationRefType(pumpLocation.getName(), null,
                     pumpLocation.getOfficeId());
-            NavigableMap<Date, WaterSupplyPumpAccounting> pumpAccountingMap = entry.getValue();
+            NavigableMap<Instant, WaterSupplyPumpAccounting> pumpAccountingMap = entry.getValue();
             TimeWindowMap timeWindowMap = accounting.getTimeWindowMap(pumpLocation);
             if(timeWindowMap == null) {
                 continue;
             }
             Set<TimeWindow> timeWindowSet = timeWindowMap.getTimeWindowSet();
             for (TimeWindow tw : timeWindowSet) {
-                Date twStartDate = tw.getStartDate();
-                Date twEndDate = tw.getEndDate();
-                TimeWindowType timeWindowType = new TimeWindowType(pumpLocRef, twStartDate, twEndDate);
+                Instant twStartDate = tw.getStartDate().toInstant();
+                Instant twEndDate = tw.getEndDate().toInstant();
+                TimeWindowType timeWindowType = new TimeWindowType(pumpLocRef, new Date(twStartDate.toEpochMilli()), new Date(twEndDate.toEpochMilli()));
                 timeWindowTypes.add(timeWindowType);
-                NavigableMap<Date, WaterSupplyPumpAccounting> subMap
+                NavigableMap<Instant, WaterSupplyPumpAccounting> subMap
                         = pumpAccountingMap.subMap(twStartDate, true, twEndDate, true);
                 Logger.getLogger(WaterSupplyAccounting.class.getName()).log(Level.SEVERE,
                         "pump:{0} time window: {1}, {2}", new Object[]{pumpLocRef.getBaseLocationId(), twStartDate, twEndDate});
@@ -122,13 +123,13 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
     }
 
     public List<WaterSupplyPumpAccounting> retrieveAccountingSet(String contractName, WaterUser waterUser,
-            CwmsId projectLocation, String units, Date startTime, Date endTime, TimeZone timeZone,
+            CwmsId projectLocation, String units, Instant startTime, Instant endTime, TimeZone timeZone,
             boolean startInclusive, boolean endInclusive, boolean ascendingFlag, int rowLimit, String transferType) {
 
         WATER_USER_CONTRACT_REF_T contractRefT = WaterUserTypeUtil.toWaterUserContractReft(WaterSupplyUtils
                 .map(waterUser, projectLocation, contractName));
-        Timestamp startTimestamp = OracleTypeMap.buildTimestamp(startTime);
-        Timestamp endTimestamp = OracleTypeMap.buildTimestamp(endTime);
+        Timestamp startTimestamp = OracleTypeMap.buildTimestamp(new Date(startTime.toEpochMilli()));
+        Timestamp endTimestamp = OracleTypeMap.buildTimestamp(new Date(endTime.toEpochMilli()));
         String timeZoneId = timeZone == null ? null : timeZone.getID();
         String startInclusiveFlag = OracleTypeMap.formatBool(startInclusive);
         String endInclusiveFlag = OracleTypeMap.formatBool(endInclusive);
@@ -156,11 +157,11 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
             String storeRule, boolean overrideProtection) {
 
         connection(dsl, c -> {
-            setOffice(c, waterUser.getProjectLocationRef().getOfficeId());
+            setOffice(c, waterUser.getProjectId().getOfficeId());
             WAT_USR_CONTRACT_ACCT_TAB_T accountingTab = WaterUserTypeUtil.toWaterUserContractAcctTs(WaterSupplyUtils
                     .map(accountingList));
             WATER_USER_CONTRACT_REF_T contractRefT = WaterUserTypeUtil.toWaterUserContractReft(WaterSupplyUtils
-                    .map(waterUser, waterUser.getProjectLocationRef(), contractName));
+                    .map(waterUser, waterUser.getProjectId(), contractName));
             LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterUserTypeUtil.toLocRefTimeWindowTs(timeWindowTypes);
             String timeZoneId = timeZone == null ? null : timeZone.getID();
             String overrideProt = OracleTypeMap.formatBool(overrideProtection);
@@ -171,17 +172,17 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
 
     public void buildAccountingMap(List<WaterSupplyPumpAccounting> accountingList, WaterSupplyAccounting accounting) {
        for (WaterSupplyPumpAccounting pumpAccounting : accountingList) {
-           if (pumpAccounting == null || !accounting.getWaterUser().equals(pumpAccounting.getWaterUser())
+           if (pumpAccounting == null || !compareWaterUsers(accounting.getWaterUser(), pumpAccounting.getWaterUser())
                    || !accounting.getContractName().equals(pumpAccounting.getContractName())) {
                continue;
            }
            CwmsId pumpLocationRef = pumpAccounting.getPumpLocation();
-           Date transferStartDate = pumpAccounting.getTransferDate();
-           NavigableMap<Date, WaterSupplyPumpAccounting> pumpAccountingMap
+           Instant transferStartDate = pumpAccounting.getTransferDate();
+           NavigableMap<Instant, WaterSupplyPumpAccounting> pumpAccountingMap
                    = accounting.buildPumpAccounting(pumpLocationRef);
            pumpAccountingMap.put(transferStartDate, pumpAccounting);
 
-           Logger.getLogger(WaterSupplyAccounting.class.getName()).log(Level.SEVERE,"pump:{0} date:{1} val:{2}", new Object[]
+           Logger.getLogger(WaterSupplyAccounting.class.getName()).log(Level.INFO,"pump:{0} date:{1} val:{2}", new Object[]
                    {
                            pumpLocationRef,
                            pumpAccounting.getTransferDate(),
@@ -189,6 +190,14 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
                    });
        }
        accounting.clearPumpTimeWindowMaps();
+    }
+
+    private boolean compareWaterUsers(WaterUser first, WaterUser second) {
+        return first != null && second != null
+                && first.getEntityName().equals(second.getEntityName())
+                && first.getProjectId().getName().equals(second.getProjectId().getName())
+                && first.getProjectId().getOfficeId().equals(second.getProjectId().getOfficeId())
+                && first.getWaterRight().equals(second.getWaterRight());
     }
 
     private List<WaterSupplyPumpAccounting> buildWaterContractAccountingTypes(String contractName, WaterUser waterUser,
@@ -208,7 +217,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
 
             double flow = accounting.getFlow();
             Double accountingFlow = flow;
-            Date transferStartDatetime = accounting.getTransferDate();
+            Instant transferStartDatetime = accounting.getTransferDate();
 
             String accountingRemarks = accounting.getComment();
 
