@@ -38,13 +38,13 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 
-class PublishStatusUpdateResultTest {
+class MessageTimestampTest {
 
     @Test
     void testCreate() {
-        PublishStatusUpdateResult result = new PublishStatusUpdateResult(Instant.now());
+        MessageTimestamp result = new MessageTimestamp(Instant.now());
 
-        ContentType contentType = Formats.parseHeader(Formats.JSON, PublishStatusUpdateResult.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, MessageTimestamp.class);
         String json = Formats.format(contentType, result);
         assertNotNull(json);
         assertTrue(json.contains("value")); // result is like: {"value":1719516704895}
@@ -59,11 +59,11 @@ class PublishStatusUpdateResultTest {
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        PublishStatusUpdateResult result = om.readValue(input, PublishStatusUpdateResult.class);
+        MessageTimestamp result = om.readValue(input, MessageTimestamp.class);
         assertNotNull(result);
 
         String json = om.writeValueAsString(result);
-        PublishStatusUpdateResult result2 = om.readValue(json, PublishStatusUpdateResult.class);
+        MessageTimestamp result2 = om.readValue(json, MessageTimestamp.class);
         assertNotNull(result2);
 
         Instant value = result.getValue();

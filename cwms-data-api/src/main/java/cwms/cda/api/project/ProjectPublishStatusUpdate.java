@@ -41,7 +41,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.ProjectController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
-import cwms.cda.data.dto.project.PublishStatusUpdateResult;
+import cwms.cda.data.dto.project.MessageTimestamp;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -99,7 +99,7 @@ public class ProjectPublishStatusUpdate implements Handler {
             method = HttpMethod.POST,
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON, from = PublishStatusUpdateResult.class)}
+                    @OpenApiContent(type = Formats.JSON, from = MessageTimestamp.class)}
                     )},
             tags = {TAG}
     )
@@ -119,9 +119,9 @@ public class ProjectPublishStatusUpdate implements Handler {
 
             Instant timeOfMessage = prjDao.publishStatusUpdate(
                     office, projectId, appId, sourceId, tsId, begin, end);
-            PublishStatusUpdateResult updateResult = new PublishStatusUpdateResult(timeOfMessage);
+            MessageTimestamp updateResult = new MessageTimestamp(timeOfMessage);
 
-            ContentType contentType = Formats.parseHeader(ctx.header(Header.ACCEPT), PublishStatusUpdateResult.class);
+            ContentType contentType = Formats.parseHeader(ctx.header(Header.ACCEPT), MessageTimestamp.class);
             String result = Formats.format(contentType, updateResult);
             ctx.result(result).contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
