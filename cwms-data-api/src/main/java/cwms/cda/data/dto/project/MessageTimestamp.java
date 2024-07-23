@@ -37,10 +37,10 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV2.class)
-public class PublishStatusUpdateResult extends CwmsDTOBase {
+public class MessageTimestamp extends CwmsDTOBase {
     private final Instant value;
 
-    public PublishStatusUpdateResult(@JsonProperty ("value") Instant value) {
+    public MessageTimestamp(@JsonProperty ("value") Instant value) {
         this.value = value;
     }
 
