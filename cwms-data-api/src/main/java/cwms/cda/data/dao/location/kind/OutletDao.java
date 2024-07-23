@@ -44,7 +44,6 @@ import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_TAB_T;
 
 public class OutletDao extends JooqDao<Outlet> {
-    private static final String RATING_LOC_GROUP_CATEGORY = "Rating";
 
     public OutletDao(DSLContext dsl) {
         super(dsl);
@@ -56,7 +55,7 @@ public class OutletDao extends JooqDao<Outlet> {
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(projectId, officeId);
 
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
-            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, RATING_LOC_GROUP_CATEGORY);
+            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, Outlet.RATING_LOC_GROUP_CATEGORY);
 
             return CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef)
                                       .stream()
@@ -72,19 +71,21 @@ public class OutletDao extends JooqDao<Outlet> {
             PROJECT_STRUCTURE_OBJ_T outletStruct = CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLET(config, locRef);
             
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
-            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, RATING_LOC_GROUP_CATEGORY);
+            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, Outlet.RATING_LOC_GROUP_CATEGORY);
 
             return mapToOutlet(outletStruct, groups);
         });
     }
 
-    private String getRatingGroupId(String locationId, List<LocationGroup> groups) {
+    private CwmsId getRatingGroupId(String locationId, List<LocationGroup> groups) {
         return groups.stream()
                      .filter(group -> group.getAssignedLocations()
                                            .stream()
                                            .anyMatch(loc -> loc.getLocationId().equalsIgnoreCase(locationId)))
                      .findFirst()
-                     .map(LocationGroup::getId)
+                     .map(locGroup -> new CwmsId.Builder().withName(locGroup.getId())
+                                                          .withOfficeId(locGroup.getOfficeId())
+                                                          .build())
                      .orElse(null);
     }
 
@@ -179,7 +180,7 @@ public class OutletDao extends JooqDao<Outlet> {
     private Outlet mapToOutlet(PROJECT_STRUCTURE_OBJ_T projectStructure,
                                List<LocationGroup> groups) {
         Location location = LocationUtil.getLocation(projectStructure.getSTRUCTURE_LOCATION());
-        String ratingGroupId = getRatingGroupId(location.getName(), groups);
+        CwmsId ratingGroupId = getRatingGroupId(location.getName(), groups);
         CwmsId projectId = LocationUtil.getLocationIdentifier(projectStructure.getPROJECT_LOCATION_REF());
 
         return new Outlet.Builder().withLocation(location)
