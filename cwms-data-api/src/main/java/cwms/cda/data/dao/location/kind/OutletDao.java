@@ -94,7 +94,7 @@ public class OutletDao extends JooqDao<Outlet> {
         connection(dsl, conn -> {
             setOffice(conn, outlet.getProjectId().getOfficeId());
             PROJECT_STRUCTURE_OBJ_T structure = mapToProjectStructure(outlet);
-            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, outlet.getRatingGroupId(),
+            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, outlet.getRatingGroupId().getName(),
                                                   OracleTypeMap.formatBool(failIfExists));
         });
     }

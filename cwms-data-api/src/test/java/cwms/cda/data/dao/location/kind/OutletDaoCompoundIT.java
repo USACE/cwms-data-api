@@ -45,7 +45,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     private static final String OUTLET_KIND = "OUTLET";
-    private static final String VIRTUAL_OUTLET_RATING_GROUP = "Rating-" + PROJECT_LOC2.getName() + "-VirtualOutlet";
+    private static final CwmsId VIRTUAL_OUTLET_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_LOC2.getName() + "-VirtualOutlet")
+                                                                                  .withOfficeId(OFFICE_ID)
+                                                                                  .build();
 
     private static final CwmsId EXISTING_VIRTUAL_OUTLET_ID = new CwmsId.Builder().withName("Virtual Outlet 1")
                                                                                  .withOfficeId(OFFICE_ID)
@@ -279,7 +281,7 @@ class OutletDaoCompoundIT extends ProjectStructureDaoIT {
     }
 
 
-    private static Outlet buildTestOutlet(Location outletLoc, String ratingGroup) {
+    private static Outlet buildTestOutlet(Location outletLoc, CwmsId ratingGroup) {
         return new Outlet.Builder().withProjectId(
                 new CwmsId.Builder().withName(ProjectStructureDaoIT.PROJECT_LOC2.getName())
                                     .withOfficeId(ProjectStructureDaoIT.PROJECT_LOC2.getOfficeId())
