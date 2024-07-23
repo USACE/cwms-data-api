@@ -76,9 +76,9 @@ class OutletDaoIT extends ProjectStructureDaoIT {
                 storeLocation(context, TAINTER_GATE_2_LOC);
                 storeLocation(context, TAINTER_GATE_3_LOC);
                 storeLocation(context, BOX_CULVERT_1_LOC);
-                outletDao.storeOutlet(TAINTER_GATE_1_OUTLET, TAINTER_GATE_1_OUTLET.getRatingGroupId().getName(), false);
-                outletDao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId().getName(), false);
-                outletDao.storeOutlet(BOX_CULVERT_1_OUTLET, BOX_CULVERT_1_OUTLET.getRatingGroupId().getName(), false);
+                outletDao.storeOutlet(TAINTER_GATE_1_OUTLET, false);
+                outletDao.storeOutlet(TAINTER_GATE_2_OUTLET, false);
+                outletDao.storeOutlet(BOX_CULVERT_1_OUTLET, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -148,7 +148,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             //Create
             Outlet modifiedOutlet = new Outlet.Builder(TAINTER_GATE_2_OUTLET).withRatingGroupId(
                     TAINTER_GATE_RATING_GROUP_MODIFIED).build();
-            dao.storeOutlet(modifiedOutlet, TAINTER_GATE_RATING_GROUP_MODIFIED.getName(), true);
+            dao.storeOutlet(modifiedOutlet, true);
 
             //Single retrieve
             Outlet retrievedModifiedOutlet = dao.retrieveOutlet(TAINTER_GATE_2_LOC.getOfficeId(),
@@ -156,7 +156,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             DTOMatch.assertMatch(modifiedOutlet, retrievedModifiedOutlet);
 
             //Update (back to original)
-            dao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId().getName(), false);
+            dao.storeOutlet(TAINTER_GATE_2_OUTLET, false);
 
             List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                       PROJECT_1_ID.getName());
@@ -213,7 +213,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             OutletDao dao = new OutletDao(context);
 
             //Shouldn't exist in the db.
-            dao.storeOutlet(TAINTER_GATE_3_OUTLET, TAINTER_GATE_3_OUTLET.getRatingGroupId().getName(), true);
+            dao.storeOutlet(TAINTER_GATE_3_OUTLET, true);
             dao.renameOutlet(OFFICE_ID, TAINTER_GATE_3_LOC.getName(), TG_LOC4_ID.getName());
             Outlet outlet = dao.retrieveOutlet(TG_LOC4_ID.getOfficeId(), TG_LOC4_ID.getName());
             assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(OFFICE_ID, TAINTER_GATE_3_LOC.getName()));
