@@ -148,7 +148,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             //Create
             Outlet modifiedOutlet = new Outlet.Builder(TAINTER_GATE_2_OUTLET).withRatingGroupId(
                     TAINTER_GATE_RATING_GROUP_MODIFIED).build();
-            dao.storeOutlet(modifiedOutlet, TAINTER_GATE_RATING_GROUP_MODIFIED, true);
+            dao.storeOutlet(modifiedOutlet, TAINTER_GATE_RATING_GROUP_MODIFIED.getName(), true);
 
             //Single retrieve
             Outlet retrievedModifiedOutlet = dao.retrieveOutlet(TAINTER_GATE_2_LOC.getOfficeId(),
@@ -156,7 +156,7 @@ class OutletDaoIT extends ProjectStructureDaoIT {
             DTOMatch.assertMatch(modifiedOutlet, retrievedModifiedOutlet);
 
             //Update (back to original)
-            dao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId(), false);
+            dao.storeOutlet(TAINTER_GATE_2_OUTLET, TAINTER_GATE_2_OUTLET.getRatingGroupId().getName(), false);
 
             List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                       PROJECT_1_ID.getName());
