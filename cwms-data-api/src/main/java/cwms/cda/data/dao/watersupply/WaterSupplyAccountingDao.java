@@ -69,8 +69,9 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
 
     public WaterSupplyAccounting retrieveAccounting(String contractName, WaterUser waterUser, Instant startTime,
             Instant endTime, boolean startInclusive, boolean endInclusive, boolean headFlag, int rowLimit) {
-        WaterSupplyAccounting accounting = new WaterSupplyAccounting(contractName, waterUser, new HashMap<>(),
-                new HashMap<>());
+        WaterSupplyAccounting accounting = new WaterSupplyAccounting.Builder().withContractName(contractName)
+                .withWaterUser(waterUser).withPumpTimeWindowMap(new HashMap<>())
+                .withPumpLocationMap(new HashMap<>()).build();
         TimeZone timeZone = null;
         String transferType = null;
 
@@ -230,10 +231,12 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyPumpAccounting>
                             accounting.getTransferDate(),
                             Double.toString(flow)
                     });
-            WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(waterUser, contractName,
-                    new CwmsId.Builder().withName(pumpLocationRef.getBaseLocationId())
-                            .withOfficeId(pumpLocationRef.getOfficeId()).build(),
-                    physicalXferType, accountingFlow, transferStartDatetime, accountingRemarks);
+            WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting.Builder()
+                    .withWaterUser(waterUser).withContractName(contractName)
+                    .withPumpLocation(new CwmsId.Builder().withName(pumpLocationRef.getBaseLocationId())
+                            .withOfficeId(pumpLocationRef.getOfficeId()).build())
+                    .withTransferType(physicalXferType).withFlow(accountingFlow)
+                    .withTransferDate(transferStartDatetime).withComment(accountingRemarks).build();
             retVal.add(waterSupplyPumpAccounting);
         }
         return retVal;
