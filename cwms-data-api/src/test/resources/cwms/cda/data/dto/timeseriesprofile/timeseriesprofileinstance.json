@@ -6,7 +6,7 @@
       "name": "location"
     },
     "key-parameter": "Depth",
-    "parameter-list": [ "Temperature", "Depth"],
+    "parameter-list": [ "Temp-Water", "Depth"],
     "description": "Description",
     "reference-ts-id":{
       "office-id": "office",
@@ -15,7 +15,7 @@
   },
   "time-series-list" :  [
     {
-         "parameter": "Temperature",
+         "parameter": "Temp-Water",
          "unit": "F",
          "time-zone": "PST",
          "time-value-pair-list":
