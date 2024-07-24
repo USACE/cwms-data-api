@@ -32,6 +32,7 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.watersupply.WaterUser;
@@ -49,14 +50,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
@@ -499,6 +498,120 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+    }
+
+    @Test
+    void test_getAllWaterContracts() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+
+        // create contract
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        WaterUserContract waterContract = new WaterUserContract.Builder()
+                .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("NEW CONTRACT").build())
+                .withContractEffectiveDate(CONTRACT.getContractEffectiveDate())
+                .withContractExpirationDate(CONTRACT.getContractExpirationDate())
+                .withContractType(CONTRACT.getContractType())
+                .withContractedStorage(CONTRACT.getContractedStorage())
+                .withFutureUseAllocation(CONTRACT.getFutureUseAllocation())
+                .withInitialUseAllocation(CONTRACT.getInitialUseAllocation())
+                .withStorageUnitsId(CONTRACT.getStorageUnitsId())
+                .withTotalAllocPercentActivated(CONTRACT.getTotalAllocPercentActivated())
+                .withFutureUsePercentActivated(CONTRACT.getFutureUsePercentActivated())
+                .withOfficeId(OFFICE_ID)
+                .withWaterUser(CONTRACT.getWaterUser()).build();
+        String json2 = JsonV1.buildObjectMapper().writeValueAsString(waterContract);
+
+        // create contract
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .body(json2)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, "true")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                        + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+
+        // get all contracts
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].office-id", equalTo(OFFICE_ID))
+            .body("[0].contract-id.name", equalTo("NEW CONTRACT"))
+            .body("[1].office-id", equalTo(CONTRACT.getOfficeId()))
+            .body("[1].contract-id.name", equalTo(CONTRACT.getContractId().getName()))
+        ;
+
+        // delete contract
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(DELETE_MODE, "DELETE ALL")
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/projects/" + OFFICE_ID + "/"
+                    + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
+                    + CONTRACT.getContractId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+
+        // delete contract
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(DELETE_MODE, "DELETE ALL")
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/projects/" + OFFICE_ID + "/"
+                        + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
+                        + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
+                        + "NEW CONTRACT")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
     }
 }

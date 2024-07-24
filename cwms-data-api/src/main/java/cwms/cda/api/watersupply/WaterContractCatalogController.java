@@ -35,6 +35,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -100,9 +101,9 @@ public class WaterContractCatalogController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            final String office = ctx.queryParam(OFFICE);
-            final String name = ctx.queryParam(NAME);
+            final String office = ctx.pathParam(OFFICE);
             final String locationId = ctx.pathParam(PROJECT_ID);
+            final String waterUserEntity = ctx.pathParam(WATER_USER);
             DSLContext dsl = getDslContext(ctx);
             String result;
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
@@ -110,15 +111,17 @@ public class WaterContractCatalogController implements Handler {
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
-            List<WaterUserContract> contracts = contractDao.getAllWaterContracts(projectLocation, name);
 
-            if (contracts.isEmpty()) {
-                CdaError error = new CdaError("No contracts found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving all contracts");
+            WaterUser waterUser = contractDao.getWaterUser(projectLocation, waterUserEntity);
+
+            if (waterUser == null) {
+                CdaError error = new CdaError("No water user found for the provided parameters.");
+                LOGGER.log(Level.SEVERE, "Error retrieving water user contracts - no water user found.");
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
                 return;
             }
 
+            List<WaterUserContract> contracts = contractDao.getAllWaterContracts(projectLocation, waterUserEntity);
             result = Formats.format(contentType, contracts, WaterUserContract.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
