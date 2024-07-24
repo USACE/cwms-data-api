@@ -41,6 +41,9 @@ import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public final class Controllers {
@@ -210,6 +213,27 @@ public final class Controllers {
         meter.mark();
         Timer timer = registry.timer(name(className, subject, TIME));
         return timer.time();
+    }
+
+    /**
+     * Returns the first matching query param or the provided default value if no match is found.
+     *
+     * @param ctx          Request Context
+     * @param name         Name of the query param
+     * @param aliases      Alternative names for the query parameter that could be coming in
+     * @param clazz        Return value type.
+     * @param defaultValue Value to return if no matching queryParam is found.
+     * @return value
+     */
+    public static <T> T queryParamAsClass(io.javalin.http.Context ctx,
+                                          Class<T> clazz, T defaultValue, String name, String ... aliases) {
+        List<String> items = new ArrayList<>();
+        items.add(name);
+        if (aliases != null) {
+            items.addAll(Arrays.asList(aliases));
+        }
+
+        return queryParamAsClass(ctx, items.toArray(new String[]{}), clazz, defaultValue);
     }
 
     /**

@@ -37,24 +37,17 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = LookupType.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class LookupType extends CwmsDTOBase {
-
-    @JsonProperty(required = true)
-    private final String officeId;
+public final class LookupType extends CwmsDTO {
     @JsonProperty(required = true)
     private final String displayValue;
     private final String tooltip;
     private final boolean active;
 
     private LookupType(Builder builder) {
-        this.officeId = builder.officeId;
+        super(builder.officeId);
         this.displayValue = builder.displayValue;
         this.tooltip = builder.tooltip;
         this.active = builder.active;
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     public String getDisplayValue() {

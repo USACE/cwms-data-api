@@ -24,6 +24,7 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.location.kind.CompoundOutletRecord;
+import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.data.dto.location.kind.Turbine;
@@ -199,30 +200,29 @@ public final class DTOMatch {
         assertAll(
                 () -> assertMatch(first.getProjectId(), second.getProjectId()),
                 () -> assertEquals(first.getLocation(), second.getLocation()),
-                () -> assertEquals(first.getRatingGroupId(), second.getRatingGroupId()),
-                () -> assertMatch(first.getCompoundOutletRecords(), second.getCompoundOutletRecords(), DTOMatch::assertMatch)
+                () -> assertMatch(first.getRatingGroupId(), second.getRatingGroupId())
         );
     }
 
-    public static void assertMatch(CompoundOutletRecord first, CompoundOutletRecord second) {
+    public static void assertMatch(VirtualOutletRecord first, VirtualOutletRecord second) {
         assertAll(() -> assertMatch(first.getOutletId(), second.getOutletId()),
-                  () -> assertEquals(first.getDownstreamOutletIds().size(), second.getDownstreamOutletIds().size()),
-                  () -> assertAll(IntStream.range(0, first.getDownstreamOutletIds().size())
-                                           .mapToObj(i -> () -> DTOMatch.assertMatch(
-                                                   first.getDownstreamOutletIds().get(i),
-                                                   second.getDownstreamOutletIds().get(i),
-                                                   "Downstream Outlet Id " + i)))
+                  () -> assertMatch(first.getDownstreamOutletIds(), second.getDownstreamOutletIds(), DTOMatch::assertMatch)
         );
     }
 
-    private static <T> void assertMatch(List<T> first, List<T> second, AssertMatchMethod<T> matcher) {
+    public static void assertMatch(VirtualOutlet first, VirtualOutlet second) {
+        assertAll(() -> assertMatch(first.getVirtualOutletId(), second.getVirtualOutletId()),
+                  () -> assertMatch(first.getVirtualRecords(), second.getVirtualRecords(), DTOMatch::assertMatch));
+    }
+
+    public static <T> void assertMatch(List<T> first, List<T> second, AssertMatchMethod<T> matcher) {
         assertAll(() -> assertEquals(first.size(), second.size()),
                   () -> assertAll(IntStream.range(0, first.size())
                                            .mapToObj(i -> () -> matcher.assertMatch(first.get(i), second.get(i)))));
     }
 
     @FunctionalInterface
-    private interface AssertMatchMethod<T>{
+    public interface AssertMatchMethod<T>{
         void assertMatch(T first, T second);
     }
 }

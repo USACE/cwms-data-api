@@ -65,16 +65,14 @@ import static org.hamcrest.Matchers.*;
 final class TurbineControllerIT extends DataApiTestIT {
     private static final String OFFICE = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final Location PROJECT_LOC;
-    private static final Location TURBINE_LOC;
     private static final Turbine TURBINE;
     static {
-        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
-            InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine.json")) {
+        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location_turb.json");
+            InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine_phys.json")) {
             String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
             PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
             String turbineJson = IOUtils.toString(turbineStream, StandardCharsets.UTF_8);
             TURBINE = Formats.parseContent(new ContentType(Formats.JSONV1), turbineJson, Turbine.class);
-            TURBINE_LOC = TURBINE.getLocation();
         } catch(Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -82,20 +80,12 @@ final class TurbineControllerIT extends DataApiTestIT {
 
     @BeforeAll
     public static void setup() throws Exception {
-        tearDown();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            try {
-                DSLContext context = getDslContext(c, OFFICE);
-                LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-                PROJECT_OBJ_T projectObjT = buildProject();
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
-                locationsDao.storeLocation(TURBINE_LOC);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+            DSLContext context = getDslContext(c, OFFICE);
+            PROJECT_OBJ_T projectObjT = buildProject();
+            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -103,10 +93,9 @@ final class TurbineControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);
-            cleanTurbine(context, TURBINE_LOC);
+            cleanTurbine(context, TURBINE.getLocation());
             cleanProject(context, PROJECT_LOC);
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test

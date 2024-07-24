@@ -18,8 +18,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.UnitsDao;
-import cwms.cda.data.dto.TimeZone;
-import cwms.cda.data.dto.TimeZones;
 import cwms.cda.data.dto.Unit;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -90,7 +88,7 @@ public class UnitsController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String header = ctx.header(ACCEPT);
 
-            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, TimeZone.class);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Unit.class);
             String version = contentType.getParameters()
                                         .getOrDefault(VERSION, "");
 

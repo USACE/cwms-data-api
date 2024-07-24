@@ -67,10 +67,10 @@ public final class StreamDao extends JooqDao<Stream> {
      * @param stationUnits - the station units used for stations and length of stream
      * @return a list of streams
      */
-    public List<Stream> retrieveStreams(String officeIdMask, String divertsFromStreamIdMask, String flowsIntStreamIdMask, String stationUnits) {
+    public List<Stream> retrieveStreams(String officeIdMask, String streamIdMask, String divertsFromStreamIdMask, String flowsIntStreamIdMask, String stationUnits) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeIdMask);
-            Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(DSL.using(conn).configuration(), null,
+            Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(DSL.using(conn).configuration(), streamIdMask,
                             stationUnits, null, flowsIntStreamIdMask, null,
                             null, null, divertsFromStreamIdMask, null,
                             null, null, null, null, null,

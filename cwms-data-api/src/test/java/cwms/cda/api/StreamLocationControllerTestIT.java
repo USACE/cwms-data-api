@@ -25,6 +25,7 @@
 package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.AREA_UNIT;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NAME_MASK;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -33,7 +34,6 @@ import static cwms.cda.api.Controllers.STAGE_UNIT;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STREAM_ID;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
-import cwms.cda.api.errors.NotFoundException;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
@@ -68,17 +68,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 final class StreamLocationControllerTestIT extends DataApiTestIT {
 
-    private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
+    private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
     @BeforeAll
     public static void setup() throws SQLException {
-        String testLoc = "StreamLoc123"; // match the stream location name in the json file
+        String testLoc = "StreamLoc321"; // match the stream location name in the json file
         createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
-        createAndStoreTestStream("ImOnThisStream");
+        createAndStoreTestStream("ImOnThisStream2");
     }
 
-    private static void createAndStoreTestStream(String testLoc) throws SQLException {
+    static void createAndStoreTestStream(String testLoc) throws SQLException {
         createLocation(testLoc, true, OFFICE_ID, "STREAM");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
@@ -92,8 +92,8 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                     .withLengthUnits("km")
                     .build();
             STREAMS_CREATED.add(streamToStore);
-            streamDao.storeStream(streamToStore, true);
-        });
+            streamDao.storeStream(streamToStore, false);
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -105,10 +105,10 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                     StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
                     try {
                         streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
-                    } catch (NotFoundException e) {
+                    } catch (Exception e) {
                         // ignore
                     }
-                });
+                }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -118,7 +118,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_get_create_delete() throws IOException {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location3.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
@@ -129,12 +129,13 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         // 2) Retrieve the StreamLocation and assert that it exists
         // 3) Delete the StreamLocation
         // 4) Retrieve the StreamLocation and assert that it does not exist
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 
         // Create the StreamLocation
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
+                .queryParam(FAIL_IF_EXISTS, false)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -220,7 +221,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_update_does_not_exist() {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .queryParam(Controllers.OFFICE, user.getOperatingOffice())
@@ -238,7 +239,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_delete_does_not_exist() {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .queryParam(Controllers.OFFICE, user.getOperatingOffice())
@@ -257,7 +258,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_get_all() throws IOException {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location3.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
@@ -267,12 +268,13 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         // 1) Create the StreamLocation
         // 2) Retrieve the StreamLocation with getAll and assert that it exists
         // 3) Delete the StreamLocation
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 
         // Create the StreamLocation
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .contentType(Formats.JSON)
+                .queryParam(FAIL_IF_EXISTS, false)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
         .when()

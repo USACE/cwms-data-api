@@ -1,19 +1,26 @@
 {
   "project-id": {
     "office-id": "SPK",
-    "name": "location"
+    "name": "BIGH"
   },
   "location": {
     "office-id": "SPK",
-    "name": "outlet",
+    "name": "TG2",
     "latitude": 0.0,
     "longitude": 0.0,
     "active": true,
-    "public-name": "outlet",
+    "public-name": "TG2",
     "timezone-name": "UTC",
     "location-kind": "Outlet",
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
   },
-  "rating-group-id": "Rating-location-outlet"
+  "rating-category-id": {
+    "office-id": "SPK",
+    "name": "Rating"
+  },
+  "rating-group-id": {
+    "office-id": "SPK",
+    "name": "Rating-BIGH-TG1"
+  }
 }

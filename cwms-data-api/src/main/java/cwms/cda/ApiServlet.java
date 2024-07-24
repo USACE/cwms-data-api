@@ -26,6 +26,7 @@ package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.DownstreamLocationsGetController;
+import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
@@ -64,6 +65,7 @@ import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.OfficeController;
+import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
@@ -99,6 +101,7 @@ import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.project.ProjectChildLocationHandler;
+import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -508,6 +511,14 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
         post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
         delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
+
+        String outletPath = format("/projects/outlets/{%s}", NAME);
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
+                                          Controllers.PROJECT_ID, NAME);
+        String virtualOutletCreatePath = "/projects/virtual-outlets";
+        cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
 
         get("/projects/child-locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
