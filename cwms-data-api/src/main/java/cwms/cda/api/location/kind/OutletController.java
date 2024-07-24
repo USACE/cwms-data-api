@@ -78,7 +78,7 @@ public class OutletController implements CrudHandler {
             },
             description = "Create CWMS Outlet",
             method = HttpMethod.POST,
-            tags = {OutletController.TAG},
+            tags = {TAG},
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Outlet successfully stored to CWMS.")
             }
@@ -113,7 +113,7 @@ public class OutletController implements CrudHandler {
                     })
             },
             description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
-            tags = {OutletController.TAG}
+            tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {

@@ -73,11 +73,7 @@ public class VirtualOutletCreateController extends BaseOutletHandler {
             boolean failIfExists = queryParamAsClass(ctx, Boolean.class, true, FAIL_IF_EXISTS);
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
-
-            String officeId = virtualOutlet.getProjectId().getOfficeId();
-            String projectId = virtualOutlet.getProjectId().getName();
-            String virtualOutletId = virtualOutlet.getVirtualOutletId().getName();
-            dao.storeVirtualOutlet(officeId, projectId, virtualOutletId, virtualOutlet.getVirtualRecords(), failIfExists);
+            dao.storeVirtualOutlet(virtualOutlet, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
         }
     }

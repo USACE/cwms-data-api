@@ -21,7 +21,6 @@
 package cwms.cda.data.dao.location.kind;
 
 import cwms.cda.data.dao.DeleteRule;
-import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.location.kind.Outlet;
@@ -74,17 +73,16 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
     private static final Location CO3_I3 = buildProjectStructureLocation("I3", OUTLET_KIND);
     private static final Location CO3_CONDUIT = buildProjectStructureLocation("Conduit", OUTLET_KIND);
 
-    private static final List<VirtualOutletRecord> EXISTING_VIRTUAL_OUTLET = Arrays.asList(
+    private static final List<VirtualOutletRecord> EXISTING_VIRTUAL_OUTLET_RECORDS = Arrays.asList(
             buildVirtualOutletRecord(CO1_I25, CO1_LOW_FLOW), buildVirtualOutletRecord(CO1_I53, CO1_LOW_FLOW),
             buildVirtualOutletRecord(CO1_LOW_FLOW));
-
-    private static final List<VirtualOutletRecord> BASE_AND_SUB_VIRTUAL_OUTLET = Arrays.asList(
+    private static final List<VirtualOutletRecord> BASE_AND_SUB_VIRTUAL_OUTLET_RECORDS = Arrays.asList(
             buildVirtualOutletRecord(CO2_INTAKE, CO2_WEIR, CO2_CONDUIT), buildVirtualOutletRecord(CO2_WEIR),
             buildVirtualOutletRecord(CO2_CONDUIT));
-
-    private static final List<VirtualOutletRecord> BASE_ONLY_VIRTUAL_OUTLET = Arrays.asList(
+    private static final List<VirtualOutletRecord> BASE_ONLY_VIRTUAL_OUTLET_RECORDS = Arrays.asList(
             buildVirtualOutletRecord(CO3_I1, CO3_CONDUIT), buildVirtualOutletRecord(CO3_I2, CO3_CONDUIT),
             buildVirtualOutletRecord(CO3_I3, CO3_CONDUIT), buildVirtualOutletRecord(CO3_CONDUIT));
+
     private static final Outlet CO1_I25_OUTLET = buildTestOutlet(CO1_I25, VIRTUAL_OUTLET_RATING_GROUP);
     private static final Outlet CO1_I53_OUTLET = buildTestOutlet(CO1_I53, VIRTUAL_OUTLET_RATING_GROUP);
     private static final Outlet CO1_LOW_FLOW_OUTLET = buildTestOutlet(CO1_LOW_FLOW, VIRTUAL_OUTLET_RATING_GROUP);
@@ -96,25 +94,43 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
     private static final Outlet CO3_I3_OUTLET = buildTestOutlet(CO3_I3, VIRTUAL_OUTLET_RATING_GROUP);
     private static final Outlet CO3_CONDUIT_OUTLET = buildTestOutlet(CO3_CONDUIT, VIRTUAL_OUTLET_RATING_GROUP);
 
+    private static final VirtualOutlet EXISTING_VIRTUAL_OUTLET = new VirtualOutlet.Builder().withProjectId(PROJECT_2_ID)
+                                                                                            .withVirtualOutletId(
+                                                                                                    EXISTING_VIRTUAL_OUTLET_ID)
+                                                                                            .withVirtualRecords(
+                                                                                                    EXISTING_VIRTUAL_OUTLET_RECORDS)
+                                                                                            .build();
+    private static final VirtualOutlet BASE_AND_SUB_VIRTUAL_OUTLET = new VirtualOutlet.Builder().withProjectId(PROJECT_2_ID)
+                                                                                            .withVirtualOutletId(
+                                                                                                    BASE_AND_SUB_VIRTUAL_OUTLET_ID)
+                                                                                            .withVirtualRecords(
+                                                                                                    BASE_AND_SUB_VIRTUAL_OUTLET_RECORDS)
+                                                                                            .build();
+    private static final VirtualOutlet BASE_ONLY_VIRTUAL_OUTLET = new VirtualOutlet.Builder().withProjectId(PROJECT_2_ID)
+                                                                                            .withVirtualOutletId(
+                                                                                                    BASE_ONLY_VIRTUAL_OUTLET_ID)
+                                                                                            .withVirtualRecords(
+                                                                                                    BASE_ONLY_VIRTUAL_OUTLET_RECORDS)
+                                                                                            .build();
+
     @BeforeAll
     static void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             OutletDao outletDao = new OutletDao(context);
             try {
-                locationsDao.storeLocation(CO1_I25);
-                locationsDao.storeLocation(CO1_I53);
-                locationsDao.storeLocation(CO1_LOW_FLOW);
-                locationsDao.storeLocation(CO2_CONDUIT);
-                locationsDao.storeLocation(CO2_INTAKE);
-                locationsDao.storeLocation(CO2_WEIR);
-                locationsDao.storeLocation(CO3_I1);
-                locationsDao.storeLocation(CO3_I2);
-                locationsDao.storeLocation(CO3_I3);
-                locationsDao.storeLocation(CO3_CONDUIT);
+                storeLocation(context, CO1_I25);
+                storeLocation(context, CO1_I53);
+                storeLocation(context, CO1_LOW_FLOW);
+                storeLocation(context, CO2_CONDUIT);
+                storeLocation(context, CO2_INTAKE);
+                storeLocation(context, CO2_WEIR);
+                storeLocation(context, CO3_I1);
+                storeLocation(context, CO3_I2);
+                storeLocation(context, CO3_I3);
+                storeLocation(context, CO3_CONDUIT);
 
                 outletDao.storeOutlet(CO1_I25_OUTLET, false);
                 outletDao.storeOutlet(CO1_I53_OUTLET, false);
@@ -127,8 +143,7 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
                 outletDao.storeOutlet(CO3_I3_OUTLET, false);
                 outletDao.storeOutlet(CO3_CONDUIT_OUTLET, false);
 
-                outletDao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
-                                             EXISTING_VIRTUAL_OUTLET_ID.getName(), EXISTING_VIRTUAL_OUTLET, false);
+                outletDao.storeVirtualOutlet(EXISTING_VIRTUAL_OUTLET, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -140,7 +155,6 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             OutletDao outletDao = new OutletDao(context);
 
             outletDao.deleteVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
@@ -157,16 +171,16 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
             outletDao.deleteOutlet(CO3_I3.getOfficeId(), CO3_I3.getName(), DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(CO3_CONDUIT.getOfficeId(), CO3_CONDUIT.getName(), DeleteRule.DELETE_ALL);
 
-            locationsDao.deleteLocation(CO1_I25.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO1_I53.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO1_LOW_FLOW.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO2_CONDUIT.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO2_INTAKE.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO2_WEIR.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_I1.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_I2.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_I3.getName(), PROJECT_LOC2.getOfficeId(), true);
-            locationsDao.deleteLocation(CO3_CONDUIT.getName(), PROJECT_LOC2.getOfficeId(), true);
+            deleteLocation(context, CO1_I25.getOfficeId(), CO1_I25.getName());
+            deleteLocation(context, CO1_I53.getOfficeId(), CO1_I53.getName());
+            deleteLocation(context, CO1_LOW_FLOW.getOfficeId(), CO1_LOW_FLOW.getName());
+            deleteLocation(context, CO2_CONDUIT.getOfficeId(), CO2_CONDUIT.getName());
+            deleteLocation(context, CO2_INTAKE.getOfficeId(), CO2_INTAKE.getName());
+            deleteLocation(context, CO2_WEIR.getOfficeId(), CO2_WEIR.getName());
+            deleteLocation(context, CO3_I1.getOfficeId(), CO3_I1.getName());
+            deleteLocation(context, CO3_I2.getOfficeId(), CO3_I2.getName());
+            deleteLocation(context, CO3_I3.getOfficeId(), CO3_I3.getName());
+            deleteLocation(context, CO3_CONDUIT.getOfficeId(), CO3_CONDUIT.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
         tearDownProject();
     }
@@ -186,12 +200,12 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
             assertNotNull(outlet);
             DTOMatch.assertMatch(outlet.getVirtualOutletId(), EXISTING_VIRTUAL_OUTLET_ID);
             DTOMatch.assertMatch(outlet.getProjectId(), PROJECT_2_ID);
-            DTOMatch.assertMatch(outlet.getVirtualRecords(), EXISTING_VIRTUAL_OUTLET, DTOMatch::assertMatch);
+            DTOMatch.assertMatch(outlet.getVirtualRecords(), EXISTING_VIRTUAL_OUTLET_RECORDS, DTOMatch::assertMatch);
 
             List<VirtualOutletRecord> virtualRecords = outlet.getVirtualRecords();
-            assertEquals(EXISTING_VIRTUAL_OUTLET.size(), virtualRecords.size());
-            assertAll(EXISTING_VIRTUAL_OUTLET.stream()
-                                             .map(virtualOutletRecord -> () -> compareOutletRecords(virtualOutletRecord,
+            assertEquals(EXISTING_VIRTUAL_OUTLET_RECORDS.size(), virtualRecords.size());
+            assertAll(EXISTING_VIRTUAL_OUTLET_RECORDS.stream()
+                                                     .map(virtualOutletRecord -> () -> compareOutletRecords(virtualOutletRecord,
                                                                                                     virtualRecords)));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -207,8 +221,7 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            dao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
-                                   BASE_ONLY_VIRTUAL_OUTLET_ID.getName(), BASE_ONLY_VIRTUAL_OUTLET, false);
+            dao.storeVirtualOutlet(BASE_ONLY_VIRTUAL_OUTLET, false);
 
             VirtualOutlet virtualOutlet = dao.retrieveVirtualOutlet(PROJECT_2_ID.getOfficeId(),
                                                                     PROJECT_LOC2.getName(),
@@ -218,8 +231,8 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
                                     BASE_ONLY_VIRTUAL_OUTLET_ID.getName(), DeleteRule.DELETE_ALL);
 
 
-            assertAll(BASE_ONLY_VIRTUAL_OUTLET.stream()
-                                              .map(virtualOutletRecord -> () -> compareOutletRecords(
+            assertAll(BASE_ONLY_VIRTUAL_OUTLET_RECORDS.stream()
+                                                      .map(virtualOutletRecord -> () -> compareOutletRecords(
                                                       virtualOutletRecord, virtualOutlet.getVirtualRecords())));
 
         }, CwmsDataApiSetupCallback.getWebUser());
@@ -232,8 +245,7 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao dao = new OutletDao(context);
-            dao.storeVirtualOutlet(PROJECT_LOC2.getOfficeId(), PROJECT_LOC2.getName(),
-                                   BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(), BASE_AND_SUB_VIRTUAL_OUTLET, false);
+            dao.storeVirtualOutlet(BASE_AND_SUB_VIRTUAL_OUTLET, false);
 
             VirtualOutlet outlet = dao.retrieveVirtualOutlet(PROJECT_LOC2.getOfficeId(),
                                                              PROJECT_LOC2.getName(),
@@ -242,9 +254,9 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
                                     BASE_AND_SUB_VIRTUAL_OUTLET_ID.getName(), DeleteRule.DELETE_ALL);
             List<VirtualOutletRecord> virtualOutletRecords = outlet.getVirtualRecords();
 
-            assertEquals(BASE_AND_SUB_VIRTUAL_OUTLET.size(), virtualOutletRecords.size());
-            assertAll(BASE_AND_SUB_VIRTUAL_OUTLET.stream()
-                                                 .map(virtualOutletRecord -> () -> compareOutletRecords(
+            assertEquals(BASE_AND_SUB_VIRTUAL_OUTLET_RECORDS.size(), virtualOutletRecords.size());
+            assertAll(BASE_AND_SUB_VIRTUAL_OUTLET_RECORDS.stream()
+                                                         .map(virtualOutletRecord -> () -> compareOutletRecords(
                                                          virtualOutletRecord, virtualOutletRecords)));
 
         }, CwmsDataApiSetupCallback.getWebUser());

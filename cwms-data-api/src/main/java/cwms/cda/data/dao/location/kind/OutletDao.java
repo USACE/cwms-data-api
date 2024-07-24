@@ -155,18 +155,24 @@ public class OutletDao extends JooqDao<Outlet> {
                                           .build();
     }
 
-    public void storeVirtualOutlet(String officeId, String projectId, String virtualOutletId,
-                                   List<VirtualOutletRecord> records, boolean failIfExists) {
-        List<List<String>> virtualOutlets = records.stream()
-                                                    .map(this::mapVirtualRecords)
-                                                    .collect(Collectors.toList());
+    public void storeVirtualOutlet(VirtualOutlet outlet, boolean failIfExists) {
+        List<List<String>> virtualOutlets = outlet.getVirtualRecords()
+                                                  .stream()
+                                                  .map(this::mapVirtualRecords)
+                                                  .collect(Collectors.toList());
 
         STR_TAB_TAB_T outlets = new STR_TAB_TAB_T(
                 virtualOutlets.stream().map(STR_TAB_T::new).collect(Collectors.toList()));
+
+        CwmsId projectId = outlet.getProjectId();
+        CwmsId outletId = outlet.getVirtualOutletId();
+
         connection(dsl, conn -> {
-            setOffice(conn, officeId);
-            CWMS_OUTLET_PACKAGE.call_STORE_COMPOUND_OUTLET(DSL.using(conn).configuration(), projectId, virtualOutletId,
-                                                           outlets, OracleTypeMap.formatBool(failIfExists), officeId);
+            setOffice(conn, outlet.getProjectId().getOfficeId());
+            CWMS_OUTLET_PACKAGE.call_STORE_COMPOUND_OUTLET(DSL.using(conn).configuration(), projectId.getName(),
+                                                           outletId.getName(), outlets,
+                                                           OracleTypeMap.formatBool(failIfExists),
+                                                           projectId.getOfficeId());
         });
     }
 
