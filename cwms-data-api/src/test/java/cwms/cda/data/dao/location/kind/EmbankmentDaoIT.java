@@ -40,10 +40,6 @@ import cwms.cda.data.dto.location.kind.Embankment;
 import fixtures.CwmsDataApiSetupCallback;
 import cwms.cda.helpers.DTOMatch;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -54,12 +50,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
-import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
-
 @Tag("integration")
 @TestInstance(Lifecycle.PER_CLASS)
-final class EmbankmentDaoIT extends ProjectStructureDaoIT {
+final class EmbankmentDaoIT extends ProjectStructureIT {
     private static final String EMBANKMENT_KIND = "EMBANKMENT";
     private static final Location EMBANK_LOC1 = buildProjectStructureLocation("PROJECT-EMBANK_LOC1_IT", EMBANKMENT_KIND);
     private static final Location EMBANK_LOC2 = buildProjectStructureLocation("EMBANK_LOC2_IT", EMBANKMENT_KIND);
