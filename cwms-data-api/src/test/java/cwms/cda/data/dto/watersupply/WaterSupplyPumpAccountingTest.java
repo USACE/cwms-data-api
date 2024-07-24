@@ -45,11 +45,12 @@ class WaterSupplyPumpAccountingTest {
 
     @Test
     void testWaterSupplyPumpAccountingSerializationRoundTrip() {
-        WaterUser user = new WaterUser("Test Entity", new CwmsId.Builder()
-            .withOfficeId(OFFICE)
-            .withName("Test Location")
-            .build(),
-            "Test Water Right");
+        WaterUser user = new WaterUser.Builder().withEntityName("Test Entity")
+            .withProjectId(new CwmsId.Builder()
+                .withOfficeId(OFFICE)
+                .withName("Test Location")
+                .build())
+            .withWaterRight("Test Water Right").build();
 
         WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(user, "Test Contract",
             new CwmsId.Builder().withOfficeId(OFFICE).withName("NAME").build(),
@@ -64,8 +65,10 @@ class WaterSupplyPumpAccountingTest {
 
     @Test
     void testWaterSupplyPumpAccountingSerializationRoundTripFromFile() throws Exception {
-        WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-            new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+        WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                        .withName("Test Location").build())
+                .withWaterRight("Test Water Right").build(),
             "Test Contract",
                 new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
             new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
@@ -84,8 +87,10 @@ class WaterSupplyPumpAccountingTest {
     void testValidate() {
         assertAll(
             () -> {
-                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                                .withName("Test Location").build())
+                        .withWaterRight("Test Water Right").build(),
                     "Test Contract",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
@@ -93,18 +98,23 @@ class WaterSupplyPumpAccountingTest {
                 assertDoesNotThrow(waterSupplyPumpAccounting::validate, "Expected validation to pass");
             },
             () -> {
-                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                                .withName("Test Location").build())
+                        .withWaterRight("Test Water Right").build(),
                     null,
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
-                        .withDisplayValue("Test Transfer Type").build(), 1.0, Instant.ofEpochSecond(10000012648112L), "Test Comment");
+                        .withDisplayValue("Test Transfer Type").build(), 1.0,
+                        Instant.ofEpochSecond(10000012648112L), "Test Comment");
                 assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null contract name");
             },
             () -> {
-                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                                .withName("Test Location").build())
+                        .withWaterRight("Test Water Right").build(),
                     "Test Contract",
                     null,
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
@@ -113,8 +123,10 @@ class WaterSupplyPumpAccountingTest {
                     + "fail due to null location");
             },
             () -> {
-                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder()
+                                .withOfficeId(OFFICE).withName("Test Location").build())
+                        .withWaterRight("Test Water Right").build(),
                     "Test Contract",
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     null, 1.0, Instant.ofEpochSecond(10000012648112L), "Test Comment");
@@ -122,18 +134,23 @@ class WaterSupplyPumpAccountingTest {
                     + "fail due to null transfer type");
             },
             () -> {
-                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                                .withName("Test Location").build())
+                        .withWaterRight("Test Water Right").build(),
                     null,
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
-                        .withDisplayValue("Test Transfer Type").build(), null, Instant.ofEpochSecond(10000012648112L), "Test Comment");
+                        .withDisplayValue("Test Transfer Type").build(), null,
+                        Instant.ofEpochSecond(10000012648112L), "Test Comment");
                 assertThrows(FieldException.class, waterSupplyPumpAccounting::validate, "Expected validation to "
                     + "fail due to null flow value");
             },
             () -> {
-                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser("Test Entity",
-                    new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location").build(), "Test Water Right"),
+                WaterSupplyPumpAccounting waterSupplyPumpAccounting = new WaterSupplyPumpAccounting(new WaterUser.Builder()
+                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                                .withName("Test Location").build())
+                        .withWaterRight("Test Water Right").build(),
                     null,
                     new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build(),
                     new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
