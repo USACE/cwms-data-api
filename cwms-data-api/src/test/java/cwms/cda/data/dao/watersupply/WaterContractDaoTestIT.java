@@ -194,9 +194,9 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(oldContract.getWaterUser(), true);
             dao.storeWaterContract(oldContract, true, false);
-            WaterUser user = new WaterUser(oldContract.getWaterUser().getEntityName(),
-                    oldContract.getWaterUser().getProjectId(),
-                    oldContract.getContractId().getName());
+            WaterUser user = new WaterUser.Builder().withEntityName(oldContract.getWaterUser().getEntityName())
+                    .withProjectId(oldContract.getWaterUser().getProjectId())
+                    .withWaterRight(oldContract.getContractId().getName()).build();
             dao.renameWaterContract(user, oldContract.getContractId().getName(),
                     renamedContract.getContractId().getName());
             List<WaterUserContract> retrievedContracts = dao.getAllWaterContracts(
@@ -281,11 +281,11 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     }
 
     private static WaterUser buildTestWaterUser(String entityName) {
-        return new WaterUser(entityName, new CwmsId.Builder()
+        return new WaterUser.Builder().withEntityName(entityName).withProjectId(new CwmsId.Builder()
                                 .withName("Test Location Name")
                                 .withOfficeId(OFFICE_ID)
-                                .build(),
-                        "Test Water Right");
+                                .build())
+                .withWaterRight("Test Water Right").build();
     }
 
     private WaterUserContract buildTestWaterContract(String entityName, boolean renameTest) {
@@ -310,12 +310,15 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                             .build())
                     .withFutureUsePercentActivated(35.7)
                     .withWaterUser(testUser)
-                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1 " + entityName,
-                            "PUMP"), PumpType.IN))
-                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2 " + entityName,
-                            "PUMP"), PumpType.OUT))
-                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3 " + entityName,
-                            "PUMP"), PumpType.BELOW))
+                    .withPumpInLocation(new WaterSupplyPump.Builder()
+                            .withPumpLocation(buildTestLocation("Pump 1 " + entityName,
+                            "PUMP")).withPumpType(PumpType.IN).build())
+                    .withPumpOutLocation(new WaterSupplyPump.Builder()
+                            .withPumpLocation(buildTestLocation("Pump 2 " + entityName,
+                            "PUMP")).withPumpType(PumpType.OUT).build())
+                    .withPumpOutBelowLocation(new WaterSupplyPump.Builder()
+                            .withPumpLocation(buildTestLocation("Pump 3 " + entityName,
+                            "PUMP")).withPumpType(PumpType.BELOW).build())
                     .build();
         } else {
             return new WaterUserContract.Builder()
@@ -338,12 +341,12 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                             .build())
                     .withFutureUsePercentActivated(35.7)
                     .withWaterUser(buildTestWaterUser("Water User Name"))
-                    .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1",
-                            "PUMP"), PumpType.IN))
-                    .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2",
-                            "PUMP"), PumpType.OUT))
-                    .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3",
-                            "PUMP"), PumpType.BELOW))
+                    .withPumpInLocation(new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation("Pump 1",
+                            "PUMP")).withPumpType(PumpType.IN).build())
+                    .withPumpOutLocation(new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation("Pump 2",
+                            "PUMP")).withPumpType(PumpType.OUT).build())
+                    .withPumpOutBelowLocation(new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation("Pump 3",
+                            "PUMP")).withPumpType(PumpType.BELOW).build())
                     .build();
         }
 

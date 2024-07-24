@@ -240,8 +240,9 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
 
     public void deleteWaterContract(WaterUserContract contract, String deleteAction) {
 
-        WaterUser waterUser = new WaterUser(contract.getWaterUser().getEntityName(),
-                contract.getWaterUser().getProjectId(), contract.getWaterUser().getWaterRight());
+        WaterUser waterUser = new WaterUser.Builder().withEntityName(contract.getWaterUser().getEntityName())
+                .withProjectId(contract.getWaterUser().getProjectId())
+                .withWaterRight(contract.getWaterUser().getWaterRight()).build();
 
         WaterUserContractRefType waterUserContractRefTypeModified =
                 WaterSupplyUtils.map(waterUser, waterUser.getProjectId(), contract.getContractId().getName());

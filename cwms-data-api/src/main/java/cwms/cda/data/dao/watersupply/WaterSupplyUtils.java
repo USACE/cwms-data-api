@@ -50,8 +50,8 @@ public class WaterSupplyUtils {
 
     public static WaterUser map(WaterUserType waterUserType,
             CwmsId projectLocation) {
-        return new WaterUser(waterUserType.getEntityName(),
-                projectLocation, waterUserType.getWaterRight());
+        return new WaterUser.Builder().withEntityName(waterUserType.getEntityName())
+                .withProjectId(projectLocation).withWaterRight(waterUserType.getWaterRight()).build();
     }
 
     public static WaterUserType map(WaterUser waterUserType,
@@ -88,33 +88,34 @@ public class WaterSupplyUtils {
         if (locationType == null) {
             return null;
         }
-        return new WaterSupplyPump(new Location.Builder(locationType.getLocationRef().getOfficeId(),
-                locationType.getLocationRef().getBaseLocationId())
-                .withNearestCity(locationType.getNearestCity())
-                .withLocationType(locationType.getLocationType())
-                .withNation(Nation.nationForName(locationType.getNationId()))
-                .withLatitude(locationType.getLatitude())
-                .withLongitude(locationType.getLongitude())
-                .withPublicName(locationType.getPublicName())
-                .withLongName(locationType.getLongName())
-                .withDescription(locationType.getDescription())
-                .withBoundingOfficeId(locationType.getBoundingOfficeId())
-                .withActive(locationType.getActiveFlag())
-                .withName(locationType.getLocationRef().getBaseLocationId())
-                .withStateInitial(locationType.getStateInitial())
-                .withCountyName(locationType.getCountyName())
-                .withTimeZoneName(ZoneId.of(locationType.getTimeZoneName()))
-                .withElevationUnits(locationType.getElevUnitId())
-                .withElevation(locationType.getElevation())
-                .withHorizontalDatum(locationType.getHorizontalDatum())
-                .withVerticalDatum(locationType.getVerticalDatum())
-                .withLocationKind(locationType.getLocationKindId())
-                .withMapLabel(locationType.getMapLabel())
-                .withPublishedLatitude(locationType.getPublishedLatitude())
-                .withPublishedLongitude(locationType.getPublishedLongitude())
-                .withOfficeId(locationType.getLocationRef().getOfficeId())
-                .build(),
-                pumpType);
+        return new WaterSupplyPump.Builder()
+                .withPumpLocation(new Location.Builder(locationType.getLocationRef().getOfficeId(),
+                    locationType.getLocationRef().getBaseLocationId())
+                    .withNearestCity(locationType.getNearestCity())
+                    .withLocationType(locationType.getLocationType())
+                    .withNation(Nation.nationForName(locationType.getNationId()))
+                    .withLatitude(locationType.getLatitude())
+                    .withLongitude(locationType.getLongitude())
+                    .withPublicName(locationType.getPublicName())
+                    .withLongName(locationType.getLongName())
+                    .withDescription(locationType.getDescription())
+                    .withBoundingOfficeId(locationType.getBoundingOfficeId())
+                    .withActive(locationType.getActiveFlag())
+                    .withName(locationType.getLocationRef().getBaseLocationId())
+                    .withStateInitial(locationType.getStateInitial())
+                    .withCountyName(locationType.getCountyName())
+                    .withTimeZoneName(ZoneId.of(locationType.getTimeZoneName()))
+                    .withElevationUnits(locationType.getElevUnitId())
+                    .withElevation(locationType.getElevation())
+                    .withHorizontalDatum(locationType.getHorizontalDatum())
+                    .withVerticalDatum(locationType.getVerticalDatum())
+                    .withLocationKind(locationType.getLocationKindId())
+                    .withMapLabel(locationType.getMapLabel())
+                    .withPublishedLatitude(locationType.getPublishedLatitude())
+                    .withPublishedLongitude(locationType.getPublishedLongitude())
+                    .withOfficeId(locationType.getLocationRef().getOfficeId())
+                    .build())
+                .withPumpType(pumpType).build();
     }
 
     public static LocationType map(WaterSupplyPump pump) {
@@ -164,7 +165,7 @@ public class WaterSupplyUtils {
 
     public static WaterUser map(WaterUserContractRefType contract,
             CwmsId projectLocation, String contractName) {
-        return new WaterUser(contract.getContractName(),
-                projectLocation, contractName);
+        return new WaterUser.Builder().withEntityName(contract.getContractName())
+                .withProjectId(projectLocation).withWaterRight(contractName).build();
     }
 }
