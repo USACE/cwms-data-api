@@ -1,23 +1,23 @@
 {
   "time-series-profile": {
     "location-id": {
-      "office-id": "office",
-      "name": "location"
+      "office-id": "SWT",
+      "name": "SWAN"
     },
     "description": "Description",
     "parameter-list": [
-      "Temperature",
+      "Temp-Water",
       "Depth"
     ],
     "key-parameter": "Depth",
     "reference-ts-id": {
-      "office-id": "office",
-      "name": "location.Elev.Inst.0.0.REV"
+      "office-id": "SWT",
+      "name": "SWAN.Elev.Inst.1Hour.0.DSS-Obs"
     }
   },
   "time-series-list": [
     {
-      "parameter": "Temperature",
+      "parameter": "Temp-Water",
       "unit": "F",
       "time-zone": "PST",
       "values": [
