@@ -5,17 +5,13 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
 
 import java.time.Instant;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @JsonDeserialize(builder = TimeValuePair.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class TimeValuePair {
+public final class TimeValuePair {
     private final Instant dateTime;
     private final double value;
 

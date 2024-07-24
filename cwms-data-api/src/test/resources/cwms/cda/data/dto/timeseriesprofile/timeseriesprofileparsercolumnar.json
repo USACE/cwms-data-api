@@ -1,0 +1,27 @@
+{
+  "location-id": {
+    "office-id": "SWT",
+    "name": "location"
+  },
+  "key-parameter": "Depth",
+  "record-delimiter": "\n",
+  "time-format": "MM/DD/YYYY,HH24:MI:SS",
+  "time-zone": "UTC",
+  "parameter-info-list": [
+    {
+      "parameter": "Depth",
+      "unit": "m",
+      "start-column": 11,
+      "end-column": 20
+    },
+    {
+      "parameter": "Temp-Water",
+      "unit": "F",
+      "start-column": 21,
+      "end-column": 30
+    }
+  ],
+  "time-in-two-fields": false,
+  "time-start-column": 1,
+  "time-end-column": 10
+}

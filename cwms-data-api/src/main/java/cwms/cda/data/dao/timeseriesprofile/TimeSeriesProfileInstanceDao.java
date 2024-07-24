@@ -50,7 +50,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						versionId,
 						storeRule,
 						overrideProtection?"T":"F",
-						Timestamp.from(versionDate),
+						versionDate!=null?Timestamp.from(versionDate):null,
 						timeSeriesProfile.getLocationId().getOfficeId());
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -103,7 +103,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 					String parameterId = timeseriesProfileInstance.getTimeSeriesList().get(i).getParameter();
 					BigInteger parameterCode = parameterIdToCode.get(parameterId);
 					pvq.setPARAMETER_CODE(parameterCode);
-					pvq.setQUALITY_CODE(BigInteger.valueOf(9));
 					parameters.add(pvq);
 					units.add(timeseriesProfileInstance.getTimeSeriesList().get(i).getUnit());
 				}
@@ -207,7 +206,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						endInclusive,
 						previous,
 						next,
-						null,//Timestamp.from(versionDate),
+						versionDate!=null?Timestamp.from(versionDate):null,
 						maxVersion,
 						location.getOfficeId()
 				);
@@ -263,22 +262,18 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		List<Instant> timeList = new ArrayList<>();
 		List<List<Double>> valuesList = new ArrayList<>();
 		List<List<BigInteger>> parametersList = new ArrayList<>();
-		List<List<BigInteger>> qualitiesList = new ArrayList<>();
 		for(TS_PROF_DATA_REC_T dataRecord : records)
 		{
 			Instant dateTime = dataRecord.get(0, Instant.class);
 			timeList.add(dateTime);
 			PVQ_TAB_T parameters = dataRecord.getPARAMETERS();
 			List<Double> valueList = new ArrayList<>();
-			List<BigInteger> qualityList = new ArrayList<>();
 			List<BigInteger> parameterList = new ArrayList<>();
 			for(PVQ_T parameter : parameters)
 			{
-				qualityList.add(parameter.getQUALITY_CODE());
 				valueList.add(parameter.getVALUE());
 				parameterList.add(parameter.getPARAMETER_CODE());
 			}
-			qualitiesList.add(qualityList);
 			valuesList.add(valueList);
 			parametersList.add(parameterList);
 		}
