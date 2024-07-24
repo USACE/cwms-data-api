@@ -7,14 +7,17 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
+import java.io.IOException;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
@@ -27,8 +30,9 @@ import java.time.ZoneId;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 
-public abstract class ProjectStructureIT extends DataApiTestIT
-{
+public abstract class ProjectStructureIT extends DataApiTestIT {
+	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+	protected static final TestAccounts.KeyUser USER = TestAccounts.KeyUser.SPK_NORMAL;
 	protected static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
 	public static final Location PROJECT_LOC = buildProjectLocation("PROJECT1");
 	public static final Location PROJECT_LOC2 = buildProjectLocation("PROJECT2");
@@ -126,5 +130,20 @@ public abstract class ProjectStructureIT extends DataApiTestIT
 			.withDescription("for testing")
 			.withNearestCity("Davis")
 			.build();
+	}
+
+	public static void storeLocation(DSLContext context, Location loc) throws IOException {
+		LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
+		deleteLocation(context, loc.getOfficeId(), loc.getName());
+		locationsDao.storeLocation(loc);
+	}
+
+	public static void deleteLocation(DSLContext context, String officeId, String locId) {
+		LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
+		try {
+			locationsDao.deleteLocation(locId, officeId, true);
+		} catch (NotFoundException ex) {
+			LOGGER.atFinest().withCause(ex).log("No data found for " + officeId + "." + locId);
+		}
 	}
 }

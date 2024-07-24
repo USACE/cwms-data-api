@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class OutletDaoIT extends ProjectStructureIT {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId TAINTER_GATE_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId BOX_CULVERT_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert").withOfficeId(OFFICE_ID).build();
     private static final CwmsId TAINTER_GATE_RATING_GROUP_MODIFIED = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate Modified").withOfficeId(OFFICE_ID).build();
@@ -70,7 +69,7 @@ class OutletDaoIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
-            deleteLocation(context, TG_LOC4_ID.getName(), TG_LOC4_ID.getOfficeId());
+            deleteLocation(context, TG_LOC4_ID.getOfficeId(), TG_LOC4_ID.getName());
             try {
                 storeLocation(context, TAINTER_GATE_1_LOC);
                 storeLocation(context, TAINTER_GATE_2_LOC);
@@ -85,21 +84,6 @@ class OutletDaoIT extends ProjectStructureIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    static void deleteLocation(DSLContext context, String locId, String officeId) {
-        LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-        try {
-            locationsDao.deleteLocation(locId, officeId, true);
-        } catch (NotFoundException ex) {
-            LOGGER.atFinest().withCause(ex).log("No data found for " + officeId + "." + locId);
-        }
-    }
-
-    static void storeLocation(DSLContext context, Location loc) throws IOException {
-        LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-        deleteLocation(context, loc.getName(), loc.getOfficeId());
-        locationsDao.storeLocation(loc);
-    }
-
     @AfterAll
     static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -111,10 +95,10 @@ class OutletDaoIT extends ProjectStructureIT {
             outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName(), DeleteRule.DELETE_ALL);
-            deleteLocation(context, TAINTER_GATE_1_LOC.getName(), TAINTER_GATE_1_LOC.getOfficeId());
-            deleteLocation(context, TAINTER_GATE_2_LOC.getName(), TAINTER_GATE_2_LOC.getOfficeId());
-            deleteLocation(context, TAINTER_GATE_3_LOC.getName(), TAINTER_GATE_3_LOC.getOfficeId());
-            deleteLocation(context, BOX_CULVERT_1_LOC.getName(), BOX_CULVERT_1_LOC.getOfficeId());
+            deleteLocation(context, TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName());
+            deleteLocation(context, TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName());
+            deleteLocation(context, TAINTER_GATE_3_LOC.getOfficeId(), TAINTER_GATE_3_LOC.getName());
+            deleteLocation(context, BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
         tearDownProject();
     }

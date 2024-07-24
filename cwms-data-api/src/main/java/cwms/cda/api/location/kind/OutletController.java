@@ -117,8 +117,8 @@ public class OutletController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        String office = ctx.pathParam(OFFICE);
-        String projectId = ctx.pathParam(PROJECT_ID);
+        String office = requiredParam(ctx, OFFICE);
+        String projectId = requiredParam(ctx, PROJECT_ID);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
