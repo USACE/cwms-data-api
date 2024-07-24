@@ -29,6 +29,7 @@ package cwms.cda.data.dto.watersupply;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
@@ -41,34 +42,31 @@ import java.time.Instant;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
         aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonDeserialize(builder = WaterSupplyPumpAccounting.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class WaterSupplyPumpAccounting extends CwmsDTOBase {
     @JsonProperty(required = true)
-    private WaterUser waterUser;
+    private final WaterUser waterUser;
     @JsonProperty(required = true)
-    private String contractName;
+    private final String contractName;
     @JsonProperty(required = true)
-    private CwmsId pumpLocation;
+    private final CwmsId pumpLocation;
     @JsonProperty(required = true)
-    private LookupType transferType;
+    private final LookupType transferType;
     @JsonProperty(required = true)
     private Double flow;
     @JsonProperty(required = true)
-    private Instant transferDate;
-    private String comment;
+    private final Instant transferDate;
+    private final String comment;
 
-    private WaterSupplyPumpAccounting() {
-    }
-
-    public WaterSupplyPumpAccounting(WaterUser waterUser, String contractName, CwmsId pumpLocation,
-            LookupType transferType, Double flow, Instant transferDate, String comment) {
-        this.waterUser = waterUser;
-        this.contractName = contractName;
-        this.pumpLocation = pumpLocation;
-        this.transferType = transferType;
-        this.flow = flow;
-        this.transferDate = transferDate;
-        this.comment = comment;
+    private WaterSupplyPumpAccounting(Builder builder) {
+        this.waterUser = builder.waterUser;
+        this.contractName = builder.contractName;
+        this.pumpLocation = builder.pumpLocation;
+        this.transferType = builder.transferType;
+        this.flow = builder.flow;
+        this.transferDate = builder.transferDate;
+        this.comment = builder.comment;
     }
 
     public WaterUser getWaterUser() {
@@ -101,5 +99,54 @@ public class WaterSupplyPumpAccounting extends CwmsDTOBase {
 
     public void setUndefined() {
         this.flow = Double.NEGATIVE_INFINITY;
+    }
+
+    public static final class Builder {
+        private WaterUser waterUser;
+        private String contractName;
+        private CwmsId pumpLocation;
+        private LookupType transferType;
+        private Double flow;
+        private Instant transferDate;
+        private String comment;
+
+        public Builder withWaterUser(WaterUser waterUser) {
+            this.waterUser = waterUser;
+            return this;
+        }
+
+        public Builder withContractName(String contractName) {
+            this.contractName = contractName;
+            return this;
+        }
+
+        public Builder withPumpLocation(CwmsId pumpLocation) {
+            this.pumpLocation = pumpLocation;
+            return this;
+        }
+
+        public Builder withTransferType(LookupType transferType) {
+            this.transferType = transferType;
+            return this;
+        }
+
+        public Builder withFlow(Double flow) {
+            this.flow = flow;
+            return this;
+        }
+
+        public Builder withTransferDate(Instant transferDate) {
+            this.transferDate = transferDate;
+            return this;
+        }
+
+        public Builder withComment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public WaterSupplyPumpAccounting build() {
+            return new WaterSupplyPumpAccounting(this);
+        }
     }
 }
