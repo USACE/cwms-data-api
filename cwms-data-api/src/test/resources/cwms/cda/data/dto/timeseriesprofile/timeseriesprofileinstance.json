@@ -1,50 +1,50 @@
 {
-  "time-series-profile":
-  {
+  "time-series-profile": {
     "location-id": {
       "office-id": "office",
       "name": "location"
     },
-    "key-parameter": "Depth",
-    "parameter-list": [ "Temp-Water", "Depth"],
     "description": "Description",
-    "reference-ts-id":{
+    "parameter-list": [
+      "Temperature",
+      "Depth"
+    ],
+    "key-parameter": "Depth",
+    "reference-ts-id": {
       "office-id": "office",
       "name": "location.Elev.Inst.0.0.REV"
     }
   },
-  "time-series-list" :  [
+  "time-series-list": [
     {
-         "parameter": "Temp-Water",
-         "unit": "F",
-         "time-zone": "PST",
-         "time-value-pair-list":
-        [
-           {
-              "date-time": 1612869582120,
-              "value": "1.0"
-           },
-           {
-             "date-time": 1612869582220,
-             "value": "3.0"
-           }
-        ]
+      "parameter": "Temperature",
+      "unit": "F",
+      "time-zone": "PST",
+      "values": [
+        {
+          "date-time": 1612869582120,
+          "value": 1.0
+        },
+        {
+          "date-time": 1612869582220,
+          "value": 3.0
+        }
+      ]
     },
     {
-        "parameter": "Depth",
-        "unit": "ft",
-        "time-zone": "PST",
-        "time-value-pair-list":
-        [
-          {
-            "date-time": 1612869582120,
-            "value": "1.0"
-          },
-          {
-            "date-time": 1612869582220,
-            "value": "3.0"
-          }
-        ]
+      "parameter": "Depth",
+      "unit": "ft",
+      "time-zone": "PST",
+      "values": [
+        {
+          "date-time": 1612869582120,
+          "value": 1.0
+        },
+        {
+          "date-time": 1612869582220,
+          "value": 3.0
+        }
+      ]
     }
   ]
 }

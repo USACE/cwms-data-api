@@ -87,11 +87,11 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 			TS_PROF_DATA_TAB_T records = new TS_PROF_DATA_TAB_T();
 
-			for(int i=0; i<timeseriesProfileInstance.getTimeSeriesList().get(0).getTimeValuePairList().size();i++)
+			for(int i=0; i<timeseriesProfileInstance.getTimeSeriesList().get(0).getValues().size();i++)
 			{
 				TS_PROF_DATA_REC_T dataRecord = new TS_PROF_DATA_REC_T();
 				Timestamp timeStamp =  Timestamp.from(timeseriesProfileInstance.getTimeSeriesList().get(0)
-								.getTimeValuePairList().get(i).getDateTime());
+								.getValues().get(i).getDateTime());
 				dataRecord.setDATE_TIME(timeStamp);
 				records.add(dataRecord);
 			}
@@ -111,11 +111,11 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 			for(int i = 0; i<timeseriesProfileInstance.getTimeSeriesList().size(); i++)
 			{
-				for(int j =0; j<timeseriesProfileInstance.getTimeSeriesList().get(i).getTimeValuePairList().size();j++)
+				for(int j =0; j<timeseriesProfileInstance.getTimeSeriesList().get(i).getValues().size();j++)
 				{
 					TS_PROF_DATA_REC_T dataRecord = records.get(j);
 					dataRecord.getPARAMETERS().get(i).setVALUE(
-						timeseriesProfileInstance.getTimeSeriesList().get(i).getTimeValuePairList().get(j).getValue());
+						timeseriesProfileInstance.getTimeSeriesList().get(i).getValues().get(j).getValue());
 				}
 			}
 
@@ -301,7 +301,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		if(!timeValuePairList.isEmpty()) {
 			for (int i = 0; i < timeValuePairList.size(); i++) {
 				ProfileTimeSeries timeSeries = new ProfileTimeSeries.Builder()
-						.withTimeValuePairList(timeValuePairList.get(i))
+						.withValues(timeValuePairList.get(i))
 						.withTimeZone(timeZone)
 						.withParameter(parameterList.get(i))
 						.withUnit(units.get(i))

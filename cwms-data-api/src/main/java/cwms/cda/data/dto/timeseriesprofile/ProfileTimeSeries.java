@@ -19,13 +19,13 @@ public final class ProfileTimeSeries {
     private final String parameter;
     private final String unit;
     private final String timeZone;
-    private final List<TimeValuePair> timeValuePairList;
+    private final List<TimeValuePair> values;
 
     protected ProfileTimeSeries(Builder builder)
     {
         parameter = builder.parameter;
         unit = builder.unit;
-        timeValuePairList = builder.timeValuePairList;
+        values = builder.values;
         timeZone = builder.timeZone;
     }
     public String getTimeZone()
@@ -40,19 +40,19 @@ public final class ProfileTimeSeries {
     {
         return unit;
     }
-    public List<TimeValuePair> getTimeValuePairList()
+    public List<TimeValuePair> getValues()
     {
-        return timeValuePairList;
+        return values;
     }
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
-        private List<TimeValuePair> timeValuePairList;
+        private List<TimeValuePair> values;
         private String unit;
         private String parameter;
         private String timeZone;
-        public Builder withTimeValuePairList(List<TimeValuePair> timeValuePairList) {
-            this.timeValuePairList = timeValuePairList;
+        public Builder withValues(List<TimeValuePair> values) {
+            this.values = values;
             return this;
         }
 

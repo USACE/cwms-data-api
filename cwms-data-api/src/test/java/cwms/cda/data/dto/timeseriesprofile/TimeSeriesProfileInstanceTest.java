@@ -60,7 +60,7 @@ public class TimeSeriesProfileInstanceTest {
                     .withParameter(parameter)
                     .withUnit(PARAMETER_UNIT_MAP.get(parameter))
                     .withTimeZone("PST")
-                    .withTimeValuePairList(buildTimeValueList())
+                    .withValues(buildTimeValueList())
                     .build();
             timeSeriesList.add(profileTimeSeries);
         }
@@ -90,7 +90,7 @@ public class TimeSeriesProfileInstanceTest {
         assertEquals(expected.getTimeZone(), actual.getTimeZone(), message);
         assertEquals(expected.getParameter(), actual.getParameter(), message);
         assertEquals(expected.getUnit(),actual.getUnit(), message);
-        testAssertEquals(expected.getTimeValuePairList(), actual.getTimeValuePairList());
+        testAssertEquals(expected.getValues(), actual.getValues());
     }
 
     private void testAssertEquals(List<TimeValuePair> expected, List<TimeValuePair> actual) {
