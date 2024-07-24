@@ -254,7 +254,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
             // check if the retrieved timeseries profile instance has the same tineseries as the one we stored
             assertEquals(2, result.getTimeSeriesList().size());
-            assertEquals(2, result.getTimeSeriesList().get(0).getTimeValuePairList().size());
+            assertEquals(2, result.getTimeSeriesList().get(0).getValues().size());
 
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -469,7 +469,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 .withParameter(keyParameterUnit[0])
                 .withUnit(keyParameterUnit[1])
                 .withTimeZone(timeZone)
-                .withTimeValuePairList(timeValuePairList)
+                .withValues(timeValuePairList)
                 .build();
 
         List<ProfileTimeSeries> timeSeriesList = new ArrayList<>();
@@ -478,7 +478,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 .withParameter(parameterUnit1[0])
                 .withUnit(parameterUnit1[1])
                 .withTimeZone(timeZone)
-                .withTimeValuePairList(timeValuePairList)
+                .withValues(timeValuePairList)
                 .build();
 
         timeSeriesList.add(profileTimeSeries);
