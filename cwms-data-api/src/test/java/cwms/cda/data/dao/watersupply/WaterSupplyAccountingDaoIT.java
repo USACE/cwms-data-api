@@ -462,7 +462,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
 
 
     private WaterSupplyPump buildTestWaterSupplyPump(String locationName, PumpType pumpType) {
-        return new WaterSupplyPump(buildTestLocation(locationName, "PUMP"), pumpType);
+        return new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation(locationName, "PUMP"))
+                .withPumpType(pumpType).build();
     }
 
     private NavigableMap<Instant, WaterSupplyPumpAccounting> createPumpChangesMap(CwmsId pumpLocation, WaterUser user,
@@ -543,11 +544,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     }
 
     protected static WaterUser buildTestWaterUser(String entityName) {
-        return new WaterUser(entityName, new CwmsId.Builder()
+        return new WaterUser.Builder().withEntityName(entityName).withProjectId(new CwmsId.Builder()
                 .withName("Test Project Name")
                 .withOfficeId(OFFICE_ID)
-                .build(),
-                "Test Water Right");
+                .build())
+            .withWaterRight("Test Water Right").build();
     }
 
     protected WaterUserContract buildTestWaterContract(String entityName) {
@@ -571,12 +572,15 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                         .build())
                 .withFutureUsePercentActivated(35.7)
                 .withWaterUser(testUser)
-                .withPumpInLocation(new WaterSupplyPump(buildTestLocation("Pump 1 " + entityName,
-                        "PUMP"), PumpType.IN))
-                .withPumpOutLocation(new WaterSupplyPump(buildTestLocation("Pump 2 " + entityName,
-                        "PUMP"), PumpType.OUT))
-                .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation("Pump 3 " + entityName,
-                        "PUMP"), PumpType.BELOW))
+                .withPumpInLocation(new WaterSupplyPump.Builder()
+                        .withPumpLocation(buildTestLocation("Pump 1 " + entityName,
+                        "PUMP")).withPumpType(PumpType.IN).build())
+                .withPumpOutLocation(new WaterSupplyPump.Builder()
+                        .withPumpLocation(buildTestLocation("Pump 2 " + entityName,
+                        "PUMP")).withPumpType(PumpType.OUT).build())
+                .withPumpOutBelowLocation(new WaterSupplyPump.Builder()
+                        .withPumpLocation(buildTestLocation("Pump 3 " + entityName,
+                        "PUMP")).withPumpType(PumpType.BELOW).build())
                 .build();
 
     }
